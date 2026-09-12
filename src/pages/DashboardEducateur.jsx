@@ -810,6 +810,141 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
   )
 }
 
+// Bloc d'explication + tutoriel carrousel en tête de la rubrique "Pts Séance"
+// (statsSubTab === 'mois') — les images des slides sont volontairement des
+// icônes de substitution (pas encore de vraies captures d'écran) : ajouter
+// `image: '/tuto/....png'` à un slide et l'afficher via <img> à la place de
+// l'icône dès que les captures seront prêtes.
+function ExplicationPtsSeance() {
+  const colors = useColors()
+  const [showTuto, setShowTuto] = useState(false)
+  const [slide, setSlide] = useState(0)
+
+  const slides = [
+    { titre: 'Étape 1 — Ouvrir le Planning', texte: "Dans le menu, va dans Création entraînement → Planning.", icone: '📅' },
+    { titre: 'Étape 2 — Aller sur Mes séances', texte: "Dans le sous-onglet \"Mes séances\", retrouve la séance concernée.", icone: '📋' },
+    { titre: 'Étape 3 — Ouvrir la séance', texte: "Clique sur la carte de la séance pour ouvrir le détail des présences.", icone: '➡️' },
+    { titre: 'Étape 4 — Attribuer le point séance', texte: "Clique sur l'étoile à côté du ou des joueurs qui ont gagné le point séance.", icone: '⭐' },
+  ]
+
+  return (
+    <div>
+      <div style={{
+        background: `linear-gradient(135deg, ${colors.accent.green}15, ${colors.accent.green}05)`,
+        border: `1px solid ${colors.accent.green}30`,
+        borderRadius: '14px', padding: '20px',
+      }}>
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: '32px', flexShrink: 0 }}>⭐</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '15px', marginBottom: '8px' }}>
+              Qu'est-ce que les Points Séance ?
+            </div>
+            <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.7', margin: '0 0 14px' }}>
+              Challenge tes joueurs et offre-leur sur chaque séance un point séance sur un de tes procédés.
+              Le joueur qui aura additionné le plus de points séance peut gagner une récompense ou un privilège.
+              <strong style={{ color: colors.text.primary }}> À toi d'en faire de vrais compétiteurs.</strong>
+            </p>
+            <button
+              onClick={() => { setShowTuto(true); setSlide(0) }}
+              style={{
+                background: 'none', border: `1px solid ${colors.accent.green}`, color: colors.accent.green,
+                borderRadius: '8px', padding: '8px 16px', fontSize: '13px',
+                fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}>
+              Comment inscrire les points séances ?
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showTuto && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, padding: '20px',
+        }}>
+          <div style={{
+            background: colors.background.surface, borderRadius: '16px',
+            width: '100%', maxWidth: '520px', border: `1px solid ${colors.border.default}`,
+            overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>
+                Comment inscrire les points séances
+              </div>
+              <button onClick={() => setShowTuto(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '20px' }}>×</button>
+            </div>
+
+            <div style={{
+              background: colors.background.base, height: '220px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{ fontSize: '48px' }}>{slides[slide].icone}</div>
+
+              {slide > 0 && (
+                <button onClick={() => setSlide(slide - 1)} style={{
+                  position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '50%',
+                  width: '36px', height: '36px', cursor: 'pointer', color: colors.text.primary, fontSize: '16px',
+                }}>‹</button>
+              )}
+              {slide < slides.length - 1 && (
+                <button onClick={() => setSlide(slide + 1)} style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '50%',
+                  width: '36px', height: '36px', cursor: 'pointer', color: colors.text.primary, fontSize: '16px',
+                }}>›</button>
+              )}
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Étape {slide + 1} / {slides.length}
+              </div>
+              <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
+                {slides[slide].titre}
+              </div>
+              <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                {slides[slide].texte}
+              </p>
+            </div>
+
+            <div style={{ padding: '0 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {slides.map((_, i) => (
+                  <button key={i} onClick={() => setSlide(i)} style={{
+                    width: i === slide ? '20px' : '8px', height: '8px',
+                    borderRadius: '4px', border: 'none', cursor: 'pointer',
+                    background: i === slide ? colors.accent.green : colors.border.default,
+                    transition: 'width 0.2s', padding: 0,
+                  }} />
+                ))}
+              </div>
+              {slide === slides.length - 1 ? (
+                <button onClick={() => setShowTuto(false)} style={{
+                  background: colors.accent.green, color: colors.black, border: 'none',
+                  borderRadius: '8px', padding: '8px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>
+                  C'est parti !
+                </button>
+              ) : (
+                <button onClick={() => setSlide(slide + 1)} style={{
+                  background: colors.accent.green, color: colors.black, border: 'none',
+                  borderRadius: '8px', padding: '8px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>
+                  Suivant →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
@@ -1034,14 +1169,8 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || mesSeancesOuvertes.find(s => s.id === entr.fiche_id)?.theme || 'Séance'}</p>
                       <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
                     </div>
-                    {isMobile ? (
-                      <span title={sondageEstClos(entr) ? 'Sondage clôturé' : 'Sondage ouvert'}
-                        style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? colors.accent.red : colors.accent.green, flexShrink: 0 }} />
-                    ) : (
-                      !sondageEstClos(entr) && (
-                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: colors.accent.green + alpha.subtle, color: colors.accent.green, flexShrink: 0 }}>Sondage ouvert</span>
-                      )
-                    )}
+                    <span title={sondageEstClos(entr) ? 'Sondage clôturé' : 'Sondage ouvert'}
+                      style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? colors.accent.red : colors.accent.green, flexShrink: 0 }} />
                   </div>
                 )
               })}
@@ -5488,7 +5617,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`🌟 ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
+              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`⭐ ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -5968,6 +6097,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <ExplicationPtsSeance />
                   {/* Mois en cours */}
                   <div style={st.card}>
                     <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisCourant)}</p>
