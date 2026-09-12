@@ -7980,39 +7980,40 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
           <div>
-            {(() => {
-              const boutonsSeance = [
-                { id: 'enregistrer', icon: '📥', label: t('seance_enregistrer_une', lang), color: colors.accent.green, onClick: () => setModeSeance('enregistrer') },
-                ...(SEANCE_IA_BETA_EMAILS.includes(profil?.email) ? [
-                  { id: 'ia', icon: '🤖', label: "Générer avec l'IA", color: colors.accent.purpleLight, onClick: () => setModalGenerationIA(true) },
-                ] : []),
-                { id: 'rediger', icon: '✏️', label: t('seance_rediger_fiche', lang), color: colors.accent.blue, onClick: () => setModeSeance('rediger') },
-                { id: 'scanner', icon: '📷', label: t('seance_scanner', lang), color: colors.accent.orange, onClick: () => setModeSeance('scanner') },
-                { id: 'club', icon: '🏟️', label: t('seance_eval_club', lang), color: '#f472b6', onClick: () => setModeSeance('club') },
-              ]
-              const nbCols = isMobile ? Math.min(boutonsSeance.length, 3) : boutonsSeance.length
-              return (
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${nbCols}, 1fr)`, gap: '10px', marginBottom: '24px' }}>
-                  {boutonsSeance.map(btn => {
-                    const actif = btn.id !== 'ia' && modeSeance === btn.id
-                    return (
-                      <button key={btn.id} onClick={btn.onClick}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                          padding: '14px 10px', borderRadius: '14px',
-                          border: actif ? `1.5px solid ${btn.color}60` : `1.5px solid ${colors.border.faint}`,
-                          background: actif ? btn.color + alpha.subtle : colors.background.sunken,
-                          cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Inter, sans-serif',
-                        }}>
-                        <span style={{ fontSize: '22px' }}>{btn.icon}</span>
-                        <div style={{ textAlign: 'center', color: actif ? btn.color : colors.text.dim, fontWeight: 700, fontSize: '12px', lineHeight: 1.2 }}>{btn.label}</div>
-                        {actif && <div style={{ width: '20px', height: '2px', borderRadius: '2px', background: btn.color }} />}
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-            })()}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+              <button
+                onClick={() => setModeSeance('enregistrer')}
+                style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                📥 {t('seance_enregistrer_une', lang)}
+              </button>
+              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
+                <button
+                  onClick={() => setModalGenerationIA(true)}
+                  style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                >
+                  🤖 Générer avec l'IA
+                </button>
+              )}
+              <button
+                onClick={() => setModeSeance('rediger')}
+                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                ✏️ {t('seance_rediger_fiche', lang)}
+              </button>
+              <button
+                onClick={() => setModeSeance('scanner')}
+                style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                📷 {t('seance_scanner', lang)}
+              </button>
+              <button
+                onClick={() => setModeSeance('club')}
+                style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                🏟️ {t('seance_eval_club', lang)}
+              </button>
+            </div>
 
             {modalGenerationIA && (
               <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
