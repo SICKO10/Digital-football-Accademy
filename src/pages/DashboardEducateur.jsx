@@ -36,6 +36,7 @@ import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
+import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 import { notifierJoueur } from '../lib/notifications'
@@ -1462,7 +1463,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // la largeur du contenu (ex: le canvas Tactipad) ; isTablet reste déclaré
   // (utilisé par de nombreux styles plus bas) mais toujours à false, pour ne
   // pas devoir toucher chacun de ces usages individuellement.
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const isMobile = useIsMobileOrTablet()
   const isTablet = false
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Repli manuel supplémentaire pour la tablette : la sidebar réduite aux
@@ -1661,13 +1662,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   useEffect(() => { init() }, [])
-  useEffect(() => {
-    const onResize = () => {
-      setIsMobile(window.innerWidth < 1024)
-    }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
 
   // sondageEstClos() est calculée en direct depuis l'heure courante (cf. lib/sondage.js),
   // donc aucune écriture en base n'est nécessaire à l'échéance — mais sans ce tick, rien

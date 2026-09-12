@@ -16,6 +16,7 @@ import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
+import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
@@ -488,8 +489,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [explorerRecherche, setExplorerRecherche] = useState('')
   const [explorerRegion, setExplorerRegion] = useState('')
   // Tablette alignée sur le comportement téléphone (menu en tiroir plutôt que
-  // sidebar fixe) — même décision que DashboardEducateur.jsx.
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  // sidebar fixe) — même décision que DashboardEducateur.jsx. Le hook gère
+  // aussi le paysage (largeur seule ne suffit pas, cf. useIsMobileOrTablet).
+  const isMobile = useIsMobileOrTablet()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
@@ -564,12 +566,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   useEffect(() => { getProfil() }, [])
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 1024)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
 
   // Taux de présence (widget Accueil, à côté de "Prochaines échéances") — basé
   // sur presences_entrainement (constat de l'éducateur après la séance), donc

@@ -28,6 +28,7 @@ import TachesClub from '../components/club/TachesClub'
 import ProjetSportif from '../components/club/ProjetSportif'
 import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import NotificationBanner from '../components/NotificationBanner'
+import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -1041,7 +1042,7 @@ export default function DashboardClub() {
   const [clubId, setClubId] = useState(null)
   const [moi, setMoi] = useState(null) // { id, prenom, nom } — le compte réellement connecté (club OU staff délégué), distinct de clubId (portée des données)
   const [loading, setLoading] = useState(true)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const isMobile = useIsMobileOrTablet()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
@@ -1320,11 +1321,6 @@ export default function DashboardClub() {
   }
 
   useEffect(() => { init() }, [])
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 1024)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
 
   // Menu ⋯ des cartes éducateur — fermé au clic en dehors, même pattern que
   // les menus ⋯ des cartes match/résultat/joueur (DashboardEducateur.jsx).
