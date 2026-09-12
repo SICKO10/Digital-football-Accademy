@@ -6594,7 +6594,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
               const nomsCoches = reponses.filter(j => convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')).map(j => `${j.prenom} ${j.nom}`)
               const copierConvocations = async () => {
                 try {
-                  await navigator.clipboard.writeText(nomsCoches.join(', '))
+                  await navigator.clipboard.writeText(`Les convoqués sont :\n\n${nomsCoches.join('\n')}`)
                   afficherToast(`${nomsCoches.length} joueur${nomsCoches.length > 1 ? 's' : ''} copié${nomsCoches.length > 1 ? 's' : ''}`)
                 } catch { /* clipboard indisponible (contexte non sécurisé, permission refusée...) */ }
               }
