@@ -3210,10 +3210,20 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
   const [affiliationEnCours, setAffiliationEnCours] = useState(null) // {id, profiles} — modal de liaison
   const [joueurLieId, setJoueurLieId] = useState('')
 
-  const gererAffiliation = async (id, statut, equipeJoueurId = null) => {
+  const gererAffiliation = async (id, statut, equipeJoueurId = null, joueurId = null) => {
     const update = { statut }
     if (equipeJoueurId) update.equipe_joueur_id = equipeJoueurId
     await supabase.from('affiliations').update(update).eq('id', id)
+    // equipe_joueurs.joueur_id doit aussi être renseigné ici — sinon l'affiliation
+    // est bien "accepte" mais le joueur reste invisible dans le roster réel
+    // (Mon équipe, décompte du sondage de présence) qui se base sur equipe_joueurs,
+    // pas sur affiliations. Bug constaté : joueur affilié recevant bien
+    // stats/planning (lus via affiliations) mais absent du sondage et non
+    // marqué "compte lié" (lus via equipe_joueurs.joueur_id resté null).
+    if (equipeJoueurId && joueurId) {
+      await supabase.from('equipe_joueurs').update({ joueur_id: joueurId }).eq('id', equipeJoueurId)
+      await chargerJoueurs(userId, equipeActive?.id)
+    }
     setAffiliationEnCours(null)
     setJoueurLieId('')
     await chargerProfilEdu(userId)
@@ -10413,7 +10423,7 @@ même listé dans buts_gauche/buts_droite.`
 
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId)}
+              onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId, affiliationEnCours.joueur_id)}
               disabled={!joueurLieId}
               style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #60a5fa40', background: joueurLieId ? colors.accent.blue + alpha.soft : colors.background.raised, color: joueurLieId ? colors.accent.blue : colors.text.disabled, fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
             >
