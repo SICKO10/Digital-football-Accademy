@@ -3807,7 +3807,7 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
     const erreurs = resultats.filter(r => r.error)
     if (erreurs.length > 0) {
       console.error('Erreur sauvegarde stats match:', erreurs.map(e => e.error.message))
-      alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''}.`)
+      alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''} :\n${erreurs[0].error.message}`)
     }
     await chargerMatchs(userId, equipeActive?.id)
     setMatchActif(null)
@@ -3998,7 +3998,7 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
           ]}
         ],
-        temperature: 0.7,
+        temperature: 0.1,
         max_completion_tokens: 4000
       })
     }, setStatus)
