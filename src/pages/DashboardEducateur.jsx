@@ -4053,9 +4053,13 @@ même listé dans buts_gauche/buts_droite.`
     nosNomsIA.forEach(nom => {
       const joueur = matcherJoueurParNom(nom, joueurs)
       if (joueur) {
-        const buts = butsIA.filter(b => matcherJoueurParNom(b, [joueur])).length
-        const cartonJ = (parsed.cartons_jaunes || []).some(b => matcherJoueurParNom(b, [joueur]))
-        const cartonR = (parsed.cartons_rouges || []).some(b => matcherJoueurParNom(b, [joueur]))
+        // Matche contre TOUT le roster (pas juste [joueur]) pour que le départage par
+        // initiale en cas d'homonymes s'applique réellement — sinon un but/carton
+        // "MATHIS" sans initiale lisible matchait n'importe quel Mathis testé
+        // individuellement, et se retrouvait attribué à chacun des homonymes.
+        const buts = butsIA.filter(b => matcherJoueurParNom(b, joueurs)?.id === joueur.id).length
+        const cartonJ = (parsed.cartons_jaunes || []).some(b => matcherJoueurParNom(b, joueurs)?.id === joueur.id)
+        const cartonR = (parsed.cartons_rouges || []).some(b => matcherJoueurParNom(b, joueurs)?.id === joueur.id)
         statsParJoueur[joueur.id] = {
           minutes: 90,
           buts,
