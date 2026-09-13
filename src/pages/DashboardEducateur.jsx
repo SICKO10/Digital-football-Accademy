@@ -3982,10 +3982,19 @@ Format exact attendu :
 
 Lis chaque nom exactement comme écrit sur la feuille.
 Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.
-Pour "buts_minutes" : un élément par but marqué, avec la colonne (gauche/droite,
-même convention que equipe_gauche/equipe_droite) et la minute indiquée à côté du
-but (souvent près d'un symbole ⚽). Si la minute d'un but n'est pas visible, ne
-mets pas d'élément pour ce but plutôt qu'une minute inventée.`
+Deux formats de feuille sont possibles :
+1. Feuille papier classique : les buts et cartons sont listés à part, avec les
+   minutes écrites à côté (souvent près d'un symbole ⚽).
+2. Composition d'appli (type FFF) : un petit pictogramme ballon apparaît
+   directement à côté du nom d'un buteur dans la liste des joueurs, et un
+   petit carré jaune ou rouge à côté du nom d'un joueur averti/expulsé — sans
+   minute visible dans ce cas. Dans ce format, mets ce joueur dans buts_gauche/
+   buts_droite ou cartons_jaunes/cartons_rouges même sans minute associée.
+Pour "buts_minutes" : un élément par but dont la minute est effectivement
+visible, avec la colonne (gauche/droite, même convention que equipe_gauche/
+equipe_droite). Si la minute d'un but n'est pas visible, ne mets pas
+d'élément pour ce but plutôt qu'une minute inventée — le but reste quand
+même listé dans buts_gauche/buts_droite.`
     const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -6868,6 +6877,11 @@ mets pas d'élément pour ce but plutôt qu'une minute inventée.`
                       </button>
                     </div>
                     {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>{scannerModalError}</p>}
+                  </div>
+
+                  <div style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', borderRadius: '10px', padding: '10px 14px', marginBottom: '18px', fontSize: '12px', color: colors.text.secondary, lineHeight: 1.5 }}>
+                    <strong style={{ color: colors.accent.blue }}>Après le scan : </strong>
+                    vérifiez que les informations détectées sont correctes. Les minutes sont pré-remplies à 90, à corriger selon les remplacements. Les passes décisives ne sont pas lues par le scan, à compléter manuellement. Pensez aussi à ajouter les buts avec leur nature et leur côté ci-dessous : ces infos alimentent les statistiques d'équipe sur les périodes et les zones où l'équipe marque ou encaisse.
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
