@@ -298,6 +298,7 @@ const MATERIEL_COULEURS = {
   coupelle_bleue: { fill: '#3182ce', dark: '#2b6cb0' },
   cone_orange: { fill: '#ed8936', dark: '#c05621' },
   cone_rouge: { fill: '#e53e3e', dark: '#c53030' },
+  barre: { fill: '#f6ad55', dark: '#dd6b20' },
 }
 
 export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () => {}, onDelete = () => {}, onRotate = () => {}, draggable = true, dragBoundFunc }) {
@@ -309,6 +310,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   const isCerceau = el.kind === 'cerceau'
   const isEchelleV = el.kind === 'echelle'
   const isEchelleH = el.kind === 'echelle_h'
+  const isHaie = el.kind === 'haie'
+  const isBarre = el.kind === 'barre'
   const cageW = el.kind === 'grande_cage' ? 44 : 30
   const cageH = el.kind === 'grande_cage' ? 24 : 18
 
@@ -322,6 +325,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   else if (isCerceau) { delX = 15; delY = -15; selRadius = 19 }
   else if (isEchelleV) { delX = 11; delY = -33; selRadius = 36 }
   else if (isEchelleH) { delX = 33; delY = -11; selRadius = 36 }
+  else if (isHaie) { delX = 20; delY = -10; selRadius = 24 }
+  else if (isBarre) { delX = 22; delY = -5; selRadius = 24 }
 
   const rungsV = [-27, -18, -9, 0, 9, 18, 27]
 
@@ -371,6 +376,16 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
           <Rect x={-33} y={8} width={66} height={3} cornerRadius={1.5} fill="#805ad5" />
           {rungsV.map(bx => <Rect key={bx} x={bx - 1.2} y={-11} width={2.5} height={22} fill="#b794f4" />)}
         </>
+      ) : isHaie ? (
+        <>
+          <Line points={[-18, 12, -10, -4]} stroke="#4a5568" strokeWidth={2.5} lineCap="round" />
+          <Line points={[18, 12, 10, -4]} stroke="#4a5568" strokeWidth={2.5} lineCap="round" />
+          <Rect x={-20} y={-8} width={40} height={6} cornerRadius={2} fill="#fff" stroke="#e53e3e" strokeWidth={1.5} />
+          <Rect x={-20} y={-8} width={9} height={6} fill="#e53e3e" />
+          <Rect x={11} y={-8} width={9} height={6} fill="#e53e3e" />
+        </>
+      ) : isBarre ? (
+        <Rect x={-22} y={-3} width={44} height={6} cornerRadius={3} fill={MATERIEL_COULEURS.barre.fill} stroke={MATERIEL_COULEURS.barre.dark} strokeWidth={1} />
       ) : (
         /* Le texte porte la zone cliquable/draggable : elle ne doit jamais être
            listening=false, sinon un objet non sélectionné n'a aucune zone
@@ -887,7 +902,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       return
     }
 
-    if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h'].includes(tool)) {
+    if (['cone', 'ballon', 'mannequin', 'petite_cage', 'grande_cage', 'plot', 'coupelle_rouge', 'coupelle_jaune', 'coupelle_bleue', 'cone_orange', 'cone_rouge', 'cerceau', 'echelle', 'echelle_h', 'haie', 'barre'].includes(tool)) {
       setPickerStagePos(pos)
       const { x, y } = clientXY(e.evt)
       setPickerScreenPos({ x: Math.max(10, Math.min(x, window.innerWidth - 230)), y: Math.max(10, Math.min(y, window.innerHeight - 180)) })
@@ -1341,6 +1356,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     { key: 'cerceau', title: 'Cerceau', apercu: <svg width="26" height="26" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="none" stroke="#38a169" strokeWidth="3.5"/></svg> },
     { key: 'echelle', title: 'Échelle', apercu: <svg width="14" height="30" viewBox="0 0 30 80"><rect x="3" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="23" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="3" y="8" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="30" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="52" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="74" width="24" height="3" rx="1" fill="#b794f4"/></svg> },
     { key: 'echelle_h', title: 'Échelle (horizontal)', apercu: <svg width="30" height="14" viewBox="0 0 80 30"><rect x="2" y="3" width="76" height="4" rx="2" fill="#805ad5"/><rect x="2" y="23" width="76" height="4" rx="2" fill="#805ad5"/><rect x="8" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="30" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="52" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="74" y="3" width="3" height="24" rx="1" fill="#b794f4"/></svg> },
+    { key: 'haie', title: 'Haie', apercu: <svg width="30" height="18" viewBox="0 0 50 30"><line x1="8" y1="26" x2="16" y2="10" stroke="#4a5568" strokeWidth="3"/><line x1="42" y1="26" x2="34" y2="10" stroke="#4a5568" strokeWidth="3"/><rect x="6" y="6" width="38" height="6" rx="2" fill="#fff" stroke="#e53e3e" strokeWidth="1.5"/><rect x="6" y="6" width="9" height="6" fill="#e53e3e"/><rect x="35" y="6" width="9" height="6" fill="#e53e3e"/></svg> },
+    { key: 'barre', title: 'Barre', apercu: <svg width="30" height="10" viewBox="0 0 50 12"><rect x="2" y="3" width="46" height="6" rx="3" fill="#f6ad55" stroke="#dd6b20" strokeWidth="1"/></svg> },
   ]
 
   const btnStyle = (active) => ({
