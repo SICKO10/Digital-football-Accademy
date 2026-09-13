@@ -795,17 +795,17 @@ function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
 function SousOngletsBar({ items, activeSection, setActiveSection }) {
   const colors = useColors()
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 28, background: colors.background.sunken, padding: 6, borderRadius: 12, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
+    <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
       {items.map(it => {
         const actif = activeSection === it.key
         return (
           <button key={it.key} onClick={() => setActiveSection(it.key)}
             style={{
-              flex: 1, padding: '12px 16px', border: 'none', borderRadius: 8, cursor: 'pointer',
-              fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-              background: actif ? colors.accent.green : 'transparent',
-              color: actif ? colors.black : colors.text.faint,
-              boxShadow: actif ? `0 2px 8px ${colors.accent.green}4d` : 'none',
+              padding: '9px 22px', borderRadius: 9, border: 'none', cursor: 'pointer',
+              background: actif ? colors.text.primary : 'transparent',
+              color: actif ? colors.background.base : colors.text.faint,
+              fontWeight: actif ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap',
+              fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
             }}>
             {it.label}
           </button>
