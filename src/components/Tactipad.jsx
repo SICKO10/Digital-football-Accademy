@@ -392,7 +392,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   )
 }
 
-export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, initialSchema, onValider, onFermer, lang = 'fr' }) {
+export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, initialSchema, onValider, onFermer, lang = 'fr', equipeActiveId = null, categories = [] }) {
   const colors = useColors()
   const isModal = mode === 'modal'
 
@@ -1273,14 +1273,22 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // Partage interne (distinct de partagerSchema/partage_slug, qui est un lien
   // public anonyme) : rend le schéma visible dans le dashboard des joueurs
   // affiliés à cet éducateur (cf. supabase_tactipads_visible_joueurs.sql).
+  // categorie_id fige l'équipe active au moment de l'activation — un compte
+  // éducateur gérant plusieurs catégories (ex: U18 et U11) ne partage qu'à
+  // celle en cours, pas à tous ses joueurs toutes catégories confondues (cf.
+  // supabase_tactipads_categorie_joueurs.sql). On ne touche categorie_id qu'à
+  // l'activation : le désactiver ne doit pas faire perdre l'association.
   const toggleVisibleJoueurs = async (s) => {
-    const { error } = await supabase.from('tactipads').update({ visible_joueurs: !s.visible_joueurs }).eq('id', s.id)
+    const activation = !s.visible_joueurs
+    const payload = { visible_joueurs: activation }
+    if (activation) payload.categorie_id = equipeActiveId || null
+    const { error } = await supabase.from('tactipads').update(payload).eq('id', s.id)
     if (error) {
-      // 42703 = colonne inexistante : la migration supabase_tactipads_visible_joueurs.sql
-      // n'a pas encore été exécutée sur cette base (fichier présent dans le repo, mais les
-      // migrations SQL de ce projet ne s'appliquent pas automatiquement).
+      // 42703 = colonne inexistante : la migration SQL correspondante n'a pas
+      // encore été exécutée sur cette base (fichier présent dans le repo, mais
+      // les migrations SQL de ce projet ne s'appliquent pas automatiquement).
       if (error.code === '42703') {
-        alert('Fonctionnalité pas encore activée sur cette base — exécute la migration supabase_tactipads_visible_joueurs.sql dans Supabase.')
+        alert('Fonctionnalité pas encore activée sur cette base — exécute la migration supabase_tactipads_visible_joueurs.sql (et supabase_tactipads_categorie_joueurs.sql) dans Supabase.')
       } else {
         alert('Erreur : ' + error.message)
       }
@@ -1958,7 +1966,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                           {dossier && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dossier.couleur, flexShrink: 0 }} />}
                           {s.nom || 'Sans titre'}
                         </p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}{s.visible_joueurs ? ' · 👥 visible aux joueurs' : ''}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}{s.visible_joueurs ? ` · 👥 visible aux joueurs (${categories.find(c => c.id === s.categorie_id)?.nom || 'toutes catégories'})` : ''}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
