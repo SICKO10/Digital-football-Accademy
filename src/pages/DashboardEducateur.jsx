@@ -8986,7 +8986,7 @@ même listé dans buts_gauche/buts_droite.`
 
         {activeSection === 'bibliotheque' && (
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
               {[
                 { id: 'personal', label: 'Ma bibliothèque' },
                 { id: 'club', label: 'Bibliothèque club' },
@@ -8994,7 +8994,13 @@ même listé dans buts_gauche/buts_droite.`
                 { id: 'videos', label: 'Vidéos' },
               ].map(r => (
                 <button key={r.id} onClick={() => setBiblioRubrique(r.id)}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: biblioRubrique === r.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioRubrique === r.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioRubrique === r.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{
+                    padding: '9px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                    background: biblioRubrique === r.id ? colors.text.primary : 'transparent',
+                    color: biblioRubrique === r.id ? colors.background.base : colors.text.faint,
+                    fontWeight: biblioRubrique === r.id ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap',
+                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
+                  }}>
                   {r.label}
                 </button>
               ))}
