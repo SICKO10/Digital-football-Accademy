@@ -2091,7 +2091,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -9233,6 +9233,9 @@ même listé dans buts_gauche/buts_droite.`
               {[
                 { key: 'nom', label: t('biblio_champ_nom', lang), placeholder: t('biblio_placeholder_nom', lang), required: true },
                 { key: 'theme', label: t('biblio_champ_theme', lang), placeholder: t('biblio_placeholder_theme', lang) },
+                { key: 'objectif', label: t('biblio_champ_objectif', lang), placeholder: t('biblio_placeholder_objectif', lang), multiline: true },
+                { key: 'but', label: t('biblio_champ_but', lang), placeholder: t('biblio_placeholder_but', lang), multiline: true },
+                { key: 'criteres_realisation', label: t('biblio_champ_criteres', lang), placeholder: t('biblio_placeholder_criteres', lang), multiline: true },
                 { key: 'description', label: t('biblio_champ_description', lang), placeholder: t('biblio_placeholder_description', lang), multiline: true },
                 { key: 'consignes', label: t('seance_consignes', lang), placeholder: t('biblio_placeholder_consignes', lang), multiline: true },
                 { key: 'variables', label: t('seance_variables', lang), placeholder: t('biblio_placeholder_variables', lang), multiline: true },
