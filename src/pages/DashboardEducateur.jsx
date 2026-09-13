@@ -3909,15 +3909,23 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     setPublishingCalendrier(false)
   }
 
-  // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille
-  // La feuille affiche "PRENOM N." — on cherche par prénom (majuscule)
+  // Retire les diacritiques pour un matching insensible aux accents (Noé/NOE, Léa/LEA...)
+  const normaliserPourMatching = (str) => (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
+
+  // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille.
+  // La feuille affiche "PRENOM NOM" (ou "PRENOM N.") — matche d'abord par prénom ; s'il
+  // y a plusieurs joueurs du même prénom (homonymes, ex. deux "Mathis"), départage avec
+  // l'initiale du nom fournie par l'IA. Sans quoi tous les homonymes retombaient sur le
+  // premier trouvé dans la liste.
   const matcherJoueurParNom = (nomSurFeuille, listeJoueurs) => {
     if (!nomSurFeuille) return null
-    const prenomFeuille = nomSurFeuille.trim().split(/\s+/)[0].toUpperCase()
+    const mots = nomSurFeuille.trim().split(/\s+/)
+    const prenomFeuille = normaliserPourMatching(mots[0])
     if (!prenomFeuille) return null
-    return listeJoueurs.find(j =>
-      j.prenom && j.prenom.toUpperCase() === prenomFeuille
-    ) || null
+    const initialeFeuille = normaliserPourMatching(mots[1]).charAt(0)
+    const candidats = listeJoueurs.filter(j => j.prenom && normaliserPourMatching(j.prenom) === prenomFeuille)
+    if (candidats.length <= 1) return candidats[0] || null
+    return candidats.find(j => j.nom && normaliserPourMatching(j.nom).charAt(0) === initialeFeuille) || candidats[0]
   }
 
   // Redimensionne (sans jamais agrandir) et recompresse une photo de feuille de
