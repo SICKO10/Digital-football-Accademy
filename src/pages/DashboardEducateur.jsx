@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
+import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 import AnalyseVideo from '../components/AnalyseVideo'
 import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../components/RapportMatch'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
@@ -2076,6 +2077,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
   const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', video_url: '', fichier_url: '', commentaire_perso: '' })
   const [dossiersOuverts, setDossiersOuverts] = useState({})
+  // Sous-dossiers "principes de jeu" à l'intérieur d'un dossier Offensif/Défensif
+  // — clé "phaseKey:principeId" (ex. "offensif:conservation") pour éviter toute
+  // collision entre les deux listes de principes.
+  const [principesOuverts, setPrincipesOuverts] = useState({})
   // Filtres "Mes séances" — actifs, on bascule des dossiers cliquables à une
   // liste plate filtrée (cf. rendu activeSection === 'mes_seances').
   const [filtrePhase, setFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif'
@@ -9064,17 +9069,61 @@ même listé dans buts_gauche/buts_droite.`
                             })}
                           </div>
 
-                          {/* Séances des dossiers ouverts, affichées en dessous */}
+                          {/* Séances des dossiers ouverts, affichées en dessous — pour Offensif/Défensif,
+                              un niveau intermédiaire de sous-dossiers "principes de jeu" (cf.
+                              src/constants/principesJeu.js) ; "Sans catégorie" reste une liste plate. */}
                           {dossiersVisibles.filter(d => dossiersOuverts[d.key]).map(d => {
                             const items = seancesParPhase[d.key]
+                            const principes = d.key === 'offensif' ? PRINCIPES_OFFENSIFS : d.key === 'defensif' ? PRINCIPES_DEFENSIFS : null
+                            if (!principes) {
+                              return (
+                                <div key={d.key} style={{ marginBottom: '20px' }}>
+                                  <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
+                                    📁 {d.label} ({items.length})
+                                  </p>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {items.map(renderCarteSeance)}
+                                  </div>
+                                </div>
+                              )
+                            }
+                            // Un principe de jeu regroupe plusieurs libellés (cf. champ `theme`
+                            // texte libre de la fiche, pas `categorie_tactique`) — une même séance
+                            // peut donc apparaître dans plusieurs sous-dossiers, par design.
+                            const principesAvecItems = principes
+                              .map(p => ({ ...p, items: items.filter(s => p.themes.some(th => s.theme?.includes(th))) }))
+                              .filter(p => p.items.length > 0)
                             return (
                               <div key={d.key} style={{ marginBottom: '20px' }}>
                                 <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
                                   📁 {d.label} ({items.length})
                                 </p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                  {items.map(renderCarteSeance)}
-                                </div>
+                                {principesAvecItems.length === 0 ? (
+                                  <p style={{ fontSize: '12px', color: colors.text.disabled, fontStyle: 'italic' }}>Aucun principe de jeu reconnu dans ces séances.</p>
+                                ) : (
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                                    {principesAvecItems.map(p => {
+                                      const clePrincipe = `${d.key}:${p.id}`
+                                      const ouvertP = !!principesOuverts[clePrincipe]
+                                      return (
+                                        <div key={p.id}
+                                          onClick={() => setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] }))}
+                                          style={{ background: colors.background.surface, border: `1px solid ${ouvertP ? d.color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
+                                          <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {p.label}</span>
+                                          <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{p.items.length}</span>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                                {principesAvecItems.filter(p => principesOuverts[`${d.key}:${p.id}`]).map(p => (
+                                  <div key={p.id} style={{ marginTop: '16px' }}>
+                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{p.label} ({p.items.length})</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                      {p.items.map(renderCarteSeance)}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )
                           })}
