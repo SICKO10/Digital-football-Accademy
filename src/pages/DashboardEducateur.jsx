@@ -2090,6 +2090,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioLoading, setBiblioLoading] = useState(false)
   const [biblioTab, setBiblioTab] = useState('tous') // 'tous' | 'jeu' | 'exercice' | 'situation' | 'echauffement'
   const [biblioSearch, setBiblioSearch] = useState('')
+  const [biblioFiltrePhase, setBiblioFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif' — club/platform uniquement
+  const [biblioFiltreTheme, setBiblioFiltreTheme] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
   const [modalProcede, setModalProcede] = useState(false)
@@ -9080,19 +9082,61 @@ même listé dans buts_gauche/buts_droite.`
                 situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.light },
                 echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
               }
+              const pastille = (actif, couleur) => ({
+                padding: '6px 14px', border: `1px solid ${actif ? couleur : colors.border.default}`, borderRadius: '20px', cursor: 'pointer',
+                fontWeight: actif ? 700 : 500, fontSize: '12px', fontFamily: 'Inter, sans-serif',
+                background: actif ? couleur + alpha.subtle : 'transparent', color: actif ? couleur : colors.text.faint,
+              })
+              // Filtre thème (phase Offensif/Défensif + thème officiel FFF, cf.
+              // src/lib/themesSeance.js — même système que "Mes séances") :
+              // réservé aux bibliothèques partagées (club/platform), assez
+              // fournies pour en justifier le classement ; "Ma bibliothèque"
+              // n'affiche ni la barre ni les dossiers.
+              const avecThemes = ['club', 'platform'].includes(biblioRubrique)
+              const themesDeLaPhase = biblioFiltrePhase !== 'tous' ? THEMES_SEANCE[biblioFiltrePhase].themes : []
               const filtres = biblio.filter(p => {
                 const matchTab = biblioTab === 'tous' || p.type === biblioTab
                 const matchSearch = !biblioSearch.trim() || `${p.nom} ${p.theme} ${p.tags} ${p.description}`.toLowerCase().includes(biblioSearch.toLowerCase())
-                return matchTab && matchSearch
+                const matchPhase = !avecThemes || biblioFiltrePhase === 'tous' || themeSeanceInfo(p.theme)?.phase === biblioFiltrePhase
+                const matchTheme = !avecThemes || !biblioFiltreTheme || p.theme === biblioFiltreTheme
+                return matchTab && matchSearch && matchPhase && matchTheme
               })
-              if (filtres.length === 0) return (
-                <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.4 }}>
-                    <IcoBiblioVide size={56} color={colors.accent.green} />
+              const barreThemes = avecThemes && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Phase</span>
+                    {['tous', 'offensif', 'defensif'].map(p => (
+                      <button key={p} onClick={() => { setBiblioFiltrePhase(p); setBiblioFiltreTheme('') }}
+                        style={pastille(biblioFiltrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
+                        {p === 'tous' ? 'Toutes' : THEMES_SEANCE[p].label}
+                      </button>
+                    ))}
                   </div>
-                  <p style={{ fontSize: '14px', color: colors.text.disabled, marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
-                  <p style={{ fontSize: '12px', color: colors.border.strong }}>{t('biblio_creer_premier', lang)}</p>
+                  {biblioFiltrePhase !== 'tous' && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Thème</span>
+                      <button onClick={() => setBiblioFiltreTheme('')} style={pastille(!biblioFiltreTheme, colors.accent.green)}>Tous</button>
+                      {themesDeLaPhase.map(th => (
+                        <button key={th.value} onClick={() => setBiblioFiltreTheme(th.value === biblioFiltreTheme ? '' : th.value)}
+                          style={pastille(biblioFiltreTheme === th.value, THEMES_SEANCE[biblioFiltrePhase].color)}>
+                          {th.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              )
+              if (filtres.length === 0) return (
+                <>
+                  {barreThemes}
+                  <div style={{ textAlign: 'center', padding: '64px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.4 }}>
+                      <IcoBiblioVide size={56} color={colors.accent.green} />
+                    </div>
+                    <p style={{ fontSize: '14px', color: colors.text.disabled, marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
+                    <p style={{ fontSize: '12px', color: colors.border.strong }}>{t('biblio_creer_premier', lang)}</p>
+                  </div>
+                </>
               )
               const renderCarteProcede = (p) => {
                 const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
@@ -9118,7 +9162,7 @@ même listé dans buts_gauche/buts_droite.`
                     </div>
                     <div>
                       <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
-                      {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
+                      {p.theme && <p style={{ fontSize: '11px', color: themeSeanceInfo(p.theme)?.color || cfg.color, fontWeight: 600 }}>{themeSeanceInfo(p.theme)?.label || p.theme}</p>}
                       {p.educateur_id !== userId && p.educateur && (
                         <p style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
                       )}
@@ -9143,34 +9187,45 @@ même listé dans buts_gauche/buts_droite.`
                   </div>
                 )
               }
-              // Dossiers par type (échauffement/jeu/exercice/situation — seule
-              // classification à vocabulaire contrôlé sur un procédé, "theme"
-              // étant du texte libre) : utile pour parcourir les bibliothèques
-              // partagées (club/platform), potentiellement fournies par
-              // plusieurs éducateurs ; "Ma bibliothèque" reste une liste plate,
-              // en général trop réduite pour justifier des dossiers. Masqué dès
-              // qu'un type précis est déjà sélectionné dans les pastilles
-              // au-dessus (le classement ferait alors doublon avec le filtre).
-              const avecDossiers = ['club', 'platform'].includes(biblioRubrique) && biblioTab === 'tous'
+              // Dossiers par phase (Offensif/Défensif, comme "Mes séances") : pour
+              // les bibliothèques partagées (club/platform), potentiellement
+              // fournies par plusieurs éducateurs ; "Ma bibliothèque" reste une
+              // liste plate, en général trop réduite pour justifier des dossiers.
+              // Masqués dès qu'un type précis (pastilles au-dessus) ou un
+              // thème/phase (barre ci-dessus) est déjà sélectionné — le
+              // classement ferait alors doublon avec le filtre.
+              const avecDossiers = avecThemes && biblioTab === 'tous' && biblioFiltrePhase === 'tous' && !biblioFiltreTheme
               if (!avecDossiers) return (
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                  {filtres.map(renderCarteProcede)}
-                </div>
+                <>
+                  {barreThemes}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                    {filtres.map(renderCarteProcede)}
+                  </div>
+                </>
               )
-              const ordreTypes = ['echauffement', 'jeu', 'exercice', 'situation']
-              const dossiers = ordreTypes.map(ty => ({ ty, cfg: TYPE_CONFIG[ty], items: filtres.filter(p => p.type === ty) })).filter(d => d.items.length > 0)
+              const DOSSIERS_PHASE = [
+                { key: 'offensif', label: THEMES_SEANCE.offensif.label, color: THEMES_SEANCE.offensif.color },
+                { key: 'defensif', label: THEMES_SEANCE.defensif.label, color: THEMES_SEANCE.defensif.color },
+                { key: 'aucun', label: 'Sans thème', color: colors.text.faint },
+              ]
+              const parPhase = filtres.reduce((acc, p) => {
+                const phase = themeSeanceInfo(p.theme)?.phase || 'aucun'
+                if (!acc[phase]) acc[phase] = []
+                acc[phase].push(p)
+                return acc
+              }, {})
+              const dossiersVisibles = DOSSIERS_PHASE.filter(d => parPhase[d.key]?.length > 0)
               return (
                 <>
-                  {dossiers.map(d => (
-                    <div key={d.ty} style={{ marginBottom: '28px' }}>
+                  {barreThemes}
+                  {dossiersVisibles.map(d => (
+                    <div key={d.key} style={{ marginBottom: '28px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <p style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {d.cfg.emoji} {d.cfg.label}
-                        </p>
-                        <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{d.items.length} {d.items.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
+                        <p style={{ color: d.color, fontWeight: 800, fontSize: '15px', margin: 0 }}>{d.label}</p>
+                        <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{parPhase[d.key].length} {parPhase[d.key].length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                        {d.items.map(renderCarteProcede)}
+                        {parPhase[d.key].map(renderCarteProcede)}
                       </div>
                     </div>
                   ))}
@@ -9263,7 +9318,30 @@ même listé dans buts_gauche/buts_droite.`
 
               {[
                 { key: 'nom', label: t('biblio_champ_nom', lang), placeholder: t('biblio_placeholder_nom', lang), required: true },
-                { key: 'theme', label: t('biblio_champ_theme', lang), placeholder: t('biblio_placeholder_theme', lang) },
+              ].map(field => (
+                <div key={field.key} style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
+                  <input type="text" value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
+                    style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{t('biblio_champ_theme', lang)}</label>
+                <select value={procedeForm.theme} onChange={e => setProcedeForm(f => ({ ...f, theme: e.target.value }))}
+                  style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
+                  <option value="">{t('seance_choisis_categorie', lang)}</option>
+                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
+                    <optgroup label={groupe.label} key={phase}>
+                      {groupe.themes.map(th => (
+                        <option key={th.value} value={th.value}>{th.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              {[
                 { key: 'objectif', label: t('biblio_champ_objectif', lang), placeholder: t('biblio_placeholder_objectif', lang), multiline: true },
                 { key: 'but', label: t('biblio_champ_but', lang), placeholder: t('biblio_placeholder_but', lang), multiline: true },
                 { key: 'criteres_realisation', label: t('biblio_champ_criteres', lang), placeholder: t('biblio_placeholder_criteres', lang), multiline: true },
@@ -9363,7 +9441,7 @@ même listé dans buts_gauche/buts_droite.`
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{themeSeanceInfo(p.theme)?.label || p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
                     <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
                       style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
