@@ -9225,39 +9225,57 @@ même listé dans buts_gauche/buts_droite.`
               const renderCarteProcede = (p) => {
                 const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
                 const estSelectionne = biblioSelection.some(x => x.id === p.id)
+                const tagsListe = (p.tags || '').split(',').map(tag => tag.trim()).filter(Boolean)
                 return (
                   <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
-                    style={{ background: colors.background.surface, border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, boxShadow: estSelectionne ? `0 0 0 1px ${colors.accent.green}` : 'none', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px', cursor: biblioSelectionMode ? 'pointer' : 'default' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {biblioSelectionMode && (
-                          <span style={{ width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : 'transparent', color: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900, flexShrink: 0 }}>
-                            {estSelectionne ? '✓' : ''}
-                          </span>
-                        )}
-                        <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {cfg.emoji} {cfg.label}
-                        </span>
-                      </div>
-                      {p.educateur_id === userId ? (
+                    style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, boxShadow: estSelectionne ? `0 0 0 1px ${colors.accent.green}` : 'none', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
+                    onMouseEnter={e => { if (!estSelectionne) e.currentTarget.style.borderColor = colors.border.default }}
+                    onMouseLeave={e => { if (!estSelectionne) e.currentTarget.style.borderColor = colors.border.subtle }}>
+
+                    {/* Bande couleur top par type de procédé */}
+                    <div style={{ height: '3px', background: cfg.color, flexShrink: 0 }} />
+
+                    {biblioSelectionMode && (
+                      <span style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 1, width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : colors.background.overlay, color: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
+                        {estSelectionne ? '✓' : ''}
+                      </span>
+                    )}
+
+                    {!biblioSelectionMode && (
+                      p.educateur_id === userId ? (
                         canEdit('entrainements') && (
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
-                            <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                          <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, display: 'flex', gap: '4px' }}>
+                            <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_modifier', lang)}>✏️</button>
+                            <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_supprimer', lang)}>🗑️</button>
                           </div>
                         )
                       ) : (
                         <button onClick={(e) => { e.stopPropagation(); copierProcede(p) }}
-                          style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           Copier
                         </button>
-                      )}
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
-                      {p.theme && <p style={{ fontSize: '11px', color: themeSeanceInfo(p.theme)?.color || cfg.color, fontWeight: 600 }}>{themeSeanceInfo(p.theme)?.label || p.theme}</p>}
+                      )
+                    )}
+
+                    {/* Schéma tactique si disponible */}
+                    {p.schema_png && (
+                      <div style={{ height: '140px', overflow: 'hidden', background: colors.background.base }}>
+                        <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
+                      </div>
+                    )}
+
+                    {/* Corps */}
+                    <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ background: cfg.color + '20', color: cfg.color, fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {cfg.emoji} {cfg.label}
+                      </span>
+
+                      <h4 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.3 }}>{p.nom}</h4>
+
+                      {p.theme && <p style={{ color: themeSeanceInfo(p.theme)?.color || cfg.color, fontSize: '11px', margin: 0, fontWeight: 600 }}>{themeSeanceInfo(p.theme)?.label || p.theme}</p>}
+
                       {p.educateur_id !== userId && p.educateur && (
-                        <div style={{ marginTop: '2px' }}>
+                        <div>
                           <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
                           {(p.educateur.diplome && p.educateur.diplome !== 'Aucun diplôme' || p.educateur.categorie) && (
                             <p style={{ fontSize: '10px', color: colors.text.disabled, margin: '1px 0 0' }}>
@@ -9266,38 +9284,50 @@ même listé dans buts_gauche/buts_droite.`
                           )}
                         </div>
                       )}
-                    </div>
-                    {p.description && (
-                      <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
-                    )}
-                    {p.schema_png && (
-                      <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: `1px solid ${colors.border.faint}`, background: colors.background.base }} />
-                    )}
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
-                      {p.nb_joueurs && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
-                    </div>
-                    {p.tags && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                          <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
-                        ))}
+
+                      {p.objectif && <p style={{ color: cfg.color, fontSize: '12px', margin: 0, fontStyle: 'italic' }}>{p.objectif}</p>}
+
+                      {p.description && !p.schema_png && (
+                        <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {p.description}
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '6px' }}>
+                        {p.duree && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>⏱ {p.duree} min</span>}
+                        {p.nb_joueurs && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>👥 {p.nb_joueurs}</span>}
                       </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+
+                      {tagsListe.length > 0 && (
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          {tagsListe.slice(0, 3).map(tag => (
+                            <span key={tag} style={{ padding: '2px 7px', borderRadius: '5px', background: colors.background.raised, color: colors.text.disabled, fontSize: '10px' }}>{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions — toujours visibles mais discrètes */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${colors.border.subtle}` }}>
                       <button onClick={(e) => { e.stopPropagation(); setProcedeActif(p) }}
-                        style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        {t('biblio_voir', lang)}
+                        style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.disabled, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised; e.currentTarget.style.color = colors.text.dim }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.text.disabled }}>
+                        👁 {t('biblio_voir', lang)}
                       </button>
                       {biblioSelectionMode ? (
                         <button onClick={(e) => { e.stopPropagation(); basculerSelectionBiblio(p) }}
-                          style={{ flex: 1, background: estSelectionne ? colors.accent.green : colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: estSelectionne ? colors.black : colors.accent.green, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          style={{ padding: '11px', border: 'none', background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = colors.accent.green + '10'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                           {estSelectionne ? t('biblio_selectionne', lang) : t('biblio_selectionner', lang)}
                         </button>
                       ) : (
                         <button onClick={(e) => { e.stopPropagation(); importerProcedeVersNouvelleSeance(p) }}
-                          style={{ flex: 1, background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          {t('biblio_importer_ma_seance', lang)}
+                          style={{ padding: '11px', border: 'none', background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = colors.accent.green + '10'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          + {t('biblio_importer_ma_seance', lang)}
                         </button>
                       )}
                     </div>
