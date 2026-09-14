@@ -9274,74 +9274,84 @@ même listé dans buts_gauche/buts_droite.`
               const renderCarteProcede = (p) => {
                 const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
                 const estSelectionne = biblioSelection.some(x => x.id === p.id)
+                // Pas de colonne "source" en base : le badge Digital Football/Club se
+                // déduit du rubrique actif (biblioRubrique), qui détermine déjà quelle
+                // requête a chargé `biblio` (partage_platform vs partage_club) — inutile
+                // de dupliquer cette info dans une colonne, cf. bibliotheque_exercices.
+                const sourceBadge = biblioRubrique === 'platform' ? { label: '🎓 Digital Football', couleur: true }
+                  : biblioRubrique === 'club' ? { label: '🏟 Club', couleur: false } : null
+                const ombreBase = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 8px 32px rgba(0,0,0,0.5)`
+                const ombreHover = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 12px 40px rgba(0,0,0,0.7)`
                 return (
                   <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
-                    style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, boxShadow: estSelectionne ? `0 0 0 1px ${colors.accent.green}` : 'none', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
-                    onMouseEnter={e => { if (!estSelectionne) e.currentTarget.style.borderColor = colors.border.default }}
-                    onMouseLeave={e => { if (!estSelectionne) e.currentTarget.style.borderColor = colors.border.subtle }}>
+                    style={{ background: colors.background.surface, borderRadius: '16px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.faint}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: ombreBase, transition: 'transform 0.15s, box-shadow 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = ombreHover }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ombreBase }}>
 
                     {/* Bande couleur top par type de procédé */}
                     <div style={{ height: '3px', background: cfg.color, flexShrink: 0 }} />
 
-                    {biblioSelectionMode && (
-                      <span style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 1, width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : colors.background.overlay, color: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
-                        {estSelectionne ? '✓' : ''}
-                      </span>
-                    )}
+                    {/* Image (schéma tactique) ou placeholder terrain */}
+                    <div style={{ height: '130px', background: p.schema_png ? colors.background.base : '#0d1a0d', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                      {p.schema_png
+                        ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1a3a1a', fontSize: '40px' }}>⚽</div>
+                      }
 
-                    {!biblioSelectionMode && (
-                      p.educateur_id === userId ? (
-                        canEdit('entrainements') && (
-                          <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, display: 'flex', gap: '4px' }}>
-                            <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_modifier', lang)}>✏️</button>
-                            <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_supprimer', lang)}>🗑️</button>
-                          </div>
-                        )
-                      ) : (
-                        <button onClick={(e) => { e.stopPropagation(); copierProcede(p) }}
-                          style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          Copier
-                        </button>
-                      )
-                    )}
-
-                    {/* Schéma tactique si disponible */}
-                    {p.schema_png && (
-                      <div style={{ height: '140px', overflow: 'hidden', background: colors.background.base }}>
-                        <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
-                      </div>
-                    )}
-
-                    {/* Corps */}
-                    <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <span style={{ background: cfg.color + '20', color: cfg.color, fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {cfg.emoji} {cfg.label}
-                      </span>
-
-                      <h4 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.3 }}>{p.nom}</h4>
-
-                      {p.theme && <p style={{ color: themeSeanceInfo(p.theme)?.color || cfg.color, fontSize: '11px', margin: 0, fontWeight: 600 }}>{themeSeanceInfo(p.theme)?.label || p.theme}</p>}
-
-                      {p.educateur_id !== userId && p.educateur && (
-                        <div>
-                          <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
-                          {(p.educateur.diplome && p.educateur.diplome !== 'Aucun diplôme' || p.educateur.categorie) && (
-                            <p style={{ fontSize: '10px', color: colors.text.disabled, margin: '1px 0 0' }}>
-                              {[p.educateur.diplome && p.educateur.diplome !== 'Aucun diplôme' ? p.educateur.diplome : null, p.educateur.categorie].filter(Boolean).join(' · ')}
-                            </p>
-                          )}
+                      {sourceBadge && (
+                        <div style={{ position: 'absolute', top: '8px', left: '8px' }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '6px', background: sourceBadge.couleur ? colors.accent.green + '20' : '#00000080', color: sourceBadge.couleur ? colors.accent.green : colors.text.secondary, fontSize: '10px', fontWeight: 700, backdropFilter: 'blur(4px)', border: `1px solid ${sourceBadge.couleur ? colors.accent.green + '30' : colors.border.strong}` }}>
+                            {sourceBadge.label}
+                          </span>
                         </div>
                       )}
 
-                      {p.objectif && <p style={{ color: cfg.color, fontSize: '12px', margin: 0, fontStyle: 'italic' }}>{p.objectif}</p>}
-
-                      <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '6px' }}>
-                        {p.duree && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>⏱ {p.duree} min</span>}
-                        {p.nb_joueurs && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>👥 {p.nb_joueurs}</span>}
+                      <div style={{ position: 'absolute', bottom: '8px', right: '8px', display: 'flex', gap: '6px' }}>
+                        {p.duree && <span style={{ padding: '2px 8px', borderRadius: '5px', background: '#000000aa', color: '#ccc', fontSize: '11px', backdropFilter: 'blur(4px)' }}>⏱ {p.duree} min</span>}
+                        {p.nb_joueurs && <span style={{ padding: '2px 8px', borderRadius: '5px', background: '#000000aa', color: '#ccc', fontSize: '11px', backdropFilter: 'blur(4px)' }}>👥 {p.nb_joueurs}</span>}
                       </div>
+
+                      {biblioSelectionMode && (
+                        <span style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : colors.background.overlay, color: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
+                          {estSelectionne ? '✓' : ''}
+                        </span>
+                      )}
+
+                      {!biblioSelectionMode && (
+                        p.educateur_id === userId ? (
+                          canEdit('entrainements') && (
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
+                              <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_modifier', lang)}>✏️</button>
+                              <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                            </div>
+                          )
+                        ) : (
+                          <button onClick={(e) => { e.stopPropagation(); copierProcede(p) }}
+                            style={{ position: 'absolute', top: '8px', right: '8px', background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            Copier
+                          </button>
+                        )
+                      )}
                     </div>
 
-                    {/* Actions — toujours visibles mais discrètes */}
+                    {/* Corps */}
+                    <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ background: cfg.color + '20', color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        {cfg.emoji} {cfg.label}
+                      </span>
+
+                      <h4 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '14px', margin: 0, lineHeight: 1.3 }}>{p.nom}</h4>
+
+                      {p.objectif && <p style={{ color: cfg.color, fontSize: '12px', margin: 0, fontWeight: 600 }}>{p.objectif}</p>}
+
+                      {p.educateur_id !== userId && p.educateur && (
+                        <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                      )}
+
+                      {p.theme && <p style={{ color: colors.text.faint, fontSize: '11px', margin: 0 }}>📌 {themeSeanceInfo(p.theme)?.label || p.theme}</p>}
+                    </div>
+
+                    {/* Actions footer — toujours visibles mais discrètes */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${colors.border.subtle}` }}>
                       <button onClick={(e) => { e.stopPropagation(); setProcedeActif(p) }}
                         style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.disabled, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
