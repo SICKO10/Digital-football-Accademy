@@ -377,12 +377,12 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
           {rungsV.map(bx => <Rect key={bx} x={bx - 1.2} y={-11} width={2.5} height={22} fill="#b794f4" />)}
         </>
       ) : isHaie ? (
+        // Mini-haie d'agilité (tube plastique plié, façon "6 inch agility hurdle") :
+        // un seul tube continu qui forme l'arche, plus deux embouts au sol.
         <>
-          <Line points={[-18, 12, -10, -4]} stroke="#4a5568" strokeWidth={2.5} lineCap="round" />
-          <Line points={[18, 12, 10, -4]} stroke="#4a5568" strokeWidth={2.5} lineCap="round" />
-          <Rect x={-20} y={-8} width={40} height={6} cornerRadius={2} fill="#fff" stroke="#e53e3e" strokeWidth={1.5} />
-          <Rect x={-20} y={-8} width={9} height={6} fill="#e53e3e" />
-          <Rect x={11} y={-8} width={9} height={6} fill="#e53e3e" />
+          <Line points={[-16, 10, -13, -4, -8, -8, 8, -8, 13, -4, 16, 10]} stroke="#22c55e" strokeWidth={3} lineCap="round" lineJoin="round" tension={0.15} fill="none" />
+          <Line points={[-18, 12, -14, 9]} stroke="#1a1a1a" strokeWidth={2.5} lineCap="round" />
+          <Line points={[18, 12, 14, 9]} stroke="#1a1a1a" strokeWidth={2.5} lineCap="round" />
         </>
       ) : isBarre ? (
         <Rect x={-22} y={-3} width={44} height={6} cornerRadius={3} fill={MATERIEL_COULEURS.barre.fill} stroke={MATERIEL_COULEURS.barre.dark} strokeWidth={1} />
@@ -1356,7 +1356,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     { key: 'cerceau', title: 'Cerceau', apercu: <svg width="26" height="26" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="none" stroke="#38a169" strokeWidth="3.5"/></svg> },
     { key: 'echelle', title: 'Échelle', apercu: <svg width="14" height="30" viewBox="0 0 30 80"><rect x="3" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="23" y="2" width="4" height="76" rx="2" fill="#805ad5"/><rect x="3" y="8" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="30" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="52" width="24" height="3" rx="1" fill="#b794f4"/><rect x="3" y="74" width="24" height="3" rx="1" fill="#b794f4"/></svg> },
     { key: 'echelle_h', title: 'Échelle (horizontal)', apercu: <svg width="30" height="14" viewBox="0 0 80 30"><rect x="2" y="3" width="76" height="4" rx="2" fill="#805ad5"/><rect x="2" y="23" width="76" height="4" rx="2" fill="#805ad5"/><rect x="8" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="30" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="52" y="3" width="3" height="24" rx="1" fill="#b794f4"/><rect x="74" y="3" width="3" height="24" rx="1" fill="#b794f4"/></svg> },
-    { key: 'haie', title: 'Haie', apercu: <svg width="30" height="18" viewBox="0 0 50 30"><line x1="8" y1="26" x2="16" y2="10" stroke="#4a5568" strokeWidth="3"/><line x1="42" y1="26" x2="34" y2="10" stroke="#4a5568" strokeWidth="3"/><rect x="6" y="6" width="38" height="6" rx="2" fill="#fff" stroke="#e53e3e" strokeWidth="1.5"/><rect x="6" y="6" width="9" height="6" fill="#e53e3e"/><rect x="35" y="6" width="9" height="6" fill="#e53e3e"/></svg> },
+    { key: 'haie', title: 'Haie', apercu: <svg width="26" height="20" viewBox="0 0 40 30"><path d="M4 26 L7 12 L13 8 L27 8 L33 12 L36 26" stroke="#22c55e" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/><line x1="2" y1="28" x2="6" y2="25" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round"/><line x1="38" y1="28" x2="34" y2="25" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round"/></svg> },
     { key: 'barre', title: 'Barre', apercu: <svg width="30" height="10" viewBox="0 0 50 12"><rect x="2" y="3" width="46" height="6" rx="3" fill="#f6ad55" stroke="#dd6b20" strokeWidth="1"/></svg> },
   ]
 
