@@ -8484,6 +8484,22 @@ même listé dans buts_gauche/buts_droite.`
                     </optgroup>
                   ))}
                 </select>
+                {/* Séance libre uniquement (pas BMF/BEF/DEF, qui ont leur propre champ
+                    "Principe de jeu" en texte libre plus bas) — dropdown plutôt que texte
+                    libre pour que le classement en sous-dossiers dans "Mes séances"
+                    fonctionne de façon fiable. */}
+                {!fiche.mode_diplome && themeSeanceInfo(fiche.categorie_tactique) && (
+                  <select
+                    value={fiche.principe_jeu || ''}
+                    onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))}
+                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  >
+                    <option value="">Principe de jeu (optionnel)</option>
+                    {(themeSeanceInfo(fiche.categorie_tactique).phase === 'offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
+                      <option key={p.id} value={p.label}>{p.label}</option>
+                    ))}
+                  </select>
+                )}
                 <select
                   value={fiche.categorie_age}
                   onChange={e => setFiche(f => ({ ...f, categorie_age: e.target.value }))}
@@ -9087,35 +9103,49 @@ même listé dans buts_gauche/buts_droite.`
                                 </div>
                               )
                             }
-                            // Un principe de jeu regroupe plusieurs libellés (cf. champ `theme`
-                            // texte libre de la fiche, pas `categorie_tactique`) — une même séance
+                            // Un principe de jeu regroupe plusieurs libellés (cf. champ
+                            // fiche_seance.principe_jeu, rempli via le select "Principe de jeu"
+                            // du formulaire de rédaction — pas categorie_tactique, qui sert déjà
+                            // au tri Offensif/Défensif du niveau au-dessus) — une même séance
                             // peut donc apparaître dans plusieurs sous-dossiers, par design.
+                            const principeSeance = s => s.fiche_seance?.principe_jeu || ''
+                            const matchePrincipe = (s, p) => {
+                              const val = principeSeance(s)
+                              return !!val && (val === p.label || p.themes.some(th => val.includes(th)))
+                            }
                             const principesAvecItems = principes
-                              .map(p => ({ ...p, items: items.filter(s => p.themes.some(th => s.theme?.includes(th))) }))
+                              .map(p => ({ ...p, items: items.filter(s => matchePrincipe(s, p)) }))
                               .filter(p => p.items.length > 0)
+                            // Séances sans principe reconnu (champ vide, ou pas encore migrées) —
+                            // toujours accessibles, dans un dossier à part plutôt que masquées.
+                            const nonClasses = items.filter(s => !principes.some(p => matchePrincipe(s, p)))
                             return (
                               <div key={d.key} style={{ marginBottom: '20px' }}>
                                 <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
                                   📁 {d.label} ({items.length})
                                 </p>
-                                {principesAvecItems.length === 0 ? (
-                                  <p style={{ fontSize: '12px', color: colors.text.disabled, fontStyle: 'italic' }}>Aucun principe de jeu reconnu dans ces séances.</p>
-                                ) : (
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-                                    {principesAvecItems.map(p => {
-                                      const clePrincipe = `${d.key}:${p.id}`
-                                      const ouvertP = !!principesOuverts[clePrincipe]
-                                      return (
-                                        <div key={p.id}
-                                          onClick={() => setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] }))}
-                                          style={{ background: colors.background.surface, border: `1px solid ${ouvertP ? d.color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
-                                          <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {p.label}</span>
-                                          <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{p.items.length}</span>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                                  {principesAvecItems.map(p => {
+                                    const clePrincipe = `${d.key}:${p.id}`
+                                    const ouvertP = !!principesOuverts[clePrincipe]
+                                    return (
+                                      <div key={p.id}
+                                        onClick={() => setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] }))}
+                                        style={{ background: colors.background.surface, border: `1px solid ${ouvertP ? d.color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {p.label}</span>
+                                        <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{p.items.length}</span>
+                                      </div>
+                                    )
+                                  })}
+                                  {nonClasses.length > 0 && (
+                                    <div
+                                      onClick={() => setPrincipesOuverts(prev => ({ ...prev, [`${d.key}:_non_classe`]: !prev[`${d.key}:_non_classe`] }))}
+                                      style={{ background: colors.background.surface, border: `1px solid ${principesOuverts[`${d.key}:_non_classe`] ? colors.text.faint : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
+                                      <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}>📁 Non classé</span>
+                                      <span style={{ background: colors.background.raised, color: colors.text.faint, fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{nonClasses.length}</span>
+                                    </div>
+                                  )}
+                                </div>
                                 {principesAvecItems.filter(p => principesOuverts[`${d.key}:${p.id}`]).map(p => (
                                   <div key={p.id} style={{ marginTop: '16px' }}>
                                     <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{p.label} ({p.items.length})</p>
@@ -9124,6 +9154,14 @@ même listé dans buts_gauche/buts_droite.`
                                     </div>
                                   </div>
                                 ))}
+                                {principesOuverts[`${d.key}:_non_classe`] && nonClasses.length > 0 && (
+                                  <div style={{ marginTop: '16px' }}>
+                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>Non classé ({nonClasses.length})</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                      {nonClasses.map(renderCarteSeance)}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -10950,6 +10988,17 @@ même listé dans buts_gauche/buts_droite.`
                         {TOUS_THEMES_SEANCE.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
                     </div>
+                    {!ficheApercuEdit.mode_diplome && themeSeanceInfo(ficheApercuEdit.categorie_tactique) && (
+                      <div className="fiche-champ">
+                        <label>Principe de jeu</label>
+                        <select value={ficheApercuEdit.principe_jeu || ''} onChange={e => setFicheApercuEdit(f => ({ ...f, principe_jeu: e.target.value }))} style={champEditStyle}>
+                          <option value="">—</option>
+                          {(themeSeanceInfo(ficheApercuEdit.categorie_tactique).phase === 'offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
+                            <option key={p.id} value={p.label}>{p.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="fiche-champ">
                       <label>Catégorie d'âge</label>
                       <select value={ficheApercuEdit.categorie_age} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_age: e.target.value }))} style={champEditStyle}>
