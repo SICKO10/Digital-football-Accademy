@@ -49,6 +49,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   const [loading, setLoading] = useState(true)
   const [videoActive, setVideoActive] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [videoEnEdition, setVideoEnEdition] = useState(null) // null = nouvelle vidéo
   const [filtreCategorie, setFiltreCategorie] = useState('toutes')
   const [filtreTheme, setFiltreTheme] = useState('tous')
   const [filtreTypeSeance, setFiltreTypeSeance] = useState('tous')
@@ -76,14 +77,24 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, clubId, proprietaireId])
 
-  const ajouterVideo = async () => {
+  const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: 'autre', type_seance: 'collectif', tags: '', duree: '', visible_joueurs: false }
+
+  const ouvrirEditionVideo = (video) => {
+    setVideoEnEdition(video)
+    setForm({
+      titre: video.titre || '', description: video.description || '', youtube_url: video.youtube_url || '',
+      categorie: video.categorie || 'technique', theme_seance: video.theme_seance || 'autre', type_seance: video.type_seance || 'collectif',
+      tags: (video.tags || []).join(', '), duree: video.duree || '', visible_joueurs: video.visible_joueurs || false,
+    })
+    setVideoActive(null)
+    setShowForm(true)
+  }
+
+  const enregistrerVideo = async () => {
     const youtubeId = extractYoutubeId(form.youtube_url)
     if (!youtubeId) { alert('URL YouTube invalide'); return }
     setSaving(true)
-    const { error } = await supabase.from('bibliotheque_videos').insert({
-      type,
-      club_id: type === 'club' ? clubId : null,
-      proprietaire_id: type === 'perso' ? proprietaireId : null,
+    const payload = {
       titre: form.titre,
       description: form.description || null,
       youtube_url: form.youtube_url,
@@ -94,10 +105,16 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       duree: form.duree || null,
       visible_joueurs: form.visible_joueurs,
-    })
+    }
+    const { error } = videoEnEdition
+      ? await supabase.from('bibliotheque_videos').update(payload).eq('id', videoEnEdition.id)
+      : await supabase.from('bibliotheque_videos').insert({
+          ...payload, type, club_id: type === 'club' ? clubId : null, proprietaire_id: type === 'perso' ? proprietaireId : null,
+        })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
-    setForm({ titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: 'autre', type_seance: 'collectif', tags: '', duree: '', visible_joueurs: false })
+    setForm(FORM_VIDE)
+    setVideoEnEdition(null)
     setShowForm(false)
     chargerVideos()
   }
@@ -175,7 +192,11 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
           {videos.length} vidéo{videos.length > 1 ? 's' : ''}
         </p>
         {peutAjouter && (
-          <button onClick={() => setShowForm(v => !v)}
+          <button onClick={() => setShowForm(v => {
+              const next = !v
+              if (next) { setVideoEnEdition(null); setForm(FORM_VIDE) }
+              return next
+            })}
             style={{ background: accentColor, color: colors.black || '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             + Ajouter une vidéo
           </button>
@@ -184,7 +205,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
 
       {showForm && peutAjouter && (
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '22px', marginBottom: '24px' }}>
-          <p style={{ color: colors.text.primary, margin: '0 0 18px', fontSize: '14px', fontWeight: 700 }}>Nouvelle vidéo</p>
+          <p style={{ color: colors.text.primary, margin: '0 0 18px', fontSize: '14px', fontWeight: 700 }}>{videoEnEdition ? 'Modifier la vidéo' : 'Nouvelle vidéo'}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
               placeholder="Titre de la vidéo" style={inputStyle} />
@@ -244,10 +265,10 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             )}
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button onClick={() => setShowForm(false)} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
-            <button onClick={ajouterVideo} disabled={!form.titre || !form.youtube_url || saving}
+            <button onClick={() => { setShowForm(false); setVideoEnEdition(null); setForm(FORM_VIDE) }} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
+            <button onClick={enregistrerVideo} disabled={!form.titre || !form.youtube_url || saving}
               style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: (!form.titre || !form.youtube_url || saving) ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
-              {saving ? 'Ajout...' : 'Ajouter'}
+              {saving ? (videoEnEdition ? 'Enregistrement...' : 'Ajout...') : (videoEnEdition ? 'Enregistrer' : 'Ajouter')}
             </button>
           </div>
         </div>
@@ -344,10 +365,16 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               </div>
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                 {peutAjouter && (
-                  <button onClick={() => supprimerVideo(videoActive.id)}
-                    style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    Supprimer
-                  </button>
+                  <>
+                    <button onClick={() => ouvrirEditionVideo(videoActive)}
+                      style={{ background: accentColor + '20', border: `1px solid ${accentColor}40`, color: accentColor, borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Modifier
+                    </button>
+                    <button onClick={() => supprimerVideo(videoActive.id)}
+                      style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Supprimer
+                    </button>
+                  </>
                 )}
                 <button onClick={() => setVideoActive(null)}
                   style={{ background: '#1a1a1a', border: 'none', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', fontSize: '18px', cursor: 'pointer' }}>×</button>
