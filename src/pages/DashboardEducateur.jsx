@@ -2574,8 +2574,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const ouvrirEditionProcede = (procede) => {
+    // procede peut venir d'une bibliothèque partagée (club/platform), chargée
+    // avec le join `educateur:educateur_id(...)` — ce champ imbriqué n'est pas
+    // une colonne de bibliotheque_exercices et ferait échouer l'update/insert
+    // ("Could not find the 'educateur' column...") s'il restait dans le form.
+    const { educateur, ...rest } = procede
     setProcedeEnEdition(procede)
-    setProcedeForm({ ...procede, duree: procede.duree?.toString() || '' })
+    setProcedeForm({ ...rest, duree: procede.duree?.toString() || '' })
     setModalProcede(true)
   }
 
