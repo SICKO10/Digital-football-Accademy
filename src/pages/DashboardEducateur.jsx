@@ -9331,10 +9331,9 @@ même listé dans buts_gauche/buts_droite.`
 
                     {/* Image (schéma tactique) ou placeholder terrain */}
                     <div style={{ height: '130px', background: p.schema_png ? colors.background.base : '#0d1a0d', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                      {p.schema_png
-                        ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1a3a1a', fontSize: '40px' }}>⚽</div>
-                      }
+                      {p.schema_png && (
+                        <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      )}
 
                       {sourceBadge && (
                         <div style={{ position: 'absolute', top: '8px', left: '8px' }}>
