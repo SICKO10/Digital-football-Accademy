@@ -9094,58 +9094,87 @@ même listé dans buts_gauche/buts_droite.`
                   <p style={{ fontSize: '12px', color: colors.border.strong }}>{t('biblio_creer_premier', lang)}</p>
                 </div>
               )
-              return (
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                  {filtres.map(p => {
-                    const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
-                    return (
-                      <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {cfg.emoji} {cfg.label}
-                          </span>
-                          {p.educateur_id === userId ? (
-                            canEdit('entrainements') && (
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
-                                <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
-                              </div>
-                            )
-                          ) : (
-                            <button onClick={() => copierProcede(p)}
-                              style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                              Copier
-                            </button>
-                          )}
-                        </div>
-                        <div>
-                          <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
-                          {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
-                          {p.educateur_id !== userId && p.educateur && (
-                            <p style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
-                          )}
-                        </div>
-                        {p.description && (
-                          <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
-                        )}
-                        {p.schema_png && (
-                          <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: `1px solid ${colors.border.faint}`, background: colors.background.base }} />
-                        )}
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
-                          {p.nb_joueurs && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
-                        </div>
-                        {p.tags && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                              <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
-                            ))}
+              const renderCarteProcede = (p) => {
+                const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
+                return (
+                  <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {cfg.emoji} {cfg.label}
+                      </span>
+                      {p.educateur_id === userId ? (
+                        canEdit('entrainements') && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
+                            <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
                           </div>
-                        )}
+                        )
+                      ) : (
+                        <button onClick={() => copierProcede(p)}
+                          style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          Copier
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
+                      {p.theme && <p style={{ fontSize: '11px', color: cfg.color, fontWeight: 600 }}>{p.theme}</p>}
+                      {p.educateur_id !== userId && p.educateur && (
+                        <p style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                      )}
+                    </div>
+                    {p.description && (
+                      <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
+                    )}
+                    {p.schema_png && (
+                      <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: `1px solid ${colors.border.faint}`, background: colors.background.base }} />
+                    )}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {p.duree && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>⏱️ {p.duree} min</span>}
+                      {p.nb_joueurs && <span style={{ fontSize: '10px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '6px' }}>👥 {p.nb_joueurs}</span>}
+                    </div>
+                    {p.tags && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {p.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                          <span key={tag} style={{ fontSize: '9px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 7px', borderRadius: '20px' }}>{tag}</span>
+                        ))}
                       </div>
-                    )
-                  })}
+                    )}
+                  </div>
+                )
+              }
+              // Dossiers par type (échauffement/jeu/exercice/situation — seule
+              // classification à vocabulaire contrôlé sur un procédé, "theme"
+              // étant du texte libre) : utile pour parcourir les bibliothèques
+              // partagées (club/platform), potentiellement fournies par
+              // plusieurs éducateurs ; "Ma bibliothèque" reste une liste plate,
+              // en général trop réduite pour justifier des dossiers. Masqué dès
+              // qu'un type précis est déjà sélectionné dans les pastilles
+              // au-dessus (le classement ferait alors doublon avec le filtre).
+              const avecDossiers = ['club', 'platform'].includes(biblioRubrique) && biblioTab === 'tous'
+              if (!avecDossiers) return (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  {filtres.map(renderCarteProcede)}
                 </div>
+              )
+              const ordreTypes = ['echauffement', 'jeu', 'exercice', 'situation']
+              const dossiers = ordreTypes.map(ty => ({ ty, cfg: TYPE_CONFIG[ty], items: filtres.filter(p => p.type === ty) })).filter(d => d.items.length > 0)
+              return (
+                <>
+                  {dossiers.map(d => (
+                    <div key={d.ty} style={{ marginBottom: '28px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                        <p style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {d.cfg.emoji} {d.cfg.label}
+                        </p>
+                        <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{d.items.length} {d.items.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                        {d.items.map(renderCarteProcede)}
+                      </div>
+                    </div>
+                  ))}
+                </>
               )
             })()}
             </>
