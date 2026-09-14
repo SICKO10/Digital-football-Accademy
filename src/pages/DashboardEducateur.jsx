@@ -2602,6 +2602,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         variables: current.variables || p.variables || current.variables,
         duree: current.duree || (p.duree ? String(p.duree) : current.duree),
         nb_joueurs: current.nb_joueurs || p.nb_joueurs || current.nb_joueurs,
+        schema_png: current.schema_png || p.schema_png || current.schema_png,
+        schema_data: current.schema_data || p.schema_data || current.schema_data,
       }
       const newProcedes = [...prev.procedes]
       newProcedes[index] = merged
