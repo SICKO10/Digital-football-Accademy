@@ -2101,6 +2101,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
   const [savingProcede, setSavingProcede] = useState(false)
   const [modalBiblioImport, setModalBiblioImport] = useState(null) // index du procédé cible dans la fiche, ou null si fermé
+  const [procedeActif, setProcedeActif] = useState(null) // procédé affiché en grand (modale d'aperçu bibliothèque), ou null si fermée
+  const [biblioSelectionMode, setBiblioSelectionMode] = useState(false)
+  // Objets complets (pas juste des id) : la sélection doit survivre à un
+  // changement de rubrique (personal/club/platform), qui recharge `biblio` et
+  // ferait perdre les procédés sélectionnés ailleurs si on ne stockait qu'un id.
+  const [biblioSelection, setBiblioSelection] = useState([])
   const [showVisibilityPicker, setShowVisibilityPicker] = useState(null) // procédé (bloc de la fiche) en cours de sauvegarde rapide, ou null si fermé
   const [modalImportFicheEntrainement, setModalImportFicheEntrainement] = useState(null) // id de l'entraînement cible, ou null si fermé
   const [moisOuverts, setMoisOuverts] = useState(() => {
@@ -2487,7 +2493,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     else if (rubrique === 'platform') query = query.eq('partage_platform', true)
     else query = query.eq('educateur_id', uid)
     const { data } = await query.order('type').order('nom')
-    setBiblio(data || [])
+    let procedes = data || []
+    // Diplôme/catégorie de l'auteur (profil_educateur, pas profiles) — affichés
+    // sur les cartes des bibliothèques partagées uniquement, un 2e aller-retour
+    // groupé plutôt qu'un embed PostgREST imbriqué (même pattern que
+    // DashboardClub.jsx pour le téléphone des éducateurs affiliés).
+    if (rubrique !== 'personal' && procedes.length) {
+      const idsAuteurs = [...new Set(procedes.filter(p => p.educateur_id !== uid).map(p => p.educateur_id))]
+      if (idsAuteurs.length) {
+        const { data: profils } = await supabase.from('profil_educateur').select('user_id, diplome, categorie').in('user_id', idsAuteurs)
+        const profilParId = Object.fromEntries((profils || []).map(pe => [pe.user_id, pe]))
+        procedes = procedes.map(p => p.educateur ? { ...p, educateur: { ...p.educateur, diplome: profilParId[p.educateur_id]?.diplome, categorie: profilParId[p.educateur_id]?.categorie } } : p)
+      }
+    }
+    setBiblio(procedes)
     setBiblioLoading(false)
   }
 
@@ -2614,6 +2633,51 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       return { ...prev, procedes: newProcedes }
     })
     setModalBiblioImport(null)
+  }
+
+  // Démarre une nouvelle fiche séance avec ce procédé de bibliothèque déjà
+  // importé dans le premier bloc — depuis la carte/l'aperçu, sans passer par
+  // une fiche existante (contrairement à importerProcedeDansBloc ci-dessus).
+  const procedeVersBlocFiche = (p, numero) => ({
+    ...ficheVide.procedes[0],
+    numero,
+    titre: p.nom || '',
+    but: p.but || p.theme || '',
+    organisation: p.description || '',
+    consignes: p.consignes || '',
+    criteres_realisation: p.criteres_realisation || '',
+    variables: p.variables || '',
+    duree: p.duree ? String(p.duree) : '',
+    nb_joueurs: p.nb_joueurs || '',
+    schema_png: p.schema_png || '',
+    schema_data: p.schema_data || null,
+  })
+
+  const demarrerFicheDepuisProcedes = (procedes) => {
+    setFiche({ ...ficheVide, theme: procedes[0]?.theme || '', procedes: procedes.map((p, i) => procedeVersBlocFiche(p, i + 1)) })
+    setSport('football')
+    setFicheFichierUrl(null)
+    setFicheExtraite(false)
+    setModeSeance('rediger')
+    setActiveSection('mes_seances')
+    setProcedeActif(null)
+    setBiblioSelectionMode(false)
+    setBiblioSelection([])
+  }
+
+  const importerProcedeVersNouvelleSeance = (p) => {
+    demarrerFicheDepuisProcedes([p])
+    afficherToast(t('biblio_importe_vers_seance', lang))
+  }
+
+  const basculerSelectionBiblio = (p) => {
+    setBiblioSelection(sel => sel.some(x => x.id === p.id) ? sel.filter(x => x.id !== p.id) : [...sel, p])
+  }
+
+  const importerSelectionVersNouvelleSeance = () => {
+    if (biblioSelection.length === 0) return
+    demarrerFicheDepuisProcedes(biblioSelection)
+    afficherToast(t('biblio_selection_importee', lang))
   }
 
   // Capture #fiche-print (déjà stylé pour l'impression, cf. index.css) en PDF via html2canvas + jsPDF
@@ -9055,12 +9119,18 @@ même listé dans buts_gauche/buts_droite.`
                 </h1>
                 <p style={{ fontSize: '13px', color: colors.text.faint }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
               </div>
-              {biblioRubrique === 'personal' && canEdit('entrainements') && (
-                <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
-                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  + {t('biblio_nouveau_procede', lang)}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button onClick={() => { setBiblioSelectionMode(m => !m); if (biblioSelectionMode) setBiblioSelection([]) }}
+                  style={{ background: biblioSelectionMode ? colors.accent.green + alpha.subtle : 'transparent', border: `1px solid ${biblioSelectionMode ? colors.accent.green : colors.border.default}`, color: biblioSelectionMode ? colors.accent.green : colors.text.faint, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {biblioSelectionMode ? t('biblio_annuler_selection', lang) : t('biblio_selection_multiple', lang)}
                 </button>
-              )}
+                {biblioRubrique === 'personal' && canEdit('entrainements') && (
+                  <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
+                    style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    + {t('biblio_nouveau_procede', lang)}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -9149,21 +9219,30 @@ même listé dans buts_gauche/buts_droite.`
               )
               const renderCarteProcede = (p) => {
                 const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
+                const estSelectionne = biblioSelection.some(x => x.id === p.id)
                 return (
-                  <div key={p.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
+                    style={{ background: colors.background.surface, border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, boxShadow: estSelectionne ? `0 0 0 1px ${colors.accent.green}` : 'none', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px', cursor: biblioSelectionMode ? 'pointer' : 'default' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {cfg.emoji} {cfg.label}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {biblioSelectionMode && (
+                          <span style={{ width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : 'transparent', color: colors.black, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900, flexShrink: 0 }}>
+                            {estSelectionne ? '✓' : ''}
+                          </span>
+                        )}
+                        <span style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {cfg.emoji} {cfg.label}
+                        </span>
+                      </div>
                       {p.educateur_id === userId ? (
                         canEdit('entrainements') && (
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => ouvrirEditionProcede(p)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
-                            <button onClick={() => supprimerProcede(p.id)} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                            <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_modifier', lang)}>✏️</button>
+                            <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }} title={t('btn_supprimer', lang)}>🗑️</button>
                           </div>
                         )
                       ) : (
-                        <button onClick={() => copierProcede(p)}
+                        <button onClick={(e) => { e.stopPropagation(); copierProcede(p) }}
                           style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           Copier
                         </button>
@@ -9173,7 +9252,14 @@ même listé dans buts_gauche/buts_droite.`
                       <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '3px' }}>{p.nom}</p>
                       {p.theme && <p style={{ fontSize: '11px', color: themeSeanceInfo(p.theme)?.color || cfg.color, fontWeight: 600 }}>{themeSeanceInfo(p.theme)?.label || p.theme}</p>}
                       {p.educateur_id !== userId && p.educateur && (
-                        <p style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                        <div style={{ marginTop: '2px' }}>
+                          <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                          {(p.educateur.diplome && p.educateur.diplome !== 'Aucun diplôme' || p.educateur.categorie) && (
+                            <p style={{ fontSize: '10px', color: colors.text.disabled, margin: '1px 0 0' }}>
+                              {[p.educateur.diplome && p.educateur.diplome !== 'Aucun diplôme' ? p.educateur.diplome : null, p.educateur.categorie].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                     {p.description && (
@@ -9193,6 +9279,23 @@ même listé dans buts_gauche/buts_droite.`
                         ))}
                       </div>
                     )}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                      <button onClick={(e) => { e.stopPropagation(); setProcedeActif(p) }}
+                        style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {t('biblio_voir', lang)}
+                      </button>
+                      {biblioSelectionMode ? (
+                        <button onClick={(e) => { e.stopPropagation(); basculerSelectionBiblio(p) }}
+                          style={{ flex: 1, background: estSelectionne ? colors.accent.green : colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: estSelectionne ? colors.black : colors.accent.green, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          {estSelectionne ? t('biblio_selectionne', lang) : t('biblio_selectionner', lang)}
+                        </button>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); importerProcedeVersNouvelleSeance(p) }}
+                          style={{ flex: 1, background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, borderRadius: '8px', padding: '7px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          {t('biblio_importer_ma_seance', lang)}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               }
@@ -9267,6 +9370,23 @@ même listé dans buts_gauche/buts_droite.`
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Barre flottante : sélection multiple de procédés → créer une séance ── */}
+        {biblioSelectionMode && biblioSelection.length > 0 && (
+          <div style={{ position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 250, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, whiteSpace: 'nowrap' }}>
+              {biblioSelection.length} {biblioSelection.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}
+            </span>
+            <button onClick={() => { setBiblioSelectionMode(false); setBiblioSelection([]) }}
+              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+              {t('biblio_annuler_selection', lang)}
+            </button>
+            <button onClick={importerSelectionVersNouvelleSeance}
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+              {t('biblio_creer_seance_selection', lang)}
+            </button>
           </div>
         )}
 
@@ -9452,16 +9572,121 @@ même listé dans buts_gauche/buts_droite.`
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
                       <p style={{ fontSize: '11px', color: colors.text.faint }}>{themeSeanceInfo(p.theme)?.label || p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
-                    <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
-                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
-                      + {t('biblio_importer_action', lang)}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                      <button onClick={() => setProcedeActif(p)}
+                        style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.dim, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {t('biblio_voir', lang)}
+                      </button>
+                      <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
+                        style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', width: '32px', height: '32px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}
+                        title={t('biblio_importer_action', lang)}>
+                        +
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         )}
+
+        {/* ── Modal aperçu en grand d'un procédé de bibliothèque (bouton "Voir") ── */}
+        {procedeActif && (() => {
+          const APERCU_TYPE = {
+            jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: colors.accent.green },
+            exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: colors.accent.blue },
+            situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: colors.accent.orange },
+            echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030' },
+          }
+          const cfg = APERCU_TYPE[procedeActif.type] || APERCU_TYPE.exercice
+          const champ = (label, valeur) => valeur && (
+            <div style={{ marginBottom: '14px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{label}</p>
+              <p style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{valeur}</p>
+            </div>
+          )
+          return (
+            <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+              onClick={() => setProcedeActif(null)}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '28px', maxWidth: '640px', width: '100%', maxHeight: '88vh', overflowY: 'auto' }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
+                  <div>
+                    <span style={{ background: cfg.color + alpha.subtle, border: `1px solid ${cfg.color}40`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                      {cfg.emoji} {cfg.label}
+                    </span>
+                    <h2 style={{ fontSize: '19px', fontWeight: 800, marginBottom: '2px' }}>{procedeActif.nom}</h2>
+                    {procedeActif.theme && <p style={{ fontSize: '12px', color: themeSeanceInfo(procedeActif.theme)?.color || cfg.color, fontWeight: 600 }}>{themeSeanceInfo(procedeActif.theme)?.label || procedeActif.theme}</p>}
+                    {procedeActif.educateur_id !== userId && procedeActif.educateur && (
+                      <div style={{ marginTop: '4px' }}>
+                        <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0 }}>Par {procedeActif.educateur.prenom} {procedeActif.educateur.nom}</p>
+                        {(procedeActif.educateur.diplome && procedeActif.educateur.diplome !== 'Aucun diplôme' || procedeActif.educateur.categorie) && (
+                          <p style={{ fontSize: '11px', color: colors.text.disabled, margin: '1px 0 0' }}>
+                            {[procedeActif.educateur.diplome && procedeActif.educateur.diplome !== 'Aucun diplôme' ? procedeActif.educateur.diplome : null, procedeActif.educateur.categorie].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setProcedeActif(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer', flexShrink: 0 }}>✕</button>
+                </div>
+
+                {procedeActif.schema_png && (
+                  <img src={procedeActif.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '10px', border: `1px solid ${colors.border.faint}`, background: colors.background.base, marginBottom: '16px' }} />
+                )}
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {procedeActif.duree && <span style={{ fontSize: '11px', color: colors.text.faint, background: colors.background.raised, padding: '3px 10px', borderRadius: '6px' }}>⏱️ {procedeActif.duree} min</span>}
+                  {procedeActif.nb_joueurs && <span style={{ fontSize: '11px', color: colors.text.faint, background: colors.background.raised, padding: '3px 10px', borderRadius: '6px' }}>👥 {procedeActif.nb_joueurs}</span>}
+                </div>
+
+                {champ(t('biblio_champ_objectif', lang), procedeActif.objectif)}
+                {champ(t('biblio_champ_but', lang), procedeActif.but)}
+                {champ(t('biblio_champ_criteres', lang), procedeActif.criteres_realisation)}
+                {champ(t('biblio_champ_description', lang), procedeActif.description)}
+                {champ(t('biblio_champ_consignes', lang), procedeActif.consignes)}
+                {champ(t('biblio_champ_variables', lang), procedeActif.variables)}
+
+                {procedeActif.tags && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '18px' }}>
+                    {procedeActif.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                      <span key={tag} style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 8px', borderRadius: '20px' }}>{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {modalBiblioImport !== null ? (
+                    // Ouverte depuis "Importer un procédé" (dans un bloc précis d'une fiche
+                    // en rédaction) : l'action doit remplir CE bloc, pas créer une séance.
+                    <button onClick={() => { importerProcedeDansBloc(modalBiblioImport, procedeActif); setProcedeActif(null); setModalBiblioImport(null) }}
+                      style={{ flex: 1, background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      + {t('biblio_importer_action', lang)}
+                    </button>
+                  ) : (
+                    <button onClick={() => importerProcedeVersNouvelleSeance(procedeActif)}
+                      style={{ flex: 1, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {t('biblio_importer_ma_seance', lang)}
+                    </button>
+                  )}
+                  {procedeActif.educateur_id === userId ? (
+                    canEdit('entrainements') && (
+                      <button onClick={() => { const p = procedeActif; setProcedeActif(null); ouvrirEditionProcede(p) }}
+                        style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {t('btn_modifier', lang)}
+                      </button>
+                    )
+                  ) : (
+                    <button onClick={() => { copierProcede(procedeActif); setProcedeActif(null) }}
+                      style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Copier
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Modal import d'une fiche archivée sur un entraînement déjà créé ── */}
         {modalImportFicheEntrainement !== null && (
