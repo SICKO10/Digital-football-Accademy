@@ -9274,7 +9274,6 @@ même listé dans buts_gauche/buts_droite.`
               const renderCarteProcede = (p) => {
                 const cfg = TYPE_CONFIG[p.type] || TYPE_CONFIG.exercice
                 const estSelectionne = biblioSelection.some(x => x.id === p.id)
-                const tagsListe = (p.tags || '').split(',').map(tag => tag.trim()).filter(Boolean)
                 return (
                   <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
                     style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, boxShadow: estSelectionne ? `0 0 0 1px ${colors.accent.green}` : 'none', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
@@ -9314,7 +9313,7 @@ même listé dans buts_gauche/buts_droite.`
                     )}
 
                     {/* Corps */}
-                    <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <span style={{ background: cfg.color + '20', color: cfg.color, fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {cfg.emoji} {cfg.label}
                       </span>
@@ -9336,24 +9335,10 @@ même listé dans buts_gauche/buts_droite.`
 
                       {p.objectif && <p style={{ color: cfg.color, fontSize: '12px', margin: 0, fontStyle: 'italic' }}>{p.objectif}</p>}
 
-                      {p.description && !p.schema_png && (
-                        <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {p.description}
-                        </p>
-                      )}
-
                       <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '6px' }}>
                         {p.duree && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>⏱ {p.duree} min</span>}
                         {p.nb_joueurs && <span style={{ color: colors.text.disabled, fontSize: '11px' }}>👥 {p.nb_joueurs}</span>}
                       </div>
-
-                      {tagsListe.length > 0 && (
-                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                          {tagsListe.slice(0, 3).map(tag => (
-                            <span key={tag} style={{ padding: '2px 7px', borderRadius: '5px', background: colors.background.raised, color: colors.text.disabled, fontSize: '10px' }}>{tag}</span>
-                          ))}
-                        </div>
-                      )}
                     </div>
 
                     {/* Actions — toujours visibles mais discrètes */}
@@ -9394,7 +9379,7 @@ même listé dans buts_gauche/buts_droite.`
               if (!avecDossiers) return (
                 <>
                   {barreThemes}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
                     {filtres.map(renderCarteProcede)}
                   </div>
                 </>
@@ -9420,7 +9405,7 @@ même listé dans buts_gauche/buts_droite.`
                         <p style={{ color: d.color, fontWeight: 800, fontSize: '15px', margin: 0 }}>{d.label}</p>
                         <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{parPhase[d.key].length} {parPhase[d.key].length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
                         {parPhase[d.key].map(renderCarteProcede)}
                       </div>
                     </div>
