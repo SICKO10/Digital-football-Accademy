@@ -672,6 +672,7 @@ function FicheContenu({ fiche, categorieLabel }) {
                   </div>
                 ))}
               </div>
+              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Critères de réalisation</label><div className="valeur">{p.criteres_realisation}</div></div>
               <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
             </div>
           </div>
@@ -2418,8 +2419,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       numero_seance: fs.numero_seance || '', heure_debut: fs.heure_debut || '',
       constats: fs.constats || '', justification_pedagogique: fs.justification_pedagogique || '', auto_evaluation: fs.auto_evaluation || '',
       analyse_equipe: fs.analyse_equipe || '', bilan_projection: fs.bilan_projection || '',
-      procedes: (fs.procedes && fs.procedes.length ? fs.procedes : [{ numero: 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }])
-        .map(p => ({ ...p })),
+      procedes: (fs.procedes && fs.procedes.length ? fs.procedes : [{ numero: 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', criteres_realisation: '', variables: '' }])
+        .map(p => ({ criteres_realisation: '', ...p })),
     })
     setModeEditionApercu(true)
   }
@@ -2435,7 +2436,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const ajouterProcedeApercu = () => {
     setFicheApercuEdit(f => ({
       ...f,
-      procedes: [...f.procedes, { numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '' }],
+      procedes: [...f.procedes, { numero: f.procedes.length + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', criteres_realisation: '', variables: '' }],
     }))
   }
 
@@ -2601,6 +2602,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         but: current.but || p.theme || current.but,
         organisation: current.organisation || p.description || current.organisation,
         consignes: current.consignes || p.consignes || current.consignes,
+        criteres_realisation: current.criteres_realisation || p.criteres_realisation || current.criteres_realisation,
         variables: current.variables || p.variables || current.variables,
         duree: current.duree || (p.duree ? String(p.duree) : current.duree),
         nb_joueurs: current.nb_joueurs || p.nb_joueurs || current.nb_joueurs,
@@ -8680,6 +8682,13 @@ même listé dans buts_gauche/buts_droite.`
                           style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                         <textarea
+                          placeholder={t('seance_criteres_realisation', lang)}
+                          value={p.criteres_realisation}
+                          onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)}
+                          rows={2}
+                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                        />
+                        <textarea
                           placeholder={t('seance_variables', lang)}
                           value={p.variables}
                           onChange={e => updateProcede(i, 'variables', e.target.value)}
@@ -10705,6 +10714,10 @@ même listé dans buts_gauche/buts_droite.`
                         <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                           <label>Consignes</label>
                           <textarea value={p.consignes} onChange={e => updateProcedeApercu(i, 'consignes', e.target.value)} rows={3} style={champEditTextareaStyle} />
+                        </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Critères de réalisation</label>
+                          <textarea value={p.criteres_realisation} onChange={e => updateProcedeApercu(i, 'criteres_realisation', e.target.value)} rows={2} style={champEditTextareaStyle} />
                         </div>
                         <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                           <label>Variables / progressions</label>

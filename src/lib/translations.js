@@ -266,6 +266,7 @@ export const T = {
   seance_but:               { fr: 'But',                      en: 'Goal',                  pt: 'Objetivo',              es: 'Objetivo',              it: 'Obiettivo',             de: 'Ziel'                  },
   seance_organisation:      { fr: 'Organisation',             en: 'Setup',                 pt: 'Organização',           es: 'Organización',          it: 'Organizzazione',        de: 'Organisation'          },
   seance_consignes:         { fr: 'Consignes',                en: 'Instructions',          pt: 'Instruções',            es: 'Instrucciones',         it: 'Istruzioni',            de: 'Anweisungen'           },
+  seance_criteres_realisation: { fr: 'Critères de réalisation', en: 'Success criteria',     pt: 'Critérios de sucesso',  es: 'Criterios de éxito',    it: 'Criteri di riuscita',   de: 'Erfolgskriterien'      },
   seance_variables:         { fr: 'Variables / progressions', en: 'Variables / progressions', pt: 'Variáveis / progressões', es: 'Variables / progresiones', it: 'Variabili / progressioni', de: 'Variablen / Progressionen' },
   seance_sauvegarder_fiche: { fr: 'Sauvegarder la fiche',     en: 'Save sheet',            pt: 'Guardar ficha',         es: 'Guardar ficha',         it: 'Salva scheda',          de: 'Blatt speichern'       },
   seance_imprimer_fiche:    { fr: 'Imprimer la fiche',        en: 'Print sheet',           pt: 'Imprimir ficha',        es: 'Imprimir ficha',        it: 'Stampa scheda',         de: 'Blatt drucken'         },
