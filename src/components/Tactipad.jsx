@@ -335,8 +335,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
       x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable} dragBoundFunc={dragBoundFunc}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
-      onDblClick={() => isCage && draggable && onRotate()}
-      onDblTap={() => isCage && draggable && onRotate()}
+      onDblClick={() => draggable && onRotate()}
+      onDblTap={() => draggable && onRotate()}
       onMouseEnter={() => draggable && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onDragEnd={e => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
@@ -1644,7 +1644,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               {elements.filter(e => e.type === 'objet').map(e => (
                 <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement}
                   onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
-                  onRotate={() => updateElement({ ...e, rotation: (e.rotation || 0) === 0 ? 90 : 0 })}
+                  onRotate={() => updateElement({ ...e, rotation: ((e.rotation || 0) + 45) % 360 })}
                   dragBoundFunc={dragBound}
                 />
               ))}
