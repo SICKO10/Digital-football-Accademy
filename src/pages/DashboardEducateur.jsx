@@ -11156,6 +11156,15 @@ même listé dans buts_gauche/buts_droite.`
                           <label>Variables / progressions</label>
                           <textarea value={p.variables} onChange={e => updateProcedeApercu(i, 'variables', e.target.value)} rows={2} style={champEditTextareaStyle} />
                         </div>
+                        <div className="procede-field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <button type="button" onClick={() => setTactipadModal(i)}
+                            style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #a78bfa40', background: '#a78bfa10', color: '#a78bfa', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}>
+                            🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
+                          </button>
+                          {p.schema_png && (
+                            <img src={p.schema_png} alt="Schéma tactique" style={{ height: '48px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -11183,22 +11192,35 @@ même listé dans buts_gauche/buts_droite.`
       )
     })()}
 
-    {tactipadModal !== null && (
+    {tactipadModal !== null && (() => {
+      // Deux contextes partagent ce même modal : la rédaction d'une nouvelle
+      // fiche (`fiche`) et l'édition d'une fiche déjà archivée (`ficheApercuEdit`,
+      // actif quand modeEditionApercu) — ce dernier n'avait jusqu'ici aucun moyen
+      // d'ouvrir Tactipad, le bouton 🎨 n'existant que côté rédaction.
+      const enEditionApercu = modeEditionApercu && ficheApercuEdit
+      const procedesActifs = enEditionApercu ? ficheApercuEdit.procedes : fiche.procedes
+      return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
         <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {fiche.procedes[tactipadModal]?.numero}</p>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedesActifs[tactipadModal]?.numero}</p>
             <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
           </div>
           <Tactipad
             userId={userId}
             mode="modal"
             vueParDefaut="demi"
-            initialSchema={fiche.procedes[tactipadModal]?.schema_data}
+            initialSchema={procedesActifs[tactipadModal]?.schema_data}
             onValider={(png, schema) => {
-              const newProcedes = [...fiche.procedes]
-              newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
-              setFiche({ ...fiche, procedes: newProcedes })
+              if (enEditionApercu) {
+                const newProcedes = [...ficheApercuEdit.procedes]
+                newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
+                setFicheApercuEdit({ ...ficheApercuEdit, procedes: newProcedes })
+              } else {
+                const newProcedes = [...fiche.procedes]
+                newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
+                setFiche({ ...fiche, procedes: newProcedes })
+              }
               setTactipadModal(null)
             }}
             onFermer={() => setTactipadModal(null)}
@@ -11206,7 +11228,8 @@ même listé dans buts_gauche/buts_droite.`
           />
         </div>
       </div>
-    )}
+      )
+    })()}
 
     </>
   )
