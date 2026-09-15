@@ -411,6 +411,51 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const colors = useColors()
   const isModal = mode === 'modal'
 
+  // ── Tutoriel interactif (première utilisation) ─────────────────────────────
+  // Spotlight qui met en évidence chaque bouton réel de la toolbar (via
+  // tourRefs + getBoundingClientRect, pas un simple carrousel d'icônes) — se
+  // déclenche seul au premier montage si jamais vu (localStorage par
+  // utilisateur), et reste accessible ensuite via le bouton "?" discret de la
+  // barre du haut. -1 = fermé.
+  const TOUR_STEPS = [
+    { ref: 'select', titre: t('tac_tour_1_titre', lang), texte: t('tac_tour_1_texte', lang) },
+    { ref: 'grid', titre: t('tac_tour_2_titre', lang), texte: t('tac_tour_2_texte', lang) },
+    { ref: 'fleches', titre: t('tac_tour_3_titre', lang), texte: t('tac_tour_3_texte', lang) },
+    { ref: 'zones', titre: t('tac_tour_4_titre', lang), texte: t('tac_tour_4_texte', lang) },
+    { ref: 'objets', titre: t('tac_tour_5_titre', lang), texte: t('tac_tour_5_texte', lang) },
+    { ref: 'joueur', titre: t('tac_tour_6_titre', lang), texte: t('tac_tour_6_texte', lang) },
+    { ref: 'materiel', titre: t('tac_tour_7_titre', lang), texte: t('tac_tour_7_texte', lang) },
+    { ref: 'couleurs', titre: t('tac_tour_8_titre', lang), texte: t('tac_tour_8_texte', lang) },
+    { ref: 'actions', titre: t('tac_tour_9_titre', lang), texte: t('tac_tour_9_texte', lang) },
+    { ref: 'sequences', titre: t('tac_tour_10_titre', lang), texte: t('tac_tour_10_texte', lang) },
+  ]
+  const tourKey = `tactipad_tour_vu_${userId || 'anon'}`
+  const [tourEtape, setTourEtape] = useState(-1)
+  const [tourRect, setTourRect] = useState(null)
+  const tourRefs = useRef({})
+  const fermerTour = () => { setTourEtape(-1); try { localStorage.setItem(tourKey, '1') } catch { /* localStorage indisponible (navigation privée...) — tant pis, le tour réapparaîtra */ } }
+  useEffect(() => {
+    let vu = false
+    try { vu = localStorage.getItem(tourKey) === '1' } catch { /* idem */ }
+    if (vu) return
+    // Laisse le premier rendu (mesure du terrain, refs des boutons) se
+    // stabiliser avant d'afficher le spotlight, sinon la 1ère position est fausse.
+    const timer = setTimeout(() => setTourEtape(0), 400)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useLayoutEffect(() => {
+    if (tourEtape < 0) { setTourRect(null); return }
+    const recalc = () => {
+      const el = tourRefs.current[TOUR_STEPS[tourEtape]?.ref]
+      setTourRect(el ? el.getBoundingClientRect() : null)
+    }
+    recalc()
+    window.addEventListener('resize', recalc)
+    window.addEventListener('scroll', recalc, true)
+    return () => { window.removeEventListener('resize', recalc); window.removeEventListener('scroll', recalc, true) }
+  }, [tourEtape])
+
   // Largeur du Stage, remontée ici (au lieu de sa place naturelle plus bas,
   // avec canvasRef/useLayoutEffect) pour être disponible dès l'état initial
   // de sequences/elements ci-dessous (rescale d'un initialSchema éventuel) —
@@ -1463,6 +1508,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             </div>
           )
         })}
+        <button onClick={() => setTourEtape(0)} title={t('tac_tour_revoir', lang)}
+          style={{
+            marginLeft: 'auto', width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+            background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint,
+            fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+          ?
+        </button>
       </div>
 
       {tableMissing && !isModal && (
@@ -1474,24 +1527,31 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
         {/* Toolbar gauche */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
-          <button onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
-          <button onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
+          <button ref={el => (tourRefs.current.select = el)} onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
+          <button ref={el => (tourRefs.current.grid = el)} onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
           <div style={{ height: '1px', background: colors.border.default }} />
-          {outilsFlêches.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-          ))}
+          <div ref={el => (tourRefs.current.fleches = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {outilsFlêches.map(o => (
+              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            ))}
+          </div>
           <div style={{ height: '1px', background: colors.border.default }} />
-          {outilsZones.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-          ))}
+          <div ref={el => (tourRefs.current.zones = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {outilsZones.map(o => (
+              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            ))}
+          </div>
           <div style={{ height: '1px', background: colors.border.default }} />
-          {outilsObjets.map(o => (
-            <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-          ))}
-          <button onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
+          <div ref={el => (tourRefs.current.objets = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {outilsObjets.map(o => (
+              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+            ))}
+          </div>
+          <button ref={el => (tourRefs.current.joueur = el)} onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div style={{ position: 'relative' }}>
             <button
+              ref={el => (tourRefs.current.materiel = el)}
               onClick={() => setShowMaterielPanel(v => !v)}
               title="Matériel"
               style={btnStyle(showMaterielPanel || outilsMateriel.some(o => o.key === tool))}
@@ -1526,7 +1586,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             )}
           </div>
           <div style={{ height: '1px', background: colors.border.default }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div ref={el => (tourRefs.current.couleurs = el)} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {COULEURS.map(c => (
               <button key={c.val} onClick={() => setArrowColor(c.val)} title={c.label}
                 style={{ width: '22px', height: '22px', borderRadius: '50%', background: c.val, border: arrowColor === c.val ? '2px solid #4ade80' : '1px solid #444', cursor: 'pointer', margin: '0 8px' }} />
@@ -1741,7 +1801,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+          <div ref={el => (tourRefs.current.actions = el)} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
             <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
             <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ {t('tac_redo', lang)}</button>
             <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 {t('btn_supprimer', lang)}</button>
@@ -1767,7 +1827,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           </div>
 
           {/* Séquences */}
-          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div ref={el => (tourRefs.current.sequences = el)} style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${colors.border.subtle}` }}>
 
             {/* Ligne 1 : étapes + boutons navigation */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
@@ -2108,6 +2168,65 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           </div>
         </>
       )}
+
+      {/* ── Tutoriel interactif : spotlight sur le bouton réel de l'étape en cours ── */}
+      {tourEtape >= 0 && tourRect && (() => {
+        const step = TOUR_STEPS[tourEtape]
+        const pad = 6
+        const box = { top: tourRect.top - pad, left: tourRect.left - pad, width: tourRect.width + pad * 2, height: tourRect.height + pad * 2 }
+        const TOOLTIP_W = 300
+        const placeRight = window.innerWidth - (box.left + box.width) > TOOLTIP_W + 24
+        let ttTop = placeRight ? box.top : box.top + box.height + 14
+        let ttLeft = placeRight ? box.left + box.width + 14 : box.left
+        ttLeft = Math.min(Math.max(12, ttLeft), window.innerWidth - TOOLTIP_W - 12)
+        ttTop = Math.min(Math.max(12, ttTop), window.innerHeight - 220)
+        return (
+          <>
+            {/* Capte les clics en dehors de l'infobulle — ferme le tour plutôt
+                que de laisser interagir avec le bouton mis en évidence, pour
+                éviter un état à moitié "en tour"/à moitié "en train de dessiner". */}
+            <div onClick={fermerTour} style={{ position: 'fixed', inset: 0, zIndex: 4000 }} />
+            <div style={{
+              position: 'fixed', top: box.top, left: box.left, width: box.width, height: box.height,
+              borderRadius: '10px', border: '2px solid #4ade80', pointerEvents: 'none',
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.65), 0 0 18px #4ade80a0',
+              zIndex: 4001, transition: 'top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease',
+            }} />
+            <div onClick={e => e.stopPropagation()} style={{
+              position: 'fixed', top: ttTop, left: ttLeft, width: TOOLTIP_W, zIndex: 4002,
+              background: colors.background.surface, border: `1px solid ${colors.border.default}`,
+              borderRadius: '12px', padding: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+            }}>
+              <div style={{ fontSize: '11px', color: '#4ade80', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {t('tac_etape', lang)} {tourEtape + 1} / {TOUR_STEPS.length}
+              </div>
+              <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', marginBottom: '6px' }}>{step.titre}</div>
+              <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.5, margin: '0 0 14px' }}>{step.texte}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button onClick={fermerTour} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                  {t('tac_tour_passer', lang)}
+                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {tourEtape > 0 && (
+                    <button onClick={() => setTourEtape(tourEtape - 1)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                      {t('tac_tour_precedent', lang)}
+                    </button>
+                  )}
+                  {tourEtape < TOUR_STEPS.length - 1 ? (
+                    <button onClick={() => setTourEtape(tourEtape + 1)} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      {t('tac_tour_suivant', lang)}
+                    </button>
+                  ) : (
+                    <button onClick={fermerTour} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      {t('tac_tour_terminer', lang)}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }
