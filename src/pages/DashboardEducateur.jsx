@@ -2098,8 +2098,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioSearch, setBiblioSearch] = useState('')
   const [biblioFiltrePhase, setBiblioFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif' — club/platform uniquement
   const [biblioFiltreTheme, setBiblioFiltreTheme] = useState('')
+  const [biblioFiltreCategorieAge, setBiblioFiltreCategorieAge] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
+  const CATEGORIES_AGE_PROCEDE = ['Pour tous', 'U6-U7', 'U8-U9', 'U10-U11', 'U12-U13', 'U14-U15', 'U16-U17', 'U18-U19', 'Senior']
+  const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', partage_platform: true }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -2113,6 +2116,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // ferait perdre les procédés sélectionnés ailleurs si on ne stockait qu'un id.
   const [biblioSelection, setBiblioSelection] = useState([])
   const [showVisibilityPicker, setShowVisibilityPicker] = useState(null) // procédé (bloc de la fiche) en cours de sauvegarde rapide, ou null si fermé
+  const [metaProc, setMetaProc] = useState(METAPROC_VIDE) // métadonnées collectées par la modale de sauvegarde enrichie
   const [modalImportFicheEntrainement, setModalImportFicheEntrainement] = useState(null) // id de l'entraînement cible, ou null si fermé
   const [moisOuverts, setMoisOuverts] = useState(() => {
     const now = new Date()
@@ -2592,31 +2596,38 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Sauvegarde rapide d'un procédé de la fiche en cours de rédaction vers la
   // bibliothèque, avec choix direct du niveau de visibilité (picker "Bibliothèque")
   // — plus besoin de repasser par le modal Créer/Éditer complet.
-  const sauvegarderProcedeBibliotheque = async (visibilite) => {
+  // Sauvegarde enrichie d'un procédé de la fiche en cours de rédaction vers la
+  // bibliothèque — remplace l'ancien picker "personal/club/platform" par une
+  // modale qui collecte nom/thème/principe/catégorie d'âge, avec le partage
+  // club toujours actif et le partage plateforme en opt-out (coché par défaut).
+  const sauvegarderProcedeBibliotheque = async () => {
     const p = showVisibilityPicker
-    if (!p) return
-    if (visibilite === 'club' && !clubAffiliation?.club_id) {
-      alert("Rejoins un club pour partager ce procédé avec ton club.")
-      return
-    }
+    if (!p || !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age) return
     const payload = {
       type: 'exercice',
-      nom: p.titre || '',
-      theme: p.but || '',
+      nom: metaProc.nom.trim(),
+      theme: metaProc.theme,
+      principe_jeu: metaProc.principe || null,
+      categorie_age: metaProc.categorie_age,
+      but: p.but || '',
       description: p.organisation || '',
       consignes: p.consignes || '',
       variables: p.variables || '',
+      criteres_realisation: p.criteres_realisation || '',
       duree: p.duree ? parseInt(p.duree) : null,
       nb_joueurs: p.nb_joueurs || '',
       tags: '',
+      schema_png: p.schema_png || '',
+      schema_data: p.schema_data || null,
       educateur_id: userId,
       club_id: clubAffiliation?.club_id || null,
-      partage_club: visibilite === 'club',
-      partage_platform: visibilite === 'platform',
+      partage_club: true,
+      partage_platform: metaProc.partage_platform,
     }
     setShowVisibilityPicker(null)
     const { error } = await supabase.from('bibliotheque_exercices').insert(payload)
     if (error) { alert('Erreur : ' + error.message); return }
+    setMetaProc(METAPROC_VIDE)
     afficherToast('Ajouté à la bibliothèque')
   }
 
@@ -8688,7 +8699,7 @@ même listé dans buts_gauche/buts_droite.`
                       {[
                         { icon: '🎨', label: p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang), action: () => setTactipadModal(i), color: '#a78bfa' },
                         { icon: '📚', label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i), color: '#60a5fa' },
-                        { icon: '💾', label: t('biblio_sauvegarder_procede', lang), action: () => setShowVisibilityPicker(p), color: '#4ade80' },
+                        { icon: '💾', label: t('biblio_sauvegarder_procede', lang), action: () => { setShowVisibilityPicker(p); setMetaProc({ ...METAPROC_VIDE, nom: p.titre || '' }) }, color: '#4ade80' },
                       ].map(btn => (
                         <button key={btn.label} type="button" onClick={btn.action} style={{
                           flex: 1, padding: '10px 6px', borderRadius: '10px',
@@ -8791,28 +8802,84 @@ même listé dans buts_gauche/buts_droite.`
                 </div>
               ))}
 
-              {showVisibilityPicker && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                  <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '16px 16px 0 0', padding: '24px', width: '100%', maxWidth: '480px' }}>
-                    <p style={{ color: '#888', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>Sauvegarder dans...</p>
-                    {[
-                      { value: 'personal', icon: '👤', label: 'Ma bibliothèque', desc: 'Visible uniquement par moi' },
-                      { value: 'club', icon: '🏟️', label: 'Bibliothèque Club', desc: 'Partagé avec mon club' },
-                      { value: 'platform', icon: '⚡', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
-                    ].map(opt => (
-                      <button key={opt.value} onClick={() => sauvegarderProcedeBibliotheque(opt.value)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', padding: '14px', marginBottom: '8px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', cursor: 'pointer', textAlign: 'left' }}>
-                        <span style={{ fontSize: '24px' }}>{opt.icon}</span>
-                        <div>
-                          <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{opt.label}</div>
-                          <div style={{ color: '#666', fontSize: '12px' }}>{opt.desc}</div>
+              {showVisibilityPicker && (() => {
+                const champLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
+                const champInput = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '14px', boxSizing: 'border-box' }
+                const pastilleMeta = (actif) => ({ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + alpha.subtle : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' })
+                const invalide = !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+                    onClick={() => setShowVisibilityPicker(null)}>
+                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '460px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
+                      onClick={e => e.stopPropagation()}>
+                      <h2 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px', fontWeight: 800 }}>💾 Sauvegarder ce procédé</h2>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={champLabel}>Nom du procédé *</label>
+                        <input value={metaProc.nom} onChange={e => setMetaProc(p => ({ ...p, nom: e.target.value }))}
+                          placeholder="Ex: Pressing haut 4-3-3" style={champInput} />
+                      </div>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={champLabel}>Thème *</label>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {['Offensif', 'Défensif', 'Coup de pied arrêté', 'Gardien de but', 'Physique', 'Sans thème'].map(th => (
+                            <button key={th} type="button" onClick={() => setMetaProc(p => ({ ...p, theme: th, principe: '' }))} style={pastilleMeta(metaProc.theme === th)}>
+                              {th}
+                            </button>
+                          ))}
                         </div>
-                      </button>
-                    ))}
-                    <button onClick={() => setShowVisibilityPicker(null)} style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: '#666', fontSize: '14px', cursor: 'pointer', marginTop: '4px' }}>Annuler</button>
+                      </div>
+
+                      {(metaProc.theme === 'Offensif' || metaProc.theme === 'Défensif') && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <label style={champLabel}>Principe de jeu</label>
+                          <select value={metaProc.principe} onChange={e => setMetaProc(p => ({ ...p, principe: e.target.value }))} style={champInput}>
+                            <option value="">— Choisir un principe —</option>
+                            {(metaProc.theme === 'Offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
+                              <option key={p.id} value={p.label}>{p.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={champLabel}>Catégorie d'âge *</label>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {CATEGORIES_AGE_PROCEDE.map(c => (
+                            <button key={c} type="button" onClick={() => setMetaProc(p => ({ ...p, categorie_age: c }))} style={pastilleMeta(metaProc.categorie_age === c)}>
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, borderRadius: '10px', padding: '12px 14px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <input type="checkbox" id="partage-platform-proc" checked={metaProc.partage_platform}
+                          onChange={e => setMetaProc(p => ({ ...p, partage_platform: e.target.checked }))}
+                          style={{ marginTop: '2px', accentColor: colors.accent.green, width: '15px', height: '15px', flexShrink: 0, cursor: 'pointer' }} />
+                        <label htmlFor="partage-platform-proc" style={{ cursor: 'pointer' }}>
+                          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>Partager avec la communauté Digital Football</div>
+                          <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px', lineHeight: 1.4 }}>
+                            Ton procédé enrichira la bibliothèque commune et aidera d'autres éducateurs. Décoche pour garder privé (visible seulement par toi et ton club).
+                          </div>
+                        </label>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => setShowVisibilityPicker(null)}
+                          style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px', color: colors.text.faint, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          Annuler
+                        </button>
+                        <button onClick={sauvegarderProcedeBibliotheque} disabled={invalide}
+                          style={{ flex: 2, background: invalide ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px', color: invalide ? colors.text.disabled : colors.black, fontWeight: 800, cursor: invalide ? 'default' : 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+                          💾 Sauvegarder
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               <button
                 type="button"
@@ -9241,8 +9308,15 @@ même listé dans buts_gauche/buts_droite.`
               ))}
             </div>
 
-            <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
-              style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: '20px' }} />
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
+                style={{ flex: 2, minWidth: '200px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+              <select value={biblioFiltreCategorieAge} onChange={e => setBiblioFiltreCategorieAge(e.target.value)}
+                style={{ flex: 1, minWidth: '160px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
+                <option value="">Toutes catégories</option>
+                {CATEGORIES_AGE_PROCEDE.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
 
             {biblioLoading ? (
               <p style={{ textAlign: 'center', color: colors.text.disabled, padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
@@ -9265,12 +9339,19 @@ même listé dans buts_gauche/buts_droite.`
               // n'affiche ni la barre ni les dossiers.
               const avecThemes = ['club', 'platform'].includes(biblioRubrique)
               const themesDeLaPhase = biblioFiltrePhase !== 'tous' ? THEMES_SEANCE[biblioFiltrePhase].themes : []
+              // Deux échelles de thème coexistent sur `theme` : les valeurs FFF (cf.
+              // THEMES_SEANCE, ex. 'conservation') pour les procédés créés via le
+              // formulaire complet, et depuis la modale de sauvegarde enrichie les
+              // libellés de phase bruts 'Offensif'/'Défensif' — les deux doivent
+              // alimenter les mêmes filtres et dossiers par phase.
+              const phaseDuTheme = theme => theme === 'Offensif' ? 'offensif' : theme === 'Défensif' ? 'defensif' : themeSeanceInfo(theme)?.phase
               const filtres = biblio.filter(p => {
                 const matchTab = biblioTab === 'tous' || p.type === biblioTab
                 const matchSearch = !biblioSearch.trim() || `${p.nom} ${p.theme} ${p.tags} ${p.description}`.toLowerCase().includes(biblioSearch.toLowerCase())
-                const matchPhase = !avecThemes || biblioFiltrePhase === 'tous' || themeSeanceInfo(p.theme)?.phase === biblioFiltrePhase
+                const matchPhase = !avecThemes || biblioFiltrePhase === 'tous' || phaseDuTheme(p.theme) === biblioFiltrePhase
                 const matchTheme = !avecThemes || !biblioFiltreTheme || p.theme === biblioFiltreTheme
-                return matchTab && matchSearch && matchPhase && matchTheme
+                const matchCategorieAge = !biblioFiltreCategorieAge || p.categorie_age === biblioFiltreCategorieAge
+                return matchTab && matchSearch && matchPhase && matchTheme && matchCategorieAge
               })
               const barreThemes = avecThemes && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px' }}>
@@ -9437,7 +9518,7 @@ même listé dans buts_gauche/buts_droite.`
                 { key: 'aucun', label: 'Sans thème', color: colors.text.faint },
               ]
               const parPhase = filtres.reduce((acc, p) => {
-                const phase = themeSeanceInfo(p.theme)?.phase || 'aucun'
+                const phase = phaseDuTheme(p.theme) || 'aucun'
                 if (!acc[phase]) acc[phase] = []
                 acc[phase].push(p)
                 return acc
