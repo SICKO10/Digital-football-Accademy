@@ -2133,6 +2133,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // valeur française canonique en base, seul l'affichage passe par t().
   const THEME_PROCEDE_CLES = { 'Offensif': 'biblio_theme_offensif', 'Défensif': 'biblio_theme_defensif', 'Coup de pied arrêté': 'biblio_theme_cpa', 'Gardien de but': 'biblio_theme_gardien', 'Physique': 'biblio_theme_physique', 'Sans thème': 'biblio_theme_sans' }
   const labelThemeProcede = theme => THEME_PROCEDE_CLES[theme] ? t(THEME_PROCEDE_CLES[theme], lang) : themeSeanceInfo(theme)?.label || theme
+  // Thèmes officiels FFF (categorie_tactique) — value → clé de traduction,
+  // pour ne jamais afficher les libellés en dur de THEMES_SEANCE/themesSeance.js.
+  const THEME_FFF_CLES = {
+    conservation: 'theme_fff_conservation', utilisation_creation_espaces: 'theme_fff_utilisation_creation_espaces',
+    dribble_elimination: 'theme_fff_dribble_elimination', fixer_renverser: 'theme_fff_fixer_renverser',
+    agrandir_espace_jeu: 'theme_fff_agrandir_espace_jeu', desequilibrer_finir: 'theme_fff_desequilibrer_finir',
+    progression: 'theme_fff_progression', coup_pied_arrete: 'theme_fff_coup_pied_arrete',
+    defense_inferiorite_numerique: 'theme_fff_defense_inferiorite_numerique', remplacer_axe_ballon_but: 'theme_fff_remplacer_axe_ballon_but',
+    duels: 'theme_fff_duels', reformer_bloc_equipe: 'theme_fff_reformer_bloc_equipe',
+    recuperer_ballon_bloc: 'theme_fff_recuperer_ballon_bloc', proteger_but_desequilibre: 'theme_fff_proteger_but_desequilibre',
+    gardien_de_but: 'theme_fff_gardien_de_but',
+  }
+  const labelTheme = value => THEME_FFF_CLES[value] ? t(THEME_FFF_CLES[value], lang) : themeSeanceInfo(value)?.label || value
+  const labelPhase = phase => phase === 'offensif' ? t('biblio_theme_offensif', lang) : phase === 'defensif' ? t('biblio_theme_defensif', lang) : phase
   const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', partage_platform: true }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
@@ -8416,9 +8430,9 @@ même listé dans buts_gauche/buts_droite.`
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={groupe.label} key={phase}>
+                    <optgroup label={labelPhase(phase)} key={phase}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{th.label}</option>
+                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -8521,9 +8535,9 @@ même listé dans buts_gauche/buts_droite.`
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={groupe.label} key={phase}>
+                    <optgroup label={labelPhase(phase)} key={phase}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{th.label}</option>
+                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -9001,7 +9015,7 @@ même listé dans buts_gauche/buts_droite.`
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                           {infoTheme && (
                             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', marginRight: '8px', background: infoTheme.color + alpha.subtle, color: infoTheme.color }}>
-                              {infoTheme.label}
+                              {labelTheme(s.categorie_tactique)}
                             </span>
                           )}
                           {s.theme || t('seance_sans_theme', lang)}
@@ -9093,23 +9107,23 @@ même listé dans buts_gauche/buts_droite.`
                     {/* Barre de filtres */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '16px' }}>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Phase</span>
+                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
                         {['tous', 'offensif', 'defensif'].map(p => (
                           <button key={p} onClick={() => { setFiltrePhase(p); setFiltreTheme('') }}
                             style={pastille(filtrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
-                            {p === 'tous' ? 'Toutes' : THEMES_SEANCE[p].label}
+                            {p === 'tous' ? t('theme_phase_toutes', lang) : labelPhase(p)}
                           </button>
                         ))}
                       </div>
 
                       {filtrePhase !== 'tous' && (
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Thème</span>
-                          <button onClick={() => setFiltreTheme('')} style={pastille(!filtreTheme, colors.accent.green)}>Tous</button>
+                          <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</span>
+                          <button onClick={() => setFiltreTheme('')} style={pastille(!filtreTheme, colors.accent.green)}>{t('biblio_tab_tous', lang)}</button>
                           {themesDeLaPhase.map(th => (
                             <button key={th.value} onClick={() => setFiltreTheme(th.value === filtreTheme ? '' : th.value)}
                               style={pastille(filtreTheme === th.value, THEMES_SEANCE[filtrePhase].color)}>
-                              {th.label}
+                              {labelTheme(th.value)}
                             </button>
                           ))}
                         </div>
@@ -9120,11 +9134,11 @@ même listé dans buts_gauche/buts_droite.`
 
                         <select value={filtreCategorieAge} onChange={e => setFiltreCategorieAge(e.target.value)}
                           style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.primary, fontSize: '12px', cursor: 'pointer' }}>
-                          <option value="">Toutes catégories</option>
-                          <optgroup label="Masculin">
+                          <option value="">{t('toutes_categories', lang)}</option>
+                          <optgroup label={t('categorie_masculin', lang)}>
                             {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
                           </optgroup>
-                          <optgroup label="Féminin">
+                          <optgroup label={t('categorie_feminin', lang)}>
                             {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
                           </optgroup>
                         </select>
@@ -9162,8 +9176,8 @@ même listé dans buts_gauche/buts_droite.`
                       </div>
                     ) : (() => {
                       const DOSSIERS_PHASE = [
-                        { key: 'offensif', label: THEMES_SEANCE.offensif.label, color: THEMES_SEANCE.offensif.color },
-                        { key: 'defensif', label: THEMES_SEANCE.defensif.label, color: THEMES_SEANCE.defensif.color },
+                        { key: 'offensif', label: labelPhase('offensif'), color: THEMES_SEANCE.offensif.color },
+                        { key: 'defensif', label: labelPhase('defensif'), color: THEMES_SEANCE.defensif.color },
                         { key: 'aucune', label: t('seance_sans_categorie', lang), color: colors.text.faint },
                       ]
                       const seancesParPhase = mesSeancesOuvertes.reduce((acc, s) => {
@@ -9396,22 +9410,22 @@ même listé dans buts_gauche/buts_droite.`
               const barreThemes = avecThemes && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px' }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Phase</span>
+                    <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
                     {['tous', 'offensif', 'defensif'].map(p => (
                       <button key={p} onClick={() => { setBiblioFiltrePhase(p); setBiblioFiltreTheme('') }}
                         style={pastille(biblioFiltrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
-                        {p === 'tous' ? 'Toutes' : THEMES_SEANCE[p].label}
+                        {p === 'tous' ? t('theme_phase_toutes', lang) : labelPhase(p)}
                       </button>
                     ))}
                   </div>
                   {biblioFiltrePhase !== 'tous' && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Thème</span>
-                      <button onClick={() => setBiblioFiltreTheme('')} style={pastille(!biblioFiltreTheme, colors.accent.green)}>Tous</button>
+                      <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</span>
+                      <button onClick={() => setBiblioFiltreTheme('')} style={pastille(!biblioFiltreTheme, colors.accent.green)}>{t('biblio_tab_tous', lang)}</button>
                       {themesDeLaPhase.map(th => (
                         <button key={th.value} onClick={() => setBiblioFiltreTheme(th.value === biblioFiltreTheme ? '' : th.value)}
                           style={pastille(biblioFiltreTheme === th.value, THEMES_SEANCE[biblioFiltrePhase].color)}>
-                          {th.label}
+                          {labelTheme(th.value)}
                         </button>
                       ))}
                     </div>
@@ -9553,9 +9567,9 @@ même listé dans buts_gauche/buts_droite.`
                 </>
               )
               const DOSSIERS_PHASE = [
-                { key: 'offensif', label: THEMES_SEANCE.offensif.label, color: THEMES_SEANCE.offensif.color },
-                { key: 'defensif', label: THEMES_SEANCE.defensif.label, color: THEMES_SEANCE.defensif.color },
-                { key: 'aucun', label: 'Sans thème', color: colors.text.faint },
+                { key: 'offensif', label: labelPhase('offensif'), color: THEMES_SEANCE.offensif.color },
+                { key: 'defensif', label: labelPhase('defensif'), color: THEMES_SEANCE.defensif.color },
+                { key: 'aucun', label: t('biblio_theme_sans', lang), color: colors.text.faint },
               ]
               const parPhase = filtres.reduce((acc, p) => {
                 const phase = phaseDuTheme(p.theme) || 'aucun'
@@ -9698,9 +9712,9 @@ même listé dans buts_gauche/buts_droite.`
                   style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={groupe.label} key={phase}>
+                    <optgroup label={labelPhase(phase)} key={phase}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{th.label}</option>
+                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -11105,7 +11119,7 @@ même listé dans buts_gauche/buts_droite.`
                       <label>Catégorie</label>
                       <select value={ficheApercuEdit.categorie_tactique} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_tactique: e.target.value }))} style={champEditStyle}>
                         <option value="">—</option>
-                        {TOUS_THEMES_SEANCE.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        {TOUS_THEMES_SEANCE.map(c => <option key={c.value} value={c.value}>{labelTheme(c.value)}</option>)}
                       </select>
                     </div>
                     {!ficheApercuEdit.mode_diplome && themeSeanceInfo(ficheApercuEdit.categorie_tactique) && (
