@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { extractYoutubeId, youtubeThumbnail } from '../lib/youtube'
+import { THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 
 const CATEGORIES = [
   { val: 'toutes', label: 'Toutes' },
@@ -10,21 +11,6 @@ const CATEGORIES = [
   { val: 'physique', label: 'Physique' },
   { val: 'gardien', label: 'Gardien' },
   { val: 'mental', label: 'Mental' },
-  { val: 'autre', label: 'Autre' },
-]
-
-// Classification supplémentaire réservée au contenu 'df' (Digital Football) —
-// sans intérêt pour 'club'/'perso', qui n'ont pas cette organisation par
-// thème de séance.
-const THEMES_SEANCE = [
-  { val: 'pressing', label: 'Pressing' },
-  { val: 'transition', label: 'Transitions' },
-  { val: 'jeu_position', label: 'Jeu en position' },
-  { val: 'corner', label: 'Corners' },
-  { val: 'coup_franc', label: 'Coups francs' },
-  { val: 'gardien', label: 'Gardien' },
-  { val: 'physique', label: 'Physique' },
-  { val: 'technique_individuelle', label: 'Technique individuelle' },
   { val: 'autre', label: 'Autre' },
 ]
 
@@ -51,13 +37,15 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   const [showForm, setShowForm] = useState(false)
   const [videoEnEdition, setVideoEnEdition] = useState(null) // null = nouvelle vidéo
   const [filtreCategorie, setFiltreCategorie] = useState('toutes')
+  const [filtrePhase, setFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif'
   const [filtreTheme, setFiltreTheme] = useState('tous')
   const [filtreTypeSeance, setFiltreTypeSeance] = useState('tous')
   const [recherche, setRecherche] = useState('')
   const [saving, setSaving] = useState(false)
+  const [formPhase, setFormPhase] = useState('offensif') // phase affichée dans le sélecteur du formulaire (pas persisté, theme_seance suffit)
   const [form, setForm] = useState({
     titre: '', description: '', youtube_url: '',
-    categorie: 'technique', theme_seance: 'autre', type_seance: 'collectif',
+    categorie: 'technique', theme_seance: '', type_seance: 'collectif',
     tags: '', duree: '', visible_joueurs: false,
   })
 
@@ -77,15 +65,16 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, clubId, proprietaireId])
 
-  const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: 'autre', type_seance: 'collectif', tags: '', duree: '', visible_joueurs: false }
+  const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: '', type_seance: 'collectif', tags: '', duree: '', visible_joueurs: false }
 
   const ouvrirEditionVideo = (video) => {
     setVideoEnEdition(video)
     setForm({
       titre: video.titre || '', description: video.description || '', youtube_url: video.youtube_url || '',
-      categorie: video.categorie || 'technique', theme_seance: video.theme_seance || 'autre', type_seance: video.type_seance || 'collectif',
+      categorie: video.categorie || 'technique', theme_seance: video.theme_seance || '', type_seance: video.type_seance || 'collectif',
       tags: (video.tags || []).join(', '), duree: video.duree || '', visible_joueurs: video.visible_joueurs || false,
     })
+    setFormPhase(themeSeanceInfo(video.theme_seance)?.phase || 'offensif')
     setVideoActive(null)
     setShowForm(true)
   }
@@ -129,21 +118,27 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
 
   const videosFiltrees = videos.filter(v => {
     const matchCat = filtreCategorie === 'toutes' || v.categorie === filtreCategorie
+    const matchPhase = filtrePhase === 'tous' || themeSeanceInfo(v.theme_seance)?.phase === filtrePhase
     const matchTheme = filtreTheme === 'tous' || v.theme_seance === filtreTheme
     const matchType = filtreTypeSeance === 'tous' || v.type_seance === filtreTypeSeance || v.type_seance === 'les_deux'
     const r = recherche.trim().toLowerCase()
     const matchRecherche = !r || v.titre.toLowerCase().includes(r) || v.description?.toLowerCase().includes(r)
-    return matchCat && matchTheme && matchType && matchRecherche
+    return matchCat && matchPhase && matchTheme && matchType && matchRecherche
   })
 
-  // Regroupement par thème de séance — uniquement pour le contenu 'df',
-  // seul type qui porte cette classification.
-  const videosParTheme = type === 'df' ? THEMES_SEANCE.reduce((acc, th) => {
-    const vids = videosFiltrees.filter(v => v.theme_seance === th.val)
-    if (vids.length) acc.push({ ...th, videos: vids })
+  // Regroupement par phase (Offensif/Défensif, thèmes officiels FFF — mêmes
+  // que "Mes séances" et la bibliothèque de procédés) — uniquement pour le
+  // contenu 'df', seul type qui porte cette classification.
+  const DOSSIERS_PHASE_VIDEOS = [
+    { key: 'offensif', label: THEMES_SEANCE.offensif.label, color: THEMES_SEANCE.offensif.color },
+    { key: 'defensif', label: THEMES_SEANCE.defensif.label, color: THEMES_SEANCE.defensif.color },
+  ]
+  const videosParTheme = type === 'df' ? DOSSIERS_PHASE_VIDEOS.reduce((acc, d) => {
+    const vids = videosFiltrees.filter(v => themeSeanceInfo(v.theme_seance)?.phase === d.key)
+    if (vids.length) acc.push({ ...d, videos: vids })
     return acc
   }, []) : null
-  const videosSansTheme = type === 'df' ? videosFiltrees.filter(v => !v.theme_seance) : null
+  const videosSansTheme = type === 'df' ? videosFiltrees.filter(v => !themeSeanceInfo(v.theme_seance)) : null
 
   const inputStyle = { background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }
 
@@ -166,6 +161,11 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       </div>
       <div style={{ padding: '12px' }}>
         <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: '0 0 4px', lineHeight: '1.3' }}>{video.titre}</p>
+        {video.theme_seance && themeSeanceInfo(video.theme_seance) && (
+          <p style={{ color: themeSeanceInfo(video.theme_seance).color, fontSize: '11px', fontWeight: 600, margin: '0 0 4px' }}>
+            {themeSeanceInfo(video.theme_seance).label}
+          </p>
+        )}
         {video.description && (
           <p style={{ color: colors.text.faint, fontSize: '11px', lineHeight: '1.4', margin: '0 0 8px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
             {video.description}
@@ -194,7 +194,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         {peutAjouter && (
           <button onClick={() => setShowForm(v => {
               const next = !v
-              if (next) { setVideoEnEdition(null); setForm(FORM_VIDE) }
+              if (next) { setVideoEnEdition(null); setForm(FORM_VIDE); setFormPhase('offensif') }
               return next
             })}
             style={{ background: accentColor, color: colors.black || '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -218,14 +218,28 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
           {type === 'df' && (
             <>
               <div style={{ marginBottom: '12px' }}>
+                <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 8px' }}>Phase</p>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
+                    <button key={phase} onClick={() => { setFormPhase(phase); setForm(f => ({ ...f, theme_seance: '' })) }}
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                        background: formPhase === phase ? groupe.color + '22' : 'transparent',
+                        borderColor: formPhase === phase ? groupe.color : colors.border.strong,
+                        color: formPhase === phase ? groupe.color : colors.text.faint }}>
+                      {groupe.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
                 <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 8px' }}>Thème de séance</p>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {THEMES_SEANCE.map(th => (
-                    <button key={th.val} onClick={() => setForm(f => ({ ...f, theme_seance: th.val }))}
+                  {THEMES_SEANCE[formPhase].themes.map(th => (
+                    <button key={th.value} onClick={() => setForm(f => ({ ...f, theme_seance: th.value }))}
                       style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                        background: form.theme_seance === th.val ? accentColor + '22' : 'transparent',
-                        borderColor: form.theme_seance === th.val ? accentColor : colors.border.strong,
-                        color: form.theme_seance === th.val ? accentColor : colors.text.faint }}>
+                        background: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color + '22' : 'transparent',
+                        borderColor: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.border.strong,
+                        color: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.text.faint }}>
                       {th.label}
                     </button>
                   ))}
@@ -292,10 +306,23 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         </div>
         {type === 'df' && (
           <>
-            <select value={filtreTheme} onChange={e => setFiltreTheme(e.target.value)} style={inputStyle}>
-              <option value="tous">Tous les thèmes</option>
-              {THEMES_SEANCE.map(th => <option key={th.val} value={th.val}>{th.label}</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[{ val: 'tous', label: 'Toutes phases' }, { val: 'offensif', label: THEMES_SEANCE.offensif.label }, { val: 'defensif', label: THEMES_SEANCE.defensif.label }].map(p => (
+                <button key={p.val} onClick={() => { setFiltrePhase(p.val); setFiltreTheme('tous') }}
+                  style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: filtrePhase === p.val ? accentColor + '22' : 'transparent',
+                    borderColor: filtrePhase === p.val ? accentColor : colors.border.strong,
+                    color: filtrePhase === p.val ? accentColor : colors.text.faint }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {filtrePhase !== 'tous' && (
+              <select value={filtreTheme} onChange={e => setFiltreTheme(e.target.value)} style={inputStyle}>
+                <option value="tous">Tous les thèmes</option>
+                {THEMES_SEANCE[filtrePhase].themes.map(th => <option key={th.value} value={th.value}>{th.label}</option>)}
+              </select>
+            )}
             <div style={{ display: 'flex', gap: '6px' }}>
               {[{ val: 'tous', label: 'Tous' }, ...TYPES_SEANCE.filter(t => t.val !== 'les_deux')].map(t => (
                 <button key={t.val} onClick={() => setFiltreTypeSeance(t.val)}
@@ -316,9 +343,9 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       ) : type === 'df' ? (
         <>
           {videosParTheme.map(groupe => (
-            <div key={groupe.val} style={{ marginBottom: '28px' }}>
+            <div key={groupe.key} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                <p style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', margin: 0 }}>{groupe.label}</p>
+                <p style={{ color: groupe.color, fontWeight: 800, fontSize: '15px', margin: 0 }}>{groupe.label}</p>
                 <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{groupe.videos.length} vidéo{groupe.videos.length > 1 ? 's' : ''}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
