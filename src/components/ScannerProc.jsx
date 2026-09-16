@@ -84,7 +84,19 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       const { data, error } = await supabase.functions.invoke('scan-procede', {
         body: { imageBase64, mimeType: 'image/jpeg' }, // recompressée en JPEG par redimensionnerImage, quel que soit le format d'origine
       })
-      if (error || data?.error) throw new Error(error?.message || data?.error)
+      if (error) {
+        // Sur un statut non-2xx, error.message du client Supabase reste générique
+        // ("Edge Function returned a non-2xx status code") — le vrai message
+        // renvoyé par la fonction vit dans error.context (la Response brute).
+        let detail = error.message
+        try {
+          const body = await error.context?.json()
+          if (body?.error) detail = body.error
+          if (body?.stack) console.error('scan-procede stack:', body.stack)
+        } catch { /* corps non-JSON, on garde error.message */ }
+        throw new Error(detail)
+      }
+      if (data?.error) throw new Error(data.error)
       const p = data.procede || {}
       const theme = normaliser(p.theme, THEMES.map(th => th.valeur))
       setResultat({

@@ -77,7 +77,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    // Temporaire : stack/type en plus du message, pour diagnostiquer le 500
+    // qui persiste malgré les garde-fous déjà en place — à retirer une fois
+    // la cause confirmée.
+    console.error('scan-procede error:', err)
+    return new Response(JSON.stringify({ error: err.message, stack: err.stack, type: err?.constructor?.name }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
