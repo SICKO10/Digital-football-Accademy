@@ -22,6 +22,8 @@ import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
+import MesStats from './MesStats'
+import { getPosteFamille } from '../lib/postes'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import CompositionTerrain from '../components/CompositionTerrain'
@@ -1556,7 +1558,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   const caracteristiquesParPoste = {
     Gardien: ['Jeu au pied', 'Sortie aérienne', 'Sur sa ligne', 'Penalties', 'Leadership', '1 contre 1', 'Lecture du jeu', 'Anticipation', 'Relance longue', 'Commandement défensif', 'Détente', 'Sang-froid'],
-    Defenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
+    Défenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
     Milieu: ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
     Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
   }
@@ -2967,6 +2969,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
+    { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
     { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
     { id: 'carte', label: t('jnav_carte', lang), icon: <IconCard />, section: t('jsec_profil', lang) },
     { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
@@ -3723,7 +3726,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             </div>
 
-            {caracteristiquesParPoste[profil?.poste] && (
+            {caracteristiquesParPoste[getPosteFamille(profil?.poste)] && (
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
                 <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_style_jeu', lang)}</p>
 
@@ -3747,7 +3750,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <div style={{ marginBottom: '20px' }}>
                   <label style={labelStyle}>{t('jp_points_forts', lang)}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                    {caracteristiquesParPoste[profil.poste].map(c => {
+                    {caracteristiquesParPoste[getPosteFamille(profil.poste)].map(c => {
                       const selected = pointsForts.includes(c)
                       const disabled = !selected && pointsForts.length >= 4
                       return (
@@ -3773,7 +3776,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <div>
                   <label style={labelStyle}>{t('jp_ameliorer', lang)}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                    {caracteristiquesParPoste[profil.poste].map(c => {
+                    {caracteristiquesParPoste[getPosteFamille(profil.poste)].map(c => {
                       const selected = aAmeliorer.includes(c)
                       const disabled = !selected && aAmeliorer.length >= 4
                       return (
@@ -4503,6 +4506,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             )}
           </div>
         )}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>
