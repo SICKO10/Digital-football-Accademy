@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
+import { calculerMoyennes } from '../lib/statsRecrutement'
 
 const STATS_PAR_POSTE = {
   Gardien: [
@@ -60,39 +61,6 @@ const FORM_VIDE = {
   fautes_commises: '', arrets: '', buts_encaisses: '', sorties: '', relances_reussies: '',
 }
 
-// Moyennes/pourcentages calculés à partir de tous les matchs saisis — mêmes
-// noms de champs que profil_recrutement (upsert direct du résultat).
-function calculerMoyennes(matchs) {
-  if (!matchs.length) return {}
-  const n = matchs.length
-  const sum = (key) => matchs.reduce((s, m) => s + (Number(m[key]) || 0), 0)
-  const avg = (key) => Math.round((sum(key) / n) * 100) / 100
-  const pct = (num, den) => {
-    const t = sum(den)
-    return t > 0 ? Math.round((sum(num) / t) * 100) : null
-  }
-  const totalArrets = sum('arrets')
-  const totalEncaisses = sum('buts_encaisses')
-  return {
-    nb_matchs: n,
-    moy_minutes: avg('minutes'),
-    moy_buts: avg('buts'),
-    moy_pd: avg('passes_decisives'),
-    moy_km: avg('km_parcourus'),
-    moy_recuperations: avg('recuperations'),
-    pct_passes: pct('passes_reussies', 'passes_tentees'),
-    pct_duels: pct('duels_gagnes', 'duels_total'),
-    // Arrêts / (arrêts + buts encaissés) — pas arrêts / frappes tentées (le
-    // gardien n'a pas cette stat), sinon ce pourcentage n'a pas de sens.
-    pct_arrets: (totalArrets + totalEncaisses) > 0 ? Math.round((totalArrets / (totalArrets + totalEncaisses)) * 100) : null,
-    moy_arrets: avg('arrets'),
-    pct_frappes: pct('frappes_cadrees', 'frappes_tentees'),
-    pct_dribbles: pct('dribbles_reussis', 'dribbles_tentes'),
-    moy_interceptions: avg('interceptions'),
-    moy_tacles: avg('tacles_reussis'),
-  }
-}
-
 // Radar SVG pour le profil — pas de lib externe, mêmes conventions que le
 // reste de l'app (schémas terrain dessinés à la main en SVG/jsPDF ailleurs).
 function RadarChart({ data, labels, color, gridColor, textColor }) {
@@ -143,6 +111,9 @@ export default function MesStats({ userId, joueurPoste }) {
   const statsSpec = STATS_PAR_POSTE[poste] || STATS_PAR_POSTE.Milieu
 
   const [form, setForm] = useState(FORM_VIDE)
+  const [csvModal, setCsvModal] = useState(false)
+  const [csvImporting, setCsvImporting] = useState(false)
+  const csvInputRef = useRef()
 
   const charger = async () => {
     const { data } = await supabase.from('stats_match_joueur').select('*').eq('joueur_id', userId).order('date', { ascending: false })
@@ -167,6 +138,64 @@ export default function MesStats({ userId, joueurPoste }) {
     await charger()
     setVue('profil')
     setForm(FORM_VIDE)
+  }
+
+  // Export Veo connu : Date, Opponent, Minutes played, Goals, Assists, Shots,
+  // Shots on target, Duels, Duels won, Distance (km), Sprints, Top speed —
+  // colonnes en-tête normalisées (minuscules, non-alphanum → _) pour tolérer
+  // les variantes ("Distance (km)" → "distance__km_").
+  function parserVeoCSV(texte) {
+    const lignes = texte.trim().split('\n')
+    if (lignes.length < 2) return []
+    const headers = lignes[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '_'))
+    return lignes.slice(1).filter(Boolean).map(ligne => {
+      const vals = ligne.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      const row = {}
+      headers.forEach((h, i) => { row[h] = vals[i] })
+      return {
+        date: row['date'] || row['match_date'] || new Date().toISOString().split('T')[0],
+        adversaire: row['opponent'] || row['adversaire'] || '',
+        minutes: parseInt(row['minutes_played'] || row['minutes'] || 0) || 0,
+        titulaire: true,
+        buts: parseInt(row['goals'] || 0) || 0,
+        passes_decisives: parseInt(row['assists'] || 0) || 0,
+        frappes_tentees: parseInt(row['shots'] || 0) || null,
+        frappes_cadrees: parseInt(row['shots_on_target'] || 0) || null,
+        duels_total: parseInt(row['duels'] || 0) || null,
+        duels_gagnes: parseInt(row['duels_won'] || 0) || null,
+        km_parcourus: parseFloat(row['distance__km_'] || row['distance_km'] || row['distance'] || 0) || null,
+        source: 'veo_csv',
+      }
+    }).filter(r => r.adversaire || r.minutes > 0)
+  }
+
+  async function importerVeoCSV(fichier) {
+    setCsvImporting(true)
+    try {
+      const texte = await fichier.text()
+      const matchsImportes = parserVeoCSV(texte)
+      if (!matchsImportes.length) {
+        alert("Aucun match détecté dans ce fichier. Vérifie que c'est bien un export Veo.")
+        return
+      }
+      let importes = 0
+      for (const m of matchsImportes) {
+        // Pas de match_id (Veo n'en fournit pas) — dédoublonnage sur date+adversaire.
+        const { data: existant } = await supabase.from('stats_match_joueur').select('id').eq('joueur_id', userId).eq('date', m.date).eq('adversaire', m.adversaire).maybeSingle()
+        if (!existant) {
+          const { error } = await supabase.from('stats_match_joueur').insert({ ...m, joueur_id: userId })
+          if (!error) importes++
+        }
+      }
+      const { data: allMatchs } = await supabase.from('stats_match_joueur').select('*').eq('joueur_id', userId)
+      const moyennes = calculerMoyennes(allMatchs || [])
+      await supabase.from('profil_recrutement').upsert({ joueur_id: userId, ...moyennes, updated_at: new Date().toISOString() }, { onConflict: 'joueur_id' })
+      setCsvModal(false)
+      await charger()
+      alert(`✅ ${importes} match${importes > 1 ? 's' : ''} importé${importes > 1 ? 's' : ''} depuis Veo !`)
+    } finally {
+      setCsvImporting(false)
+    }
   }
 
   const moy = calculerMoyennes(matchs)
@@ -211,6 +240,10 @@ export default function MesStats({ userId, joueurPoste }) {
             {o.label}
           </button>
         ))}
+        <button onClick={() => setCsvModal(true)}
+          style={{ padding: '9px 16px', borderRadius: '20px', border: `1px solid ${colors.accent.blue}40`, background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          📥 Import Veo
+        </button>
       </div>
 
       {vue === 'profil' && (
@@ -332,6 +365,40 @@ export default function MesStats({ userId, joueurPoste }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {csvModal && (
+        <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}
+          onClick={() => !csvImporting && setCsvModal(false)}>
+          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '480px', maxWidth: '100%', boxSizing: 'border-box' }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 12px', fontWeight: 800 }}>📥 Importer depuis Veo</h3>
+
+            <div style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, borderRadius: '10px', padding: '14px', marginBottom: '20px' }}>
+              <div style={{ color: colors.accent.blue, fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>Comment exporter depuis Veo ?</div>
+              <ol style={{ color: colors.text.faint, fontSize: '12px', margin: 0, paddingLeft: '16px', lineHeight: 1.8 }}>
+                <li>Va sur <strong style={{ color: colors.text.primary }}>veo.co</strong> → ton profil</li>
+                <li>Clique sur <strong style={{ color: colors.text.primary }}>Statistics</strong></li>
+                <li>Clique sur <strong style={{ color: colors.text.primary }}>Export CSV</strong></li>
+                <li>Importe le fichier ici</li>
+              </ol>
+            </div>
+
+            <div onClick={() => !csvImporting && csvInputRef.current.click()}
+              style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '30px', textAlign: 'center', cursor: csvImporting ? 'default' : 'pointer', marginBottom: '16px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>📊</div>
+              <div style={{ color: colors.text.faint, fontSize: '13px' }}>
+                {csvImporting ? 'Import en cours...' : 'Clique pour sélectionner ton fichier CSV Veo'}
+              </div>
+              <input ref={csvInputRef} type="file" accept=".csv" disabled={csvImporting} onChange={e => e.target.files[0] && importerVeoCSV(e.target.files[0])} style={{ display: 'none' }} />
+            </div>
+
+            <button onClick={() => setCsvModal(false)} disabled={csvImporting}
+              style={{ width: '100%', background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '11px', color: colors.text.faint, fontWeight: 700, cursor: csvImporting ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Annuler
+            </button>
+          </div>
         </div>
       )}
     </div>

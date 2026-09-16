@@ -17,6 +17,7 @@ import CauserieAvantMatch from '../components/CauserieAvantMatch'
 import BibliothequeVideos from '../components/BibliothequeVideos'
 import ScannerProc from '../components/ScannerProc'
 import MoteurRecrutement from './MoteurRecrutement'
+import { calculerMoyennes } from '../lib/statsRecrutement'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 import NotationMatch from '../components/NotationMatch'
@@ -4149,6 +4150,42 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setModalMatchForm(null)
   }
 
+  // Recrutement Phase 3 : remonte automatiquement les stats de base (minutes,
+  // buts, passes déc., cartons) saisies par l'éducateur sur la feuille de
+  // match vers stats_match_joueur — le joueur n'a pas à les ressaisir dans
+  // MesStats.jsx. match_id permet de mettre à jour plutôt que dupliquer si
+  // l'éducateur corrige la feuille plus tard. Ne renseigne que les champs
+  // disponibles à cette source (pas de km/duels/passes tentées, saisis à la
+  // main ou importés via Veo) — calculerMoyennes() ignore les champs absents.
+  const remonterStatsVersJoueurs = async (matchInfo, statsParJoueur) => {
+    const entries = Object.entries(statsParJoueur || {}).filter(([joueurId, s]) => joueurId && (s.minutes || 0) > 0)
+    if (!entries.length) return
+    for (const [joueurId, s] of entries) {
+      const payload = {
+        joueur_id: joueurId,
+        match_id: matchInfo.id,
+        date: matchInfo.date,
+        adversaire: matchInfo.adversaire,
+        niveau: matchInfo.competition || null,
+        minutes: s.minutes || 0,
+        buts: s.buts || 0,
+        passes_decisives: s.passes_dec || 0,
+        cartons_jaunes: s.carton_jaune ? 1 : 0,
+        cartons_rouges: s.carton_rouge ? 1 : 0,
+        source: 'feuille_match',
+      }
+      const { data: existant } = await supabase.from('stats_match_joueur').select('id').eq('joueur_id', joueurId).eq('match_id', matchInfo.id).maybeSingle()
+      if (existant) await supabase.from('stats_match_joueur').update(payload).eq('id', existant.id)
+      else await supabase.from('stats_match_joueur').insert(payload)
+    }
+    // Moyennes recalculées une fois par joueur concerné (pas par ligne insérée).
+    await Promise.all(entries.map(async ([joueurId]) => {
+      const { data: tousLesMatchs } = await supabase.from('stats_match_joueur').select('*').eq('joueur_id', joueurId)
+      if (!tousLesMatchs?.length) return
+      await supabase.from('profil_recrutement').upsert({ joueur_id: joueurId, ...calculerMoyennes(tousLesMatchs), updated_at: new Date().toISOString() }, { onConflict: 'joueur_id' })
+    }))
+  }
+
   const sauvegarderStatsMatch = async (matchId) => {
     const entries = Object.entries(statsMatch[matchId] || {})
     // Un upsert par joueur, chacun indépendant des autres (clé match_id+
@@ -4165,6 +4202,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     if (erreurs.length > 0) {
       console.error('Erreur sauvegarde stats match:', erreurs.map(e => e.error.message))
       alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''} :\n${erreurs[0].error.message}`)
+    }
+    const matchInfo = matchs.find(m => m.id === matchId)
+    if (matchInfo) {
+      await remonterStatsVersJoueurs(matchInfo, statsMatch[matchId]).catch(e => console.error('Erreur remontée stats joueur:', e))
     }
     await chargerMatchs(userId, equipeActive?.id)
     setMatchActif(null)

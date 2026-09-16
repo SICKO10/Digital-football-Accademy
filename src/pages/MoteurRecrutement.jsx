@@ -344,17 +344,36 @@ export default function MoteurRecrutement({ userId }) {
               ))}
             </div>
 
-            {statsSelected.length > 0 && (
+            {statsSelected.length > 0 && (() => {
+              // "Vérifiées" = remontées automatiquement (feuille de match
+              // officielle côté éducateur, ou import Veo) plutôt que
+              // ressaisies à la main par le joueur — cf. Recrutement Phase 3.
+              const nbVerifiees = statsSelected.filter(m => m.source === 'feuille_match' || m.source === 'veo_csv').length
+              const pctVerifiees = Math.round((nbVerifiees / statsSelected.length) * 100)
+              return (
               <div style={{ marginBottom: '20px' }}>
+                {pctVerifiees > 0 && (
+                  <div style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}30`, borderRadius: '8px', padding: '8px 12px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>✅</span>
+                    <div>
+                      <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>{pctVerifiees}% des stats vérifiées</div>
+                      <div style={{ color: colors.text.disabled, fontSize: '11px' }}>{nbVerifiees}/{statsSelected.length} matchs via feuille officielle ou Veo</div>
+                    </div>
+                  </div>
+                )}
                 <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>5 derniers matchs</div>
                 {statsSelected.slice(0, 5).map(m => (
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.faint}`, fontSize: '12px' }}>
-                    <span style={{ color: colors.text.dim }}>vs {m.adversaire}</span>
+                    <span style={{ color: colors.text.dim }}>
+                      vs {m.adversaire}
+                      {(m.source === 'feuille_match' || m.source === 'veo_csv') && <span title="Donnée vérifiée" style={{ marginLeft: '6px' }}>✅</span>}
+                    </span>
                     <span style={{ color: colors.text.faint }}>{m.minutes}min · {m.buts}⚽ · {m.passes_decisives}🎯{m.km_parcourus ? ` · ${m.km_parcourus}km` : ''}</span>
                   </div>
                 ))}
               </div>
-            )}
+              )
+            })()}
 
             <div style={{ background: selected.statut_recrutement === 'Recherche active' ? colors.accent.green + '15' : selected.statut_recrutement === "À l'écoute" ? '#f59e0b15' : colors.background.raised, border: `1px solid ${selected.statut_recrutement === 'Recherche active' ? colors.accent.green + '40' : selected.statut_recrutement === "À l'écoute" ? '#f59e0b40' : colors.border.default}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', textAlign: 'center' }}>
               <span style={{ color: selected.statut_recrutement === 'Recherche active' ? colors.accent.green : selected.statut_recrutement === "À l'écoute" ? '#f59e0b' : colors.text.disabled, fontWeight: 700, fontSize: '13px' }}>
