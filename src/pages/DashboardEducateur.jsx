@@ -2123,6 +2123,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
   const CATEGORIES_AGE_PROCEDE = ['Pour tous', 'U6-U7', 'U8-U9', 'U10-U11', 'U12-U13', 'U14-U15', 'U16-U17', 'U18-U19', 'Senior']
+  // Valeur stockée toujours en français (canonique, comparée telle quelle par
+  // les filtres) — seul l'affichage est traduit ; les tranches U6-U7 etc.
+  // sont déjà identiques dans toutes les langues proposées.
+  const labelAgeProcede = c => c === 'Pour tous' ? t('biblio_age_pour_tous', lang) : c === 'Senior' ? t('biblio_age_senior', lang) : c
+  // Le thème d'un procédé peut être soit une valeur FFF (cf. themeSeanceInfo,
+  // ex. 'conservation'), soit — depuis la modale de sauvegarde enrichie — un
+  // libellé de phase brut ('Offensif'/'Défensif'/...) : les deux gardent leur
+  // valeur française canonique en base, seul l'affichage passe par t().
+  const THEME_PROCEDE_CLES = { 'Offensif': 'biblio_theme_offensif', 'Défensif': 'biblio_theme_defensif', 'Coup de pied arrêté': 'biblio_theme_cpa', 'Gardien de but': 'biblio_theme_gardien', 'Physique': 'biblio_theme_physique', 'Sans thème': 'biblio_theme_sans' }
+  const labelThemeProcede = theme => THEME_PROCEDE_CLES[theme] ? t(THEME_PROCEDE_CLES[theme], lang) : themeSeanceInfo(theme)?.label || theme
   const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', partage_platform: true }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
@@ -8528,9 +8538,9 @@ même listé dans buts_gauche/buts_droite.`
                     onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))}
                     style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                   >
-                    <option value="">Principe de jeu (optionnel)</option>
+                    <option value="">{t('biblio_principe_optionnel', lang)}</option>
                     {(themeSeanceInfo(fiche.categorie_tactique).phase === 'offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
-                      <option key={p.id} value={p.label}>{p.label}</option>
+                      <option key={p.id} value={p.label}>{t(`principe_${p.id}`, lang)}</option>
                     ))}
                   </select>
                 )}
@@ -8835,20 +8845,27 @@ même listé dans buts_gauche/buts_droite.`
                     onClick={() => setShowVisibilityPicker(null)}>
                     <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '460px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
                       onClick={e => e.stopPropagation()}>
-                      <h2 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px', fontWeight: 800 }}>💾 Sauvegarder ce procédé</h2>
+                      <h2 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px', fontWeight: 800 }}>💾 {t('biblio_sauver_titre', lang)}</h2>
 
                       <div style={{ marginBottom: '16px' }}>
-                        <label style={champLabel}>Nom du procédé *</label>
+                        <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
                         <input value={metaProc.nom} onChange={e => setMetaProc(p => ({ ...p, nom: e.target.value }))}
-                          placeholder="Ex: Pressing haut 4-3-3" style={champInput} />
+                          placeholder={t('biblio_nom_procede_placeholder', lang)} style={champInput} />
                       </div>
 
                       <div style={{ marginBottom: '16px' }}>
-                        <label style={champLabel}>Thème *</label>
+                        <label style={champLabel}>{t('biblio_champ_theme', lang)} *</label>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {['Offensif', 'Défensif', 'Coup de pied arrêté', 'Gardien de but', 'Physique', 'Sans thème'].map(th => (
-                            <button key={th} type="button" onClick={() => setMetaProc(p => ({ ...p, theme: th, principe: '' }))} style={pastilleMeta(metaProc.theme === th)}>
-                              {th}
+                          {[
+                            { valeur: 'Offensif', cle: 'biblio_theme_offensif' },
+                            { valeur: 'Défensif', cle: 'biblio_theme_defensif' },
+                            { valeur: 'Coup de pied arrêté', cle: 'biblio_theme_cpa' },
+                            { valeur: 'Gardien de but', cle: 'biblio_theme_gardien' },
+                            { valeur: 'Physique', cle: 'biblio_theme_physique' },
+                            { valeur: 'Sans thème', cle: 'biblio_theme_sans' },
+                          ].map(th => (
+                            <button key={th.valeur} type="button" onClick={() => setMetaProc(p => ({ ...p, theme: th.valeur, principe: '' }))} style={pastilleMeta(metaProc.theme === th.valeur)}>
+                              {t(th.cle, lang)}
                             </button>
                           ))}
                         </div>
@@ -8856,22 +8873,22 @@ même listé dans buts_gauche/buts_droite.`
 
                       {(metaProc.theme === 'Offensif' || metaProc.theme === 'Défensif') && (
                         <div style={{ marginBottom: '16px' }}>
-                          <label style={champLabel}>Principe de jeu</label>
+                          <label style={champLabel}>{t('biblio_principe_label', lang)}</label>
                           <select value={metaProc.principe} onChange={e => setMetaProc(p => ({ ...p, principe: e.target.value }))} style={champInput}>
-                            <option value="">— Choisir un principe —</option>
+                            <option value="">{t('biblio_choisir_principe', lang)}</option>
                             {(metaProc.theme === 'Offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
-                              <option key={p.id} value={p.label}>{p.label}</option>
+                              <option key={p.id} value={p.label}>{t(`principe_${p.id}`, lang)}</option>
                             ))}
                           </select>
                         </div>
                       )}
 
                       <div style={{ marginBottom: '20px' }}>
-                        <label style={champLabel}>Catégorie d'âge *</label>
+                        <label style={champLabel}>{t('biblio_categorie_age_label', lang)} *</label>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {CATEGORIES_AGE_PROCEDE.map(c => (
                             <button key={c} type="button" onClick={() => setMetaProc(p => ({ ...p, categorie_age: c }))} style={pastilleMeta(metaProc.categorie_age === c)}>
-                              {c}
+                              {labelAgeProcede(c)}
                             </button>
                           ))}
                         </div>
@@ -8882,9 +8899,9 @@ même listé dans buts_gauche/buts_droite.`
                           onChange={e => setMetaProc(p => ({ ...p, partage_platform: e.target.checked }))}
                           style={{ marginTop: '2px', accentColor: colors.accent.green, width: '15px', height: '15px', flexShrink: 0, cursor: 'pointer' }} />
                         <label htmlFor="partage-platform-proc" style={{ cursor: 'pointer' }}>
-                          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>Partager avec la communauté Digital Football</div>
+                          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>{t('biblio_partage_communaute_titre', lang)}</div>
                           <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px', lineHeight: 1.4 }}>
-                            Ton procédé enrichira la bibliothèque commune et aidera d'autres éducateurs. Décoche pour garder privé (visible seulement par toi et ton club).
+                            {t('biblio_partage_communaute_desc', lang)}
                           </div>
                         </label>
                       </div>
@@ -8892,11 +8909,11 @@ même listé dans buts_gauche/buts_droite.`
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setShowVisibilityPicker(null)}
                           style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px', color: colors.text.faint, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          Annuler
+                          {t('btn_annuler', lang)}
                         </button>
                         <button onClick={sauvegarderProcedeBibliotheque} disabled={invalide}
                           style={{ flex: 2, background: invalide ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px', color: invalide ? colors.text.disabled : colors.black, fontWeight: 800, cursor: invalide ? 'default' : 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
-                          💾 Sauvegarder
+                          💾 {t('biblio_sauvegarder_bouton', lang)}
                         </button>
                       </div>
                     </div>
@@ -9222,7 +9239,7 @@ même listé dans buts_gauche/buts_droite.`
                                       <div key={p.id}
                                         onClick={() => setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] }))}
                                         style={{ background: colors.background.surface, border: `1px solid ${ouvertP ? d.color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
-                                        <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {p.label}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {t(`principe_${p.id}`, lang)}</span>
                                         <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{p.items.length}</span>
                                       </div>
                                     )
@@ -9231,14 +9248,14 @@ même listé dans buts_gauche/buts_droite.`
                                     <div
                                       onClick={() => setPrincipesOuverts(prev => ({ ...prev, [`${d.key}:_non_classe`]: !prev[`${d.key}:_non_classe`] }))}
                                       style={{ background: colors.background.surface, border: `1px solid ${principesOuverts[`${d.key}:_non_classe`] ? colors.text.faint : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}>📁 Non classé</span>
+                                      <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}>📁 {t('biblio_non_classe', lang)}</span>
                                       <span style={{ background: colors.background.raised, color: colors.text.faint, fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{nonClasses.length}</span>
                                     </div>
                                   )}
                                 </div>
                                 {principesAvecItems.filter(p => principesOuverts[`${d.key}:${p.id}`]).map(p => (
                                   <div key={p.id} style={{ marginTop: '16px' }}>
-                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{p.label} ({p.items.length})</p>
+                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{t(`principe_${p.id}`, lang)} ({p.items.length})</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                       {p.items.map(renderCarteSeance)}
                                     </div>
@@ -9246,7 +9263,7 @@ même listé dans buts_gauche/buts_droite.`
                                 ))}
                                 {principesOuverts[`${d.key}:_non_classe`] && nonClasses.length > 0 && (
                                   <div style={{ marginTop: '16px' }}>
-                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>Non classé ({nonClasses.length})</p>
+                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{t('biblio_non_classe', lang)} ({nonClasses.length})</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                       {nonClasses.map(renderCarteSeance)}
                                     </div>
@@ -9336,8 +9353,8 @@ même listé dans buts_gauche/buts_droite.`
                 style={{ flex: 2, minWidth: '200px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
               <select value={biblioFiltreCategorieAge} onChange={e => setBiblioFiltreCategorieAge(e.target.value)}
                 style={{ flex: 1, minWidth: '160px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
-                <option value="">Toutes catégories</option>
-                {CATEGORIES_AGE_PROCEDE.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="">{t('biblio_toutes_categories_age', lang)}</option>
+                {CATEGORIES_AGE_PROCEDE.map(c => <option key={c} value={c}>{labelAgeProcede(c)}</option>)}
               </select>
             </div>
 
@@ -9489,7 +9506,7 @@ même listé dans buts_gauche/buts_droite.`
                         <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
                       )}
 
-                      {p.theme && <p style={{ color: colors.text.faint, fontSize: '11px', margin: 0 }}>📌 {themeSeanceInfo(p.theme)?.label || p.theme}</p>}
+                      {p.theme && <p style={{ color: colors.text.faint, fontSize: '11px', margin: 0 }}>📌 {labelThemeProcede(p.theme)}</p>}
                     </div>
 
                     {/* Actions footer — toujours visibles mais discrètes */}
@@ -9790,7 +9807,7 @@ même listé dans buts_gauche/buts_droite.`
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{themeSeanceInfo(p.theme)?.label || p.theme || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
+                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{labelThemeProcede(p.theme) || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                       <button onClick={() => setProcedeActif(p)}
@@ -9836,7 +9853,7 @@ même listé dans buts_gauche/buts_droite.`
                       {cfg.emoji} {cfg.label}
                     </span>
                     <h2 style={{ fontSize: '19px', fontWeight: 800, marginBottom: '2px' }}>{procedeActif.nom}</h2>
-                    {procedeActif.theme && <p style={{ fontSize: '12px', color: themeSeanceInfo(procedeActif.theme)?.color || cfg.color, fontWeight: 600 }}>{themeSeanceInfo(procedeActif.theme)?.label || procedeActif.theme}</p>}
+                    {procedeActif.theme && <p style={{ fontSize: '12px', color: themeSeanceInfo(procedeActif.theme)?.color || cfg.color, fontWeight: 600 }}>{labelThemeProcede(procedeActif.theme)}</p>}
                     {procedeActif.educateur_id !== userId && procedeActif.educateur && (
                       <div style={{ marginTop: '4px' }}>
                         <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0 }}>Par {procedeActif.educateur.prenom} {procedeActif.educateur.nom}</p>
@@ -11093,11 +11110,11 @@ même listé dans buts_gauche/buts_droite.`
                     </div>
                     {!ficheApercuEdit.mode_diplome && themeSeanceInfo(ficheApercuEdit.categorie_tactique) && (
                       <div className="fiche-champ">
-                        <label>Principe de jeu</label>
+                        <label>{t('biblio_principe_label', lang)}</label>
                         <select value={ficheApercuEdit.principe_jeu || ''} onChange={e => setFicheApercuEdit(f => ({ ...f, principe_jeu: e.target.value }))} style={champEditStyle}>
                           <option value="">—</option>
                           {(themeSeanceInfo(ficheApercuEdit.categorie_tactique).phase === 'offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
-                            <option key={p.id} value={p.label}>{p.label}</option>
+                            <option key={p.id} value={p.label}>{t(`principe_${p.id}`, lang)}</option>
                           ))}
                         </select>
                       </div>
