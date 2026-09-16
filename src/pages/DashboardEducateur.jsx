@@ -3256,6 +3256,197 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     doc.save(`seance_fff_${(seance.objectif || 'seance').replace(/\s+/g, '_').toLowerCase()}.pdf`)
   }
 
+  // Fiche séance VIERGE imprimable (à remplir à la main, puis rescanner) — un
+  // des 4 formats gérés par fiche.mode_diplome (null = Libre, 'BMF', 'BEF',
+  // 'DEF'), mêmes champs que le formulaire "Rédiger" (~ligne 8611 et
+  // suivantes). Étiquette [DF-...] imprimée en haut à droite de chaque page :
+  // du texte simple lisible par l'IA de scan, pas un QR code — un QR/
+  // code-barres image n'est pas fiable à décoder pour un modèle de vision,
+  // alors qu'un texte imprimé est lu directement par l'OCR déjà utilisé pour
+  // analyserFicheScan.
+  const genererFicheVierge = async (modeDiplome) => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const W = 210
+    const HMAX = 282
+    const margin = 12
+    const NOIR = [30, 30, 30]
+    const GRIS = [120, 120, 120]
+    const GRIS_LIGNE = [195, 195, 195]
+    const VERT = [74, 222, 128]
+    const tag = `DF-${modeDiplome || 'LIBRE'}`
+
+    let y = 0
+    const enTete = () => {
+      doc.setFillColor(20, 20, 20)
+      doc.rect(margin, 10, W - margin * 2, 16, 'F')
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(255, 255, 255)
+      doc.text('DigitalFootball.academy', margin + 4, 16.5)
+      doc.setFontSize(12)
+      doc.text('FICHE SÉANCE', margin + 4, 23)
+      doc.setFillColor(...VERT)
+      doc.roundedRect(W - margin - 34, 13, 30, 10, 1.5, 1.5, 'F')
+      doc.setFontSize(9)
+      doc.setTextColor(0, 0, 0)
+      doc.text(`[${tag}]`, W - margin - 19, 19.5, { align: 'center' })
+      return 32
+    }
+
+    const nouvellePage = () => { doc.addPage(); y = enTete() }
+    const assurerPlace = (h) => { if (y + h > HMAX) nouvellePage() }
+
+    const champCourt = (label, x, xY, w) => {
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...GRIS)
+      doc.text(label.toUpperCase(), x, xY)
+      doc.setDrawColor(...GRIS_LIGNE)
+      doc.setLineWidth(0.3)
+      doc.line(x, xY + 6, x + w, xY + 6)
+    }
+
+    const zoneEcriture = (label, x, yDep, w, nbLignes = 2) => {
+      let yy = yDep
+      if (label) {
+        doc.setFontSize(7)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...GRIS)
+        doc.text(label.toUpperCase(), x, yy)
+        yy += 4
+      }
+      for (let i = 0; i < nbLignes; i++) {
+        yy += 6
+        doc.setDrawColor(...GRIS_LIGNE)
+        doc.setLineWidth(0.25)
+        doc.line(x, yy, x + w, yy)
+      }
+      return yy + 3
+    }
+
+    const titreSection = (texte, yDep, extra = '') => {
+      doc.setFillColor(230, 230, 230)
+      doc.rect(margin, yDep, W - margin * 2, 7, 'F')
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...NOIR)
+      doc.text(texte, margin + 3, yDep + 5)
+      if (extra) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(...GRIS)
+        doc.text(extra, W - margin - 3, yDep + 5, { align: 'right' })
+      }
+      return yDep + 10
+    }
+
+    y = enTete()
+
+    // ── Bandeau Éducateur / Catégorie / Nb joueurs ──────────────
+    const colW3 = (W - margin * 2 - 8) / 3
+    champCourt('Éducateur', margin, y, colW3)
+    champCourt('Catégorie', margin + colW3 + 4, y, colW3)
+    champCourt('Nb joueurs', margin + (colW3 + 4) * 2, y, colW3)
+    y += 12
+
+    const colW2 = (W - margin * 2 - 6) / 2
+    champCourt('Thème', margin, y, colW2)
+    champCourt('Date', margin + colW2 + 6, y, colW2 * 0.45)
+    champCourt('Durée totale', margin + colW2 + 6 + colW2 * 0.45 + 4, y, colW2 * 0.55 - 4)
+    y += 14
+
+    // ── Champs spécifiques au mode diplôme (mêmes noms que le formulaire
+    // "Rédiger" : numero_seance/heure_debut, phase_jeu/principe_jeu/
+    // objectif_general, constats/justification_pedagogique/auto_evaluation,
+    // analyse_equipe/bilan_projection) ─────────────────────────
+    if (modeDiplome === 'BEF') {
+      assurerPlace(14)
+      champCourt('Séance N°', margin, y, 40)
+      champCourt('Heure de début', margin + 50, y, 50)
+      y += 14
+    }
+
+    if (modeDiplome) {
+      assurerPlace(14)
+      champCourt('Phase de jeu', margin, y, colW2)
+      champCourt('Principe de jeu', margin + colW2 + 6, y, colW2)
+      y += 14
+      assurerPlace(24)
+      y = zoneEcriture('Objectif de séance', margin, y, W - margin * 2, 2)
+    } else {
+      assurerPlace(24)
+      y = zoneEcriture('Objectif général', margin, y, W - margin * 2, 2)
+    }
+
+    if (modeDiplome === 'BEF' || modeDiplome === 'DEF') {
+      assurerPlace(24); y = zoneEcriture('Constats (observation des joueurs)', margin, y, W - margin * 2, 2)
+      assurerPlace(24); y = zoneEcriture('Justification pédagogique', margin, y, W - margin * 2, 2)
+      assurerPlace(24); y = zoneEcriture('Auto-évaluation (post-séance)', margin, y, W - margin * 2, 2)
+    }
+    if (modeDiplome === 'DEF') {
+      assurerPlace(24); y = zoneEcriture("Analyse de l'équipe / Contexte", margin, y, W - margin * 2, 2)
+      assurerPlace(24); y = zoneEcriture('Bilan et projection', margin, y, W - margin * 2, 2)
+    }
+
+    // ── Échauffement ─────────────────────────────────────────────
+    assurerPlace(30)
+    y = titreSection('ÉCHAUFFEMENT', y, 'Durée : _______ min')
+    y = zoneEcriture('', margin, y, W - margin * 2, 2)
+
+    // ── Procédés ─────────────────────────────────────────────────
+    // BEF : gabarit officiel dense (17 champs par procédé, cf. formulaire
+    // "Rédiger" ~ligne 8766) — un procédé par page pour rester lisible.
+    // Libre/BMF/DEF : bloc simple (but/organisation/consignes/variables),
+    // les 3 tiennent sur la page courante grâce aux sauts de page auto.
+    for (let i = 1; i <= 3; i++) {
+      if (modeDiplome === 'BEF') {
+        nouvellePage()
+        y = titreSection(`PROCÉDÉ ${i}`, y, 'Durée : _____ min · Nb joueurs : _____')
+        const colBW = (W - margin * 2 - 6) / 2
+        const xG = margin, xD = margin + colBW + 6
+        let yG = y, yD = y
+        yG = zoneEcriture('Tps travail / Tps récup / Nb séries / Nb répét / RPE', xG, yG, colBW, 1)
+        yG = zoneEcriture('Pédagogie', xG, yG, colBW, 2)
+        yG = zoneEcriture('Surface (zone de terrain, aménagements)', xG, yG, colBW, 2)
+        yG = zoneEcriture('Comportements attendus', xG, yG, colBW, 2)
+        yG = zoneEcriture('But', xG, yG, colBW, 2)
+        yG = zoneEcriture('Systèmes de jeu (et postes)', xG, yG, colBW, 2)
+        yD = zoneEcriture('Consignes (départ, déroulé)', xD, yD, colBW, 3)
+        yD = zoneEcriture('Variantes', xD, yD, colBW, 2)
+        yD = zoneEcriture('Critères de réalisation (comment faire)', xD, yD, colBW, 2)
+        yD = zoneEcriture('Critères de réussite (2 max)', xD, yD, colBW, 2)
+        yD = zoneEcriture('Dominantes-impacts athlétiques', xD, yD, colBW, 2)
+        yD = zoneEcriture('Bilan (posture, engagement, remédiations)', xD, yD, colBW, 3)
+        y = Math.max(yG, yD)
+      } else {
+        assurerPlace(50)
+        y = titreSection(`PROCÉDÉ ${i}`, y, 'Durée : _____ min · Nb joueurs : _____')
+        y = zoneEcriture('But', margin, y, W - margin * 2, 1)
+        y = zoneEcriture('Organisation', margin, y, W - margin * 2, 1)
+        y = zoneEcriture('Consignes', margin, y, W - margin * 2, 1)
+        y = zoneEcriture('Variables / progressions', margin, y, W - margin * 2, 1)
+      }
+    }
+
+    // ── Retour au calme ──────────────────────────────────────────
+    assurerPlace(24)
+    y = titreSection('RETOUR AU CALME', y, 'Durée : _______ min')
+    y = zoneEcriture('', margin, y, W - margin * 2, 2)
+
+    // ── Pied de page (chaque page) ───────────────────────────────
+    const totalPages = doc.internal.getNumberOfPages()
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(150, 150, 150)
+      doc.text('Document généré par Digital Football Academy — digitalfootball.academy', W / 2, 291, { align: 'center' })
+    }
+
+    doc.save(`fiche_vierge_${(modeDiplome || 'libre').toLowerCase()}.pdf`)
+  }
+
   // Scanner IA : lit une photo de fiche papier (Gemini Vision) et pré-remplit le formulaire "Rédiger"
   const analyserFicheScan = async () => {
     if (!scanImageFile || !scanImageBase64) return
@@ -3266,14 +3457,29 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const prompt = `Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
 
-Analyse cette image d'une fiche séance manuscrite ou imprimée et extrais toutes les informations visibles.
+Cherche d'abord, en haut de l'image, une étiquette imprimée entre crochets au format [DF-XXX]
+(ex: [DF-LIBRE], [DF-BMF], [DF-BEF], [DF-DEF]) — c'est une fiche officielle Digital Football, et
+XXX indique son format exact. Si tu ne trouves aucune étiquette de ce type, c'est une fiche
+manuscrite libre : traite-la comme le format LIBRE.
+
+Analyse cette image de fiche séance (manuscrite ou imprimée) et extrais toutes les informations visibles.
 Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
 {
+  "format_detecte": "LIBRE, BMF, BEF ou DEF",
   "theme": "titre ou thème de la séance",
   "date": "date si visible (format YYYY-MM-DD)",
   "nb_joueurs": "nombre de joueurs si mentionné",
   "duree_totale": "durée totale si mentionnée",
-  "objectif_general": "objectif général de la séance",
+  "objectif_general": "objectif général / objectif de séance",
+  "numero_seance": "numéro de séance si visible (format BEF uniquement)",
+  "heure_debut": "heure de début si visible (format BEF uniquement)",
+  "phase_jeu": "phase de jeu si visible (formats BMF/BEF/DEF)",
+  "principe_jeu": "principe de jeu si visible (formats BMF/BEF/DEF)",
+  "constats": "constats si visibles (formats BEF/DEF)",
+  "justification_pedagogique": "justification pédagogique si visible (formats BEF/DEF)",
+  "auto_evaluation": "auto-évaluation si visible (formats BEF/DEF)",
+  "analyse_equipe": "analyse de l'équipe/contexte si visible (format DEF)",
+  "bilan_projection": "bilan et projection si visible (format DEF)",
   "procedes": [
     {
       "titre": "nom du procédé/exercice",
@@ -3282,12 +3488,28 @@ Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou apr�
       "but": "but de l'exercice",
       "organisation": "description de l'organisation",
       "consignes": "consignes de l'exercice",
-      "variables": "variantes ou progressions"
+      "criteres_realisation": "critères de réalisation si visibles",
+      "variables": "variantes ou progressions",
+      "tps_travail": "temps de travail si visible (format BEF uniquement)",
+      "tps_recup": "temps de récupération si visible (format BEF uniquement)",
+      "nb_series": "nombre de séries si visible (format BEF uniquement)",
+      "nb_repet": "nombre de répétitions si visible (format BEF uniquement)",
+      "rpe": "RPE si visible (format BEF uniquement)",
+      "pedagogie": "pédagogie si visible (format BEF uniquement)",
+      "surface": "surface/zone de terrain si visible (format BEF uniquement)",
+      "comportements_attendus": "comportements attendus si visibles (format BEF uniquement)",
+      "systemes_jeu": "systèmes de jeu si visibles (format BEF uniquement)",
+      "criteres_reussite": "critères de réussite si visibles (format BEF uniquement)",
+      "dominantes_impacts": "dominantes-impacts athlétiques si visibles (format BEF uniquement)",
+      "bilan_posture": "bilan posture/engagement si visible (format BEF uniquement)",
+      "bilan_remediations": "remédiations si visibles (format BEF uniquement)"
     }
   ]
 }
 
-Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
+Ne remplis les champs marqués "format BEF uniquement" que si le format détecté est BEF (laisse-les
+à null sinon, et utilise plutôt but/organisation/consignes/variables). Si une information n'est pas
+visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
       const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -3313,20 +3535,38 @@ Si une information n'est pas visible, mets null pour ce champ. Extrais jusqu'à 
 
       const url = await uploaderFichierSeance(scanImageFile)
 
+      // format_detecte vient de l'étiquette [DF-XXX] imprimée sur les fiches
+      // officielles (cf. genererFicheVierge) — absente/invalide sur une fiche
+      // manuscrite libre, mode_diplome reste alors null comme avant.
+      const modeDetecte = ['BMF', 'BEF', 'DEF'].includes(extrait.format_detecte) ? extrait.format_detecte : null
+
       setFiche({
         ...ficheVide,
+        mode_diplome: modeDetecte,
         theme: extrait.theme || '',
         date: extrait.date || '',
         nb_joueurs: extrait.nb_joueurs != null ? String(extrait.nb_joueurs) : '',
         duree_totale: extrait.duree_totale != null ? String(extrait.duree_totale) : '',
         objectif_general: extrait.objectif_general || '',
+        numero_seance: extrait.numero_seance || '',
+        heure_debut: extrait.heure_debut || '',
+        phase_jeu: extrait.phase_jeu || '',
+        principe_jeu: extrait.principe_jeu || '',
+        constats: extrait.constats || '',
+        justification_pedagogique: extrait.justification_pedagogique || '',
+        auto_evaluation: extrait.auto_evaluation || '',
+        analyse_equipe: extrait.analyse_equipe || '',
+        bilan_projection: extrait.bilan_projection || '',
         procedes: ficheVide.procedes.map((base, i) => {
           const p = extrait.procedes?.[i]
           if (!p) return base
+          // Neutralise les null (champs non détectés) en '' pour rester cohérent
+          // avec le reste des champs contrôlés du formulaire "Rédiger".
+          const pNettoye = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v == null ? '' : v]))
           return {
-            ...base, ...p, numero: i + 1,
-            duree: p.duree != null ? String(p.duree) : '',
-            nb_joueurs: p.nb_joueurs != null ? String(p.nb_joueurs) : '',
+            ...base, ...pNettoye, numero: i + 1,
+            duree: pNettoye.duree !== '' ? String(pNettoye.duree) : '',
+            nb_joueurs: pNettoye.nb_joueurs !== '' ? String(pNettoye.nb_joueurs) : '',
           }
         }),
       })
@@ -8357,6 +8597,29 @@ même listé dans buts_gauche/buts_droite.`
               <p style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '16px' }}>
                 {t('seance_prends_photo', lang)}
               </p>
+
+              {/* Fiches vierges officielles — plus fiables à scanner que du manuscrit
+                  libre, mais n'excluent pas le scan libre ci-dessous. */}
+              <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '14px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', margin: 0 }}>{t('seance_fiche_officielle_titre', lang)}</p>
+                  <p style={{ color: colors.text.faint, fontSize: '12px', margin: '2px 0 0' }}>{t('seance_fiche_officielle_desc', lang)}</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { mode: null, label: 'Libre', color: colors.accent.green },
+                    { mode: 'BMF', label: 'BMF', color: colors.accent.blue },
+                    { mode: 'BEF', label: 'BEF', color: colors.accent.purple },
+                    { mode: 'DEF', label: 'DEF', color: colors.accent.orange },
+                  ].map(f => (
+                    <button key={f.label} type="button" onClick={() => genererFicheVierge(f.mode)}
+                      style={{ background: f.color, border: 'none', borderRadius: '8px', padding: '8px 14px', color: colors.black, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div
                 onClick={() => document.getElementById('scan-fiche-input').click()}
                 style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
