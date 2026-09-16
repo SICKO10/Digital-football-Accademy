@@ -3256,6 +3256,30 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     doc.save(`seance_fff_${(seance.objectif || 'seance').replace(/\s+/g, '_').toLowerCase()}.pdf`)
   }
 
+  // Recharge une image distante (logo club, Cloudinary — cf. profiles.avatar_url
+  // via clubAffiliation.club) en data URL PNG, pour pouvoir l'injecter dans un
+  // PDF jsPDF (addImage n'accepte pas une URL distante directement). Résout à
+  // null en cas d'échec (pas de logo, CORS...) plutôt que de faire échouer
+  // toute la génération de la fiche.
+  const chargerLogoBase64 = (url) => new Promise(resolve => {
+    if (!url) { resolve(null); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        canvas.getContext('2d').drawImage(img, 0, 0)
+        resolve(canvas.toDataURL('image/png'))
+      } catch {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+
   // Fiche séance VIERGE imprimable (à remplir à la main, puis rescanner) — un
   // des 4 formats gérés par fiche.mode_diplome (null = Libre, 'BMF', 'BEF',
   // 'DEF'), mêmes champs que le formulaire "Rédiger" (~ligne 8611 et
@@ -3275,17 +3299,47 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     const GRIS_LIGNE = [195, 195, 195]
     const VERT = [74, 222, 128]
     const tag = `DF-${modeDiplome || 'LIBRE'}`
+    const nomClub = clubAffiliation?.club?.club || ''
+    const logoData = await chargerLogoBase64(clubAffiliation?.club?.avatar_url || null)
 
     let y = 0
     const enTete = () => {
       doc.setFillColor(20, 20, 20)
       doc.rect(margin, 10, W - margin * 2, 16, 'F')
+
+      // Logo club — ou carré pointillé "Logo club" tant qu'il n'a pas encore
+      // été uploadé (pas d'erreur, juste une incitation discrète).
+      const logoX = margin + 3, logoY = 11.5, logoTaille = 13
+      if (logoData) {
+        try { doc.addImage(logoData, 'PNG', logoX, logoY, logoTaille, logoTaille) } catch { /* image illisible par jsPDF, ignorée */ }
+      } else {
+        doc.setDrawColor(110, 110, 110)
+        doc.setLineWidth(0.3)
+        doc.setLineDashPattern([1, 1], 0)
+        doc.rect(logoX, logoY, logoTaille, logoTaille, 'S')
+        doc.setLineDashPattern([], 0)
+        doc.setFontSize(5.5)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(150, 150, 150)
+        doc.text('Logo', logoX + logoTaille / 2, logoY + logoTaille / 2 - 1, { align: 'center' })
+        doc.text('club', logoX + logoTaille / 2, logoY + logoTaille / 2 + 3, { align: 'center' })
+      }
+
+      const xTexte = logoX + logoTaille + 5
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(255, 255, 255)
-      doc.text('DigitalFootball.academy', margin + 4, 16.5)
+      doc.text('DigitalFootball.academy', xTexte, 16.5)
       doc.setFontSize(12)
-      doc.text('FICHE SÉANCE', margin + 4, 23)
+      doc.text('FICHE SÉANCE', xTexte, 23)
+
+      if (nomClub) {
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(220, 220, 220)
+        doc.text(nomClub, W - margin - 38, 19.5, { align: 'right' })
+      }
+
       doc.setFillColor(...VERT)
       doc.roundedRect(W - margin - 34, 13, 30, 10, 1.5, 1.5, 'F')
       doc.setFontSize(9)
