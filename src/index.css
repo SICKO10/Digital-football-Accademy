@@ -33,6 +33,11 @@ body {
   width: 1500px;
   padding: 0;
 }
+/* Une .fiche-page par page réelle du PDF (même principe que .bef-page plus bas)
+   — 2 procédés par page (.procedes-grid a 2 colonnes = 1 ligne de grille par
+   page), jamais coupés entre recto et verso. Cf. genererPdfDepuisElement qui
+   capture chaque .fiche-page séparément. */
+.fiche-page { padding-bottom: 20px; }
 .fiche-header { margin-bottom: 14px; }
 .fiche-row { display: grid; gap: 8px; margin-bottom: 8px; font-size: 12px; }
 .fiche-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }

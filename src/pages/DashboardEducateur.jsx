@@ -614,72 +614,93 @@ const getTerrainComponent = (numeroProcede, sport) => {
 }
 
 function FicheContenu({ fiche, categorieLabel }) {
+  // Pagination par page réelle du PDF, même principe que FicheBEFContenu : 2
+  // procédés par page (la grille .procedes-grid a 2 colonnes, donc 1 ligne de
+  // grille = 1 page) — l'en-tête ne se répète pas d'une page à l'autre ici
+  // (pas d'exigence de gabarit fédéral sur ce rendu générique, contrairement à
+  // BEF), il n'apparaît que sur la première. Chaque .fiche-page est capturée
+  // séparément par genererPdfDepuisElement pour ne jamais couper un procédé
+  // entre recto et verso (auparavant : une seule capture géante, découpée
+  // mécaniquement par hauteur de page sans égard aux blocs procédé).
+  const procedes = fiche.procedes || []
+  const pages = []
+  for (let i = 0; i < procedes.length; i += 2) pages.push(procedes.slice(i, i + 2))
+  if (pages.length === 0) pages.push([])
+
   return (
     <>
-      <div className="fiche-header">
-        <div className="fiche-row fiche-row-1">
-          <div className="fiche-champ large"><label>Thème</label>{fiche.theme || '—'}</div>
-          <div className="fiche-champ"><label>Date</label>{fiche.date || '—'}</div>
-          <div className="fiche-champ"><label>Catégorie</label>{categorieLabel || '—'}</div>
-          <div className="fiche-champ"><label>Nb joueurs</label>{fiche.nb_joueurs || '—'}</div>
-        </div>
-        <div className="fiche-row fiche-row-2">
-          <div className="fiche-champ"><label>Durée totale</label>{fiche.duree_totale || '—'}</div>
-          <div className="fiche-champ large"><label>Objectif général</label>{fiche.objectif_general || '—'}</div>
-        </div>
-      </div>
+      {pages.map((procedesPage, pageIndex) => (
+        <div className="fiche-page" key={pageIndex}>
+          {pageIndex === 0 && (
+            <>
+              <div className="fiche-header">
+                <div className="fiche-row fiche-row-1">
+                  <div className="fiche-champ large"><label>Thème</label>{fiche.theme || '—'}</div>
+                  <div className="fiche-champ"><label>Date</label>{fiche.date || '—'}</div>
+                  <div className="fiche-champ"><label>Catégorie</label>{categorieLabel || '—'}</div>
+                  <div className="fiche-champ"><label>Nb joueurs</label>{fiche.nb_joueurs || '—'}</div>
+                </div>
+                <div className="fiche-row fiche-row-2">
+                  <div className="fiche-champ"><label>Durée totale</label>{fiche.duree_totale || '—'}</div>
+                  <div className="fiche-champ large"><label>Objectif général</label>{fiche.objectif_general || '—'}</div>
+                </div>
+              </div>
 
-      {fiche.mode_diplome && (
-        <div style={{ border: '1px solid #000', borderRadius: '4px', padding: '10px 12px', marginBottom: '14px' }}>
-          <p style={{ fontWeight: 'bold', fontSize: '13px', margin: '0 0 8px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
-          <div className="fiche-row" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '8px' }}>
-            <div className="fiche-champ"><label>Phase de jeu</label>{fiche.phase_jeu || '—'}</div>
-            <div className="fiche-champ"><label>Principe de jeu</label>{fiche.principe_jeu || '—'}</div>
-          </div>
-          {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
-            <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {fiche.constats && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Constats</label>{fiche.constats}</div>}
-              {fiche.justification_pedagogique && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Justification pédagogique</label>{fiche.justification_pedagogique}</div>}
-              {fiche.auto_evaluation && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Auto-évaluation</label>{fiche.auto_evaluation}</div>}
-            </div>
-          )}
-          {fiche.mode_diplome === 'DEF' && (
-            <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
-              {fiche.analyse_equipe && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Analyse équipe</label>{fiche.analyse_equipe}</div>}
-              {fiche.bilan_projection && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Bilan et projection</label>{fiche.bilan_projection}</div>}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="procedes-grid">
-        {(fiche.procedes || []).map((p, i) => {
-          const consignesLignes = (p.consignes || '').split('\n')
-          return (
-          <div className="procede-block" key={i}>
-            <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
-            <div className="procede-grid">
-              <div className="procede-field"><label>Durée</label><div className="valeur">{p.duree}</div></div>
-              <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
-                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
-              </div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
-                <label>Consignes</label>
-                {[0, 1, 2, 3].map(idx => (
-                  <div key={idx} style={{ borderBottom: '1px solid #999', minHeight: '18px', marginBottom: '6px' }}>
-                    {consignesLignes[idx] || ''}
+              {fiche.mode_diplome && (
+                <div style={{ border: '1px solid #000', borderRadius: '4px', padding: '10px 12px', marginBottom: '14px' }}>
+                  <p style={{ fontWeight: 'bold', fontSize: '13px', margin: '0 0 8px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
+                  <div className="fiche-row" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '8px' }}>
+                    <div className="fiche-champ"><label>Phase de jeu</label>{fiche.phase_jeu || '—'}</div>
+                    <div className="fiche-champ"><label>Principe de jeu</label>{fiche.principe_jeu || '—'}</div>
                   </div>
-                ))}
+                  {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
+                    <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {fiche.constats && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Constats</label>{fiche.constats}</div>}
+                      {fiche.justification_pedagogique && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Justification pédagogique</label>{fiche.justification_pedagogique}</div>}
+                      {fiche.auto_evaluation && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Auto-évaluation</label>{fiche.auto_evaluation}</div>}
+                    </div>
+                  )}
+                  {fiche.mode_diplome === 'DEF' && (
+                    <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                      {fiche.analyse_equipe && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Analyse équipe</label>{fiche.analyse_equipe}</div>}
+                      {fiche.bilan_projection && <div><label style={{ fontWeight: 'bold', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Bilan et projection</label>{fiche.bilan_projection}</div>}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          <div className="procedes-grid">
+            {procedesPage.map((p) => {
+              const consignesLignes = (p.consignes || '').split('\n')
+              return (
+              <div className="procede-block" key={p.numero}>
+                <h3>Procédé {p.numero} — {p.titre || 'Sans titre'}</h3>
+                <div className="procede-grid">
+                  <div className="procede-field"><label>Durée</label><div className="valeur">{p.duree}</div></div>
+                  <div className="procede-field"><label>Nombre de joueurs</label><div className="valeur">{p.nb_joueurs}</div></div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                    {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+                  </div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                    <label>Consignes</label>
+                    {[0, 1, 2, 3].map(idx => (
+                      <div key={idx} style={{ borderBottom: '1px solid #999', minHeight: '18px', marginBottom: '6px' }}>
+                        {consignesLignes[idx] || ''}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Critères de réalisation</label><div className="valeur">{p.criteres_realisation}</div></div>
+                  <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
+                </div>
               </div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Critères de réalisation</label><div className="valeur">{p.criteres_realisation}</div></div>
-              <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Variables / progressions</label><div className="valeur">{p.variables}</div></div>
-            </div>
+              )
+            })}
           </div>
-          )
-        })}
-      </div>
+        </div>
+      ))}
     </>
   )
 }
@@ -2702,13 +2723,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   // Capture #fiche-print (déjà stylé pour l'impression, cf. index.css) en PDF via html2canvas + jsPDF
-  // Capture un conteneur imprimable en PDF. S'il contient des .bef-page (gabarit
-  // officiel BEF, cf. FicheBEFContenu — 2 procédés par page, en-tête répété),
-  // chaque page est capturée séparément et posée sur SA PROPRE page PDF, pour ne
-  // jamais rétrécir le contenu en écrasant tout sur une seule capture mécanique
-  // (ce qui arrivait avant : 4 procédés compressés sur une unique image géante).
-  // Sans .bef-page (rendu générique FicheContenu), on retombe sur l'ancien
-  // comportement : une seule capture, découpée mécaniquement par hauteur de page.
+  // Capture un conteneur imprimable en PDF. S'il contient des .bef-page ou
+  // .fiche-page (pagination par 2 procédés — gabarit BEF via FicheBEFContenu,
+  // ou rendu générique via FicheContenu), chaque page est capturée séparément
+  // et posée sur SA PROPRE page PDF, pour ne jamais rétrécir le contenu ni
+  // couper un procédé entre deux pages en écrasant tout sur une seule capture
+  // mécanique (ce qui arrivait avant pour le rendu générique : tous les
+  // procédés compressés sur une unique image géante, découpée par hauteur de
+  // page sans égard aux blocs procédé). Sans page repérable (cas résiduel,
+  // fiche sans aucun procédé), on retombe sur une capture unique de tout l'élément.
   const genererPdfDepuisElement = async (el, orientation) => {
     const html2canvas = (await import('html2canvas')).default
     const { jsPDF } = await import('jspdf')
@@ -2734,7 +2757,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       }
     }
 
-    const pageEls = el.querySelectorAll('.bef-page')
+    const pageEls = el.querySelectorAll('.bef-page, .fiche-page')
     if (pageEls.length > 0) {
       for (let i = 0; i < pageEls.length; i++) await capturerEtAjouter(pageEls[i], i === 0)
     } else {
