@@ -715,11 +715,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setProfil(data)
     setStats({
       club: data?.club || '', niveau_equipe: data?.niveau_equipe || '', categorie: data?.categorie || '',
-      region: data?.region || '', numero_licence: data?.numero_licence || '', pied: data?.pied || 'droit', matchs_officiel: data?.matchs_officiel || 0,
-      matchs_amical: data?.matchs_amical || 0, minutes_jouees: data?.minutes_jouees || 0,
-      buts_pied_droit: data?.buts_pied_droit || 0, buts_pied_gauche: data?.buts_pied_gauche || 0,
-      buts_tete: data?.buts_tete || 0, buts_total: data?.buts_total || 0,
-      passes_decisives: data?.passes_decisives || 0, cleansheets: data?.cleansheets || 0,
+      region: data?.region || '', numero_licence: data?.numero_licence || '', pied: data?.pied || 'droit',
     })
     setPointsForts(data?.points_forts ? data.points_forts.split(', ').filter(Boolean) : [])
     setAAmeliorer(data?.a_ameliorer ? data.a_ameliorer.split(', ').filter(Boolean) : [])
@@ -3740,13 +3736,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             </div>
 
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_stats', lang)}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                {[['matchs_officiel', t('jp_matchs_off', lang)], ['matchs_amical', t('jp_matchs_amical', lang)], ['minutes_jouees', t('jp_minutes', lang)], ['buts_pied_droit', t('jp_buts_droit', lang)], ['buts_pied_gauche', t('jp_buts_gauche', lang)], ['buts_tete', t('jp_buts_tete', lang)], ['buts_total', t('jp_buts_total', lang)], ['passes_decisives', t('jp_passes_dec', lang)], ['cleansheets', t('jp_cleansheets', lang)]].map(([key, label]) => (
-                  <div key={key}><label style={labelStyle}>{label}</label><input type="number" min="0" value={stats[key]} onChange={e => setStats({ ...stats, [key]: parseInt(e.target.value) || 0 })} style={inputStyle} /></div>
-                ))}
+            {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
+                automatiquement depuis stats_match_joueur via "Mes Statistiques"
+                (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
+            <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
+              <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '6px' }}>Mes Statistiques</div>
+              <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '12px' }}>
+                Tes stats sont calculées automatiquement depuis tes fiches match
               </div>
+              <button onClick={() => setOnglet('mes_stats')}
+                style={{ background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px 18px', color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Voir mes statistiques →
+              </button>
             </div>
 
             {caracteristiquesParPoste[getPosteFamille(profil?.poste)] && (
