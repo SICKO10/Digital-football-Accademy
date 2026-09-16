@@ -4008,6 +4008,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
 
             {/* ── VISIBILITÉ RECRUTEURS ── */}
+            {/* Fonctionnalité pas encore lancée publiquement — masquée sauf sur le
+                compte de test (Rayan Attia) pour continuer à la préparer. */}
+            {profil?.id === '147846d3-71e6-4c35-a84e-21084a9ea20a' && (
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
               <p style={{ ...labelStyle, marginBottom: '20px' }}>👁️ Visibilité recruteurs</p>
 
@@ -4037,6 +4040,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
               {savingRecrutement && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
             </div>
+            )}
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ ...st.btnSolid(statsSaved ? '#22c55e' : colors.accent.green), width: '100%', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
