@@ -17,7 +17,7 @@ import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } fr
 import OnboardingGuide from '../components/OnboardingGuide'
 import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
-import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
@@ -2631,58 +2631,24 @@ export default function DashboardClub() {
     }
   }
 
-  // Scan d'un organigramme papier via Groq Vision — même modèle et même file
-  // d'attente séquentielle (enqueueGroqRequest) que les autres scans IA de l'app
-  // (feuille de match, séances...), pour respecter le rate limit global du compte.
+  // Scan d'un organigramme papier — Gemini Vision via l'Edge Function
+  // scan-organigramme (prompt + clé API côté serveur).
   const scannerOrganigramme = async () => {
     if (!orgScanFile || !clubId) return
     setOrgScanLoading(true)
     setOrgScanStatus(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => resolve(reader.result.split(',')[1])
         reader.onerror = reject
         reader.readAsDataURL(orgScanFile)
       })
-      const prompt = `Analyse cet organigramme de club de football (photo ou document) et extrait tous les membres visibles.
-Réponds UNIQUEMENT avec un tableau JSON valide, aucun texte avant ou après, aucune balise markdown.
-
-Format exact attendu :
-[
-  { "nom": "Dupont", "prenom": "Jean", "role": "Président", "departement": "Direction", "superieur": "" },
-  { "nom": "Martin", "prenom": "Pierre", "role": "Directeur Sportif", "departement": "Sportif", "superieur": "Dupont Jean" }
-]
-
-Règles :
-- "superieur" = "Nom Prénom" du supérieur hiérarchique direct visible sur le document (chaîne vide si c'est le sommet de la hiérarchie)
-- "departement" = l'un des : Direction, Sportif, Administration, Communication, Finance, Médical, Autre
-- Inclure tous les membres visibles sur le document
-- Si le prénom n'est pas visible, mets une chaîne vide`
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
-          messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:${orgScanFile.type || 'image/jpeg'};base64,${base64}` } }
-            ] }
-          ],
-          temperature: 0.3,
-          max_completion_tokens: 4000
-        })
-      }, setOrgScanStatus)
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\[[\s\S]*\]/)
-      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
-      const extraits = JSON.parse(jsonMatch[0])
+      const { data: scanData, error: scanError } = await supabase.functions.invoke('scan-organigramme', {
+        body: { imageBase64: base64, mimeType: orgScanFile.type },
+      })
+      if (scanError || scanData?.error) throw new Error(scanError?.message || scanData?.error)
+      const extraits = scanData.membres || []
       const membres = extraits.map((m, i) => ({
         club_id: clubId,
         nom: (m.nom || '').trim(),

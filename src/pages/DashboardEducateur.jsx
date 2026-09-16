@@ -15,6 +15,7 @@ import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import CauserieAvantMatch from '../components/CauserieAvantMatch'
 import BibliothequeVideos from '../components/BibliothequeVideos'
+import ScannerProc from '../components/ScannerProc'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 import NotationMatch from '../components/NotationMatch'
@@ -2166,6 +2167,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioSelection, setBiblioSelection] = useState([])
   const [showVisibilityPicker, setShowVisibilityPicker] = useState(null) // procédé (bloc de la fiche) en cours de sauvegarde rapide, ou null si fermé
   const [metaProc, setMetaProc] = useState(METAPROC_VIDE) // métadonnées collectées par la modale de sauvegarde enrichie
+  const [modalScannerProc, setModalScannerProc] = useState(false)
   const [modalImportFicheEntrainement, setModalImportFicheEntrainement] = useState(null) // id de l'entraînement cible, ou null si fermé
   const [moisOuverts, setMoisOuverts] = useState(() => {
     const now = new Date()
@@ -3505,91 +3507,18 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     doc.save(`fiche_vierge_${(modeDiplome || 'libre').toLowerCase()}.pdf`)
   }
 
-  // Scanner IA : lit une photo de fiche papier (Gemini Vision) et pré-remplit le formulaire "Rédiger"
+  // Scanner IA : lit une photo de fiche papier (Gemini Vision, via l'Edge Function
+  // scan-fiche-seance — prompt et clé API côté serveur) et pré-remplit "Rédiger"
   const analyserFicheScan = async () => {
     if (!scanImageFile || !scanImageBase64) return
     setScanningFiche(true)
     setScanFicheError(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `Tu es un assistant spécialisé dans l'analyse de fiches de séances d'entraînement football.
-
-Cherche d'abord, en haut de l'image, une étiquette imprimée entre crochets au format [DF-XXX]
-(ex: [DF-LIBRE], [DF-BMF], [DF-BEF], [DF-DEF]) — c'est une fiche officielle Digital Football, et
-XXX indique son format exact. Si tu ne trouves aucune étiquette de ce type, c'est une fiche
-manuscrite libre : traite-la comme le format LIBRE.
-
-Analyse cette image de fiche séance (manuscrite ou imprimée) et extrais toutes les informations visibles.
-Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte avant ou après:
-{
-  "format_detecte": "LIBRE, BMF, BEF ou DEF",
-  "theme": "titre ou thème de la séance",
-  "date": "date si visible (format YYYY-MM-DD)",
-  "nb_joueurs": "nombre de joueurs si mentionné",
-  "duree_totale": "durée totale si mentionnée",
-  "objectif_general": "objectif général / objectif de séance",
-  "numero_seance": "numéro de séance si visible (format BEF uniquement)",
-  "heure_debut": "heure de début si visible (format BEF uniquement)",
-  "phase_jeu": "phase de jeu si visible (formats BMF/BEF/DEF)",
-  "principe_jeu": "principe de jeu si visible (formats BMF/BEF/DEF)",
-  "constats": "constats si visibles (formats BEF/DEF)",
-  "justification_pedagogique": "justification pédagogique si visible (formats BEF/DEF)",
-  "auto_evaluation": "auto-évaluation si visible (formats BEF/DEF)",
-  "analyse_equipe": "analyse de l'équipe/contexte si visible (format DEF)",
-  "bilan_projection": "bilan et projection si visible (format DEF)",
-  "procedes": [
-    {
-      "titre": "nom du procédé/exercice",
-      "duree": "durée en minutes",
-      "nb_joueurs": "nombre de joueurs",
-      "but": "but de l'exercice",
-      "organisation": "description de l'organisation",
-      "consignes": "consignes de l'exercice",
-      "criteres_realisation": "critères de réalisation si visibles",
-      "variables": "variantes ou progressions",
-      "tps_travail": "temps de travail si visible (format BEF uniquement)",
-      "tps_recup": "temps de récupération si visible (format BEF uniquement)",
-      "nb_series": "nombre de séries si visible (format BEF uniquement)",
-      "nb_repet": "nombre de répétitions si visible (format BEF uniquement)",
-      "rpe": "RPE si visible (format BEF uniquement)",
-      "pedagogie": "pédagogie si visible (format BEF uniquement)",
-      "surface": "surface/zone de terrain si visible (format BEF uniquement)",
-      "comportements_attendus": "comportements attendus si visibles (format BEF uniquement)",
-      "systemes_jeu": "systèmes de jeu si visibles (format BEF uniquement)",
-      "criteres_reussite": "critères de réussite si visibles (format BEF uniquement)",
-      "dominantes_impacts": "dominantes-impacts athlétiques si visibles (format BEF uniquement)",
-      "bilan_posture": "bilan posture/engagement si visible (format BEF uniquement)",
-      "bilan_remediations": "remédiations si visibles (format BEF uniquement)"
-    }
-  ]
-}
-
-Ne remplis les champs marqués "format BEF uniquement" que si le format détecté est BEF (laisse-les
-à null sinon, et utilise plutôt but/organisation/consignes/variables). Si une information n'est pas
-visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
-          messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:${scanImageFile.type || 'image/jpeg'};base64,${scanImageBase64}` } }
-            ]}
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 4000
-        })
-      }, setScanFicheStatus)
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('JSON non trouvé dans la réponse')
-      const extrait = JSON.parse(jsonMatch[0])
+      const { data, error } = await supabase.functions.invoke('scan-fiche-seance', {
+        body: { imageBase64: scanImageBase64, mimeType: scanImageFile.type },
+      })
+      if (error || data?.error) throw new Error(error?.message || data?.error)
+      const extrait = data.fiche
 
       const url = await uploaderFichierSeance(scanImageFile)
 
@@ -4260,52 +4189,17 @@ visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximu
     setStatsMatch({})
   }
 
+  // Gemini Vision via l'Edge Function scan-calendrier (prompt + clé API côté serveur)
   const scannerCalendrier = async () => {
     if (!calendarImages.length) return
     setCalendarLoading(true)
     setCalendarError(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const prompt = `Tu analyses une ou plusieurs photos d'un calendrier de football.
-Extrait TOUS les matchs visibles sur les photos.
-Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
-{
-  "matchs": [
-    {
-      "journee": "J1" ou null,
-      "date": "YYYY-MM-DD" ou null,
-      "heure": "HH:MM" ou null,
-      "equipe_domicile": "Nom complet de l'équipe",
-      "equipe_exterieur": "Nom complet de l'équipe",
-      "competition": "Nom de la compétition" ou null
-    }
-  ]
-}`
-      const contentParts = [
-        { type: 'text', text: prompt },
-        ...calendarImages.map(img => ({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img.base64}` } }))
-      ]
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'qwen/qwen3.6-27b',
-          messages: [
-            { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: contentParts }
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 4000
-        })
-      }, setCalendarStatus)
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-      const raw = data.choices?.[0]?.message?.content || ''
-      const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
-      const result = JSON.parse(jsonMatch[0])
-      const newMatchs = (result.matchs || []).filter(m => m.equipe_domicile && m.equipe_exterieur)
+      const { data, error } = await supabase.functions.invoke('scan-calendrier', {
+        body: { images: calendarImages.map(img => ({ base64: img.base64 })) },
+      })
+      if (error || data?.error) throw new Error(error?.message || data?.error)
+      const newMatchs = (data.matchs || []).filter(m => m.equipe_domicile && m.equipe_exterieur)
       const merged = [
         ...calendarMatchs.filter(m => !newMatchs.find(nm => nm.date === m.date && nm.equipe_domicile === m.equipe_domicile && nm.equipe_exterieur === m.equipe_exterieur)),
         ...newMatchs
@@ -4399,79 +4293,20 @@ Réponds UNIQUEMENT avec du JSON valide, sans texte autour:
     reader.readAsDataURL(file)
   })
 
-  // Cœur du scan de feuille de match (appel Groq + matching JS contre le roster) —
-  // partagé entre le scanner "nouveau match" (scannerMatch) et le scanner de la
-  // modale "Marquer comme joué" (scannerFeuilleModal), pour ne pas dupliquer la
-  // logique d'extraction/matching.
+  // Cœur du scan de feuille de match (Gemini Vision via l'Edge Function
+  // scan-feuille-match + matching JS contre le roster) — partagé entre le
+  // scanner "nouveau match" (scannerMatch) et le scanner de la modale "Marquer
+  // comme joué" (scannerFeuilleModal), pour ne pas dupliquer la logique
+  // d'extraction/matching. setStatus n'a plus de file d'attente à refléter
+  // (Edge Function directe, pas de rate-limit client) — conservé dans la
+  // signature pour ne pas toucher les deux appelants.
   const scannerFeuilleDeMatch = async (imageBase64, setStatus) => {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY
-    if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-    const prompt = `Analyse cette feuille de match football et extrais les données visibles.
-Réponds UNIQUEMENT avec un objet JSON valide, aucun texte avant ou après, aucune balise markdown.
-
-RÈGLE ABSOLUE : liste TOUS les joueurs visibles sur la feuille, dans les deux
-colonnes (equipe_gauche ET equipe_droite), sans exception — titulaires,
-remplaçants, joueurs sans but ni carton. Ne t'arrête pas après quelques noms.
-Relis l'image de haut en bas deux fois avant de répondre : une feuille de
-match contient généralement 11 à 20 noms par équipe, si tu en listes beaucoup
-moins c'est probablement que tu en as manqué. Si tu n'es pas sûr d'un nom,
-mets quand même ta meilleure lecture plutôt que de sauter le joueur.
-
-Format exact attendu :
-{
-  "date": "YYYY-MM-DD ou null",
-  "competition": "nom ou null",
-  "equipe_adversaire": "nom de l'équipe adverse ou null",
-  "domicile": true,
-  "score_domicile": 0,
-  "score_exterieur": 0,
-  "equipe_gauche": ["PRENOM NOM", ...],
-  "equipe_droite": ["PRENOM NOM", ...],
-  "buts_gauche": ["PRENOM NOM", ...],
-  "buts_droite": ["PRENOM NOM", ...],
-  "cartons_jaunes": ["PRENOM NOM", ...],
-  "cartons_rouges": ["PRENOM NOM", ...],
-  "buts_minutes": [{ "colonne": "gauche ou droite", "minute": 23 }, ...]
-}
-
-Lis chaque nom exactement comme écrit sur la feuille.
-Si une info n'est pas visible, mets un tableau vide [] ou null selon le champ.
-Deux formats de feuille sont possibles :
-1. Feuille papier classique : les buts et cartons sont listés à part, avec les
-   minutes écrites à côté (souvent près d'un symbole ⚽).
-2. Composition d'appli (type FFF) : un petit pictogramme ballon apparaît
-   directement à côté du nom d'un buteur dans la liste des joueurs, et un
-   petit carré jaune ou rouge à côté du nom d'un joueur averti/expulsé — sans
-   minute visible dans ce cas. Dans ce format, mets ce joueur dans buts_gauche/
-   buts_droite ou cartons_jaunes/cartons_rouges même sans minute associée.
-Pour "buts_minutes" : un élément par but dont la minute est effectivement
-visible, avec la colonne (gauche/droite, même convention que equipe_gauche/
-equipe_droite). Si la minute d'un but n'est pas visible, ne mets pas
-d'élément pour ce but plutôt qu'une minute inventée — le but reste quand
-même listé dans buts_gauche/buts_droite.`
-    const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
-        messages: [
-          { role: 'system', content: '/no_think\nRéponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-          { role: 'user', content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
-          ]}
-        ],
-        temperature: 0.1,
-        max_completion_tokens: 4000
-      })
-    }, setStatus)
-    console.log('GROQ RESPONSE:', JSON.stringify(data))
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
-    const raw = data.choices?.[0]?.message?.content || ''
-    const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('Réponse invalide de l\'IA')
-    const parsed = JSON.parse(jsonMatch[0])
+    setStatus?.(null)
+    const { data, error } = await supabase.functions.invoke('scan-feuille-match', {
+      body: { imageBase64 },
+    })
+    if (error || data?.error) throw new Error(error?.message || data?.error)
+    const parsed = data.resultat
 
     // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
     // le plus de noms matchent notre roster (matching JS, pas d'IA)
@@ -9659,10 +9494,16 @@ même listé dans buts_gauche/buts_droite.`
                   {biblioSelectionMode ? t('biblio_annuler_selection', lang) : t('biblio_selection_multiple', lang)}
                 </button>
                 {biblioRubrique === 'personal' && canEdit('entrainements') && (
-                  <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
-                    style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    + {t('biblio_nouveau_procede', lang)}
-                  </button>
+                  <>
+                    <button onClick={() => setModalScannerProc(true)}
+                      style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      📸 {t('scanproc_bouton', lang)}
+                    </button>
+                    <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
+                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      + {t('biblio_nouveau_procede', lang)}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -9959,6 +9800,23 @@ même listé dans buts_gauche/buts_droite.`
               style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
               {t('biblio_creer_seance_selection', lang)}
             </button>
+          </div>
+        )}
+
+        {/* ── Modal Scanner un procédé (photo → IA → bibliothèque) ── */}
+        {modalScannerProc && (
+          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
+            onClick={() => setModalScannerProc(false)}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}
+              onClick={e => e.stopPropagation()}>
+              <ScannerProc
+                userId={userId}
+                clubId={clubAffiliation?.club_id}
+                lang={lang}
+                onFermer={() => setModalScannerProc(false)}
+                onImporte={() => { setModalScannerProc(false); chargerBiblio(userId, biblioRubrique === 'videos' ? 'personal' : biblioRubrique); afficherToast('Ajouté à la bibliothèque') }}
+              />
+            </div>
           </div>
         )}
 
