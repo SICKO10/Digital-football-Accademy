@@ -339,6 +339,10 @@ const COULEURS_BUDGET = [
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
+// Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
+// retiré de la nav (repasser à true pour le republier).
+const RECRUTEMENT_ACTIF = false
+
 // Panneau d'alertes de l'accueil club, remplace "Nouveaux joueurs" (peu
 // actionnable — juste un historique). Adapté au vrai schéma de chaque table
 // plutôt qu'aux noms suggérés (grep fait avant d'écrire les requêtes) :
@@ -538,7 +542,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   const ACTIONS = [
     { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
     { emoji: '📧', label: t('club_inviter_educateur_titre', lang), categorie: 'sportif', tab: 'educateurs' },
-    { emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' },
+    ...(RECRUTEMENT_ACTIF ? [{ emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' }] : []),
     { emoji: '🏢', label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
   ]
 
@@ -3269,7 +3273,7 @@ Règles :
       { id: 'planning', label: 'Planning', Icon: IcoCalendar },
       { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
       { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
-      { id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch },
+      ...(RECRUTEMENT_ACTIF ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
@@ -3332,7 +3336,7 @@ Règles :
   const clubOnboardingSteps = [
     { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de l'espace club en 2 minutes.", targetId: null, position: "center" },
     { id: 2, title: "Accueil", message: "Vue d'ensemble : stats du club, actions rapides et activité récente.", targetId: "cat-accueil", position: "bottom" },
-    ...(sportifVisible ? [{ id: 3, title: "Sportif", message: "Catégories (tes équipes), Classements, Planning des terrains, Recrutement et Éducateurs affiliés — tout le suivi sportif du club.", targetId: "cat-sportif", position: "bottom" }] : []),
+    ...(sportifVisible ? [{ id: 3, title: "Sportif", message: "Catégories (tes équipes), Classements, Planning des terrains et Éducateurs affiliés — tout le suivi sportif du club.", targetId: "cat-sportif", position: "bottom" }] : []),
     ...(administratifVisible ? [{ id: 4, title: "Administratif", message: "Sponsors, Déplacements, Répartition mini-bus, Profil du club, Budget et Staff — toute la gestion administrative.", targetId: "cat-administratif", position: "bottom" }] : []),
     { id: 5, title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
   ]

@@ -50,6 +50,10 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 // en conditions réelles, à retirer de cette liste (ou vider) une fois prête.
 const SEANCE_IA_BETA_EMAILS = ['clubtest@gmail.com']
 
+// Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
+// retiré de la nav (repasser à true pour le republier).
+const RECRUTEMENT_ACTIF = false
+
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
 // l'onglet actif). Voir OnboardingGuide.jsx pour le composant générique.
@@ -110,13 +114,13 @@ const EDUCATEUR_ONBOARDING_STEPS = [
     targetId: "nav-notes",
     position: "bottom",
   },
-  {
+  ...(RECRUTEMENT_ACTIF ? [{
     id: 9,
     title: "Recrutement",
     message: "Explore les profils de joueurs disponibles et repère de nouveaux talents pour ton équipe.",
     targetId: "nav-recrutement",
     position: "bottom",
-  },
+  }] : []),
   {
     id: 10,
     title: "Déplacements",
@@ -5007,7 +5011,7 @@ même listé dans buts_gauche/buts_droite.`
     ] },
     { titre: t('section_suivi_reseau', lang), items: [
       { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
-      { key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> },
+      ...(RECRUTEMENT_ACTIF ? [{ key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> }] : []),
       { key: 'explorer', label: 'Explorer', icon: <IcoCompass /> },
     ] },
   ]
