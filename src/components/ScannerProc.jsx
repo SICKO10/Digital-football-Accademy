@@ -27,10 +27,34 @@ const normaliser = (valeur, options) => {
 
 const PROCEDE_SCAN_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true }
 
+// Redimensionne (sans jamais agrandir) avant envoi à l'Edge Function — une
+// photo de téléphone brute (souvent plusieurs Mo, 3000-4000px de large)
+// dépasse la limite de taille de requête et fait planter scan-procede avec
+// un 500 avant même d'atteindre Gemini. Même approche que les scans côté
+// DashboardEducateur.jsx (redimensionnerImagePourScan).
+const redimensionnerImage = (file, maxWidth = 1600) => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.onload = ev => {
+    const img = new Image()
+    img.onload = () => {
+      const ratio = Math.min(maxWidth / img.width, 1)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * ratio
+      canvas.height = img.height * ratio
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
+      resolve({ base64: dataUrl.split(',')[1], preview: dataUrl })
+    }
+    img.onerror = reject
+    img.src = ev.target.result
+  }
+  reader.onerror = reject
+  reader.readAsDataURL(file)
+})
+
 export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer }) {
   const colors = useColors()
   const [image, setImage] = useState(null)
-  const [imageFile, setImageFile] = useState(null)
   const [imageBase64, setImageBase64] = useState(null)
   const [scanning, setScanning] = useState(false)
   const [resultat, setResultat] = useState(null)
@@ -38,16 +62,18 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
   const [saving, setSaving] = useState(false)
   const inputRef = useRef()
 
-  const handleImage = (e) => {
+  const handleImage = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    setImage(URL.createObjectURL(file))
-    setImageFile(file)
     setResultat(null)
     setErreur(null)
-    const reader = new FileReader()
-    reader.onload = (ev) => setImageBase64(ev.target.result.split(',')[1])
-    reader.readAsDataURL(file)
+    try {
+      const { base64, preview } = await redimensionnerImage(file)
+      setImage(preview)
+      setImageBase64(base64)
+    } catch {
+      setErreur(t('scanproc_image_illisible', lang))
+    }
   }
 
   const analyser = async () => {
@@ -56,7 +82,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
     setErreur(null)
     try {
       const { data, error } = await supabase.functions.invoke('scan-procede', {
-        body: { imageBase64, mimeType: imageFile?.type },
+        body: { imageBase64, mimeType: 'image/jpeg' }, // recompressée en JPEG par redimensionnerImage, quel que soit le format d'origine
       })
       if (error || data?.error) throw new Error(error?.message || data?.error)
       const p = data.procede || {}

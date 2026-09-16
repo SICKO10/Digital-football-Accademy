@@ -28,7 +28,21 @@ serve(async (req) => {
 
   try {
     const { imageBase64, mimeType } = await req.json()
+    if (!imageBase64) {
+      return new Response(JSON.stringify({ error: 'Image manquante' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    // Le frontend (ScannerProc.jsx) redimensionne déjà avant l'envoi — ce
+    // garde-fou couvre un appel direct sans passer par ce chemin, pour
+    // renvoyer une erreur claire plutôt qu'un crash Gemini/plateforme opaque.
+    if (imageBase64.length > 6_000_000) {
+      return new Response(JSON.stringify({ error: 'Image trop lourde. Réduis la résolution avant de scanner.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+    if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY non configurée dans les secrets Supabase')
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
@@ -47,6 +61,10 @@ serve(async (req) => {
       }
     )
 
+    if (!response.ok) {
+      const errText = await response.text()
+      throw new Error(`Gemini API error ${response.status}: ${errText.slice(0, 300)}`)
+    }
     const data = await response.json()
     if (data.error) throw new Error(data.error.message)
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
