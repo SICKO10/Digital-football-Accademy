@@ -1,7 +1,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
-import ScoutCenter from '../components/ScoutCenter'
+import MoteurRecrutement from './MoteurRecrutement'
 import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
@@ -27,6 +27,7 @@ import Newsletter from '../components/club/Newsletter'
 import TachesClub from '../components/club/TachesClub'
 import ProjetSportif from '../components/club/ProjetSportif'
 import ProjetClubCFF4 from '../components/ProjetClubCFF4'
+import TournoiClub from '../components/club/TournoiClub'
 import NotificationBanner from '../components/NotificationBanner'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 
@@ -341,7 +342,7 @@ const COULEURS_BUDGET = [
 
 // Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
 // retiré de la nav (repasser à true pour le republier).
-const RECRUTEMENT_ACTIF = false
+const RECRUTEMENT_ACTIF = true
 
 // Panneau d'alertes de l'accueil club, remplace "Nouveaux joueurs" (peu
 // actionnable — juste un historique). Adapté au vrai schéma de chaque table
@@ -1343,7 +1344,7 @@ export default function DashboardClub() {
   // composant) pour rester sûre même sur un render qui retourne tôt (loading).
   useEffect(() => {
     if (!monRole) return
-    const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'classements', 'recrutement', 'educateurs'] : []
+    const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(RECRUTEMENT_ACTIF ? ['recrutement'] : []), 'educateurs'] : []
     if (canViewSection('terrains')) idsSportif.push('terrains')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
@@ -3238,6 +3239,7 @@ export default function DashboardClub() {
       { id: 'categories', label: t('club_tab_categories', lang), Icon: IcoClipboard },
       { id: 'planning', label: 'Planning', Icon: IcoCalendar },
       { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
+      { id: 'tournoi', label: 'Tournois', Icon: IcoTrophy },
       { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
       ...(RECRUTEMENT_ACTIF ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
@@ -3580,6 +3582,11 @@ export default function DashboardClub() {
         {activeTab === 'projet_sportif' && canViewSection('sportif') && (
           <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
             logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
+        )}
+
+        {/* ── TOURNOIS ── */}
+        {activeTab === 'tournoi' && canViewSection('sportif') && (
+          <TournoiClub clubId={clubId} categories={categories} readOnly={!canEditSection('sportif')} />
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}
@@ -4153,7 +4160,7 @@ export default function DashboardClub() {
           <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} accentColor={couleurPrincipale} />
         )}
         {activeTab === 'recrutement' && canViewSection('sportif') && (
-          <ScoutCenter userId={clubId} profil={club} embedded={true} />
+          <MoteurRecrutement userId={clubId} />
         )}
         {activeTab === 'profil' && canViewSection('profil') && (() => {
           const moyenne = avisRecus.length ? avisRecus.reduce((s, a) => s + (a.note || 0), 0) / avisRecus.length : null

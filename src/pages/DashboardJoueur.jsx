@@ -421,6 +421,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [notifications, setNotifications] = useState([])
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({ email_analyse: true, email_like: true, email_commentaire: true, email_message: true })
+  // Visibilité recruteurs (Moteur de Recrutement, Mon Réseau côté éducateur/club)
+  // — table profil_recrutement, distincte de profiles ; visible_recruteurs=false
+  // par défaut, le joueur doit explicitement s'exposer.
+  const [recrutementProfil, setRecrutementProfil] = useState({ visible_recruteurs: false, statut_recrutement: 'Non disponible' })
+  const [savingRecrutement, setSavingRecrutement] = useState(false)
   const [parentsInvites, setParentsInvites] = useState([])
   const [emailParentInput, setEmailParentInput] = useState('')
   const [invitantParent, setInvitantParent] = useState(false)
@@ -699,6 +704,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setUserId(targetId)
     await chargerNotifications(targetId)
     await chargerNotifPrefs(targetId)
+    await chargerRecrutementProfil(targetId)
     const { data } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
@@ -859,6 +865,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const chargerNotifPrefs = async (uid) => {
     const { data } = await supabase.from('notification_preferences').select('*').eq('user_id', uid).maybeSingle()
     if (data) setNotifPrefs(data)
+  }
+
+  const chargerRecrutementProfil = async (uid) => {
+    const { data } = await supabase.from('profil_recrutement').select('visible_recruteurs, statut_recrutement').eq('joueur_id', uid).maybeSingle()
+    if (data) setRecrutementProfil(data)
+  }
+
+  // Même logique optimiste que sauvegarderNotifPrefs : upsert direct, table
+  // séparée de profiles (pas besoin de repasser par handleSaveStats).
+  const sauvegarderRecrutementProfil = async (patch) => {
+    const avant = recrutementProfil
+    const next = { ...recrutementProfil, ...patch }
+    setRecrutementProfil(next)
+    setSavingRecrutement(true)
+    const { error } = await supabase.from('profil_recrutement').upsert({ joueur_id: userId, ...next }, { onConflict: 'joueur_id' })
+    setSavingRecrutement(false)
+    if (error) { setRecrutementProfil(avant); alert('Erreur : ' + error.message) }
   }
 
   const marquerNotifLue = async (notifId) => {
@@ -3982,6 +4005,37 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 ))}
               </div>
               {savingPrefs && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
+            </div>
+
+            {/* ── VISIBILITÉ RECRUTEURS ── */}
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>👁️ Visibilité recruteurs</p>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>Mon statut</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                  {['Non disponible', "À l'écoute", 'Recherche active'].map(s => (
+                    <div key={s} onClick={() => sauvegarderRecrutementProfil({ statut_recrutement: s })}
+                      style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
+                        background: recrutementProfil.statut_recrutement === s ? colors.accent.green + alpha.soft : colors.background.raised,
+                        border: recrutementProfil.statut_recrutement === s ? `1px solid ${colors.accent.green}` : `1px solid ${colors.border.strong}`,
+                        color: recrutementProfil.statut_recrutement === s ? colors.accent.green : colors.text.secondary,
+                        fontWeight: recrutementProfil.statut_recrutement === s ? 700 : 400,
+                      }}>
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div onClick={() => sauvegarderRecrutementProfil({ visible_recruteurs: !recrutementProfil.visible_recruteurs })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
+                <span style={{ fontSize: '14px' }}>Rendre mon profil visible aux recruteurs et clubs</span>
+                <div style={{ width: '40px', height: '22px', background: recrutementProfil.visible_recruteurs ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.visible_recruteurs ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                </div>
+              </div>
+              {savingRecrutement && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
             </div>
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}

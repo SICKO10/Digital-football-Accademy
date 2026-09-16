@@ -16,6 +16,7 @@ import PlanningTerrains from '../components/PlanningTerrains'
 import CauserieAvantMatch from '../components/CauserieAvantMatch'
 import BibliothequeVideos from '../components/BibliothequeVideos'
 import ScannerProc from '../components/ScannerProc'
+import MoteurRecrutement from './MoteurRecrutement'
 import SondageSemaine from '../components/SondageSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 import NotationMatch from '../components/NotationMatch'
@@ -53,7 +54,7 @@ const SEANCE_IA_BETA_EMAILS = ['clubtest@gmail.com']
 
 // Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
 // retiré de la nav (repasser à true pour le republier).
-const RECRUTEMENT_ACTIF = false
+const RECRUTEMENT_ACTIF = true
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
@@ -1671,24 +1672,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [savingAnnonce, setSavingAnnonce] = useState(false)
   const [newParcours, setNewParcours] = useState({ type: 'coach', club: '', poste: '', saison_debut: '', saison_fin: '', niveau: '' })
 
-  // Recrutement
-  const [recrutJoueurs, setRecrutJoueurs] = useState([])
-  const [recrutLoaded, setRecrutLoaded] = useState(false)
-  const [recrutSearch, setRecrutSearch] = useState('')
-  const [recrutPoste, setRecrutPoste] = useState('Tous')
-  const [recrutCategorie, setRecrutCategorie] = useState('Toutes')
-  const [recrutRegion, setRecrutRegion] = useState('Toutes')
-  const [recrutSelectedJoueur, setRecrutSelectedJoueur] = useState(null)
-  const [recrutParcours, setRecrutParcours] = useState([])
-  const [recrutStyleDeJeu, setRecrutStyleDeJeu] = useState('Tous')
-
-  const CARACTERISTIQUES_PAR_POSTE = {
-    Gardien:   ['Détente', 'Relance longue', 'Relance courte', 'Placement', 'Jeu aérien', 'Un contre un', 'Communication', 'Leadership', 'Reflexes', 'Prise de balle', 'Agilité', 'Lecture du jeu'],
-    Défenseur: ['Impact physique / Duel', 'Jeu aérien', 'Anticipation / Lecture du jeu', 'Relance longue', 'Relance courte', 'Vitesse', 'Gestion infériorité numérique', 'Leadership', 'Centre', '1 contre 1', 'Pressing', 'Marquage', 'Placement', 'Récupération de balle', 'Jeu propre', 'Combativité'],
-    Milieu:    ['Vision du jeu', 'Pressing', 'Passes longues', 'Box-to-box', 'Dribble', 'Récupération', 'Créativité', 'Endurance', 'Pointe basse', "Déséquilibre l'adversaire", 'Vitesse', 'Impact physique / Duel', 'Technique', 'CPA', 'Corner', 'Frappe de loin', 'Finition', 'Centre', 'Passes courtes', 'Transition rapide', 'Jeu entre les lignes', 'Leadership'],
-    Attaquant: ['Finition', 'Vitesse', 'Dribble', 'Jeu dos au but', 'Jeu aérien', 'Appels de balle', 'Technique', 'Pressing', 'CPA', 'Corner', 'Renard des surfaces', 'Profondeur', 'Duel 1 contre 1', 'Frappe de loin', 'Décalage', 'Combinaison', 'Mouvement sans ballon', 'Leadership offensif'],
-  }
-
   useEffect(() => { init() }, [])
 
   // sondageEstClos() est calculée en direct depuis l'heure courante (cf. lib/sondage.js),
@@ -1701,7 +1684,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const id = setInterval(() => forcerReevaluationCloture(t => t + 1), 60 * 1000)
     return () => clearInterval(id)
   }, [])
-  useEffect(() => { if (activeSection === 'recrutement') chargerRecrutJoueurs() }, [activeSection])
   useEffect(() => {
     if (activeSection !== 'explorer') return
     if (educateursExplorer.length === 0 && clubsExplorer.length === 0) chargerExplorer()
@@ -4877,13 +4859,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   const sidebarSectionsVisibles = sidebarSections
     .map(section => ({ ...section, items: section.items.filter(itemVisible) }))
     .filter(section => section.items.length > 0)
-
-  const chargerRecrutJoueurs = async () => {
-    if (recrutLoaded) return
-    const { data } = await supabase.from('profiles').select('id, prenom, nom, poste, categorie, region, club, niveau_equipe, pied, buts_total, passes_decisives, matchs_officiel, cleansheets, minutes_jouees, points_forts, a_ameliorer, avatar_url, clip_url, created_at').eq('plan', 'joueur_pro').eq('abonnement_actif', true)
-    setRecrutJoueurs(data || [])
-    setRecrutLoaded(true)
-  }
 
   // Annuaire éducateurs/clubs — même source que l'onglet "Explorer" du
   // dashboard joueur (profiles.plan), club_recrutements pour les postes
@@ -8114,175 +8089,8 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           </>
         )}
 
-        {/* ===== MON PROFIL ÉDUCATEUR ===== */}
-        {activeSection === 'recrutement' && (() => {
-          const postes = ['Tous', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant']
-          const categories = ['Toutes', ...CATEGORIES]
-          const regions = ['Toutes', ...Array.from(new Set(recrutJoueurs.map(j => j.region).filter(Boolean))).sort()]
-          const stylesDisponibles = recrutPoste !== 'Tous' && CARACTERISTIQUES_PAR_POSTE[recrutPoste]
-            ? ['Tous', ...CARACTERISTIQUES_PAR_POSTE[recrutPoste]]
-            : ['Tous']
-          const filtered = recrutJoueurs.filter(j => {
-            if (recrutPoste !== 'Tous' && j.poste !== recrutPoste) return false
-            if (recrutCategorie !== 'Toutes' && j.categorie !== recrutCategorie) return false
-            if (recrutRegion !== 'Toutes' && j.region !== recrutRegion) return false
-            if (recrutStyleDeJeu !== 'Tous' && !(j.points_forts || '').toLowerCase().includes(recrutStyleDeJeu.toLowerCase())) return false
-            if (recrutSearch) {
-              const s = recrutSearch.toLowerCase()
-              return `${j.prenom} ${j.nom}`.toLowerCase().includes(s) || (j.club || '').toLowerCase().includes(s) || (j.poste || '').toLowerCase().includes(s) || (j.region || '').toLowerCase().includes(s)
-            }
-            return true
-          })
-          const posteColor = (p) => {
-            const map = { Gardien: { bg: '#f59e0b20', text: '#f59e0b' }, Défenseur: { bg: colors.accent.blue + alpha.soft, text: colors.accent.blue }, Milieu: { bg: colors.accent.green + alpha.soft, text: colors.accent.green }, Attaquant: { bg: colors.accent.orange + alpha.soft, text: colors.accent.orange } }
-            return map[p] || { bg: '#ffffff10', text: colors.text.secondary }
-          }
-          if (recrutSelectedJoueur) {
-            const j = recrutSelectedJoueur
-            return (
-              <div>
-                <button onClick={() => setRecrutSelectedJoueur(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '13px' }}>← {t('recrut_retour_feed', lang)}</button>
-                <div style={{ maxWidth: '680px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
-                    <Avatar person={j} size={60} bg={colors.accent.green + alpha.soft} border="2px solid #4ade8040" textColor={colors.accent.green} style={{ fontSize: '22px' }} />
-                    <div>
-                      <h2 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                        {j.categorie && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
-                        {j.region && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{j.region}</span>}
-                        {j.pied && <span style={{ background: '#ffffff10', color: colors.text.secondary, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Pied {j.pied}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
-                    {[{ label: 'Matchs officiels', val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('comp_passes_dec', lang), val: j.passes_decisives || 0 }, { label: t('comp_clean_sheet', lang), val: j.cleansheets || 0 }, { label: t('comp_minutes', lang), val: j.minutes_jouees || 0 }, { label: 'Club', val: j.club || '—' }].map(s => (
-                      <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
-                        <div style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {j.points_forts && <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_points_forts', lang)}</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{j.points_forts.split(', ').filter(Boolean).map(t => <span key={t} style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, border: '1px solid #4ade8040', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>{t}</span>)}</div>
-                  </div>}
-                  {j.a_ameliorer && <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_axes_progression', lang)}</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{j.a_ameliorer.split(', ').filter(Boolean).map(t => <span key={t} style={{ background: '#f59e0b15', color: '#f59e0b', border: '1px solid #f59e0b30', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>{t}</span>)}</div>
-                  </div>}
-                  {recrutParcours.length > 0 && <div>
-                    <p style={{ margin: '0 0 10px', fontSize: '11px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_parcours', lang)}</p>
-                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {recrutParcours.map(p => <div key={p.id} style={{ fontSize: '13px' }}><span style={{ fontWeight: 700 }}>{p.club}</span> <span style={{ color: colors.text.faint }}>· {[p.saison, p.niveau_championnat, p.poste].filter(Boolean).join(' · ')}</span></div>)}
-                    </div>
-                  </div>}
-                  {j.clip_url && (() => {
-                    const embed = youtubeEmbedUrl(j.clip_url)
-                    const estVeo = j.clip_url.includes('veo.co')
-                    return (
-                      <div style={{ marginTop: '1.5rem' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_video', lang)}</p>
-                        {embed ? (
-                          <iframe src={embed} title={t('recrut_video', lang)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
-                            style={{ width: '100%', aspectRatio: '16/9', borderRadius: '10px', border: 'none', background: colors.black }} />
-                        ) : estVeo ? (
-                          <a href={j.clip_url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', fontFamily: 'Inter, sans-serif' }}>
-                            {t('recrut_voir_sur_veo', lang)} <IcoExternal />
-                          </a>
-                        ) : (
-                          <video src={j.clip_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '360px', background: colors.black }} />
-                        )}
-                      </div>
-                    )
-                  })()}
-                </div>
-              </div>
-            )
-          }
-          return (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('nav_recrutement', lang)}</h1>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => navigate('/feed')} style={{ background: '#ffffff10', border: `1px solid ${colors.border.default}`, color: colors.text.primary, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>{t('recrut_feed', lang)}</button>
-                  <a href="/jogabonito" target="_blank" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Jogabonito →</a>
-                </div>
-              </div>
-              {/* Filtres */}
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-                <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_recherche', lang)}</p>
-                  <input value={recrutSearch} onChange={e => setRecrutSearch(e.target.value)} placeholder="Nom, club, région..." style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                </div>
-                <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_poste', lang)}</p>
-                  <select value={recrutPoste} onChange={e => { setRecrutPoste(e.target.value); setRecrutStyleDeJeu('Tous') }} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
-                    {postes.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-                {recrutPoste !== 'Tous' && (
-                  <div>
-                    <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('recrut_style_jeu', lang)}</p>
-                    <select value={recrutStyleDeJeu} onChange={e => setRecrutStyleDeJeu(e.target.value)} style={{ width: '100%', background: colors.background.base, border: '1px solid #60a5fa40', borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
-                      {stylesDisponibles.map(s => <option key={s}>{s}</option>)}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('equipe_categorie', lang)}</p>
-                  <select value={recrutCategorie} onChange={e => setRecrutCategorie(e.target.value)} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
-                    {categories.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('profil_region', lang)}</p>
-                  <select value={recrutRegion} onChange={e => setRecrutRegion(e.target.value)} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' }}>
-                    {regions.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </div>
-              </div>
-              <p style={{ margin: '0 0 1rem', fontSize: '12px', color: colors.text.faint }}>{filtered.length} {t('recrut_joueurs_trouves', lang)}</p>
-              {/* Grid joueurs */}
-              {!recrutLoaded ? (
-                <p style={{ color: colors.accent.blue, textAlign: 'center', padding: '3rem' }}>{t('btn_chargement', lang)}</p>
-              ) : filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: colors.text.disabled }}>
-                  <p>{t('recrut_aucun_trouve', lang)}</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {filtered.map(j => (
-                    <div key={j.id} onClick={async () => { setRecrutSelectedJoueur(j); const { data } = await supabase.from('parcours').select('*').eq('joueur_id', j.id).order('saison', { ascending: false }); setRecrutParcours(data || []) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.green + alpha.medium}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
-                      <Avatar person={j} size={40} bg={colors.accent.green + alpha.subtle} border="1px solid #4ade8030" textColor={colors.accent.green} />
-                      <div style={{ flex: 1, minWidth: '160px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                          {j.poste && <span style={{ background: posteColor(j.poste).bg, color: posteColor(j.poste).text, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>{j.poste}</span>}
-                          {j.categorie && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{labelCategorie(j.categorie)}</span>}
-                          {j.region && <span style={{ background: '#ffffff08', color: colors.text.dim, fontSize: '11px', padding: '2px 8px', borderRadius: '20px' }}>{j.region}</span>}
-                        </div>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.club || '—'} {j.niveau_equipe ? `· ${j.niveau_equipe}` : ''}</p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '18px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
-                        {[{ label: t('recrut_matchs', lang), val: j.matchs_officiel || 0 }, { label: t('comp_buts', lang), val: j.buts_total || 0 }, { label: t('recrut_passes', lang), val: j.passes_decisives || 0 }].map(s => (
-                          <div key={s.label} style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '15px', fontWeight: 800, color: colors.accent.green }}>{s.val}</div>
-                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase' }}>{s.label}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })()}
+        {/* ===== RECRUTEMENT (Mon Réseau) ===== */}
+        {activeSection === 'recrutement' && <MoteurRecrutement userId={userId} />}
 
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
