@@ -280,16 +280,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           </div>
         ) : readOnly ? (
           <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.a ?? ''}
-              onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), a: e.target.value } }))} />
-            <span style={{ color: colors.text.disabled }}>-</span>
-            <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.b ?? ''}
-              onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), b: e.target.value } }))} />
-            <button onClick={() => saisirScore(mt.id)} style={st.iconBtn(colors.accent.green)}><IcoCheck /></button>
-          </div>
-        )}
+        ) : (() => {
+          const aVide = edit?.a === undefined || edit?.a === ''
+          const bVide = edit?.b === undefined || edit?.b === ''
+          const pret = !aVide && !bVide
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${aVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.a ?? ''}
+                onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), a: e.target.value } }))} />
+              <span style={{ color: colors.text.disabled }}>-</span>
+              <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${bVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.b ?? ''}
+                onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), b: e.target.value } }))} />
+              <button onClick={() => saisirScore(mt.id)} disabled={!pret} title={pret ? 'Valider le score' : 'Saisis les deux scores (même 0) pour valider'}
+                style={{ ...st.iconBtn(colors.accent.green), opacity: pret ? 1 : 0.35, cursor: pret ? 'pointer' : 'not-allowed' }}>
+                <IcoCheck />
+              </button>
+            </div>
+          )
+        })()}
         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
       </div>
     )
@@ -703,6 +711,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               <div style={{ ...st.card, textAlign: 'center', padding: '40px' }}><p style={{ color: colors.text.faint }}>Générez d'abord le planning.</p></div>
             ) : (
               <>
+                {!readOnly && (
+                  <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', color: colors.accent.blue, fontSize: '12px', lineHeight: 1.5 }}>
+                    Pour valider un score : clique sur les deux champs (marqués « ? » tant qu'ils sont vides) et saisis un chiffre dans chacun — y compris 0 pour un 0-0. La coche verte ne s'active qu'une fois les deux scores renseignés.
+                  </div>
+                )}
                 {poules.map(poule => (
                   <div key={poule} style={{ ...st.card, marginBottom: '12px' }}>
                     <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
