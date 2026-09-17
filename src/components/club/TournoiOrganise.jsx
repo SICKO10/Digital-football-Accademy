@@ -20,6 +20,7 @@ const VIDE_TOURNOI = {
   nom: '', date: '', lieu: '', categorie_age: '',
   nb_terrains: 2, duree_match: 15, pause_minutes: 5,
   heure_debut: '09:00', nb_equipes_poule: 4,
+  heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
 
@@ -32,7 +33,14 @@ const genererCode = () => Math.random().toString(36).substring(2, 8).toUpperCase
 // aucun match en attente n'a ses deux équipes libres sur le terrain qui vient
 // de se libérer, on avance ce terrain jusqu'à la prochaine équipe disponible
 // plutôt que de forcer un match en conflit.
-function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDebut = '09:00') {
+const timeToMin = (t) => {
+  if (!t) return null
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+const minToTime = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+
+function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDebut = '09:00', heureFin = null, pauseMidiDebut = '12:00', pauseMidiDuree = 90) {
   const poules = {}
   equipes.forEach(e => { (poules[e.poule] ||= []).push(e) })
   const restants = []
@@ -44,17 +52,36 @@ function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDeb
     }
   })
 
-  const [h, m] = heureDebut.split(':').map(Number)
-  const debutJournee = h * 60 + m
-  const terrainLibreA = Array(nbTerrains).fill(debutJournee)
+  const debutJournee = timeToMin(heureDebut)
+  const finJournee = heureFin ? timeToMin(heureFin) : null
+  const midiDebut = timeToMin(pauseMidiDebut)
+  const midiFin = midiDebut + pauseMidiDuree
+
+  // Décale un horaire après la pause méridienne s'il tombe dedans ou si le
+  // match empièterait sur son début — appliqué à chaque fois qu'un terrain
+  // (ou une équipe) se libère, pour que la pause soit bloquée sur tous les
+  // terrains en même temps plutôt que gérée équipe par équipe.
+  const eviterPauseMidi = (t) => {
+    if (t >= midiDebut && t < midiFin) return midiFin
+    if (t < midiDebut && t + dureeMatch > midiDebut) return midiFin
+    return t
+  }
+
+  const terrainLibreA = Array(nbTerrains).fill(debutJournee).map(eviterPauseMidi)
   const equipeLibreA = {}
   equipes.forEach(e => { equipeLibreA[e.id] = debutJournee })
 
   const matchs = []
+  const nonPlanifies = []
   let garde = restants.length * nbTerrains + 200 // filet de sécurité anti boucle infinie
   while (restants.length > 0 && garde-- > 0) {
     const terrainIdx = terrainLibreA.indexOf(Math.min(...terrainLibreA))
     const dispoTerrain = terrainLibreA[terrainIdx]
+
+    if (finJournee && dispoTerrain + dureeMatch > finJournee) {
+      nonPlanifies.push(...restants.splice(0))
+      break
+    }
 
     // Parmi les matchs jouables maintenant (aucune des deux équipes encore
     // sur un autre terrain), on note chacun 0/1/2 selon qu'une équipe vient
@@ -74,18 +101,19 @@ function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDeb
 
     if (meilleurIdx === -1) {
       const prochaine = Math.min(...restants.flatMap(mt => [equipeLibreA[mt.equipe_a.id], equipeLibreA[mt.equipe_b.id]]))
-      terrainLibreA[terrainIdx] = Math.max(dispoTerrain + 1, prochaine)
+      terrainLibreA[terrainIdx] = eviterPauseMidi(Math.max(dispoTerrain + 1, prochaine))
       continue
     }
     const match = restants.splice(meilleurIdx, 1)[0]
     const debut = dispoTerrain
-    matchs.push({ ...match, terrain: terrainIdx + 1, heure_debut: `${String(Math.floor(debut / 60)).padStart(2, '0')}:${String(debut % 60).padStart(2, '0')}` })
-    const fin = debut + dureeMatch + pauseMinutes
-    terrainLibreA[terrainIdx] = fin
-    equipeLibreA[match.equipe_a.id] = fin
-    equipeLibreA[match.equipe_b.id] = fin
+    matchs.push({ ...match, terrain: terrainIdx + 1, heure_debut: minToTime(debut) })
+    const finMatch = debut + dureeMatch
+    const finTerrain = eviterPauseMidi(finMatch + pauseMinutes)
+    terrainLibreA[terrainIdx] = finTerrain
+    equipeLibreA[match.equipe_a.id] = finMatch
+    equipeLibreA[match.equipe_b.id] = finMatch
   }
-  return matchs
+  return { planifies: matchs, nonPlanifies }
 }
 
 export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
@@ -161,9 +189,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   async function genererPlanningAuto() {
     if (matchs.length > 0 && !confirm('Effacer le planning existant et le régénérer ?')) return
     await supabase.from('tournois_matchs_organises').delete().eq('tournoi_id', tournoi.id)
-    const planning = genererPlanning(equipes, tournoi.nb_terrains, tournoi.duree_match, tournoi.pause_minutes, tournoi.heure_debut || '09:00')
+    const { planifies, nonPlanifies } = genererPlanning(
+      equipes, tournoi.nb_terrains, tournoi.duree_match, tournoi.pause_minutes,
+      tournoi.heure_debut || '09:00', tournoi.heure_fin || null,
+      tournoi.pause_midi_debut || '12:00', tournoi.pause_midi_duree || 90,
+    )
     const { data } = await supabase.from('tournois_matchs_organises').insert(
-      planning.map(mt => ({ tournoi_id: tournoi.id, equipe_a_id: mt.equipe_a.id, equipe_b_id: mt.equipe_b.id, terrain: mt.terrain, heure_debut: mt.heure_debut, phase: mt.phase, poule: mt.poule, statut: 'a_jouer' }))
+      planifies.map(mt => ({ tournoi_id: tournoi.id, equipe_a_id: mt.equipe_a.id, equipe_b_id: mt.equipe_b.id, terrain: mt.terrain, heure_debut: mt.heure_debut, phase: mt.phase, poule: mt.poule, statut: 'a_jouer' }))
     ).select()
     setMatchs(data || [])
     if (tournoi.statut === 'preparation') {
@@ -171,6 +203,9 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       setTournoi(t => ({ ...t, statut: 'en_cours' }))
     }
     setOnglet('planning')
+    if (nonPlanifies.length > 0) {
+      alert(`⚠️ ${nonPlanifies.length} match${nonPlanifies.length > 1 ? 's' : ''} n'ont pas pu être placés avant ${tournoi.heure_fin}. Augmente le nombre de terrains ou avance l'heure de début.`)
+    }
   }
 
   async function saisirScore(matchId) {
@@ -447,6 +482,26 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           <div>
             <label style={st.label}>Pause entre matchs (min)</label>
             <input type="number" min="0" value={form.pause_minutes} onChange={e => setForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={st.input} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={st.label}>Heure de fin</label>
+            <input type="time" value={form.heure_fin} onChange={e => setForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />
+          </div>
+          <div>
+            <label style={st.label}>Début pause midi</label>
+            <input type="time" value={form.pause_midi_debut} onChange={e => setForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
+          </div>
+          <div>
+            <label style={st.label}>Durée pause midi</label>
+            <select value={form.pause_midi_duree} onChange={e => setForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
+              <option value={60}>1h00</option>
+              <option value={75}>1h15</option>
+              <option value={90}>1h30</option>
+              <option value={105}>1h45</option>
+              <option value={120}>2h00</option>
+            </select>
           </div>
         </div>
         <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
