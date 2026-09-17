@@ -166,6 +166,9 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [lienCopie, setLienCopie] = useState(false)
   const [reglagesForm, setReglagesForm] = useState(VIDE_TOURNOI)
   const [reglagesSaving, setReglagesSaving] = useState(false)
+  const [buteurs, setButeurs] = useState([])
+  const [buteurForm, setButeurForm] = useState({}) // matchId -> { prenom, nom, numero, equipe_id, nb_buts }
+  const [matchExpande, setMatchExpande] = useState(null)
 
   useEffect(() => { if (clubId) chargerTournois() }, [clubId])
 
@@ -183,11 +186,30 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
       qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0,
     })
-    const [{ data: eqs }, { data: mts }] = await Promise.all([
+    const [{ data: eqs }, { data: mts }, { data: buts }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
       supabase.from('tournois_matchs_organises').select('*').eq('tournoi_id', t.id).order('heure_debut'),
+      supabase.from('tournois_buteurs').select('*').eq('tournoi_id', t.id),
     ])
-    setEquipes(eqs || []); setMatchs(mts || [])
+    setEquipes(eqs || []); setMatchs(mts || []); setButeurs(buts || [])
+  }
+
+  async function ajouterButeur(matchId) {
+    const f = buteurForm[matchId]
+    if (!f?.nom?.trim() || !f?.equipe_id) return
+    const { data, error } = await supabase.from('tournois_buteurs').insert({
+      match_id: matchId, tournoi_id: tournoi.id, equipe_id: f.equipe_id,
+      nom_joueur: f.nom.trim(), prenom_joueur: f.prenom?.trim() || '',
+      numero_maillot: f.numero ? parseInt(f.numero) : null, nb_buts: parseInt(f.nb_buts) || 1,
+    }).select().single()
+    if (error) { alert(error.message); return }
+    setButeurs(p => [...p, data])
+    setButeurForm(p => ({ ...p, [matchId]: { prenom: '', nom: '', numero: '', equipe_id: f.equipe_id, nb_buts: 1 } }))
+  }
+
+  async function supprimerButeur(id) {
+    await supabase.from('tournois_buteurs').delete().eq('id', id)
+    setButeurs(p => p.filter(b => b.id !== id))
   }
 
   function ouvrirCreation() { setForm(VIDE_TOURNOI); setVue('creation') }
@@ -358,6 +380,56 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           </span>
         </div>
       )}
+      {mt.statut === 'termine' && (() => {
+        const buteursMatch = buteurs.filter(b => b.match_id === mt.id)
+        const f = buteurForm[mt.id] || {}
+        return (
+          <div style={{ marginTop: '6px' }}>
+            <div onClick={() => setMatchExpande(matchExpande === mt.id ? null : mt.id)}
+              style={{ cursor: 'pointer', color: colors.text.faint, fontSize: '12px', padding: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{buteursMatch.length} buteur{buteursMatch.length !== 1 ? 's' : ''}</span>
+              <span>{matchExpande === mt.id ? '▴' : '▾'}</span>
+            </div>
+            {matchExpande === mt.id && (
+              <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '12px', marginTop: '4px' }}>
+                {buteursMatch.map(b => {
+                  const eq = getEquipe(b.equipe_id)
+                  return (
+                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${colors.border.faint}`, fontSize: '13px' }}>
+                      {b.numero_maillot != null && <span style={{ color: colors.text.disabled, fontSize: '11px', minWidth: '26px' }}>#{b.numero_maillot}</span>}
+                      <span style={{ color: colors.text.primary, fontWeight: 600 }}>{b.prenom_joueur} {b.nom_joueur}</span>
+                      {b.nb_buts > 1 && <span style={{ color: colors.accent.amber, fontSize: '12px', fontWeight: 700 }}>×{b.nb_buts}</span>}
+                      <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{eq?.nom}</span>
+                      {!readOnly && <button onClick={() => supprimerButeur(b.id)} style={{ ...st.iconBtn(colors.accent.red), width: '20px', height: '20px', marginLeft: 'auto' }}><IcoX /></button>}
+                    </div>
+                  )
+                })}
+                {!readOnly && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    <input style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Prénom"
+                      value={f.prenom || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, prenom: e.target.value } }))} />
+                    <input style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Nom *"
+                      value={f.nom || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, nom: e.target.value } }))} />
+                    <input type="number" min="1" style={{ ...st.input, width: '54px', padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} placeholder="#"
+                      value={f.numero || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, numero: e.target.value } }))} />
+                    <select style={{ ...st.input, flex: 1, minWidth: '100px', padding: '6px 8px', fontSize: '12px' }}
+                      value={f.equipe_id || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, equipe_id: e.target.value } }))}>
+                      <option value="">Équipe</option>
+                      {[mt.equipe_a_id, mt.equipe_b_id].map(eid => { const eq = getEquipe(eid); return eq ? <option key={eid} value={eid}>{eq.nom}</option> : null })}
+                    </select>
+                    <select style={{ ...st.input, width: '68px', padding: '6px 8px', fontSize: '12px' }}
+                      value={f.nb_buts || 1} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, nb_buts: e.target.value } }))}>
+                      {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} but{n > 1 ? 's' : ''}</option>)}
+                    </select>
+                    <button onClick={() => ajouterButeur(mt.id)} disabled={!f.nom?.trim() || !f.equipe_id}
+                      style={{ ...st.btnSolid, padding: '6px 12px', fontSize: '12px', opacity: (!f.nom?.trim() || !f.equipe_id) ? 0.4 : 1 }}>+ Ajouter</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
       </div>
     )
   }
@@ -706,6 +778,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       { key: 'planning', label: 'Planning' },
       { key: 'resultats', label: 'Résultats' },
       { key: 'classement', label: 'Classement' },
+      { key: 'buteurs', label: `Buteurs (${buteurs.length})` },
       ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
@@ -946,6 +1019,46 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             })}
           </div>
         )}
+
+        {onglet === 'buteurs' && (() => {
+          const stats = {}
+          buteurs.forEach(b => {
+            const cle = `${b.nom_joueur}_${b.equipe_id}`
+            if (!stats[cle]) stats[cle] = { nom: b.nom_joueur, prenom: b.prenom_joueur, numero: b.numero_maillot, equipe: getEquipe(b.equipe_id)?.nom || '', total: 0 }
+            stats[cle].total += b.nb_buts
+          })
+          const classementButeurs = Object.values(stats).sort((a, b) => b.total - a.total)
+          return (
+            <div style={{ ...st.card, overflowX: 'auto' }}>
+              {classementButeurs.length === 0 ? (
+                <div style={{ color: colors.text.disabled, textAlign: 'center', padding: '30px' }}>Aucun buteur enregistré — ajoute-les depuis l'onglet Résultats, sous chaque match terminé.</div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '420px' }}>
+                  <thead>
+                    <tr>{['#', 'Joueur', 'Équipe', 'Buts'].map(h => (
+                      <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {classementButeurs.map((j, i) => (
+                      <tr key={`${j.nom}_${j.equipe}_${i}`} style={{ background: i === 0 ? colors.accent.green + '11' : 'transparent' }}>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 700, color: i === 0 ? colors.accent.green : i === 1 ? colors.accent.amber : colors.text.disabled }}>{i + 1}</td>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}` }}>
+                          <div style={{ color: colors.text.primary, fontWeight: 700 }}>{j.prenom} {j.nom}</div>
+                          {j.numero != null && <div style={{ color: colors.text.disabled, fontSize: '11px' }}>#{j.numero}</div>}
+                        </td>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary, fontSize: '13px' }}>{j.equipe}</td>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.accent.green, fontSize: '16px' }}>
+                          {j.total} <span style={{ fontSize: '12px', fontWeight: 400, color: colors.text.faint }}>but{j.total > 1 ? 's' : ''}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )
+        })()}
 
         {onglet === 'reglages' && !readOnly && (
           <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: '16px' }}>
