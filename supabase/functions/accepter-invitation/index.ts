@@ -164,6 +164,13 @@ serve(async (req) => {
           club_id: inv.club_id, educateur_id: userId, statut: 'accepte', methode: 'invite',
         }, { onConflict: 'club_id,educateur_id' })
         if (errEducateur) throw errEducateur
+
+        // Comme pour le rôle 'club' plus bas : on force le plan même si le
+        // profil existait déjà avant l'invitation (ex. compte joueur créé
+        // en premier), sinon la personne reste coincée sur son ancien
+        // dashboard malgré l'affiliation club_educateurs acceptée.
+        const { error: errPlanEducateur } = await supabase.from('profiles').update({ plan: 'educateur' }).eq('id', userId)
+        if (errPlanEducateur) throw errPlanEducateur
       }
 
       if (inv.role === 'club') {
