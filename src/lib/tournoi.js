@@ -1,5 +1,5 @@
-export const PHASE_LABEL = { quart: 'Quarts de finale', demi: 'Demi-finales', troisieme: 'Petite finale', finale: 'Finale' }
-export const PHASE_ORDRE = ['quart', 'demi', 'troisieme', 'finale']
+export const PHASE_LABEL = { quart: 'Quarts de finale', demi: 'Demi-finales', troisieme: 'Petite finale', finale: 'Finale', finale_poule: 'Poule finale' }
+export const PHASE_ORDRE = ['quart', 'demi', 'troisieme', 'finale_poule', 'finale']
 
 // Classement d'une poule de tournoi — partagé entre la gestion club
 // (TournoiOrganise.jsx) et la page publique en lecture seule (TournoiPublic.jsx),
