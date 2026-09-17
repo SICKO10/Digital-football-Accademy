@@ -129,6 +129,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [nouvelleEquipe, setNouvelleEquipe] = useState(VIDE_EQUIPE)
   const [scoreEdit, setScoreEdit] = useState({})
   const [lienCopie, setLienCopie] = useState(false)
+  const [reglagesForm, setReglagesForm] = useState(VIDE_TOURNOI)
+  const [reglagesSaving, setReglagesSaving] = useState(false)
 
   useEffect(() => { if (clubId) chargerTournois() }, [clubId])
 
@@ -139,6 +141,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
   async function chargerDetail(t) {
     setTournoi(t); setVue('detail'); setOnglet('equipes')
+    setReglagesForm({
+      heure_debut: t.heure_debut || '09:00', nb_terrains: t.nb_terrains || 2, nb_equipes_poule: t.nb_equipes_poule || 4,
+      duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
+      heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
+    })
     const [{ data: eqs }, { data: mts }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
       supabase.from('tournois_matchs_organises').select('*').eq('tournoi_id', t.id).order('heure_debut'),
@@ -147,6 +154,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   }
 
   function ouvrirCreation() { setForm(VIDE_TOURNOI); setVue('creation') }
+
+  async function sauvegarderReglages() {
+    setReglagesSaving(true)
+    const { data, error } = await supabase.from('tournois_organises').update(reglagesForm).eq('id', tournoi.id).select().single()
+    setReglagesSaving(false)
+    if (!error && data) setTournoi(data)
+  }
 
   async function creerTournoi() {
     if (!form.nom.trim()) return
@@ -517,6 +531,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       { key: 'planning', label: 'Planning' },
       { key: 'resultats', label: 'Résultats' },
       { key: 'classement', label: 'Classement' },
+      ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
       <div style={{ maxWidth: 900 }}>
@@ -719,6 +734,60 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {onglet === 'reglages' && !readOnly && (
+          <div style={{ ...st.card, maxWidth: 560 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={st.label}>Heure de début</label>
+                <input type="time" value={reglagesForm.heure_debut} onChange={e => setReglagesForm(f => ({ ...f, heure_debut: e.target.value }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Nb terrains</label>
+                <input type="number" min="1" value={reglagesForm.nb_terrains} onChange={e => setReglagesForm(f => ({ ...f, nb_terrains: parseInt(e.target.value) || 1 }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Équipes/poule</label>
+                <select value={reglagesForm.nb_equipes_poule} onChange={e => setReglagesForm(f => ({ ...f, nb_equipes_poule: parseInt(e.target.value) }))} style={st.input}>
+                  {[3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              <div>
+                <label style={st.label}>Durée d'un match (min)</label>
+                <input type="number" min="1" value={reglagesForm.duree_match} onChange={e => setReglagesForm(f => ({ ...f, duree_match: parseInt(e.target.value) || 1 }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Pause entre matchs (min)</label>
+                <input type="number" min="0" value={reglagesForm.pause_minutes} onChange={e => setReglagesForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={st.input} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              <div>
+                <label style={st.label}>Heure de fin</label>
+                <input type="time" value={reglagesForm.heure_fin} onChange={e => setReglagesForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Début pause midi</label>
+                <input type="time" value={reglagesForm.pause_midi_debut} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Durée pause midi</label>
+                <select value={reglagesForm.pause_midi_duree} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
+                  <option value={60}>1h00</option>
+                  <option value={75}>1h15</option>
+                  <option value={90}>1h30</option>
+                  <option value={105}>1h45</option>
+                  <option value={120}>2h00</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={sauvegarderReglages} disabled={reglagesSaving} style={{ ...st.btnSolid, opacity: reglagesSaving ? 0.6 : 1, marginTop: '16px' }}>
+              {reglagesSaving ? 'Enregistrement…' : 'Enregistrer — puis régénère le planning pour appliquer'}
+            </button>
           </div>
         )}
       </div>
