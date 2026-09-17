@@ -3586,7 +3586,7 @@ export default function DashboardClub() {
 
         {/* ── TOURNOIS ── */}
         {activeTab === 'tournoi' && canViewSection('sportif') && (
-          <TournoiClub clubId={clubId} categories={categories} readOnly={!canEditSection('sportif')} />
+          <TournoiClub clubId={clubId} categories={categories} readOnly={!canEditSection('sportif')} userId={moi?.id} />
         )}
 
         {/* ── PLANNING DES TERRAINS ── */}

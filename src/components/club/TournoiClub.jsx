@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
+import TournoiOrganise from './TournoiOrganise'
 
 const STATUT_COULEUR = {
   'Inscrit': '#f59e0b',
@@ -24,15 +25,15 @@ const VIDE_TOURNOI = {
 }
 const VIDE_MATCH = { adversaire: '', phase: 'Poule', score_nous: '', score_eux: '', heure: '', terrain: '', buteurs: '', notes: '' }
 
-// Module Tournoi (Phase 1 — « On participe »). « On organise » (Phase 2 :
-// le club organise son propre tournoi) n'est pas encore développé, cf.
-// SOUS_ONGLETS ci-dessous.
+// Module Tournoi : « Nos tournois » (Phase 1, tournois auxquels le club
+// participe) et « On organise » (Phase 2, tournois organisés par le club —
+// cf. TournoiOrganise.jsx pour la création/planning/résultats/classement).
 const SOUS_ONGLETS = [
   { key: 'participation', label: 'Nos tournois' },
   { key: 'organisation', label: 'On organise' },
 ]
 
-export default function TournoiClub({ clubId, categories, readOnly = false }) {
+export default function TournoiClub({ clubId, categories, readOnly = false, userId = null }) {
   const colors = useColors()
   const [sousOnglet, setSousOnglet] = useState('participation')
   const [vue, setVue] = useState('liste') // liste | nouveau | detail
@@ -178,11 +179,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false }) {
     <div style={{ maxWidth: 900 }}>
       <TitreSection colors={colors} />
       <SousOngletsBar sousOnglet={sousOnglet} setSousOnglet={setSousOnglet} colors={colors} />
-      <div style={{ ...st.card, textAlign: 'center', padding: '60px 24px', color: colors.text.faint }}>
-        <IcoTrophy />
-        <p style={{ margin: '12px 0 0', fontWeight: 700, color: colors.text.secondary }}>Bientôt disponible</p>
-        <p style={{ margin: '6px 0 0', fontSize: '13px' }}>La gestion des tournois organisés par le club arrive dans une prochaine mise à jour.</p>
-      </div>
+      <TournoiOrganise clubId={clubId} userId={userId} readOnly={readOnly} />
     </div>
   )
 
