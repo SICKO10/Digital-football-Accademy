@@ -25,7 +25,63 @@ const normaliser = (valeur, options) => {
   return trouve || ''
 }
 
-const PROCEDE_SCAN_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true }
+const PROCEDE_SCAN_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true, schema_data: null }
+
+// Terrain de référence pour convertir les positions % renvoyées par Gemini en
+// coordonnées absolues — Tactipad stocke terrain.w/h dans le schéma et
+// rescale tout seul vers la taille réelle du canvas au chargement (cf.
+// rescaleElements dans Tactipad.jsx), donc n'importe quelle taille de
+// référence fixe fonctionne ici.
+const TERRAIN_W = 800
+const TERRAIN_H = 500
+const COULEURS_HEX = {
+  noir: '#1a1a1a', bleu: '#3b82f6', rouge: '#ef4444', jaune: '#eab308',
+  orange: '#f97316', vert: '#22c55e', blanc: '#ffffff', violet: '#a78bfa',
+}
+const LETTRES_EQUIPE = ['A', 'B', 'C', 'D']
+
+// Convertit le schema_data (positions en %, vocabulaire libre pour Gemini)
+// vers le format natif attendu par Tactipad.initialSchema — cf. `schema` construit
+// dans validerSchema() côté Tactipad.jsx (terrain/elements/sequences/equipesCouleurs).
+// Une couleur détectée = une équipe (A/B/C/D, dans l'ordre d'apparition) avec
+// equipesCouleurs personnalisé, pour garder les couleurs vues sur la photo.
+const convertirSchemaScan = (schemaData) => {
+  const brut = schemaData?.elements
+  if (!Array.isArray(brut) || brut.length === 0) return null
+
+  const lettreParCouleur = {}
+  const equipesCouleurs = {}
+  const lettrePourCouleur = (couleur) => {
+    const cle = couleur || 'vert'
+    if (lettreParCouleur[cle]) return lettreParCouleur[cle]
+    const lettre = LETTRES_EQUIPE[Object.keys(lettreParCouleur).length] || 'A'
+    lettreParCouleur[cle] = lettre
+    equipesCouleurs[lettre] = COULEURS_HEX[cle] || '#4ade80'
+    return lettre
+  }
+  const px = (v) => (Number(v) || 0) / 100 * TERRAIN_W
+  const py = (v) => (Number(v) || 0) / 100 * TERRAIN_H
+
+  const elements = brut.map((el, i) => {
+    const id = `scan_${i}_${Math.random().toString(36).slice(2, 7)}`
+    if (el.type === 'joueur') {
+      return { id, type: 'joueur', equipe: lettrePourCouleur(el.couleur), gardien: false, numero: '', nom: '', x: px(el.x), y: py(el.y) }
+    }
+    if (el.type === 'ballon') {
+      return { id, type: 'objet', kind: 'ballon', rotation: 0, x: px(el.x), y: py(el.y) }
+    }
+    if (el.type === 'but') {
+      return { id, type: 'objet', kind: 'petite_cage', rotation: el.orientation === 'vertical' ? 90 : 0, x: px(el.x), y: py(el.y) }
+    }
+    if (el.type === 'fleche') {
+      return { id, type: 'fleche', style: el.style === 'course' ? 'pointillee' : 'droite', points: [px(el.x1), py(el.y1), px(el.x2), py(el.y2)], color: '#ffffff' }
+    }
+    return null
+  }).filter(Boolean)
+
+  if (elements.length === 0) return null
+  return { terrain: { sport: 'football', vue: 'complet', fond: 'vert', w: TERRAIN_W, h: TERRAIN_H }, elements, sequences: [elements], equipesCouleurs }
+}
 
 // Redimensionne (sans jamais agrandir) avant envoi à l'Edge Function — une
 // photo de téléphone brute (souvent plusieurs Mo, 3000-4000px de large)
@@ -72,7 +128,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       setImage(preview)
       setImageBase64(base64)
     } catch {
-      setErreur(t('scanproc_image_illisible', lang))
+      setErreur(`❌ ${t('scanproc_image_illisible', lang)}`)
     }
   }
 
@@ -112,9 +168,21 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
         consignes: p.consignes || '',
         variables: p.variables || '',
         criteres_realisation: p.criteres_realisation || '',
+        schema_data: convertirSchemaScan(p.schema_data),
       })
     } catch (e) {
-      setErreur(e.message)
+      const brut = e.message || ''
+      // Retries déjà tentés côté Edge Function (scan-procede) — un 429/quota
+      // ou un 503 qui remonte jusqu'ici signifie qu'ils sont épuisés, pas un
+      // vrai échec de lecture : message dédié plutôt que le message technique
+      // brut, différent selon la cause (saturation temporaire vs quota).
+      const sature = /\b429\b/.test(brut) || /quota/i.test(brut)
+      const surcharge = /\b503\b/.test(brut) || /UNAVAILABLE/i.test(brut)
+      setErreur(
+        sature ? `⏳ ${t('scanproc_erreur_saturation', lang)}`
+        : surcharge ? `⚠️ ${t('scanproc_erreur_surcharge', lang)}`
+        : `❌ ${t('scanproc_erreur_prefix', lang)}${brut}`
+      )
     } finally {
       setScanning(false)
     }
@@ -141,6 +209,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       tags: '',
       partage_club: true,
       partage_platform: resultat.partage_platform,
+      schema_data: resultat.schema_data || null,
     })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
@@ -189,7 +258,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
 
       {erreur && (
         <div style={{ background: '#ef444415', border: '1px solid #ef4444', borderRadius: '10px', padding: '12px', marginTop: '12px', color: '#ef4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <span>❌ {t('scanproc_erreur_prefix', lang)}{erreur}</span>
+          <span>{erreur}</span>
           <button onClick={analyser} style={{ background: 'none', border: '1px solid #ef4444', borderRadius: '6px', padding: '4px 10px', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>{t('scanproc_reessayer', lang)}</button>
         </div>
       )}
@@ -197,6 +266,12 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       {resultat && (
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '20px', marginTop: '16px' }}>
           <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '13px', marginBottom: '16px' }}>✅ {t('scanproc_detecte', lang)}</div>
+
+          {resultat.schema_data && (
+            <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', color: colors.accent.blue, fontSize: '12px' }}>
+              🎨 Schéma tactique détecté ({resultat.schema_data.elements.length} élément{resultat.schema_data.elements.length > 1 ? 's' : ''}) — ajustable après enregistrement via « Modifier le schéma ».
+            </div>
+          )}
 
           <div style={{ marginBottom: '14px' }}>
             <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
