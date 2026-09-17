@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { calculerClassement, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { calculerClassement, meilleursTroisiemes, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -22,6 +22,7 @@ const VIDE_TOURNOI = {
   heure_debut: '09:00', nb_equipes_poule: 4,
   heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
   prix_inscription_equipe: '', nb_equipes_prevues: 8,
+  qualifies_meilleurs_troisiemes: 0,
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
 
@@ -180,6 +181,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
       heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
+      qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0,
     })
     const [{ data: eqs }, { data: mts }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
@@ -285,7 +287,14 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   async function saisirScore(matchId) {
     const s = scoreEdit[matchId]
     if (s?.a === undefined || s?.b === undefined || s.a === '' || s.b === '') return
-    const { data, error } = await supabase.from('tournois_matchs_organises').update({ score_a: +s.a, score_b: +s.b, statut: 'termine' }).eq('id', matchId).select().single()
+    const mt = matchs.find(m => m.id === matchId)
+    const cartons = {
+      cartons_jaunes_a: s.cja !== undefined ? +s.cja || 0 : (mt?.cartons_jaunes_a || 0),
+      cartons_jaunes_b: s.cjb !== undefined ? +s.cjb || 0 : (mt?.cartons_jaunes_b || 0),
+      cartons_rouges_a: s.cra !== undefined ? +s.cra || 0 : (mt?.cartons_rouges_a || 0),
+      cartons_rouges_b: s.crb !== undefined ? +s.crb || 0 : (mt?.cartons_rouges_b || 0),
+    }
+    const { data, error } = await supabase.from('tournois_matchs_organises').update({ score_a: +s.a, score_b: +s.b, statut: 'termine', ...cartons }).eq('id', matchId).select().single()
     // Sans ce check, un échec (RLS, colonne manquante...) était totalement
     // silencieux : le bouton ✓ semblait "ne rien faire" sans aucune trace,
     // aussi bien pour l'utilisateur que pour nous en debug.
@@ -300,14 +309,21 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   function ligneMatch(mt) {
     const ea = getEquipe(mt.equipe_a_id), eb = getEquipe(mt.equipe_b_id), edit = scoreEdit[mt.id]
     const enEdition = mt.statut !== 'termine' || edit !== undefined
+    const carton = (equipe, champ, valeur) => (
+      <input type="number" min="0" title={`Cartons ${champ === 'j' ? 'jaunes' : 'rouges'} — ${equipe === 'a' ? ea?.nom : eb?.nom}`}
+        style={{ ...st.input, width: '30px', padding: '3px', textAlign: 'center', fontSize: '11px' }}
+        value={valeur}
+        onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), [`c${champ}${equipe}`]: e.target.value } }))} />
+    )
     return (
-      <div key={mt.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+      <div key={mt.id} style={{ padding: '12px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '42px' }}>{mt.heure_debut?.slice(0, 5)}</span>
         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
         {!enEdition ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
-            {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b } }))} style={st.iconBtn(colors.text.faint)}><IcoEdit /></button>}
+            {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b, cja: mt.cartons_jaunes_a || 0, cjb: mt.cartons_jaunes_b || 0, cra: mt.cartons_rouges_a || 0, crb: mt.cartons_rouges_b || 0 } }))} style={st.iconBtn(colors.text.faint)}><IcoEdit /></button>}
           </div>
         ) : readOnly ? (
           <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
@@ -330,6 +346,18 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           )
         })()}
         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
+      </div>
+      {enEdition && !readOnly && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '8px', fontSize: '11px', color: colors.text.faint }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            🟨 {carton('a', 'j', edit?.cja ?? (mt.cartons_jaunes_a || 0))} 🟥 {carton('a', 'r', edit?.cra ?? (mt.cartons_rouges_a || 0))}
+          </span>
+          <span style={{ color: colors.text.disabled }}>cartons</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            🟨 {carton('b', 'j', edit?.cjb ?? (mt.cartons_jaunes_b || 0))} 🟥 {carton('b', 'r', edit?.crb ?? (mt.cartons_rouges_b || 0))}
+          </span>
+        </div>
+      )}
       </div>
     )
   }
@@ -393,17 +421,32 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }
     const debutFinale = eviterPauseMidiFinale(finDernierMatch + 15)
 
+    // Qualifiés : les 2 premiers de chaque poule (dans l'ordre des poules),
+    // puis les K meilleurs troisièmes réglés dans l'onglet Réglages (cf.
+    // qualifies_meilleurs_troisiemes). Le nombre total doit tomber sur une
+    // puissance de 2 (2/4/8/16) pour former un tableau à élimination directe
+    // classique, sans équipe exemptée d'un tour.
+    const qualifies = []
+    poules.forEach(p => {
+      if (classements[p]?.[0]) qualifies.push(classements[p][0])
+      if (classements[p]?.[1]) qualifies.push(classements[p][1])
+    })
+    const nbMeilleursTroisiemes = tournoi.qualifies_meilleurs_troisiemes || 0
+    if (nbMeilleursTroisiemes > 0) {
+      qualifies.push(...meilleursTroisiemes(equipes, matchsPoule, poules, nbMeilleursTroisiemes))
+    }
+    const Q = qualifies.length
+    if (![2, 4, 8, 16].includes(Q)) {
+      alert(`Le réglage actuel donne ${Q} qualifiés — ajuste le nombre de meilleurs troisièmes (onglet Réglages) pour tomber sur 2, 4, 8 ou 16.`)
+      return
+    }
+
     const inserts = []
 
     if (tournoi.format === 'poules_minichampionnat') {
-      // Les qualifiés (1ers de chaque poule, + 2èmes si peu de poules) forment
-      // une nouvelle poule unique, rejouée en round-robin.
-      const qualifies = []
-      poules.forEach(p => {
-        if (classements[p]?.[0]) qualifies.push({ ...classements[p][0].equipe, poule: 'Finale' })
-        if (poules.length <= 3 && classements[p]?.[1]) qualifies.push({ ...classements[p][1].equipe, poule: 'Finale' })
-      })
-      const rounds = genererRoundsPoule(qualifies)
+      // Les qualifiés forment une nouvelle poule unique, rejouée en round-robin.
+      const qualifiesEquipes = qualifies.map(q => ({ ...q.equipe, poule: 'Finale' }))
+      const rounds = genererRoundsPoule(qualifiesEquipes)
       let temps = debutFinale
       let terrainIdx = 0
       rounds.forEach(round => {
@@ -418,38 +461,30 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         temps = eviterPauseMidiFinale(temps + (tournoi.duree_match || 15) + (tournoi.pause_minutes || 5))
       })
     } else {
-      // Élimination directe (seule, ou après les poules) — croisements
-      // standards pour 1 ou 2 poules, tableau de quarts généralisé sinon.
-      if (poules.length === 1) {
-        inserts.push({
-          tournoi_id: tournoi.id, equipe_a_id: classements[poules[0]]?.[0]?.equipe.id, equipe_b_id: classements[poules[0]]?.[1]?.equipe.id,
-          phase: 'finale', terrain: 1, heure_debut: minToTime(debutFinale), statut: 'a_jouer',
-        })
-      } else if (poules.length === 2) {
-        inserts.push(
-          { tournoi_id: tournoi.id, equipe_a_id: classements[poules[0]]?.[0]?.equipe.id, equipe_b_id: classements[poules[1]]?.[1]?.equipe.id, phase: 'demi', terrain: 1, heure_debut: minToTime(debutFinale), statut: 'a_jouer' },
-          { tournoi_id: tournoi.id, equipe_a_id: classements[poules[1]]?.[0]?.equipe.id, equipe_b_id: classements[poules[0]]?.[1]?.equipe.id, phase: 'demi', terrain: Math.min(2, tournoi.nb_terrains), heure_debut: minToTime(debutFinale), statut: 'a_jouer' },
-        )
-        const debutF = eviterPauseMidiFinale(debutFinale + (tournoi.duree_match || 15) + 10)
-        inserts.push(
-          { tournoi_id: tournoi.id, equipe_a_id: null, equipe_b_id: null, phase: 'troisieme', terrain: 1, heure_debut: minToTime(debutF), statut: 'a_jouer' },
-          { tournoi_id: tournoi.id, equipe_a_id: null, equipe_b_id: null, phase: 'finale', terrain: Math.min(2, tournoi.nb_terrains), heure_debut: minToTime(debutF), statut: 'a_jouer' },
-        )
-      } else {
-        const paires = []
-        for (let i = 0; i < Math.floor(poules.length / 2); i++) {
-          paires.push([classements[poules[i]]?.[0], classements[poules[poules.length - 1 - i]]?.[1]])
-          paires.push([classements[poules[poules.length - 1 - i]]?.[0], classements[poules[i]]?.[1]])
+      // Élimination directe (seule, ou après les poules) — seule la première
+      // manche est générée ici ; les tours suivants (jusqu'à la finale +
+      // petite finale) sont générés progressivement par genererTourSuivant,
+      // une fois les vainqueurs de la manche en cours connus.
+      const phasePremiereManche = { 2: 'finale', 4: 'demi', 8: 'quart', 16: 'huitieme' }[Q]
+      const paires = []
+      for (let i = 0; i < Q / 2; i++) paires.push([qualifies[i], qualifies[Q - 1 - i]])
+      // Évite au mieux qu'une paire oppose deux équipes de la même poule
+      // (possible quand un meilleur 3e retombe contre le vainqueur de sa
+      // propre poule) — échange avec la paire voisine si besoin.
+      paires.forEach((paire, i) => {
+        if (paire[0]?.equipe.poule === paire[1]?.equipe.poule) {
+          const voisine = paires[i + 1] || paires[i - 1]
+          if (voisine) { const tmp = paire[1]; paire[1] = voisine[1]; voisine[1] = tmp }
         }
-        paires.forEach(([a, b], i) => {
-          inserts.push({
-            tournoi_id: tournoi.id, equipe_a_id: a?.equipe.id, equipe_b_id: b?.equipe.id,
-            phase: 'quart', terrain: (i % tournoi.nb_terrains) + 1,
-            heure_debut: minToTime(eviterPauseMidiFinale(debutFinale + Math.floor(i / tournoi.nb_terrains) * ((tournoi.duree_match || 15) + 5))),
-            statut: 'a_jouer',
-          })
+      })
+      paires.forEach(([a, b], i) => {
+        inserts.push({
+          tournoi_id: tournoi.id, equipe_a_id: a?.equipe.id, equipe_b_id: b?.equipe.id,
+          phase: phasePremiereManche, terrain: (i % tournoi.nb_terrains) + 1,
+          heure_debut: minToTime(eviterPauseMidiFinale(debutFinale + Math.floor(i / tournoi.nb_terrains) * ((tournoi.duree_match || 15) + 5))),
+          statut: 'a_jouer',
         })
-      }
+      })
     }
 
     const { data, error } = await supabase.from('tournois_matchs_organises').insert(inserts.filter(m => m.equipe_a_id !== undefined)).select()
@@ -459,12 +494,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   }
 
   // Résout le tour suivant du tableau à élimination directe une fois le tour
-  // en cours entièrement joué — nécessaire à partir de 3 poules, où
-  // genererPhaseFinale ne peut créer que les quarts (demies/finale dépendent
-  // des vainqueurs, inconnus à cet instant). Pour 2 poules, genererPhaseFinale
-  // crée déjà les lignes "troisieme"/"finale" à équipes nulles en attendant
-  // les demies : on les régénère ici plutôt que de bricoler un UPDATE, même
-  // logique "supprimer puis réinsérer" que genererPhaseFinale plus haut.
+  // en cours entièrement joué — genererPhaseFinale ne génère que la toute
+  // première manche (huitieme/quart/demi/finale selon le nombre de
+  // qualifiés), les tours suivants dépendent des vainqueurs, inconnus à ce
+  // moment-là. Gère aussi bien huitieme→quart, quart→demi que demi→finale
+  // (qui ajoute la petite finale en même temps).
   async function genererTourSuivant(phaseActuelle, phaseSuivante) {
     const matchsPhase = matchs
       .filter(m => m.phase === phaseActuelle && m.statut === 'termine')
@@ -487,20 +521,20 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }, 0)
     const debut = eviterPauseMidiFinale(finDernier + 15)
 
-    if (phaseSuivante === 'demi') {
+    if (phaseSuivante !== 'finale') {
       const gagnants = matchsPhase.map(gagnant)
       const n = gagnants.length
       const paires = []
       for (let i = 0; i < Math.floor(n / 2); i++) paires.push([gagnants[i], gagnants[n - 1 - i]])
       const inserts = paires.filter(([a, b]) => a && b).map(([a, b], i) => ({
-        tournoi_id: tournoi.id, equipe_a_id: a, equipe_b_id: b, phase: 'demi',
+        tournoi_id: tournoi.id, equipe_a_id: a, equipe_b_id: b, phase: phaseSuivante,
         terrain: (i % tournoi.nb_terrains) + 1, heure_debut: minToTime(debut), statut: 'a_jouer',
       }))
-      if (inserts.length === 0) { alert('Impossible de déterminer les demi-finales — vérifiez les scores saisis.'); return }
+      if (inserts.length === 0) { alert(`Impossible de déterminer ${PHASE_LABEL[phaseSuivante] || 'le tour suivant'} — vérifiez les scores saisis.`); return }
       const { data, error } = await supabase.from('tournois_matchs_organises').insert(inserts).select()
-      if (error) { console.error('genererTourSuivant error:', error); alert('Erreur en générant les demi-finales : ' + error.message); return }
+      if (error) { console.error('genererTourSuivant error:', error); alert('Erreur en générant le tour suivant : ' + error.message); return }
       setMatchs(p => [...p, ...(data || [])])
-    } else if (phaseSuivante === 'finale') {
+    } else {
       const gagnants = matchsPhase.map(gagnant)
       const perdants = matchsPhase.map(perdant)
       if (gagnants.length < 2 || !gagnants[0] || !gagnants[1]) { alert('Impossible de déterminer la finale — vérifiez les scores saisis.'); return }
@@ -853,16 +887,19 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 ))}
 
                 {!readOnly && (() => {
-                  const quarts = matchsElim.filter(mt => mt.phase === 'quart')
-                  const demis = matchsElim.filter(mt => mt.phase === 'demi')
-                  const finale = matchsElim.filter(mt => mt.phase === 'finale')
-                  const quartsTermines = quarts.length > 0 && quarts.every(mt => mt.statut === 'termine')
-                  const demisTermines = demis.length > 0 && demis.every(mt => mt.statut === 'termine')
-                  if (quartsTermines && demis.length === 0) {
-                    return <button onClick={() => genererTourSuivant('quart', 'demi')} style={{ ...st.btnSolid, marginTop: '4px' }}>⚡ Générer les demi-finales</button>
-                  }
-                  if (demisTermines && (finale.length === 0 || finale.some(mt => !mt.equipe_a_id || !mt.equipe_b_id))) {
-                    return <button onClick={() => genererTourSuivant('demi', 'finale')} style={{ ...st.btnSolid, marginTop: '4px' }}>🏆 Générer la finale</button>
+                  const chaineElimination = [['huitieme', 'quart'], ['quart', 'demi'], ['demi', 'finale']]
+                  for (const [actuelle, suivante] of chaineElimination) {
+                    const matchsActuelle = matchsElim.filter(mt => mt.phase === actuelle)
+                    const matchsSuivante = matchsElim.filter(mt => mt.phase === suivante)
+                    const actuelleTerminee = matchsActuelle.length > 0 && matchsActuelle.every(mt => mt.statut === 'termine')
+                    const suivanteAGenerer = matchsSuivante.length === 0 || matchsSuivante.some(mt => !mt.equipe_a_id || !mt.equipe_b_id)
+                    if (actuelleTerminee && suivanteAGenerer) {
+                      return (
+                        <button onClick={() => genererTourSuivant(actuelle, suivante)} style={{ ...st.btnSolid, marginTop: '4px' }}>
+                          {suivante === 'finale' ? '🏆 Générer la finale' : `⚡ Générer les ${PHASE_LABEL[suivante].toLowerCase()}`}
+                        </button>
+                      )
+                    }
                   }
                   return null
                 })()}
@@ -882,7 +919,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                   <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
                     <thead>
-                      <tr>{['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Pts'].map(h => (
+                      <tr>{['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Fair-play', 'Pts'].map(h => (
                         <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
                       ))}</tr>
                     </thead>
@@ -898,6 +935,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.bp}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.bc}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: s.diff >= 0 ? colors.accent.green : colors.accent.red }}>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.faint, fontSize: '12px' }}>🟨{s.cj} 🟥{s.cr}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.accent.green, fontSize: '14px' }}>{s.pts}</td>
                         </tr>
                       ))}
@@ -933,6 +971,31 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </div>
               ))}
             </div>
+
+            {(tournoi.format === 'poules_elimination' || tournoi.format === 'poules_minichampionnat') && (
+              <div style={st.card}>
+                <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, color: colors.text.primary }}>Qualification pour la phase finale</h3>
+                <label style={st.label}>Meilleurs troisièmes qualifiés (en plus des 2 premiers de chaque poule)</label>
+                <select value={reglagesForm.qualifies_meilleurs_troisiemes} onChange={e => setReglagesForm(f => ({ ...f, qualifies_meilleurs_troisiemes: parseInt(e.target.value) }))} style={st.input}>
+                  {Array.from({ length: poules.length + 1 }, (_, k) => k).map(k => (
+                    <option key={k} value={k}>{k === 0 ? 'Aucun' : k === poules.length ? `Tous les 3e (${k}) = 3 premiers/poule` : `${k} meilleur${k > 1 ? 's' : ''} 3e`}</option>
+                  ))}
+                </select>
+                {(() => {
+                  const q = poules.length * 2 + reglagesForm.qualifies_meilleurs_troisiemes
+                  const ok = [2, 4, 8, 16].includes(q)
+                  const tours = { 2: 'Finale', 4: 'Demi-finales, finale', 8: 'Quarts, demi-finales, finale', 16: 'Huitièmes, quarts, demi-finales, finale' }
+                  return (
+                    <div style={{ marginTop: '10px', fontSize: '12px', color: ok ? colors.accent.green : colors.accent.amber, fontWeight: 600 }}>
+                      {ok
+                        ? `${q} qualifiés — ${tours[q]}`
+                        : `${q} qualifiés — ajuste le nombre de meilleurs troisièmes ou de poules pour tomber sur 2, 4, 8 ou 16 qualifiés`}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
           <div style={{ ...st.card, maxWidth: 560 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <div>

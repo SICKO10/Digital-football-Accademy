@@ -7,7 +7,18 @@ import { calculerClassement, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
 const ONGLETS_BASE = [
   { key: 'planning', label: 'Planning' },
   { key: 'classement', label: 'Classement' },
+  { key: 'reglement', label: 'Règlement' },
 ]
+
+// Repris des libellés du sélecteur de format dans TournoiOrganise.jsx (côté
+// club) — dupliqué plutôt qu'importé, cette page publique doit rester
+// autonome (pas de dépendance vers un composant de gestion réservé au club).
+const FORMAT_INFO = {
+  poules: { label: 'Championnat / Poules uniquement', desc: 'Classement final par points, pas de phase éliminatoire.' },
+  poules_elimination: { label: 'Poules + Élimination directe', desc: "Les meilleures équipes de chaque poule s'affrontent ensuite en élimination directe jusqu'à la finale." },
+  poules_minichampionnat: { label: 'Poules + Mini-championnat', desc: 'Les équipes qualifiées forment une nouvelle poule, rejouée en matchs aller simple, pour désigner le vainqueur.' },
+  elimination: { label: 'Élimination directe', desc: 'Tableau à élimination directe dès le premier tour, pas de phase de poules.' },
+}
 
 export default function TournoiPublic() {
   const { code } = useParams()
@@ -127,7 +138,7 @@ export default function TournoiPublic() {
                 <div key={poule} style={{ ...st.card, overflowX: 'auto' }}>
                   <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>Poule {poule}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '460px' }}>
-                    <thead><tr>{['#', 'Équipe', 'J', 'V', 'N', 'D', 'Diff', 'Pts'].map(h => <th key={h} style={st.th}>{h}</th>)}</tr></thead>
+                    <thead><tr>{['#', 'Équipe', 'J', 'V', 'N', 'D', 'BC', 'Diff', 'Fair-play', 'Pts'].map(h => <th key={h} style={st.th}>{h}</th>)}</tr></thead>
                     <tbody>
                       {classement.map((s, i) => (
                         <tr key={s.equipe.id} style={{ background: i === 0 ? colors.accent.green + '11' : 'transparent' }}>
@@ -137,7 +148,9 @@ export default function TournoiPublic() {
                           <td style={{ ...st.td, color: colors.accent.green }}>{s.v}</td>
                           <td style={st.td}>{s.n}</td>
                           <td style={{ ...st.td, color: colors.accent.red }}>{s.d}</td>
+                          <td style={st.td}>{s.bc}</td>
                           <td style={{ ...st.td, color: s.diff >= 0 ? colors.accent.green : colors.accent.red }}>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+                          <td style={{ ...st.td, color: colors.text.faint, fontSize: '12px' }}>🟨{s.cj} 🟥{s.cr}</td>
                           <td style={{ ...st.td, fontWeight: 800, color: colors.accent.green, fontSize: '15px' }}>{s.pts}</td>
                         </tr>
                       ))}
@@ -168,6 +181,43 @@ export default function TournoiPublic() {
             </div>
           ))
         )}
+
+        {onglet === 'reglement' && (() => {
+          const info = FORMAT_INFO[tournoi.format] || FORMAT_INFO.poules
+          const avecQualification = tournoi.format === 'poules_elimination' || tournoi.format === 'poules_minichampionnat'
+          const avecPoules = tournoi.format !== 'elimination'
+          const k = tournoi.qualifies_meilleurs_troisiemes || 0
+          return (
+            <div>
+              <div style={st.card}>
+                <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Format — {info.label}</h3>
+                <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px', lineHeight: 1.6 }}>{info.desc}</p>
+              </div>
+
+              {avecQualification && (
+                <div style={st.card}>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Qualification</h3>
+                  <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px', lineHeight: 1.6 }}>
+                    Les 2 premiers de chaque poule sont qualifiés{k > 0 ? `, ainsi que les ${k} meilleur${k > 1 ? 's' : ''} 3e de poule.` : '.'}
+                  </p>
+                </div>
+              )}
+
+              {avecPoules && (
+                <div style={st.card}>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Départage en cas d'égalité</h3>
+                  <ol style={{ margin: 0, paddingLeft: '20px', color: colors.text.faint, fontSize: '13px', lineHeight: 1.9 }}>
+                    <li>Points</li>
+                    <li>Différence de buts</li>
+                    <li>Buts marqués</li>
+                    <li>Fair-play (cartons)</li>
+                    <li>Buts encaissés</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         <div style={{ textAlign: 'center', marginTop: '32px', color: colors.text.ghost, fontSize: '12px' }}>
           Propulsé par <span style={{ color: colors.accent.green, fontWeight: 700 }}>Digital Football</span>
