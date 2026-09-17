@@ -5335,7 +5335,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     <div>
                       <label style={st.label}>{t('club_equipe_label', lang)}</label>
                       <select style={st.input} value={promptCategorieForm.equipe} onChange={e => setPromptCategorieForm(p => ({ ...p, equipe: e.target.value }))}>
-                        {['A', 'B'].map(e => <option key={e}>{e}</option>)}
+                        {['A', 'B', 'C', 'D', 'E'].map(e => <option key={e}>{e}</option>)}
                       </select>
                     </div>
                   </div>
