@@ -340,9 +340,9 @@ const COULEURS_BUDGET = [
   '#f472b6', '#34d399', '#fb923c', '#38bdf8', '#e879f9',
 ]
 
-// Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
-// retiré de la nav (repasser à true pour le republier).
-const RECRUTEMENT_ACTIF = true
+// Onglet "Recrutement" masqué le temps de le préparer pour tout le monde sauf
+// le compte test (AS CANNES) — pas supprimé, juste retiré de la nav ailleurs.
+const recrutementActif = (email) => email === 'asclubtest@gmail.com'
 
 // Panneau d'alertes de l'accueil club, remplace "Nouveaux joueurs" (peu
 // actionnable — juste un historique). Adapté au vrai schéma de chaque table
@@ -516,7 +516,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -543,7 +543,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   const ACTIONS = [
     { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
     { emoji: '📧', label: t('club_inviter_educateur_titre', lang), categorie: 'sportif', tab: 'educateurs' },
-    ...(RECRUTEMENT_ACTIF ? [{ emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' }] : []),
+    ...(recrutementActif(email) ? [{ emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' }] : []),
     { emoji: '🏢', label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
   ]
 
@@ -1344,7 +1344,7 @@ export default function DashboardClub() {
   // composant) pour rester sûre même sur un render qui retourne tôt (loading).
   useEffect(() => {
     if (!monRole) return
-    const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(RECRUTEMENT_ACTIF ? ['recrutement'] : []), 'educateurs'] : []
+    const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(recrutementActif(club?.email) ? ['recrutement'] : []), 'educateurs'] : []
     if (canViewSection('terrains')) idsSportif.push('terrains')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
@@ -3241,7 +3241,7 @@ export default function DashboardClub() {
       { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
       { id: 'tournoi', label: 'Tournois', Icon: IcoTrophy },
       { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
-      ...(RECRUTEMENT_ACTIF ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
+      ...(recrutementActif(club?.email) ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
@@ -3461,6 +3461,7 @@ export default function DashboardClub() {
             lang={lang}
             isMobile={isMobile}
             couleurPrincipale={couleurPrincipale}
+            email={club?.email}
           />
         )}
 
@@ -4159,7 +4160,7 @@ export default function DashboardClub() {
         {activeTab === 'deplacements' && canViewSection('deplacements') && (
           <Deplacements clubId={clubId} readOnly={!canEditSection('deplacements')} accentColor={couleurPrincipale} />
         )}
-        {activeTab === 'recrutement' && canViewSection('sportif') && (
+        {activeTab === 'recrutement' && canViewSection('sportif') && recrutementActif(club?.email) && (
           <MoteurRecrutement userId={clubId} />
         )}
         {activeTab === 'profil' && canViewSection('profil') && (() => {

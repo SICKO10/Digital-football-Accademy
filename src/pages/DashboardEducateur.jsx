@@ -53,14 +53,14 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 // en conditions réelles, à retirer de cette liste (ou vider) une fois prête.
 const SEANCE_IA_BETA_EMAILS = ['clubtest@gmail.com']
 
-// Onglet "Recrutement" masqué le temps de le préparer — pas supprimé, juste
-// retiré de la nav (repasser à true pour le republier).
-const RECRUTEMENT_ACTIF = true
+// Onglet "Recrutement" masqué le temps de le préparer pour tout le monde sauf
+// le compte test (AS CANNES) — pas supprimé, juste retiré de la nav ailleurs.
+const recrutementActif = (email) => email === 'asclubtest@gmail.com'
 
 // Parcours d'onboarding du dashboard éducateur (guide "Cedinho") — chaque étape
 // cible l'id d'un bouton de nav (toujours monté, contrairement au contenu de
 // l'onglet actif). Voir OnboardingGuide.jsx pour le composant générique.
-const EDUCATEUR_ONBOARDING_STEPS = [
+const getEducateurOnboardingSteps = (email) => [
   {
     id: 1,
     title: "Bienvenue sur Digital Football ! ⚽",
@@ -117,7 +117,7 @@ const EDUCATEUR_ONBOARDING_STEPS = [
     targetId: "nav-notes",
     position: "bottom",
   },
-  ...(RECRUTEMENT_ACTIF ? [{
+  ...(recrutementActif(email) ? [{
     id: 9,
     title: "Recrutement",
     message: "Explore les profils de joueurs disponibles et repère de nouveaux talents pour ton équipe.",
@@ -4869,7 +4869,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     ] },
     { titre: t('section_suivi_reseau', lang), items: [
       { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
-      ...(RECRUTEMENT_ACTIF ? [{ key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> }] : []),
+      ...(recrutementActif(profil?.email) ? [{ key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> }] : []),
       { key: 'explorer', label: 'Explorer', icon: <IcoCompass /> },
     ] },
   ]
@@ -5070,7 +5070,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
-    <OnboardingGuide key={onboardingKey} userId={userId} steps={EDUCATEUR_ONBOARDING_STEPS} accentColor={colors.accent.blue} />
+    <OnboardingGuide key={onboardingKey} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
     <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
 
@@ -8131,7 +8131,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         )}
 
         {/* ===== RECRUTEMENT (Mon Réseau) ===== */}
-        {activeSection === 'recrutement' && <MoteurRecrutement userId={userId} />}
+        {activeSection === 'recrutement' && recrutementActif(profil?.email) && <MoteurRecrutement userId={userId} />}
 
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
