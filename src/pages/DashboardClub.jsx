@@ -28,6 +28,7 @@ import TachesClub from '../components/club/TachesClub'
 import ProjetSportif from '../components/club/ProjetSportif'
 import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import TournoiClub from '../components/club/TournoiClub'
+import PlanificationSeances from '../components/club/PlanificationSeances'
 import NotificationBanner from '../components/NotificationBanner'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 
@@ -244,6 +245,7 @@ const optionsPourSuggestion = (suggestion, categorieAge) => {
 
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
+  { id: 'seances', label: 'Séances' },
   { id: 'terrains', label: 'Planning terrains' },
   { id: 'deplacements', label: 'Déplacements' },
   { id: 'budget', label: 'Budget' },
@@ -265,6 +267,7 @@ const PERMISSION_SECTIONS = [
 // d'autre que le président n'y a accès tant qu'il ne l'accorde pas explicitement.
 const PERMISSION_DEFAULTS = {
   sportif: ['president', 'directeur_sportif'],
+  seances: ['president', 'directeur_sportif'],
   terrains: ['president', 'directeur_sportif'],
   deplacements: ['president', 'marketing', 'secretaire'],
   budget: ['president', 'secretaire'],
@@ -1345,6 +1348,7 @@ export default function DashboardClub() {
   useEffect(() => {
     if (!monRole) return
     const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(recrutementActif(club?.email) ? ['recrutement'] : []), 'educateurs'] : []
+    if (canViewSection('seances')) idsSportif.push('seances')
     if (canViewSection('terrains')) idsSportif.push('terrains')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
@@ -3245,6 +3249,7 @@ export default function DashboardClub() {
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
+    ...(canViewSection('seances') ? [{ id: 'seances', label: 'Séances', Icon: IcoCalendar }] : []),
   ]
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
@@ -3577,6 +3582,11 @@ export default function DashboardClub() {
         {/* ── PLANNING (vue générale : matchs, entraînements, événements, projets) ── */}
         {activeTab === 'planning' && canViewSection('sportif') && (
           <Planning matchs={matchsClub} evenements={evenementsClub} projets={projetsClub} categories={categories} />
+        )}
+
+        {/* ── SÉANCES (planification des entraînements pour le compte des éducateurs) ── */}
+        {activeTab === 'seances' && canViewSection('seances') && (
+          <PlanificationSeances categories={categories} readOnly={!canEditSection('seances')} />
         )}
 
         {/* ── PROJET SPORTIF ── */}
