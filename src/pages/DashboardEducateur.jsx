@@ -4858,7 +4858,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
-      { key: 'entrainements', label: 'Création entraînement', icon: <IcoRun />, subKeys: ['mes_seances', 'entrainements'] },
+      { key: 'entrainements', label: 'Création entraînement', icon: <IcoRun />, subKeys: ['entrainements', 'mes_seances'] },
       { key: 'prep_physique', label: t('nav_prep_physique', lang), icon: <IcoDumbbell /> },
       { key: 'tactipad', label: t('nav_tacticboard', lang), icon: <IcoLayout /> },
       { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
@@ -7499,7 +7499,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
         {['entrainements', 'mes_seances'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'mes_seances', label: t('nav_seances', lang) }, { key: 'entrainements', label: t('nav_planning', lang) }].filter(it => canView(it.key))}
+            items={[{ key: 'entrainements', label: t('nav_planning', lang) }, { key: 'mes_seances', label: t('nav_seances', lang) }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
