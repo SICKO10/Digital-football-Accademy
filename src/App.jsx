@@ -44,13 +44,19 @@ function SmartDashboard() {
         supabase.from('staff_club').select('club_id').eq('user_id', user.id).maybeSingle(),
         supabase.from('dirigeant_acces').select('id').eq('dirigeant_id', user.id).eq('statut', 'accepte').maybeSingle(),
         supabase.from('parents_acces').select('id').eq('parent_id', user.id).eq('statut', 'accepte').maybeSingle(),
-      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }, { data: parentAcces }]) => {
+        supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle(),
+      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }, { data: parentAcces }, { data: educateurClub }]) => {
         // Membre du staff d'un club (rôle géré et détecté par DashboardClub lui-même)
         if (staff) { setDest('/club'); return }
         // Dirigeant délégué par un éducateur (plan reste 'fan', accès géré par dirigeant_acces)
         if (dirigeant) { setDest('/dashboard-dirigeant'); return }
         // Parent d'un joueur (plan reste 'fan' aussi, accès géré par parents_acces)
         if (parentAcces) { setDest('/dashboard-parent'); return }
+        // Éducateur affilié à un club (club_educateurs) — vérifié en plus de
+        // profiles.plan : un compte qui existait déjà avant d'accepter
+        // l'invitation (ex. joueur) peut avoir un plan resté désynchronisé,
+        // cf. bug maxime.bertrand96@outlook.fr (sept. 2026).
+        if (educateurClub) { setDest('/educateur'); return }
         const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'scout') setDest('/recruteur')

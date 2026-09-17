@@ -221,6 +221,10 @@ serve(async (req) => {
         await supabase.from('club_educateurs').upsert({
           club_id, educateur_id: existingUser.id, statut: 'accepte', methode: 'invite',
         }, { onConflict: 'club_id,educateur_id' })
+        // Le compte existait déjà (souvent avec un plan joueur) — sans ce
+        // forçage il reste coincé sur son ancien dashboard malgré
+        // l'affiliation club_educateurs acceptée (bug déjà vu en prod).
+        await supabase.from('profiles').update({ plan: 'educateur' }).eq('id', existingUser.id)
       }
 
       // Compte déjà existant → accès accordé immédiatement en base, mais SANS email
