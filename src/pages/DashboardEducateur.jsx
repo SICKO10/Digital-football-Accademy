@@ -5136,7 +5136,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   )) : (
                     <span style={{ fontSize: '11px', color: colors.text.faint }}>{labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}</span>
                   )}
-                  <button onClick={() => setAjouterEquipeOuvert(true)} title="Ajouter une équipe"
+                  <button onClick={() => { setActiveSection('equipe'); setAjouterEquipeOuvert(true) }} title="Ajouter une équipe"
                     style={{ padding: '4px 10px', borderRadius: '20px', border: `1px dashed ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     + Équipe
                   </button>
@@ -5341,7 +5341,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     {mesEquipes.length > 0 && (
-                      <button onClick={() => setAjouterEquipeOuvert(false)} disabled={savingCategorieClub} style={st.btn(colors.text.dim)}>
+                      <button onClick={() => setAjouterEquipeOuvert(false)} disabled={savingCategorieClub} style={{ ...st.btn(colors.text.dim), color: colors.black }}>
                         {t('btn_annuler', lang)}
                       </button>
                     )}
