@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
+import { calculerClassement, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -8,6 +9,8 @@ const IcoX = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" s
 const IcoCheck = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 const IcoEdit = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
 const IcoRefresh = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+const IcoShuffle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+const IcoLink = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
 
 const STATUT_COULEUR = { preparation: '#f59e0b', en_cours: '#4ade80', termine: '#888' }
 const STATUT_LABEL = { preparation: 'Préparation', en_cours: 'En cours', termine: 'Terminé' }
@@ -52,13 +55,29 @@ function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDeb
   while (restants.length > 0 && garde-- > 0) {
     const terrainIdx = terrainLibreA.indexOf(Math.min(...terrainLibreA))
     const dispoTerrain = terrainLibreA[terrainIdx]
-    const idx = restants.findIndex(mt => equipeLibreA[mt.equipe_a.id] <= dispoTerrain && equipeLibreA[mt.equipe_b.id] <= dispoTerrain)
-    if (idx === -1) {
+
+    // Parmi les matchs jouables maintenant (aucune des deux équipes encore
+    // sur un autre terrain), on note chacun 0/1/2 selon qu'une équipe vient
+    // juste de terminer (enchaînement direct, à éviter) — et on prend
+    // toujours le score le plus bas plutôt que le premier match jouable
+    // trouvé, pour ne forcer un enchaînement que si vraiment aucune équipe
+    // n'a eu le temps de souffler.
+    let meilleurIdx = -1
+    let meilleurScore = Infinity
+    restants.forEach((mt, idx) => {
+      const aLibre = equipeLibreA[mt.equipe_a.id]
+      const bLibre = equipeLibreA[mt.equipe_b.id]
+      if (aLibre > dispoTerrain || bLibre > dispoTerrain) return
+      const score = (aLibre === dispoTerrain ? 1 : 0) + (bLibre === dispoTerrain ? 1 : 0)
+      if (score < meilleurScore) { meilleurScore = score; meilleurIdx = idx }
+    })
+
+    if (meilleurIdx === -1) {
       const prochaine = Math.min(...restants.flatMap(mt => [equipeLibreA[mt.equipe_a.id], equipeLibreA[mt.equipe_b.id]]))
       terrainLibreA[terrainIdx] = Math.max(dispoTerrain + 1, prochaine)
       continue
     }
-    const match = restants.splice(idx, 1)[0]
+    const match = restants.splice(meilleurIdx, 1)[0]
     const debut = dispoTerrain
     matchs.push({ ...match, terrain: terrainIdx + 1, heure_debut: `${String(Math.floor(debut / 60)).padStart(2, '0')}:${String(debut % 60).padStart(2, '0')}` })
     const fin = debut + dureeMatch + pauseMinutes
@@ -67,23 +86,6 @@ function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDeb
     equipeLibreA[match.equipe_b.id] = fin
   }
   return matchs
-}
-
-function calculerClassement(equipes, matchs, poule) {
-  const stats = {}
-  equipes.filter(e => e.poule === poule).forEach(e => {
-    stats[e.id] = { equipe: e, pts: 0, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, diff: 0 }
-  })
-  matchs.filter(mt => mt.poule === poule && mt.statut === 'termine' && mt.score_a !== null).forEach(mt => {
-    if (!stats[mt.equipe_a_id] || !stats[mt.equipe_b_id]) return
-    const a = stats[mt.equipe_a_id], b = stats[mt.equipe_b_id]
-    a.j++; b.j++; a.bp += mt.score_a; a.bc += mt.score_b; b.bp += mt.score_b; b.bc += mt.score_a
-    if (mt.score_a > mt.score_b) { a.pts += 3; a.v++; b.d++ }
-    else if (mt.score_a < mt.score_b) { b.pts += 3; b.v++; a.d++ }
-    else { a.pts++; b.pts++; a.n++; b.n++ }
-  })
-  Object.values(stats).forEach(s => { s.diff = s.bp - s.bc })
-  return Object.values(stats).sort((a, b) => b.pts - a.pts || b.diff - a.diff || b.bp - a.bp)
 }
 
 export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
@@ -98,6 +100,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [form, setForm] = useState(VIDE_TOURNOI)
   const [nouvelleEquipe, setNouvelleEquipe] = useState(VIDE_EQUIPE)
   const [scoreEdit, setScoreEdit] = useState({})
+  const [lienCopie, setLienCopie] = useState(false)
 
   useEffect(() => { if (clubId) chargerTournois() }, [clubId])
 
@@ -178,8 +181,174 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     setScoreEdit(p => { const n = { ...p }; delete n[matchId]; return n })
   }
 
+  // Ligne de saisie/affichage de score — partagée entre les matchs de poule
+  // et les matchs à élimination directe (même comportement, juste des
+  // groupements différents en amont).
+  function ligneMatch(mt) {
+    const ea = getEquipe(mt.equipe_a_id), eb = getEquipe(mt.equipe_b_id), edit = scoreEdit[mt.id]
+    const enEdition = mt.statut !== 'termine' || edit !== undefined
+    return (
+      <div key={mt.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+        <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '42px' }}>{mt.heure_debut?.slice(0, 5)}</span>
+        <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
+        {!enEdition ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
+            {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b } }))} style={st.iconBtn(colors.text.faint)}><IcoEdit /></button>}
+          </div>
+        ) : readOnly ? (
+          <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.a ?? ''}
+              onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), a: e.target.value } }))} />
+            <span style={{ color: colors.text.disabled }}>-</span>
+            <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.b ?? ''}
+              onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), b: e.target.value } }))} />
+            <button onClick={() => saisirScore(mt.id)} style={st.iconBtn(colors.accent.green)}><IcoCheck /></button>
+          </div>
+        )}
+        <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
+      </div>
+    )
+  }
+
+  async function tirageAuSort() {
+    if (equipes.length < 2 || !confirm(`Répartir aléatoirement ${equipes.length} équipes dans les poules ?`)) return
+    const melangees = [...equipes].sort(() => Math.random() - 0.5)
+    const cible = tournoi.nb_equipes_poule || 4
+    const maj = melangees.map((eq, i) => ({ id: eq.id, poule: LETTRES_POULE[Math.floor(i / cible)] || 'A' }))
+    await Promise.all(maj.map(u => supabase.from('tournois_equipes').update({ poule: u.poule }).eq('id', u.id)))
+    const { data } = await supabase.from('tournois_equipes').select('*').eq('tournoi_id', tournoi.id).order('poule')
+    setEquipes(data || [])
+  }
+
+  async function ajusterHoraire(matchId, deltaMinutes) {
+    const mt = matchs.find(m => m.id === matchId)
+    if (!mt?.heure_debut) return
+    const [h, mn] = mt.heure_debut.split(':').map(Number)
+    const total = Math.max(0, Math.min(23 * 60 + 59, h * 60 + mn + deltaMinutes))
+    const nouvelleHeure = `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+    const { data } = await supabase.from('tournois_matchs_organises').update({ heure_debut: nouvelleHeure }).eq('id', matchId).select().single()
+    if (data) setMatchs(p => p.map(m => (m.id === matchId ? data : m)))
+  }
+
   const getEquipe = (id) => equipes.find(e => e.id === id)
   const poules = [...new Set(equipes.map(e => e.poule))].sort()
+
+  // Phase finale progressive : chaque round n'est proposé qu'une fois le
+  // précédent entièrement joué, et se construit à partir des vraies équipes
+  // qualifiées (vainqueurs/perdants réels), jamais de match "placeholder" aux
+  // équipes encore inconnues. Seuls 1, 2 ou 4 poules ont une progression
+  // automatique définie (croisements 1er/2ème standards) ; les autres tailles
+  // de poules demandent un arbitrage humain qu'on ne devine pas.
+  const matchsPoule = matchs.filter(m => m.phase === 'poule')
+  const poulesJouees = matchsPoule.length > 0 && matchsPoule.every(m => m.statut === 'termine')
+  const quarts = matchs.filter(m => m.phase === 'quart')
+  const demis = matchs.filter(m => m.phase === 'demi')
+  const finale = matchs.filter(m => m.phase === 'finale')
+  const matchsElim = matchs.filter(m => m.phase !== 'poule')
+
+  let etapeSuivante = null
+  if (poulesJouees && finale.length === 0) {
+    if (poules.length === 4) {
+      if (quarts.length === 0) etapeSuivante = 'quart'
+      else if (quarts.every(m => m.statut === 'termine') && demis.length === 0) etapeSuivante = 'demi'
+      else if (demis.length > 0 && demis.every(m => m.statut === 'termine')) etapeSuivante = 'finale'
+    } else if (poules.length === 2) {
+      if (demis.length === 0) etapeSuivante = 'demi'
+      else if (demis.every(m => m.statut === 'termine')) etapeSuivante = 'finale'
+    } else if (poules.length === 1) {
+      etapeSuivante = 'finale'
+    }
+  }
+
+  const vainqueur = (mt) => (mt.score_a > mt.score_b ? mt.equipe_a_id : mt.equipe_b_id)
+  const perdant = (mt) => (mt.score_a > mt.score_b ? mt.equipe_b_id : mt.equipe_a_id)
+
+  // Étale une liste de paires (équipe A, équipe B) sur les terrains dispo à
+  // partir de `debut` (minutes depuis minuit) — même logique de cyclage que
+  // genererPlanning : terrains en parallèle, puis créneaux suivants si plus
+  // de paires que de terrains.
+  const planifierRonde = (paires, debut) => {
+    const nbT = tournoi.nb_terrains || 1
+    const dureeTotale = (tournoi.duree_match || 15) + (tournoi.pause_minutes || 5)
+    return paires.map(([a, b], i) => {
+      const t = debut + Math.floor(i / nbT) * dureeTotale
+      return {
+        equipe_a_id: a || null, equipe_b_id: b || null,
+        terrain: (i % nbT) + 1,
+        heure_debut: `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`,
+      }
+    })
+  }
+
+  const finDeRonde = (mts) => {
+    const [h, mn] = (tournoi.heure_debut || '09:00').split(':').map(Number)
+    const base = h * 60 + mn
+    const dureeTotale = (tournoi.duree_match || 15) + (tournoi.pause_minutes || 5)
+    return mts.reduce((max, m) => {
+      if (!m.heure_debut) return max
+      const [mh, mm] = m.heure_debut.split(':').map(Number)
+      return Math.max(max, mh * 60 + mm + dureeTotale)
+    }, base)
+  }
+
+  async function genererPhaseSuivante() {
+    if (!etapeSuivante) return
+    const debut = finDeRonde(matchs) + 10
+    let paires = []
+    let phase = etapeSuivante
+
+    if (etapeSuivante === 'quart') {
+      const cl = {}
+      poules.forEach(p => { cl[p] = calculerClassement(equipes, matchs, p) })
+      const [A, B, C, D] = poules
+      paires = [
+        [cl[A]?.[0]?.equipe.id, cl[B]?.[1]?.equipe.id],
+        [cl[B]?.[0]?.equipe.id, cl[A]?.[1]?.equipe.id],
+        [cl[C]?.[0]?.equipe.id, cl[D]?.[1]?.equipe.id],
+        [cl[D]?.[0]?.equipe.id, cl[C]?.[1]?.equipe.id],
+      ]
+    } else if (etapeSuivante === 'demi' && poules.length === 4) {
+      const [q1, q2, q3, q4] = quarts
+      paires = [[vainqueur(q1), vainqueur(q2)], [vainqueur(q3), vainqueur(q4)]]
+    } else if (etapeSuivante === 'demi') {
+      const cl = {}
+      poules.forEach(p => { cl[p] = calculerClassement(equipes, matchs, p) })
+      const [A, B] = poules
+      paires = [[cl[A]?.[0]?.equipe.id, cl[B]?.[1]?.equipe.id], [cl[B]?.[0]?.equipe.id, cl[A]?.[1]?.equipe.id]]
+    } else if (etapeSuivante === 'finale' && poules.length === 1) {
+      const classement = calculerClassement(equipes, matchs, poules[0])
+      paires = [[classement[0]?.equipe.id, classement[1]?.equipe.id]]
+      phase = 'finale'
+    } else if (etapeSuivante === 'finale') {
+      const [d1, d2] = demis
+      const rondeFinale = planifierRonde([[perdant(d1), perdant(d2)], [vainqueur(d1), vainqueur(d2)]], debut)
+      const inserts = [
+        { tournoi_id: tournoi.id, phase: 'troisieme', poule: null, statut: 'a_jouer', ...rondeFinale[0] },
+        { tournoi_id: tournoi.id, phase: 'finale', poule: null, statut: 'a_jouer', ...rondeFinale[1] },
+      ].filter(i => i.equipe_a_id && i.equipe_b_id)
+      const { data } = await supabase.from('tournois_matchs_organises').insert(inserts).select()
+      setMatchs(p => [...p, ...(data || [])])
+      setOnglet('resultats')
+      return
+    }
+
+    const ronde = planifierRonde(paires, debut)
+    const inserts = ronde.map(m => ({ tournoi_id: tournoi.id, phase, poule: null, statut: 'a_jouer', ...m })).filter(i => i.equipe_a_id && i.equipe_b_id)
+    const { data } = await supabase.from('tournois_matchs_organises').insert(inserts).select()
+    setMatchs(p => [...p, ...(data || [])])
+    setOnglet('resultats')
+  }
+
+  const lienPublic = tournoi?.code_public ? `${window.location.origin}/tournoi/${tournoi.code_public}` : null
+  const copierLien = () => {
+    if (!lienPublic) return
+    navigator.clipboard.writeText(lienPublic)
+    setLienCopie(true)
+    setTimeout(() => setLienCopie(false), 2000)
+  }
 
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' },
@@ -310,6 +479,16 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           </div>
         </div>
 
+        {lienPublic && (
+          <div style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+            <div>
+              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '2px' }}>Page publique · suivi en direct pour les parents</div>
+              <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{lienPublic.replace(/^https?:\/\//, '')}</div>
+            </div>
+            <button onClick={copierLien} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> {lienCopie ? 'Copié !' : 'Copier le lien'}</button>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {onglets.map(o => (
             <button key={o.key} onClick={() => setOnglet(o.key)}
@@ -356,9 +535,14 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             ))}
 
             {!readOnly && equipes.length >= 2 && (
-              <button onClick={genererPlanningAuto} style={{ ...st.btnSolid, marginTop: '8px' }}>
-                Générer le planning · {equipes.length} équipes · {tournoi.nb_terrains} terrain{tournoi.nb_terrains > 1 ? 's' : ''}
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                <button onClick={genererPlanningAuto} style={st.btnSolid}>
+                  Générer le planning · {equipes.length} équipes · {tournoi.nb_terrains} terrain{tournoi.nb_terrains > 1 ? 's' : ''}
+                </button>
+                <button onClick={tirageAuSort} style={{ ...st.btnGhost, background: colors.background.raised, border: `1px solid ${colors.border.strong}`, padding: '10px 16px', borderRadius: '10px' }}>
+                  <IcoShuffle /> Tirage au sort des poules
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -381,13 +565,23 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     return (
                       <div key={mt.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '68px' }}>Terrain {mt.terrain}</span>
-                        <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '56px', textAlign: 'center' }}>Poule {mt.poule}</span>
+                        {mt.phase === 'poule' ? (
+                          <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '56px', textAlign: 'center' }}>Poule {mt.poule}</span>
+                        ) : (
+                          <span style={{ background: colors.accent.purple + '20', color: colors.accent.purple, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textAlign: 'center' }}>{PHASE_LABEL[mt.phase] || mt.phase}</span>
+                        )}
                         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
                         <span style={{ color: colors.text.disabled, fontWeight: 700, padding: '0 10px' }}>vs</span>
                         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
                         {mt.statut === 'termine'
                           ? <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
                           : <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>}
+                        {!readOnly && (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button onClick={() => ajusterHoraire(mt.id, -5)} style={{ ...st.iconBtn(colors.text.faint), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler -5 min">-5</button>
+                            <button onClick={() => ajusterHoraire(mt.id, 5)} style={{ ...st.iconBtn(colors.text.faint), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler +5 min">+5</button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -404,39 +598,34 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           <div>
             {matchs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '40px' }}><p style={{ color: colors.text.faint }}>Générez d'abord le planning.</p></div>
-            ) : poules.map(poule => (
-              <div key={poule} style={{ ...st.card, marginBottom: '12px' }}>
-                <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
-                {matchs.filter(mt => mt.poule === poule).map(mt => {
-                  const ea = getEquipe(mt.equipe_a_id), eb = getEquipe(mt.equipe_b_id), edit = scoreEdit[mt.id]
-                  const enEdition = mt.statut !== 'termine' || edit !== undefined
-                  return (
-                    <div key={mt.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
-                      <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '42px' }}>{mt.heure_debut?.slice(0, 5)}</span>
-                      <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom}</span>
-                      {!enEdition ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
-                          {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b } }))} style={st.iconBtn(colors.text.faint)}><IcoEdit /></button>}
-                        </div>
-                      ) : readOnly ? (
-                        <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.a ?? ''}
-                            onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), a: e.target.value } }))} />
-                          <span style={{ color: colors.text.disabled }}>-</span>
-                          <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center' }} placeholder="0" value={edit?.b ?? ''}
-                            onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), b: e.target.value } }))} />
-                          <button onClick={() => saisirScore(mt.id)} style={st.iconBtn(colors.accent.green)}><IcoCheck /></button>
-                        </div>
-                      )}
-                      <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
+            ) : (
+              <>
+                {poules.map(poule => (
+                  <div key={poule} style={{ ...st.card, marginBottom: '12px' }}>
+                    <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
+                    {matchs.filter(mt => mt.poule === poule).map(ligneMatch)}
+                  </div>
+                ))}
+
+                {!readOnly && etapeSuivante && (
+                  <button onClick={genererPhaseSuivante} style={{ ...st.btnSolid, marginBottom: '16px' }}>
+                    Générer {PHASE_LABEL[etapeSuivante] === 'Finale' ? 'la finale' : PHASE_LABEL[etapeSuivante].toLowerCase()}
+                  </button>
+                )}
+                {!readOnly && poulesJouees && finale.length === 0 && !etapeSuivante && ![1, 2, 4].includes(poules.length) && (
+                  <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '16px' }}>
+                    La génération automatique de la phase finale n'est prise en charge que pour 1, 2 ou 4 poules ({poules.length} ici) — à organiser manuellement.
+                  </div>
+                )}
+
+                {PHASE_ORDRE.filter(ph => matchsElim.some(mt => mt.phase === ph)).map(phase => (
+                  <div key={phase} style={{ ...st.card, marginBottom: '12px' }}>
+                    <div style={{ color: colors.accent.purple, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>{PHASE_LABEL[phase]}</div>
+                    {matchsElim.filter(mt => mt.phase === phase).map(ligneMatch)}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
 
