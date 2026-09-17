@@ -2135,7 +2135,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
   const labelTheme = value => THEME_FFF_CLES[value] ? t(THEME_FFF_CLES[value], lang) : themeSeanceInfo(value)?.label || value
   const labelPhase = phase => phase === 'offensif' ? t('biblio_theme_offensif', lang) : phase === 'defensif' ? t('biblio_theme_defensif', lang) : phase
-  const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', partage_platform: true }
+  const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', type: 'exercice', partage_platform: true }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -2638,7 +2638,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const p = showVisibilityPicker
     if (!p || !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age) return
     const payload = {
-      type: 'exercice',
+      type: metaProc.type,
       nom: metaProc.nom.trim(),
       theme: metaProc.theme,
       principe_jeu: metaProc.principe || null,
@@ -8865,6 +8865,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '460px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
                       onClick={e => e.stopPropagation()}>
                       <h2 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px', fontWeight: 800 }}>💾 {t('biblio_sauver_titre', lang)}</h2>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={champLabel}>{t('biblio_champ_type', lang)}</label>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {[
+                            { val: 'echauffement', label: `🔥 ${t('biblio_tab_echauffement', lang)}` },
+                            { val: 'jeu', label: `⚽ ${t('biblio_tab_jeu', lang)}` },
+                            { val: 'exercice', label: `🔄 ${t('biblio_tab_exercice', lang)}` },
+                            { val: 'situation', label: `🎯 ${t('biblio_tab_situation', lang)}` },
+                          ].map(opt => (
+                            <button key={opt.val} type="button" onClick={() => setMetaProc(p => ({ ...p, type: opt.val }))} style={pastilleMeta(metaProc.type === opt.val)}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
                       <div style={{ marginBottom: '16px' }}>
                         <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
