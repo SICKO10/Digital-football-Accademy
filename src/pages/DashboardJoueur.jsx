@@ -17,6 +17,7 @@ import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
+import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
@@ -139,6 +140,11 @@ const IconUsers = () => (
 const IconTactic = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+  </svg>
+)
+const IconCheck = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
   </svg>
 )
 const IconTrophy = () => (
@@ -416,6 +422,7 @@ function VoirToutClassement({ classement, onClose }) {
 function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const navigate = useNavigate()
   const colors = useColors()
+  const { masquees: alertesMasquees, masquer: masquerAlerte } = useAlertesMasquees()
   const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
   const [notifications, setNotifications] = useState([])
@@ -637,7 +644,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!equipeJoueurId) { setMesNotes([]); setMoyennePerso(null); return }
     const { data } = await supabase
       .from('notations_match')
-      .select('note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)')
+      .select('id, note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)')
       .eq('joueur_id', equipeJoueurId)
       .eq('est_note_equipe', false)
       .order('created_at', { ascending: false })
@@ -2040,33 +2047,46 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
               {/* ── Alertes — raccourcis vers ce qui vient de changer (convocation,
                   équipement prêt, dernier commentaire coach) plutôt que de devoir
-                  les trouver en cherchant plus bas sur la page. ── */}
-              {(convocationActive || equipementPret || mesNotes[0]?.commentaire) && (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
-                  {convocationActive && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>Convoqué {convocationActive.matchs_equipe?.domicile ? 'vs' : '@'} {convocationActive.matchs_equipe?.adversaire}</p>
-                    </div>
-                  )}
-                  {equipementPret && (
-                    <button onClick={() => setOnglet('profil')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, border: 'none', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'Inter, sans-serif' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>Ton équipement est prêt</p>
-                    </button>
-                  )}
-                  {mesNotes[0]?.commentaire && (
-                    <div style={{ padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600 }}>Commentaire du coach — vs {mesNotes[0].matchs_equipe?.adversaire}</p>
+                  les trouver en cherchant plus bas sur la page. Chacune peut être
+                  validée (bouton coche) pour disparaître, cf. useAlertesMasquees. ── */}
+              {(() => {
+                const idConvocation = convocationActive ? `convocation_${convocationActive.id}` : null
+                const idEquipement = equipementPret ? `equipement_${equipementPret.id}` : null
+                const idCommentaire = mesNotes[0]?.commentaire ? `commentaire_${mesNotes[0].id}` : null
+                const showConvocation = idConvocation && !alertesMasquees.has(idConvocation)
+                const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
+                const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
+                const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
+                return (showConvocation || showEquipement || showCommentaire) && (
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
+                    {showConvocation && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>Convoqué {convocationActive.matchs_equipe?.domicile ? 'vs' : '@'} {convocationActive.matchs_equipe?.adversaire}</p>
+                        <button onClick={() => masquerAlerte(idConvocation)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                       </div>
-                      <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, paddingLeft: '18px' }}>{mesNotes[0].commentaire}</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    {showEquipement && (
+                      <div onClick={() => setOnglet('profil')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>Ton équipement est prêt</p>
+                        <button onClick={e => { e.stopPropagation(); masquerAlerte(idEquipement) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    )}
+                    {showCommentaire && (
+                      <div style={{ padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, flex: 1 }}>Commentaire du coach — vs {mesNotes[0].matchs_equipe?.adversaire}</p>
+                          <button onClick={() => masquerAlerte(idCommentaire)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, paddingLeft: '18px' }}>{mesNotes[0].commentaire}</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>

@@ -20,6 +20,7 @@ import ParrainageWidget from '../components/ParrainageWidget'
 import { libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
+import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
@@ -61,6 +62,7 @@ const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
+const IcoCheckAlerte = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 
 const EQUIPES = ['A', 'B', 'C', 'D', 'E']
 
@@ -366,6 +368,7 @@ const recrutementActif = (email) => email === 'asclubtest@gmail.com'
 // ferait cohabiter deux implémentations du même signal.
 function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActiveTab }) {
   const colors = useColors()
+  const { masquees, masquer } = useAlertesMasquees()
   const [alertes, setAlertes] = useState([])
   const [loading, setLoading] = useState(true)
   const [popup, setPopup] = useState(null)
@@ -470,28 +473,34 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
     charger()
   }, [clubId, educateursAcceptes])
 
+  const alertesVisibles = alertes.filter(a => !masquees.has(a.id))
+
   if (loading) return null
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Alertes & infos</p>
-        {alertes.length > 0 && (
-          <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
+        {alertesVisibles.length > 0 && (
+          <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertesVisibles.length}</span>
         )}
       </div>
 
-      {alertes.length === 0 ? (
+      {alertesVisibles.length === 0 ? (
         <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune alerte pour le moment.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {alertes.map(a => (
+          {alertesVisibles.map(a => (
             <div key={a.id} onClick={a.onClick}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: colors.background.raised, border: `1px solid ${a.couleur}30`, borderLeft: `3px solid ${a.couleur}`, borderRadius: '10px', cursor: 'pointer' }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titre}</p>
                 <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{a.sousTitre}</p>
               </div>
+              <button onClick={e => { e.stopPropagation(); masquer(a.id) }} title="Valider"
+                style={{ flexShrink: 0, width: '22px', height: '22px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                <IcoCheckAlerte />
+              </button>
             </div>
           ))}
         </div>

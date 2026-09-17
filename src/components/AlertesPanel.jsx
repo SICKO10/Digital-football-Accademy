@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 
 // Icônes locales (pas d'emoji, cf. mémoire "no emojis in new UI") — même style
 // que les Ico* déjà présents dans DashboardEducateur.jsx, dupliquées ici plutôt
@@ -13,6 +14,7 @@ const IcoCalendarEvt  = () => <svg width="18" height="18" viewBox="0 0 24 24" fi
 const IcoBell         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
 const IcoClipboard    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-3"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
 const IcoRepeat       = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+const IcoCheck        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 
 // Panneau d'alertes de l'accueil éducateur, remplace l'ancien "Dernières
 // réponses aux sondages" (peu actionnable — juste un historique). Regroupe des
@@ -31,6 +33,7 @@ const IcoRepeat       = () => <svg width="18" height="18" viewBox="0 0 24 24" fi
 // même signal, à faire diverger avec le temps.
 export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs = [], setActiveSection }) {
   const colors = useColors()
+  const { masquees, masquer } = useAlertesMasquees()
   const [commandesPretes, setCommandesPretes] = useState([])
   const [deplacementsRisque, setDeplacementsRisque] = useState([])
   const [evenements, setEvenements] = useState([])
@@ -149,7 +152,7 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       sousTitre: r.domaine || 'Responsabilité qui vous a été confiée',
       onClick: () => setTacheOuverte({ type: 'responsabilite', ...r }),
     })),
-  ]
+  ].filter(a => !masquees.has(a.id))
 
   if (loading) return null
 
@@ -174,6 +177,10 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
                 <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titre}</p>
                 <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{a.sousTitre}</p>
               </div>
+              <button onClick={e => { e.stopPropagation(); masquer(a.id) }} title="Valider"
+                style={{ flexShrink: 0, width: '22px', height: '22px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                <IcoCheck />
+              </button>
             </div>
           ))}
         </div>
