@@ -62,7 +62,7 @@ const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 
-const EQUIPES = ['A', 'B']
+const EQUIPES = ['A', 'B', 'C', 'D', 'E']
 
 // Couleur repère par tranche d'âge sur les cartes "Catégories & Équipes" —
 // purement visuel (regroupement rapide à l'œil), aucun lien avec
