@@ -40,17 +40,50 @@ const timeToMin = (t) => {
 }
 const minToTime = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
 
+// Rounds d'une poule en round-robin par la méthode du cercle : n-1 rounds
+// pour n équipes (n pair, un "bye" ajouté sinon), chaque équipe joue
+// exactement une fois par round. Contrairement à une simple liste de paires
+// i<j, ça donne une vraie structure "round 1, round 2…" qu'on peut entrelacer
+// entre poules ci-dessous — sans ça, la file de matchs contenait toute la
+// poule A d'abord, puis B, puis C : la poule A occupait les premiers
+// créneaux/terrains disponibles et les autres ne démarraient vraiment
+// qu'une fois la poule A bien avancée, au lieu de progresser en parallèle.
+function genererRoundsPoule(equipes) {
+  const teams = [...equipes]
+  if (teams.length % 2 !== 0) teams.push(null)
+  const rounds = []
+  for (let r = 0; r < teams.length - 1; r++) {
+    const round = []
+    for (let i = 0; i < teams.length / 2; i++) {
+      const a = teams[i], b = teams[teams.length - 1 - i]
+      if (a && b) round.push({ equipe_a: a, equipe_b: b })
+    }
+    rounds.push(round)
+    teams.splice(1, 0, teams.pop())
+  }
+  return rounds
+}
+
 function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDebut = '09:00', heureFin = null, pauseMidiDebut = '12:00', pauseMidiDuree = 90) {
   const poules = {}
   equipes.forEach(e => { (poules[e.poule] ||= []).push(e) })
-  const restants = []
+
+  const roundsParPoule = {}
   Object.entries(poules).forEach(([poule, eqs]) => {
-    for (let i = 0; i < eqs.length; i++) {
-      for (let j = i + 1; j < eqs.length; j++) {
-        restants.push({ equipe_a: eqs[i], equipe_b: eqs[j], poule, phase: 'poule' })
-      }
-    }
+    roundsParPoule[poule] = genererRoundsPoule(eqs).map(round => round.map(m => ({ ...m, poule, phase: 'poule' })))
   })
+
+  // Entrelacement : round 1 de toutes les poules, puis round 2 de toutes les
+  // poules, etc. — la file `restants` alterne donc naturellement entre
+  // poules au lieu de les traiter en blocs séparés.
+  const maxRounds = Math.max(0, ...Object.values(roundsParPoule).map(r => r.length))
+  const restants = []
+  for (let r = 0; r < maxRounds; r++) {
+    Object.keys(roundsParPoule).sort().forEach(poule => {
+      const round = roundsParPoule[poule][r]
+      if (round) restants.push(...round)
+    })
+  }
 
   const debutJournee = timeToMin(heureDebut)
   const finJournee = heureFin ? timeToMin(heureFin) : null
