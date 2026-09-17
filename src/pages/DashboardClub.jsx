@@ -247,7 +247,7 @@ const optionsPourSuggestion = (suggestion, categorieAge) => {
 
 const PERMISSION_SECTIONS = [
   { id: 'sportif', label: 'Sportif' },
-  { id: 'seances', label: 'Séances' },
+  { id: 'seances', label: 'Planifier séance' },
   { id: 'terrains', label: 'Planning terrains' },
   { id: 'deplacements', label: 'Déplacements' },
   { id: 'budget', label: 'Budget' },
@@ -327,6 +327,7 @@ const CATEGORIES_DEPENSE = [
   { label: 'Communication', emoji: '📣' },
   { label: 'Éducateur', emoji: '🧑‍🏫' },
   { label: 'Équipes', emoji: '⚽' },
+  { label: 'Tournoi', emoji: '🏆' },
   { label: 'Divers', emoji: '📦' },
 ]
 
@@ -3258,7 +3259,7 @@ export default function DashboardClub() {
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
-    ...(canViewSection('seances') ? [{ id: 'seances', label: 'Séances', Icon: IcoCalendar }] : []),
+    ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
   ]
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },

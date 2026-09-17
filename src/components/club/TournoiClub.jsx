@@ -21,7 +21,7 @@ const VIDE_TOURNOI = {
   nom: '', organisateur: '', date_debut: '', date_fin: '',
   lieu: '', adresse: '', format: 'Poules + KO', nb_equipes: '',
   statut: 'Inscrit', contact_nom: '', contact_email: '', contact_tel: '',
-  nb_joueurs_max: 16, notes: '', club_categorie_id: '',
+  nb_joueurs_max: 16, notes: '', club_categorie_id: '', budget_inscription: '',
 }
 const VIDE_MATCH = { adversaire: '', phase: 'Poule', score_nous: '', score_eux: '', heure: '', terrain: '', buteurs: '', notes: '' }
 
@@ -90,23 +90,44 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     setVue('nouveau')
   }
 
+  // Synchronise la dépense budget liée à l'inscription du tournoi — un
+  // montant à 0/vide supprime l'entrée plutôt que de laisser une dépense à
+  // 0€ traîner. source_type/source_id permet de retrouver l'entrée pour la
+  // mettre à jour ou la supprimer en cascade, plutôt que de la dupliquer à
+  // chaque modification.
+  async function syncBudgetInscription(tournoiId, nom, montant, date) {
+    const { data: existant } = await supabase.from('budget_club').select('id')
+      .eq('source_type', 'tournoi_participation').eq('source_id', tournoiId).maybeSingle()
+    if (montant > 0) {
+      const champs = { libelle: `Inscription tournoi — ${nom}`, montant, date: date || new Date().toISOString().split('T')[0] }
+      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
+      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: 'tournoi_participation', source_id: tournoiId })
+    } else if (existant) {
+      await supabase.from('budget_club').delete().eq('id', existant.id)
+    }
+  }
+
   async function sauvegarderTournoi() {
     if (!form.nom || !form.date_debut || !form.club_categorie_id) return
+    const budgetInscription = form.budget_inscription === '' ? 0 : Number(form.budget_inscription)
     const payload = {
       ...form,
       club_id: clubId,
       nb_equipes: form.nb_equipes === '' ? null : Number(form.nb_equipes),
       nb_joueurs_max: form.nb_joueurs_max === '' ? null : Number(form.nb_joueurs_max),
       date_fin: form.date_fin || null,
+      budget_inscription: budgetInscription,
     }
-    const { error } = await supabase.from('tournois_participation').insert(payload)
+    const { data, error } = await supabase.from('tournois_participation').insert(payload).select().single()
     if (error) { alert(error.message); return }
+    if (budgetInscription > 0) await syncBudgetInscription(data.id, form.nom, budgetInscription, form.date_debut)
     setVue('liste')
     charger()
   }
 
   async function supprimerTournoi(id) {
     if (!confirm('Supprimer ce tournoi ? Cette action est définitive.')) return
+    await supabase.from('budget_club').delete().eq('source_type', 'tournoi_participation').eq('source_id', id)
     await supabase.from('tournois_participation').delete().eq('id', id)
     setVue('liste')
     charger()
@@ -115,6 +136,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   async function majChamp(champ, valeur) {
     await supabase.from('tournois_participation').update({ [champ]: valeur }).eq('id', selected.id)
     setSelected(p => ({ ...p, [champ]: valeur }))
+    if (champ === 'budget_inscription') await syncBudgetInscription(selected.id, selected.nom, valeur, selected.date_debut)
   }
 
   async function ajouterMatch() {
@@ -287,6 +309,11 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
             <label style={st.label}>Nb joueurs max</label>
             <input type="number" value={form.nb_joueurs_max} onChange={e => setForm(p => ({ ...p, nb_joueurs_max: e.target.value }))} style={st.input} />
           </div>
+        </div>
+        <div>
+          <label style={st.label}>Prix d'inscription (€)</label>
+          <input type="number" min="0" step="0.01" placeholder="0.00" value={form.budget_inscription} onChange={e => setForm(p => ({ ...p, budget_inscription: e.target.value }))} style={st.input} />
+          <div style={{ color: colors.text.disabled, fontSize: '11px', marginTop: '4px' }}>Ajouté automatiquement dans le budget du club (dépense, catégorie Tournoi)</div>
         </div>
         <div>
           <label style={st.label}>Notes</label>

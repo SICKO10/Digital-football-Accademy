@@ -21,6 +21,7 @@ const VIDE_TOURNOI = {
   nb_terrains: 2, duree_match: 15, pause_minutes: 5,
   heure_debut: '09:00', nb_equipes_poule: 4,
   heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
+  prix_inscription_equipe: '', nb_equipes_prevues: 8,
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
 
@@ -178,6 +179,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       heure_debut: t.heure_debut || '09:00', nb_terrains: t.nb_terrains || 2, nb_equipes_poule: t.nb_equipes_poule || 4,
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
       heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
+      prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
     })
     const [{ data: eqs }, { data: mts }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
@@ -188,25 +190,50 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
   function ouvrirCreation() { setForm(VIDE_TOURNOI); setVue('creation') }
 
+  // Recette prévisionnelle liée au tournoi (prix/équipe × équipes attendues)
+  // — même logique de sync que côté Phase 1 (TournoiClub.jsx) : une entrée
+  // budget_club retrouvée/mise à jour via source_type/source_id plutôt que
+  // dupliquée à chaque modification, supprimée si le prix repasse à 0.
+  async function syncBudgetRecette(tournoiId, nom, prixEquipe, nbEquipes, date) {
+    const { data: existant } = await supabase.from('budget_club').select('id')
+      .eq('source_type', 'tournoi_organise').eq('source_id', tournoiId).maybeSingle()
+    const montant = (Number(prixEquipe) || 0) * (Number(nbEquipes) || 0)
+    if (montant > 0) {
+      const champs = { libelle: `Inscriptions tournoi — ${nom}`, montant, date: date || new Date().toISOString().split('T')[0] }
+      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
+      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'recette', categorie: 'Tournoi', source_type: 'tournoi_organise', source_id: tournoiId })
+    } else if (existant) {
+      await supabase.from('budget_club').delete().eq('id', existant.id)
+    }
+  }
+
   async function sauvegarderReglages() {
     setReglagesSaving(true)
     const { data, error } = await supabase.from('tournois_organises').update(reglagesForm).eq('id', tournoi.id).select().single()
     setReglagesSaving(false)
-    if (!error && data) setTournoi(data)
+    if (!error && data) {
+      setTournoi(data)
+      await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+    }
   }
 
   async function creerTournoi() {
     if (!form.nom.trim()) return
     setLoading(true)
+    const payload = { ...form, prix_inscription_equipe: form.prix_inscription_equipe === '' ? 0 : Number(form.prix_inscription_equipe) }
     const { data, error } = await supabase.from('tournois_organises').insert({
-      ...form, club_id: clubId, educateur_id: userId || null, code_public: genererCode(),
+      ...payload, club_id: clubId, educateur_id: userId || null, code_public: genererCode(),
     }).select().single()
+    if (!error && data && payload.prix_inscription_equipe > 0) {
+      await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+    }
     setLoading(false)
     if (!error && data) { await chargerTournois(); await chargerDetail(data) }
   }
 
   async function supprimerTournoi(id) {
     if (!confirm('Supprimer ce tournoi ? Cette action est définitive.')) return
+    await supabase.from('budget_club').delete().eq('source_type', 'tournoi_organise').eq('source_id', id)
     await supabase.from('tournois_organises').delete().eq('id', id)
     chargerTournois()
   }
@@ -616,6 +643,22 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             </select>
           </div>
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={st.label}>Prix d'inscription par équipe (€)</label>
+            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
+          </div>
+          <div>
+            <label style={st.label}>Nombre d'équipes attendues</label>
+            <input type="number" min="2" value={form.nb_equipes_prevues} onChange={e => setForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />
+          </div>
+        </div>
+        {Number(form.prix_inscription_equipe) > 0 && (
+          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '-6px' }}>
+            Recette prévisionnelle : {(Number(form.prix_inscription_equipe) * (form.nb_equipes_prevues || 8)).toFixed(2)}€
+            <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (basé sur {form.nb_equipes_prevues || 8} équipes) — ajoutée automatiquement dans le budget du club</span>
+          </div>
+        )}
         <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
           {loading ? 'Création…' : 'Créer le tournoi'}
         </button>
@@ -668,6 +711,12 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
         {onglet === 'equipes' && (
           <div>
+            {Number(tournoi.prix_inscription_equipe) > 0 && (
+              <div style={{ ...st.card, marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipes.length} équipe{equipes.length > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
+                <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '15px' }}>{(equipes.length * Number(tournoi.prix_inscription_equipe)).toFixed(2)}€</span>
+              </div>
+            )}
             {!readOnly && (
               <div style={{ ...st.card, marginBottom: '16px' }}>
                 <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>Ajouter une équipe</div>
@@ -931,6 +980,21 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </select>
               </div>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              <div>
+                <label style={st.label}>Prix d'inscription par équipe (€)</label>
+                <input type="number" min="0" step="0.01" placeholder="0.00" value={reglagesForm.prix_inscription_equipe} onChange={e => setReglagesForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Nombre d'équipes attendues</label>
+                <input type="number" min="2" value={reglagesForm.nb_equipes_prevues} onChange={e => setReglagesForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />
+              </div>
+            </div>
+            {Number(reglagesForm.prix_inscription_equipe) > 0 && (
+              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>
+                Recette prévisionnelle : {(Number(reglagesForm.prix_inscription_equipe) * (reglagesForm.nb_equipes_prevues || 8)).toFixed(2)}€
+              </div>
+            )}
             <button onClick={sauvegarderReglages} disabled={reglagesSaving} style={{ ...st.btnSolid, opacity: reglagesSaving ? 0.6 : 1, marginTop: '16px' }}>
               {reglagesSaving ? 'Enregistrement…' : 'Enregistrer — puis régénère le planning pour appliquer'}
             </button>
