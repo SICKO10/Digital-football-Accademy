@@ -352,7 +352,19 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       const t = timeToMin(m.heure_debut) + (tournoi.duree_match || 15)
       return t > max ? t : max
     }, timeToMin(tournoi.heure_debut || '09:00') + (tournoi.duree_match || 15))
-    const debutFinale = finDernierMatch + 15
+
+    // La phase finale démarre juste après le dernier match de poule, mais ce
+    // créneau peut tomber dans la pause méridienne (contrairement à
+    // genererPlanning, rien ne le décalait ici) — même logique d'évitement,
+    // réappliquée à chaque nouveau créneau calculé plus bas.
+    const midiDebut = timeToMin(tournoi.pause_midi_debut || '12:00')
+    const midiFin = midiDebut + (tournoi.pause_midi_duree || 90)
+    const eviterPauseMidiFinale = (t) => {
+      if (t >= midiDebut && t < midiFin) return midiFin
+      if (t < midiDebut && t + (tournoi.duree_match || 15) > midiDebut) return midiFin
+      return t
+    }
+    const debutFinale = eviterPauseMidiFinale(finDernierMatch + 15)
 
     const inserts = []
 
@@ -376,7 +388,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           })
           terrainIdx++
         })
-        temps += (tournoi.duree_match || 15) + (tournoi.pause_minutes || 5)
+        temps = eviterPauseMidiFinale(temps + (tournoi.duree_match || 15) + (tournoi.pause_minutes || 5))
       })
     } else {
       // Élimination directe (seule, ou après les poules) — croisements
@@ -391,7 +403,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           { tournoi_id: tournoi.id, equipe_a_id: classements[poules[0]]?.[0]?.equipe.id, equipe_b_id: classements[poules[1]]?.[1]?.equipe.id, phase: 'demi', terrain: 1, heure_debut: minToTime(debutFinale), statut: 'a_jouer' },
           { tournoi_id: tournoi.id, equipe_a_id: classements[poules[1]]?.[0]?.equipe.id, equipe_b_id: classements[poules[0]]?.[1]?.equipe.id, phase: 'demi', terrain: Math.min(2, tournoi.nb_terrains), heure_debut: minToTime(debutFinale), statut: 'a_jouer' },
         )
-        const debutF = debutFinale + (tournoi.duree_match || 15) + 10
+        const debutF = eviterPauseMidiFinale(debutFinale + (tournoi.duree_match || 15) + 10)
         inserts.push(
           { tournoi_id: tournoi.id, equipe_a_id: null, equipe_b_id: null, phase: 'troisieme', terrain: 1, heure_debut: minToTime(debutF), statut: 'a_jouer' },
           { tournoi_id: tournoi.id, equipe_a_id: null, equipe_b_id: null, phase: 'finale', terrain: Math.min(2, tournoi.nb_terrains), heure_debut: minToTime(debutF), statut: 'a_jouer' },
@@ -406,7 +418,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           inserts.push({
             tournoi_id: tournoi.id, equipe_a_id: a?.equipe.id, equipe_b_id: b?.equipe.id,
             phase: 'quart', terrain: (i % tournoi.nb_terrains) + 1,
-            heure_debut: minToTime(debutFinale + Math.floor(i / tournoi.nb_terrains) * ((tournoi.duree_match || 15) + 5)),
+            heure_debut: minToTime(eviterPauseMidiFinale(debutFinale + Math.floor(i / tournoi.nb_terrains) * ((tournoi.duree_match || 15) + 5))),
             statut: 'a_jouer',
           })
         })
@@ -417,6 +429,64 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     if (error) { console.error('genererPhaseFinale error:', error); alert('Erreur en générant la phase finale : ' + error.message); return }
     setMatchs(p => [...p.filter(m => m.phase === 'poule'), ...(data || [])])
     setOnglet('classement')
+  }
+
+  // Résout le tour suivant du tableau à élimination directe une fois le tour
+  // en cours entièrement joué — nécessaire à partir de 3 poules, où
+  // genererPhaseFinale ne peut créer que les quarts (demies/finale dépendent
+  // des vainqueurs, inconnus à cet instant). Pour 2 poules, genererPhaseFinale
+  // crée déjà les lignes "troisieme"/"finale" à équipes nulles en attendant
+  // les demies : on les régénère ici plutôt que de bricoler un UPDATE, même
+  // logique "supprimer puis réinsérer" que genererPhaseFinale plus haut.
+  async function genererTourSuivant(phaseActuelle, phaseSuivante) {
+    const matchsPhase = matchs
+      .filter(m => m.phase === phaseActuelle && m.statut === 'termine')
+      .sort((a, b) => a.heure_debut?.localeCompare(b.heure_debut) || a.terrain - b.terrain)
+    if (matchsPhase.length === 0) return
+
+    const gagnant = (m) => (m.score_a > m.score_b ? m.equipe_a_id : m.equipe_b_id)
+    const perdant = (m) => (m.score_a > m.score_b ? m.equipe_b_id : m.equipe_a_id)
+
+    const midiDebut = timeToMin(tournoi.pause_midi_debut || '12:00')
+    const midiFin = midiDebut + (tournoi.pause_midi_duree || 90)
+    const eviterPauseMidiFinale = (t) => {
+      if (t >= midiDebut && t < midiFin) return midiFin
+      if (t < midiDebut && t + (tournoi.duree_match || 15) > midiDebut) return midiFin
+      return t
+    }
+    const finDernier = matchsPhase.reduce((max, m) => {
+      if (!m.heure_debut) return max
+      return Math.max(max, timeToMin(m.heure_debut) + (tournoi.duree_match || 15))
+    }, 0)
+    const debut = eviterPauseMidiFinale(finDernier + 15)
+
+    if (phaseSuivante === 'demi') {
+      const gagnants = matchsPhase.map(gagnant)
+      const n = gagnants.length
+      const paires = []
+      for (let i = 0; i < Math.floor(n / 2); i++) paires.push([gagnants[i], gagnants[n - 1 - i]])
+      const inserts = paires.filter(([a, b]) => a && b).map(([a, b], i) => ({
+        tournoi_id: tournoi.id, equipe_a_id: a, equipe_b_id: b, phase: 'demi',
+        terrain: (i % tournoi.nb_terrains) + 1, heure_debut: minToTime(debut), statut: 'a_jouer',
+      }))
+      if (inserts.length === 0) { alert('Impossible de déterminer les demi-finales — vérifiez les scores saisis.'); return }
+      const { data, error } = await supabase.from('tournois_matchs_organises').insert(inserts).select()
+      if (error) { console.error('genererTourSuivant error:', error); alert('Erreur en générant les demi-finales : ' + error.message); return }
+      setMatchs(p => [...p, ...(data || [])])
+    } else if (phaseSuivante === 'finale') {
+      const gagnants = matchsPhase.map(gagnant)
+      const perdants = matchsPhase.map(perdant)
+      if (gagnants.length < 2 || !gagnants[0] || !gagnants[1]) { alert('Impossible de déterminer la finale — vérifiez les scores saisis.'); return }
+      await supabase.from('tournois_matchs_organises').delete().eq('tournoi_id', tournoi.id).in('phase', ['troisieme', 'finale'])
+      const inserts = []
+      if (perdants[0] && perdants[1]) {
+        inserts.push({ tournoi_id: tournoi.id, equipe_a_id: perdants[0], equipe_b_id: perdants[1], phase: 'troisieme', terrain: 1, heure_debut: minToTime(debut), statut: 'a_jouer' })
+      }
+      inserts.push({ tournoi_id: tournoi.id, equipe_a_id: gagnants[0], equipe_b_id: gagnants[1], phase: 'finale', terrain: Math.min(2, tournoi.nb_terrains), heure_debut: minToTime(debut), statut: 'a_jouer' })
+      const { data, error } = await supabase.from('tournois_matchs_organises').insert(inserts).select()
+      if (error) { console.error('genererTourSuivant error:', error); alert('Erreur en générant la finale : ' + error.message); return }
+      setMatchs(p => [...p.filter(m => m.phase !== 'troisieme' && m.phase !== 'finale'), ...(data || [])])
+    }
   }
 
   const lienPublic = tournoi?.code_public ? `${window.location.origin}/tournoi/${tournoi.code_public}` : null
@@ -732,6 +802,21 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     {matchsElim.filter(mt => mt.phase === phase).map(ligneMatch)}
                   </div>
                 ))}
+
+                {!readOnly && (() => {
+                  const quarts = matchsElim.filter(mt => mt.phase === 'quart')
+                  const demis = matchsElim.filter(mt => mt.phase === 'demi')
+                  const finale = matchsElim.filter(mt => mt.phase === 'finale')
+                  const quartsTermines = quarts.length > 0 && quarts.every(mt => mt.statut === 'termine')
+                  const demisTermines = demis.length > 0 && demis.every(mt => mt.statut === 'termine')
+                  if (quartsTermines && demis.length === 0) {
+                    return <button onClick={() => genererTourSuivant('quart', 'demi')} style={{ ...st.btnSolid, marginTop: '4px' }}>⚡ Générer les demi-finales</button>
+                  }
+                  if (demisTermines && (finale.length === 0 || finale.some(mt => !mt.equipe_a_id || !mt.equipe_b_id))) {
+                    return <button onClick={() => genererTourSuivant('demi', 'finale')} style={{ ...st.btnSolid, marginTop: '4px' }}>🏆 Générer la finale</button>
+                  }
+                  return null
+                })()}
               </>
             )}
           </div>
