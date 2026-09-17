@@ -258,7 +258,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   async function saisirScore(matchId) {
     const s = scoreEdit[matchId]
     if (s?.a === undefined || s?.b === undefined || s.a === '' || s.b === '') return
-    const { data } = await supabase.from('tournois_matchs_organises').update({ score_a: +s.a, score_b: +s.b, statut: 'termine' }).eq('id', matchId).select().single()
+    const { data, error } = await supabase.from('tournois_matchs_organises').update({ score_a: +s.a, score_b: +s.b, statut: 'termine' }).eq('id', matchId).select().single()
+    // Sans ce check, un échec (RLS, colonne manquante...) était totalement
+    // silencieux : le bouton ✓ semblait "ne rien faire" sans aucune trace,
+    // aussi bien pour l'utilisateur que pour nous en debug.
+    if (error) { console.error('saisirScore error:', error); alert('Erreur en enregistrant le score : ' + error.message); return }
     if (data) setMatchs(p => p.map(mt => (mt.id === matchId ? data : mt)))
     setScoreEdit(p => { const n = { ...p }; delete n[matchId]; return n })
   }
