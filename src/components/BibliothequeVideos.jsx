@@ -11,6 +11,7 @@ const CATEGORIES = [
   { val: 'physique', label: 'Physique' },
   { val: 'gardien', label: 'Gardien' },
   { val: 'mental', label: 'Mental' },
+  { val: 'procede', label: 'Procédé de jeu' },
   { val: 'autre', label: 'Autre' },
 ]
 
@@ -18,6 +19,16 @@ const TYPES_SEANCE = [
   { val: 'collectif', label: 'Collectif' },
   { val: 'individuel', label: 'Individuel' },
   { val: 'les_deux', label: 'Les deux' },
+]
+
+// Même vocabulaire que le champ `type` de la bibliothèque de procédés
+// (DashboardEducateur.jsx) — pour rester cohérent entre les deux
+// bibliothèques plutôt que d'inventer une classification vidéo distincte.
+const TYPES_PROCEDE = [
+  { val: 'echauffement', label: 'Échauffement', emoji: '🔥' },
+  { val: 'jeu', label: 'Jeu', emoji: '⚽' },
+  { val: 'exercice', label: 'Exercice', emoji: '🔄' },
+  { val: 'situation', label: 'Situation', emoji: '🎯' },
 ]
 
 // type : 'df' | 'club' | 'perso' — portée réelle appliquée par la RLS de
@@ -40,12 +51,13 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   const [filtrePhase, setFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif'
   const [filtreTheme, setFiltreTheme] = useState('tous')
   const [filtreTypeSeance, setFiltreTypeSeance] = useState('tous')
+  const [filtreTypeProcede, setFiltreTypeProcede] = useState('tous')
   const [recherche, setRecherche] = useState('')
   const [saving, setSaving] = useState(false)
   const [formPhase, setFormPhase] = useState('offensif') // phase affichée dans le sélecteur du formulaire (pas persisté, theme_seance suffit)
   const [form, setForm] = useState({
     titre: '', description: '', youtube_url: '',
-    categorie: 'technique', theme_seance: '', type_seance: 'collectif',
+    categorie: 'technique', theme_seance: '', type_seance: 'collectif', type_procede: '',
     tags: '', duree: '', visible_joueurs: false,
   })
 
@@ -65,13 +77,13 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, clubId, proprietaireId])
 
-  const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: '', type_seance: 'collectif', tags: '', duree: '', visible_joueurs: false }
+  const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: '', type_seance: 'collectif', type_procede: '', tags: '', duree: '', visible_joueurs: false }
 
   const ouvrirEditionVideo = (video) => {
     setVideoEnEdition(video)
     setForm({
       titre: video.titre || '', description: video.description || '', youtube_url: video.youtube_url || '',
-      categorie: video.categorie || 'technique', theme_seance: video.theme_seance || '', type_seance: video.type_seance || 'collectif',
+      categorie: video.categorie || 'technique', theme_seance: video.theme_seance || '', type_seance: video.type_seance || 'collectif', type_procede: video.type_procede || '',
       tags: (video.tags || []).join(', '), duree: video.duree || '', visible_joueurs: video.visible_joueurs || false,
     })
     setFormPhase(themeSeanceInfo(video.theme_seance)?.phase || 'offensif')
@@ -91,6 +103,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       categorie: form.categorie,
       theme_seance: type === 'df' ? form.theme_seance : null,
       type_seance: type === 'df' ? form.type_seance : null,
+      type_procede: form.type_procede || null,
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       duree: form.duree || null,
       visible_joueurs: form.visible_joueurs,
@@ -121,9 +134,10 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     const matchPhase = filtrePhase === 'tous' || themeSeanceInfo(v.theme_seance)?.phase === filtrePhase
     const matchTheme = filtreTheme === 'tous' || v.theme_seance === filtreTheme
     const matchType = filtreTypeSeance === 'tous' || v.type_seance === filtreTypeSeance || v.type_seance === 'les_deux'
+    const matchTypeProcede = filtreTypeProcede === 'tous' || v.type_procede === filtreTypeProcede
     const r = recherche.trim().toLowerCase()
     const matchRecherche = !r || v.titre.toLowerCase().includes(r) || v.description?.toLowerCase().includes(r)
-    return matchCat && matchPhase && matchTheme && matchType && matchRecherche
+    return matchCat && matchPhase && matchTheme && matchType && matchTypeProcede && matchRecherche
   })
 
   // Regroupement par phase (Offensif/Défensif, thèmes officiels FFF — mêmes
@@ -175,6 +189,11 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
           {video.categorie && (
             <span style={{ background: accentColor + '22', color: accentColor, borderRadius: '4px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>
               {CATEGORIES.find(c => c.val === video.categorie)?.label || video.categorie}
+            </span>
+          )}
+          {video.type_procede && (
+            <span style={{ background: colors.background.raised, color: colors.text.secondary, borderRadius: '4px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>
+              {(() => { const tp = TYPES_PROCEDE.find(t => t.val === video.type_procede); return tp ? `${tp.emoji} ${tp.label}` : video.type_procede })()}
             </span>
           )}
           {(video.tags || []).map((tag, i) => (
@@ -261,6 +280,20 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               </div>
             </>
           )}
+          <div style={{ marginBottom: '16px' }}>
+            <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 8px' }}>Type de procédé (optionnel)</p>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {TYPES_PROCEDE.map(tp => (
+                <button key={tp.val} onClick={() => setForm(f => ({ ...f, type_procede: f.type_procede === tp.val ? '' : tp.val }))}
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: form.type_procede === tp.val ? accentColor + '22' : 'transparent',
+                    borderColor: form.type_procede === tp.val ? accentColor : colors.border.strong,
+                    color: form.type_procede === tp.val ? accentColor : colors.text.faint }}>
+                  {tp.emoji} {tp.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
             <select value={form.categorie} onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))} style={inputStyle}>
               {CATEGORIES.filter(c => c.val !== 'toutes').map(c => <option key={c.val} value={c.val}>{c.label}</option>)}
@@ -336,6 +369,17 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             </div>
           </>
         )}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {[{ val: 'tous', label: 'Tous' }, ...TYPES_PROCEDE].map(tp => (
+            <button key={tp.val} onClick={() => setFiltreTypeProcede(tp.val)}
+              style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                background: filtreTypeProcede === tp.val ? accentColor + '22' : 'transparent',
+                borderColor: filtreTypeProcede === tp.val ? accentColor : colors.border.strong,
+                color: filtreTypeProcede === tp.val ? accentColor : colors.text.faint }}>
+              {tp.emoji ? `${tp.emoji} ${tp.label}` : tp.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
