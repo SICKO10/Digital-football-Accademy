@@ -2097,7 +2097,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [filtreCategorieAge, setFiltreCategorieAge] = useState('')
   const [filtreTypeSeance, setFiltreTypeSeance] = useState('tous') // 'tous' | 'collectif' | 'individuel'
   const [filtreAnime, setFiltreAnime] = useState(false)
-  const [modeSeance, setModeSeance] = useState('enregistrer')
+  const [modeSeance, setModeSeance] = useState('rediger')
   const [confirmSuppr, setConfirmSuppr] = useState(null) // id de la séance à confirmer
 
   // Bibliothèque de procédés d'entraînement
@@ -8138,6 +8138,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           <div>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               <button
+                onClick={() => setModeSeance('rediger')}
+                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                ✏️ {t('seance_rediger_fiche', lang)}
+              </button>
+              <button
                 onClick={() => setModeSeance('enregistrer')}
                 style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
@@ -8151,12 +8157,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   🤖 Générer avec l'IA
                 </button>
               )}
-              <button
-                onClick={() => setModeSeance('rediger')}
-                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                ✏️ {t('seance_rediger_fiche', lang)}
-              </button>
               <button
                 onClick={() => setModeSeance('scanner')}
                 style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
