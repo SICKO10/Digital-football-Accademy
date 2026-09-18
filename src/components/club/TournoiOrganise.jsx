@@ -1222,6 +1222,14 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
     const { data, error } = await supabase.from('tournois_inscriptions').update({ statut }).eq('id', id).select('*, tournois_inscriptions_joueurs(*)').single()
     if (error) { console.error('changerStatut inscription error:', error); alert('Erreur : ' + error.message); return }
     onChange(prev => prev.map(i => (i.id === id ? data : i)))
+    // Email au référent + à chaque joueur ayant une adresse — best-effort,
+    // ne bloque pas la validation si Resend échoue (même logique que
+    // envoyer-invitation, un email raté ne doit pas annuler une action déjà
+    // actée en base).
+    if (statut === 'validee') {
+      supabase.functions.invoke('send-tournament-email', { body: { inscription_id: id } })
+        .then(({ error: mailErr }) => { if (mailErr) console.error('send-tournament-email error:', mailErr) })
+    }
   }
 
   const couleurStatut = { en_attente: colors.accent.amber, validee: colors.accent.green, refusee: colors.accent.red }
