@@ -825,7 +825,7 @@ function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
 function SousOngletsBar({ items, activeSection, setActiveSection }) {
   const colors = useColors()
   return (
-    <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
+    <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
       {items.map(it => {
         const actif = activeSection === it.key
         return (
@@ -834,7 +834,7 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
               padding: '9px 22px', borderRadius: 9, border: 'none', cursor: 'pointer',
               background: actif ? colors.text.primary : 'transparent',
               color: actif ? colors.background.base : colors.text.faint,
-              fontWeight: actif ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap',
+              fontWeight: actif ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0,
               fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
             }}>
             {it.label}
@@ -9653,7 +9653,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
         {/* ── Barre flottante : sélection multiple de procédés → créer une séance ── */}
         {biblioSelectionMode && biblioSelection.length > 0 && (
-          <div style={{ position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 250, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 250, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '14px', maxWidth: 'calc(100vw - 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, whiteSpace: 'nowrap' }}>
               {biblioSelection.length} {biblioSelection.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}
             </span>

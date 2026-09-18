@@ -4410,10 +4410,10 @@ export default function DashboardClub() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 4, width: 'fit-content' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 {[['mois', t('club_ce_mois', lang)], ['saison', t('club_cette_saison', lang)], ['tout', t('club_tout', lang)]].map(([val, label]) => (
                   <button key={val} onClick={() => setBudgetPeriode(val)}
-                    style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: budgetPeriode === val ? couleurPrincipale : 'transparent', color: budgetPeriode === val ? colors.black : colors.text.faint, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: budgetPeriode === val ? couleurPrincipale : 'transparent', color: budgetPeriode === val ? colors.black : colors.text.faint, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     {label}
                   </button>
                 ))}
