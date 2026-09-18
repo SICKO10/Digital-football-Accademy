@@ -510,7 +510,7 @@ function DonutVND({ v, n, d, size = 72 }) {
 }
 
 const TerrainFoot = () => (
-  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '110px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '220px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
     <rect width="300" height="200" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
@@ -543,7 +543,7 @@ const TerrainFoot = () => (
 )
 
 const DemiTerrain = () => (
-  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '130px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '240px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="199" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale (bord droit, pointillé) */}
     <line x1="299" y1="0" x2="299" y2="200" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
@@ -564,7 +564,7 @@ const DemiTerrain = () => (
 )
 
 const DemiTerrainFutsal = () => (
-  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '130px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '240px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne centrale pointillée */}
     <line x1="299" y1="0" x2="299" y2="180" stroke={colors.border.strong} strokeWidth="1.5" strokeDasharray="6,3"/>
@@ -585,7 +585,7 @@ const DemiTerrainFutsal = () => (
 )
 
 const TerrainFutsal = () => (
-  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '110px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
+  <svg viewBox="0 0 300 180" width="100%" style={{ maxHeight: '220px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     <rect width="299" height="179" x="0.5" y="0.5" fill="white" stroke={colors.border.strong} strokeWidth="2"/>
     {/* Ligne médiane */}
     <line x1="150" y1="0" x2="150" y2="180" stroke={colors.border.strong} strokeWidth="1.5"/>
@@ -689,7 +689,7 @@ function FicheContenu({ fiche, categorieLabel }) {
                   <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>But</label><div className="valeur">{p.but}</div></div>
                   <div className="procede-field" style={{ gridColumn: '1 / -1' }}><label>Organisation</label><div className="valeur">{p.organisation}</div></div>
                   <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
-                    {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+                    {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }} /> : getTerrainComponent(p.numero, fiche.sport)}
                   </div>
                   <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                     <label>Consignes</label>
@@ -772,7 +772,7 @@ function FicheBEFContenu({ fiche, categorieLabel, nomEducateur }) {
                 <div className="bef-surface-box">{p.surface}</div>
               </div>
               <div className="bef-col bef-pitch-box">
-                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '220px', objectFit: 'contain' }} /> : getTerrainComponent(p.numero, fiche.sport)}
+                {p.schema_png ? <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '280px', objectFit: 'contain' }} /> : getTerrainComponent(p.numero, fiche.sport)}
               </div>
               <div className="bef-col">
                 <div className="bef-head-blue">Comportements attendus</div>
