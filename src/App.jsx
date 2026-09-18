@@ -29,6 +29,7 @@ import ClubPublic from './pages/ClubPublic'
 import PartenairePublic from './pages/PartenairePublic'
 import TactipadPublic from './pages/TactipadPublic'
 import TournoiPublic from './pages/TournoiPublic'
+import TournoiInscription from './pages/TournoiInscription'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider } from './lib/ThemeProvider'
 
@@ -104,6 +105,7 @@ function App() {
         <Route path="/partenaire/:token" element={<PartenairePublic />} />
         <Route path="/tactipad/:slug" element={<TactipadPublic />} />
         <Route path="/tournoi/:code" element={<TournoiPublic />} />
+        <Route path="/tournoi/:code/inscription" element={<TournoiInscription />} />
       </Routes>
       <InstallAppBanner />
     </Router>

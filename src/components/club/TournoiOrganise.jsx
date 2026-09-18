@@ -169,6 +169,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [buteurs, setButeurs] = useState([])
   const [buteurForm, setButeurForm] = useState({}) // matchId -> { prenom, nom, numero, equipe_id, nb_buts }
   const [matchExpande, setMatchExpande] = useState(null)
+  const [inscriptions, setInscriptions] = useState([])
+  const [lienInscriptionCopie, setLienInscriptionCopie] = useState(false)
 
   useEffect(() => { if (clubId) chargerTournois() }, [clubId])
 
@@ -186,12 +188,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
       qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0,
     })
-    const [{ data: eqs }, { data: mts }, { data: buts }] = await Promise.all([
+    const [{ data: eqs }, { data: mts }, { data: buts }, { data: insc }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
       supabase.from('tournois_matchs_organises').select('*').eq('tournoi_id', t.id).order('heure_debut'),
       supabase.from('tournois_buteurs').select('*').eq('tournoi_id', t.id),
+      supabase.from('tournois_inscriptions').select('*, tournois_inscriptions_joueurs(*)').eq('tournoi_id', t.id).order('created_at'),
     ])
-    setEquipes(eqs || []); setMatchs(mts || []); setButeurs(buts || [])
+    setEquipes(eqs || []); setMatchs(mts || []); setButeurs(buts || []); setInscriptions(insc || [])
   }
 
   async function ajouterButeur(matchId) {
@@ -629,6 +632,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     setLienCopie(true)
     setTimeout(() => setLienCopie(false), 2000)
   }
+  const lienInscription = lienPublic ? `${lienPublic}/inscription` : null
+  const copierLienInscription = () => {
+    if (!lienInscription) return
+    navigator.clipboard.writeText(lienInscription)
+    setLienInscriptionCopie(true)
+    setTimeout(() => setLienInscriptionCopie(false), 2000)
+  }
 
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' },
@@ -779,6 +789,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       { key: 'resultats', label: 'Résultats' },
       { key: 'classement', label: 'Classement' },
       { key: 'buteurs', label: `Buteurs (${buteurs.length})` },
+      { key: 'inscriptions', label: `Inscriptions (${inscriptions.length})` },
       ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
@@ -804,6 +815,16 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{lienPublic.replace(/^https?:\/\//, '')}</div>
             </div>
             <button onClick={copierLien} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> {lienCopie ? 'Copié !' : 'Copier le lien'}</button>
+          </div>
+        )}
+
+        {lienInscription && (
+          <div style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+            <div>
+              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '2px' }}>Lien d'inscription · à partager aux équipes</div>
+              <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{lienInscription.replace(/^https?:\/\//, '')}</div>
+            </div>
+            <button onClick={copierLienInscription} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> {lienInscriptionCopie ? 'Copié !' : "Copier le lien d'inscription"}</button>
           </div>
         )}
 
@@ -1060,6 +1081,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           )
         })()}
 
+        {onglet === 'inscriptions' && (
+          <GestionInscriptions prix={tournoi.prix_inscription_equipe} inscriptions={inscriptions} onChange={setInscriptions} readOnly={readOnly} />
+        )}
+
         {onglet === 'reglages' && !readOnly && (
           <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={st.card}>
@@ -1182,4 +1207,94 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   }
 
   return null
+}
+
+// Gestion des inscriptions reçues via le lien public /tournoi/:code/inscription
+// (TournoiInscription.jsx) — composant autonome avec son propre useColors(),
+// même précédent que AlertesClub dans DashboardClub.jsx. `inscriptions`/
+// `onChange` viennent du parent (déjà chargées dans chargerDetail), pas de
+// requête de chargement séparée ici.
+function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
+  const colors = useColors()
+  const [detailOuvert, setDetailOuvert] = useState(null)
+
+  async function changerStatut(id, statut) {
+    const { data, error } = await supabase.from('tournois_inscriptions').update({ statut }).eq('id', id).select('*, tournois_inscriptions_joueurs(*)').single()
+    if (error) { console.error('changerStatut inscription error:', error); alert('Erreur : ' + error.message); return }
+    onChange(prev => prev.map(i => (i.id === id ? data : i)))
+  }
+
+  const couleurStatut = { en_attente: colors.accent.amber, validee: colors.accent.green, refusee: colors.accent.red }
+  const labelStatut = { en_attente: 'En attente', validee: 'Validée', refusee: 'Refusée' }
+
+  if (inscriptions.length === 0) {
+    return (
+      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', textAlign: 'center', padding: '40px' }}>
+        <p style={{ color: colors.text.disabled, margin: 0 }}>Aucune inscription reçue pour l'instant.</p>
+        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '6px 0 0' }}>Partage le lien d'inscription aux équipes depuis le haut de cette page.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {inscriptions.map(ins => (
+        <div key={ins.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px' }}>{ins.nom_club}{ins.categorie ? ` · ${ins.categorie}` : ''}</div>
+              <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>
+                {ins.nom_referent} · {ins.email_referent}{ins.telephone_referent ? ` · ${ins.telephone_referent}` : ''}
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.tournois_inscriptions_joueurs?.length || 0} joueur{(ins.tournois_inscriptions_joueurs?.length || 0) > 1 ? 's' : ''}</span>
+                <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.mode_paiement}</span>
+                {prix > 0 && <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.montant_paye}/{prix}€</span>}
+                <span style={{ background: couleurStatut[ins.statut] + '22', color: couleurStatut[ins.statut], border: `1px solid ${couleurStatut[ins.statut]}44`, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>{labelStatut[ins.statut]}</span>
+              </div>
+              {ins.message && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>« {ins.message} »</div>}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
+              {!readOnly && ins.statut !== 'validee' && (
+                <button onClick={() => changerStatut(ins.id, 'validee')} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Valider</button>
+              )}
+              {!readOnly && ins.statut !== 'refusee' && (
+                <button onClick={() => changerStatut(ins.id, 'refusee')} style={{ background: colors.accent.red + '15', color: colors.accent.red, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Refuser</button>
+              )}
+              <button onClick={() => setDetailOuvert(detailOuvert === ins.id ? null : ins.id)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '4px 0' }}>
+                {detailOuvert === ins.id ? 'Masquer' : 'Joueurs'}
+              </button>
+            </div>
+          </div>
+
+          {detailOuvert === ins.id && (
+            <div style={{ marginTop: '16px', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '16px', overflowX: 'auto' }}>
+              {(ins.tournois_inscriptions_joueurs || []).length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun joueur renseigné.</p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '400px' }}>
+                  <thead>
+                    <tr>{['#', 'Prénom', 'Nom', 'Maillot', 'Email'].map(h => (
+                      <th key={h} style={{ background: colors.background.raised, padding: '6px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {ins.tournois_inscriptions_joueurs.map((j, i) => (
+                      <tr key={j.id}>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.disabled }}>{i + 1}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}` }}>{j.prenom}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 600 }}>{j.nom}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.accent.green }}>{j.numero_maillot ? `#${j.numero_maillot}` : '—'}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.faint, fontSize: '12px' }}>{j.email || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
 }
