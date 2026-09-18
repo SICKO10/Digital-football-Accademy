@@ -31,6 +31,7 @@ import TactipadPublic from './pages/TactipadPublic'
 import TournoiPublic from './pages/TournoiPublic'
 import TournoiInscription from './pages/TournoiInscription'
 import TournoiVote from './pages/TournoiVote'
+import LierTournoi from './pages/LierTournoi'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider } from './lib/ThemeProvider'
 
@@ -108,6 +109,7 @@ function App() {
         <Route path="/tournoi/:code" element={<TournoiPublic />} />
         <Route path="/tournoi/:code/inscription" element={<TournoiInscription />} />
         <Route path="/tournoi/:code/voter/:inscriptionCode" element={<TournoiVote />} />
+        <Route path="/lier-tournoi/:code/:prenom/:nom" element={<LierTournoi />} />
       </Routes>
       <InstallAppBanner />
     </Router>

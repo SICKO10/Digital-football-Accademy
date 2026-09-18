@@ -113,25 +113,27 @@ serve(async (req) => {
       }
     }
 
-    // Un email à chaque joueur ayant renseigné une adresse — pousse vers la
-    // création d'un compte Digital Football (sans prétendre le pré-remplir :
-    // /register ne lit aujourd'hui ni prénom/nom ni code tournoi en query
-    // params, cf. Register.jsx — un lien qui le prétendrait mentirait).
+    // Un email à chaque joueur ayant renseigné une adresse — pousse vers
+    // /lier-tournoi/:code/:prenom/:nom (Phase F), qui retrouve réellement le
+    // joueur par prénom/nom côté serveur et attribue ses badges une fois
+    // connecté — contrairement à /register, qui ne lit aucun de ces
+    // paramètres (cf. Register.jsx), ce lien fait ce qu'il annonce.
     for (const joueur of joueurs) {
       if (!joueur.email) continue
+      const lienLiaison = `https://digitalfootball.academy/lier-tournoi/${tournoi.code_public}/${encodeURIComponent(joueur.prenom)}/${encodeURIComponent(joueur.nom)}`
       const corps = `
         Salut <strong style="color:#fff;">${joueur.prenom}</strong>,<br><br>
         Tu participes au tournoi <strong style="color:#fff;">${tournoi.nom}</strong> avec
         <strong style="color:#fff;">${inscription.nom_club}</strong>${joueur.numero_maillot ? ` (n°${joueur.numero_maillot})` : ''}.<br><br>
         ${dateStr ? `${dateStr}<br>` : ''}
         ${tournoi.lieu ? `${tournoi.lieu}<br>` : ''}
-        <br>Crée ton compte Digital Football pour retrouver tes stats du tournoi et ta carte saison.
+        <br>Lie ton compte Digital Football pour recevoir tes badges du tournoi (participation, buteur, distinctions...) sur ta carte saison.
       `
       try {
         await envoyerEmail(
           joueur.email,
           `${tournoi.nom} — tu es inscrit`,
-          enveloppe('Tu es inscrit !', corps, 'https://digitalfootball.academy/register', 'Créer mon compte (gratuit)', { lien: lienTournoi, texte: 'Ou suivre le tournoi sans compte' })
+          enveloppe('Tu es inscrit !', corps, lienLiaison, 'Lier mon compte (gratuit)', { lien: lienTournoi, texte: 'Ou suivre le tournoi sans compte' })
         )
         envoyes++
       } catch (e) {

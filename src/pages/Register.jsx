@@ -33,6 +33,12 @@ export default function Register() {
   const refBrut = searchParams.get('ref')
   const refParrainId = refBrut && REGEX_UUID.test(refBrut) ? refBrut : null
 
+  // ?redirect=/chemin (ex. retour vers /lier-tournoi/... après inscription
+  // depuis un lien joueur, cf. LierTournoi.jsx) — un chemin relatif interne
+  // uniquement, jamais une URL externe (open redirect).
+  const redirectBrut = searchParams.get('redirect')
+  const redirectApres = redirectBrut && redirectBrut.startsWith('/') && !redirectBrut.startsWith('//') ? redirectBrut : null
+
   const PROFILS = [
     {
       id: 'joueur_starter', label: t('regchoix_starter_titre', lang), desc: t('reginsc_starter_desc', lang),
@@ -133,9 +139,9 @@ export default function Register() {
       // avec le mot de passe qu'on vient de saisir, pour atterrir directement
       // sur le dashboard déjà connecté plutôt que de repasser par /login.
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
-      navigate(signInErr ? '/login' : '/dashboard')
+      navigate(signInErr ? '/login' : (redirectApres || '/dashboard'))
     } else {
-      navigate('/dashboard')
+      navigate(redirectApres || '/dashboard')
     }
   }
 
@@ -251,7 +257,7 @@ export default function Register() {
       </div>
 
       {profilChoisi?.id === 'club' && (
-        <ClubWizard color={profilChoisi.color} navigate={navigate} palierInitial={searchParams.get('palier') || ''} cycleInitial={searchParams.get('cycle') === 'annuel' ? 'annuel' : 'mensuel'} />
+        <ClubWizard color={profilChoisi.color} navigate={navigate} palierInitial={searchParams.get('palier') || ''} cycleInitial={searchParams.get('cycle') === 'annuel' ? 'annuel' : 'mensuel'} redirectApres={redirectApres} />
       )}
 
       {profilChoisi && profilChoisi.id !== 'club' && (
@@ -393,7 +399,7 @@ export default function Register() {
 // (par nombre d'équipes, cf. PALIERS_QUOTA_EQUIPES) avant redirection Stripe
 // — remplace l'ancien flux "formulaire de contact → email manuel sous
 // 24-48h" (cf. Offres.jsx, désormais limité aux questions).
-function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
+function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApres }) {
   const [etape, setEtape] = useState(1) // 1 = compte, 2 = disponibilités, 3 = formule + paiement
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
@@ -477,7 +483,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial }) {
     // ci-dessus), pour atterrir directement sur le dashboard déjà connecté.
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    navigate(signInErr ? '/login' : '/dashboard')
+    navigate(signInErr ? '/login' : (redirectApres || '/dashboard'))
   }
 
   return (

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
@@ -11,19 +11,26 @@ const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 function Login() {
   const navigate = useNavigate()
   const { lang } = useLang()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+
+  // ?redirect=/chemin (ex. retour vers /lier-tournoi/... après connexion
+  // depuis un lien joueur, cf. LierTournoi.jsx) — chemin relatif interne
+  // uniquement, jamais une URL externe (open redirect).
+  const redirectBrut = searchParams.get('redirect')
+  const redirectApres = redirectBrut && redirectBrut.startsWith('/') && !redirectBrut.startsWith('//') ? redirectBrut : null
 
   // Même logique que Home.jsx : si une session persistée existe déjà (accès
   // direct à /login via un lien ou un ancien signet), on saute le formulaire
   // au lieu de redemander un mot de passe pour rien.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/dashboard', { replace: true })
+      if (session) navigate(redirectApres || '/dashboard', { replace: true })
     })
-  }, [navigate])
+  }, [navigate, redirectApres])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -61,7 +68,9 @@ function Login() {
 
     setLoading(false)
 
-    if (profil?.plan === 'club') {
+    if (redirectApres) {
+      navigate(redirectApres)
+    } else if (profil?.plan === 'club') {
       navigate('/club')
     } else if (profil?.plan === 'scout') {
       navigate('/recruteur')

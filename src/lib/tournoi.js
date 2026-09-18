@@ -44,3 +44,16 @@ export function meilleursTroisiemes(equipes, matchs, poules, k) {
     .filter(Boolean)
   return troisiemes.sort(compareClassement).slice(0, k)
 }
+
+// Une inscription (formulaire public, tournois_inscriptions) n'est reliée
+// par aucune clé réelle à une ligne tournois_equipes (le roster du tableau
+// à élimination, géré séparément côté club) — approximation par nom
+// utilisée partout où il faut retrouver l'équipe "réelle" d'une inscription
+// (exclusion de son propre vote, attribution des badges de victoire/fair-play).
+export function retrouverInscriptionParEquipe(inscriptions, equipe) {
+  if (!equipe) return null
+  const normalise = (s) => (s || '').trim().toLowerCase()
+  return inscriptions.find(i =>
+    normalise(i.nom_club) === normalise(equipe.nom) || normalise(i.nom_club) === normalise(equipe.club)
+  ) || null
+}

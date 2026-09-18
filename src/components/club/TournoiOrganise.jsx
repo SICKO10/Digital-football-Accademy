@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { calculerClassement, meilleursTroisiemes, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { calculerClassement, meilleursTroisiemes, retrouverInscriptionParEquipe, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { saisonActuelle } from '../../lib/saison'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -324,8 +325,54 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     // silencieux : le bouton ✓ semblait "ne rien faire" sans aucune trace,
     // aussi bien pour l'utilisateur que pour nous en debug.
     if (error) { console.error('saisirScore error:', error); alert('Erreur en enregistrant le score : ' + error.message); return }
-    if (data) setMatchs(p => p.map(mt => (mt.id === matchId ? data : mt)))
+    if (data) {
+      setMatchs(p => p.map(mt => (mt.id === matchId ? data : mt)))
+      if (data.phase === 'finale' && data.score_a !== data.score_b) attribuerBadgesFinale(data)
+    }
     setScoreEdit(p => { const n = { ...p }; delete n[matchId]; return n })
+  }
+
+  // Badges de palmarès (Phase F, joueur_badges) une fois la finale jouée —
+  // attribution best-effort côté client, ne bloque jamais la saisie du
+  // score. Idempotent : vérifie l'absence du badge avant chaque insert, pour
+  // qu'une correction de score ne duplique pas les badges déjà attribués.
+  async function attribuerBadgesFinale(matchFinale) {
+    const saison = saisonActuelle()
+
+    const gagnantId = matchFinale.score_a > matchFinale.score_b ? matchFinale.equipe_a_id : matchFinale.equipe_b_id
+    const inscriptionGagnante = retrouverInscriptionParEquipe(inscriptions, getEquipe(gagnantId))
+
+    const { data: votes } = await supabase.from('tournois_votes').select('vote_fairplay_equipe_id').eq('tournoi_id', tournoi.id)
+    const compteFairplay = {}
+    ;(votes || []).forEach(v => { if (v.vote_fairplay_equipe_id) compteFairplay[v.vote_fairplay_equipe_id] = (compteFairplay[v.vote_fairplay_equipe_id] || 0) + 1 })
+    const topFairplayId = Object.entries(compteFairplay).sort(([, a], [, b]) => b - a)[0]?.[0]
+    const inscriptionFairplay = topFairplayId ? retrouverInscriptionParEquipe(inscriptions, getEquipe(topFairplayId)) : null
+
+    const attribuerPourEquipe = async (inscription, badgeInfo) => {
+      if (!inscription) return
+      const { data: comptes } = await supabase.from('tournois_joueurs_comptes').select('user_id').eq('inscription_id', inscription.id).not('user_id', 'is', null)
+      for (const compte of comptes || []) {
+        const { data: existants } = await supabase.from('joueur_badges').select('id').eq('joueur_id', compte.user_id).eq('source_id', tournoi.id).eq('type', badgeInfo.type)
+        if (existants && existants.length > 0) continue
+        const { error: badgeErr } = await supabase.from('joueur_badges').insert({ joueur_id: compte.user_id, saison, source_type: 'tournoi', source_id: tournoi.id, ...badgeInfo })
+        if (badgeErr) console.error('attribuerBadgesFinale error:', badgeErr)
+      }
+    }
+
+    if (inscriptionGagnante) {
+      await attribuerPourEquipe(inscriptionGagnante, {
+        type: 'tournoi_victoire', label: `Vainqueur — ${tournoi.nom}`,
+        sous_label: `${inscriptionGagnante.nom_club}${tournoi.categorie_age ? ` · ${tournoi.categorie_age}` : ''}`,
+        competition: tournoi.nom, couleur: '#f59e0b', icone: '🏆',
+      })
+    }
+    if (inscriptionFairplay) {
+      await attribuerPourEquipe(inscriptionFairplay, {
+        type: 'fair_play', label: `Équipe fair-play — ${tournoi.nom}`,
+        sous_label: inscriptionFairplay.nom_club,
+        competition: tournoi.nom, couleur: '#10b981', icone: '🤝',
+      })
+    }
   }
 
   // Ligne de saisie/affichage de score — partagée entre les matchs de poule
