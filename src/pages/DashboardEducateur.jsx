@@ -9319,7 +9319,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
         {activeSection === 'bibliotheque' && (
           <div>
-            <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               {[
                 { id: 'personal', label: 'Ma bibliothèque' },
                 { id: 'club', label: 'Bibliothèque club' },
@@ -9331,7 +9331,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     padding: '9px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
                     background: biblioRubrique === r.id ? colors.text.primary : 'transparent',
                     color: biblioRubrique === r.id ? colors.background.base : colors.text.faint,
-                    fontWeight: biblioRubrique === r.id ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap',
+                    fontWeight: biblioRubrique === r.id ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0,
                     fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
                   }}>
                   {r.label}
