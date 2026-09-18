@@ -99,11 +99,12 @@ serve(async (req) => {
         ${tournoi.prix_inscription_equipe > 0 ? `${tournoi.prix_inscription_equipe}€ — mode de paiement : ${inscription.mode_paiement}<br>` : ''}
         <br>${joueurs.length} joueur${joueurs.length > 1 ? 's' : ''} enregistré${joueurs.length > 1 ? 's' : ''}.
       `
+      const lienVote = `https://digitalfootball.academy/tournoi/${tournoi.code_public}/voter/${inscription.code_confirmation}`
       try {
         await envoyerEmail(
           inscription.email_referent,
           `Inscription confirmée — ${tournoi.nom}`,
-          enveloppe('Inscription confirmée', corps, lienTournoi, 'Suivre le tournoi en direct')
+          enveloppe('Inscription confirmée', corps, lienTournoi, 'Suivre le tournoi en direct', { lien: lienVote, texte: 'Voter pour les distinctions du tournoi' })
         )
         envoyes++
       } catch (e) {

@@ -790,6 +790,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       { key: 'classement', label: 'Classement' },
       { key: 'buteurs', label: `Buteurs (${buteurs.length})` },
       { key: 'inscriptions', label: `Inscriptions (${inscriptions.length})` },
+      { key: 'palmares', label: 'Palmarès' },
       ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
@@ -1085,6 +1086,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           <GestionInscriptions prix={tournoi.prix_inscription_equipe} inscriptions={inscriptions} onChange={setInscriptions} readOnly={readOnly} />
         )}
 
+        {onglet === 'palmares' && <PalmaresVotes tournoiId={tournoi.id} equipes={equipes} />}
+
         {onglet === 'reglages' && !readOnly && (
           <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={st.card}>
@@ -1301,6 +1304,74 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
               )}
             </div>
           )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Résultat des votes distinctions (Phase E) soumis via la page publique
+// /tournoi/:code/voter/:code (TournoiVote.jsx) — lecture réservée au club
+// (RLS tournois_votes_manage_select), pas de callback onChange : rechargé
+// à chaque ouverture de l'onglet plutôt que tenu à jour par le parent (les
+// votes arrivent de l'extérieur, pas d'une action locale à répercuter).
+function PalmaresVotes({ tournoiId, equipes }) {
+  const colors = useColors()
+  const [votes, setVotes] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('tournois_votes').select('*').eq('tournoi_id', tournoiId)
+      .then(({ data }) => { setVotes(data || []); setLoading(false) })
+  }, [tournoiId])
+
+  if (loading) return null
+
+  const fairplay = {}
+  votes.forEach(v => {
+    if (!v.vote_fairplay_equipe_id) return
+    fairplay[v.vote_fairplay_equipe_id] = (fairplay[v.vote_fairplay_equipe_id] || 0) + 1
+  })
+  const topFairplay = Object.entries(fairplay).sort(([, a], [, b]) => b - a)[0]
+  const equipeFairplay = topFairplay ? equipes.find(e => e.id === topFairplay[0]) : null
+
+  const compterVotesLibres = (champNom, champEquipe) => {
+    const compte = {}
+    votes.forEach(v => {
+      if (!v[champNom]) return
+      const cle = v[champNom]
+      compte[cle] = { nom: cle, equipe: v[champEquipe], votes: (compte[cle]?.votes || 0) + 1 }
+    })
+    return Object.values(compte).sort((a, b) => b.votes - a.votes)[0]
+  }
+  const topJoueur = compterVotesLibres('vote_meilleur_joueur_nom', 'vote_meilleur_joueur_equipe')
+  const topGardien = compterVotesLibres('vote_meilleur_gardien_nom', 'vote_meilleur_gardien_equipe')
+
+  const distinctions = [
+    { emoji: '🤝', label: 'Équipe la plus fair-play', valeur: equipeFairplay?.nom, detail: equipeFairplay ? `${topFairplay[1]} vote${topFairplay[1] > 1 ? 's' : ''}` : null },
+    { emoji: '⭐', label: 'Meilleur joueur', valeur: topJoueur?.nom, detail: topJoueur ? `${topJoueur.equipe} · ${topJoueur.votes} vote${topJoueur.votes > 1 ? 's' : ''}` : null },
+    { emoji: '🧤', label: 'Meilleur gardien', valeur: topGardien?.nom, detail: topGardien ? `${topGardien.equipe} · ${topGardien.votes} vote${topGardien.votes > 1 ? 's' : ''}` : null },
+  ]
+
+  return (
+    <div>
+      <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px' }}>
+        {votes.length} équipe{votes.length > 1 ? 's ont' : ' a'} voté
+      </div>
+      {distinctions.map(d => (
+        <div key={d.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '24px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ fontSize: '32px' }}>{d.emoji}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d.label}</div>
+            {d.valeur ? (
+              <>
+                <div style={{ fontWeight: 800, fontSize: '18px', color: colors.text.primary }}>{d.valeur}</div>
+                {d.detail && <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>{d.detail}</div>}
+              </>
+            ) : (
+              <div style={{ color: colors.text.disabled, fontSize: '14px' }}>Aucun vote pour l'instant</div>
+            )}
+          </div>
         </div>
       ))}
     </div>
