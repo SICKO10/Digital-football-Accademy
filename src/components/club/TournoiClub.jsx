@@ -46,6 +46,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   const [onglet, setOnglet] = useState('apercu') // apercu | matchs | groupe | logistique | bilan
 
   const [form, setForm] = useState(VIDE_TOURNOI)
+  const [editingId, setEditingId] = useState(null)
   const [formMatch, setFormMatch] = useState(VIDE_MATCH)
 
   useEffect(() => { if (clubId) charger() }, [clubId])
@@ -86,7 +87,20 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   }
 
   function ouvrirNouveau() {
+    setEditingId(null)
     setForm({ ...VIDE_TOURNOI, club_categorie_id: categories?.[0]?.id || '' })
+    setVue('nouveau')
+  }
+
+  function ouvrirModification(t) {
+    setEditingId(t.id)
+    setForm({
+      nom: t.nom || '', organisateur: t.organisateur || '', date_debut: t.date_debut || '', date_fin: t.date_fin || '',
+      lieu: t.lieu || '', adresse: t.adresse || '', format: t.format || 'Poules + KO', nb_equipes: t.nb_equipes ?? '',
+      statut: t.statut || 'Inscrit', contact_nom: t.contact_nom || '', contact_email: t.contact_email || '', contact_tel: t.contact_tel || '',
+      nb_joueurs_max: t.nb_joueurs_max ?? '', notes: t.notes || '', club_categorie_id: t.club_categorie_id || '',
+      budget_inscription: t.budget_inscription ?? '',
+    })
     setVue('nouveau')
   }
 
@@ -112,13 +126,22 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     const budgetInscription = form.budget_inscription === '' ? 0 : Number(form.budget_inscription)
     const payload = {
       ...form,
-      club_id: clubId,
       nb_equipes: form.nb_equipes === '' ? null : Number(form.nb_equipes),
       nb_joueurs_max: form.nb_joueurs_max === '' ? null : Number(form.nb_joueurs_max),
       date_fin: form.date_fin || null,
       budget_inscription: budgetInscription,
     }
-    const { data, error } = await supabase.from('tournois_participation').insert(payload).select().single()
+    if (editingId) {
+      const { data, error } = await supabase.from('tournois_participation').update(payload).eq('id', editingId).select().single()
+      if (error) { alert(error.message); return }
+      await syncBudgetInscription(editingId, form.nom, budgetInscription, form.date_debut)
+      setEditingId(null)
+      setSelected(data)
+      setVue('detail')
+      charger()
+      return
+    }
+    const { data, error } = await supabase.from('tournois_participation').insert({ ...payload, club_id: clubId }).select().single()
     if (error) { alert(error.message); return }
     if (budgetInscription > 0) await syncBudgetInscription(data.id, form.nom, budgetInscription, form.date_debut)
     setVue('liste')
@@ -253,8 +276,8 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
 
   if (vue === 'nouveau') return (
     <div style={{ maxWidth: 560 }}>
-      <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
-      <h2 style={{ color: colors.text.primary, margin: '16px 0 20px', fontWeight: 900, fontSize: '19px' }}>Nouveau tournoi</h2>
+      <button onClick={() => setVue(editingId ? 'detail' : 'liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
+      <h2 style={{ color: colors.text.primary, margin: '16px 0 20px', fontWeight: 900, fontSize: '19px' }}>{editingId ? 'Modifier le tournoi' : 'Nouveau tournoi'}</h2>
 
       <div style={{ display: 'grid', gap: '14px' }}>
         <div>
@@ -321,7 +344,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
         </div>
         <button onClick={sauvegarderTournoi} disabled={!form.nom || !form.date_debut || !form.club_categorie_id}
           style={{ ...st.btnSolid, opacity: (!form.nom || !form.date_debut || !form.club_categorie_id) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
-          Enregistrer le tournoi
+          {editingId ? 'Enregistrer les modifications' : 'Enregistrer le tournoi'}
         </button>
       </div>
     </div>
@@ -355,7 +378,12 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                 {selected.lieu && ` · ${selected.lieu}`}
               </div>
             </div>
-            {!readOnly && <button onClick={() => supprimerTournoi(selected.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>Supprimer</button>}
+            {!readOnly && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => ouvrirModification(selected)} style={st.btnSecondary}>Modifier</button>
+                <button onClick={() => supprimerTournoi(selected.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>Supprimer</button>
+              </div>
+            )}
           </div>
         </div>
 
