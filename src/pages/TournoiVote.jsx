@@ -12,7 +12,9 @@ const normalise = (s) => (s || '').trim().toLowerCase()
 const estMonEquipe = (nomClubInscription, ...noms) => noms.some(n => n && normalise(n) === normalise(nomClubInscription))
 
 const VIDE_VOTE = {
+  vote_beau_jeu_equipe_id: '',
   vote_fairplay_equipe_id: '',
+  vote_supporters_fairplay_equipe_id: '',
   vote_meilleur_joueur_nom: '',
   vote_meilleur_joueur_equipe: '',
   vote_meilleur_gardien_nom: '',
@@ -60,7 +62,9 @@ export default function TournoiVote() {
       tournoi_id: tournoi.id,
       inscription_id: inscription.id,
       ...vote,
+      vote_beau_jeu_equipe_id: vote.vote_beau_jeu_equipe_id || null,
       vote_fairplay_equipe_id: vote.vote_fairplay_equipe_id || null,
+      vote_supporters_fairplay_equipe_id: vote.vote_supporters_fairplay_equipe_id || null,
     })
     setSubmitting(false)
     if (error) {
@@ -139,21 +143,27 @@ export default function TournoiVote() {
           Chaque équipe dispose d'<strong style={{ color: colors.text.primary }}>un vote</strong> par distinction. Vous ne pouvez pas voter pour votre propre équipe.
         </p>
 
-        <div style={st.card}>
-          <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Équipe la plus fair-play</h3>
-          <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>L'équipe qui a montré le meilleur esprit sportif</p>
-          {equipesAdverses.map(eq => (
-            <div key={eq.id} style={st.option(vote.vote_fairplay_equipe_id === eq.id)}
-              onClick={() => setVote(v => ({ ...v, vote_fairplay_equipe_id: eq.id }))}>
-              <div style={st.radio(vote.vote_fairplay_equipe_id === eq.id)} />
-              <div>
-                <div style={{ fontWeight: 600 }}>{eq.nom}</div>
-                {eq.club && <div style={{ color: colors.text.disabled, fontSize: '12px' }}>{eq.club}</div>}
+        {[
+          { champ: 'vote_beau_jeu_equipe_id', titre: 'Plus beau jeu', sousTitre: "L'équipe qui a proposé le jeu le plus agréable à regarder" },
+          { champ: 'vote_fairplay_equipe_id', titre: 'Équipe la plus fair-play', sousTitre: 'L\'équipe qui a montré le meilleur esprit sportif' },
+          { champ: 'vote_supporters_fairplay_equipe_id', titre: 'Supporters les plus fair-play', sousTitre: "Le public qui a soutenu dans le respect et la bonne humeur" },
+        ].map(({ champ, titre, sousTitre }) => (
+          <div key={champ} style={st.card}>
+            <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>{titre}</h3>
+            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>{sousTitre}</p>
+            {equipesAdverses.map(eq => (
+              <div key={eq.id} style={st.option(vote[champ] === eq.id)}
+                onClick={() => setVote(v => ({ ...v, [champ]: eq.id }))}>
+                <div style={st.radio(vote[champ] === eq.id)} />
+                <div>
+                  <div style={{ fontWeight: 600 }}>{eq.nom}</div>
+                  {eq.club && <div style={{ color: colors.text.disabled, fontSize: '12px' }}>{eq.club}</div>}
+                </div>
+                <span style={{ marginLeft: 'auto', color: colors.text.disabled, fontSize: '12px' }}>Poule {eq.poule}</span>
               </div>
-              <span style={{ marginLeft: 'auto', color: colors.text.disabled, fontSize: '12px' }}>Poule {eq.poule}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ))}
 
         <div style={st.card}>
           <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur joueur du tournoi</h3>
@@ -206,11 +216,17 @@ export default function TournoiVote() {
 
         {erreur && <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px', textAlign: 'center' }}>{erreur}</p>}
 
-        <button style={{ ...st.btn, opacity: submitting || (!vote.vote_fairplay_equipe_id && !vote.vote_meilleur_joueur_nom.trim() && !vote.vote_meilleur_gardien_nom.trim()) ? 0.5 : 1 }}
-          disabled={submitting || (!vote.vote_fairplay_equipe_id && !vote.vote_meilleur_joueur_nom.trim() && !vote.vote_meilleur_gardien_nom.trim())}
-          onClick={soumettre}>
-          {submitting ? 'Envoi en cours…' : 'Soumettre mon vote'}
-        </button>
+        {(() => {
+          const aucunVote = !vote.vote_beau_jeu_equipe_id && !vote.vote_fairplay_equipe_id && !vote.vote_supporters_fairplay_equipe_id
+            && !vote.vote_meilleur_joueur_nom.trim() && !vote.vote_meilleur_gardien_nom.trim()
+          return (
+            <button style={{ ...st.btn, opacity: submitting || aucunVote ? 0.5 : 1 }}
+              disabled={submitting || aucunVote}
+              onClick={soumettre}>
+              {submitting ? 'Envoi en cours…' : 'Soumettre mon vote'}
+            </button>
+          )
+        })()}
 
         <div style={{ textAlign: 'center', marginTop: '24px', color: colors.text.ghost, fontSize: '12px' }}>
           Propulsé par <span style={{ color: colors.accent.green, fontWeight: 700 }}>Digital Football</span>

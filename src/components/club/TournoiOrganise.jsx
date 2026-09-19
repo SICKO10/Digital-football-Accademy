@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { calculerClassement, meilleursTroisiemes, retrouverInscriptionParEquipe, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { calculerClassement, meilleursTroisiemes, retrouverInscriptionParEquipe, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 import { saisonActuelle } from '../../lib/saison'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -1555,31 +1555,7 @@ function PalmaresVotes({ tournoiId, equipes }) {
 
   if (loading) return null
 
-  const fairplay = {}
-  votes.forEach(v => {
-    if (!v.vote_fairplay_equipe_id) return
-    fairplay[v.vote_fairplay_equipe_id] = (fairplay[v.vote_fairplay_equipe_id] || 0) + 1
-  })
-  const topFairplay = Object.entries(fairplay).sort(([, a], [, b]) => b - a)[0]
-  const equipeFairplay = topFairplay ? equipes.find(e => e.id === topFairplay[0]) : null
-
-  const compterVotesLibres = (champNom, champEquipe) => {
-    const compte = {}
-    votes.forEach(v => {
-      if (!v[champNom]) return
-      const cle = v[champNom]
-      compte[cle] = { nom: cle, equipe: v[champEquipe], votes: (compte[cle]?.votes || 0) + 1 }
-    })
-    return Object.values(compte).sort((a, b) => b.votes - a.votes)[0]
-  }
-  const topJoueur = compterVotesLibres('vote_meilleur_joueur_nom', 'vote_meilleur_joueur_equipe')
-  const topGardien = compterVotesLibres('vote_meilleur_gardien_nom', 'vote_meilleur_gardien_equipe')
-
-  const distinctions = [
-    { emoji: '🤝', label: 'Équipe la plus fair-play', valeur: equipeFairplay?.nom, detail: equipeFairplay ? `${topFairplay[1]} vote${topFairplay[1] > 1 ? 's' : ''}` : null },
-    { emoji: '⭐', label: 'Meilleur joueur', valeur: topJoueur?.nom, detail: topJoueur ? `${topJoueur.equipe} · ${topJoueur.votes} vote${topJoueur.votes > 1 ? 's' : ''}` : null },
-    { emoji: '🧤', label: 'Meilleur gardien', valeur: topGardien?.nom, detail: topGardien ? `${topGardien.equipe} · ${topGardien.votes} vote${topGardien.votes > 1 ? 's' : ''}` : null },
-  ]
+  const distinctions = calculerPalmares(votes, equipes)
 
   return (
     <div>
@@ -1587,19 +1563,16 @@ function PalmaresVotes({ tournoiId, equipes }) {
         {votes.length} équipe{votes.length > 1 ? 's ont' : ' a'} voté
       </div>
       {distinctions.map(d => (
-        <div key={d.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '24px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ fontSize: '32px' }}>{d.emoji}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d.label}</div>
-            {d.valeur ? (
-              <>
-                <div style={{ fontWeight: 800, fontSize: '18px', color: colors.text.primary }}>{d.valeur}</div>
-                {d.detail && <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>{d.detail}</div>}
-              </>
-            ) : (
-              <div style={{ color: colors.text.disabled, fontSize: '14px' }}>Aucun vote pour l'instant</div>
-            )}
-          </div>
+        <div key={d.key} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '20px 24px', marginBottom: '14px' }}>
+          <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d.label}</div>
+          {d.valeur ? (
+            <>
+              <div style={{ fontWeight: 800, fontSize: '18px', color: colors.text.primary }}>{d.valeur}</div>
+              {d.detail && <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>{d.detail}</div>}
+            </>
+          ) : (
+            <div style={{ color: colors.text.disabled, fontSize: '14px' }}>Aucun vote pour l'instant</div>
+          )}
         </div>
       ))}
     </div>

@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
-import { calculerClassement, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
+import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
 
 const ONGLETS_BASE = [
   { key: 'planning', label: 'Planning' },
   { key: 'classement', label: 'Classement' },
+  { key: 'votes', label: 'Votes' },
   { key: 'reglement', label: 'Règlement' },
 ]
 
@@ -29,6 +30,15 @@ export default function TournoiPublic() {
   const [onglet, setOnglet] = useState('planning')
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [votes, setVotes] = useState(null) // null = pas encore dévoilé (pas chargé), [] = dévoilé sans vote
+  const [chargementVotes, setChargementVotes] = useState(false)
+
+  const reveler = async () => {
+    setChargementVotes(true)
+    const { data } = await supabase.from('tournois_votes').select('*').eq('tournoi_id', tournoi.id)
+    setVotes(data || [])
+    setChargementVotes(false)
+  }
 
   const charger = useCallback(async () => {
     const { data: t } = await supabase.from('tournois_organises').select('*').eq('code_public', code?.toUpperCase()).maybeSingle()
@@ -159,6 +169,40 @@ export default function TournoiPublic() {
                 </div>
               )
             })
+        )}
+
+        {onglet === 'votes' && (
+          votes === null ? (
+            <div style={{ ...st.card, textAlign: 'center', padding: '48px 24px' }}>
+              <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px', lineHeight: 1.6 }}>
+                Plus beau jeu, équipe la plus fair-play, supporters les plus fair-play, meilleur joueur, meilleur gardien —
+                les résultats restent secrets jusqu'à ce que l'organisateur les dévoile.
+              </p>
+              <button onClick={reveler} disabled={chargementVotes}
+                style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
+                {chargementVotes ? 'Chargement…' : 'Dévoiler les résultats'}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '12px' }}>
+                {votes.length} vote{votes.length > 1 ? 's' : ''} reçu{votes.length > 1 ? 's' : ''}
+              </div>
+              {calculerPalmares(votes, equipes).map(d => (
+                <div key={d.key} style={{ ...st.card, padding: '18px 22px' }}>
+                  <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{d.label}</div>
+                  {d.valeur ? (
+                    <>
+                      <div style={{ fontWeight: 800, fontSize: '17px', color: colors.text.primary }}>{d.valeur}</div>
+                      {d.detail && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>{d.detail}</div>}
+                    </>
+                  ) : (
+                    <div style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun vote pour l'instant</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {onglet === 'finale' && (

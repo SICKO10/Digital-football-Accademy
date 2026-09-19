@@ -57,3 +57,39 @@ export function retrouverInscriptionParEquipe(inscriptions, equipe) {
     normalise(i.nom_club) === normalise(equipe.nom) || normalise(i.nom_club) === normalise(equipe.club)
   ) || null
 }
+
+// Dépouillement des votes distinctions (tournois_votes) — partagé entre le
+// palmarès club (TournoiOrganise.jsx, toujours visible) et le "dévoiler les
+// résultats" de la page publique (TournoiPublic.jsx, masqué par défaut),
+// pour ne pas dupliquer la logique de comptage à deux endroits.
+export function calculerPalmares(votes, equipes) {
+  const compterEquipe = (champ) => {
+    const compte = {}
+    votes.forEach(v => { if (v[champ]) compte[v[champ]] = (compte[v[champ]] || 0) + 1 })
+    const top = Object.entries(compte).sort(([, a], [, b]) => b - a)[0]
+    return top ? { equipe: equipes.find(e => e.id === top[0]), votes: top[1] } : null
+  }
+  const compterLibre = (champNom, champEquipe) => {
+    const compte = {}
+    votes.forEach(v => {
+      if (!v[champNom]) return
+      const cle = v[champNom]
+      compte[cle] = { nom: cle, equipe: v[champEquipe], votes: (compte[cle]?.votes || 0) + 1 }
+    })
+    return Object.values(compte).sort((a, b) => b.votes - a.votes)[0] || null
+  }
+
+  const beauJeu = compterEquipe('vote_beau_jeu_equipe_id')
+  const fairplayEquipe = compterEquipe('vote_fairplay_equipe_id')
+  const supporters = compterEquipe('vote_supporters_fairplay_equipe_id')
+  const topJoueur = compterLibre('vote_meilleur_joueur_nom', 'vote_meilleur_joueur_equipe')
+  const topGardien = compterLibre('vote_meilleur_gardien_nom', 'vote_meilleur_gardien_equipe')
+
+  return [
+    { key: 'beau_jeu', label: 'Plus beau jeu', valeur: beauJeu?.equipe?.nom, detail: beauJeu ? `${beauJeu.votes} vote${beauJeu.votes > 1 ? 's' : ''}` : null },
+    { key: 'fairplay_equipe', label: 'Équipe la plus fair-play', valeur: fairplayEquipe?.equipe?.nom, detail: fairplayEquipe ? `${fairplayEquipe.votes} vote${fairplayEquipe.votes > 1 ? 's' : ''}` : null },
+    { key: 'supporters', label: 'Supporters les plus fair-play', valeur: supporters?.equipe?.nom, detail: supporters ? `${supporters.votes} vote${supporters.votes > 1 ? 's' : ''}` : null },
+    { key: 'meilleur_joueur', label: 'Meilleur joueur', valeur: topJoueur?.nom, detail: topJoueur ? `${topJoueur.equipe} · ${topJoueur.votes} vote${topJoueur.votes > 1 ? 's' : ''}` : null },
+    { key: 'meilleur_gardien', label: 'Meilleur gardien', valeur: topGardien?.nom, detail: topGardien ? `${topGardien.equipe} · ${topGardien.votes} vote${topGardien.votes > 1 ? 's' : ''}` : null },
+  ]
+}
