@@ -1146,7 +1146,9 @@ export default function DashboardClub() {
   // Éducateurs affiliés
   const [educateursAffilies, setEducateursAffilies] = useState([])
   const [modalModifEdu, setModalModifEdu] = useState(null) // { educateur_id, prenom, nom, telephone }
+  const [modalDroitsEdu, setModalDroitsEdu] = useState(null) // { id (club_educateurs), nom, peut_editer_projet_sportif, peut_editer_planification } — null = suit le réglage global
   const [savingModifEdu, setSavingModifEdu] = useState(false)
+  const [savingDroitsEdu, setSavingDroitsEdu] = useState(false)
   const [openEduMenu, setOpenEduMenu] = useState(null) // id de la carte éducateur dont le menu "⋯" est ouvert
   const [searchEducateur, setSearchEducateur] = useState('')
   const [resultatsEducateurs, setResultatsEducateurs] = useState([])
@@ -1936,6 +1938,19 @@ export default function DashboardClub() {
     setSavingModifEdu(false)
     if (error) { alert('Erreur : ' + error.message); return }
     setModalModifEdu(null)
+    await chargerEducateurs(clubId)
+  }
+
+  const sauvegarderDroitsEdu = async () => {
+    if (!modalDroitsEdu) return
+    setSavingDroitsEdu(true)
+    const { error } = await supabase.from('club_educateurs').update({
+      peut_editer_projet_sportif: modalDroitsEdu.peut_editer_projet_sportif,
+      peut_editer_planification: modalDroitsEdu.peut_editer_planification,
+    }).eq('id', modalDroitsEdu.id)
+    setSavingDroitsEdu(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setModalDroitsEdu(null)
     await chargerEducateurs(clubId)
   }
 
@@ -3943,6 +3958,7 @@ export default function DashboardClub() {
                             {[
                               { icon: '⭐', label: t('club_noter', lang), action: () => ouvrirNotationEducateur(e) },
                               { icon: '✏️', label: 'Modifier', action: () => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' }) },
+                              { icon: '', label: 'Droits Projet Sportif', action: () => setModalDroitsEdu({ id: e.id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim(), peut_editer_projet_sportif: e.peut_editer_projet_sportif, peut_editer_planification: e.peut_editer_planification }) },
                               { icon: '🚪', label: t('club_retirer', lang), action: () => retirerEducateur(e.id), danger: true },
                             ].map(item => (
                               <button key={item.label} onClick={() => { item.action(); setOpenEduMenu(null) }}
@@ -3987,6 +4003,41 @@ export default function DashboardClub() {
                     <button onClick={() => setModalModifEdu(null)} style={{ ...st.btnSecondary, flex: 1 }}>Annuler</button>
                     <button onClick={sauvegarderModifEdu} disabled={savingModifEdu || !modalModifEdu.prenom.trim() || !modalModifEdu.nom.trim()} style={{ ...st.btnSolid, flex: 2 }}>
                       {savingModifEdu ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Modale Droits Projet Sportif (override par éducateur) ── */}
+            {modalDroitsEdu && (
+              <div onClick={() => setModalDroitsEdu(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '16px' }}>Droits — {modalDroitsEdu.nom}</h3>
+                    <button onClick={() => setModalDroitsEdu(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 20px' }}>Remplace le réglage global pour cet éducateur uniquement.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {[
+                      { champ: 'peut_editer_projet_sportif', label: 'Projet Sportif' },
+                      { champ: 'peut_editer_planification', label: 'Planification annuelle' },
+                    ].map(({ champ, label }) => (
+                      <div key={champ}>
+                        <label style={st.label}>{label}</label>
+                        <select style={st.input} value={modalDroitsEdu[champ] === null || modalDroitsEdu[champ] === undefined ? 'global' : String(modalDroitsEdu[champ])}
+                          onChange={e => setModalDroitsEdu(p => ({ ...p, [champ]: e.target.value === 'global' ? null : e.target.value === 'true' }))}>
+                          <option value="global">Suit le réglage global du club</option>
+                          <option value="true">Autorisé à éditer</option>
+                          <option value="false">Lecture seule</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    <button onClick={() => setModalDroitsEdu(null)} style={{ ...st.btnSecondary, flex: 1 }}>Annuler</button>
+                    <button onClick={sauvegarderDroitsEdu} disabled={savingDroitsEdu} style={{ ...st.btnSolid, flex: 2 }}>
+                      {savingDroitsEdu ? 'Enregistrement...' : 'Enregistrer'}
                     </button>
                   </div>
                 </div>
@@ -4217,6 +4268,34 @@ export default function DashboardClub() {
                   )}
                 </div>
               </div>
+
+              {/* Permissions éducateurs — Projet Sportif / Planification. Interrupteur
+                  global appliqué par défaut à tous les éducateurs affiliés ; un override
+                  individuel reste possible depuis le menu ⋯ de chaque éducateur
+                  (onglet Éducateurs), cf. modalDroitsEdu. */}
+              {canEditSection('profil') && (
+                <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>Permissions éducateurs</p>
+                  <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Par défaut, tes éducateurs affiliés sont en lecture seule sur le Projet Sportif et la Planification annuelle. Active pour leur donner le droit d'éditer.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {[
+                      { champ: 'educateurs_editent_projet_sportif', label: 'Éducateurs peuvent éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
+                      { champ: 'educateurs_editent_planification', label: 'Éducateurs peuvent éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
+                    ].map(({ champ, label, desc }) => (
+                      <div key={champ} onClick={() => sauvegarderTheme({ [champ]: !club?.[champ] })}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: colors.text.primary }}>{label}</div>
+                          <div style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>{desc}</div>
+                        </div>
+                        <div style={{ width: '40px', height: '22px', background: club?.[champ] ? couleurPrincipale : colors.border.strong, borderRadius: '20px', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                          <div style={{ position: 'absolute', top: '3px', left: club?.[champ] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Formulaire */}
               <div style={{ ...st.card, marginBottom: '1.5rem' }}>

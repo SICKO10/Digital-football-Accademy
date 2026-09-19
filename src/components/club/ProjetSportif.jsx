@@ -10,6 +10,7 @@ import PlanificationAnnuelle from './PlanificationAnnuelle'
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
   { key: 'principes', label: 'Principes de jeu' },
+  { key: 'zones', label: 'Zones de terrain' },
   { key: 'planification', label: 'Planification annuelle' },
   { key: 'regles', label: 'Règles du jeu' },
 ]
@@ -21,6 +22,19 @@ const PHASES = [
   { val: 'transition_def', label: 'Transition défensive' },
   { val: 'coups_pied_arretes', label: 'Coups de pied arrêtés' },
 ]
+
+// Mêmes 4 premières phases que PHASES (principes texte), + CPA scindé
+// offensif/défensif (affichés côte à côte sur la même page côté joueur,
+// cf. PreparationTactiqueJoueur.jsx) — propre à terrain_zones.
+const PHASES_ZONES = [
+  { val: 'attaque', label: 'Organisation offensive' },
+  { val: 'defense', label: 'Organisation défensive' },
+  { val: 'transition_att', label: 'Transition offensive' },
+  { val: 'transition_def', label: 'Transition défensive' },
+  { val: 'cpa_offensif', label: 'CPA offensifs' },
+  { val: 'cpa_defensif', label: 'CPA défensifs' },
+]
+const ZONE_VIDE = { x: 10, y: 10, largeur: 80, hauteur: 15, label: '', description: '', couleur: '#4ade80' }
 
 function PlaceholderAVenir({ couleur, texte }) {
   return (
@@ -211,6 +225,176 @@ export function SectionRegles({ pole, clubId, readOnly }) {
   )
 }
 
+// Terrain générique (fond fixe, indépendant du thème clair/sombre — c'est un
+// terrain, pas un élément d'UI) sur lequel les zones sont dessinées à partir
+// de x/y/largeur/hauteur en % (0-100 sur chaque axe indépendamment, même
+// convention que les schémas scannés/Tactipad ailleurs dans l'app).
+function TerrainZones({ zones }) {
+  const W = 260, H = 360
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 280, borderRadius: 12, display: 'block', background: '#2d5a1b' }}>
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" rx="8" />
+      {zones.map(z => {
+        const x = (Number(z.x) || 0) / 100 * W, y = (Number(z.y) || 0) / 100 * H
+        const w = (Number(z.largeur) || 0) / 100 * W, h = (Number(z.hauteur) || 0) / 100 * H
+        return (
+          <g key={z.id}>
+            <rect x={x} y={y} width={w} height={h} fill={(z.couleur || '#4ade80') + 'cc'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+            {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle">{z.label.toUpperCase()}</text>}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+export function SectionZones({ pole, clubId, readOnly }) {
+  const colors = useColors()
+  const [zones, setZones] = useState([])
+  const [phaseActive, setPhaseActive] = useState(PHASES_ZONES[0].val)
+  const [editId, setEditId] = useState(null)
+  const [edit, setEdit] = useState(ZONE_VIDE)
+  const [saving, setSaving] = useState(false)
+
+  const charger = async () => {
+    const { data } = await supabase.from('terrain_zones').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
+    setZones(data || [])
+  }
+  useEffect(() => { charger() }, [pole.key, clubId])
+
+  const zonesPhase = zones.filter(z => z.phase === phaseActive)
+
+  const ouvrirNouvelle = () => { setEditId('nouvelle'); setEdit({ ...ZONE_VIDE, label: '' }) }
+  const ouvrirEdition = (z) => { setEditId(z.id); setEdit({ x: z.x, y: z.y, largeur: z.largeur, hauteur: z.hauteur, label: z.label, description: z.description || '', couleur: z.couleur || '#4ade80' }) }
+  const annuler = () => { setEditId(null); setEdit(ZONE_VIDE) }
+
+  const enregistrer = async () => {
+    if (!edit.label.trim()) return
+    setSaving(true)
+    const champs = {
+      x: Number(edit.x) || 0, y: Number(edit.y) || 0, largeur: Number(edit.largeur) || 0, hauteur: Number(edit.hauteur) || 0,
+      label: edit.label.trim(), description: edit.description.trim() || null, couleur: edit.couleur,
+    }
+    if (editId === 'nouvelle') {
+      await supabase.from('terrain_zones').insert({ ...champs, club_id: clubId, pole_key: pole.key, phase: phaseActive, ordre: zonesPhase.length })
+    } else {
+      await supabase.from('terrain_zones').update(champs).eq('id', editId)
+    }
+    setSaving(false)
+    annuler()
+    charger()
+  }
+
+  const supprimer = async (id) => {
+    if (!confirm('Supprimer cette zone ?')) return
+    await supabase.from('terrain_zones').delete().eq('id', id)
+    if (editId === id) annuler()
+    charger()
+  }
+
+  const champStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
+  const labelStyle = { color: colors.text.faint, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 }
+
+  return (
+    <div>
+      <p style={{ color: colors.text.faint, fontSize: 13, margin: '0 0 16px' }}>
+        Dessine tes propres zones de terrain (position, taille, couleur, libellé) pour chaque phase de jeu — affichées telles quelles dans le dashboard de tes joueurs.
+      </p>
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+        {PHASES_ZONES.map(ph => (
+          <button key={ph.val} onClick={() => { setPhaseActive(ph.val); annuler() }}
+            style={{
+              padding: '7px 14px', borderRadius: 20, border: `1px solid ${phaseActive === ph.val ? pole.couleur : colors.border.faint}`,
+              background: phaseActive === ph.val ? pole.couleur + '22' : 'transparent',
+              color: phaseActive === ph.val ? pole.couleur : colors.text.faint,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            }}>
+            {ph.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
+          <TerrainZones zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {zonesPhase.length === 0 && !editId && (
+            <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucune zone définie pour cette phase.</p>
+          )}
+
+          {zonesPhase.map(z => (
+            editId === z.id ? null : (
+              <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: '10px 14px' }}>
+                <div style={{ width: 14, height: 14, borderRadius: 3, background: z.couleur || '#4ade80', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{z.label}</div>
+                  {z.description && <div style={{ color: colors.text.faint, fontSize: 11, marginTop: 2 }}>{z.description}</div>}
+                </div>
+                {!readOnly && (
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => ouvrirEdition(z)} style={{ background: 'none', border: 'none', color: pole.couleur, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>Modifier</button>
+                    <button onClick={() => supprimer(z.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>Suppr.</button>
+                  </div>
+                )}
+              </div>
+            )
+          ))}
+
+          {editId && (
+            <div style={{ background: colors.background.sunken, border: `1px solid ${pole.couleur}44`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Libellé *</label>
+                <input autoFocus style={champStyle} value={edit.label} onChange={e => setEdit(p => ({ ...p, label: e.target.value }))} placeholder="Ex: Golden Zone" />
+              </div>
+              <div>
+                <label style={labelStyle}>Description</label>
+                <input style={champStyle} value={edit.description} onChange={e => setEdit(p => ({ ...p, description: e.target.value }))} placeholder="Ex: Zone de finition prioritaire" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={labelStyle}>X (%)</label>
+                  <input type="number" min="0" max="100" style={champStyle} value={edit.x} onChange={e => setEdit(p => ({ ...p, x: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Y (%)</label>
+                  <input type="number" min="0" max="100" style={champStyle} value={edit.y} onChange={e => setEdit(p => ({ ...p, y: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Largeur (%)</label>
+                  <input type="number" min="1" max="100" style={champStyle} value={edit.largeur} onChange={e => setEdit(p => ({ ...p, largeur: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Hauteur (%)</label>
+                  <input type="number" min="1" max="100" style={champStyle} value={edit.hauteur} onChange={e => setEdit(p => ({ ...p, hauteur: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Couleur</label>
+                <input type="color" value={edit.couleur} onChange={e => setEdit(p => ({ ...p, couleur: e.target.value }))} style={{ width: '100%', height: 34, border: `1px solid ${colors.border.default}`, borderRadius: 8, background: 'none', cursor: 'pointer' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button onClick={annuler} style={{ flex: 1, background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>Annuler</button>
+                <button onClick={enregistrer} disabled={saving || !edit.label.trim()} style={{ flex: 2, background: pole.couleur, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 800, cursor: 'pointer', fontSize: 12, opacity: (saving || !edit.label.trim()) ? 0.5 : 1 }}>
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!readOnly && !editId && (
+            <button onClick={ouvrirNouvelle} style={{ background: pole.couleur + '15', color: pole.couleur, border: `1px solid ${pole.couleur}40`, borderRadius: 8, padding: '10px', fontWeight: 700, cursor: 'pointer', fontSize: 12, marginTop: zonesPhase.length > 0 ? 4 : 0 }}>
+              + Ajouter une zone
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimaire, couleurSecondaire, onRetour }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
@@ -274,6 +458,7 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
         )
       )}
       {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly={readOnly} />}
+      {onglet === 'zones' && <SectionZones pole={pole} clubId={clubId} readOnly={readOnly} />}
       {onglet === 'planification' && (
         equipesDuPole.length === 0 ? (
           <PlaceholderAVenir couleur={pole.couleur} texte="Aucune équipe créée dans ce pôle pour l'instant. Ajoute une catégorie depuis Sportif → Catégories." />

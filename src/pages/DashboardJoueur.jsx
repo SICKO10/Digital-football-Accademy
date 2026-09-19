@@ -10,7 +10,6 @@ import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
 import NotificationBanner from '../components/NotificationBanner'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
-import { FifaCardGenerator } from '../components/FifaCard'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
@@ -19,7 +18,6 @@ import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
-import CarteSaison from '../components/CarteSaison'
 import CarteJoueur from '../components/CarteJoueur'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
@@ -1526,35 +1524,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setSubmittingCertif(false)
   }
 
-  const handleFifaCardSave = async (blob) => {
-    if (readOnly) return
-    if (!userId) return
-    try {
-      const file = new File([blob], 'carte-fifa.png', { type: 'image/png' })
-      const sigRes = await fetch('/api/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id + '_carte_fifa')
-      formData.append('api_key', api_key)
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-      if (uploadData.secure_url) {
-        await supabase.from('profiles').update({ carte_fifa_url: uploadData.secure_url }).eq('id', userId)
-        setProfil(prev => ({ ...prev, carte_fifa_url: uploadData.secure_url }))
-      }
-    } catch (err) {
-      console.error('Carte FIFA upload error:', err)
-    }
-  }
-
   const handleAvatarUpload = async (e) => {
     if (readOnly) return
     const file = e.target.files?.[0]
@@ -2248,6 +2217,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {onglet === 'preparation_tactique' && (
             <PreparationTactiqueJoueur
               educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
+              clubId={clubIdInventaire}
+              categorie={profil?.categorie}
               accentColor={colors.accent.blue}
             />
           )}
@@ -3042,9 +3013,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
     { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
     { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
-    { id: 'carte', label: t('jnav_carte', lang), icon: <IconCard />, section: t('jsec_profil', lang) },
     { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
-    { id: 'carte_saison', label: 'Carte Saison', icon: <IconTrophy />, section: t('jsec_profil', lang) },
     { id: 'carte_joueur', label: 'Carte Joueur', icon: <IconCard />, section: t('jsec_profil', lang) },
     { id: 'clubs', label: t('jnav_explorer', lang), icon: <IconBuilding />, section: t('jsec_reseau', lang) },
     { id: 'messages', label: t('jnav_recruteurs', lang), icon: <IconMessage />, badge: conversations.length, section: t('jsec_reseau', lang) },
@@ -4415,51 +4384,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           )
         })()}
 
-        {/* ── COACH ── */}
-        {onglet === 'carte' && (
-          <div style={{ maxWidth: '520px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
-                {t('jcarte_titre', lang)}
-                <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                  background: isPro ? '#f0c03020' : '#c8c8c820',
-                  color: isPro ? '#f0c030' : '#c8c8c8',
-                  border: `1px solid ${isPro ? '#f0c03040' : '#c8c8c840'}`,
-                  verticalAlign: 'middle',
-                }}>
-                  {isPro ? '⭐ PRO' : 'STARTER'}
-                </span>
-              </h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint }}>
-                {t('jcarte_desc', lang)}
-              </p>
-            </div>
-
-            {(!profil?.plan || profil.plan === 'fan') ? (
-              <EmptyState dashed icon="🎮" title={t('jcarte_feature', lang)} subtitle={t('jcarte_abo', lang)} />
-            ) : (
-              <>
-                {profil?.carte_fifa_url && (
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <img src={profil.carte_fifa_url} alt="Ma carte FIFA" style={{ width: '72px', height: '100px', objectFit: 'contain', borderRadius: '6px' }} />
-                    <div>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.green, marginBottom: '4px' }}>✓ Carte sauvegardée</p>
-                      <p style={{ fontSize: '12px', color: colors.text.faint }}>Visible dans ton profil recruteur.</p>
-                    </div>
-                  </div>
-                )}
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px' }}>
-                  <FifaCardGenerator
-                    plan={isPro ? 'pro' : 'starter'}
-                    profil={profil}
-                    onSave={handleFifaCardSave}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
         {onglet === 'certif' && (
           <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
@@ -4552,16 +4476,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 </button>
               </div>
             )}
-          </div>
-        )}
-
-        {onglet === 'carte_saison' && (
-          <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Carte Saison</h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ton palmarès — les badges obtenus en participant à des tournois.</p>
-            </div>
-            <CarteSaison userId={userId} />
           </div>
         )}
 
@@ -4758,6 +4672,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {onglet === 'preparation_tactique' && (
           <PreparationTactiqueJoueur
             educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
+            clubId={clubIdInventaire}
+            categorie={profil?.categorie}
             accentColor={colors.accent.blue}
           />
         )}

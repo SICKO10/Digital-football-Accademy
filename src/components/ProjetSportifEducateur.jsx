@@ -2,22 +2,26 @@ import { useState } from 'react'
 import { useColors } from '../lib/theme'
 import { getPoleDeCategorie } from '../constants/poles'
 import PlanificationAnnuelle from './club/PlanificationAnnuelle'
-import { SectionPrincipes, SectionRegles } from './club/ProjetSportif'
+import { SectionPrincipes, SectionRegles, SectionZones } from './club/ProjetSportif'
 
 const ONGLETS = [
   { key: 'planification', label: 'Planification annuelle' },
   { key: 'principes', label: 'Principes de jeu' },
+  { key: 'zones', label: 'Zones de terrain' },
   { key: 'regles', label: 'Règles du jeu' },
 ]
 
-// Vue lecture seule du Projet Sportif du club, pour la catégorie gérée par
-// l'éducateur — réutilise les mêmes composants que le dashboard club
-// (PlanificationAnnuelle, SectionPrincipes, SectionRegles), simplement avec
-// readOnly=true (masque déjà tous les boutons d'édition dans ces 3 composants).
-// Exception : accrocher une séance réelle à une semaine du plan reste
-// possible pour l'éducateur (peutGererSeances) — c'est lui qui crée ces
-// séances, le club ne fait qu'écrire les thèmes/objectifs de la semaine.
-export default function ProjetSportifEducateur({ categorie, clubId }) {
+// Vue du Projet Sportif du club, pour la catégorie gérée par l'éducateur —
+// réutilise les mêmes composants que le dashboard club (PlanificationAnnuelle,
+// SectionPrincipes, SectionZones, SectionRegles). Lecture seule par défaut
+// (readOnlyProjet/readOnlyPlanification = true), sauf si le club a autorisé
+// l'édition (réglage global ou override par éducateur, cf. DashboardClub.jsx
+// "Permissions éducateurs" + menu ⋯ d'un éducateur "Droits Projet Sportif").
+// Exception permanente : accrocher une séance réelle à une semaine du plan
+// reste possible pour l'éducateur (peutGererSeances) même en lecture seule —
+// c'est lui qui crée ces séances, le club ne fait qu'écrire les thèmes/
+// objectifs de la semaine.
+export default function ProjetSportifEducateur({ categorie, clubId, readOnlyProjet = true, readOnlyPlanification = true }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('planification')
   const pole = categorie ? getPoleDeCategorie(categorie) : null
@@ -51,9 +55,10 @@ export default function ProjetSportifEducateur({ categorie, clubId }) {
         ))}
       </div>
 
-      {onglet === 'planification' && <PlanificationAnnuelle categorie={categorie} clubId={clubId} pole={pole} readOnly peutGererSeances />}
-      {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly />}
-      {onglet === 'regles' && <SectionRegles pole={pole} clubId={clubId} readOnly />}
+      {onglet === 'planification' && <PlanificationAnnuelle categorie={categorie} clubId={clubId} pole={pole} readOnly={readOnlyPlanification} peutGererSeances />}
+      {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly={readOnlyProjet} />}
+      {onglet === 'zones' && <SectionZones pole={pole} clubId={clubId} readOnly={readOnlyProjet} />}
+      {onglet === 'regles' && <SectionRegles pole={pole} clubId={clubId} readOnly={readOnlyProjet} />}
     </div>
   )
 }

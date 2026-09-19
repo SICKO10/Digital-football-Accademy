@@ -1753,7 +1753,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data, error } = await supabase
       .from('club_educateurs')
-      .select('*, club:club_id(club, prenom, nom, avatar_url, ville)')
+      .select('*, club:club_id(club, prenom, nom, avatar_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -10165,7 +10165,9 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         )}
 
         {activeSection === 'projet_sportif' && (
-          <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id} />
+          <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id}
+            readOnlyProjet={!(clubAffiliation?.peut_editer_projet_sportif ?? clubAffiliation?.club?.educateurs_editent_projet_sportif ?? false)}
+            readOnlyPlanification={!(clubAffiliation?.peut_editer_planification ?? clubAffiliation?.club?.educateurs_editent_planification ?? false)} />
         )}
 
         {activeSection === 'projet_club_cff4' && (
