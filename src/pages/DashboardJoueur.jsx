@@ -21,6 +21,7 @@ import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import CarteSaison from '../components/CarteSaison'
 import CarteJoueur from '../components/CarteJoueur'
+import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
@@ -535,6 +536,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [equipementCommande, setEquipementCommande] = useState(null) // ligne equipement_commandes quel que soit le statut (affichage "Remis le ...")
   const [packAttribue, setPackAttribue] = useState(null) // equipement_packs attribué à ce joueur (equipement_attributions)
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
+  const [notesSeanceEnAttente, setNotesSeanceEnAttente] = useState([]) // seances_notes_demandes ouvertes, pas encore répondues
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
@@ -655,6 +657,22 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setMoyennePerso(notes.length ? (notes.reduce((s, n) => s + Number(n.note), 0) / notes.length).toFixed(1) : null)
   }
 
+  // Demandes de note de séance ouvertes chez mon éducateur affilié, moins
+  // celles où j'ai déjà répondu — la RLS (seances_notes_demandes/joueurs)
+  // impose de toute façon ce scoping côté serveur, ce chargement reflète
+  // juste ce que le joueur peut réellement voir.
+  async function chargerNotesSeanceEnAttente(educateurId) {
+    if (!educateurId) { setNotesSeanceEnAttente([]); return }
+    const { data: demandes } = await supabase.from('seances_notes_demandes')
+      .select('id, titre, date_seance, statut').eq('educateur_id', educateurId).eq('statut', 'ouverte')
+      .order('date_seance', { ascending: false })
+    if (!demandes?.length) { setNotesSeanceEnAttente([]); return }
+    const { data: dejaRepondu } = await supabase.from('seances_notes_joueurs')
+      .select('demande_id').eq('joueur_id', userId).in('demande_id', demandes.map(d => d.id))
+    const repondues = new Set((dejaRepondu || []).map(r => r.demande_id))
+    setNotesSeanceEnAttente(demandes.filter(d => !repondues.has(d.id)))
+  }
+
   useEffect(() => {
     if (onglet === 'coach' && userId) {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
@@ -690,7 +708,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id); chargerMesNotes(a.equipe_joueur_id) }
+      if (a) { chargerCalendrierEtDispos(a.educateur_id); chargerPlanningSemaine(a.educateur_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id); chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
     }
     if (onglet === 'competition') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
@@ -2089,6 +2107,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </div>
                 )
               })()}
+
+              {notesSeanceEnAttente.length > 0 && (
+                <div style={{ marginBottom: '14px' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Notes de séance en attente ({notesSeanceEnAttente.length})
+                  </p>
+                  {notesSeanceEnAttente.map(d => (
+                    <NoteSeanceForm key={d.id} demande={d} joueurId={userId}
+                      onSubmit={() => setNotesSeanceEnAttente(prev => prev.filter(x => x.id !== d.id))} />
+                  ))}
+                </div>
+              )}
 
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>

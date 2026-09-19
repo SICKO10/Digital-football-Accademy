@@ -1620,6 +1620,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
+  const [demandesNote, setDemandesNote] = useState({}) // { [entrainement_id]: demande } — seances_notes_demandes
+  const [demandeNoteEnCours, setDemandeNoteEnCours] = useState(null) // entrainement_id en cours d'envoi
+  const [reponsesNote, setReponsesNote] = useState([]) // seances_notes_joueurs de toutes les demandes de l'éducateur, pour Stats Équipe → Notes joueurs
   const [rapportsRecents, setRapportsRecents] = useState([]) // derniers rapports d'analyse, pour le fil d'activité de l'accueil
   const [sousOngletEnt, setSousOngletEnt] = useState('liste') // 'liste' | 'prochaine'
   const [savingCloture, setSavingCloture] = useState(false)
@@ -1926,6 +1929,48 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     } else {
       setDispoJoueurs({})
     }
+
+    const { data: demandes } = await supabase.from('seances_notes_demandes').select('*').eq('educateur_id', uid)
+    const demandesMap = {}
+    demandes?.forEach(d => { demandesMap[d.entrainement_id] = d })
+    setDemandesNote(demandesMap)
+
+    const demandeIds = (demandes || []).map(d => d.id)
+    if (demandeIds.length > 0) {
+      const { data: reponses } = await supabase.from('seances_notes_joueurs')
+        .select('*, profiles(prenom, nom, avatar_url)').in('demande_id', demandeIds)
+      setReponsesNote(reponses || [])
+    } else {
+      setReponsesNote([])
+    }
+  }
+
+  // Demande une note de séance aux joueurs affiliés (acceptés) — un seul
+  // envoi par entraînement (UNIQUE(entrainement_id) côté SQL). Notifie
+  // chaque joueur affilié à CET éducateur (pas toute la plateforme comme le
+  // ferait un chargement non scopé côté joueur).
+  async function demanderNoteSeance(e) {
+    setDemandeNoteEnCours(e.id)
+    const titre = `Séance du ${new Date(`${e.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`
+    const { data, error } = await supabase.from('seances_notes_demandes').insert({
+      entrainement_id: e.id, educateur_id: userId, club_categorie_id: e.club_categorie_id || null,
+      titre, date_seance: e.date, statut: 'ouverte',
+    }).select().single()
+    if (error) { console.error('demanderNoteSeance error:', error); alert('Erreur : ' + error.message); setDemandeNoteEnCours(null); return }
+    setDemandesNote(prev => ({ ...prev, [e.id]: data }))
+
+    const { data: affiliesAcceptes } = await supabase.from('affiliations').select('joueur_id').eq('educateur_id', userId).eq('statut', 'accepte')
+    await Promise.all((affiliesAcceptes || []).map(a => notifierJoueur({
+      type: 'seance_note', userId: a.joueur_id, titre: 'Nouvelle note de séance à donner',
+      contenu: { texte: titre }, lien: '/dashboard-joueur',
+    }).catch(err => console.error('notifierJoueur seance_note error:', err))))
+    setDemandeNoteEnCours(null)
+  }
+
+  async function fermerDemandeNote(demandeId, entrainementId) {
+    const { error } = await supabase.from('seances_notes_demandes').update({ statut: 'fermee' }).eq('id', demandeId)
+    if (error) { console.error('fermerDemandeNote error:', error); return }
+    setDemandesNote(prev => ({ ...prev, [entrainementId]: { ...prev[entrainementId], statut: 'fermee' } }))
   }
 
   const chargerRapportsRecents = async (uid, catId) => {
@@ -5933,7 +5978,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`⭐ ${t('stats_tab_mois', lang)}`]].map(([k, label]) => (
+              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`⭐ ${t('stats_tab_mois', lang)}`],['notes',`📝 ${t('stats_tab_notes', lang)}`]].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -6505,6 +6550,62 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   )}
                 </div>
               )
+            })()}
+
+            {/* ─ Notes de séance (ressenti joueurs) ─ */}
+            {statsSubTab === 'notes' && (() => {
+              const demandesTriees = Object.values(demandesNote).sort((a, b) => (b.date_seance || '').localeCompare(a.date_seance || ''))
+              if (demandesTriees.length === 0) {
+                return (
+                  <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>
+                    Aucune demande de note envoyée.<br />
+                    <span style={{ fontSize: '12px' }}>Clique sur ⭐ depuis une séance, dans l'onglet Entraînements.</span>
+                  </div>
+                )
+              }
+              return demandesTriees.map(d => {
+                const reponses = reponsesNote.filter(r => r.demande_id === d.id)
+                const moy = (cle) => reponses.length ? (reponses.reduce((s, r) => s + r[cle], 0) / reponses.length).toFixed(1) : null
+                return (
+                  <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{d.titre}</div>
+                        <div style={{ color: colors.text.disabled, fontSize: '12px', marginTop: '2px' }}>
+                          {reponses.length} réponse{reponses.length !== 1 ? 's' : ''}
+                          {' · '}
+                          <span style={{ color: d.statut === 'ouverte' ? colors.accent.green : colors.text.disabled }}>{d.statut === 'ouverte' ? 'En cours' : 'Fermée'}</span>
+                        </div>
+                      </div>
+                      {reponses.length > 0 && (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: colors.accent.green }}>{moy('charge_travail')}</div>
+                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Charge</div>
+                          </div>
+                          <div style={{ width: '1px', height: '32px', background: colors.border.subtle }} />
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 900, color: colors.accent.amber }}>{moy('notion_plaisir')}</div>
+                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Plaisir</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {reponses.length > 0 && (
+                      <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px' }}>
+                        {reponses.map(r => (
+                          <div key={r.joueur_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0', borderBottom: `1px solid ${colors.border.subtle}`, flexWrap: 'wrap' }}>
+                            <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600, minWidth: '110px', flex: 1 }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                            <span style={{ fontSize: '12px' }} title="Charge de travail">{'⭐'.repeat(r.charge_travail)}{'☆'.repeat(5 - r.charge_travail)}</span>
+                            <span style={{ fontSize: '12px' }} title="Plaisir">{'😄'.repeat(r.notion_plaisir)}{'😐'.repeat(5 - r.notion_plaisir)}</span>
+                            {r.mots_cles && <span style={{ color: colors.text.disabled, fontSize: '11px', fontStyle: 'italic' }}>{r.mots_cles}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
             })()}
           </>
         )}
@@ -7951,6 +8052,21 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                           <span style={{ background: nbPresents >= total * 0.8 ? colors.accent.green + alpha.subtle : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? colors.accent.green + alpha.light : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? colors.accent.green : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
                             {nbPresents}/{total}
                           </span>
+                        )}
+                        {canEdit('entrainements') && (
+                          demandesNote[e.id] ? (
+                            <span onClick={ev => { ev.stopPropagation(); if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
+                              title={demandesNote[e.id].statut === 'ouverte' ? 'Note demandée — clique pour fermer' : 'Note fermée'}
+                              style={{ background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.subtle : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.light : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green : colors.text.disabled, padding: '4px 9px', borderRadius: '20px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              {demandesNote[e.id].statut === 'ouverte' ? '⭐ En attente' : '✅ Note fermée'}
+                            </span>
+                          ) : (
+                            <button onClick={ev => { ev.stopPropagation(); demanderNoteSeance(e) }} disabled={demandeNoteEnCours === e.id}
+                              title="Demander une note aux joueurs sur cette séance"
+                              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                              {demandeNoteEnCours === e.id ? '…' : '⭐'}
+                            </button>
+                          )
                         )}
                         {canEdit('entrainements') && !e.fiche_id && (
                           <button onClick={ev => { ev.stopPropagation(); setModalImportFicheEntrainement(e.id) }}
