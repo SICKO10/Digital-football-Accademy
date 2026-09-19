@@ -8,6 +8,7 @@ import Avatar from "../components/Avatar";
 import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
+import BadgesJoueur from "../components/BadgesJoueur";
 import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 import OnboardingGuide from "../components/OnboardingGuide";
@@ -566,6 +567,9 @@ export default function DashboardRecruteur() {
                 {j.pied && <span style={{ ...st.posteBadge(""), background: colors.background.raised, color: colors.text.secondary }}>Pied {j.pied.toLowerCase()}</span>}
                 {j.region && <span style={{ ...st.posteBadge(""), background: colors.background.raised, color: colors.text.secondary }}>{j.region}</span>}
               </div>
+              <div style={{ marginTop: "10px" }}>
+                <BadgesJoueur joueurId={j.id} afficherSaison={true} />
+              </div>
             </div>
           </div>
 
@@ -1071,6 +1075,10 @@ export default function DashboardRecruteur() {
                       {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
                     </div>
 
+                    <div style={{ marginBottom: "10px" }}>
+                      <BadgesJoueur joueurId={j.id} limite={2} />
+                    </div>
+
                     {/* Stats + barres de progression */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
                       {[
@@ -1116,6 +1124,9 @@ export default function DashboardRecruteur() {
                         {aEteContacte(j.id) && <span style={{ background: colors.accent.blue + alpha.soft, color: colors.accent.blue, fontSize: "9px", padding: "1px 5px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓</span>}
                       </div>
                       <p style={{ margin: "1px 0 0", fontSize: "11px", color: colors.text.faint }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
+                      <div style={{ marginTop: "4px" }}>
+                        <BadgesJoueur joueurId={j.id} limite={1} />
+                      </div>
                     </div>
                     <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: colors.text.dim }}>
                       <span style={{ color: colors.accent.orange, fontWeight: 700 }}>{j.buts_total || 0} <span style={{ color: colors.text.faint, fontWeight: 400 }}>buts</span></span>
