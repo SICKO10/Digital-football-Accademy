@@ -22,7 +22,7 @@ const VIDE_TOURNOI = {
   nb_terrains: 2, duree_match: 15, pause_minutes: 5,
   heure_debut: '09:00', nb_equipes_poule: 4,
   heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
-  prix_inscription_equipe: '', nb_equipes_prevues: 8,
+  prix_inscription_equipe: '', nb_equipes_prevues: 8, nb_equipes_payantes: 7,
   qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
@@ -186,7 +186,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       heure_debut: t.heure_debut || '09:00', nb_terrains: t.nb_terrains || 2, nb_equipes_poule: t.nb_equipes_poule || 4,
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
       heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
-      prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
+      prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8, nb_equipes_payantes: t.nb_equipes_payantes ?? Math.max(0, (t.nb_equipes_prevues || 8) - 1),
       qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0, cout_organisation: t.cout_organisation || '',
     })
     const [{ data: eqs }, { data: mts }, { data: buts }, { data: insc }] = await Promise.all([
@@ -258,7 +258,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     setReglagesSaving(false)
     if (!error && data) {
       setTournoi(data)
-      await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+      await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_payantes, data.date)
       await syncBudgetCout(data.id, data.nom, data.cout_organisation, data.date)
     }
   }
@@ -275,7 +275,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       ...payload, club_id: clubId, educateur_id: userId || null, code_public: genererCode(),
     }).select().single()
     if (!error && data) {
-      if (payload.prix_inscription_equipe > 0) await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+      if (payload.prix_inscription_equipe > 0) await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_payantes, data.date)
       if (payload.cout_organisation > 0) await syncBudgetCout(data.id, data.nom, data.cout_organisation, data.date)
     }
     setLoading(false)
@@ -830,20 +830,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             </select>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
           <div>
             <label style={st.label}>Prix d'inscription par équipe (€)</label>
             <input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
           </div>
           <div>
-            <label style={st.label}>Nombre d'équipes attendues</label>
+            <label style={st.label}>Nombre d'équipes total</label>
             <input type="number" min="2" value={form.nb_equipes_prevues} onChange={e => setForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />
+          </div>
+          <div>
+            <label style={st.label}>Dont payantes (invitées)</label>
+            <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={st.input} />
           </div>
         </div>
         {Number(form.prix_inscription_equipe) > 0 && (
           <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '-6px' }}>
-            Recette prévisionnelle : {(Number(form.prix_inscription_equipe) * (form.nb_equipes_prevues || 8)).toFixed(2)}€
-            <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (basé sur {form.nb_equipes_prevues || 8} équipes) — ajoutée automatiquement dans le budget du club</span>
+            Recette prévisionnelle : {(Number(form.prix_inscription_equipe) * (form.nb_equipes_payantes || 0)).toFixed(2)}€
+            <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (basé sur {form.nb_equipes_payantes || 0} équipe{form.nb_equipes_payantes > 1 ? 's' : ''} payante{form.nb_equipes_payantes > 1 ? 's' : ''} — l'équipe hôte ne paie pas) — ajoutée automatiquement dans le budget du club</span>
           </div>
         )}
         <div>
@@ -1281,19 +1285,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </select>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
               <div>
                 <label style={st.label}>Prix d'inscription par équipe (€)</label>
                 <input type="number" min="0" step="0.01" placeholder="0.00" value={reglagesForm.prix_inscription_equipe} onChange={e => setReglagesForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
               </div>
               <div>
-                <label style={st.label}>Nombre d'équipes attendues</label>
+                <label style={st.label}>Nombre d'équipes total</label>
                 <input type="number" min="2" value={reglagesForm.nb_equipes_prevues} onChange={e => setReglagesForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />
+              </div>
+              <div>
+                <label style={st.label}>Dont payantes (invitées)</label>
+                <input type="number" min="0" value={reglagesForm.nb_equipes_payantes} onChange={e => setReglagesForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={st.input} />
               </div>
             </div>
             {Number(reglagesForm.prix_inscription_equipe) > 0 && (
               <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>
-                Recette prévisionnelle : {(Number(reglagesForm.prix_inscription_equipe) * (reglagesForm.nb_equipes_prevues || 8)).toFixed(2)}€
+                Recette prévisionnelle : {(Number(reglagesForm.prix_inscription_equipe) * (reglagesForm.nb_equipes_payantes || 0)).toFixed(2)}€
+                <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (l'équipe hôte ne paie pas)</span>
               </div>
             )}
             <div style={{ marginTop: '12px' }}>
