@@ -23,7 +23,7 @@ const VIDE_TOURNOI = {
   heure_debut: '09:00', nb_equipes_poule: 4,
   heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
   prix_inscription_equipe: '', nb_equipes_prevues: 8,
-  qualifies_meilleurs_troisiemes: 0,
+  qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
 
@@ -187,7 +187,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
       heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8,
-      qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0,
+      qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0, cout_organisation: t.cout_organisation || '',
     })
     const [{ data: eqs }, { data: mts }, { data: buts }, { data: insc }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
@@ -235,6 +235,23 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }
   }
 
+  // Coût d'organisation (terrain, arbitrage, récompenses…) — même logique de
+  // sync que la recette d'inscriptions, mais côté dépense et avec un
+  // source_type distinct ('tournoi_organise_cout' vs 'tournoi_organise') pour
+  // ne pas confondre les deux entrées budget_club liées au même tournoi.
+  async function syncBudgetCout(tournoiId, nom, montant, date) {
+    const { data: existant } = await supabase.from('budget_club').select('id')
+      .eq('source_type', 'tournoi_organise_cout').eq('source_id', tournoiId).maybeSingle()
+    const m = Number(montant) || 0
+    if (m > 0) {
+      const champs = { libelle: `Organisation tournoi — ${nom}`, montant: m, date: date || new Date().toISOString().split('T')[0] }
+      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
+      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: 'tournoi_organise_cout', source_id: tournoiId })
+    } else if (existant) {
+      await supabase.from('budget_club').delete().eq('id', existant.id)
+    }
+  }
+
   async function sauvegarderReglages() {
     setReglagesSaving(true)
     const { data, error } = await supabase.from('tournois_organises').update(reglagesForm).eq('id', tournoi.id).select().single()
@@ -242,18 +259,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     if (!error && data) {
       setTournoi(data)
       await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+      await syncBudgetCout(data.id, data.nom, data.cout_organisation, data.date)
     }
   }
 
   async function creerTournoi() {
     if (!form.nom.trim()) return
     setLoading(true)
-    const payload = { ...form, prix_inscription_equipe: form.prix_inscription_equipe === '' ? 0 : Number(form.prix_inscription_equipe) }
+    const payload = {
+      ...form,
+      prix_inscription_equipe: form.prix_inscription_equipe === '' ? 0 : Number(form.prix_inscription_equipe),
+      cout_organisation: form.cout_organisation === '' ? 0 : Number(form.cout_organisation),
+    }
     const { data, error } = await supabase.from('tournois_organises').insert({
       ...payload, club_id: clubId, educateur_id: userId || null, code_public: genererCode(),
     }).select().single()
-    if (!error && data && payload.prix_inscription_equipe > 0) {
-      await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+    if (!error && data) {
+      if (payload.prix_inscription_equipe > 0) await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_prevues, data.date)
+      if (payload.cout_organisation > 0) await syncBudgetCout(data.id, data.nom, data.cout_organisation, data.date)
     }
     setLoading(false)
     if (!error && data) { await chargerTournois(); await chargerDetail(data) }
@@ -262,6 +285,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   async function supprimerTournoi(id) {
     if (!confirm('Supprimer ce tournoi ? Cette action est définitive.')) return
     await supabase.from('budget_club').delete().eq('source_type', 'tournoi_organise').eq('source_id', id)
+    await supabase.from('budget_club').delete().eq('source_type', 'tournoi_organise_cout').eq('source_id', id)
     await supabase.from('tournois_organises').delete().eq('id', id)
     chargerTournois()
   }
@@ -822,6 +846,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (basé sur {form.nb_equipes_prevues || 8} équipes) — ajoutée automatiquement dans le budget du club</span>
           </div>
         )}
+        <div>
+          <label style={st.label}>Coût d'organisation (€)</label>
+          <input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />
+          <div style={{ color: colors.text.disabled, fontSize: '11px', marginTop: '4px' }}>Terrain, arbitrage, récompenses… — ajouté automatiquement dans le budget du club (dépense, catégorie Tournoi)</div>
+        </div>
         <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
           {loading ? 'Création…' : 'Créer le tournoi'}
         </button>
@@ -887,12 +916,33 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
         {onglet === 'equipes' && (
           <div>
-            {Number(tournoi.prix_inscription_equipe) > 0 && (
-              <div style={{ ...st.card, marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipes.length} équipe{equipes.length > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
-                <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '15px' }}>{(equipes.length * Number(tournoi.prix_inscription_equipe)).toFixed(2)}€</span>
-              </div>
-            )}
+            {(Number(tournoi.prix_inscription_equipe) > 0 || Number(tournoi.cout_organisation) > 0) && (() => {
+              const recetteReelle = equipes.length * Number(tournoi.prix_inscription_equipe || 0)
+              const cout = Number(tournoi.cout_organisation || 0)
+              const solde = recetteReelle - cout
+              return (
+                <div style={{ ...st.card, marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {Number(tournoi.prix_inscription_equipe) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipes.length} équipe{equipes.length > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
+                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '15px' }}>{recetteReelle.toFixed(2)}€</span>
+                    </div>
+                  )}
+                  {cout > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Coût d'organisation</span>
+                      <span style={{ color: colors.accent.red, fontWeight: 700, fontSize: '15px' }}>-{cout.toFixed(2)}€</span>
+                    </div>
+                  )}
+                  {cout > 0 && Number(tournoi.prix_inscription_equipe) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '6px' }}>
+                      <span style={{ color: colors.text.secondary, fontSize: '12px', fontWeight: 700 }}>Solde net (réel)</span>
+                      <span style={{ color: solde >= 0 ? colors.accent.green : colors.accent.red, fontWeight: 800, fontSize: '15px' }}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)}€</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
             {!readOnly && (
               <div style={{ ...st.card, marginBottom: '16px' }}>
                 <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>Ajouter une équipe</div>
@@ -1246,6 +1296,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 Recette prévisionnelle : {(Number(reglagesForm.prix_inscription_equipe) * (reglagesForm.nb_equipes_prevues || 8)).toFixed(2)}€
               </div>
             )}
+            <div style={{ marginTop: '12px' }}>
+              <label style={st.label}>Coût d'organisation (€)</label>
+              <input type="number" min="0" step="0.01" placeholder="0.00" value={reglagesForm.cout_organisation} onChange={e => setReglagesForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />
+            </div>
             <button onClick={sauvegarderReglages} disabled={reglagesSaving} style={{ ...st.btnSolid, opacity: reglagesSaving ? 0.6 : 1, marginTop: '16px' }}>
               {reglagesSaving ? 'Enregistrement…' : 'Enregistrer — puis régénère le planning pour appliquer'}
             </button>
