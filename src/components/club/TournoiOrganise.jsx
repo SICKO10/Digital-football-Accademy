@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { calculerClassement, meilleursTroisiemes, retrouverInscriptionParEquipe, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
@@ -25,7 +25,7 @@ const VIDE_TOURNOI = {
   prix_inscription_equipe: '', nb_equipes_prevues: 8, nb_equipes_payantes: 7,
   qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
 }
-const VIDE_EQUIPE = { nom: '', club: '', poule: 'A' }
+const VIDE_EQUIPE = { nom: '', club: '', poule: 'A', est_hote: false }
 
 const genererCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
 
@@ -173,6 +173,40 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [inscriptions, setInscriptions] = useState([])
   const [lienInscriptionCopie, setLienInscriptionCopie] = useState(false)
 
+  // ── Tutoriel interactif (première ouverture d'un tournoi) ──────────────
+  // Même mécanique que le spotlight de Tactipad.jsx (tourRefs + getBoundingClientRect
+  // sur les vrais boutons, pas un carrousel séparé) — se déclenche seul à la
+  // première ouverture d'un tournoi (localStorage par utilisateur), rejouable
+  // ensuite via le bouton "?" à côté du titre. -1 = fermé. Pas de i18n ici :
+  // ce fichier est entièrement en français en dur, contrairement à Tactipad.
+  const TOUR_STEPS = [
+    { ref: 'equipes', titre: 'Équipes', texte: "Ajoute les équipes participantes avec leur poule. Le bouton \"Tirage au sort\" les répartit automatiquement une fois toutes saisies." },
+    { ref: 'planning', titre: 'Planning', texte: "Une fois les équipes réparties, génère en un clic tous les matchs de poule sans conflit de terrain ni d'horaire — modifiable ensuite match par match." },
+    { ref: 'resultats', titre: 'Résultats', texte: "Saisis le score de chaque match (même 0-0 compte), avec les cartons en option pour le départage fair-play. Le bouton \"Générer\" en haut lance la phase finale." },
+    { ref: 'classement', titre: 'Classement', texte: 'Se met à jour automatiquement à chaque score saisi : points, différence de buts, buts marqués, fair-play, buts encaissés.' },
+    { ref: 'buteurs', titre: 'Buteurs', texte: "Ajoute les buteurs sous chaque match terminé (dans l'onglet Résultats) pour faire vivre le classement des buteurs ici." },
+    { ref: 'inscriptions', titre: 'Inscriptions', texte: 'Les équipes qui s\'inscrivent via ton lien public apparaissent ici — valide ou refuse chaque demande, avec le détail des joueurs.' },
+    { ref: 'palmares', titre: 'Palmarès', texte: "Résultat des votes fair-play / meilleur joueur / meilleur gardien envoyés par email aux équipes inscrites une fois validées." },
+    ...(!readOnly ? [{ ref: 'reglages', titre: 'Réglages', texte: 'Format du tournoi, horaires, pause déjeuner, et nombre de qualifiés pour la phase finale.' }] : []),
+  ]
+  const tourKey = `tournoi_tour_vu_${userId || 'anon'}`
+  const [tourEtape, setTourEtape] = useState(-1)
+  const [tourRect, setTourRect] = useState(null)
+  const tourRefs = useRef({})
+  const fermerTour = () => { setTourEtape(-1); try { localStorage.setItem(tourKey, '1') } catch { /* navigation privée... tant pis, le tour réapparaîtra */ } }
+  useLayoutEffect(() => {
+    if (tourEtape < 0) { setTourRect(null); return }
+    const recalc = () => {
+      const el = tourRefs.current[TOUR_STEPS[tourEtape]?.ref]
+      setTourRect(el ? el.getBoundingClientRect() : null)
+    }
+    recalc()
+    window.addEventListener('resize', recalc)
+    window.addEventListener('scroll', recalc, true)
+    return () => { window.removeEventListener('resize', recalc); window.removeEventListener('scroll', recalc, true) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourEtape])
+
   useEffect(() => { if (clubId) chargerTournois() }, [clubId])
 
   async function chargerTournois() {
@@ -182,6 +216,9 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
   async function chargerDetail(t) {
     setTournoi(t); setVue('detail'); setOnglet('equipes')
+    let tourVu = false
+    try { tourVu = localStorage.getItem(tourKey) === '1' } catch { /* navigation privée... */ }
+    if (!tourVu) setTimeout(() => setTourEtape(0), 400)
     setReglagesForm({
       heure_debut: t.heure_debut || '09:00', nb_terrains: t.nb_terrains || 2, nb_equipes_poule: t.nb_equipes_poule || 4,
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
@@ -305,6 +342,11 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     if (!nouvelleEquipe.nom.trim()) return
     const { data } = await supabase.from('tournois_equipes').insert({ tournoi_id: tournoi.id, ...nouvelleEquipe }).select().single()
     if (data) { setEquipes(p => [...p, data]); setNouvelleEquipe({ ...VIDE_EQUIPE, poule: pouleSuggeree() }) }
+  }
+
+  async function basculerHoteEquipe(eq) {
+    const { data } = await supabase.from('tournois_equipes').update({ est_hote: !eq.est_hote }).eq('id', eq.id).select().single()
+    if (data) setEquipes(p => p.map(e => (e.id === eq.id ? data : e)))
   }
 
   async function supprimerEquipe(id) {
@@ -875,7 +917,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     ]
     return (
       <div style={{ maxWidth: 900 }}>
-        <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
+          <button onClick={() => setTourEtape(0)} title="Revoir le tutoriel"
+            style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: 'none', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+            ?
+          </button>
+        </div>
         <div style={{ ...st.card, margin: '16px 0 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
             <div>
@@ -911,7 +959,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
         <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {onglets.map(o => (
-            <button key={o.key} onClick={() => setOnglet(o.key)}
+            <button key={o.key} ref={el => (tourRefs.current[o.key] = el)} onClick={() => setOnglet(o.key)}
               style={{ padding: '8px 16px', borderRadius: '20px', border: onglet === o.key ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: onglet === o.key ? colors.accent.green + '15' : 'transparent', color: onglet === o.key ? colors.accent.green : colors.text.faint, fontWeight: onglet === o.key ? 700 : 400, fontSize: '13px', cursor: 'pointer' }}>
               {o.label}
             </button>
@@ -921,14 +969,15 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         {onglet === 'equipes' && (
           <div>
             {(Number(tournoi.prix_inscription_equipe) > 0 || Number(tournoi.cout_organisation) > 0) && (() => {
-              const recetteReelle = equipes.length * Number(tournoi.prix_inscription_equipe || 0)
+              const equipesPayantes = equipes.filter(e => !e.est_hote).length
+              const recetteReelle = equipesPayantes * Number(tournoi.prix_inscription_equipe || 0)
               const cout = Number(tournoi.cout_organisation || 0)
               const solde = recetteReelle - cout
               return (
                 <div style={{ ...st.card, marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {Number(tournoi.prix_inscription_equipe) > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipes.length} équipe{equipes.length > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
+                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipesPayantes} équipe{equipesPayantes > 1 ? 's' : ''} payante{equipesPayantes > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
                       <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '15px' }}>{recetteReelle.toFixed(2)}€</span>
                     </div>
                   )}
@@ -961,6 +1010,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                   </select>
                   <button onClick={ajouterEquipe} disabled={!nouvelleEquipe.nom.trim()} style={{ ...st.btnSolid, opacity: !nouvelleEquipe.nom.trim() ? 0.4 : 1 }}>+ Ajouter</button>
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={nouvelleEquipe.est_hote} onChange={e => setNouvelleEquipe(p => ({ ...p, est_hote: e.target.checked }))} />
+                  Équipe hôte (le club organisateur — ne paie pas d'inscription)
+                </label>
               </div>
             )}
 
@@ -974,8 +1027,16 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     <div>
                       <span style={{ color: colors.text.primary, fontWeight: 600 }}>{eq.nom}</span>
                       {eq.club && <span style={{ color: colors.text.disabled, fontSize: '12px', marginLeft: '10px' }}>{eq.club}</span>}
+                      {eq.est_hote && <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700, marginLeft: '10px' }}>🏠 Hôte</span>}
                     </div>
-                    {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {!readOnly && (
+                        <button onClick={() => basculerHoteEquipe(eq)} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: eq.est_hote ? colors.accent.blue : colors.text.faint, borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          {eq.est_hote ? 'Retirer hôte' : 'Marquer hôte'}
+                        </button>
+                      )}
+                      {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1315,6 +1376,63 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           </div>
           </div>
         )}
+
+        {/* ── Tutoriel interactif : spotlight sur l'onglet réel de l'étape en cours ── */}
+        {tourEtape >= 0 && tourRect && (() => {
+          const step = TOUR_STEPS[tourEtape]
+          if (!step) return null
+          const pad = 6
+          const box = { top: tourRect.top - pad, left: tourRect.left - pad, width: tourRect.width + pad * 2, height: tourRect.height + pad * 2 }
+          const TOOLTIP_W = 300
+          const placeRight = window.innerWidth - (box.left + box.width) > TOOLTIP_W + 24
+          let ttTop = placeRight ? box.top : box.top + box.height + 14
+          let ttLeft = placeRight ? box.left + box.width + 14 : box.left
+          ttLeft = Math.min(Math.max(12, ttLeft), window.innerWidth - TOOLTIP_W - 12)
+          ttTop = Math.min(Math.max(12, ttTop), window.innerHeight - 220)
+          return (
+            <>
+              <div onClick={fermerTour} style={{ position: 'fixed', inset: 0, zIndex: 4000 }} />
+              <div style={{
+                position: 'fixed', top: box.top, left: box.left, width: box.width, height: box.height,
+                borderRadius: '10px', border: `2px solid ${colors.accent.green}`, pointerEvents: 'none',
+                boxShadow: `0 0 0 9999px rgba(0,0,0,0.65), 0 0 18px ${colors.accent.green}a0`,
+                zIndex: 4001, transition: 'top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease',
+              }} />
+              <div onClick={e => e.stopPropagation()} style={{
+                position: 'fixed', top: ttTop, left: ttLeft, width: TOOLTIP_W, zIndex: 4002,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`,
+                borderRadius: '12px', padding: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+              }}>
+                <div style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Étape {tourEtape + 1} / {TOUR_STEPS.length}
+                </div>
+                <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', marginBottom: '6px' }}>{step.titre}</div>
+                <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.5, margin: '0 0 14px' }}>{step.texte}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button onClick={fermerTour} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                    Passer
+                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {tourEtape > 0 && (
+                      <button onClick={() => setTourEtape(tourEtape - 1)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                        Précédent
+                      </button>
+                    )}
+                    {tourEtape < TOUR_STEPS.length - 1 ? (
+                      <button onClick={() => setTourEtape(tourEtape + 1)} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                        Suivant
+                      </button>
+                    ) : (
+                      <button onClick={fermerTour} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                        Terminer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )
+        })()}
       </div>
     )
   }
