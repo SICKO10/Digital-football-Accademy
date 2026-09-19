@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
+import Tactipad from './Tactipad'
 
 const THEMES = [
   { valeur: 'Offensif', cle: 'biblio_theme_offensif' },
@@ -13,6 +14,16 @@ const THEMES = [
   { valeur: 'Sans thème', cle: 'biblio_theme_sans' },
 ]
 const CATEGORIES_AGE = ['Pour tous', 'U6-U7', 'U8-U9', 'U10-U11', 'U12-U13', 'U14-U15', 'U16-U17', 'U18-U19', 'Senior']
+// Même 4 valeurs que la colonne bibliotheque_exercices.type (CHECK constraint)
+// et le sélecteur équivalent du formulaire manuel (DashboardEducateur.jsx,
+// création/édition de procédé) — repris ici à l'identique pour que le scan
+// ne force plus systématiquement "exercice".
+const TYPES_PROCEDE = [
+  { valeur: 'echauffement', cle: 'biblio_tab_echauffement', emoji: '🔥' },
+  { valeur: 'jeu', cle: 'biblio_tab_jeu', emoji: '⚽' },
+  { valeur: 'exercice', cle: 'biblio_tab_exercice', emoji: '🔄' },
+  { valeur: 'situation', cle: 'biblio_tab_situation', emoji: '🎯' },
+]
 
 // Gemini répond en texte libre pour theme/categorie_age — on rattache au plus
 // proche de nos valeurs canoniques (stockées telles quelles en base) plutôt
@@ -25,7 +36,7 @@ const normaliser = (valeur, options) => {
   return trouve || ''
 }
 
-const PROCEDE_SCAN_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true, schema_data: null }
+const PROCEDE_SCAN_VIDE = { type: 'exercice', nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true, schema_data: null, schema_png: null }
 
 // Terrain de référence pour convertir les positions % renvoyées par Gemini en
 // coordonnées absolues — Tactipad stocke terrain.w/h dans le schéma et
@@ -116,6 +127,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
   const [resultat, setResultat] = useState(null)
   const [erreur, setErreur] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [showTactipad, setShowTactipad] = useState(false)
   const inputRef = useRef()
 
   const handleImage = async (e) => {
@@ -192,7 +204,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
     if (!resultat || !resultat.nom.trim()) return
     setSaving(true)
     const { error } = await supabase.from('bibliotheque_exercices').insert({
-      type: 'exercice',
+      type: resultat.type || 'exercice',
       educateur_id: userId,
       club_id: clubId || null,
       nom: resultat.nom.trim(),
@@ -210,6 +222,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       partage_club: true,
       partage_platform: resultat.partage_platform,
       schema_data: resultat.schema_data || null,
+      schema_png: resultat.schema_png || null,
     })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
@@ -267,15 +280,32 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '20px', marginTop: '16px' }}>
           <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '13px', marginBottom: '16px' }}>✅ {t('scanproc_detecte', lang)}</div>
 
-          {resultat.schema_data && (
-            <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', color: colors.accent.blue, fontSize: '12px' }}>
-              🎨 Schéma tactique détecté ({resultat.schema_data.elements.length} élément{resultat.schema_data.elements.length > 1 ? 's' : ''}) — ajustable après enregistrement via « Modifier le schéma ».
-            </div>
-          )}
+          <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ color: colors.accent.blue, fontSize: '12px' }}>
+              {resultat.schema_data
+                ? `🎨 Schéma tactique détecté (${resultat.schema_data.elements.length} élément${resultat.schema_data.elements.length > 1 ? 's' : ''})`
+                : '🎨 Aucun schéma détecté sur cette photo'}
+            </span>
+            <button type="button" onClick={() => setShowTactipad(true)}
+              style={{ background: colors.accent.blue, color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+              {resultat.schema_data ? 'Corriger le schéma' : 'Créer le schéma'}
+            </button>
+          </div>
 
           <div style={{ marginBottom: '14px' }}>
             <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
             <input value={resultat.nom} onChange={e => setResultat(r => ({ ...r, nom: e.target.value }))} style={champInput} />
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={champLabel}>{t('biblio_champ_type', lang)}</label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {TYPES_PROCEDE.map(ty => (
+                <button key={ty.valeur} type="button" onClick={() => setResultat(r => ({ ...r, type: ty.valeur }))} style={pastille(resultat.type === ty.valeur)}>
+                  {ty.emoji} {t(ty.cle, lang)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div style={{ marginBottom: '14px' }}>
@@ -350,6 +380,22 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
               style={{ flex: 2, background: saving || !resultat.nom.trim() ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px', color: saving || !resultat.nom.trim() ? colors.text.disabled : colors.black, fontWeight: 800, fontSize: '14px', cursor: saving || !resultat.nom.trim() ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
               💾 {t('biblio_sauvegarder_bouton', lang)}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showTactipad && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '1100px', maxHeight: '95vh', overflow: 'auto' }}>
+            <Tactipad
+              userId={userId}
+              mode="modal"
+              vueParDefaut="demi"
+              initialSchema={resultat?.schema_data}
+              onValider={(png, schema) => { setResultat(r => ({ ...r, schema_png: png, schema_data: schema })); setShowTactipad(false) }}
+              onFermer={() => setShowTactipad(false)}
+              lang={lang}
+            />
           </div>
         </div>
       )}
