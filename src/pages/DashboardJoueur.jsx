@@ -20,6 +20,7 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import CarteSaison from '../components/CarteSaison'
+import CarteJoueur from '../components/CarteJoueur'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
@@ -3014,6 +3015,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'carte', label: t('jnav_carte', lang), icon: <IconCard />, section: t('jsec_profil', lang) },
     { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
     { id: 'carte_saison', label: 'Carte Saison', icon: <IconTrophy />, section: t('jsec_profil', lang) },
+    { id: 'carte_joueur', label: 'Carte Joueur', icon: <IconCard />, section: t('jsec_profil', lang) },
     { id: 'clubs', label: t('jnav_explorer', lang), icon: <IconBuilding />, section: t('jsec_reseau', lang) },
     { id: 'messages', label: t('jnav_recruteurs', lang), icon: <IconMessage />, badge: conversations.length, section: t('jsec_reseau', lang) },
   ]
@@ -4530,6 +4532,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ton palmarès — les badges obtenus en participant à des tournois.</p>
             </div>
             <CarteSaison userId={userId} />
+          </div>
+        )}
+
+        {onglet === 'carte_joueur' && (
+          <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Carte Joueur</h2>
+              <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ta note globale et tes stats de la saison, calculées automatiquement.</p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <CarteJoueur userId={userId} />
+            </div>
           </div>
         )}
 
