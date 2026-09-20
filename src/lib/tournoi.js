@@ -4,7 +4,7 @@ export const PHASE_ORDRE = ['huitieme', 'quart', 'demi', 'troisieme', 'finale_po
 // Départage d'un classement — points, puis différence de buts, buts marqués,
 // fair-play (cartons, pénalité la plus faible d'abord) et enfin buts
 // encaissés (le moins en ayant encaissé d'abord). Exporté pour être aussi
-// utilisé par meilleursTroisiemes ci-dessous, qui compare des équipes de
+// utilisé par meilleursDuRang ci-dessous, qui compare des équipes de
 // poules différentes sur les mêmes critères.
 export function compareClassement(a, b) {
   return b.pts - a.pts || b.diff - a.diff || b.bp - a.bp || a.fairplay - b.fairplay || a.bc - b.bc
@@ -32,17 +32,20 @@ export function calculerClassement(equipes, matchs, poule) {
   return Object.values(stats).sort(compareClassement)
 }
 
-// Les K meilleurs 3e de poule (toutes poules confondues) qui rejoignent la
-// phase finale en plus des 2 premiers de chaque poule — cf. réglage
-// qualifies_meilleurs_troisiemes. Comparés entre eux avec le même départage
-// que le classement intra-poule, alors qu'ils n'ont pas joué les mêmes
-// adversaires (approximation usuelle de ce type de règlement).
-export function meilleursTroisiemes(equipes, matchs, poules, k) {
+// Les K meilleurs d'un rang donné (toutes poules confondues) qui rejoignent
+// la phase finale en plus des `rang` premiers qualifiés d'office de chaque
+// poule — cf. réglages qualifies_par_poule (le rang, 1 ou 2) et
+// qualifies_meilleurs_troisiemes (le K, toujours pris au rang juste après :
+// meilleurs 2e si qualifies_par_poule = 1, meilleurs 3e si = 2). Comparés
+// entre eux avec le même départage que le classement intra-poule, alors
+// qu'ils n'ont pas joué les mêmes adversaires (approximation usuelle de ce
+// type de règlement).
+export function meilleursDuRang(equipes, matchs, poules, rang, k) {
   if (!k) return []
-  const troisiemes = poules
-    .map(p => calculerClassement(equipes, matchs, p)[2])
+  const candidats = poules
+    .map(p => calculerClassement(equipes, matchs, p)[rang])
     .filter(Boolean)
-  return troisiemes.sort(compareClassement).slice(0, k)
+  return candidats.sort(compareClassement).slice(0, k)
 }
 
 // Une inscription (formulaire public, tournois_inscriptions) n'est reliée

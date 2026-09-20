@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { calculerClassement, meilleursTroisiemes, retrouverInscriptionParEquipe, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 import { saisonActuelle } from '../../lib/saison'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -23,7 +23,7 @@ const VIDE_TOURNOI = {
   heure_debut: '09:00', nb_equipes_poule: 4,
   heure_fin: '18:00', pause_midi_debut: '12:00', pause_midi_duree: 90,
   prix_inscription_equipe: '', nb_equipes_prevues: 8, nb_equipes_payantes: 7,
-  qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
+  qualifies_par_poule: 2, qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A', est_hote: false }
 
@@ -224,7 +224,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
       heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8, nb_equipes_payantes: t.nb_equipes_payantes ?? Math.max(0, (t.nb_equipes_prevues || 8) - 1),
-      qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0, cout_organisation: t.cout_organisation || '',
+      qualifies_par_poule: t.qualifies_par_poule || 2, qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0, cout_organisation: t.cout_organisation || '',
     })
     const [{ data: eqs }, { data: mts }, { data: buts }, { data: insc }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
@@ -608,23 +608,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }
     const debutFinale = eviterPauseMidiFinale(finDernierMatch + 15)
 
-    // Qualifiés : les 2 premiers de chaque poule (dans l'ordre des poules),
-    // puis les K meilleurs troisièmes réglés dans l'onglet Réglages (cf.
-    // qualifies_meilleurs_troisiemes). Le nombre total doit tomber sur une
-    // puissance de 2 (2/4/8/16) pour former un tableau à élimination directe
-    // classique, sans équipe exemptée d'un tour.
+    // Qualifiés : les N premiers de chaque poule (N = qualifies_par_poule,
+    // réglable), puis les K meilleurs du rang suivant réglés dans l'onglet
+    // Réglages (cf. qualifies_meilleurs_troisiemes — meilleurs 2e si N=1,
+    // meilleurs 3e si N=2). Le nombre total doit tomber sur une puissance de
+    // 2 (2/4/8/16) pour former un tableau à élimination directe classique,
+    // sans équipe exemptée d'un tour.
+    const parPoule = tournoi.qualifies_par_poule || 2
     const qualifies = []
     poules.forEach(p => {
-      if (classements[p]?.[0]) qualifies.push(classements[p][0])
-      if (classements[p]?.[1]) qualifies.push(classements[p][1])
+      for (let i = 0; i < parPoule; i++) { if (classements[p]?.[i]) qualifies.push(classements[p][i]) }
     })
-    const nbMeilleursTroisiemes = tournoi.qualifies_meilleurs_troisiemes || 0
-    if (nbMeilleursTroisiemes > 0) {
-      qualifies.push(...meilleursTroisiemes(equipes, matchsPoule, poules, nbMeilleursTroisiemes))
+    const nbMeilleursSuivants = tournoi.qualifies_meilleurs_troisiemes || 0
+    if (nbMeilleursSuivants > 0) {
+      qualifies.push(...meilleursDuRang(equipes, matchsPoule, poules, parPoule, nbMeilleursSuivants))
     }
     const Q = qualifies.length
     if (![2, 4, 8, 16].includes(Q)) {
-      alert(`Le réglage actuel donne ${Q} qualifiés — ajuste le nombre de meilleurs troisièmes (onglet Réglages) pour tomber sur 2, 4, 8 ou 16.`)
+      alert(`Le réglage actuel donne ${Q} qualifiés — ajuste le nombre de qualifiés par poule ou de meilleurs suivants (onglet Réglages) pour tomber sur 2, 4, 8 ou 16.`)
       return
     }
 
@@ -1269,29 +1270,40 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               ))}
             </div>
 
-            {(tournoi.format === 'poules_elimination' || tournoi.format === 'poules_minichampionnat') && (
+            {(tournoi.format === 'poules_elimination' || tournoi.format === 'poules_minichampionnat') && (() => {
+              const parPoule = reglagesForm.qualifies_par_poule || 2
+              const rangSuivant = parPoule + 1
+              return (
               <div style={st.card}>
                 <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, color: colors.text.primary }}>Qualification pour la phase finale</h3>
-                <label style={st.label}>Meilleurs troisièmes qualifiés (en plus des 2 premiers de chaque poule)</label>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={st.label}>Qualifiés automatiques par poule</label>
+                  <select value={parPoule} onChange={e => setReglagesForm(f => ({ ...f, qualifies_par_poule: parseInt(e.target.value) }))} style={st.input}>
+                    <option value={1}>1 — le premier de chaque poule</option>
+                    <option value={2}>2 — les deux premiers de chaque poule</option>
+                  </select>
+                </div>
+                <label style={st.label}>Meilleurs {rangSuivant}e qualifiés (en plus des {parPoule} premier{parPoule > 1 ? 's' : ''} de chaque poule)</label>
                 <select value={reglagesForm.qualifies_meilleurs_troisiemes} onChange={e => setReglagesForm(f => ({ ...f, qualifies_meilleurs_troisiemes: parseInt(e.target.value) }))} style={st.input}>
                   {Array.from({ length: poules.length + 1 }, (_, k) => k).map(k => (
-                    <option key={k} value={k}>{k === 0 ? 'Aucun' : k === poules.length ? `Tous les 3e (${k}) = 3 premiers/poule` : `${k} meilleur${k > 1 ? 's' : ''} 3e`}</option>
+                    <option key={k} value={k}>{k === 0 ? 'Aucun' : k === poules.length ? `Tous les ${rangSuivant}e (${k}) = ${rangSuivant} premiers/poule` : `${k} meilleur${k > 1 ? 's' : ''} ${rangSuivant}e`}</option>
                   ))}
                 </select>
                 {(() => {
-                  const q = poules.length * 2 + reglagesForm.qualifies_meilleurs_troisiemes
+                  const q = poules.length * parPoule + reglagesForm.qualifies_meilleurs_troisiemes
                   const ok = [2, 4, 8, 16].includes(q)
                   const tours = { 2: 'Finale', 4: 'Demi-finales, finale', 8: 'Quarts, demi-finales, finale', 16: 'Huitièmes, quarts, demi-finales, finale' }
                   return (
                     <div style={{ marginTop: '10px', fontSize: '12px', color: ok ? colors.accent.green : colors.accent.amber, fontWeight: 600 }}>
                       {ok
                         ? `${q} qualifiés — ${tours[q]}`
-                        : `${q} qualifiés — ajuste le nombre de meilleurs troisièmes ou de poules pour tomber sur 2, 4, 8 ou 16 qualifiés`}
+                        : `${q} qualifiés — ajuste le nombre de qualifiés par poule ou de meilleurs ${rangSuivant}e pour tomber sur 2, 4, 8 ou 16 qualifiés`}
                     </div>
                   )
                 })()}
               </div>
-            )}
+              )
+            })()}
 
           <div style={{ ...st.card, maxWidth: 560 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>

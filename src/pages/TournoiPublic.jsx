@@ -182,6 +182,11 @@ export default function TournoiPublic() {
                 style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
                 {chargementVotes ? 'Chargement…' : 'Dévoiler les résultats'}
               </button>
+              <div style={{ borderTop: `1px solid ${colors.border.faint}`, marginTop: '24px', paddingTop: '18px' }}>
+                <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
+                  Cette page affiche le résultat une fois dévoilé — le vote lui-même se fait sur un lien personnel, envoyé par email au référent de chaque équipe dès son inscription validée (un vote par équipe).
+                </p>
+              </div>
             </div>
           ) : (
             <div>
@@ -231,6 +236,8 @@ export default function TournoiPublic() {
           const avecQualification = tournoi.format === 'poules_elimination' || tournoi.format === 'poules_minichampionnat'
           const avecPoules = tournoi.format !== 'elimination'
           const k = tournoi.qualifies_meilleurs_troisiemes || 0
+          const parPoule = tournoi.qualifies_par_poule || 2
+          const rangSuivant = parPoule + 1
           return (
             <div>
               <div style={st.card}>
@@ -242,7 +249,7 @@ export default function TournoiPublic() {
                 <div style={st.card}>
                   <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Qualification</h3>
                   <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px', lineHeight: 1.6 }}>
-                    Les 2 premiers de chaque poule sont qualifiés{k > 0 ? `, ainsi que les ${k} meilleur${k > 1 ? 's' : ''} 3e de poule.` : '.'}
+                    {parPoule > 1 ? `Les ${parPoule} premiers` : 'Le premier'} de chaque poule {parPoule > 1 ? 'sont qualifiés' : 'est qualifié'}{k > 0 ? `, ainsi que les ${k} meilleur${k > 1 ? 's' : ''} ${rangSuivant}e de poule.` : '.'}
                   </p>
                 </div>
               )}
