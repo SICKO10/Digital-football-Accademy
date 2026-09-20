@@ -3616,8 +3616,17 @@ export default function DashboardClub() {
 
         {/* ── PROJET SPORTIF ── */}
         {activeTab === 'projet_sportif' && canViewSection('sportif') && (
-          <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
-            logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
+          <>
+            {canEditSection('profil') && (
+              <button onClick={() => setActiveTab('profil')}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '10px', padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                ⚙️ Permissions éducateurs
+                <span style={{ color: colors.text.disabled, fontWeight: 400 }}>— autoriser tes éducateurs à éditer</span>
+              </button>
+            )}
+            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
+              logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
+          </>
         )}
 
         {/* ── TOURNOIS ── */}
