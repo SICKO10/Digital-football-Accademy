@@ -3,6 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
+import SelecteurRosterEquipe from '../components/SelecteurRosterEquipe'
+
+const VIDE_VOTE_PUBLIC = {
+  vote_beau_jeu_equipe_id: '',
+  vote_fairplay_equipe_id: '',
+  vote_supporters_fairplay_equipe_id: '',
+  vote_meilleur_joueur_nom: '',
+  vote_meilleur_joueur_equipe: '',
+  vote_meilleur_gardien_nom: '',
+  vote_meilleur_gardien_equipe: '',
+}
 
 const ONGLETS_BASE = [
   { key: 'planning', label: 'Planning' },
@@ -32,6 +43,13 @@ export default function TournoiPublic() {
   const [notFound, setNotFound] = useState(false)
   const [votes, setVotes] = useState(null) // null = pas encore dévoilé (pas chargé), [] = dévoilé sans vote
   const [chargementVotes, setChargementVotes] = useState(false)
+  const [roster, setRoster] = useState([]) // lister_roster_tournoi(tournoi_id) — joueurs inscrits par club, pour choisir par n° de maillot
+  const [buteurs, setButeurs] = useState([])
+  const [voteForm, setVoteForm] = useState(VIDE_VOTE_PUBLIC)
+  const [dejaVotePublic, setDejaVotePublic] = useState(false)
+  const [submittingVote, setSubmittingVote] = useState(false)
+  const [voteSoumis, setVoteSoumis] = useState(false)
+  const [erreurVote, setErreurVote] = useState(null)
 
   const reveler = async () => {
     setChargementVotes(true)
@@ -40,15 +58,42 @@ export default function TournoiPublic() {
     setChargementVotes(false)
   }
 
+  const soumettreVotePublic = async () => {
+    setSubmittingVote(true)
+    setErreurVote(null)
+    const { error } = await supabase.from('tournois_votes').insert({
+      tournoi_id: tournoi.id,
+      inscription_id: null,
+      ...voteForm,
+      vote_beau_jeu_equipe_id: voteForm.vote_beau_jeu_equipe_id || null,
+      vote_fairplay_equipe_id: voteForm.vote_fairplay_equipe_id || null,
+      vote_supporters_fairplay_equipe_id: voteForm.vote_supporters_fairplay_equipe_id || null,
+    })
+    setSubmittingVote(false)
+    if (error) {
+      console.error('vote public error:', error)
+      setErreurVote("Erreur lors de l'enregistrement du vote. Réessaie.")
+      return
+    }
+    localStorage.setItem(`vote_public_${tournoi.id}`, '1')
+    setDejaVotePublic(true)
+    setVoteSoumis(true)
+  }
+
   const charger = useCallback(async () => {
     const { data: t } = await supabase.from('tournois_organises').select('*').eq('code_public', code?.toUpperCase()).maybeSingle()
     if (!t) { setNotFound(true); setLoading(false); return }
     setTournoi(t)
-    const [{ data: eqs }, { data: mts }] = await Promise.all([
+    setDejaVotePublic(localStorage.getItem(`vote_public_${t.id}`) === '1')
+    const [{ data: eqs }, { data: mts }, { data: buts }, { data: rosterData }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
       supabase.from('tournois_matchs_organises').select('*').eq('tournoi_id', t.id).order('heure_debut'),
+      supabase.from('tournois_buteurs').select('*').eq('tournoi_id', t.id),
+      supabase.rpc('lister_roster_tournoi', { p_tournoi_id: t.id }),
     ])
     setEquipes(eqs || []); setMatchs(mts || [])
+    setButeurs(buts || [])
+    setRoster(rosterData || [])
     setLoading(false)
   }, [code])
 
@@ -71,6 +116,10 @@ export default function TournoiPublic() {
     tab: (actif) => ({ padding: '8px 18px', borderRadius: '20px', border: actif ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: actif ? colors.accent.green + '15' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 400, fontSize: '13px', cursor: 'pointer' }),
     th: { background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 },
     td: { padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontSize: '13px' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Inter, sans-serif' },
+    option: (sel) => ({ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '10px', cursor: 'pointer', border: `2px solid ${sel ? colors.accent.green : colors.border.faint}`, background: sel ? colors.accent.green + '11' : colors.background.raised, marginBottom: '8px' }),
+    radio: (sel) => ({ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${sel ? colors.accent.green : colors.border.strong}`, background: sel ? colors.accent.green : 'transparent', flexShrink: 0 }),
   }
 
   if (loading) return (
@@ -171,44 +220,131 @@ export default function TournoiPublic() {
             })
         )}
 
-        {onglet === 'votes' && (
-          votes === null ? (
-            <div style={{ ...st.card, textAlign: 'center', padding: '48px 24px' }}>
-              <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px', lineHeight: 1.6 }}>
-                Plus beau jeu, équipe la plus fair-play, supporters les plus fair-play, meilleur joueur, meilleur gardien —
-                les résultats restent secrets jusqu'à ce que l'organisateur les dévoile.
-              </p>
-              <button onClick={reveler} disabled={chargementVotes}
-                style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
-                {chargementVotes ? 'Chargement…' : 'Dévoiler les résultats'}
-              </button>
-              <div style={{ borderTop: `1px solid ${colors.border.faint}`, marginTop: '24px', paddingTop: '18px' }}>
-                <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
-                  Cette page affiche le résultat une fois dévoilé — le vote lui-même se fait sur un lien personnel, envoyé par email au référent de chaque équipe dès son inscription validée (un vote par équipe).
-                </p>
-              </div>
-            </div>
-          ) : (
+        {onglet === 'votes' && (() => {
+          const statsButeurs = {}
+          buteurs.forEach(b => {
+            const cle = `${b.prenom_joueur} ${b.nom_joueur}`.trim()
+            if (!statsButeurs[cle]) statsButeurs[cle] = { nom: cle, equipe: equipes.find(e => e.id === b.equipe_id)?.nom || '', total: 0 }
+            statsButeurs[cle].total += b.nb_buts
+          })
+          const topButeurs = Object.values(statsButeurs).sort((a, b) => b.total - a.total).slice(0, 5)
+          const aucunVote = !voteForm.vote_beau_jeu_equipe_id && !voteForm.vote_fairplay_equipe_id && !voteForm.vote_supporters_fairplay_equipe_id
+            && !voteForm.vote_meilleur_joueur_nom.trim() && !voteForm.vote_meilleur_gardien_nom.trim()
+
+          return (
             <div>
-              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '12px' }}>
-                {votes.length} vote{votes.length > 1 ? 's' : ''} reçu{votes.length > 1 ? 's' : ''}
-              </div>
-              {calculerPalmares(votes, equipes).map(d => (
-                <div key={d.key} style={{ ...st.card, padding: '18px 22px' }}>
-                  <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{d.label}</div>
-                  {d.valeur ? (
-                    <>
-                      <div style={{ fontWeight: 800, fontSize: '17px', color: colors.text.primary }}>{d.valeur}</div>
-                      {d.detail && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>{d.detail}</div>}
-                    </>
-                  ) : (
-                    <div style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun vote pour l'instant</div>
-                  )}
+              {equipes.length === 0 ? (
+                <div style={{ ...st.card, textAlign: 'center', padding: '40px', color: colors.text.faint }}>Aucune équipe pour l'instant.</div>
+              ) : dejaVotePublic ? (
+                <div style={{ ...st.card, textAlign: 'center', padding: '32px 24px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '17px', color: colors.accent.green, marginBottom: '6px' }}>{voteSoumis ? 'Vote enregistré, merci !' : 'Tu as déjà voté sur cet appareil'}</div>
+                  <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>Un seul vote par appareil pour ce tournoi.</p>
                 </div>
-              ))}
+              ) : (
+                <div>
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', marginBottom: '20px' }}>
+                    Vote du public — un vote par appareil. Les catégories par équipe proposent toutes les équipes du tournoi ; pour les catégories individuelles, dépliez une équipe pour choisir par numéro de maillot.
+                  </p>
+
+                  {[
+                    { champ: 'vote_beau_jeu_equipe_id', titre: 'Plus beau jeu', sousTitre: "L'équipe qui a proposé le jeu le plus agréable à regarder" },
+                    { champ: 'vote_fairplay_equipe_id', titre: 'Équipe la plus fair-play', sousTitre: 'L\'équipe qui a montré le meilleur esprit sportif' },
+                    { champ: 'vote_supporters_fairplay_equipe_id', titre: 'Supporters les plus fair-play', sousTitre: "Le public qui a soutenu dans le respect et la bonne humeur" },
+                  ].map(({ champ, titre, sousTitre }) => (
+                    <div key={champ} style={st.card}>
+                      <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>{titre}</h3>
+                      <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>{sousTitre}</p>
+                      {equipes.map(eq => (
+                        <div key={eq.id} style={st.option(voteForm[champ] === eq.id)}
+                          onClick={() => setVoteForm(v => ({ ...v, [champ]: eq.id }))}>
+                          <div style={st.radio(voteForm[champ] === eq.id)} />
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{eq.nom}</div>
+                            {eq.club && <div style={{ color: colors.text.disabled, fontSize: '12px' }}>{eq.club}</div>}
+                          </div>
+                          <span style={{ marginLeft: 'auto', color: colors.text.disabled, fontSize: '12px' }}>Poule {eq.poule}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+
+                  <div style={st.card}>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur joueur du tournoi</h3>
+                    <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Dépliez une équipe pour choisir par numéro de maillot</p>
+                    {topButeurs.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ color: colors.text.disabled, fontSize: '11px', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}>Suggestions (top buteurs)</div>
+                        {topButeurs.map(b => (
+                          <div key={b.nom} style={st.option(voteForm.vote_meilleur_joueur_nom === b.nom && voteForm.vote_meilleur_joueur_equipe === b.equipe)}
+                            onClick={() => setVoteForm(v => ({ ...v, vote_meilleur_joueur_nom: b.nom, vote_meilleur_joueur_equipe: b.equipe }))}>
+                            <div style={st.radio(voteForm.vote_meilleur_joueur_nom === b.nom)} />
+                            <div style={{ fontWeight: 600 }}>{b.nom}</div>
+                            <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{b.equipe}</span>
+                            <span style={{ color: colors.accent.green, fontSize: '12px', marginLeft: 'auto', fontWeight: 700 }}>{b.total} but{b.total > 1 ? 's' : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <SelecteurRosterEquipe equipes={equipes} roster={roster}
+                      nomChoisi={voteForm.vote_meilleur_joueur_nom} equipeChoisie={voteForm.vote_meilleur_joueur_equipe}
+                      onChoisir={(nom, equipe) => setVoteForm(v => ({ ...v, vote_meilleur_joueur_nom: nom, vote_meilleur_joueur_equipe: equipe }))}
+                      colors={colors} st={st} />
+                  </div>
+
+                  <div style={st.card}>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur gardien</h3>
+                    <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Dépliez une équipe pour choisir par numéro de maillot</p>
+                    <SelecteurRosterEquipe equipes={equipes} roster={roster}
+                      nomChoisi={voteForm.vote_meilleur_gardien_nom} equipeChoisie={voteForm.vote_meilleur_gardien_equipe}
+                      onChoisir={(nom, equipe) => setVoteForm(v => ({ ...v, vote_meilleur_gardien_nom: nom, vote_meilleur_gardien_equipe: equipe }))}
+                      colors={colors} st={st} />
+                  </div>
+
+                  {erreurVote && <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px', textAlign: 'center' }}>{erreurVote}</p>}
+
+                  <button style={{ ...st.btn, opacity: submittingVote || aucunVote ? 0.5 : 1, marginBottom: '24px' }}
+                    disabled={submittingVote || aucunVote}
+                    onClick={soumettreVotePublic}>
+                    {submittingVote ? 'Envoi en cours…' : 'Soumettre mon vote'}
+                  </button>
+                </div>
+              )}
+
+              <div style={{ ...st.card, textAlign: 'center', padding: '32px 24px' }}>
+                {votes === null ? (
+                  <>
+                    <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px', lineHeight: 1.6 }}>
+                      Les résultats restent secrets jusqu'à ce que l'organisateur les dévoile.
+                    </p>
+                    <button onClick={reveler} disabled={chargementVotes}
+                      style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
+                      {chargementVotes ? 'Chargement…' : 'Dévoiler les résultats'}
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '12px' }}>
+                      {votes.length} vote{votes.length > 1 ? 's' : ''} reçu{votes.length > 1 ? 's' : ''}
+                    </div>
+                    {calculerPalmares(votes, equipes).map(d => (
+                      <div key={d.key} style={{ ...st.card, padding: '18px 22px' }}>
+                        <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{d.label}</div>
+                        {d.valeur ? (
+                          <>
+                            <div style={{ fontWeight: 800, fontSize: '17px', color: colors.text.primary }}>{d.valeur}</div>
+                            {d.detail && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>{d.detail}</div>}
+                          </>
+                        ) : (
+                          <div style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun vote pour l'instant</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )
-        )}
+        })()}
 
         {onglet === 'finale' && (
           PHASE_ORDRE.filter(ph => matchsElim.some(m => m.phase === ph)).map(phase => (

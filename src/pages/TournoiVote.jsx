@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
+import SelecteurRosterEquipe from '../components/SelecteurRosterEquipe'
 
 // Une "inscription" (Phase C, formulaire public) n'est pas reliée à une
 // ligne tournois_equipes (le roster du tableau/bracket, géré séparément côté
 // club) — il n'existe donc pas de vraie clé pour exclure "sa propre équipe"
-// des candidats. Comparaison approximative par nom, comme meilleursTroisiemes
+// des candidats. Comparaison approximative par nom, comme meilleursDuRang
 // dans lib/tournoi.js pour un cas similaire.
 const normalise = (s) => (s || '').trim().toLowerCase()
 const estMonEquipe = (nomClubInscription, ...noms) => noms.some(n => n && normalise(n) === normalise(nomClubInscription))
@@ -19,57 +20,6 @@ const VIDE_VOTE = {
   vote_meilleur_joueur_equipe: '',
   vote_meilleur_gardien_nom: '',
   vote_meilleur_gardien_equipe: '',
-}
-
-// Choix d'un joueur adverse pour une catégorie individuelle : équipe d'abord
-// (radio, comme les catégories par équipe), puis son effectif par numéro de
-// maillot une fois l'équipe dépliée (lister_roster_tournoi) — la valeur
-// stockée reste "Prénom Nom" comme avant (compat avec le dépouillement déjà
-// en place côté club et l'attribution des badges), le numéro n'est qu'un
-// repère de sélection plus fiable qu'une saisie libre pour un supporter
-// adverse qui ne connaît pas les noms des joueurs en face.
-function SelecteurJoueurAdverse({ equipesAdverses, roster, nomChoisi, equipeChoisie, onChoisir, colors, st }) {
-  const [equipeOuverte, setEquipeOuverte] = useState(null)
-
-  return (
-    <div>
-      {equipesAdverses.map(eq => {
-        const joueursEquipe = roster.filter(r => estMonEquipe(r.nom_club, eq.nom, eq.club))
-        const ouverte = equipeOuverte === eq.id
-        const estChoisie = equipeChoisie === eq.nom
-        return (
-          <div key={eq.id} style={{ marginBottom: '8px' }}>
-            <div onClick={() => setEquipeOuverte(ouverte ? null : eq.id)} style={st.option(estChoisie)}>
-              <div style={st.radio(estChoisie)} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{eq.nom}</div>
-                {estChoisie && nomChoisi && <div style={{ color: colors.accent.green, fontSize: '12px', marginTop: '2px' }}>{nomChoisi}</div>}
-              </div>
-              <span style={{ color: colors.text.disabled, fontSize: '11px' }}>{joueursEquipe.length > 0 ? `${joueursEquipe.length} joueurs` : 'Saisie libre'}</span>
-            </div>
-            {ouverte && (
-              <div style={{ padding: '10px 0 4px 20px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {joueursEquipe.length > 0 ? joueursEquipe.map(j => {
-                  const nomComplet = `${j.prenom} ${j.nom}`.trim()
-                  const actif = estChoisie && nomChoisi === nomComplet
-                  return (
-                    <button key={`${nomComplet}_${j.numero_maillot}`} type="button" onClick={() => onChoisir(nomComplet, eq.nom)}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${actif ? colors.accent.green : colors.border.faint}`, background: actif ? colors.accent.green + '22' : colors.background.raised, color: actif ? colors.accent.green : colors.text.secondary, fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                      {j.numero_maillot ? `#${j.numero_maillot} ` : ''}{j.prenom} {j.nom}
-                    </button>
-                  )
-                }) : (
-                  <input placeholder="Prénom Nom" defaultValue={estChoisie ? nomChoisi : ''}
-                    onBlur={e => onChoisir(e.target.value, eq.nom)}
-                    style={{ ...st.input, maxWidth: '240px' }} />
-                )}
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
 }
 
 export default function TournoiVote() {
@@ -238,7 +188,7 @@ export default function TournoiVote() {
             </div>
           )}
 
-          <SelecteurJoueurAdverse equipesAdverses={equipesAdverses} roster={roster}
+          <SelecteurRosterEquipe equipes={equipesAdverses} roster={roster}
             nomChoisi={vote.vote_meilleur_joueur_nom} equipeChoisie={vote.vote_meilleur_joueur_equipe}
             onChoisir={(nom, equipe) => setVote(v => ({ ...v, vote_meilleur_joueur_nom: nom, vote_meilleur_joueur_equipe: equipe }))}
             colors={colors} st={st} />
@@ -247,7 +197,7 @@ export default function TournoiVote() {
         <div style={st.card}>
           <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur gardien</h3>
           <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Le gardien le plus décisif du tournoi — dépliez une équipe pour choisir par numéro de maillot</p>
-          <SelecteurJoueurAdverse equipesAdverses={equipesAdverses} roster={roster}
+          <SelecteurRosterEquipe equipes={equipesAdverses} roster={roster}
             nomChoisi={vote.vote_meilleur_gardien_nom} equipeChoisie={vote.vote_meilleur_gardien_equipe}
             onChoisir={(nom, equipe) => setVote(v => ({ ...v, vote_meilleur_gardien_nom: nom, vote_meilleur_gardien_equipe: equipe }))}
             colors={colors} st={st} />
