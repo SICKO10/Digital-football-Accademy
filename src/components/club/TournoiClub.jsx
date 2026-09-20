@@ -104,22 +104,29 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     setVue('nouveau')
   }
 
-  // Synchronise la dépense budget liée à l'inscription du tournoi — un
-  // montant à 0/vide supprime l'entrée plutôt que de laisser une dépense à
-  // 0€ traîner. source_type/source_id permet de retrouver l'entrée pour la
+  // Synchronise une dépense budget liée à un poste de coût du tournoi
+  // (inscription, transport, hébergement) — un montant à 0/vide supprime
+  // l'entrée plutôt que de laisser une dépense à 0€ traîner. source_type
+  // (distinct par poste) + source_id permet de retrouver l'entrée pour la
   // mettre à jour ou la supprimer en cascade, plutôt que de la dupliquer à
-  // chaque modification.
-  async function syncBudgetInscription(tournoiId, nom, montant, date) {
+  // chaque modification. 'tournoi_participation' (sans suffixe) conservé tel
+  // quel pour l'inscription afin de ne pas casser les entrées déjà créées.
+  async function syncBudgetCout(sourceType, tournoiId, libelle, montant, date) {
     const { data: existant } = await supabase.from('budget_club').select('id')
-      .eq('source_type', 'tournoi_participation').eq('source_id', tournoiId).maybeSingle()
-    if (montant > 0) {
-      const champs = { libelle: `Inscription tournoi — ${nom}`, montant, date: date || new Date().toISOString().split('T')[0] }
+      .eq('source_type', sourceType).eq('source_id', tournoiId).maybeSingle()
+    const m = Number(montant) || 0
+    if (m > 0) {
+      const champs = { libelle, montant: m, date: date || new Date().toISOString().split('T')[0] }
       if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
-      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: 'tournoi_participation', source_id: tournoiId })
+      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: sourceType, source_id: tournoiId })
     } else if (existant) {
       await supabase.from('budget_club').delete().eq('id', existant.id)
     }
   }
+
+  const syncBudgetInscription = (tournoiId, nom, montant, date) => syncBudgetCout('tournoi_participation', tournoiId, `Inscription tournoi — ${nom}`, montant, date)
+  const syncBudgetTransport = (tournoiId, nom, montant, date) => syncBudgetCout('tournoi_participation_transport', tournoiId, `Transport tournoi — ${nom}`, montant, date)
+  const syncBudgetHebergement = (tournoiId, nom, montant, date) => syncBudgetCout('tournoi_participation_hebergement', tournoiId, `Hébergement tournoi — ${nom}`, montant, date)
 
   async function sauvegarderTournoi() {
     if (!form.nom || !form.date_debut || !form.club_categorie_id) return
@@ -150,7 +157,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
 
   async function supprimerTournoi(id) {
     if (!confirm('Supprimer ce tournoi ? Cette action est définitive.')) return
-    await supabase.from('budget_club').delete().eq('source_type', 'tournoi_participation').eq('source_id', id)
+    await supabase.from('budget_club').delete().eq('source_id', id).in('source_type', ['tournoi_participation', 'tournoi_participation_transport', 'tournoi_participation_hebergement'])
     await supabase.from('tournois_participation').delete().eq('id', id)
     setVue('liste')
     charger()
@@ -160,6 +167,8 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     await supabase.from('tournois_participation').update({ [champ]: valeur }).eq('id', selected.id)
     setSelected(p => ({ ...p, [champ]: valeur }))
     if (champ === 'budget_inscription') await syncBudgetInscription(selected.id, selected.nom, valeur, selected.date_debut)
+    if (champ === 'budget_transport') await syncBudgetTransport(selected.id, selected.nom, valeur, selected.date_debut)
+    if (champ === 'budget_hebergement') await syncBudgetHebergement(selected.id, selected.nom, valeur, selected.date_debut)
   }
 
   async function ajouterMatch() {
