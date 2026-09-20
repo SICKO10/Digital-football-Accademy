@@ -242,13 +242,15 @@ export function SectionZones({ pole, clubId, readOnly }) {
   }
   useEffect(() => { charger() }, [pole.key, clubId])
 
-  // Fond du terrain (image uploadée par le club) : un seul réglage pour tout
-  // le club, partagé entre tous les pôles/phases — cf. profiles.terrain_fond_url.
+  // Fond du terrain (image uploadée par le club) : un réglage par pôle ET
+  // par phase (organisation offensive/défensive/transition/CPA), même
+  // granularité que les zones dessinées dessus — cf. terrain_fonds,
+  // upsert sur (club_id, pole_key, phase).
   useEffect(() => {
     if (!clubId) return
-    supabase.from('profiles').select('terrain_fond_url').eq('id', clubId).maybeSingle()
-      .then(({ data }) => setFondUrl(data?.terrain_fond_url || null))
-  }, [clubId])
+    supabase.from('terrain_fonds').select('image_url').eq('club_id', clubId).eq('pole_key', pole.key).eq('phase', phaseActive).maybeSingle()
+      .then(({ data }) => setFondUrl(data?.image_url || null))
+  }, [clubId, pole.key, phaseActive])
 
   const uploaderFond = async (e) => {
     const file = e.target.files[0]
@@ -267,7 +269,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
-      await supabase.from('profiles').update({ terrain_fond_url: uploadData.secure_url }).eq('id', clubId)
+      await supabase.from('terrain_fonds').upsert({ club_id: clubId, pole_key: pole.key, phase: phaseActive, image_url: uploadData.secure_url }, { onConflict: 'club_id,pole_key,phase' })
       setFondUrl(uploadData.secure_url)
     } catch (err) {
       alert('Erreur upload : ' + err.message)
@@ -278,7 +280,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
 
   const retirerFond = async () => {
     if (!confirm('Revenir au terrain généré par défaut ?')) return
-    await supabase.from('profiles').update({ terrain_fond_url: null }).eq('id', clubId)
+    await supabase.from('terrain_fonds').delete().eq('club_id', clubId).eq('pole_key', pole.key).eq('phase', phaseActive)
     setFondUrl(null)
   }
 
@@ -350,6 +352,9 @@ export function SectionZones({ pole, clubId, readOnly }) {
                 </button>
               )}
             </div>
+          )}
+          {!readOnly && (
+            <p style={{ color: colors.text.faint, fontSize: 10, margin: '8px 0 0', fontStyle: 'italic' }}>Propre à ce pôle et cette phase — change d'onglet ci-dessus pour en définir une différente.</p>
           )}
         </div>
 
