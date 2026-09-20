@@ -3617,12 +3617,33 @@ export default function DashboardClub() {
         {/* ── PROJET SPORTIF ── */}
         {activeTab === 'projet_sportif' && canViewSection('sportif') && (
           <>
+            {/* Permissions éducateurs — Projet Sportif / Planification. Interrupteur
+                global appliqué par défaut à tous les éducateurs affiliés ; un override
+                individuel reste possible depuis le menu ⋯ de chaque éducateur
+                (onglet Éducateurs), cf. modalDroitsEdu. Affiché directement sur cette
+                page (pas dans Profil) pour rester à côté de ce qu'il configure. */}
             {canEditSection('profil') && (
-              <button onClick={() => setActiveTab('profil')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '10px', padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                ⚙️ Permissions éducateurs
-                <span style={{ color: colors.text.disabled, fontWeight: 400 }}>— autoriser tes éducateurs à éditer</span>
-              </button>
+              <div style={{ ...st.card, marginBottom: '1.5rem' }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>Permissions éducateurs</p>
+                <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Par défaut, tes éducateurs affiliés sont en lecture seule sur le Projet Sportif et la Planification annuelle. Active pour leur donner le droit d'éditer.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { champ: 'educateurs_editent_projet_sportif', label: 'Éducateurs peuvent éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
+                    { champ: 'educateurs_editent_planification', label: 'Éducateurs peuvent éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
+                  ].map(({ champ, label, desc }) => (
+                    <div key={champ} onClick={() => sauvegarderTheme({ [champ]: !club?.[champ] })}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: colors.text.primary }}>{label}</div>
+                        <div style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>{desc}</div>
+                      </div>
+                      <div style={{ width: '40px', height: '22px', background: club?.[champ] ? couleurPrincipale : colors.border.strong, borderRadius: '20px', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                        <div style={{ position: 'absolute', top: '3px', left: club?.[champ] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
             <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
               logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
@@ -4277,34 +4298,6 @@ export default function DashboardClub() {
                   )}
                 </div>
               </div>
-
-              {/* Permissions éducateurs — Projet Sportif / Planification. Interrupteur
-                  global appliqué par défaut à tous les éducateurs affiliés ; un override
-                  individuel reste possible depuis le menu ⋯ de chaque éducateur
-                  (onglet Éducateurs), cf. modalDroitsEdu. */}
-              {canEditSection('profil') && (
-                <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>Permissions éducateurs</p>
-                  <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Par défaut, tes éducateurs affiliés sont en lecture seule sur le Projet Sportif et la Planification annuelle. Active pour leur donner le droit d'éditer.</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {[
-                      { champ: 'educateurs_editent_projet_sportif', label: 'Éducateurs peuvent éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
-                      { champ: 'educateurs_editent_planification', label: 'Éducateurs peuvent éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
-                    ].map(({ champ, label, desc }) => (
-                      <div key={champ} onClick={() => sauvegarderTheme({ [champ]: !club?.[champ] })}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: colors.text.primary }}>{label}</div>
-                          <div style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>{desc}</div>
-                        </div>
-                        <div style={{ width: '40px', height: '22px', background: club?.[champ] ? couleurPrincipale : colors.border.strong, borderRadius: '20px', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-                          <div style={{ position: 'absolute', top: '3px', left: club?.[champ] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Formulaire */}
               <div style={{ ...st.card, marginBottom: '1.5rem' }}>
