@@ -47,17 +47,34 @@ function PlaceholderAVenir({ couleur, texte }) {
   )
 }
 
+// Phases pour lesquelles une photo illustrative peut être ajoutée en plus
+// des principes texte — pour l'instant limité à Organisation offensive/
+// défensive (seules phases demandées), extensible plus tard si besoin.
+const PHASES_AVEC_PHOTO = ['attaque', 'defense']
+
 export function SectionPrincipes({ pole, clubId, readOnly }) {
   const colors = useColors()
   const [principes, setPrincipes] = useState([])
   const [ajoutPhase, setAjoutPhase] = useState(null)
   const [texte, setTexte] = useState('')
+  const [photos, setPhotos] = useState({})
+  const [photoUploading, setPhotoUploading] = useState(null)
 
   const charger = async () => {
     const { data } = await supabase.from('principes_jeu').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
     setPrincipes(data || [])
   }
   useEffect(() => { charger() }, [pole.key, clubId])
+
+  useEffect(() => {
+    if (!clubId) return
+    supabase.from('principes_photos').select('phase, image_url').eq('club_id', clubId).eq('pole_key', pole.key)
+      .then(({ data }) => {
+        const map = {}
+        data?.forEach(p => { map[p.phase] = p.image_url })
+        setPhotos(map)
+      })
+  }, [clubId, pole.key])
 
   const ajouter = async () => {
     if (!texte.trim()) return
@@ -71,6 +88,39 @@ export function SectionPrincipes({ pole, clubId, readOnly }) {
   const supprimer = async (id) => {
     await supabase.from('principes_jeu').delete().eq('id', id)
     setPrincipes(prev => prev.filter(p => p.id !== id))
+  }
+
+  const uploaderPhoto = async (phase, e) => {
+    const file = e.target.files[0]
+    if (!file || !clubId) return
+    setPhotoUploading(phase)
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'principe_photo' }) })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
+      const { error } = await supabase.from('principes_photos').upsert({ club_id: clubId, pole_key: pole.key, phase, image_url: uploadData.secure_url }, { onConflict: 'club_id,pole_key,phase' })
+      if (error) throw error
+      setPhotos(prev => ({ ...prev, [phase]: uploadData.secure_url }))
+    } catch (err) {
+      alert('Erreur upload : ' + err.message)
+    }
+    setPhotoUploading(null)
+    e.target.value = ''
+  }
+
+  const retirerPhoto = async (phase) => {
+    if (!confirm('Retirer cette photo ?')) return
+    await supabase.from('principes_photos').delete().eq('club_id', clubId).eq('pole_key', pole.key).eq('phase', phase)
+    setPhotos(prev => { const n = { ...prev }; delete n[phase]; return n })
   }
 
   return (
@@ -87,6 +137,26 @@ export function SectionPrincipes({ pole, clubId, readOnly }) {
                 </button>
               )}
             </div>
+
+            {PHASES_AVEC_PHOTO.includes(phase.val) && (
+              <div style={{ marginBottom: 14 }}>
+                {photos[phase.val] ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={photos[phase.val]} alt="" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 10, display: 'block' }} />
+                    {!readOnly && (
+                      <button onClick={() => retirerPhoto(phase.val)} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        Retirer
+                      </button>
+                    )}
+                  </div>
+                ) : !readOnly && (
+                  <label style={{ display: 'inline-block', background: pole.couleur + '15', color: pole.couleur, border: `1px dashed ${pole.couleur}55`, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: photoUploading === phase.val ? 'default' : 'pointer', opacity: photoUploading === phase.val ? 0.6 : 1 }}>
+                    {photoUploading === phase.val ? 'Envoi...' : '+ Ajouter une photo'}
+                    <input type="file" accept="image/*" onChange={e => uploaderPhoto(phase.val, e)} disabled={photoUploading === phase.val} style={{ display: 'none' }} />
+                  </label>
+                )}
+              </div>
+            )}
 
             {principesPhase.map((p, i) => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
