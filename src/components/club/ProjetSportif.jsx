@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
@@ -403,20 +403,49 @@ export function SectionZones({ pole, clubId, readOnly }) {
     })
   }
 
+  const cpaJoueursRef = useRef([])
+
   const majJoueursCpa = async (joueurs) => {
     if (!cpaSchemaActif) return
+    cpaJoueursRef.current = joueurs
     setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, joueurs } : s))
     await supabase.from('cpa_schemas').update({ joueurs }).eq('id', cpaSchemaActif.id)
   }
 
+  // Pendant un glisser-déposer, on met à jour l'état local (affichage fluide)
+  // à chaque mouvement sans écrire en base à chaque pixel — la persistance
+  // n'a lieu qu'une fois au relâchement (finDeplacementCpa).
+  const majJoueursCpaLocal = (joueurs) => {
+    if (!cpaSchemaActif) return
+    cpaJoueursRef.current = joueurs
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, joueurs } : s))
+  }
+
   const ajouterJoueurCpa = (x, y) => {
     if (!cpaSchemaActif) return
-    majJoueursCpa([...(cpaSchemaActif.joueurs || []), { x, y, couleur: cpaCouleur }])
+    majJoueursCpa([...(cpaSchemaActif.joueurs || []), { x, y, couleur: cpaCouleur, numero: '' }])
   }
 
   const retirerJoueurCpa = (index) => {
     if (!cpaSchemaActif) return
     majJoueursCpa((cpaSchemaActif.joueurs || []).filter((_, i) => i !== index))
+  }
+
+  const deplacerJoueurCpa = (index, x, y) => {
+    if (!cpaSchemaActif) return
+    majJoueursCpaLocal((cpaSchemaActif.joueurs || []).map((j, i) => i === index ? { ...j, x, y } : j))
+  }
+
+  const finDeplacementCpa = () => {
+    majJoueursCpa(cpaJoueursRef.current)
+  }
+
+  const numeroterJoueurCpa = (index) => {
+    if (!cpaSchemaActif) return
+    const actuel = cpaSchemaActif.joueurs?.[index]?.numero || ''
+    const saisie = window.prompt('Numéro du joueur (laisser vide pour le retirer)', actuel)
+    if (saisie === null) return
+    majJoueursCpa((cpaSchemaActif.joueurs || []).map((j, i) => i === index ? { ...j, numero: saisie.trim() } : j))
   }
 
   const zonesPhase = zones.filter(z => z.phase === phaseActive)
@@ -601,6 +630,9 @@ export function SectionZones({ pole, clubId, readOnly }) {
                 <DemiTerrainSchema
                   joueurs={cpaSchemaActif.joueurs || []}
                   onAjouter={readOnly ? null : ajouterJoueurCpa}
+                  onDeplacer={readOnly ? null : deplacerJoueurCpa}
+                  onFinDeplacement={readOnly ? null : finDeplacementCpa}
+                  onNumeroter={readOnly ? null : numeroterJoueurCpa}
                   onRetirer={readOnly ? null : retirerJoueurCpa}
                   maxWidth={620}
                 />
@@ -630,7 +662,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
                           </button>
                         ))}
                       </div>
-                      <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, clique sur un rond pour le retirer.</p>
+                      <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, glisse un rond pour le déplacer, clique dessus pour lui donner un numéro, double-clique pour le retirer.</p>
                     </div>
                     <button onClick={() => supprimerSchemaCpa(cpaSchemaActif.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif', textAlign: 'left', padding: 0 }}>
                       Supprimer ce schéma
