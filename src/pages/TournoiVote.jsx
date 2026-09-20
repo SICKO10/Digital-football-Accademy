@@ -21,12 +21,64 @@ const VIDE_VOTE = {
   vote_meilleur_gardien_equipe: '',
 }
 
+// Choix d'un joueur adverse pour une catégorie individuelle : équipe d'abord
+// (radio, comme les catégories par équipe), puis son effectif par numéro de
+// maillot une fois l'équipe dépliée (lister_roster_tournoi) — la valeur
+// stockée reste "Prénom Nom" comme avant (compat avec le dépouillement déjà
+// en place côté club et l'attribution des badges), le numéro n'est qu'un
+// repère de sélection plus fiable qu'une saisie libre pour un supporter
+// adverse qui ne connaît pas les noms des joueurs en face.
+function SelecteurJoueurAdverse({ equipesAdverses, roster, nomChoisi, equipeChoisie, onChoisir, colors, st }) {
+  const [equipeOuverte, setEquipeOuverte] = useState(null)
+
+  return (
+    <div>
+      {equipesAdverses.map(eq => {
+        const joueursEquipe = roster.filter(r => estMonEquipe(r.nom_club, eq.nom, eq.club))
+        const ouverte = equipeOuverte === eq.id
+        const estChoisie = equipeChoisie === eq.nom
+        return (
+          <div key={eq.id} style={{ marginBottom: '8px' }}>
+            <div onClick={() => setEquipeOuverte(ouverte ? null : eq.id)} style={st.option(estChoisie)}>
+              <div style={st.radio(estChoisie)} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600 }}>{eq.nom}</div>
+                {estChoisie && nomChoisi && <div style={{ color: colors.accent.green, fontSize: '12px', marginTop: '2px' }}>{nomChoisi}</div>}
+              </div>
+              <span style={{ color: colors.text.disabled, fontSize: '11px' }}>{joueursEquipe.length > 0 ? `${joueursEquipe.length} joueurs` : 'Saisie libre'}</span>
+            </div>
+            {ouverte && (
+              <div style={{ padding: '10px 0 4px 20px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {joueursEquipe.length > 0 ? joueursEquipe.map(j => {
+                  const nomComplet = `${j.prenom} ${j.nom}`.trim()
+                  const actif = estChoisie && nomChoisi === nomComplet
+                  return (
+                    <button key={`${nomComplet}_${j.numero_maillot}`} type="button" onClick={() => onChoisir(nomComplet, eq.nom)}
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${actif ? colors.accent.green : colors.border.faint}`, background: actif ? colors.accent.green + '22' : colors.background.raised, color: actif ? colors.accent.green : colors.text.secondary, fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                      {j.numero_maillot ? `#${j.numero_maillot} ` : ''}{j.prenom} {j.nom}
+                    </button>
+                  )
+                }) : (
+                  <input placeholder="Prénom Nom" defaultValue={estChoisie ? nomChoisi : ''}
+                    onBlur={e => onChoisir(e.target.value, eq.nom)}
+                    style={{ ...st.input, maxWidth: '240px' }} />
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function TournoiVote() {
   const { code, inscriptionCode } = useParams()
   const [tournoi, setTournoi] = useState(null)
   const [inscription, setInscription] = useState(null)
   const [equipes, setEquipes] = useState([])
   const [buteurs, setButeurs] = useState([])
+  const [roster, setRoster] = useState([]) // lister_roster_tournoi(tournoi_id) — joueurs inscrits par club, pour choisir par n° de maillot
   const [loading, setLoading] = useState(true)
   const [dejaVote, setDejaVote] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -43,12 +95,14 @@ export default function TournoiVote() {
       .eq('code_confirmation', inscriptionCode?.toUpperCase()).eq('tournoi_id', t.id).maybeSingle()
     setInscription(ins)
 
-    const [{ data: eqs }, { data: buts }] = await Promise.all([
+    const [{ data: eqs }, { data: buts }, { data: rosterData }] = await Promise.all([
       supabase.from('tournois_equipes').select('*').eq('tournoi_id', t.id).order('poule'),
       supabase.from('tournois_buteurs').select('*').eq('tournoi_id', t.id),
+      supabase.rpc('lister_roster_tournoi', { p_tournoi_id: t.id }),
     ])
     setEquipes(eqs || [])
     setButeurs(buts || [])
+    setRoster(rosterData || [])
     setLoading(false)
   }, [code, inscriptionCode])
 
@@ -140,7 +194,7 @@ export default function TournoiVote() {
 
       <div style={st.body}>
         <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', marginBottom: '28px' }}>
-          Chaque équipe dispose d'<strong style={{ color: colors.text.primary }}>un vote</strong> par distinction. Vous ne pouvez pas voter pour votre propre équipe.
+          Chaque équipe dispose d'<strong style={{ color: colors.text.primary }}>un vote</strong> par distinction. Les catégories par équipe proposent toutes les équipes du tournoi ; pour les catégories individuelles, vous ne pouvez pas voter pour un joueur de votre propre équipe.
         </p>
 
         {[
@@ -151,7 +205,7 @@ export default function TournoiVote() {
           <div key={champ} style={st.card}>
             <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>{titre}</h3>
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>{sousTitre}</p>
-            {equipesAdverses.map(eq => (
+            {equipes.map(eq => (
               <div key={eq.id} style={st.option(vote[champ] === eq.id)}
                 onClick={() => setVote(v => ({ ...v, [champ]: eq.id }))}>
                 <div style={st.radio(vote[champ] === eq.id)} />
@@ -167,7 +221,7 @@ export default function TournoiVote() {
 
         <div style={st.card}>
           <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur joueur du tournoi</h3>
-          <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Le joueur qui vous a le plus impressionné</p>
+          <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Le joueur qui vous a le plus impressionné — dépliez une équipe pour choisir par numéro de maillot</p>
 
           {topButeurs.length > 0 && (
             <div style={{ marginBottom: '16px' }}>
@@ -184,34 +238,19 @@ export default function TournoiVote() {
             </div>
           )}
 
-          <div style={{ color: colors.text.disabled, fontSize: '11px', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}>Ou saisir manuellement</div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input style={{ ...st.input, flex: 2 }} placeholder="Prénom Nom du joueur"
-              value={vote.vote_meilleur_joueur_nom}
-              onChange={e => setVote(v => ({ ...v, vote_meilleur_joueur_nom: e.target.value }))} />
-            <select style={{ ...st.input, flex: 1 }}
-              value={vote.vote_meilleur_joueur_equipe}
-              onChange={e => setVote(v => ({ ...v, vote_meilleur_joueur_equipe: e.target.value }))}>
-              <option value="">Son équipe</option>
-              {equipesAdverses.map(e => <option key={e.id} value={e.nom}>{e.nom}</option>)}
-            </select>
-          </div>
+          <SelecteurJoueurAdverse equipesAdverses={equipesAdverses} roster={roster}
+            nomChoisi={vote.vote_meilleur_joueur_nom} equipeChoisie={vote.vote_meilleur_joueur_equipe}
+            onChoisir={(nom, equipe) => setVote(v => ({ ...v, vote_meilleur_joueur_nom: nom, vote_meilleur_joueur_equipe: equipe }))}
+            colors={colors} st={st} />
         </div>
 
         <div style={st.card}>
           <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700 }}>Meilleur gardien</h3>
-          <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Le gardien le plus décisif du tournoi</p>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input style={{ ...st.input, flex: 2 }} placeholder="Prénom Nom du gardien"
-              value={vote.vote_meilleur_gardien_nom}
-              onChange={e => setVote(v => ({ ...v, vote_meilleur_gardien_nom: e.target.value }))} />
-            <select style={{ ...st.input, flex: 1 }}
-              value={vote.vote_meilleur_gardien_equipe}
-              onChange={e => setVote(v => ({ ...v, vote_meilleur_gardien_equipe: e.target.value }))}>
-              <option value="">Son équipe</option>
-              {equipesAdverses.map(e => <option key={e.id} value={e.nom}>{e.nom}</option>)}
-            </select>
-          </div>
+          <p style={{ color: colors.text.disabled, fontSize: '12px', margin: '0 0 16px' }}>Le gardien le plus décisif du tournoi — dépliez une équipe pour choisir par numéro de maillot</p>
+          <SelecteurJoueurAdverse equipesAdverses={equipesAdverses} roster={roster}
+            nomChoisi={vote.vote_meilleur_gardien_nom} equipeChoisie={vote.vote_meilleur_gardien_equipe}
+            onChoisir={(nom, equipe) => setVote(v => ({ ...v, vote_meilleur_gardien_nom: nom, vote_meilleur_gardien_equipe: equipe }))}
+            colors={colors} st={st} />
         </div>
 
         {erreur && <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px', textAlign: 'center' }}>{erreur}</p>}
