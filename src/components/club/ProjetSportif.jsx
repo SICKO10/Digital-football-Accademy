@@ -32,6 +32,7 @@ const PHASES_ZONES = [
   { val: 'defense', label: 'Organisation défensive' },
   { val: 'transition_att', label: 'Transition offensive' },
   { val: 'transition_def', label: 'Transition défensive' },
+  { val: 'pressing', label: 'Pressing' },
   { val: 'cpa_offensif', label: 'CPA offensifs' },
   { val: 'cpa_defensif', label: 'CPA défensifs' },
 ]

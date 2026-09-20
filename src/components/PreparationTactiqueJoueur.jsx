@@ -40,6 +40,7 @@ const ONGLETS = [
   { key: 'offensif', label: 'Projet Offensif' },
   { key: 'defensif', label: 'Projet Défensif' },
   { key: 'transitions', label: 'Transitions' },
+  { key: 'pressing', label: 'Pressing' },
   { key: 'cpa', label: 'CPA' },
   { key: 'schemas', label: 'Schémas partagés' },
 ]
@@ -59,7 +60,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const pole = categorie ? getPoleDeCategorie(categorie) : null
   const [onglet, setOnglet] = useState('offensif')
   const [zones, setZones] = useState([])
-  const [fondUrl, setFondUrl] = useState(null)
+  const [fondUrls, setFondUrls] = useState({})
   const [schemas, setSchemas] = useState([])
   const [loadingSchemas, setLoadingSchemas] = useState(true)
   const [schemaActif, setSchemaActif] = useState(null)
@@ -89,11 +90,17 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
     charger()
   }, [clubId, pole?.key])
 
+  // Une image de fond par phase (table terrain_fonds, cf. ProjetSportif.jsx
+  // → SectionZones côté club) — pas un seul fond partagé pour tout le club.
   useEffect(() => {
-    if (!clubId) { setFondUrl(null); return }
-    supabase.from('profiles').select('terrain_fond_url').eq('id', clubId).maybeSingle()
-      .then(({ data }) => setFondUrl(data?.terrain_fond_url || null))
-  }, [clubId])
+    if (!clubId || !pole) { setFondUrls({}); return }
+    supabase.from('terrain_fonds').select('phase, image_url').eq('club_id', clubId).eq('pole_key', pole.key)
+      .then(({ data }) => {
+        const map = {}
+        data?.forEach(f => { map[f.phase] = f.image_url })
+        setFondUrls(map)
+      })
+  }, [clubId, pole?.key])
 
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px' },
@@ -140,31 +147,33 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         </div>
       )}
 
-      {clubId && onglet === 'offensif' && <PanneauZones zones={zonesPhase('attaque')} colors={colors} fondUrl={fondUrl} />}
-      {clubId && onglet === 'defensif' && <PanneauZones zones={zonesPhase('defense')} colors={colors} fondUrl={fondUrl} />}
+      {clubId && onglet === 'offensif' && <PanneauZones zones={zonesPhase('attaque')} colors={colors} fondUrl={fondUrls.attaque} />}
+      {clubId && onglet === 'defensif' && <PanneauZones zones={zonesPhase('defense')} colors={colors} fondUrl={fondUrls.defense} />}
 
       {clubId && onglet === 'transitions' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition offensive</p>
-            <PanneauZones zones={zonesPhase('transition_att')} colors={colors} fondUrl={fondUrl} />
+            <PanneauZones zones={zonesPhase('transition_att')} colors={colors} fondUrl={fondUrls.transition_att} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition défensive</p>
-            <PanneauZones zones={zonesPhase('transition_def')} colors={colors} fondUrl={fondUrl} />
+            <PanneauZones zones={zonesPhase('transition_def')} colors={colors} fondUrl={fondUrls.transition_def} />
           </div>
         </div>
       )}
+
+      {clubId && onglet === 'pressing' && <PanneauZones zones={zonesPhase('pressing')} colors={colors} fondUrl={fondUrls.pressing} />}
 
       {clubId && onglet === 'cpa' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA offensifs</p>
-            <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} fondUrl={fondUrl} />
+            <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} fondUrl={fondUrls.cpa_offensif} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA défensifs</p>
-            <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} fondUrl={fondUrl} />
+            <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} fondUrl={fondUrls.cpa_defensif} />
           </div>
         </div>
       )}
