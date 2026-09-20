@@ -1241,7 +1241,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // plus cette colonne (widget "prochains matchs" laissé tel quel, redondant
     // avec l'onglet Compétition qui lui est déjà scopé via matchs_equipe).
     let qEffectif = supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId)
-    let qMatchsEquipe = supabase.from('matchs_equipe').select('id, date, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId)
+    let qMatchsEquipe = supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId)
     if (clubCategorieId) { qEffectif = qEffectif.eq('club_categorie_id', clubCategorieId); qMatchsEquipe = qMatchsEquipe.eq('club_categorie_id', clubCategorieId) }
     const [
       { data: toutesPresences },
@@ -1250,7 +1250,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         { data: tousMatchsBruts },
         { data: evaluations },
         { data: profilEdu },
-        { data: prochainMatchs },
         { data: effectif },
         { data: matchsEquipe },
         { data: notationsMoi },
@@ -1264,7 +1263,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
         supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
         supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
-        supabase.from('calendrier_matchs').select('date, heure, equipe_domicile, equipe_exterieur, competition, lieu').eq('educateur_id', educateurId).gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true }).limit(5),
         qEffectif,
         qMatchsEquipe,
         supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
@@ -1273,6 +1271,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
     const idsEffectif = clubCategorieId ? new Set((effectif || []).map(e => e.id)) : null
     const tousMatchs = idsEffectif ? (tousMatchsBruts || []).filter(m => idsEffectif.has(m.joueur_id)) : tousMatchsBruts
+
+    // "Prochains matchs" — dérivé de matchs_equipe (déjà scopé par
+    // club_categorie_id ci-dessus) plutôt que de l'ancienne table
+    // calendrier_matchs, jamais alimentée par aucune fonctionnalité actuelle
+    // (remplacée par matchs_equipe, cf. supabase_convocations_match_id_fkey_fix.sql)
+    // et sans distinction d'équipe — elle montrait les matchs de TOUTES les
+    // équipes de l'éducateur, pas seulement celle du joueur.
+    const aujourdHuiStr = new Date().toISOString().split('T')[0]
+    const prochainMatchs = (matchsEquipe || [])
+      .filter(m => m.date >= aujourdHuiStr && (m.score_nous === '' || m.score_nous === null || m.score_nous === undefined))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 5)
+      .map(m => ({
+        date: m.date, heure: m.heure, lieu: m.lieu, competition: m.competition,
+        equipe_domicile: m.domicile ? 'Nous' : (m.adversaire || '—'),
+        equipe_exterieur: m.domicile ? (m.adversaire || '—') : 'Nous',
+      }))
 
     // --- Stats personnelles ---
     const total = saisies.length
