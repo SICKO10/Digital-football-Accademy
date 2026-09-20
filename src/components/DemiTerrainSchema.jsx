@@ -7,7 +7,7 @@
 // un rond existant le retire.
 const W = 260, H = 190
 
-export default function DemiTerrainSchema({ joueurs = [], onAjouter, onRetirer }) {
+export default function DemiTerrainSchema({ joueurs = [], onAjouter, onRetirer, maxWidth = 280 }) {
   const cx = W / 2
   const boxW = W * 0.6, boxH = H * 0.32
   const sixW = W * 0.3, sixH = H * 0.12
@@ -26,7 +26,7 @@ export default function DemiTerrainSchema({ joueurs = [], onAjouter, onRetirer }
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} onClick={handleClick}
-      style={{ width: '100%', maxWidth: 280, borderRadius: 8, display: 'block', background: '#2d5a1b', cursor: onAjouter ? 'crosshair' : 'default' }}>
+      style={{ width: '100%', maxWidth, borderRadius: 8, display: 'block', background: '#2d5a1b', cursor: onAjouter ? 'crosshair' : 'default' }}>
       <rect x={1} y={1} width={W - 2} height={H - 2} {...trait} />
       <path d={`M ${cx - circleR} ${H} A ${circleR} ${circleR} 0 0 1 ${cx + circleR} ${H}`} {...trait} />
       <rect x={cx - boxW / 2} y={0} width={boxW} height={boxH} {...trait} />

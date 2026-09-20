@@ -472,6 +472,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
         ))}
       </div>
 
+      {!estPhaseCpa && (
       <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
           <TerrainZonesSvg fondUrl={fondUrl} zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
@@ -564,6 +565,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
           )}
         </div>
       </div>
+      )}
 
       {estPhaseCpa && (
         <div style={{ marginTop: 24 }}>
@@ -594,12 +596,13 @@ export function SectionZones({ pole, clubId, readOnly }) {
           {!cpaSchemaActif ? (
             <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun schéma pour cette phase.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 620px) 1fr', gap: 20, alignItems: 'start' }}>
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
                 <DemiTerrainSchema
                   joueurs={cpaSchemaActif.joueurs || []}
                   onAjouter={readOnly ? null : ajouterJoueurCpa}
                   onRetirer={readOnly ? null : retirerJoueurCpa}
+                  maxWidth={620}
                 />
               </div>
 
