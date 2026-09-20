@@ -64,10 +64,17 @@ CREATE POLICY "parent_lit_zones" ON terrain_zones FOR SELECT
   USING (EXISTS (SELECT 1 FROM affiliations a JOIN club_educateurs ce ON ce.educateur_id = a.educateur_id
     WHERE a.statut = 'accepte' AND est_parent_accepte_de(a.joueur_id) AND ce.club_id = terrain_zones.club_id AND ce.statut = 'accepte'));
 
--- ── principes_jeu / regles_jeu / planification_annuelle : l'éducateur passe
--- de lecture seule à CRUD complet côté RLS (même raisonnement que ci-dessus :
--- la granularité "autorisé ou non" reste gérée côté UI). Remplace les
--- anciennes policies SELECT-only par des policies FOR ALL.
+-- ── principes_jeu / regles_jeu : l'éducateur passe de lecture seule à CRUD
+-- complet côté RLS (même raisonnement que ci-dessus : la granularité
+-- "autorisé ou non" reste gérée côté UI). Remplace les anciennes policies
+-- SELECT-only par des policies FOR ALL.
+--
+-- (Pas de policy équivalente sur "planification_annuelle" : cette table,
+-- créée par une migration antérieure, n'est interrogée nulle part dans le
+-- front — le véritable onglet "Planification" du Projet Sportif embarque
+-- PlanificationAnnuelle.jsx, qui utilise plan_annuel/plan_phases/... Elle a
+-- dû être supprimée manuellement depuis, d'où le "relation does not exist"
+-- si on garde les policies la ciblant.)
 DROP POLICY IF EXISTS "educateur_lit_principes" ON principes_jeu;
 CREATE POLICY "educateur_gere_principes" ON principes_jeu FOR ALL
   USING (EXISTS (SELECT 1 FROM club_educateurs WHERE club_educateurs.club_id = principes_jeu.club_id AND club_educateurs.educateur_id = auth.uid() AND club_educateurs.statut = 'accepte'))
@@ -77,8 +84,3 @@ DROP POLICY IF EXISTS "educateur_lit_regles" ON regles_jeu;
 CREATE POLICY "educateur_gere_regles" ON regles_jeu FOR ALL
   USING (EXISTS (SELECT 1 FROM club_educateurs WHERE club_educateurs.club_id = regles_jeu.club_id AND club_educateurs.educateur_id = auth.uid() AND club_educateurs.statut = 'accepte'))
   WITH CHECK (EXISTS (SELECT 1 FROM club_educateurs WHERE club_educateurs.club_id = regles_jeu.club_id AND club_educateurs.educateur_id = auth.uid() AND club_educateurs.statut = 'accepte'));
-
-DROP POLICY IF EXISTS "educateur_lit_planification" ON planification_annuelle;
-CREATE POLICY "educateur_gere_planification" ON planification_annuelle FOR ALL
-  USING (EXISTS (SELECT 1 FROM club_educateurs WHERE club_educateurs.club_id = planification_annuelle.club_id AND club_educateurs.educateur_id = auth.uid() AND club_educateurs.statut = 'accepte'))
-  WITH CHECK (EXISTS (SELECT 1 FROM club_educateurs WHERE club_educateurs.club_id = planification_annuelle.club_id AND club_educateurs.educateur_id = auth.uid() AND club_educateurs.statut = 'accepte'));
