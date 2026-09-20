@@ -263,13 +263,15 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const { data: existant } = await supabase.from('budget_club').select('id')
       .eq('source_type', 'tournoi_organise').eq('source_id', tournoiId).maybeSingle()
     const montant = (Number(prixEquipe) || 0) * (Number(nbEquipes) || 0)
+    let error = null
     if (montant > 0) {
       const champs = { libelle: `Inscriptions tournoi — ${nom}`, montant, date: date || new Date().toISOString().split('T')[0] }
-      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
-      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'recette', categorie: 'Tournoi', source_type: 'tournoi_organise', source_id: tournoiId })
+      if (existant) ({ error } = await supabase.from('budget_club').update(champs).eq('id', existant.id))
+      else ({ error } = await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'recette', categorie: 'Tournoi', source_type: 'tournoi_organise', source_id: tournoiId }))
     } else if (existant) {
-      await supabase.from('budget_club').delete().eq('id', existant.id)
+      ({ error } = await supabase.from('budget_club').delete().eq('id', existant.id))
     }
+    if (error) alert('Budget non synchronisé (recette inscriptions) : ' + error.message)
   }
 
   // Coût d'organisation (terrain, arbitrage, récompenses…) — même logique de
@@ -280,13 +282,15 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const { data: existant } = await supabase.from('budget_club').select('id')
       .eq('source_type', 'tournoi_organise_cout').eq('source_id', tournoiId).maybeSingle()
     const m = Number(montant) || 0
+    let error = null
     if (m > 0) {
       const champs = { libelle: `Organisation tournoi — ${nom}`, montant: m, date: date || new Date().toISOString().split('T')[0] }
-      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
-      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: 'tournoi_organise_cout', source_id: tournoiId })
+      if (existant) ({ error } = await supabase.from('budget_club').update(champs).eq('id', existant.id))
+      else ({ error } = await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: 'tournoi_organise_cout', source_id: tournoiId }))
     } else if (existant) {
-      await supabase.from('budget_club').delete().eq('id', existant.id)
+      ({ error } = await supabase.from('budget_club').delete().eq('id', existant.id))
     }
+    if (error) alert('Budget non synchronisé (coût organisation) : ' + error.message)
   }
 
   async function sauvegarderReglages() {

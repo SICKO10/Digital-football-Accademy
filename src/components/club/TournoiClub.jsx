@@ -115,13 +115,15 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     const { data: existant } = await supabase.from('budget_club').select('id')
       .eq('source_type', sourceType).eq('source_id', tournoiId).maybeSingle()
     const m = Number(montant) || 0
+    let error = null
     if (m > 0) {
       const champs = { libelle, montant: m, date: date || new Date().toISOString().split('T')[0] }
-      if (existant) await supabase.from('budget_club').update(champs).eq('id', existant.id)
-      else await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: sourceType, source_id: tournoiId })
+      if (existant) ({ error } = await supabase.from('budget_club').update(champs).eq('id', existant.id))
+      else ({ error } = await supabase.from('budget_club').insert({ ...champs, club_id: clubId, type: 'depense', categorie: 'Tournoi', source_type: sourceType, source_id: tournoiId }))
     } else if (existant) {
-      await supabase.from('budget_club').delete().eq('id', existant.id)
+      ({ error } = await supabase.from('budget_club').delete().eq('id', existant.id))
     }
+    if (error) alert('Budget non synchronisé : ' + error.message)
   }
 
   const syncBudgetInscription = (tournoiId, nom, montant, date) => syncBudgetCout('tournoi_participation', tournoiId, `Inscription tournoi — ${nom}`, montant, date)
