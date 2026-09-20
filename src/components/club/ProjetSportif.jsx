@@ -6,6 +6,7 @@ import { labelCategorie } from '../../lib/categories'
 import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
 import { saisonActuelle } from '../../lib/saison'
 import PlanificationAnnuelle from './PlanificationAnnuelle'
+import TerrainZonesSvg from '../TerrainZonesSvg'
 
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
@@ -225,29 +226,6 @@ export function SectionRegles({ pole, clubId, readOnly }) {
   )
 }
 
-// Terrain générique (fond fixe, indépendant du thème clair/sombre — c'est un
-// terrain, pas un élément d'UI) sur lequel les zones sont dessinées à partir
-// de x/y/largeur/hauteur en % (0-100 sur chaque axe indépendamment, même
-// convention que les schémas scannés/Tactipad ailleurs dans l'app).
-function TerrainZones({ zones }) {
-  const W = 260, H = 360
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 280, borderRadius: 12, display: 'block', background: '#2d5a1b' }}>
-      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" rx="8" />
-      {zones.map(z => {
-        const x = (Number(z.x) || 0) / 100 * W, y = (Number(z.y) || 0) / 100 * H
-        const w = (Number(z.largeur) || 0) / 100 * W, h = (Number(z.hauteur) || 0) / 100 * H
-        return (
-          <g key={z.id}>
-            <rect x={x} y={y} width={w} height={h} fill={(z.couleur || '#4ade80') + 'cc'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-            {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle">{z.label.toUpperCase()}</text>}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
 export function SectionZones({ pole, clubId, readOnly }) {
   const colors = useColors()
   const [zones, setZones] = useState([])
@@ -255,12 +233,54 @@ export function SectionZones({ pole, clubId, readOnly }) {
   const [editId, setEditId] = useState(null)
   const [edit, setEdit] = useState(ZONE_VIDE)
   const [saving, setSaving] = useState(false)
+  const [fondUrl, setFondUrl] = useState(null)
+  const [fondUploading, setFondUploading] = useState(false)
 
   const charger = async () => {
     const { data } = await supabase.from('terrain_zones').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
     setZones(data || [])
   }
   useEffect(() => { charger() }, [pole.key, clubId])
+
+  // Fond du terrain (image uploadée par le club) : un seul réglage pour tout
+  // le club, partagé entre tous les pôles/phases — cf. profiles.terrain_fond_url.
+  useEffect(() => {
+    if (!clubId) return
+    supabase.from('profiles').select('terrain_fond_url').eq('id', clubId).maybeSingle()
+      .then(({ data }) => setFondUrl(data?.terrain_fond_url || null))
+  }, [clubId])
+
+  const uploaderFond = async (e) => {
+    const file = e.target.files[0]
+    if (!file || !clubId) return
+    setFondUploading(true)
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'terrain_fond' }) })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
+      await supabase.from('profiles').update({ terrain_fond_url: uploadData.secure_url }).eq('id', clubId)
+      setFondUrl(uploadData.secure_url)
+    } catch (err) {
+      alert('Erreur upload : ' + err.message)
+    }
+    setFondUploading(false)
+    e.target.value = ''
+  }
+
+  const retirerFond = async () => {
+    if (!confirm('Revenir au terrain généré par défaut ?')) return
+    await supabase.from('profiles').update({ terrain_fond_url: null }).eq('id', clubId)
+    setFondUrl(null)
+  }
 
   const zonesPhase = zones.filter(z => z.phase === phaseActive)
 
@@ -317,7 +337,20 @@ export function SectionZones({ pole, clubId, readOnly }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
-          <TerrainZones zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
+          <TerrainZonesSvg fondUrl={fondUrl} zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
+          {!readOnly && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <label style={{ flex: 1, textAlign: 'center', background: pole.couleur + '22', color: pole.couleur, borderRadius: 8, padding: '8px 10px', fontSize: 11, fontWeight: 700, cursor: fondUploading ? 'default' : 'pointer', opacity: fondUploading ? 0.6 : 1 }}>
+                {fondUploading ? 'Envoi...' : (fondUrl ? "Changer l'image" : 'Image de fond')}
+                <input type="file" accept="image/*" onChange={uploaderFond} disabled={fondUploading} style={{ display: 'none' }} />
+              </label>
+              {fondUrl && (
+                <button onClick={retirerFond} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 8, padding: '8px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Retirer
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

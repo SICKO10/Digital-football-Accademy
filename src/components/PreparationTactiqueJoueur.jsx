@@ -3,32 +3,11 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { getPoleDeCategorie } from '../constants/poles'
 import TactipadViewer from './TactipadViewer'
-
-// Terrain générique — fond fixe (vert), indépendant du thème clair/sombre,
-// même logique que côté club (TerrainZones dans components/club/ProjetSportif.jsx) :
-// zones dessinées à partir de x/y/largeur/hauteur en % (0-100 sur chaque axe).
-function TerrainZones({ zones }) {
-  const W = 260, H = 360
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 280, borderRadius: 12, display: 'block', background: '#2d5a1b' }}>
-      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" rx="8" />
-      {zones.map(z => {
-        const x = (Number(z.x) || 0) / 100 * W, y = (Number(z.y) || 0) / 100 * H
-        const w = (Number(z.largeur) || 0) / 100 * W, h = (Number(z.hauteur) || 0) / 100 * H
-        return (
-          <g key={z.id}>
-            <rect x={x} y={y} width={w} height={h} fill={(z.couleur || '#4ade80') + 'cc'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-            {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle">{z.label.toUpperCase()}</text>}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
+import TerrainZonesSvg from './TerrainZonesSvg'
 
 // Un terrain + sa légende, pour une phase donnée — brique de base réutilisée
 // pour les 6 phases (offensif/défensif/transitions×2/CPA×2).
-function PanneauZones({ zones, titre, colors }) {
+function PanneauZones({ zones, titre, colors, fondUrl }) {
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px' },
   }
@@ -36,7 +15,7 @@ function PanneauZones({ zones, titre, colors }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '20px', alignItems: 'start' }}>
       <div style={st.card}>
         {titre && <p style={{ color: colors.text.faint, fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px', textAlign: 'center' }}>{titre}</p>}
-        <TerrainZones zones={zones} />
+        <TerrainZonesSvg zones={zones} fondUrl={fondUrl} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {zones.length === 0 ? (
@@ -80,6 +59,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const pole = categorie ? getPoleDeCategorie(categorie) : null
   const [onglet, setOnglet] = useState('offensif')
   const [zones, setZones] = useState([])
+  const [fondUrl, setFondUrl] = useState(null)
   const [schemas, setSchemas] = useState([])
   const [loadingSchemas, setLoadingSchemas] = useState(true)
   const [schemaActif, setSchemaActif] = useState(null)
@@ -108,6 +88,12 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
     }
     charger()
   }, [clubId, pole?.key])
+
+  useEffect(() => {
+    if (!clubId) { setFondUrl(null); return }
+    supabase.from('profiles').select('terrain_fond_url').eq('id', clubId).maybeSingle()
+      .then(({ data }) => setFondUrl(data?.terrain_fond_url || null))
+  }, [clubId])
 
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px' },
@@ -154,18 +140,18 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         </div>
       )}
 
-      {clubId && onglet === 'offensif' && <PanneauZones zones={zonesPhase('attaque')} colors={colors} />}
-      {clubId && onglet === 'defensif' && <PanneauZones zones={zonesPhase('defense')} colors={colors} />}
+      {clubId && onglet === 'offensif' && <PanneauZones zones={zonesPhase('attaque')} colors={colors} fondUrl={fondUrl} />}
+      {clubId && onglet === 'defensif' && <PanneauZones zones={zonesPhase('defense')} colors={colors} fondUrl={fondUrl} />}
 
       {clubId && onglet === 'transitions' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition offensive</p>
-            <PanneauZones zones={zonesPhase('transition_att')} colors={colors} />
+            <PanneauZones zones={zonesPhase('transition_att')} colors={colors} fondUrl={fondUrl} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition défensive</p>
-            <PanneauZones zones={zonesPhase('transition_def')} colors={colors} />
+            <PanneauZones zones={zonesPhase('transition_def')} colors={colors} fondUrl={fondUrl} />
           </div>
         </div>
       )}
@@ -174,11 +160,11 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA offensifs</p>
-            <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} />
+            <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} fondUrl={fondUrl} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA défensifs</p>
-            <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} />
+            <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} fondUrl={fondUrl} />
           </div>
         </div>
       )}
