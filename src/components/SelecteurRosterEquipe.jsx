@@ -7,6 +7,43 @@ import { useState } from 'react'
 const normalise = (s) => (s || '').trim().toLowerCase()
 const memeClub = (nomClubInscription, ...noms) => noms.some(n => n && normalise(n) === normalise(nomClubInscription))
 
+const NUMEROS_MAILLOT = Array.from({ length: 30 }, (_, i) => i + 1)
+
+// Équipe du tableau (tournois_equipes) sans effectif connu (aucune
+// inscription publique associée, cf. memeClub) : on propose quand même un
+// choix par numéro de maillot plutôt qu'une simple saisie libre — le nom du
+// joueur reste optionnel, un votant du public connaît rarement les noms des
+// joueurs adverses mais peut lire leur numéro sur le terrain.
+function ChoixParNumero({ eq, estChoisie, onChoisir, colors, st }) {
+  const [numero, setNumero] = useState(null)
+  const [nom, setNom] = useState('')
+
+  const choisir = (n, texteNom) => {
+    setNumero(n)
+    onChoisir(texteNom.trim() ? `N°${n} - ${texteNom.trim()}` : `N°${n}`, eq.nom)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {NUMEROS_MAILLOT.map(n => {
+          const actif = estChoisie && numero === n
+          return (
+            <button key={n} type="button" onClick={() => choisir(n, nom)}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', border: `1px solid ${actif ? colors.accent.green : colors.border.faint}`, background: actif ? colors.accent.green + '22' : colors.background.raised, color: actif ? colors.accent.green : colors.text.secondary, fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+              {n}
+            </button>
+          )
+        })}
+      </div>
+      <input placeholder="Nom du joueur (optionnel)" value={nom}
+        onChange={e => setNom(e.target.value)}
+        onBlur={() => { if (numero) choisir(numero, nom) }}
+        style={{ ...st.input, maxWidth: '240px' }} />
+    </div>
+  )
+}
+
 // Choix d'un joueur pour une catégorie individuelle : équipe d'abord (radio,
 // comme les catégories par équipe), puis son effectif par numéro de maillot
 // une fois l'équipe dépliée (lister_roster_tournoi) — la valeur stockée
@@ -33,7 +70,7 @@ export default function SelecteurRosterEquipe({ equipes, roster, nomChoisi, equi
                 <div style={{ fontWeight: 600 }}>{eq.nom}</div>
                 {estChoisie && nomChoisi && <div style={{ color: colors.accent.green, fontSize: '12px', marginTop: '2px' }}>{nomChoisi}</div>}
               </div>
-              <span style={{ color: colors.text.disabled, fontSize: '11px' }}>{joueursEquipe.length > 0 ? `${joueursEquipe.length} joueurs` : 'Saisie libre'}</span>
+              <span style={{ color: colors.text.disabled, fontSize: '11px' }}>{joueursEquipe.length > 0 ? `${joueursEquipe.length} joueurs` : 'Par numéro'}</span>
             </div>
             {ouverte && (
               <div style={{ padding: '10px 0 4px 20px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -47,9 +84,7 @@ export default function SelecteurRosterEquipe({ equipes, roster, nomChoisi, equi
                     </button>
                   )
                 }) : (
-                  <input placeholder="Prénom Nom" defaultValue={estChoisie ? nomChoisi : ''}
-                    onBlur={e => onChoisir(e.target.value, eq.nom)}
-                    style={{ ...st.input, maxWidth: '240px' }} />
+                  <ChoixParNumero eq={eq} estChoisie={estChoisie} onChoisir={onChoisir} colors={colors} st={st} />
                 )}
               </div>
             )}
