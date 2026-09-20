@@ -7,6 +7,7 @@ import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
 import { saisonActuelle } from '../../lib/saison'
 import PlanificationAnnuelle from './PlanificationAnnuelle'
 import TerrainZonesSvg from '../TerrainZonesSvg'
+import DemiTerrainSchema from '../DemiTerrainSchema'
 
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
@@ -355,6 +356,69 @@ export function SectionZones({ pole, clubId, readOnly }) {
     setFondUrl(null)
   }
 
+  // Schémas CPA (offensifs/défensifs) : autant de demi-terrains que voulu par
+  // phase, chacun avec ses propres ronds noir/blanc représentant les joueurs
+  // — cf. cpa_schemas, distinct des zones rectangulaires ci-dessus.
+  const estPhaseCpa = phaseActive === 'cpa_offensif' || phaseActive === 'cpa_defensif'
+  const [cpaSchemas, setCpaSchemas] = useState([])
+  const [cpaSchemaActifId, setCpaSchemaActifId] = useState(null)
+  const [cpaCouleur, setCpaCouleur] = useState('noir')
+
+  useEffect(() => {
+    const charger = async () => {
+      if (!clubId || !estPhaseCpa) { setCpaSchemas([]); setCpaSchemaActifId(null); return }
+      const { data } = await supabase.from('cpa_schemas').select('*').eq('club_id', clubId).eq('pole_key', pole.key).eq('phase', phaseActive).order('ordre')
+      setCpaSchemas(data || [])
+      setCpaSchemaActifId(data?.[0]?.id || null)
+    }
+    charger()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, pole.key, phaseActive, estPhaseCpa])
+
+  const cpaSchemaActif = cpaSchemas.find(s => s.id === cpaSchemaActifId) || null
+
+  const nouveauSchemaCpa = async () => {
+    const { data, error } = await supabase.from('cpa_schemas').insert({
+      club_id: clubId, pole_key: pole.key, phase: phaseActive,
+      nom: `Schéma ${cpaSchemas.length + 1}`, joueurs: [], ordre: cpaSchemas.length,
+    }).select().single()
+    if (error) { alert(error.message); return }
+    setCpaSchemas(prev => [...prev, data])
+    setCpaSchemaActifId(data.id)
+  }
+
+  const renommerSchemaCpa = async (nom) => {
+    if (!cpaSchemaActif) return
+    await supabase.from('cpa_schemas').update({ nom }).eq('id', cpaSchemaActif.id)
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, nom } : s))
+  }
+
+  const supprimerSchemaCpa = async (id) => {
+    if (!confirm('Supprimer ce schéma ?')) return
+    await supabase.from('cpa_schemas').delete().eq('id', id)
+    setCpaSchemas(prev => {
+      const suivants = prev.filter(s => s.id !== id)
+      if (cpaSchemaActifId === id) setCpaSchemaActifId(suivants[0]?.id || null)
+      return suivants
+    })
+  }
+
+  const majJoueursCpa = async (joueurs) => {
+    if (!cpaSchemaActif) return
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, joueurs } : s))
+    await supabase.from('cpa_schemas').update({ joueurs }).eq('id', cpaSchemaActif.id)
+  }
+
+  const ajouterJoueurCpa = (x, y) => {
+    if (!cpaSchemaActif) return
+    majJoueursCpa([...(cpaSchemaActif.joueurs || []), { x, y, couleur: cpaCouleur }])
+  }
+
+  const retirerJoueurCpa = (index) => {
+    if (!cpaSchemaActif) return
+    majJoueursCpa((cpaSchemaActif.joueurs || []).filter((_, i) => i !== index))
+  }
+
   const zonesPhase = zones.filter(z => z.phase === phaseActive)
 
   const ouvrirNouvelle = () => { setEditId('nouvelle'); setEdit({ ...ZONE_VIDE, label: '' }) }
@@ -500,6 +564,84 @@ export function SectionZones({ pole, clubId, readOnly }) {
           )}
         </div>
       </div>
+
+      {estPhaseCpa && (
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ color: colors.text.primary, margin: '0 0 4px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Schémas CPA</h3>
+          <p style={{ color: colors.text.faint, fontSize: 12, margin: '0 0 14px' }}>
+            Autant de demi-terrains que nécessaire (corners, coups francs…), avec des ronds noir/blanc pour placer les joueurs.
+          </p>
+
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+            {cpaSchemas.map(s => (
+              <button key={s.id} onClick={() => setCpaSchemaActifId(s.id)}
+                style={{
+                  padding: '6px 12px', borderRadius: 20, border: `1px solid ${cpaSchemaActifId === s.id ? pole.couleur : colors.border.faint}`,
+                  background: cpaSchemaActifId === s.id ? pole.couleur + '22' : 'transparent',
+                  color: cpaSchemaActifId === s.id ? pole.couleur : colors.text.faint,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>
+                {s.nom}
+              </button>
+            ))}
+            {!readOnly && (
+              <button onClick={nouveauSchemaCpa} style={{ padding: '6px 12px', borderRadius: 20, border: `1px dashed ${pole.couleur}66`, background: 'transparent', color: pole.couleur, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                + Nouveau schéma
+              </button>
+            )}
+          </div>
+
+          {!cpaSchemaActif ? (
+            <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun schéma pour cette phase.</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
+                <DemiTerrainSchema
+                  joueurs={cpaSchemaActif.joueurs || []}
+                  onAjouter={readOnly ? null : ajouterJoueurCpa}
+                  onRetirer={readOnly ? null : retirerJoueurCpa}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {!readOnly && (
+                  <>
+                    <div>
+                      <label style={labelStyle}>Nom du schéma</label>
+                      <input style={champStyle} defaultValue={cpaSchemaActif.nom} onBlur={e => e.target.value.trim() && renommerSchemaCpa(e.target.value.trim())} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Couleur à poser</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {[['noir', 'Noir', '#111'], ['blanc', 'Blanc', '#fff']].map(([val, label, swatch]) => (
+                          <button key={val} onClick={() => setCpaCouleur(val)}
+                            style={{
+                              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                              padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                              border: `1px solid ${cpaCouleur === val ? pole.couleur : colors.border.default}`,
+                              background: cpaCouleur === val ? pole.couleur + '22' : 'transparent',
+                              color: cpaCouleur === val ? pole.couleur : colors.text.secondary,
+                            }}>
+                            <span style={{ width: 12, height: 12, borderRadius: '50%', background: swatch, border: '1px solid #888' }} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, clique sur un rond pour le retirer.</p>
+                    </div>
+                    <button onClick={() => supprimerSchemaCpa(cpaSchemaActif.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif', textAlign: 'left', padding: 0 }}>
+                      Supprimer ce schéma
+                    </button>
+                  </>
+                )}
+                {(cpaSchemaActif.joueurs || []).length === 0 && (
+                  <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun joueur placé sur ce schéma.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useColors } from '../lib/theme'
 import { getPoleDeCategorie } from '../constants/poles'
 import TactipadViewer from './TactipadViewer'
 import TerrainZonesSvg from './TerrainZonesSvg'
+import DemiTerrainSchema from './DemiTerrainSchema'
 
 // Un terrain + sa légende, pour une phase donnée — brique de base réutilisée
 // pour les 6 phases (offensif/défensif/transitions×2/CPA×2).
@@ -36,6 +37,22 @@ function PanneauZones({ zones, titre, colors, fondUrl }) {
   )
 }
 
+// Galerie en lecture seule des schémas CPA d'une phase (autant que le club en
+// a créé, cf. ProjetSportif.jsx → SectionZones → "Schémas CPA").
+function GalerieCpa({ schemas, colors }) {
+  if (schemas.length === 0) return null
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '14px', marginTop: '12px' }}>
+      {schemas.map(s => (
+        <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px' }}>
+          <DemiTerrainSchema joueurs={s.joueurs || []} />
+          <p style={{ margin: '8px 0 0', fontSize: '11px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>{s.nom}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const ONGLETS = [
   { key: 'offensif', label: 'Projet Offensif' },
   { key: 'defensif', label: 'Projet Défensif' },
@@ -61,6 +78,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const [onglet, setOnglet] = useState('offensif')
   const [zones, setZones] = useState([])
   const [fondUrls, setFondUrls] = useState({})
+  const [cpaSchemas, setCpaSchemas] = useState([])
   const [schemas, setSchemas] = useState([])
   const [loadingSchemas, setLoadingSchemas] = useState(true)
   const [schemaActif, setSchemaActif] = useState(null)
@@ -100,6 +118,16 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         data?.forEach(f => { map[f.phase] = f.image_url })
         setFondUrls(map)
       })
+  }, [clubId, pole?.key])
+
+  useEffect(() => {
+    const charger = async () => {
+      if (!clubId || !pole) { setCpaSchemas([]); return }
+      const { data } = await supabase.from('cpa_schemas').select('*').eq('club_id', clubId).eq('pole_key', pole.key)
+        .in('phase', ['cpa_offensif', 'cpa_defensif']).order('ordre')
+      setCpaSchemas(data || [])
+    }
+    charger()
   }, [clubId, pole?.key])
 
   const st = {
@@ -170,10 +198,12 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA offensifs</p>
             <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} fondUrl={fondUrls.cpa_offensif} />
+            <GalerieCpa schemas={cpaSchemas.filter(s => s.phase === 'cpa_offensif')} colors={colors} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA défensifs</p>
             <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} fondUrl={fondUrls.cpa_defensif} />
+            <GalerieCpa schemas={cpaSchemas.filter(s => s.phase === 'cpa_defensif')} colors={colors} />
           </div>
         </div>
       )}
