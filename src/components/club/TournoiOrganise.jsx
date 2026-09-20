@@ -344,11 +344,6 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     if (data) { setEquipes(p => [...p, data]); setNouvelleEquipe({ ...VIDE_EQUIPE, poule: pouleSuggeree() }) }
   }
 
-  async function basculerHoteEquipe(eq) {
-    const { data } = await supabase.from('tournois_equipes').update({ est_hote: !eq.est_hote }).eq('id', eq.id).select().single()
-    if (data) setEquipes(p => p.map(e => (e.id === eq.id ? data : e)))
-  }
-
   async function supprimerEquipe(id) {
     await supabase.from('tournois_equipes').delete().eq('id', id)
     setEquipes(p => p.filter(e => e.id !== id))
@@ -1030,11 +1025,6 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                       {eq.est_hote && <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700, marginLeft: '10px' }}>🏠 Hôte</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {!readOnly && (
-                        <button onClick={() => basculerHoteEquipe(eq)} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: eq.est_hote ? colors.accent.blue : colors.text.faint, borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          {eq.est_hote ? 'Retirer hôte' : 'Marquer hôte'}
-                        </button>
-                      )}
                       {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
                     </div>
                   </div>
