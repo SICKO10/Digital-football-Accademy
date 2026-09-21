@@ -1961,7 +1961,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
     const { data: affiliesAcceptes } = await supabase.from('affiliations').select('joueur_id').eq('educateur_id', userId).eq('statut', 'accepte')
     await Promise.all((affiliesAcceptes || []).map(a => notifierJoueur({
-      type: 'seance_note', userId: a.joueur_id, titre: 'Nouvelle note de séance à donner',
+      type: 'seance_note', userId: a.joueur_id, titre: 'Nouveau ressenti de séance à donner',
       contenu: { texte: titre }, lien: '/dashboard-joueur',
     }).catch(err => console.error('notifierJoueur seance_note error:', err))))
     setDemandeNoteEnCours(null)
@@ -6558,7 +6558,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               if (demandesTriees.length === 0) {
                 return (
                   <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>
-                    Aucune demande de note envoyée.<br />
+                    Aucune demande de ressenti envoyée.<br />
                     <span style={{ fontSize: '12px' }}>Clique sur ⭐ depuis une séance, dans l'onglet Entraînements.</span>
                   </div>
                 )
@@ -8058,11 +8058,11 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                             <span onClick={ev => { ev.stopPropagation(); if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
                               title={demandesNote[e.id].statut === 'ouverte' ? 'Note demandée — clique pour fermer' : 'Note fermée'}
                               style={{ background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.subtle : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.light : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green : colors.text.disabled, padding: '4px 9px', borderRadius: '20px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                              {demandesNote[e.id].statut === 'ouverte' ? '⭐ En attente' : '✅ Note fermée'}
+                              {demandesNote[e.id].statut === 'ouverte' ? '⭐ En attente' : '✅ Ressenti fermé'}
                             </span>
                           ) : (
                             <button onClick={ev => { ev.stopPropagation(); demanderNoteSeance(e) }} disabled={demandeNoteEnCours === e.id}
-                              title="Demander une note aux joueurs sur cette séance"
+                              title="Demander le ressenti aux joueurs sur cette séance"
                               style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
                               {demandeNoteEnCours === e.id ? '…' : '⭐'}
                             </button>
