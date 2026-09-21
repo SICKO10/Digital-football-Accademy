@@ -491,9 +491,9 @@ export function SectionZones({ pole, clubId, readOnly }) {
     majElementsCpa((cpaSchemaActif.elements || []).filter(el => el.id !== id))
   }
 
-  const deplacerJoueurCpa = (id, x, y) => {
+  const deplacerElementCpa = (id, patch) => {
     if (!cpaSchemaActif) return
-    majElementsCpaLocal((cpaSchemaActif.elements || []).map(el => el.id === id ? { ...el, x, y } : el))
+    majElementsCpaLocal((cpaSchemaActif.elements || []).map(el => el.id === id ? { ...el, ...patch } : el))
   }
 
   const finDeplacementCpa = () => {
@@ -719,7 +719,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
                   couleurJoueur={cpaCouleur}
                   couleurZone={couleurZoneCpa}
                   onCreerElement={readOnly ? null : creerElementCpa}
-                  onDeplacerJoueur={readOnly ? null : deplacerJoueurCpa}
+                  onDeplacerElement={readOnly ? null : deplacerElementCpa}
                   onFinDeplacement={readOnly ? null : finDeplacementCpa}
                   onNumeroter={readOnly ? null : numeroterElementCpa}
                   onSupprimer={readOnly ? null : supprimerElementCpa}

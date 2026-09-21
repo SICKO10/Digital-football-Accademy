@@ -7,13 +7,15 @@ import { useEffect, useRef, useState } from 'react'
 // rectangulaire), cercle_zone (zone circulaire) et fleche (vecteur).
 //
 // Interactions en mode édition (outil actif fourni par l'appelant) :
-// - outil 'joueur' : clic sur le terrain → onCreerElement(joueur) ; glisser
-//   un joueur → onDeplacerJoueur(id, x, y) à chaque mouvement (l'appelant
-//   ne persiste en base qu'au relâchement, via onFinDeplacement) ; clic
+// - outil 'joueur' : clic sur le terrain → onCreerElement(joueur) ; clic
 //   simple sur un joueur (sans glisser) → onNumeroter(id)
 // - outils 'carre'/'cercle_zone'/'fleche' : clic+glisser sur le terrain
 //   dessine l'élément, prévisualisé en pointillés puis commité via
 //   onCreerElement au relâchement
+// - glisser un joueur, un carré ou un cercle (déjà posé) → onDeplacerElement
+//   (id, patch) à chaque mouvement (l'appelant ne persiste en base qu'au
+//   relâchement, via onFinDeplacement) ; les flèches ne se déplacent pas
+//   (elles se redessinent)
 // - double-clic sur n'importe quel élément → onSupprimer(id)
 const W = 260, H = 190
 const RAYON_JOUEUR = 5.5
@@ -22,11 +24,11 @@ const clamp = (n) => Math.max(0, Math.min(100, n))
 
 export default function DemiTerrainSchema({
   elements = [], outil = 'joueur', couleurJoueur = 'noir', couleurZone = '#4ade80',
-  onCreerElement, onDeplacerJoueur, onFinDeplacement, onNumeroter, onSupprimer,
+  onCreerElement, onDeplacerElement, onFinDeplacement, onNumeroter, onSupprimer,
   maxWidth = 280,
 }) {
   const svgRef = useRef(null)
-  const [dragJoueurId, setDragJoueurId] = useState(null)
+  const [dragInfo, setDragInfo] = useState(null) // { id, type, offX, offY } — offX/offY = ancre - pointeur au moment du pointerdown
   const [dessin, setDessin] = useState(null)
   const aGlisseRef = useRef(false)
 
@@ -47,15 +49,26 @@ export default function DemiTerrainSchema({
   const px = (v) => (Number(v) || 0) / 100 * W
   const py = (v) => (Number(v) || 0) / 100 * H
 
+  const demarrerGlisser = (e, el) => {
+    if (!onDeplacerElement) return
+    e.stopPropagation()
+    aGlisseRef.current = false
+    const { x, y } = pctDepuisEvent(e)
+    const ancreX = el.type === 'cercle_zone' ? el.cx : el.x
+    const ancreY = el.type === 'cercle_zone' ? el.cy : el.y
+    setDragInfo({ id: el.id, type: el.type, offX: (Number(ancreX) || 0) - x, offY: (Number(ancreY) || 0) - y })
+  }
+
   useEffect(() => {
-    if (!dragJoueurId || !onDeplacerJoueur) return
+    if (!dragInfo || !onDeplacerElement) return
     const handleMove = (e) => {
       aGlisseRef.current = true
       const { x, y } = pctDepuisEvent(e)
-      onDeplacerJoueur(dragJoueurId, x, y)
+      const nx = clamp(x + dragInfo.offX), ny = clamp(y + dragInfo.offY)
+      onDeplacerElement(dragInfo.id, dragInfo.type === 'cercle_zone' ? { cx: nx, cy: ny } : { x: nx, y: ny })
     }
     const handleUp = () => {
-      setDragJoueurId(null)
+      setDragInfo(null)
       if (aGlisseRef.current) onFinDeplacement && onFinDeplacement()
     }
     window.addEventListener('pointermove', handleMove)
@@ -65,7 +78,7 @@ export default function DemiTerrainSchema({
       window.removeEventListener('pointerup', handleUp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragJoueurId, onDeplacerJoueur])
+  }, [dragInfo, onDeplacerElement])
 
   useEffect(() => {
     if (!dessin) return
@@ -128,18 +141,18 @@ export default function DemiTerrainSchema({
           return (
             <rect key={el.id} x={px(el.x)} y={py(el.y)} width={px(el.w)} height={py(el.h)}
               fill={el.couleur} fillOpacity={0.15} stroke={el.couleur} strokeWidth={1.5}
-              onPointerDown={e => e.stopPropagation()}
+              onPointerDown={e => demarrerGlisser(e, el)}
               onDoubleClick={e => { e.stopPropagation(); onSupprimer && onSupprimer(el.id) }}
-              style={{ cursor: onSupprimer ? 'pointer' : 'default' }} />
+              style={{ cursor: onDeplacerElement ? 'grab' : 'default' }} />
           )
         }
         if (el.type === 'cercle_zone') {
           return (
             <circle key={el.id} cx={px(el.cx)} cy={py(el.cy)} r={px(el.r)}
               fill={el.couleur} fillOpacity={0.12} stroke={el.couleur} strokeWidth={1.5} strokeDasharray="5,3"
-              onPointerDown={e => e.stopPropagation()}
+              onPointerDown={e => demarrerGlisser(e, el)}
               onDoubleClick={e => { e.stopPropagation(); onSupprimer && onSupprimer(el.id) }}
-              style={{ cursor: onSupprimer ? 'pointer' : 'default' }} />
+              style={{ cursor: onDeplacerElement ? 'grab' : 'default' }} />
           )
         }
         if (el.type === 'fleche') {
@@ -159,14 +172,14 @@ export default function DemiTerrainSchema({
         }
         return (
           <g key={el.id}
-            onPointerDown={e => { if (onDeplacerJoueur) { e.stopPropagation(); aGlisseRef.current = false; setDragJoueurId(el.id) } }}
+            onPointerDown={e => demarrerGlisser(e, el)}
             onClick={e => {
               e.stopPropagation()
               if (aGlisseRef.current) { aGlisseRef.current = false; return }
               onNumeroter && onNumeroter(el.id)
             }}
             onDoubleClick={e => { e.stopPropagation(); onSupprimer && onSupprimer(el.id) }}
-            style={{ cursor: onDeplacerJoueur ? 'grab' : (onNumeroter ? 'pointer' : 'default') }}>
+            style={{ cursor: onDeplacerElement ? 'grab' : (onNumeroter ? 'pointer' : 'default') }}>
             <circle cx={px(el.x)} cy={py(el.y)} r={RAYON_JOUEUR}
               fill={el.couleur === 'noir' ? '#111' : '#fff'} stroke={el.couleur === 'noir' ? '#fff' : '#111'} strokeWidth={1.2} />
             {el.numero && (
