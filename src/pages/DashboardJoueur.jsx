@@ -3415,7 +3415,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {(() => {
               const aff = mesAffiliations.find(af => af.statut === 'accepte')
               if (!aff) return null
-              return <SondageSemaine mode="joueur" userId={userId} educateurId={aff.educateur_id} accentColor={colors.accent.green} />
+              return <SondageSemaine mode="joueur" userId={userId} educateurId={aff.educateur_id} equipeCategorieId={aff.club_categorie_id} accentColor={colors.accent.green} />
             })()}
             {tauxPresenceAccueil && (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
