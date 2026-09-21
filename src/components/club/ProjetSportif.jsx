@@ -356,6 +356,50 @@ export function SectionZones({ pole, clubId, readOnly }) {
     setFondUrl(null)
   }
 
+  // Galerie d'images de référence supplémentaires (plusieurs par pôle+phase,
+  // sans zones dessus) — distincte de l'image de fond ci-dessus (une seule,
+  // support des zones). cf. terrain_galerie.
+  const [galerie, setGalerie] = useState([])
+  const [galerieUploading, setGalerieUploading] = useState(false)
+
+  useEffect(() => {
+    if (!clubId) { setGalerie([]); return }
+    supabase.from('terrain_galerie').select('*').eq('club_id', clubId).eq('pole_key', pole.key).eq('phase', phaseActive).order('ordre')
+      .then(({ data }) => setGalerie(data || []))
+  }, [clubId, pole.key, phaseActive])
+
+  const ajouterImageGalerie = async (e) => {
+    const file = e.target.files[0]
+    if (!file || !clubId) return
+    setGalerieUploading(true)
+    try {
+      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'terrain_galerie' }) })
+      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signature)
+      formData.append('timestamp', timestamp)
+      formData.append('folder', folder)
+      formData.append('public_id', public_id)
+      formData.append('api_key', api_key)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const uploadData = await uploadRes.json()
+      if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
+      const { data } = await supabase.from('terrain_galerie').insert({ club_id: clubId, pole_key: pole.key, phase: phaseActive, image_url: uploadData.secure_url, ordre: galerie.length }).select().single()
+      if (data) setGalerie(prev => [...prev, data])
+    } catch (err) {
+      alert('Erreur upload : ' + err.message)
+    }
+    setGalerieUploading(false)
+    e.target.value = ''
+  }
+
+  const supprimerImageGalerie = async (id) => {
+    if (!confirm('Supprimer cette image ?')) return
+    await supabase.from('terrain_galerie').delete().eq('id', id)
+    setGalerie(prev => prev.filter(g => g.id !== id))
+  }
+
   // Schémas CPA (offensifs/défensifs) : autant de demi-terrains que voulu par
   // phase, chacun avec ses propres ronds noir/blanc représentant les joueurs
   // — cf. cpa_schemas, distinct des zones rectangulaires ci-dessus.
@@ -677,6 +721,39 @@ export function SectionZones({ pole, clubId, readOnly }) {
           )}
         </div>
       )}
+
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ color: colors.text.primary, margin: '0 0 4px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Galerie d'images supplémentaires</h3>
+        <p style={{ color: colors.text.faint, fontSize: 12, margin: '0 0 14px' }}>
+          Autant de visuels de référence que tu veux pour cette phase (ex: plusieurs formations) — sans zones dessus, affichés tels quels côté joueur.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+          {galerie.map(g => (
+            <div key={g.id} style={{ position: 'relative' }}>
+              <img src={g.image_url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 10, border: `1px solid ${colors.border.subtle}`, display: 'block' }} />
+              {!readOnly && (
+                <button onClick={() => supprimerImageGalerie(g.id)}
+                  style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 6, width: 22, height: 22, cursor: 'pointer', fontSize: 12, fontWeight: 700, lineHeight: '22px', padding: 0 }}>
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {!readOnly && (
+            <label style={{
+              aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+              border: `1px dashed ${pole.couleur}66`, borderRadius: 10, color: pole.couleur, fontSize: 12, fontWeight: 700,
+              cursor: galerieUploading ? 'default' : 'pointer', opacity: galerieUploading ? 0.6 : 1, padding: 8,
+            }}>
+              {galerieUploading ? 'Envoi...' : '+ Ajouter une image'}
+              <input type="file" accept="image/*" onChange={ajouterImageGalerie} disabled={galerieUploading} style={{ display: 'none' }} />
+            </label>
+          )}
+        </div>
+        {galerie.length === 0 && readOnly && (
+          <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucune image pour cette phase.</p>
+        )}
+      </div>
     </div>
   )
 }

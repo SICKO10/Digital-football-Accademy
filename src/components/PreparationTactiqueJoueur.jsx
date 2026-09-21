@@ -53,6 +53,20 @@ function GalerieCpa({ schemas, colors }) {
   )
 }
 
+// Galerie en lecture seule d'images de référence supplémentaires d'une phase
+// (plusieurs par pôle+phase, sans zones dessus) — cf. ProjetSportif.jsx →
+// SectionZones → "Galerie d'images supplémentaires" (terrain_galerie).
+function GalerieImages({ images, colors }) {
+  if (images.length === 0) return null
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px', marginTop: '12px' }}>
+      {images.map(g => (
+        <img key={g.id} src={g.image_url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: '10px', border: `1px solid ${colors.border.default}`, display: 'block' }} />
+      ))}
+    </div>
+  )
+}
+
 const ONGLETS = [
   { key: 'offensif', label: 'Projet Offensif' },
   { key: 'defensif', label: 'Projet Défensif' },
@@ -79,6 +93,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const [zones, setZones] = useState([])
   const [fondUrls, setFondUrls] = useState({})
   const [cpaSchemas, setCpaSchemas] = useState([])
+  const [galerieImages, setGalerieImages] = useState([])
   const [schemas, setSchemas] = useState([])
   const [loadingSchemas, setLoadingSchemas] = useState(true)
   const [schemaActif, setSchemaActif] = useState(null)
@@ -130,6 +145,12 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
     charger()
   }, [clubId, pole?.key])
 
+  useEffect(() => {
+    if (!clubId || !pole) { setGalerieImages([]); return }
+    supabase.from('terrain_galerie').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
+      .then(({ data }) => setGalerieImages(data || []))
+  }, [clubId, pole?.key])
+
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px' },
   }
@@ -175,23 +196,40 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         </div>
       )}
 
-      {clubId && onglet === 'offensif' && <PanneauZones zones={zonesPhase('attaque')} colors={colors} fondUrl={fondUrls.attaque} />}
-      {clubId && onglet === 'defensif' && <PanneauZones zones={zonesPhase('defense')} colors={colors} fondUrl={fondUrls.defense} />}
+      {clubId && onglet === 'offensif' && (
+        <>
+          <PanneauZones zones={zonesPhase('attaque')} colors={colors} fondUrl={fondUrls.attaque} />
+          <GalerieImages images={galerieImages.filter(g => g.phase === 'attaque')} colors={colors} />
+        </>
+      )}
+      {clubId && onglet === 'defensif' && (
+        <>
+          <PanneauZones zones={zonesPhase('defense')} colors={colors} fondUrl={fondUrls.defense} />
+          <GalerieImages images={galerieImages.filter(g => g.phase === 'defense')} colors={colors} />
+        </>
+      )}
 
       {clubId && onglet === 'transitions' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition offensive</p>
             <PanneauZones zones={zonesPhase('transition_att')} colors={colors} fondUrl={fondUrls.transition_att} />
+            <GalerieImages images={galerieImages.filter(g => g.phase === 'transition_att')} colors={colors} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>Transition défensive</p>
             <PanneauZones zones={zonesPhase('transition_def')} colors={colors} fondUrl={fondUrls.transition_def} />
+            <GalerieImages images={galerieImages.filter(g => g.phase === 'transition_def')} colors={colors} />
           </div>
         </div>
       )}
 
-      {clubId && onglet === 'pressing' && <PanneauZones zones={zonesPhase('pressing')} colors={colors} fondUrl={fondUrls.pressing} />}
+      {clubId && onglet === 'pressing' && (
+        <>
+          <PanneauZones zones={zonesPhase('pressing')} colors={colors} fondUrl={fondUrls.pressing} />
+          <GalerieImages images={galerieImages.filter(g => g.phase === 'pressing')} colors={colors} />
+        </>
+      )}
 
       {clubId && onglet === 'cpa' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -199,11 +237,13 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA offensifs</p>
             <PanneauZones zones={zonesPhase('cpa_offensif')} colors={colors} fondUrl={fondUrls.cpa_offensif} />
             <GalerieCpa schemas={cpaSchemas.filter(s => s.phase === 'cpa_offensif')} colors={colors} />
+            <GalerieImages images={galerieImages.filter(g => g.phase === 'cpa_offensif')} colors={colors} />
           </div>
           <div>
             <p style={{ color: colors.text.secondary, fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>CPA défensifs</p>
             <PanneauZones zones={zonesPhase('cpa_defensif')} colors={colors} fondUrl={fondUrls.cpa_defensif} />
             <GalerieCpa schemas={cpaSchemas.filter(s => s.phase === 'cpa_defensif')} colors={colors} />
+            <GalerieImages images={galerieImages.filter(g => g.phase === 'cpa_defensif')} colors={colors} />
           </div>
         </div>
       )}
