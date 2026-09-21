@@ -39,6 +39,20 @@ const PHASES_ZONES = [
 ]
 const ZONE_VIDE = { x: 10, y: 10, largeur: 80, hauteur: 15, label: '', description: '', couleur: '#4ade80' }
 
+const OUTILS_CPA = [
+  { id: 'joueur', label: '●', title: 'Joueur' },
+  { id: 'carre', label: '■', title: 'Zone carrée' },
+  { id: 'cercle_zone', label: '○', title: 'Zone cercle' },
+  { id: 'fleche', label: '→', title: 'Flèche' },
+]
+const COULEURS_ZONE_CPA = [
+  { label: 'Vert', value: '#4ade80' },
+  { label: 'Rouge', value: '#f87171' },
+  { label: 'Bleu', value: '#60a5fa' },
+  { label: 'Jaune', value: '#facc15' },
+  { label: 'Orange', value: '#fb923c' },
+]
+
 function PlaceholderAVenir({ couleur, texte }) {
   return (
     <div style={{ textAlign: 'center', padding: '48px 24px', border: '1px dashed', borderColor: couleur + '44', borderRadius: 14 }}>
@@ -407,6 +421,8 @@ export function SectionZones({ pole, clubId, readOnly }) {
   const [cpaSchemas, setCpaSchemas] = useState([])
   const [cpaSchemaActifId, setCpaSchemaActifId] = useState(null)
   const [cpaCouleur, setCpaCouleur] = useState('noir')
+  const [outilCpa, setOutilCpa] = useState('joueur')
+  const [couleurZoneCpa, setCouleurZoneCpa] = useState('#4ade80')
 
   useEffect(() => {
     const charger = async () => {
@@ -424,7 +440,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
   const nouveauSchemaCpa = async () => {
     const { data, error } = await supabase.from('cpa_schemas').insert({
       club_id: clubId, pole_key: pole.key, phase: phaseActive,
-      nom: `Schéma ${cpaSchemas.length + 1}`, joueurs: [], ordre: cpaSchemas.length,
+      nom: `Schéma ${cpaSchemas.length + 1}`, elements: [], legende: {}, ordre: cpaSchemas.length,
     }).select().single()
     if (error) { alert(error.message); return }
     setCpaSchemas(prev => [...prev, data])
@@ -447,50 +463,61 @@ export function SectionZones({ pole, clubId, readOnly }) {
     })
   }
 
-  const cpaJoueursRef = useRef([])
+  const cpaElementsRef = useRef([])
 
-  const majJoueursCpa = async (joueurs) => {
+  const majElementsCpa = async (elements) => {
     if (!cpaSchemaActif) return
-    cpaJoueursRef.current = joueurs
-    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, joueurs } : s))
-    await supabase.from('cpa_schemas').update({ joueurs }).eq('id', cpaSchemaActif.id)
+    cpaElementsRef.current = elements
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, elements } : s))
+    await supabase.from('cpa_schemas').update({ elements }).eq('id', cpaSchemaActif.id)
   }
 
   // Pendant un glisser-déposer, on met à jour l'état local (affichage fluide)
   // à chaque mouvement sans écrire en base à chaque pixel — la persistance
   // n'a lieu qu'une fois au relâchement (finDeplacementCpa).
-  const majJoueursCpaLocal = (joueurs) => {
+  const majElementsCpaLocal = (elements) => {
     if (!cpaSchemaActif) return
-    cpaJoueursRef.current = joueurs
-    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, joueurs } : s))
+    cpaElementsRef.current = elements
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, elements } : s))
   }
 
-  const ajouterJoueurCpa = (x, y) => {
+  const creerElementCpa = (elementSansId) => {
     if (!cpaSchemaActif) return
-    majJoueursCpa([...(cpaSchemaActif.joueurs || []), { x, y, couleur: cpaCouleur, numero: '' }])
+    majElementsCpa([...(cpaSchemaActif.elements || []), { id: crypto.randomUUID(), ...elementSansId }])
   }
 
-  const retirerJoueurCpa = (index) => {
+  const supprimerElementCpa = (id) => {
     if (!cpaSchemaActif) return
-    majJoueursCpa((cpaSchemaActif.joueurs || []).filter((_, i) => i !== index))
+    majElementsCpa((cpaSchemaActif.elements || []).filter(el => el.id !== id))
   }
 
-  const deplacerJoueurCpa = (index, x, y) => {
+  const deplacerJoueurCpa = (id, x, y) => {
     if (!cpaSchemaActif) return
-    majJoueursCpaLocal((cpaSchemaActif.joueurs || []).map((j, i) => i === index ? { ...j, x, y } : j))
+    majElementsCpaLocal((cpaSchemaActif.elements || []).map(el => el.id === id ? { ...el, x, y } : el))
   }
 
   const finDeplacementCpa = () => {
-    majJoueursCpa(cpaJoueursRef.current)
+    majElementsCpa(cpaElementsRef.current)
   }
 
-  const numeroterJoueurCpa = (index) => {
+  const numeroterElementCpa = (id) => {
     if (!cpaSchemaActif) return
-    const actuel = cpaSchemaActif.joueurs?.[index]?.numero || ''
+    const actuel = (cpaSchemaActif.elements || []).find(el => el.id === id)?.numero || ''
     const saisie = window.prompt('Numéro du joueur (laisser vide pour le retirer)', actuel)
     if (saisie === null) return
-    majJoueursCpa((cpaSchemaActif.joueurs || []).map((j, i) => i === index ? { ...j, numero: saisie.trim() } : j))
+    majElementsCpa((cpaSchemaActif.elements || []).map(el => el.id === id ? { ...el, numero: saisie.trim() } : el))
   }
+
+  const majLegendeCpa = async (legende) => {
+    if (!cpaSchemaActif) return
+    setCpaSchemas(prev => prev.map(s => s.id === cpaSchemaActif.id ? { ...s, legende } : s))
+    await supabase.from('cpa_schemas').update({ legende }).eq('id', cpaSchemaActif.id)
+  }
+
+  const numerosCpaUtilises = cpaSchemaActif ? Array.from(new Set([
+    ...(cpaSchemaActif.elements || []).filter(el => el.type === 'joueur' && el.numero).map(el => el.numero),
+    ...Object.keys(cpaSchemaActif.legende || {}),
+  ])).sort((a, b) => (Number(a) || 0) - (Number(b) || 0) || String(a).localeCompare(String(b))) : []
 
   const zonesPhase = zones.filter(z => z.phase === phaseActive)
 
@@ -644,7 +671,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
         <div style={{ marginTop: 24 }}>
           <h3 style={{ color: colors.text.primary, margin: '0 0 4px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Schémas CPA</h3>
           <p style={{ color: colors.text.faint, fontSize: 12, margin: '0 0 14px' }}>
-            Autant de demi-terrains que nécessaire (corners, coups francs…), avec des ronds noir/blanc pour placer les joueurs.
+            Autant de demi-terrains que nécessaire (corners, coups francs…) : joueurs noir/blanc numérotés, zones carrées ou circulaires et flèches.
           </p>
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -671,13 +698,31 @@ export function SectionZones({ pole, clubId, readOnly }) {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 620px) 1fr', gap: 20, alignItems: 'start' }}>
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16 }}>
+                {!readOnly && (
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                    {OUTILS_CPA.map(o => (
+                      <button key={o.id} onClick={() => setOutilCpa(o.id)} title={o.title}
+                        style={{
+                          width: 36, height: 36, borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                          background: outilCpa === o.id ? pole.couleur : colors.background.raised,
+                          color: outilCpa === o.id ? '#0a0a0a' : colors.text.secondary,
+                          border: `1px solid ${outilCpa === o.id ? pole.couleur : colors.border.default}`,
+                        }}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <DemiTerrainSchema
-                  joueurs={cpaSchemaActif.joueurs || []}
-                  onAjouter={readOnly ? null : ajouterJoueurCpa}
-                  onDeplacer={readOnly ? null : deplacerJoueurCpa}
+                  elements={cpaSchemaActif.elements || []}
+                  outil={readOnly ? 'joueur' : outilCpa}
+                  couleurJoueur={cpaCouleur}
+                  couleurZone={couleurZoneCpa}
+                  onCreerElement={readOnly ? null : creerElementCpa}
+                  onDeplacerJoueur={readOnly ? null : deplacerJoueurCpa}
                   onFinDeplacement={readOnly ? null : finDeplacementCpa}
-                  onNumeroter={readOnly ? null : numeroterJoueurCpa}
-                  onRetirer={readOnly ? null : retirerJoueurCpa}
+                  onNumeroter={readOnly ? null : numeroterElementCpa}
+                  onSupprimer={readOnly ? null : supprimerElementCpa}
                   maxWidth={620}
                 />
               </div>
@@ -689,32 +734,73 @@ export function SectionZones({ pole, clubId, readOnly }) {
                       <label style={labelStyle}>Nom du schéma</label>
                       <input style={champStyle} defaultValue={cpaSchemaActif.nom} onBlur={e => e.target.value.trim() && renommerSchemaCpa(e.target.value.trim())} />
                     </div>
-                    <div>
-                      <label style={labelStyle}>Couleur à poser</label>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {[['noir', 'Noir', '#111'], ['blanc', 'Blanc', '#fff']].map(([val, label, swatch]) => (
-                          <button key={val} onClick={() => setCpaCouleur(val)}
-                            style={{
-                              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                              padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
-                              border: `1px solid ${cpaCouleur === val ? pole.couleur : colors.border.default}`,
-                              background: cpaCouleur === val ? pole.couleur + '22' : 'transparent',
-                              color: cpaCouleur === val ? pole.couleur : colors.text.secondary,
-                            }}>
-                            <span style={{ width: 12, height: 12, borderRadius: '50%', background: swatch, border: '1px solid #888' }} />
-                            {label}
-                          </button>
-                        ))}
+
+                    {outilCpa === 'joueur' ? (
+                      <div>
+                        <label style={labelStyle}>Couleur à poser</label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          {[['noir', 'Noir', '#111'], ['blanc', 'Blanc', '#fff']].map(([val, label, swatch]) => (
+                            <button key={val} onClick={() => setCpaCouleur(val)}
+                              style={{
+                                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                                border: `1px solid ${cpaCouleur === val ? pole.couleur : colors.border.default}`,
+                                background: cpaCouleur === val ? pole.couleur + '22' : 'transparent',
+                                color: cpaCouleur === val ? pole.couleur : colors.text.secondary,
+                              }}>
+                              <span style={{ width: 12, height: 12, borderRadius: '50%', background: swatch, border: '1px solid #888' }} />
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, glisse un rond pour le déplacer, clique dessus pour lui donner un numéro, double-clique pour le retirer.</p>
                       </div>
-                      <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, glisse un rond pour le déplacer, clique dessus pour lui donner un numéro, double-clique pour le retirer.</p>
-                    </div>
+                    ) : (
+                      <div>
+                        <label style={labelStyle}>Couleur</label>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {COULEURS_ZONE_CPA.map(c => (
+                            <button key={c.value} onClick={() => setCouleurZoneCpa(c.value)} title={c.label}
+                              style={{
+                                width: 26, height: 26, borderRadius: '50%', background: c.value, cursor: 'pointer',
+                                border: couleurZoneCpa === c.value ? `2px solid ${colors.text.primary}` : '2px solid transparent',
+                              }} />
+                          ))}
+                        </div>
+                        <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique et glisse sur le terrain pour dessiner, double-clique dessus pour le retirer.</p>
+                      </div>
+                    )}
+
                     <button onClick={() => supprimerSchemaCpa(cpaSchemaActif.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif', textAlign: 'left', padding: 0 }}>
                       Supprimer ce schéma
                     </button>
                   </>
                 )}
-                {(cpaSchemaActif.joueurs || []).length === 0 && (
-                  <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun joueur placé sur ce schéma.</p>
+
+                {(cpaSchemaActif.elements || []).length === 0 && (
+                  <p style={{ color: colors.text.faint, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun élément placé sur ce schéma.</p>
+                )}
+
+                {numerosCpaUtilises.length > 0 && (
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 14 }}>
+                    <p style={{ color: pole.couleur, fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 0 10px' }}>Légende</p>
+                    {numerosCpaUtilises.map(num => (
+                      <div key={num} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: colors.background.raised, border: `1.5px solid ${pole.couleur}`, color: colors.text.primary, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {num}
+                        </div>
+                        {readOnly ? (
+                          <span style={{ color: colors.text.secondary, fontSize: 12 }}>{cpaSchemaActif.legende?.[num] || ''}</span>
+                        ) : (
+                          <input
+                            defaultValue={cpaSchemaActif.legende?.[num] || ''}
+                            onBlur={e => majLegendeCpa({ ...(cpaSchemaActif.legende || {}), [num]: e.target.value })}
+                            placeholder={`Joueur ${num}`}
+                            style={{ background: 'transparent', border: 'none', borderBottom: `1px solid ${colors.border.default}`, color: colors.text.primary, fontSize: 12, width: '100%', outline: 'none', padding: '2px 0', fontFamily: 'Inter, sans-serif' }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

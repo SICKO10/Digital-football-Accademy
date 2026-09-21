@@ -43,12 +43,24 @@ function GalerieCpa({ schemas, colors }) {
   if (schemas.length === 0) return null
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '14px', marginTop: '12px' }}>
-      {schemas.map(s => (
-        <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px' }}>
-          <DemiTerrainSchema joueurs={s.joueurs || []} />
-          <p style={{ margin: '8px 0 0', fontSize: '11px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>{s.nom}</p>
-        </div>
-      ))}
+      {schemas.map(s => {
+        const numeros = Object.keys(s.legende || {}).sort((a, b) => (Number(a) || 0) - (Number(b) || 0))
+        return (
+          <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px' }}>
+            <DemiTerrainSchema elements={s.elements || []} />
+            <p style={{ margin: '8px 0 0', fontSize: '11px', fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>{s.nom}</p>
+            {numeros.length > 0 && (
+              <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {numeros.map(num => (
+                  <p key={num} style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>
+                    <strong style={{ color: colors.text.secondary }}>{num}</strong> — {s.legende[num]}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
