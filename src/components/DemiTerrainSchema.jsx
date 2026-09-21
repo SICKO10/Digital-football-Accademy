@@ -176,9 +176,14 @@ export default function DemiTerrainSchema({
             onClick={e => {
               e.stopPropagation()
               if (aGlisseRef.current) { aGlisseRef.current = false; return }
+              // e.detail > 1 = ce clic fait partie d'un double-clic (deux
+              // "click" natifs sont émis avant le "dblclick") — on l'ignore
+              // ici pour ne pas rouvrir une deuxième fois le prompt de
+              // numéro juste avant que le clic droit ne serve à supprimer.
+              if (e.detail > 1) return
               onNumeroter && onNumeroter(el.id)
             }}
-            onDoubleClick={e => { e.stopPropagation(); onSupprimer && onSupprimer(el.id) }}
+            onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onSupprimer && onSupprimer(el.id) }}
             style={{ cursor: onDeplacerElement ? 'grab' : (onNumeroter ? 'pointer' : 'default') }}>
             <circle cx={px(el.x)} cy={py(el.y)} r={RAYON_JOUEUR}
               fill={el.couleur === 'noir' ? '#111' : '#fff'} stroke={el.couleur === 'noir' ? '#fff' : '#111'} strokeWidth={1.2} />

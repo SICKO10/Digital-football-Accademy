@@ -753,7 +753,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
                             </button>
                           ))}
                         </div>
-                        <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, glisse un rond pour le déplacer, clique dessus pour lui donner un numéro, double-clique pour le retirer.</p>
+                        <p style={{ color: colors.text.faint, fontSize: 10, margin: '6px 0 0', fontStyle: 'italic' }}>Clique sur le terrain pour poser un rond, glisse un rond pour le déplacer, clique dessus pour lui donner un numéro, clic droit pour le retirer.</p>
                       </div>
                     ) : (
                       <div>
