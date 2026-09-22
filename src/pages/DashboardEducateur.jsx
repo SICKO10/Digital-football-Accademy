@@ -10,6 +10,7 @@ import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principes
 import AnalyseVideo from '../components/AnalyseVideo'
 import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../components/RapportMatch'
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
+import SanteEquipe from '../components/SanteEquipe'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
@@ -4936,7 +4937,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   // pour un dirigeant délégué via canView('dirigeants') à cet endroit.
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
-      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats'] },
+      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante'] },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
     ] },
@@ -5374,9 +5375,9 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           </>
         )}
 
-        {['equipe', 'stats'].includes(activeSection) && (
+        {['equipe', 'stats', 'sante'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }].filter(it => canView(it.key))}
+            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -6646,6 +6647,11 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               })
             })()}
           </>
+        )}
+
+        {/* ===== SANTÉ ===== */}
+        {activeSection === 'sante' && (
+          <SanteEquipe joueurs={joueurs} educateurId={userId} />
         )}
 
         {/* ===== COMPÉTITION ===== */}

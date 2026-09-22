@@ -13,6 +13,7 @@ export const T = {
   nav_accueil:          { fr: 'Accueil',             en: 'Home',              pt: 'Início',            es: 'Inicio',            it: 'Home',              de: 'Startseite'        },
   nav_equipe:           { fr: 'Mon équipe',           en: 'My team',           pt: 'Minha equipa',      es: 'Mi equipo',         it: 'La mia squadra',    de: 'Mein Team'         },
   nav_stats:            { fr: 'Stats équipe',         en: 'Team stats',        pt: 'Estatísticas da equipa', es: 'Estadísticas del equipo', it: 'Statistiche squadra', de: 'Team-Statistik'  },
+  nav_sante:            { fr: 'Santé',                en: 'Health',            pt: 'Saúde',             es: 'Salud',             it: 'Salute',            de: 'Gesundheit'        },
   nav_competition:      { fr: 'Compétition',          en: 'Competition',       pt: 'Competição',        es: 'Competición',       it: 'Competizione',      de: 'Wettbewerb'        },
   nav_organisation:     { fr: 'Organisation',         en: 'Organisation',      pt: 'Organização',       es: 'Organización',      it: 'Organizzazione',    de: 'Organisation'      },
   nav_deplacements:     { fr: 'Déplacements',         en: 'Travel',            pt: 'Deslocações',       es: 'Desplazamientos',   it: 'Trasferte',         de: 'Fahrten'           },
