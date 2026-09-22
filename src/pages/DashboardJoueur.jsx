@@ -8,6 +8,7 @@ import EmptyState from '../components/EmptyState'
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import SanteJoueur from '../components/SanteJoueur'
+import NutritionDashboard from '../components/NutritionDashboard'
 import { notifierJoueur } from '../lib/notifications'
 import NotificationBanner from '../components/NotificationBanner'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
@@ -121,6 +122,12 @@ const IconClipboard = ({ size = 18 }) => (
 const IconShirt = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M16 3l5 4-3 3-2-2v12a1 1 0 01-1 1H9a1 1 0 01-1-1V8l-2 2-3-3 5-4a4 4 0 008 0z"/>
+  </svg>
+)
+const IconNutrition = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20c-4.4 0-8-3.6-8-9 0-4 2.5-7 5.5-7 1.3 0 2 .5 2.5 1 .5-.5 1.2-1 2.5-1 3 0 5.5 3 5.5 7 0 5.4-3.6 9-8 9Z"/>
+    <path d="M12 5c0-1.5 1-3 3-3"/>
   </svg>
 )
 const IconHealth = () => (
@@ -2000,6 +2007,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
       { id: 'sante',         label: t('nav_sante', lang),           icon: <IconHealth /> },
+      { id: 'nutrition',     label: t('jnav_nutrition', lang),      icon: <IconNutrition />, locked: true },
       { id: 'annonces',      label: 'Actualités du club',             icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
 
       { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
@@ -2836,6 +2844,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           )}
 
+          {onglet === 'nutrition' && <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
+
           {onglet === 'equipement' && (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>Mon équipement</h1>
@@ -3075,6 +3085,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
     { id: 'sante', label: t('nav_sante', lang), icon: <IconHealth /> },
+    { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
     { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
@@ -4209,6 +4220,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('nav_sante', lang)}</h1>
             <SanteJoueur />
+          </div>
+        )}
+
+        {onglet === 'nutrition' && (
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            {isPro ? (
+              <>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jnav_nutrition', lang)}</h1>
+                <NutritionDashboard joueurId={userId} />
+              </>
+            ) : (
+              <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />
+            )}
           </div>
         )}
 
