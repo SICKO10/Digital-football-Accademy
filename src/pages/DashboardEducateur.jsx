@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { supabase, signOutSafe } from '../supabase'
+import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
@@ -2230,6 +2230,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
   const [fiche, setFiche] = useState(ficheVide)
   const [sport, setSport] = useState('football')
+  // Filet de sécurité contre les pertes de fiche en cours de rédaction (cf.
+  // bug du 2026-09-22 : session expirée en plein milieu d'une longue
+  // rédaction → l'enregistrement échouait et le contenu semblait perdu).
+  // Sauvegarde locale (debounced) indépendante de Supabase, donc immunisée
+  // contre les problèmes de session/réseau — restaurable au retour sur
+  // l'onglet, effacée une fois la fiche réellement enregistrée en base.
+  const [brouillonFiche, setBrouillonFiche] = useState(null) // { fiche, sport, savedAt } détecté au chargement, ou null
   const [tactipadModal, setTactipadModal] = useState(null) // index du procédé en cours d'édition de schéma
   const [savingFiche, setSavingFiche] = useState(false)
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
@@ -2246,6 +2253,36 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scanningFiche, setScanningFiche] = useState(false)
   const [scanFicheStatus, setScanFicheStatus] = useState(null)
   const [scanFicheError, setScanFicheError] = useState(null)
+
+  // Détecte un brouillon local laissé par une session précédente (ex:
+  // enregistrement échoué, fermeture accidentelle) dès que l'identité de
+  // l'éducateur est connue — propose de le restaurer via un bandeau, ne
+  // l'applique jamais automatiquement pour ne pas écraser une saisie en cours.
+  useEffect(() => {
+    const detecter = async () => {
+      if (!userId) return
+      try {
+        const brut = localStorage.getItem(`df_fiche_brouillon_${userId}`)
+        if (brut) setBrouillonFiche(JSON.parse(brut))
+      } catch { /* JSON invalide : ignoré */ }
+    }
+    detecter()
+  }, [userId])
+
+  // Sauvegarde locale continue (debounced) pendant la rédaction — indépendante
+  // de Supabase (aucun appel réseau), donc toujours disponible même si
+  // l'enregistrement échoue (session expirée, réseau coupé...).
+  useEffect(() => {
+    if (!userId || modeSeance !== 'rediger') return
+    const vide = !fiche.theme?.trim() && !fiche.date && fiche.procedes.every(p => !p.titre?.trim() && !p.organisation?.trim() && !p.consignes?.trim())
+    const timer = setTimeout(() => {
+      try {
+        if (vide) localStorage.removeItem(`df_fiche_brouillon_${userId}`)
+        else localStorage.setItem(`df_fiche_brouillon_${userId}`, JSON.stringify({ fiche, sport, savedAt: Date.now() }))
+      } catch { /* quota dépassé ou navigation privée : tant pis, pas de brouillon */ }
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [fiche, sport, userId, modeSeance])
 
   // Générateur IA de séance (modale déclenchée depuis "Mes séances")
   const [modalGenerationIA, setModalGenerationIA] = useState(false)
@@ -2442,7 +2479,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const uploaderMaSeance = async () => {
     setUploadingSeanceOuverte(true)
-    const { data: inserted, error } = await supabase.from('seances_uploadees').insert({
+    const { data: inserted, error } = await avecRetrySession(() => supabase.from('seances_uploadees').insert({
       educateur_id: userId,
       theme: uploadSeanceOuverteForm.theme || null,
       date_seance: uploadSeanceOuverteForm.date_seance || null,
@@ -2455,7 +2492,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       origine: 'ouvert',
       statut: 'en_attente',
       saison: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-    }).select().single()
+    }).select().single())
     setUploadingSeanceOuverte(false)
     if (error) {
       console.error('Erreur insertion séance:', error)
@@ -2556,7 +2593,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       type_seance: ficheApercuEdit.type_seance || 'collectif',
       fiche_seance: ficheApercuEdit,
     }
-    const { error } = await supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id)
+    const { error } = await avecRetrySession(() => supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id))
     setSavingFicheApercu(false)
     if (error) { alert('Erreur lors de la sauvegarde : ' + error.message); return }
     const updated = { ...ficheApercu, ...payload }
@@ -2892,7 +2929,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const sauvegarderFiche = async () => {
     setSavingFiche(true)
-    const { data: inserted, error } = await supabase.from('seances_uploadees').insert({
+    const { data: inserted, error } = await avecRetrySession(() => supabase.from('seances_uploadees').insert({
       educateur_id: userId,
       theme: fiche.theme || null,
       date_seance: fiche.date || null,
@@ -2904,13 +2941,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       fichier_url: ficheFichierUrl || null,
       origine: 'ouvert',
       statut: 'archivee',
-    }).select().single()
+    }).select().single())
     if (error) {
       setSavingFiche(false)
       console.error('Erreur insertion fiche:', error)
-      alert('Erreur lors de l\'enregistrement : ' + error.message)
+      alert('Erreur lors de l\'enregistrement : ' + error.message + '\n\nPas de panique, ton brouillon reste rempli à l\'écran — réessaie dans quelques secondes.')
       return
     }
+    try { if (userId) localStorage.removeItem(`df_fiche_brouillon_${userId}`) } catch { /* navigation privée : tant pis */ }
 
     // Optimistic : l'insert principal ci-dessus est confirmé, donc on referme
     // côté UI tout de suite. La liaison à l'entraînement et la génération du
@@ -8625,6 +8663,23 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
             {modeSeance === 'rediger' && (
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
               <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ {t('seance_rediger_titre', lang)}</p>
+              {brouillonFiche && (
+                <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}44`, borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ color: colors.text.secondary }}>
+                    Un brouillon non enregistré du {new Date(brouillonFiche.savedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} a été retrouvé.
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <button onClick={() => { setFiche(brouillonFiche.fiche); setSport(brouillonFiche.sport || 'football'); setBrouillonFiche(null) }}
+                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      Restaurer
+                    </button>
+                    <button onClick={() => { try { localStorage.removeItem(`df_fiche_brouillon_${userId}`) } catch { /* ignore */ } setBrouillonFiche(null) }}
+                      style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      Ignorer
+                    </button>
+                  </div>
+                </div>
+              )}
               {ficheExtraite && (
                 <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: colors.accent.green, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                   <span>✅ {t('seance_fiche_extraite', lang)}</span>
