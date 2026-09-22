@@ -35,15 +35,30 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     moderee: { label: 'Modérée', niveau: 2 },
     grave: { label: 'Grave', niveau: 3 },
   }
+  const STATUT_ETAPE_META = {
+    a_faire: { label: 'À faire', color: colors.text.disabled },
+    en_cours: { label: 'En cours', color: colors.accent.orange },
+    validee: { label: 'Validée', color: colors.accent.green },
+  }
+  const ONGLETS_DETAIL = [
+    { id: 'retour', label: 'Retour compétition' },
+    { id: 'reedu', label: 'Rééducation' },
+    { id: 'suivi', label: 'Suivi médical' },
+  ]
 
   const [blessures, setBlessures] = useState([])
   const [filtreStatut, setFiltreStatut] = useState('tous')
   const [blessureSelectionnee, setBlessureSelectionnee] = useState(null)
+  const [ongletDetail, setOngletDetail] = useState('retour')
   const [suivis, setSuivis] = useState([])
+  const [etapes, setEtapes] = useState([])
   const [showFormBlessure, setShowFormBlessure] = useState(false)
   const [showFormSuivi, setShowFormSuivi] = useState(false)
+  const [showFormEtape, setShowFormEtape] = useState(false)
+  const [showRapport, setShowRapport] = useState(false)
   const [form, setForm] = useState(FORM_VIDE)
   const [formSuivi, setFormSuivi] = useState(FORM_SUIVI_VIDE)
+  const [formEtape, setFormEtape] = useState({ titre: '', description: '', duree_estimee: '' })
   const [envoiEnCours, setEnvoiEnCours] = useState(false)
 
   const joueursIds = joueurs.map(j => j.id)
@@ -60,6 +75,46 @@ export default function SanteEquipe({ joueurs, educateurId }) {
   const chargerSuivis = async (blessureId) => {
     const { data } = await supabase.from('suivi_medical').select('*').eq('blessure_id', blessureId).order('date_consultation', { ascending: false })
     setSuivis(data || [])
+  }
+
+  const chargerEtapes = async (blessureId) => {
+    const { data } = await supabase.from('reeducation_etapes').select('*').eq('blessure_id', blessureId).order('ordre')
+    setEtapes(data || [])
+  }
+
+  const ouvrirBlessure = (b) => {
+    setBlessureSelectionnee(b)
+    setOngletDetail('retour')
+    chargerSuivis(b.id)
+    chargerEtapes(b.id)
+  }
+
+  const ajouterEtape = async () => {
+    if (!formEtape.titre.trim()) return
+    setEnvoiEnCours(true)
+    const { error } = await supabase.from('reeducation_etapes').insert({
+      blessure_id: blessureSelectionnee.id,
+      educateur_id: educateurId,
+      ordre: etapes.length + 1,
+      titre: formEtape.titre,
+      description: formEtape.description || null,
+      duree_estimee: formEtape.duree_estimee || null,
+    })
+    setEnvoiEnCours(false)
+    if (error) { console.error('ajouterEtape error:', error); alert('Erreur : ' + error.message); return }
+    setShowFormEtape(false)
+    setFormEtape({ titre: '', description: '', duree_estimee: '' })
+    chargerEtapes(blessureSelectionnee.id)
+  }
+
+  const passerEnCours = async (etapeId) => {
+    await supabase.from('reeducation_etapes').update({ statut: 'en_cours' }).eq('id', etapeId)
+    chargerEtapes(blessureSelectionnee.id)
+  }
+
+  const validerEtape = async (etapeId) => {
+    await supabase.from('reeducation_etapes').update({ statut: 'validee', date_validation: new Date().toISOString().slice(0, 10) }).eq('id', etapeId)
+    chargerEtapes(blessureSelectionnee.id)
   }
 
   const joueurDe = (equipeJoueurId) => joueurs.find(j => j.id === equipeJoueurId)
@@ -142,7 +197,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     const joueur = joueurDe(blessureSelectionnee.equipe_joueur_id)
     return (
       <div>
-        <button onClick={() => { setBlessureSelectionnee(null); setShowFormSuivi(false) }} style={{ ...s.btnGhost, marginBottom: '16px' }}>
+        <button onClick={() => { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }} style={{ ...s.btnGhost, marginBottom: '16px' }}>
           ← Retour à l'équipe
         </button>
 
@@ -161,6 +216,19 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           </div>
         </div>
 
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          {ONGLETS_DETAIL.map(o => (
+            <button key={o.id} onClick={() => setOngletDetail(o.id)}
+              style={{
+                background: ongletDetail === o.id ? colors.text.primary : colors.background.raised,
+                color: ongletDetail === o.id ? colors.background.base : colors.text.faint,
+                border: `1px solid ${ongletDetail === o.id ? colors.text.primary : colors.border.default}`,
+                borderRadius: '20px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Inter, sans-serif',
+              }}>{o.label}</button>
+          ))}
+        </div>
+
+        {ongletDetail === 'retour' && (
         <div style={s.card}>
           <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>RETOUR À LA COMPÉTITION</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -190,7 +258,97 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           </div>
           <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={mettreAJourBlessure}>Enregistrer</button>
         </div>
+        )}
 
+        {ongletDetail === 'reedu' && (() => {
+          const progression = etapes.length > 0 ? Math.round((etapes.filter(e => e.statut === 'validee').length / etapes.length) * 100) : 0
+          return (
+            <div>
+              {etapes.length > 0 && (
+                <div style={s.card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>Progression rééducation</span>
+                    <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>{progression}%</span>
+                  </div>
+                  <div style={{ background: colors.background.raised, borderRadius: '4px', height: '8px' }}>
+                    <div style={{ background: colors.accent.green, width: `${progression}%`, height: '8px', borderRadius: '4px', transition: 'width 0.3s' }} />
+                  </div>
+                  <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '6px' }}>{etapes.filter(e => e.statut === 'validee').length} / {etapes.length} étapes complétées</div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ color: colors.text.secondary, fontSize: '13px' }}>Programme de retour au jeu</div>
+                {!showFormEtape && <button style={s.btn} onClick={() => setShowFormEtape(true)}>+ Ajouter une étape</button>}
+              </div>
+
+              {showFormEtape && (
+                <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '16px', marginBottom: '16px', border: `1px solid ${colors.border.default}` }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={s.label}>Titre de l'étape</label>
+                    <input style={s.input} placeholder="ex : Phase 1 — Repos actif, Reprise course légère..."
+                      value={formEtape.titre} onChange={e => setFormEtape(p => ({ ...p, titre: e.target.value }))} />
+                  </div>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={s.label}>Durée estimée</label>
+                    <input style={s.input} placeholder="ex : 3 jours, 1 semaine..."
+                      value={formEtape.duree_estimee} onChange={e => setFormEtape(p => ({ ...p, duree_estimee: e.target.value }))} />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={s.label}>Exercices / consignes détaillées</label>
+                    <textarea style={s.textarea} placeholder="Détaille les exercices, charges autorisées, restrictions, objectifs de la phase..."
+                      value={formEtape.description} onChange={e => setFormEtape(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterEtape}>Ajouter</button>
+                    <button style={s.btnGhost} onClick={() => { setShowFormEtape(false); setFormEtape({ titre: '', description: '', duree_estimee: '' }) }}>Annuler</button>
+                  </div>
+                </div>
+              )}
+
+              {etapes.length === 0 && !showFormEtape && (
+                <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '30px 0', border: `1px dashed ${colors.border.default}`, borderRadius: '8px' }}>
+                  Aucun programme défini — crée les étapes de rééducation
+                </div>
+              )}
+
+              {etapes.map((etape, idx) => {
+                const stMeta = STATUT_ETAPE_META[etape.statut] || STATUT_ETAPE_META.a_faire
+                return (
+                  <div key={etape.id} style={{ background: stMeta.color + alpha.faint, border: `1px solid ${stMeta.color}${alpha.light}`, borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+                          background: etape.statut === 'validee' ? colors.accent.green : colors.background.raised,
+                          color: etape.statut === 'validee' ? colors.black : colors.text.faint,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px',
+                        }}>{idx + 1}</div>
+                        <div>
+                          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{etape.titre}</div>
+                          {etape.duree_estimee && <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{etape.duree_estimee}</div>}
+                          {etape.description && <p style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '6px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
+                          {etape.date_validation && <div style={{ color: colors.accent.green, fontSize: '11px', marginTop: '4px' }}>Validée le {new Date(`${etape.date_validation}T12:00:00`).toLocaleDateString('fr-FR')}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                        <span style={{ color: stMeta.color, fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{stMeta.label}</span>
+                        {etape.statut === 'a_faire' && (
+                          <button onClick={() => passerEnCours(etape.id)} style={{ background: colors.background.raised, color: colors.accent.orange, border: `1px solid ${colors.accent.orange}`, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Démarrer</button>
+                        )}
+                        {etape.statut === 'en_cours' && (
+                          <button onClick={() => validerEtape(etape.id)} style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Valider</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
+
+        {ongletDetail === 'suivi' && (
         <div style={s.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>SUIVI MÉDICAL</div>
@@ -254,12 +412,89 @@ export default function SanteEquipe({ joueurs, educateurId }) {
             </div>
           ))}
         </div>
+        )}
       </div>
     )
   }
 
   // ── Liste équipe ────────────────────────────────────────────────────────
   const blessuresFiltrees = blessures.filter(b => filtreStatut === 'tous' || b.statut === filtreStatut)
+
+  const genererRapport = () => {
+    const total = blessures.length
+    const enCours = blessures.filter(b => b.statut !== 'gueri').length
+    const blessuresAvecDuree = blessures.filter(b => b.date_retour_effective && b.date_debut)
+    const dureeMoyenne = blessuresAvecDuree.length > 0
+      ? Math.round(blessuresAvecDuree.reduce((acc, b) => acc + (new Date(b.date_retour_effective) - new Date(b.date_debut)) / (1000 * 86400), 0) / blessuresAvecDuree.length)
+      : null
+
+    const zonesCount = blessures.reduce((acc, b) => { if (b.zone_corps) acc[b.zone_corps] = (acc[b.zone_corps] || 0) + 1; return acc }, {})
+    const zonesTriees = Object.entries(zonesCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+    const joueursCount = blessures.reduce((acc, b) => {
+      const j = joueurDe(b.equipe_joueur_id)
+      const nom = j ? `${j.prenom} ${j.nom}` : 'Joueur'
+      acc[nom] = (acc[nom] || 0) + 1
+      return acc
+    }, {})
+    const joueursTries = Object.entries(joueursCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+    return { total, enCours, dureeMoyenne, zonesTriees, joueursTries }
+  }
+
+  const renderRapport = () => {
+    const r = genererRapport()
+    return (
+      <div style={{ ...s.card, border: `1px solid ${colors.border.default}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px' }}>Rapport santé — Saison {saisonActuelle()}</div>
+          <button onClick={() => setShowRapport(false)} style={{ color: colors.text.faint, background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+          {[
+            { label: 'Blessures total', val: r.total, color: colors.text.primary },
+            { label: 'En cours', val: r.enCours, color: colors.accent.orange },
+            { label: 'Durée moy.', val: r.dureeMoyenne != null ? `${r.dureeMoyenne} j` : 'N/A', color: colors.accent.blue },
+          ].map(k => (
+            <div key={k.label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+              <div style={{ color: k.color, fontWeight: 800, fontSize: '22px' }}>{k.val}</div>
+              <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>{k.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {r.zonesTriees.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ color: colors.text.faint, fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>ZONES LES PLUS TOUCHÉES</div>
+            {r.zonesTriees.map(([zone, count]) => (
+              <div key={zone} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{zone}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px', width: '100px' }}>
+                    <div style={{ background: colors.accent.orange, height: '6px', borderRadius: '4px', width: `${(count / r.total) * 100}%` }} />
+                  </div>
+                  <span style={{ color: colors.accent.orange, fontSize: '12px', fontWeight: 700, width: '16px' }}>{count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {r.joueursTries.length > 0 && (
+          <div>
+            <div style={{ color: colors.text.faint, fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>JOUEURS LES PLUS TOUCHÉS</div>
+            {r.joueursTries.map(([nom, count]) => (
+              <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{nom}</span>
+                <span style={{ color: colors.accent.orange, fontWeight: 700, fontSize: '13px' }}>{count} blessure{count > 1 ? 's' : ''}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -269,8 +504,13 @@ export default function SanteEquipe({ joueurs, educateurId }) {
             {blessures.filter(b => b.statut !== 'gueri').length} joueur{blessures.filter(b => b.statut !== 'gueri').length !== 1 ? 's' : ''} actuellement hors compétition
           </p>
         </div>
-        <button style={s.btn} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button style={s.btnGhost} onClick={() => setShowRapport(v => !v)}>Rapport saison</button>
+          <button style={s.btn} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>
+        </div>
       </div>
+
+      {showRapport && renderRapport()}
 
       {showFormBlessure && (
         <div style={{ ...s.card, border: `1px solid ${colors.border.default}` }}>
@@ -339,7 +579,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         const joueur = joueurDe(b.equipe_joueur_id)
         const joursDepuis = Math.floor((new Date() - new Date(`${b.date_debut}T12:00:00`)) / (1000 * 86400))
         return (
-          <div key={b.id} onClick={() => { setBlessureSelectionnee(b); chargerSuivis(b.id) }}
+          <div key={b.id} onClick={() => ouvrirBlessure(b)}
             style={{ ...s.card, marginBottom: '10px', cursor: 'pointer', borderLeft: `3px solid ${meta.color}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

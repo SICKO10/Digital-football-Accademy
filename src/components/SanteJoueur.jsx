@@ -12,6 +12,8 @@ const STATUT_META_KEYS = {
 
 const GRAVITE_LABELS = { legere: 'Légère', moderee: 'Modérée', grave: 'Grave' }
 
+const STATUT_ETAPE_KEYS = { a_faire: 'À faire', en_cours: 'En cours', validee: 'Validée' }
+
 // Section Santé en lecture seule, Dashboard Joueur — mêmes tables que côté
 // éducateur (blessures/suivi_medical), la RLS scope automatiquement aux
 // blessures du joueur connecté (via affiliations) ou de son enfant s'il est
@@ -20,6 +22,7 @@ export default function SanteJoueur() {
   const colors = useColors()
   const [blessures, setBlessures] = useState([])
   const [suivisParBlessure, setSuivisParBlessure] = useState({})
+  const [etapesParBlessure, setEtapesParBlessure] = useState({})
   const [ouverte, setOuverte] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -28,6 +31,11 @@ export default function SanteJoueur() {
     en_soin: { label: STATUT_META_KEYS.en_soin, color: colors.accent.amber },
     retour_prog: { label: STATUT_META_KEYS.retour_prog, color: colors.accent.blue },
     gueri: { label: STATUT_META_KEYS.gueri, color: colors.accent.green },
+  }
+  const STATUT_ETAPE_META = {
+    a_faire: { label: STATUT_ETAPE_KEYS.a_faire, color: colors.text.disabled },
+    en_cours: { label: STATUT_ETAPE_KEYS.en_cours, color: colors.accent.orange },
+    validee: { label: STATUT_ETAPE_KEYS.validee, color: colors.accent.green },
   }
 
   useEffect(() => {
@@ -44,6 +52,10 @@ export default function SanteJoueur() {
     if (!suivisParBlessure[b.id]) {
       const { data } = await supabase.from('suivi_medical').select('*').eq('blessure_id', b.id).order('date_consultation', { ascending: false })
       setSuivisParBlessure(prev => ({ ...prev, [b.id]: data || [] }))
+    }
+    if (!etapesParBlessure[b.id]) {
+      const { data } = await supabase.from('reeducation_etapes').select('*').eq('blessure_id', b.id).order('ordre')
+      setEtapesParBlessure(prev => ({ ...prev, [b.id]: data || [] }))
     }
   }
 
@@ -82,6 +94,8 @@ export default function SanteJoueur() {
         const meta = STATUT_META[b.statut] || STATUT_META.en_cours
         const estOuverte = ouverte === b.id
         const suivis = suivisParBlessure[b.id] || []
+        const etapes = etapesParBlessure[b.id] || []
+        const progression = etapes.length > 0 ? Math.round((etapes.filter(e => e.statut === 'validee').length / etapes.length) * 100) : 0
         return (
           <div key={b.id} style={s.card}>
             <div onClick={() => ouvrirBlessure(b)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -119,6 +133,40 @@ export default function SanteJoueur() {
                     <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '6px', lineHeight: 1.5 }}>{sv.compte_rendu}</p>
                   </div>
                 ))}
+
+                {etapes.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${colors.border.subtle}`, marginTop: '16px', paddingTop: '14px' }}>
+                    <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Ton programme de rééducation</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ color: colors.text.secondary, fontSize: '12px' }}>Progression</span>
+                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '12px' }}>{progression}%</span>
+                    </div>
+                    <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px', marginBottom: '14px' }}>
+                      <div style={{ background: colors.accent.green, width: `${progression}%`, height: '6px', borderRadius: '4px' }} />
+                    </div>
+                    {etapes.map((etape, idx) => {
+                      const stMeta = STATUT_ETAPE_META[etape.statut] || STATUT_ETAPE_META.a_faire
+                      return (
+                        <div key={etape.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
+                          <div style={{
+                            width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
+                            background: etape.statut === 'validee' ? colors.accent.green : colors.background.raised,
+                            color: etape.statut === 'validee' ? colors.black : colors.text.faint,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px',
+                          }}>{idx + 1}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{etape.titre}</span>
+                              <span style={{ color: stMeta.color, fontSize: '11px', fontWeight: 600 }}>{stMeta.label}</span>
+                            </div>
+                            {etape.duree_estimee && <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{etape.duree_estimee}</div>}
+                            {etape.description && <p style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '4px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
