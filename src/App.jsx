@@ -1,39 +1,55 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { supabase } from './supabase'
 import { COACH_ADMIN_EMAILS } from './lib/coachAdmin'
-import Home from './pages/Home'
-import Offres from './pages/Offres'
-import RegisterChoix from './pages/RegisterChoix'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import RegisterRecruteur from './pages/RegisterRecruteur'
-import DashboardJoueur from './pages/DashboardJoueur'
-import DashboardCoach from './pages/DashboardCoach'
-import DashboardScoutClub from './pages/DashboardScoutClub'
-import DashboardClub from './pages/DashboardClub'
-import DashboardRecruteur from './pages/DashboardRecruteur'
-import DashboardEducateur from './pages/DashboardEducateur'
-import DashboardDirigeant from './pages/DashboardDirigeant'
-import DashboardParent from './pages/DashboardParent'
-import Upload from './pages/Upload'
-import Feed from './pages/Feed'
-import UploadClip from './pages/UploadClip'
-import Jogabonito from './pages/Jogabonito'
-import UploadReel from './pages/UploadReel'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import AcceptInvite from './pages/AcceptInvite'
-import CGU from './pages/CGU'
-import ClubPublic from './pages/ClubPublic'
-import PartenairePublic from './pages/PartenairePublic'
-import TactipadPublic from './pages/TactipadPublic'
-import TournoiPublic from './pages/TournoiPublic'
-import TournoiInscription from './pages/TournoiInscription'
-import TournoiVote from './pages/TournoiVote'
-import LierTournoi from './pages/LierTournoi'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider } from './lib/ThemeProvider'
+
+// Chargement à la demande de chaque page — sans ça, Vite regroupait tout
+// (dont les 3 dashboards, plusieurs milliers de lignes chacun) dans un seul
+// bundle de ~3.7 Mo téléchargé même pour afficher juste la page d'accueil ou
+// l'écran de connexion. Home reste en import statique : c'est la toute
+// première page vue par un visiteur non connecté, pas la peine de lui
+// imposer même le petit coût d'un aller-retour réseau supplémentaire.
+import Home from './pages/Home'
+const Offres = lazy(() => import('./pages/Offres'))
+const RegisterChoix = lazy(() => import('./pages/RegisterChoix'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const RegisterRecruteur = lazy(() => import('./pages/RegisterRecruteur'))
+const DashboardJoueur = lazy(() => import('./pages/DashboardJoueur'))
+const DashboardCoach = lazy(() => import('./pages/DashboardCoach'))
+const DashboardScoutClub = lazy(() => import('./pages/DashboardScoutClub'))
+const DashboardClub = lazy(() => import('./pages/DashboardClub'))
+const DashboardRecruteur = lazy(() => import('./pages/DashboardRecruteur'))
+const DashboardEducateur = lazy(() => import('./pages/DashboardEducateur'))
+const DashboardDirigeant = lazy(() => import('./pages/DashboardDirigeant'))
+const DashboardParent = lazy(() => import('./pages/DashboardParent'))
+const Upload = lazy(() => import('./pages/Upload'))
+const Feed = lazy(() => import('./pages/Feed'))
+const UploadClip = lazy(() => import('./pages/UploadClip'))
+const Jogabonito = lazy(() => import('./pages/Jogabonito'))
+const UploadReel = lazy(() => import('./pages/UploadReel'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
+const CGU = lazy(() => import('./pages/CGU'))
+const ClubPublic = lazy(() => import('./pages/ClubPublic'))
+const PartenairePublic = lazy(() => import('./pages/PartenairePublic'))
+const TactipadPublic = lazy(() => import('./pages/TactipadPublic'))
+const TournoiPublic = lazy(() => import('./pages/TournoiPublic'))
+const TournoiInscription = lazy(() => import('./pages/TournoiInscription'))
+const TournoiVote = lazy(() => import('./pages/TournoiVote'))
+const LierTournoi = lazy(() => import('./pages/LierTournoi'))
+
+function ChargementPage() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+      <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
+    </div>
+  )
+}
 
 function SmartDashboard() {
   const [dest, setDest] = useState(null)
@@ -78,6 +94,7 @@ function App() {
   return (
     <ThemeProvider>
     <Router>
+      <Suspense fallback={<ChargementPage />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/offres" element={<Offres />} />
@@ -111,6 +128,7 @@ function App() {
         <Route path="/tournoi/:code/voter/:inscriptionCode" element={<TournoiVote />} />
         <Route path="/lier-tournoi/:code/:prenom/:nom" element={<LierTournoi />} />
       </Routes>
+      </Suspense>
       <InstallAppBanner />
     </Router>
     </ThemeProvider>
