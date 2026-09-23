@@ -2168,18 +2168,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 )
               })()}
 
-              {notesSeanceEnAttente.length > 0 && (
-                <div style={{ marginBottom: '14px' }}>
-                  <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Notes de séance en attente ({notesSeanceEnAttente.length})
-                  </p>
-                  {notesSeanceEnAttente.map(d => (
-                    <NoteSeanceForm key={d.id} demande={d} joueurId={userId}
-                      onSubmit={() => setNotesSeanceEnAttente(prev => prev.filter(x => x.id !== d.id))} />
-                  ))}
-                </div>
-              )}
-
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -3155,6 +3143,27 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} estAccueil={onglet === 'accueil' || onglet === 'dashboard'} />
 
       {popupEquipementPret}
+
+      {/* ── Note de séance obligatoire : bloque tout le dashboard (overlay plein
+          écran, sans bouton fermer) tant qu'il reste une demande de ressenti
+          ouverte non répondue — la plus récente en premier (déjà l'ordre
+          renvoyé par chargerNotesSeanceEnAttente). Réutilise NoteSeanceForm
+          tel quel (mêmes règles/validation/RLS que l'ancien affichage non
+          bloquant qu'il remplace), seul l'emplacement/l'habillage changent. ── */}
+      {notesSeanceEnAttente.length > 0 && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: colors.background.overlay, backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
+          <div style={{ maxWidth: '420px', width: '100%' }}>
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <p style={{ color: colors.accent.green, fontWeight: 800, fontSize: '12px', letterSpacing: '1.5px', margin: 0, textTransform: 'uppercase' }}>Note de séance</p>
+              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '4px 0 0' }}>
+                Réponds pour accéder à ton dashboard{notesSeanceEnAttente.length > 1 ? ` — 1/${notesSeanceEnAttente.length}` : ''}
+              </p>
+            </div>
+            <NoteSeanceForm demande={notesSeanceEnAttente[0]} joueurId={userId}
+              onSubmit={() => setNotesSeanceEnAttente(prev => prev.slice(1))} />
+          </div>
+        </div>
+      )}
 
       {/* ── SIDEBAR ── */}
       {isMobile && sidebarOpen && (
