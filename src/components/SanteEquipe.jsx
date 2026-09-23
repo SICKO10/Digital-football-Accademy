@@ -120,7 +120,9 @@ export default function SanteEquipe({ joueurs, educateurId }) {
   const joueurDe = (equipeJoueurId) => joueurs.find(j => j.id === equipeJoueurId)
 
   const declarerBlessure = async () => {
-    if (!form.equipe_joueur_id || !form.type_blessure.trim() || !form.date_debut) return
+    if (!form.equipe_joueur_id) { alert('Merci de choisir le joueur concerné.'); return }
+    if (!form.type_blessure.trim()) { alert('Merci de renseigner le type de blessure.'); return }
+    if (!form.date_debut) { alert('Merci de renseigner la date de début.'); return }
     setEnvoiEnCours(true)
     const { error } = await supabase.from('blessures').insert({
       ...form,

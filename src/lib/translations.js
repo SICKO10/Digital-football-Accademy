@@ -487,6 +487,7 @@ export const T = {
   jsec_profil:              { fr: 'MON PROFIL',               en: 'MY PROFILE',            pt: 'O MEU PERFIL',          es: 'MI PERFIL',             it: 'IL MIO PROFILO',        de: 'MEIN PROFIL'           },
   jsec_reseau:              { fr: 'MON RÉSEAU',               en: 'MY NETWORK',            pt: 'A MINHA REDE',          es: 'MI RED',                it: 'LA MIA RETE',           de: 'MEIN NETZWERK'         },
   jsec_equipe:              { fr: 'MON ÉQUIPE',               en: 'MY TEAM',               pt: 'A MINHA EQUIPA',        es: 'MI EQUIPO',             it: 'LA MIA SQUADRA',        de: 'MEIN TEAM'             },
+  jsec_preparation:         { fr: 'PRÉPARATION',              en: 'PREPARATION',           pt: 'PREPARAÇÃO',            es: 'PREPARACIÓN',           it: 'PREPARAZIONE',          de: 'VORBEREITUNG'          },
   jnav_accueil:             { fr: 'Accueil',                  en: 'Home',                  pt: 'Início',                es: 'Inicio',                it: 'Home',                  de: 'Startseite'            },
   jnav_equipe:              { fr: 'Mon Équipe',               en: 'My Team',               pt: 'A minha Equipa',        es: 'Mi Equipo',             it: 'La mia Squadra',        de: 'Mein Team'             },
   jnav_prep_physique:       { fr: 'Préparation physique',     en: 'Physical prep',         pt: 'Preparação física',     es: 'Preparación física',    it: 'Prep. fisica',          de: 'Phys. Training'        },

@@ -2002,13 +2002,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
       { id: 'equipe',        label: t('jnav_equipe', lang),         icon: <IconUsers />, section: labelSection },
       { id: 'competition',   label: t('jnav_competition', lang),    icon: <IconTrophy /> },
-      { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
       { id: 'stats',         label: t('aff_mes_stats', lang),       icon: <IconChart /> },
-      { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'equipement',    label: 'Équipement',                   icon: <IconShirt /> },
+      { id: 'annonces',      label: 'Actualités du club',             icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
+
+      { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic />, section: t('jsec_preparation', lang) },
+      { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'sante',         label: t('nav_sante', lang),           icon: <IconHealth /> },
       { id: 'nutrition',     label: t('jnav_nutrition', lang),      icon: <IconNutrition />, locked: true },
-      { id: 'annonces',      label: 'Actualités du club',             icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
 
       { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
       { id: 'feed',          label: t('recrut_feed', lang),         icon: <IconGlobe />,  locked: true },
@@ -2840,7 +2841,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {onglet === 'sante' && (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>{t('nav_sante', lang)}</h1>
-              <SanteJoueur />
+              <SanteJoueur userId={userId} />
             </div>
           )}
 
@@ -3081,9 +3082,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
     { id: 'annonces', label: 'Actualités du club', icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
     { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
-    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
-    { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
+    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic />, section: t('jsec_preparation', lang) },
+    { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'sante', label: t('nav_sante', lang), icon: <IconHealth /> },
     { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
@@ -4219,7 +4220,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {onglet === 'sante' && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('nav_sante', lang)}</h1>
-            <SanteJoueur />
+            <SanteJoueur userId={userId} />
           </div>
         )}
 
