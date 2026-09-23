@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { calculerTDEE, calculerMacros, CONSEILS_JOURNEE, MULTIPLICATEUR_JOURNEE, RECETTES } from '../lib/nutrition'
+import EducationNutrition from './EducationNutrition'
 
 const REPAS_LABELS = {
   petit_dejeuner: 'Petit déjeuner',
@@ -52,6 +53,7 @@ const USDA_NUTRIENT_IDS = { calories: 1008, proteines: 1003, glucides: 1005, lip
 function RecetteCard({ recette, onAjouter }) {
   const colors = useColors()
   const [ouvert, setOuvert] = useState(false)
+  const [imageEnErreur, setImageEnErreur] = useState(false)
   return (
     <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setOuvert(o => !o)}>
@@ -66,33 +68,61 @@ function RecetteCard({ recette, onAjouter }) {
       </div>
 
       {ouvert && (
-        <div style={{ borderTop: `1px solid ${colors.border.subtle}`, padding: '14px 16px' }}>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '14px' }}>
-            {[
-              { label: 'Glucides', val: recette.glucides_g, color: colors.accent.amber },
-              { label: 'Protéines', val: recette.proteines_g, color: colors.accent.green },
-              { label: 'Lipides', val: recette.lipides_g, color: colors.accent.orange },
-            ].map(m => (
-              <div key={m.label} style={{ textAlign: 'center' }}>
-                <div style={{ color: m.color, fontWeight: 700, fontSize: '16px' }}>{m.val}g</div>
-                <div style={{ color: colors.text.faint, fontSize: '10px' }}>{m.label}</div>
+        <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
+          {recette.image && !imageEnErreur && (
+            <div style={{ height: '160px', overflow: 'hidden', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={recette.image} alt={recette.nom} onError={() => setImageEnErreur(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          )}
+          {(!recette.image || imageEnErreur) && recette.emoji && (
+            <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', background: colors.background.raised }}>
+              {recette.emoji}
+            </div>
+          )}
+
+          <div style={{ padding: '14px 16px' }}>
+            {(recette.difficulte || recette.temps) && (
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                {recette.difficulte && <span style={{ color: colors.text.faint, fontSize: '12px' }}>{recette.difficulte}</span>}
+                {recette.temps && <span style={{ color: colors.text.faint, fontSize: '12px' }}>{recette.temps}</span>}
               </div>
-            ))}
-          </div>
+            )}
 
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>INGRÉDIENTS</div>
-            {recette.ingredients.map((ing, i) => <div key={i} style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '3px' }}>• {ing}</div>)}
-          </div>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '14px' }}>
+              {[
+                { label: 'Glucides', val: recette.glucides_g, color: colors.accent.amber },
+                { label: 'Protéines', val: recette.proteines_g, color: colors.accent.green },
+                { label: 'Lipides', val: recette.lipides_g, color: colors.accent.orange },
+              ].map(m => (
+                <div key={m.label} style={{ textAlign: 'center' }}>
+                  <div style={{ color: m.color, fontWeight: 700, fontSize: '16px' }}>{m.val}g</div>
+                  <div style={{ color: colors.text.faint, fontSize: '10px' }}>{m.label}</div>
+                </div>
+              ))}
+            </div>
 
-          <div style={{ marginBottom: '14px' }}>
-            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>PRÉPARATION</div>
-            <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{recette.preparation}</p>
-          </div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>INGRÉDIENTS</div>
+              {recette.ingredients.map((ing, i) => <div key={i} style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '3px' }}>• {ing}</div>)}
+            </div>
 
-          <button onClick={onAjouter} style={{ background: colors.accent.green + '1a', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            + Ajouter au journal du jour
-          </button>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>PRÉPARATION</div>
+              <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{recette.preparation}</p>
+            </div>
+
+            {recette.pourquoi && (
+              <div style={{ background: colors.accent.green + '0f', border: `1px solid ${colors.accent.green}33`, borderRadius: '8px', padding: '10px', marginBottom: '14px' }}>
+                <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>POURQUOI CETTE RECETTE ?</div>
+                <p style={{ color: colors.text.secondary, fontSize: '12px', margin: 0, lineHeight: 1.5 }}>{recette.pourquoi}</p>
+              </div>
+            )}
+
+            <button onClick={onAjouter} style={{ background: colors.accent.green + '1a', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              + Ajouter au journal du jour
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -119,6 +149,7 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   const [searchLoading, setSearchLoading] = useState(false)
   const [nouveauPoids, setNouveauPoids] = useState('')
   const [repasActif, setRepasActif] = useState('dejeuner')
+  const [educationSousSection, setEducationSousSection] = useState('macros')
   const [loading, setLoading] = useState(true)
 
   const chargerJournalSemaine = async () => {
@@ -549,6 +580,11 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
     )
   }
 
+  // ── Onglet Éducation (macros / comparateur / hydratation) ──────────────
+  const renderEducation = () => (
+    <EducationNutrition sousSection={educationSousSection} setSousSection={setEducationSousSection} profil={profil} />
+  )
+
   // ── Onglet Rapport (moyennes 7 derniers jours) ──────────────────────────
   const renderRapport = () => {
     const parJour = journalSemaine.reduce((acc, item) => {
@@ -645,6 +681,7 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
     { id: 'plan', label: 'Mon plan' },
     { id: 'journal', label: 'Journal' },
     { id: 'recettes', label: 'Recettes' },
+    { id: 'education', label: 'Éducation' },
     { id: 'rapport', label: 'Rapport' },
     { id: 'poids', label: 'Poids' },
     { id: 'profil', label: 'Profil' },
@@ -658,6 +695,7 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
       {onglet === 'plan' && renderPlan()}
       {onglet === 'journal' && renderJournal()}
       {onglet === 'recettes' && renderRecettes()}
+      {onglet === 'education' && renderEducation()}
       {onglet === 'rapport' && renderRapport()}
       {onglet === 'poids' && renderPoids()}
     </div>
