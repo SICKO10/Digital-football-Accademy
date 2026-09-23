@@ -445,8 +445,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // Visibilité recruteurs (Moteur de Recrutement, Mon Réseau côté éducateur/club)
   // — table profil_recrutement, distincte de profiles ; visible_recruteurs=false
   // par défaut, le joueur doit explicitement s'exposer.
-  const [recrutementProfil, setRecrutementProfil] = useState({ visible_recruteurs: false, statut_recrutement: 'Non disponible' })
+  const [recrutementProfil, setRecrutementProfil] = useState({ visible_recruteurs: false, statut_recrutement: 'Non disponible', partage_bilan_medical: false })
   const [savingRecrutement, setSavingRecrutement] = useState(false)
+  // Demandes de détail médical reçues des recruteurs (cf.
+  // supabase_bilan_medical_recruteurs.sql) — le joueur garde la main :
+  // accepter ne révèle que type/zone/gravité/dates de ses blessures (jamais
+  // les notes ni les documents de suivi), et seulement tant que
+  // partage_bilan_medical reste activé.
+  const [demandesBilanMedical, setDemandesBilanMedical] = useState([])
+  const [repondantDemandeId, setRepondantDemandeId] = useState(null)
   const [parentsInvites, setParentsInvites] = useState([])
   const [emailParentInput, setEmailParentInput] = useState('')
   const [invitantParent, setInvitantParent] = useState(false)
@@ -747,6 +754,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     await chargerNotifications(targetId)
     await chargerNotifPrefs(targetId)
     await chargerRecrutementProfil(targetId)
+    await chargerDemandesBilanMedical(targetId)
     const { data } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
@@ -906,8 +914,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   const chargerRecrutementProfil = async (uid) => {
-    const { data } = await supabase.from('profil_recrutement').select('visible_recruteurs, statut_recrutement').eq('joueur_id', uid).maybeSingle()
+    const { data } = await supabase.from('profil_recrutement').select('visible_recruteurs, statut_recrutement, partage_bilan_medical').eq('joueur_id', uid).maybeSingle()
     if (data) setRecrutementProfil(data)
+  }
+
+  const chargerDemandesBilanMedical = async (uid) => {
+    const { data } = await supabase.from('demandes_bilan_medical').select('*, recruteur:profiles!demandes_bilan_medical_recruteur_id_fkey(prenom, nom, club)')
+      .eq('joueur_id', uid).order('created_at', { ascending: false })
+    setDemandesBilanMedical(data || [])
+  }
+
+  const repondreDemandeBilanMedical = async (demandeId, accepter) => {
+    setRepondantDemandeId(demandeId)
+    const { error } = await supabase.from('demandes_bilan_medical')
+      .update({ statut: accepter ? 'acceptee' : 'refusee', repondu_at: new Date().toISOString() })
+      .eq('id', demandeId)
+    setRepondantDemandeId(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setDemandesBilanMedical(prev => prev.map(d => d.id === demandeId ? { ...d, statut: accepter ? 'acceptee' : 'refusee' } : d))
   }
 
   // Même logique optimiste que sauvegarderNotifPrefs : upsert direct, table
@@ -4141,6 +4165,50 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 </div>
               </div>
               {savingRecrutement && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
+
+              {/* Partage du bilan médical — réglage distinct de la visibilité du
+                  profil : même si le profil est visible, l'historique médical
+                  reste privé tant que ce toggle-ci n'est pas activé séparément. */}
+              <div onClick={() => sauvegarderRecrutementProfil({ partage_bilan_medical: !recrutementProfil.partage_bilan_medical })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginTop: '10px' }}>
+                <div>
+                  <span style={{ fontSize: '14px' }}>Partager un résumé de mon bilan médical</span>
+                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '3px 0 0' }}>Nombre de blessures et jours d'indisponibilité cette saison — jamais le détail sans ton accord explicite ci-dessous.</p>
+                </div>
+                <div style={{ width: '40px', height: '22px', background: recrutementProfil.partage_bilan_medical ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.partage_bilan_medical ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                </div>
+              </div>
+
+              {demandesBilanMedical.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <p style={{ fontSize: '12px', color: colors.text.faint, fontWeight: 700, marginBottom: '8px' }}>Demandes de détail médical</p>
+                  {demandesBilanMedical.map(d => (
+                    <div key={d.id} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '12px 14px', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 600 }}>
+                        {d.recruteur?.prenom} {d.recruteur?.nom}{d.recruteur?.club ? ` — ${d.recruteur.club}` : ''}
+                      </div>
+                      {d.message && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0' }}>« {d.message} »</p>}
+                      {d.statut === 'en_attente' ? (
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                          <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, true)}
+                            style={{ flex: 1, background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px', color: colors.black, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            Accepter
+                          </button>
+                          <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, false)}
+                            style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            Refuser
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: d.statut === 'acceptee' ? colors.accent.green : colors.text.disabled }}>
+                          {d.statut === 'acceptee' ? 'Accepté' : 'Refusé'}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             )}
 

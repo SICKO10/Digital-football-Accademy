@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { saisonActuelle } from '../lib/saison'
 
 const POSTES = ['Tous', 'Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu axial', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
 const REGIONS = ['Toutes', 'Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Bretagne', 'Centre-Val de Loire', 'Corse', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandie', 'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', "Provence-Alpes-Côte d'Azur", 'DOM-TOM']
@@ -78,6 +79,16 @@ export default function MoteurRecrutement({ userId }) {
   const [messageModal, setMessageModal] = useState(false)
   const [messageTexte, setMessageTexte] = useState('')
   const [envoiEnCours, setEnvoiEnCours] = useState(false)
+  // Bilan médical du joueur sélectionné — jamais de donnée brute (cf.
+  // supabase_bilan_medical_recruteurs.sql) : resume = agrégats si le joueur
+  // a activé partage_bilan_medical ; demande = notre propre demande de
+  // détail pour ce joueur (une par recruteur/joueur) ; detail = liste des
+  // blessures (sans notes ni documents) seulement si la demande est acceptée.
+  const [bilanResume, setBilanResume] = useState(null)
+  const [bilanDemande, setBilanDemande] = useState(null)
+  const [bilanDetail, setBilanDetail] = useState(null)
+  const [demandeMessage, setDemandeMessage] = useState('')
+  const [envoiDemandeEnCours, setEnvoiDemandeEnCours] = useState(false)
 
   const [filtres, setFiltres] = useState({
     poste: 'Tous',
@@ -142,6 +153,32 @@ export default function MoteurRecrutement({ userId }) {
       .order('date', { ascending: false })
       .limit(10)
     setStatsSelected(data || [])
+  }
+
+  async function chargerBilanMedical(joueurId) {
+    setBilanResume(null); setBilanDemande(null); setBilanDetail(null); setDemandeMessage('')
+
+    const { data: resume } = await supabase.rpc('bilan_medical_resume', { p_joueur_id: joueurId, p_saison: saisonActuelle() })
+    setBilanResume(resume?.[0] || null)
+
+    const { data: demande } = await supabase.from('demandes_bilan_medical').select('*')
+      .eq('recruteur_id', userId).eq('joueur_id', joueurId).maybeSingle()
+    setBilanDemande(demande || null)
+
+    if (demande?.statut === 'acceptee') {
+      const { data: detail } = await supabase.rpc('bilan_medical_detail', { p_joueur_id: joueurId })
+      setBilanDetail(detail || [])
+    }
+  }
+
+  async function envoyerDemandeBilan(joueurId) {
+    setEnvoiDemandeEnCours(true)
+    const { data, error } = await supabase.from('demandes_bilan_medical')
+      .insert({ recruteur_id: userId, joueur_id: joueurId, message: demandeMessage.trim() || null })
+      .select().single()
+    setEnvoiDemandeEnCours(false)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setBilanDemande(data)
   }
 
   const setFiltre = (key, val) => setFiltres(p => ({ ...p, [key]: val }))
@@ -246,7 +283,7 @@ export default function MoteurRecrutement({ userId }) {
 
               return (
                 <div key={j.joueur_id}
-                  onClick={async () => { setSelected(j); await chargerStatsJoueur(j.joueur_id) }}
+                  onClick={async () => { setSelected(j); await Promise.all([chargerStatsJoueur(j.joueur_id), chargerBilanMedical(j.joueur_id)]) }}
                   style={{ background: isActive ? colors.accent.green + '15' : colors.background.surface, border: `1px solid ${isActive ? colors.accent.green + '40' : colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px', cursor: 'pointer', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px', transition: 'border-color 0.15s' }}>
 
                   <div style={{ color: idx < 3 ? ['#fbbf24', '#aaa', '#cd7f32'][idx] : colors.text.disabled, fontWeight: 900, fontSize: '14px', width: '28px', textAlign: 'center' }}>
@@ -374,6 +411,55 @@ export default function MoteurRecrutement({ userId }) {
               </div>
               )
             })()}
+
+            {bilanResume && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
+                  Bilan médical · saison {saisonActuelle()}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                  {[
+                    { label: 'Blessures', val: bilanResume.nb_blessures },
+                    { label: 'Jours indispo.', val: bilanResume.jours_indisponibilite },
+                    { label: 'Dont graves', val: bilanResume.nb_graves },
+                  ].map(m => (
+                    <div key={m.label} style={{ flex: 1, background: colors.background.raised, borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '16px' }}>{m.val}</div>
+                      <div style={{ color: colors.text.disabled, fontSize: '10px' }}>{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {bilanDetail ? (
+                  <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 700, marginBottom: '8px' }}>Détail accepté par le joueur</div>
+                    {bilanDetail.length === 0 ? (
+                      <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0 }}>Aucune blessure enregistrée.</p>
+                    ) : bilanDetail.map((b, i) => (
+                      <div key={i} style={{ fontSize: '12px', color: colors.text.secondary, padding: '5px 0', borderBottom: i < bilanDetail.length - 1 ? `1px solid ${colors.border.faint}` : 'none' }}>
+                        <strong style={{ color: colors.text.primary }}>{b.type_blessure}</strong>{b.zone_corps ? ` — ${b.zone_corps}` : ''} · {new Date(b.date_debut).toLocaleDateString('fr-FR')}
+                        {b.date_retour_effective && ` → ${new Date(b.date_retour_effective).toLocaleDateString('fr-FR')}`}
+                      </div>
+                    ))}
+                  </div>
+                ) : bilanDemande?.statut === 'acceptee' ? null : bilanDemande?.statut === 'en_attente' ? (
+                  <p style={{ color: colors.text.faint, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Demande de détail envoyée, en attente de réponse du joueur.</p>
+                ) : bilanDemande?.statut === 'refusee' ? (
+                  <p style={{ color: colors.text.faint, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Le joueur n'a pas souhaité partager plus de détails.</p>
+                ) : (
+                  <div>
+                    <textarea value={demandeMessage} onChange={e => setDemandeMessage(e.target.value)}
+                      placeholder="Précise pourquoi tu souhaites en savoir plus (optionnel)"
+                      rows={2}
+                      style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 10px', color: colors.text.primary, fontSize: '12px', resize: 'vertical', boxSizing: 'border-box', marginBottom: '8px', fontFamily: 'inherit' }} />
+                    <button disabled={envoiDemandeEnCours} onClick={() => envoyerDemandeBilan(selected.joueur_id)}
+                      style={{ width: '100%', background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: envoiDemandeEnCours ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {envoiDemandeEnCours ? 'Envoi...' : 'Demander le détail au joueur'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ background: selected.statut_recrutement === 'Recherche active' ? colors.accent.green + '15' : selected.statut_recrutement === "À l'écoute" ? '#f59e0b15' : colors.background.raised, border: `1px solid ${selected.statut_recrutement === 'Recherche active' ? colors.accent.green + '40' : selected.statut_recrutement === "À l'écoute" ? '#f59e0b40' : colors.border.default}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', textAlign: 'center' }}>
               <span style={{ color: selected.statut_recrutement === 'Recherche active' ? colors.accent.green : selected.statut_recrutement === "À l'écoute" ? '#f59e0b' : colors.text.disabled, fontWeight: 700, fontSize: '13px' }}>
