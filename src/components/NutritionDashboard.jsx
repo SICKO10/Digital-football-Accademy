@@ -34,6 +34,8 @@ const TYPE_JOURNEE_OPTIONS = [
   { value: 'repos', label: 'Repos' },
 ]
 
+// Repli générique si le joueur n'est affilié à aucun éducateur (impossible
+// de lire un vrai calendrier) — cf. chargerSemaineReelle.
 const PROGRAMME_SEMAINE = [
   { jour: 'Lundi', type: 'entrainement' },
   { jour: 'Mardi', type: 'repos' },
@@ -44,7 +46,17 @@ const PROGRAMME_SEMAINE = [
   { jour: 'Dimanche', type: 'repos' },
 ]
 
-const PROFIL_VIDE = { poids_kg: '', taille_cm: '', age: '', sexe: 'homme', poste: 'milieu', nb_entrainements_semaine: 3, objectif: 'performance' }
+const JOURS_SEMAINE = [
+  { key: 'lundi', label: 'Lundi' },
+  { key: 'mardi', label: 'Mardi' },
+  { key: 'mercredi', label: 'Mercredi' },
+  { key: 'jeudi', label: 'Jeudi' },
+  { key: 'vendredi', label: 'Vendredi' },
+  { key: 'samedi', label: 'Samedi' },
+  { key: 'dimanche', label: 'Dimanche' },
+]
+
+const PROFIL_VIDE = { poids_kg: '', taille_cm: '', age: '', sexe: 'homme', poste: 'milieu', nb_entrainements_semaine: 3, objectif: 'performance', jours_musculation: [] }
 
 const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY || 'DEMO_KEY'
 // Identifiants nutriments USDA FoodData Central (Energy / Protein / Carbohydrate / Total lipid).
@@ -206,12 +218,38 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   const [nouveauPoids, setNouveauPoids] = useState('')
   const [repasActif, setRepasActif] = useState('dejeuner')
   const [educationSousSection, setEducationSousSection] = useState('macros')
+  const [semaineReelle, setSemaineReelle] = useState(null) // null = pas affilié, repli sur PROGRAMME_SEMAINE générique
   const [loading, setLoading] = useState(true)
 
   const chargerJournalSemaine = async () => {
     const il7j = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
     const { data } = await supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).gte('date', il7j).order('date')
     setJournalSemaine(data || [])
+  }
+
+  // Semaine réelle (lundi→dimanche courants) à partir du vrai calendrier de
+  // l'éducateur affilié — remplace le PROGRAMME_SEMAINE générique de
+  // lib/nutrition.js par les vraies séances/matchs, même source que
+  // detecterTypeJourneeAuto juste en dessous. Repli sur le modèle générique
+  // si le joueur n'est affilié à aucun éducateur (educateurId absent).
+  const chargerSemaineReelle = async () => {
+    if (!educateurId) { setSemaineReelle(null); return }
+    const aujourdHui = new Date()
+    const decalage = (aujourdHui.getDay() + 6) % 7 // 0 = lundi
+    const lundi = new Date(aujourdHui)
+    lundi.setDate(aujourdHui.getDate() - decalage)
+    const dates = JOURS_SEMAINE.map((_, i) => {
+      const d = new Date(lundi)
+      d.setDate(lundi.getDate() + i)
+      return d.toISOString().slice(0, 10)
+    })
+    const [{ data: ents }, { data: mts }] = await Promise.all([
+      supabase.from('entrainements').select('date').eq('educateur_id', educateurId).gte('date', dates[0]).lte('date', dates[6]),
+      supabase.from('matchs_equipe').select('date').eq('educateur_id', educateurId).gte('date', dates[0]).lte('date', dates[6]),
+    ])
+    const joursEntrainement = new Set((ents || []).map(e => e.date))
+    const joursMatch = new Set((mts || []).map(m => m.date))
+    setSemaineReelle(JOURS_SEMAINE.map((j, i) => ({ ...j, date: dates[i], match: joursMatch.has(dates[i]), entrainement: joursEntrainement.has(dates[i]) })))
   }
 
   // Détection automatique du type de journée à partir du calendrier réel de
@@ -255,6 +293,7 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
       setLoading(false)
       await chargerJournalSemaine()
       await detecterTypeJourneeAuto()
+      await chargerSemaineReelle()
     })()
   }, [joueurId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -431,6 +470,20 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
               ))}
             </div>
           </div>
+          <div style={{ marginTop: '14px' }}>
+            <label style={s.label}>Jours de musculation perso (optionnel)</label>
+            <p style={{ color: colors.text.disabled, fontSize: '11px', margin: '0 0 6px' }}>En plus des séances/matchs déjà connus de ton club — coché ici si tu t'entraînes en salle de ton côté.</p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+              {JOURS_SEMAINE.map(j => {
+                const actif = (profilForm.jours_musculation || []).includes(j.key)
+                return (
+                  <button key={j.key} type="button"
+                    onClick={() => setProfilForm(p => ({ ...p, jours_musculation: actif ? p.jours_musculation.filter(k => k !== j.key) : [...(p.jours_musculation || []), j.key] }))}
+                    style={s.pillTab(actif)}>{j.label.slice(0, 3)}</button>
+                )
+              })}
+            </div>
+          </div>
           <button style={{ ...s.btn, marginTop: '20px', width: '100%' }} onClick={sauvegarderProfil}>Calculer mon programme</button>
         </div>
       </div>
@@ -504,14 +557,21 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
       </div>
 
       <div style={s.card}>
-        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>PROGRAMME SEMAINE TYPE</div>
-        {PROGRAMME_SEMAINE.map(({ jour, type }) => {
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{semaineReelle ? 'CETTE SEMAINE' : 'PROGRAMME SEMAINE TYPE'}</div>
+          {!semaineReelle && <span style={{ color: colors.text.faint, fontSize: '10px' }}>exemple — affilie-toi pour ta vraie semaine</span>}
+        </div>
+        {(semaineReelle || PROGRAMME_SEMAINE).map((j) => {
+          const musculation = !semaineReelle ? false : (profil.jours_musculation || []).includes(j.key)
+          const type = !semaineReelle ? j.type : (j.match ? 'match' : (j.entrainement || musculation) ? 'entrainement' : 'repos')
+          const estMusculationSeule = semaineReelle && musculation && !j.match && !j.entrainement
           const cal = Math.round(calculerTDEE(profil) * MULTIPLICATEUR_JOURNEE[type])
-          const c = CONSEILS_JOURNEE[type].couleur
+          const c = estMusculationSeule ? colors.accent.purple : CONSEILS_JOURNEE[type].couleur
+          const label = estMusculationSeule ? 'Musculation' : CONSEILS_JOURNEE[type].titre.split(' — ')[0]
           return (
-            <div key={jour} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-              <span style={{ color: colors.text.secondary, fontSize: '13px', width: '80px' }}>{jour}</span>
-              <span style={{ color: c, fontSize: '12px', fontWeight: 600 }}>{CONSEILS_JOURNEE[type].titre.split(' — ')[0]}</span>
+            <div key={j.jour || j.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+              <span style={{ color: colors.text.secondary, fontSize: '13px', width: '80px' }}>{j.jour || j.label}</span>
+              <span style={{ color: c, fontSize: '12px', fontWeight: 600 }}>{label}</span>
               <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{cal} kcal</span>
             </div>
           )
