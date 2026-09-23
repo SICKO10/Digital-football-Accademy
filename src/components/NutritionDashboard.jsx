@@ -50,6 +50,62 @@ const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY || 'DEMO_KEY'
 // Identifiants nutriments USDA FoodData Central (Energy / Protein / Carbohydrate / Total lipid).
 const USDA_NUTRIENT_IDS = { calories: 1008, proteines: 1003, glucides: 1005, lipides: 1004 }
 
+// Base locale d'aliments courants — la clé DEMO_KEY de l'API USDA est
+// limitée (30 req/heure) et peut ne renvoyer aucun résultat en pratique ;
+// cette liste répond instantanément et sert de repli si l'appel USDA échoue
+// ou ne renvoie rien, cf. rechercherAliment.
+const ALIMENTS_BASE = [
+  { nom: 'Blanc de poulet', cal100: 165, prot: 31, gluc: 0, lip: 3.6 },
+  { nom: 'Riz basmati cuit', cal100: 130, prot: 2.7, gluc: 28, lip: 0.3 },
+  { nom: 'Pâtes cuites', cal100: 158, prot: 5.5, gluc: 31, lip: 0.9 },
+  { nom: 'Patate douce cuite', cal100: 90, prot: 2, gluc: 21, lip: 0.1 },
+  { nom: 'Saumon frais', cal100: 208, prot: 20, gluc: 0, lip: 13 },
+  { nom: 'Thon au naturel', cal100: 116, prot: 26, gluc: 0, lip: 1 },
+  { nom: 'Œufs entiers (1 œuf)', cal100: 68, prot: 6, gluc: 0.5, lip: 4.8 },
+  { nom: 'Yaourt grec 0%', cal100: 59, prot: 10, gluc: 3.6, lip: 0.4 },
+  { nom: 'Fromage blanc 0%', cal100: 45, prot: 8, gluc: 3.8, lip: 0.2 },
+  { nom: 'Banane', cal100: 89, prot: 1.1, gluc: 23, lip: 0.3 },
+  { nom: "Flocons d'avoine", cal100: 389, prot: 17, gluc: 66, lip: 7 },
+  { nom: 'Pain complet', cal100: 247, prot: 9, gluc: 47, lip: 3 },
+  { nom: 'Quinoa cuit', cal100: 120, prot: 4.4, gluc: 21, lip: 1.9 },
+  { nom: 'Lentilles cuites', cal100: 116, prot: 9, gluc: 20, lip: 0.4 },
+  { nom: 'Avocat', cal100: 160, prot: 2, gluc: 9, lip: 15 },
+  { nom: 'Amandes', cal100: 579, prot: 21, gluc: 22, lip: 50 },
+  { nom: "Lait d'avoine", cal100: 47, prot: 1.2, gluc: 7.5, lip: 1.5 },
+  { nom: 'Brocolis cuits', cal100: 35, prot: 2.4, gluc: 7, lip: 0.4 },
+  { nom: 'Épinards frais', cal100: 23, prot: 2.9, gluc: 3.6, lip: 0.4 },
+  { nom: 'Tomates cerises', cal100: 18, prot: 0.9, gluc: 3.9, lip: 0.2 },
+  { nom: 'Pomme de terre cuite', cal100: 87, prot: 1.9, gluc: 20, lip: 0.1 },
+  { nom: 'Pois chiches cuits', cal100: 164, prot: 8.9, gluc: 27, lip: 2.6 },
+  { nom: 'Beurre de cacahuète', cal100: 588, prot: 25, gluc: 20, lip: 50 },
+  { nom: 'Miel', cal100: 304, prot: 0.3, gluc: 82, lip: 0 },
+  { nom: "Huile d'olive", cal100: 884, prot: 0, gluc: 0, lip: 100 },
+  { nom: 'Whey protéine (1 scoop)', cal100: 400, prot: 80, gluc: 8, lip: 4 },
+  { nom: 'Dinde tranchée', cal100: 135, prot: 29, gluc: 0, lip: 1.5 },
+  { nom: 'Maïs doux', cal100: 86, prot: 3.3, gluc: 19, lip: 1.2 },
+  { nom: 'Noix de cajou', cal100: 553, prot: 18, gluc: 30, lip: 44 },
+  { nom: 'Feta', cal100: 264, prot: 14, gluc: 4, lip: 21 },
+  { nom: 'Mozzarella', cal100: 280, prot: 28, gluc: 2, lip: 17 },
+  { nom: 'Lait entier', cal100: 61, prot: 3.2, gluc: 4.8, lip: 3.3 },
+  { nom: 'Protéines de soja', cal100: 330, prot: 50, gluc: 30, lip: 1 },
+  { nom: 'Granola', cal100: 471, prot: 10, gluc: 57, lip: 20 },
+  { nom: 'Myrtilles', cal100: 57, prot: 0.7, gluc: 14, lip: 0.3 },
+  { nom: 'Fraises', cal100: 32, prot: 0.7, gluc: 7.7, lip: 0.3 },
+  { nom: 'Orange', cal100: 47, prot: 0.9, gluc: 12, lip: 0.1 },
+  { nom: 'Pomme', cal100: 52, prot: 0.3, gluc: 14, lip: 0.2 },
+  { nom: 'Concombre', cal100: 15, prot: 0.7, gluc: 3.6, lip: 0.1 },
+  { nom: 'Carottes', cal100: 41, prot: 0.9, gluc: 10, lip: 0.2 },
+  { nom: 'Poivron rouge', cal100: 31, prot: 1, gluc: 6, lip: 0.3 },
+  { nom: 'Champignons', cal100: 22, prot: 3.1, gluc: 3.3, lip: 0.3 },
+  { nom: 'Courgettes', cal100: 17, prot: 1.2, gluc: 3.1, lip: 0.3 },
+  { nom: 'Haricots verts', cal100: 31, prot: 1.8, gluc: 7, lip: 0.1 },
+  { nom: 'Sardines en boîte', cal100: 208, prot: 25, gluc: 0, lip: 11 },
+  { nom: 'Cottage cheese', cal100: 98, prot: 11, gluc: 3.4, lip: 4.3 },
+  { nom: 'Kéfir', cal100: 52, prot: 3.5, gluc: 4.8, lip: 1 },
+  { nom: 'Graines de chia', cal100: 486, prot: 17, gluc: 42, lip: 31 },
+  { nom: 'Edamame', cal100: 121, prot: 11, gluc: 8.9, lip: 5.2 },
+].map((a, i) => ({ ...a, id: `local_${i}` }))
+
 function RecetteCard({ recette, onAjouter }) {
   const colors = useColors()
   const [ouvert, setOuvert] = useState(false)
@@ -185,11 +241,14 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
 
   useEffect(() => {
     (async () => {
-      const [{ data: p }, { data: j }, { data: pds }] = await Promise.all([
+      const [{ data: p, error: errProfil }, { data: j, error: errJournal }, { data: pds, error: errPoids }] = await Promise.all([
         supabase.from('nutrition_profil').select('*').eq('joueur_id', joueurId).maybeSingle(),
         supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).eq('date', new Date().toISOString().slice(0, 10)).order('created_at'),
         supabase.from('nutrition_poids').select('*').eq('joueur_id', joueurId).order('date', { ascending: false }).limit(30),
       ])
+      if (errProfil) console.error('chargement nutrition_profil error:', errProfil)
+      if (errJournal) console.error('chargement nutrition_journal error:', errJournal)
+      if (errPoids) console.error('chargement nutrition_poids error:', errPoids)
       if (p) { setProfil(p); setProfilForm(p); setOnglet('plan') } else { setOnglet('profil') }
       setJournal(j || [])
       setPoidsHisto(pds || [])
@@ -216,12 +275,14 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   }
 
   const chargerJournal = async () => {
-    const { data } = await supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).eq('date', new Date().toISOString().slice(0, 10)).order('created_at')
+    const { data, error } = await supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).eq('date', new Date().toISOString().slice(0, 10)).order('created_at')
+    if (error) { console.error('chargerJournal error:', error); return }
     setJournal(data || [])
   }
 
   const chargerPoids = async () => {
-    const { data } = await supabase.from('nutrition_poids').select('*').eq('joueur_id', joueurId).order('date', { ascending: false }).limit(30)
+    const { data, error } = await supabase.from('nutrition_poids').select('*').eq('joueur_id', joueurId).order('date', { ascending: false }).limit(30)
+    if (error) { console.error('chargerPoids error:', error); return }
     setPoidsHisto(data || [])
   }
 
@@ -251,35 +312,56 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
     chargerPoids()
   }
 
+  // Résultats locaux immédiats (toujours disponibles), puis complétés par
+  // l'API USDA si elle répond à temps (timeout court — DEMO_KEY est lente et
+  // limitée à 30 req/heure, pas question de bloquer la recherche dessus).
   const rechercherAliment = async (query) => {
     if (!query || query.length < 2) { setResultatsUSDA([]); return }
+    const queryLower = query.toLowerCase()
+    const locaux = ALIMENTS_BASE.filter(a => a.nom.toLowerCase().includes(queryLower)).map(a => ({ ...a, source: 'local' }))
+    setResultatsUSDA(locaux)
+
     setSearchLoading(true)
     try {
-      const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=8&api_key=${USDA_API_KEY}`)
-      const data = await res.json()
-      setResultatsUSDA(data.foods || [])
+      const res = await fetch(
+        `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=6&api_key=${USDA_API_KEY}`,
+        { signal: AbortSignal.timeout(4000) }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const getNutrient = (f, id) => Math.round((f.foodNutrients?.find(n => n.nutrientId === id)?.value || 0) * 10) / 10
+        const usda = (data.foods || []).slice(0, 6).map(f => ({
+          id: `usda_${f.fdcId}`,
+          nom: f.description,
+          cal100: Math.round(getNutrient(f, USDA_NUTRIENT_IDS.calories)),
+          prot: getNutrient(f, USDA_NUTRIENT_IDS.proteines),
+          gluc: getNutrient(f, USDA_NUTRIENT_IDS.glucides),
+          lip: getNutrient(f, USDA_NUTRIENT_IDS.lipides),
+          marque: f.brandOwner || '',
+          source: 'usda',
+        }))
+        setResultatsUSDA([...locaux, ...usda])
+      }
     } catch (e) {
+      // USDA indisponible ou trop lente — les résultats locaux déjà affichés suffisent.
       console.error('recherche USDA error:', e)
-      setResultatsUSDA([])
     }
     setSearchLoading(false)
   }
 
-  const ajouterAlimentJournal = async (food, quantite_g) => {
-    const getNutrient = (id) => {
-      const n = food.foodNutrients?.find(fn => fn.nutrientId === id)
-      return n ? Math.round((n.value * quantite_g / 100) * 10) / 10 : 0
-    }
+  const ajouterAlimentJournal = async (aliment, quantite_g) => {
+    const ratio = quantite_g / 100
+    const arrondi = v => Math.round(v * ratio * 10) / 10
     const { error } = await supabase.from('nutrition_journal').insert({
       joueur_id: joueurId,
       date: new Date().toISOString().slice(0, 10),
       repas: repasActif,
-      aliment_nom: food.description,
+      aliment_nom: aliment.nom,
       quantite_g,
-      calories: getNutrient(USDA_NUTRIENT_IDS.calories),
-      proteines_g: getNutrient(USDA_NUTRIENT_IDS.proteines),
-      glucides_g: getNutrient(USDA_NUTRIENT_IDS.glucides),
-      lipides_g: getNutrient(USDA_NUTRIENT_IDS.lipides),
+      calories: arrondi(aliment.cal100),
+      proteines_g: arrondi(aliment.prot),
+      glucides_g: arrondi(aliment.gluc),
+      lipides_g: arrondi(aliment.lip),
     })
     if (error) { console.error('ajouterAlimentJournal error:', error); alert('Erreur : ' + error.message); return }
     setRecherche('')
@@ -475,15 +557,26 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
               onChange={e => { setRecherche(e.target.value); rechercherAliment(e.target.value) }} />
             {searchLoading && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '6px' }}>Recherche…</div>}
             {resultatsUSDA.length > 0 && (
-              <div style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', marginTop: '4px', maxHeight: '200px', overflowY: 'auto' }}>
-                {resultatsUSDA.map(food => (
-                  <div key={food.fdcId} style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.subtle}`, fontSize: '13px', color: colors.text.secondary }}
+              <div style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', marginTop: '4px', maxHeight: '240px', overflowY: 'auto' }}>
+                {resultatsUSDA.map(aliment => (
+                  <div key={aliment.id} style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.subtle}` }}
                     onClick={() => {
-                      const quantite = parseInt(window.prompt(`Quantité en grammes pour "${food.description}" ?`, '100') || '', 10)
-                      if (quantite > 0) ajouterAlimentJournal(food, quantite)
+                      const quantite = parseInt(window.prompt(`Quantité en grammes pour "${aliment.nom}" ?`, '100') || '', 10)
+                      if (quantite > 0) ajouterAlimentJournal(aliment, quantite)
                     }}>
-                    {food.description}
-                    <span style={{ color: colors.text.faint, fontSize: '11px', marginLeft: '8px' }}>{food.brandOwner || food.foodCategory || ''}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <div>
+                        <div style={{ color: colors.text.primary, fontSize: '13px' }}>{aliment.nom}</div>
+                        {aliment.marque && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{aliment.marque}</div>}
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '12px' }}>{aliment.cal100} kcal/100g</div>
+                        <div style={{ color: colors.text.faint, fontSize: '10px' }}>P:{aliment.prot}g G:{aliment.gluc}g L:{aliment.lip}g</div>
+                      </div>
+                    </div>
+                    <div style={{ color: aliment.source === 'local' ? colors.accent.green : colors.accent.blue, fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>
+                      {aliment.source === 'local' ? 'Base locale' : 'USDA'}
+                    </div>
                   </div>
                 ))}
               </div>
