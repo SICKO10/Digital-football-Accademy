@@ -4228,7 +4228,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {isPro ? (
               <>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jnav_nutrition', lang)}</h1>
-                <NutritionDashboard joueurId={userId} />
+                <NutritionDashboard joueurId={userId} educateurId={mesAffiliations.find(a => a.statut === 'accepte')?.educateur_id} />
               </>
             ) : (
               <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />

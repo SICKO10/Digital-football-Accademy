@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { calculerTDEE, calculerMacros, CONSEILS_JOURNEE, MULTIPLICATEUR_JOURNEE } from '../lib/nutrition'
+import { calculerTDEE, calculerMacros, CONSEILS_JOURNEE, MULTIPLICATEUR_JOURNEE, RECETTES } from '../lib/nutrition'
 
 const REPAS_LABELS = {
   petit_dejeuner: 'Petit déjeuner',
@@ -49,18 +49,70 @@ const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY || 'DEMO_KEY'
 // Identifiants nutriments USDA FoodData Central (Energy / Protein / Carbohydrate / Total lipid).
 const USDA_NUTRIENT_IDS = { calories: 1008, proteines: 1003, glucides: 1005, lipides: 1004 }
 
+function RecetteCard({ recette, onAjouter }) {
+  const colors = useColors()
+  const [ouvert, setOuvert] = useState(false)
+  return (
+    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setOuvert(o => !o)}>
+        <div>
+          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{recette.nom}</div>
+          <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{recette.timing}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '16px' }}>{recette.calories}</div>
+          <div style={{ color: colors.text.faint, fontSize: '10px' }}>kcal</div>
+        </div>
+      </div>
+
+      {ouvert && (
+        <div style={{ borderTop: `1px solid ${colors.border.subtle}`, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '14px' }}>
+            {[
+              { label: 'Glucides', val: recette.glucides_g, color: colors.accent.amber },
+              { label: 'Protéines', val: recette.proteines_g, color: colors.accent.green },
+              { label: 'Lipides', val: recette.lipides_g, color: colors.accent.orange },
+            ].map(m => (
+              <div key={m.label} style={{ textAlign: 'center' }}>
+                <div style={{ color: m.color, fontWeight: 700, fontSize: '16px' }}>{m.val}g</div>
+                <div style={{ color: colors.text.faint, fontSize: '10px' }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>INGRÉDIENTS</div>
+            {recette.ingredients.map((ing, i) => <div key={i} style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '3px' }}>• {ing}</div>)}
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>PRÉPARATION</div>
+            <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{recette.preparation}</p>
+          </div>
+
+          <button onClick={onAjouter} style={{ background: colors.accent.green + '1a', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            + Ajouter au journal du jour
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Module Nutrition, Dashboard Joueur (forfait Pro) : profil physique →
 // besoins caloriques/macros calculés côté client (lib/nutrition.js), suivi
 // de poids, journal alimentaire avec recherche d'aliments via l'API
 // publique USDA FoodData Central (gratuite, DEMO_KEY suffisant en dev —
 // VITE_USDA_API_KEY recommandée en prod pour un quota plus large).
-export default function NutritionDashboard({ joueurId }) {
+export default function NutritionDashboard({ joueurId, educateurId }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('plan')
   const [profil, setProfil] = useState(null)
   const [profilForm, setProfilForm] = useState(PROFIL_VIDE)
   const [typeJournee, setTypeJournee] = useState('entrainement')
+  const [typeJourneeAuto, setTypeJourneeAuto] = useState(null)
   const [journal, setJournal] = useState([])
+  const [journalSemaine, setJournalSemaine] = useState([])
   const [poidsHisto, setPoidsHisto] = useState([])
   const [recherche, setRecherche] = useState('')
   const [resultatsUSDA, setResultatsUSDA] = useState([])
@@ -68,6 +120,37 @@ export default function NutritionDashboard({ joueurId }) {
   const [nouveauPoids, setNouveauPoids] = useState('')
   const [repasActif, setRepasActif] = useState('dejeuner')
   const [loading, setLoading] = useState(true)
+
+  const chargerJournalSemaine = async () => {
+    const il7j = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+    const { data } = await supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).gte('date', il7j).order('date')
+    setJournalSemaine(data || [])
+  }
+
+  // Détection automatique du type de journée à partir du calendrier réel de
+  // l'éducateur affilié (entrainements/matchs_equipe, filtrés par
+  // educateur_id — comme partout ailleurs dans DashboardJoueur.jsx, pas de
+  // notion de "type" sur entrainements : les deux tables sont déjà
+  // distinctes, la table elle-même indique le type). Ne s'applique qu'une
+  // fois au chargement — un changement manuel ensuite n'est jamais écrasé.
+  const detecterTypeJourneeAuto = async () => {
+    if (!educateurId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const hier = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    const demain = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    const [{ data: matchsProches }, { data: entrainementsAuj }] = await Promise.all([
+      supabase.from('matchs_equipe').select('date').eq('educateur_id', educateurId).in('date', [hier, today, demain]),
+      supabase.from('entrainements').select('id').eq('educateur_id', educateurId).eq('date', today),
+    ])
+    let type
+    if (matchsProches?.some(m => m.date === today)) type = 'match'
+    else if (entrainementsAuj?.length > 0) type = 'entrainement'
+    else if (matchsProches?.some(m => m.date === demain)) type = 'avant_match'
+    else if (matchsProches?.some(m => m.date === hier)) type = 'apres_match'
+    else type = 'repos'
+    setTypeJourneeAuto(type)
+    setTypeJournee(type)
+  }
 
   useEffect(() => {
     (async () => {
@@ -80,8 +163,26 @@ export default function NutritionDashboard({ joueurId }) {
       setJournal(j || [])
       setPoidsHisto(pds || [])
       setLoading(false)
+      await chargerJournalSemaine()
+      await detecterTypeJourneeAuto()
     })()
-  }, [joueurId])
+  }, [joueurId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ajouterRecetteJournal = async (recette) => {
+    const { error } = await supabase.from('nutrition_journal').insert({
+      joueur_id: joueurId,
+      date: new Date().toISOString().slice(0, 10),
+      repas: repasActif,
+      aliment_nom: recette.nom,
+      quantite_g: null,
+      calories: recette.calories,
+      proteines_g: recette.proteines_g,
+      glucides_g: recette.glucides_g,
+      lipides_g: recette.lipides_g,
+    })
+    if (error) { console.error('ajouterRecetteJournal error:', error); alert('Erreur : ' + error.message); return }
+    chargerJournal()
+  }
 
   const chargerJournal = async () => {
     const { data } = await supabase.from('nutrition_journal').select('*').eq('joueur_id', joueurId).eq('date', new Date().toISOString().slice(0, 10)).order('created_at')
@@ -237,6 +338,19 @@ export default function NutritionDashboard({ joueurId }) {
   // ── Onglet Plan ──────────────────────────────────────────────────────
   const renderPlan = () => (
     <div>
+      {typeJourneeAuto && (
+        <div style={{ background: colors.accent.green + '14', border: `1px solid ${colors.accent.green}33`, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px' }}>
+          <span style={{ color: colors.accent.green, fontWeight: 700 }}>Détection auto</span>
+          <span style={{ color: colors.text.secondary, marginLeft: '8px' }}>
+            {typeJourneeAuto === 'match' ? 'Match détecté aujourd\'hui — programme match activé'
+              : typeJourneeAuto === 'entrainement' ? 'Entraînement détecté aujourd\'hui — programme entraînement activé'
+              : typeJourneeAuto === 'avant_match' ? 'Match demain — charge glucides recommandée'
+              : typeJourneeAuto === 'apres_match' ? 'Match hier — programme récupération activé'
+              : 'Pas de séance détectée — programme repos'}
+          </span>
+          <span style={{ color: colors.text.faint, marginLeft: '8px' }}>(modifiable ci-dessous)</span>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '16px' }}>
         {TYPE_JOURNEE_OPTIONS.map(t => (
           <button key={t.value} onClick={() => setTypeJournee(t.value)} style={s.pillTab(typeJournee === t.value)}>{t.label}</button>
@@ -417,9 +531,121 @@ export default function NutritionDashboard({ joueurId }) {
     </div>
   )
 
+  // ── Onglet Recettes ──────────────────────────────────────────────────
+  const renderRecettes = () => {
+    const recettesJour = RECETTES[typeJournee] || RECETTES.entrainement
+    return (
+      <div>
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '16px' }}>
+          {TYPE_JOURNEE_OPTIONS.map(t => (
+            <button key={t.value} onClick={() => setTypeJournee(t.value)} style={s.pillTab(typeJournee === t.value)}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '16px' }}>
+          {recettesJour.length} recette{recettesJour.length > 1 ? 's' : ''} recommandée{recettesJour.length > 1 ? 's' : ''} pour ce type de journée
+        </div>
+        {recettesJour.map((recette, i) => <RecetteCard key={i} recette={recette} onAjouter={() => ajouterRecetteJournal(recette)} />)}
+      </div>
+    )
+  }
+
+  // ── Onglet Rapport (moyennes 7 derniers jours) ──────────────────────────
+  const renderRapport = () => {
+    const parJour = journalSemaine.reduce((acc, item) => {
+      if (!acc[item.date]) acc[item.date] = { calories: 0, proteines_g: 0, glucides_g: 0, lipides_g: 0 }
+      acc[item.date].calories += item.calories || 0
+      acc[item.date].proteines_g += item.proteines_g || 0
+      acc[item.date].glucides_g += item.glucides_g || 0
+      acc[item.date].lipides_g += item.lipides_g || 0
+      return acc
+    }, {})
+    const jours = Object.entries(parJour)
+    const nbJours = jours.length
+
+    if (nbJours === 0) {
+      return (
+        <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>
+          Commence à remplir ton journal alimentaire pour voir ton rapport hebdomadaire ici.
+        </div>
+      )
+    }
+
+    const moyCalories = Math.round(jours.reduce((a, [, j]) => a + j.calories, 0) / nbJours)
+    const moyProteines = Math.round(jours.reduce((a, [, j]) => a + j.proteines_g, 0) / nbJours)
+    const moyGlucides = Math.round(jours.reduce((a, [, j]) => a + j.glucides_g, 0) / nbJours)
+    const moyLipides = Math.round(jours.reduce((a, [, j]) => a + j.lipides_g, 0) / nbJours)
+    const diffCalories = tdee ? moyCalories - tdee : null
+    const maxCal = Math.max(...jours.map(([, j]) => j.calories), tdee || 0)
+    const aujourdHui = new Date().toISOString().slice(0, 10)
+
+    return (
+      <div>
+        <div style={s.card}>
+          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '16px' }}>MOYENNES SUR {nbJours} JOUR{nbJours > 1 ? 'S' : ''}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ background: colors.accent.green + '14', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+              <div style={{ color: colors.accent.green, fontWeight: 900, fontSize: '28px' }}>{moyCalories}</div>
+              <div style={{ color: colors.text.faint, fontSize: '11px' }}>kcal / jour</div>
+              {diffCalories !== null && (
+                <div style={{ color: diffCalories > 0 ? colors.accent.orange : colors.accent.blue, fontSize: '11px', marginTop: '4px' }}>
+                  {diffCalories > 0 ? '+' : ''}{diffCalories} vs objectif
+                </div>
+              )}
+            </div>
+            {[
+              { label: 'Glucides moy.', val: `${moyGlucides}g`, color: colors.accent.amber, target: macros?.glucides_g },
+              { label: 'Protéines moy.', val: `${moyProteines}g`, color: colors.accent.green, target: macros?.proteines_g },
+              { label: 'Lipides moy.', val: `${moyLipides}g`, color: colors.accent.orange, target: macros?.lipides_g },
+            ].map(m => (
+              <div key={m.label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '12px', border: `1px solid ${colors.border.subtle}` }}>
+                <div style={{ color: m.color, fontWeight: 700, fontSize: '18px' }}>{m.val}</div>
+                <div style={{ color: colors.text.faint, fontSize: '10px' }}>{m.label}</div>
+                {m.target && <div style={{ color: colors.text.disabled, fontSize: '10px' }}>objectif : {m.target}g</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={s.card}>
+          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>CALORIES PAR JOUR</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px' }}>
+            {jours.map(([date, j]) => {
+              const h = maxCal > 0 ? Math.round((j.calories / maxCal) * 80) : 0
+              const estAujourdHui = date === aujourdHui
+              const depasseObjectif = tdee && j.calories > tdee
+              return (
+                <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '10px', color: depasseObjectif ? colors.accent.orange : colors.accent.green, fontWeight: 600 }}>{Math.round(j.calories)}</div>
+                  <div style={{ width: '100%', height: `${h}px`, borderRadius: '4px', background: estAujourdHui ? colors.accent.green : (depasseObjectif ? colors.accent.orange : colors.accent.blue), opacity: estAujourdHui ? 1 : 0.7 }} />
+                  <div style={{ fontSize: '9px', color: colors.text.faint }}>{new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short' })}</div>
+                </div>
+              )
+            })}
+          </div>
+          {tdee && <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '8px' }}>Objectif : {tdee} kcal/jour</div>}
+        </div>
+
+        <div style={s.card}>
+          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>DÉTAIL PAR JOUR</div>
+          {jours.map(([date, j]) => (
+            <div key={date} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+              <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}</span>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ color: colors.text.faint, fontSize: '11px' }}>G:{Math.round(j.glucides_g)}g P:{Math.round(j.proteines_g)}g L:{Math.round(j.lipides_g)}g</span>
+                <span style={{ color: tdee && j.calories > tdee * 1.1 ? colors.accent.orange : colors.accent.green, fontWeight: 700, fontSize: '14px' }}>{Math.round(j.calories)} kcal</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const ONGLETS = [
     { id: 'plan', label: 'Mon plan' },
     { id: 'journal', label: 'Journal' },
+    { id: 'recettes', label: 'Recettes' },
+    { id: 'rapport', label: 'Rapport' },
     { id: 'poids', label: 'Poids' },
     { id: 'profil', label: 'Profil' },
   ]
@@ -431,6 +657,8 @@ export default function NutritionDashboard({ joueurId }) {
       </div>
       {onglet === 'plan' && renderPlan()}
       {onglet === 'journal' && renderJournal()}
+      {onglet === 'recettes' && renderRecettes()}
+      {onglet === 'rapport' && renderRapport()}
       {onglet === 'poids' && renderPoids()}
     </div>
   )
