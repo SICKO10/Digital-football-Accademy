@@ -689,9 +689,18 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
             const W = 100, H = 60
             const toX = i => pts.length > 1 ? (i / (pts.length - 1)) * W : W / 2
             const toY = v => max > min ? H - ((v - min) / (max - min)) * H : H / 2
+            const ligne = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.poids_kg)}`).join(' ')
+            const aire = `${ligne} L ${toX(pts.length - 1)} ${H} L ${toX(0)} ${H} Z`
             return (
               <svg viewBox="0 0 100 60" style={{ width: '100%', height: '120px' }}>
-                <polyline points={pts.map((p, i) => `${toX(i)},${toY(p.poids_kg)}`).join(' ')} fill="none" stroke={colors.accent.green} strokeWidth="1.5" />
+                <defs>
+                  <linearGradient id="poidsAire" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={colors.accent.green} stopOpacity="0.25" />
+                    <stop offset="100%" stopColor={colors.accent.green} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {pts.length > 1 && <path d={aire} fill="url(#poidsAire)" />}
+                <path d={ligne} fill="none" stroke={colors.accent.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 {pts.map((p, i) => <circle key={i} cx={toX(i)} cy={toY(p.poids_kg)} r="2" fill={colors.accent.green} />)}
               </svg>
             )
