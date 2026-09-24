@@ -184,6 +184,18 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     chargerSuivis(blessureSelectionnee.id)
   }
 
+  // ON DELETE CASCADE sur suivi_medical/reeducation_etapes (blessure_id) —
+  // supprimer la blessure supprime aussi son suivi et son programme de
+  // rééducation, pas besoin de les effacer séparément ici.
+  const supprimerBlessure = async (id, e) => {
+    e.stopPropagation()
+    if (!confirm('Supprimer cette blessure ? Le suivi médical et le programme de rééducation associés seront aussi supprimés. Cette action est définitive.')) return false
+    const { error } = await supabase.from('blessures').delete().eq('id', id)
+    if (error) { console.error('supprimerBlessure error:', error); alert('Erreur : ' + error.message); return false }
+    setBlessures(prev => prev.filter(b => b.id !== id))
+    return true
+  }
+
   const ouvrirDocument = async (path) => {
     const { data, error } = await supabase.storage.from('documents-medicaux').createSignedUrl(path, 300)
     if (error || !data?.signedUrl) { alert("Impossible d'ouvrir ce document."); return }
@@ -206,9 +218,17 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     const joueur = joueurDe(blessureSelectionnee.equipe_joueur_id)
     return (
       <div>
-        <button onClick={() => { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }} style={{ ...s.btnGhost, marginBottom: '16px' }}>
-          ← Retour à l'équipe
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <button onClick={() => { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }} style={s.btnGhost}>
+            ← Retour à l'équipe
+          </button>
+          <button onClick={async e => {
+            const supprimee = await supprimerBlessure(blessureSelectionnee.id, e)
+            if (supprimee) { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }
+          }} style={{ ...s.btnGhost, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>
+            Supprimer cette blessure
+          </button>
+        </div>
 
         <div style={s.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
@@ -668,7 +688,13 @@ export default function SanteEquipe({ joueurs, educateurId }) {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={s.pill(meta.color)}>{meta.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                  <span style={s.pill(meta.color)}>{meta.label}</span>
+                  <button onClick={e => supprimerBlessure(b.id, e)} title="Supprimer cette blessure"
+                    style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '6px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, fontSize: '14px', flexShrink: 0 }}>
+                    ✕
+                  </button>
+                </div>
                 <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>
                   {joursDepuis === 0 ? "Aujourd'hui" : `Depuis ${joursDepuis} j`}
                   {b.date_retour_estimee && ` · Retour estimé ${new Date(`${b.date_retour_estimee}T12:00:00`).toLocaleDateString('fr-FR')}`}
