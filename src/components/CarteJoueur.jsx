@@ -56,21 +56,41 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
       supabase.from('profiles').select('prenom, nom, poste, categorie, club, avatar_url').eq('id', userId).maybeSingle(),
       supabase.from('stats_match_joueur').select('buts, passes_decisives, buts_encaisses').eq('joueur_id', userId).gte('date', date_debut).lte('date', date_fin),
       supabase.from('joueur_badges').select('*').eq('joueur_id', userId).eq('saison', saison),
-      supabase.from('affiliations').select('educateur_id, equipe_joueur_id').eq('joueur_id', userId).eq('statut', 'accepte').maybeSingle(),
+      supabase.from('affiliations').select('educateur_id, equipe_joueur_id, club_categorie_id').eq('joueur_id', userId).eq('statut', 'accepte').maybeSingle(),
     ])
 
-    // Taux de présence aux entraînements — même source que chargerTauxPresence
-    // (DashboardJoueur.jsx), version simplifiée (sans le repli disponibilites).
+    // Taux de présence aux entraînements — même source et même logique que
+    // chargerTauxPresence (DashboardJoueur.jsx). Deux bugs corrigés par
+    // rapport à la version précédente :
+    // - le dénominateur ne filtrait pas par club_categorie_id : un éducateur
+    //   gérant plusieurs équipes voyait TOUTES ses séances comptées, y
+    //   compris celles d'équipes auxquelles le joueur n'a jamais appartenu.
+    // - le dénominateur comptait TOUTES les séances de la période, y compris
+    //   celles jamais pointées par l'éducateur (aucune ligne dans
+    //   presences_entrainement) — ces séances non saisies tombaient de facto
+    //   en "absence" côté taux. Seules les séances où un statut existe
+    //   réellement (pointage manuel ou réponse au sondage de présence)
+    //   comptent, comme côté DashboardJoueur.jsx.
     let presencePct = 0
     if (affiliation?.educateur_id && affiliation?.equipe_joueur_id) {
-      const { data: entrainementsSaison } = await supabase.from('entrainements').select('id')
+      let qEntrainements = supabase.from('entrainements').select('id')
         .eq('educateur_id', affiliation.educateur_id).gte('date', date_debut).lte('date', finPeriode)
-      const ids = (entrainementsSaison || []).map(e => e.id)
-      if (ids.length > 0) {
-        const { data: presences } = await supabase.from('presences_entrainement').select('statut, entrainement_id')
-          .eq('joueur_id', affiliation.equipe_joueur_id).in('entrainement_id', ids)
-        const present = (presences || []).filter(p => p.statut === 'present' || p.statut === 'convoque').length
-        presencePct = Math.round((present / ids.length) * 100)
+      if (affiliation.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', affiliation.club_categorie_id)
+      const [{ data: entrainementsSaison }, { data: presences }, { data: dispos }] = await Promise.all([
+        qEntrainements,
+        supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', affiliation.equipe_joueur_id),
+        supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
+      ])
+      const presenceMap = {}
+      presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+      const dispoMap = {}
+      dispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
+      const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+
+      const saisies = (entrainementsSaison || []).filter(e => statutEffectif(e.id) !== null)
+      if (saisies.length > 0) {
+        const present = saisies.filter(e => statutEffectif(e.id) === 'present' || statutEffectif(e.id) === 'convoque').length
+        presencePct = Math.round((present / saisies.length) * 100)
       }
     }
 
