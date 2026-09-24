@@ -9,6 +9,7 @@ import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
 import BadgesJoueur from "../components/BadgesJoueur";
+import BadgeVideoVerifiee from "../components/BadgeVideoVerifiee";
 import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 import OnboardingGuide from "../components/OnboardingGuide";
@@ -570,6 +571,9 @@ export default function DashboardRecruteur() {
               <div style={{ marginTop: "10px" }}>
                 <BadgesJoueur joueurId={j.id} afficherSaison={true} />
               </div>
+              <div style={{ marginTop: "6px" }}>
+                <BadgeVideoVerifiee joueurId={j.id} />
+              </div>
             </div>
           </div>
 
@@ -1075,8 +1079,9 @@ export default function DashboardRecruteur() {
                       {j.poste && <span style={st.posteBadge(j.poste)}>{j.poste}</span>}
                     </div>
 
-                    <div style={{ marginBottom: "10px" }}>
+                    <div style={{ marginBottom: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       <BadgesJoueur joueurId={j.id} limite={2} />
+                      <BadgeVideoVerifiee joueurId={j.id} />
                     </div>
 
                     {/* Stats + barres de progression */}
@@ -1124,8 +1129,9 @@ export default function DashboardRecruteur() {
                         {aEteContacte(j.id) && <span style={{ background: colors.accent.blue + alpha.soft, color: colors.accent.blue, fontSize: "9px", padding: "1px 5px", borderRadius: "20px", border: "1px solid #60a5fa40" }}>✓</span>}
                       </div>
                       <p style={{ margin: "1px 0 0", fontSize: "11px", color: colors.text.faint }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
-                      <div style={{ marginTop: "4px" }}>
+                      <div style={{ marginTop: "4px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                         <BadgesJoueur joueurId={j.id} limite={1} />
+                        <BadgeVideoVerifiee joueurId={j.id} />
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: colors.text.dim }}>
