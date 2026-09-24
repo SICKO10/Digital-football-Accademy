@@ -56,7 +56,7 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
       supabase.from('profiles').select('prenom, nom, poste, categorie, club, avatar_url').eq('id', userId).maybeSingle(),
       supabase.from('stats_match_joueur').select('buts, passes_decisives, buts_encaisses').eq('joueur_id', userId).gte('date', date_debut).lte('date', date_fin),
       supabase.from('joueur_badges').select('*').eq('joueur_id', userId).eq('saison', saison),
-      supabase.from('affiliations').select('educateur_id, equipe_joueur_id, club_categorie_id').eq('joueur_id', userId).eq('statut', 'accepte').maybeSingle(),
+      supabase.from('affiliations').select('educateur_id, equipe_joueur_id').eq('joueur_id', userId).eq('statut', 'accepte').maybeSingle(),
     ])
 
     // Taux de présence aux entraînements — même source et même logique que
@@ -65,6 +65,10 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
     // - le dénominateur ne filtrait pas par club_categorie_id : un éducateur
     //   gérant plusieurs équipes voyait TOUTES ses séances comptées, y
     //   compris celles d'équipes auxquelles le joueur n'a jamais appartenu.
+    //   club_categorie_id n'est pas une colonne de affiliations (contrairement
+    //   à ce que le select ci-dessous supposait initialement) : c'est une
+    //   colonne de equipe_joueurs, retrouvée via equipe_joueur_id — même
+    //   enrichissement que chargerAffiliations (DashboardJoueur.jsx).
     // - le dénominateur comptait TOUTES les séances de la période, y compris
     //   celles jamais pointées par l'éducateur (aucune ligne dans
     //   presences_entrainement) — ces séances non saisies tombaient de facto
@@ -73,9 +77,10 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
     //   comptent, comme côté DashboardJoueur.jsx.
     let presencePct = 0
     if (affiliation?.educateur_id && affiliation?.equipe_joueur_id) {
+      const { data: equipeJoueur } = await supabase.from('equipe_joueurs').select('club_categorie_id').eq('id', affiliation.equipe_joueur_id).maybeSingle()
       let qEntrainements = supabase.from('entrainements').select('id')
         .eq('educateur_id', affiliation.educateur_id).gte('date', date_debut).lte('date', finPeriode)
-      if (affiliation.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', affiliation.club_categorie_id)
+      if (equipeJoueur?.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', equipeJoueur.club_categorie_id)
       const [{ data: entrainementsSaison }, { data: presences }, { data: dispos }] = await Promise.all([
         qEntrainements,
         supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', affiliation.equipe_joueur_id),
