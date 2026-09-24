@@ -20,9 +20,19 @@ export default function TerrainZonesSvg({ zones, fondUrl }) {
   const circleR = W * 0.16
   const spotOffset = H * 0.115
   const trait = { fill: 'none', stroke: 'rgba(255,255,255,0.55)', strokeWidth: 1.5 }
+  const corner = 6
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 280, borderRadius: 12, display: 'block', background: '#2d5a1b' }}>
+      <defs>
+        <linearGradient id="terrain-gazon" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#357a1f" />
+          <stop offset="100%" stopColor="#2a611a" />
+        </linearGradient>
+        <pattern id="terrain-bandes" x="0" y="0" width={W} height={H / 9} patternUnits="userSpaceOnUse">
+          <rect width={W} height={H / 18} fill="rgba(255,255,255,0.035)" />
+        </pattern>
+      </defs>
       {fondUrl ? (
         <>
           <clipPath id="terrain-clip"><rect width={W} height={H} rx="8" /></clipPath>
@@ -30,6 +40,8 @@ export default function TerrainZonesSvg({ zones, fondUrl }) {
         </>
       ) : (
         <>
+          <rect x={1} y={1} width={W - 2} height={H - 2} rx="8" fill="url(#terrain-gazon)" />
+          <rect x={1} y={1} width={W - 2} height={H - 2} rx="8" fill="url(#terrain-bandes)" />
           <rect x={1} y={1} width={W - 2} height={H - 2} rx="8" {...trait} />
           <line x1={0} y1={cy} x2={W} y2={cy} {...trait} />
           <circle cx={cx} cy={cy} r={circleR} {...trait} />
@@ -46,6 +58,11 @@ export default function TerrainZonesSvg({ zones, fondUrl }) {
           <circle cx={cx} cy={H - spotOffset} r={2} fill="rgba(255,255,255,0.6)" />
           <path d={`M ${cx - circleR * 0.85} ${H - boxH} A ${circleR} ${circleR} 0 0 1 ${cx + circleR * 0.85} ${H - boxH}`} {...trait} />
           <rect x={cx - goalW / 2} y={H} width={goalW} height={3} fill="none" stroke="white" strokeWidth="1.5" />
+          {/* Corners */}
+          <path d={`M ${corner} 1 A ${corner} ${corner} 0 0 0 1 ${corner}`} {...trait} />
+          <path d={`M ${W - corner} 1 A ${corner} ${corner} 0 0 1 ${W - 1} ${corner}`} {...trait} />
+          <path d={`M 1 ${H - corner} A ${corner} ${corner} 0 0 0 ${corner} ${H - 1}`} {...trait} />
+          <path d={`M ${W - 1} ${H - corner} A ${corner} ${corner} 0 0 0 ${W - corner} ${H - 1}`} {...trait} />
         </>
       )}
 
