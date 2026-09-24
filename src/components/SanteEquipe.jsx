@@ -31,9 +31,9 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     gueri: { label: 'Guéri', color: colors.accent.green },
   }
   const GRAVITE_META = {
-    legere: { label: 'Légère', niveau: 1 },
-    moderee: { label: 'Modérée', niveau: 2 },
-    grave: { label: 'Grave', niveau: 3 },
+    legere: { label: 'Légère', niveau: 1, color: colors.accent.green },
+    moderee: { label: 'Modérée', niveau: 2, color: colors.accent.amber },
+    grave: { label: 'Grave', niveau: 3, color: colors.accent.red },
   }
   const STATUT_ETAPE_META = {
     a_faire: { label: 'À faire', color: colors.text.disabled },
@@ -119,6 +119,12 @@ export default function SanteEquipe({ joueurs, educateurId }) {
 
   const joueurDe = (equipeJoueurId) => joueurs.find(j => j.id === equipeJoueurId)
 
+  // Couleur d'avatar par défaut (pas de photo) dérivée du prénom, pour
+  // distinguer les joueurs d'un coup d'œil dans la liste plutôt qu'un gris
+  // uniforme partout.
+  const PALETTE_AVATAR = [colors.accent.green, colors.accent.blue, colors.accent.amber, colors.accent.purple, colors.accent.orange]
+  const couleurAvatar = (prenom) => PALETTE_AVATAR[(prenom?.charCodeAt(0) || 0) % PALETTE_AVATAR.length]
+
   const declarerBlessure = async () => {
     if (!form.equipe_joueur_id) { alert('Merci de choisir le joueur concerné.'); return }
     if (!form.type_blessure.trim()) { alert('Merci de renseigner le type de blessure.'); return }
@@ -168,6 +174,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
       date_consultation: formSuivi.date_consultation,
       specialiste: formSuivi.specialiste || null,
       compte_rendu: formSuivi.compte_rendu,
+      statut: 'effectue', // un ajout côté éducateur consigne toujours un compte-rendu déjà rédigé, jamais un rdv à venir (ça, c'est "+ Programmer un rendez-vous" côté joueur) — le défaut de la colonne est 'prevu', il faut le forcer explicitement ici.
       document_path, document_nom,
     })
     setEnvoiEnCours(false)
@@ -210,12 +217,25 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               <div style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '2px' }}>
                 {blessureSelectionnee.type_blessure}{blessureSelectionnee.zone_corps && ` — ${blessureSelectionnee.zone_corps}`}
               </div>
-              <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>
-                Gravité : {GRAVITE_META[blessureSelectionnee.gravite]?.label || blessureSelectionnee.gravite}
-              </div>
             </div>
             <span style={s.pill(meta.color)}>{meta.label}</span>
           </div>
+
+          {(() => {
+            const grav = GRAVITE_META[blessureSelectionnee.gravite]
+            if (!grav) return null
+            return (
+              <div style={{ marginTop: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ color: colors.text.faint, fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Gravité</span>
+                  <span style={{ color: grav.color, fontSize: '10px', fontWeight: 700 }}>{grav.label}</span>
+                </div>
+                <div style={{ height: '5px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${(grav.niveau / 3) * 100}%`, height: '100%', background: grav.color, borderRadius: '3px' }} />
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -395,7 +415,25 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           {suivis.length === 0 && !showFormSuivi && (
             <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Aucun suivi médical enregistré</div>
           )}
-          {suivis.map(sv => (
+
+          {/* Rdv à venir — programmés par le joueur lui-même (statut='prevu',
+              cf. supabase_sante_rdv_medical.sql), pas encore de compte-rendu. */}
+          {suivis.filter(sv => sv.statut === 'prevu').map(sv => (
+            <div key={sv.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px 14px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <div>
+                  <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>
+                    Rdv le {new Date(`${sv.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                    {sv.heure_rdv && ` à ${sv.heure_rdv.slice(0, 5)}`}
+                  </span>
+                  {sv.specialiste && <span style={{ color: colors.accent.blue, fontSize: '12px', marginLeft: '8px' }}>{sv.specialiste}</span>}
+                </div>
+                <span style={s.pill(colors.accent.blue)}>Prévu par le joueur</span>
+              </div>
+            </div>
+          ))}
+
+          {suivis.filter(sv => sv.statut === 'effectue').map(sv => (
             <div key={sv.id} style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', marginTop: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
                 <div>
@@ -410,7 +448,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
                   </button>
                 )}
               </div>
-              <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '6px', lineHeight: 1.5 }}>{sv.compte_rendu}</p>
+              {sv.compte_rendu && <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '6px', lineHeight: 1.5 }}>{sv.compte_rendu}</p>}
             </div>
           ))}
         </div>
@@ -498,8 +536,32 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     )
   }
 
+  const joueursBlessesActifs = new Set(blessures.filter(b => b.statut !== 'gueri').map(b => b.equipe_joueur_id)).size
+  const kpis = [
+    { val: joueursBlessesActifs, total: joueurs.length, label: 'Joueurs blessés', color: joueursBlessesActifs > 0 ? colors.accent.orange : colors.accent.green },
+    { val: blessures.filter(b => b.statut === 'en_cours').length, label: 'En cours', color: colors.accent.orange },
+    { val: blessures.filter(b => b.statut === 'en_soin').length, label: 'En soin', color: colors.accent.amber },
+    { val: blessures.filter(b => b.statut === 'gueri').length, label: 'Guéris (saison)', color: colors.accent.green },
+  ]
+
   return (
     <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '18px' }}>
+        {kpis.map(k => (
+          <div key={k.label} style={s.card}>
+            <div style={{ fontSize: '26px', fontWeight: 900, color: k.color, lineHeight: 1 }}>
+              {k.val}{k.total ? <span style={{ fontSize: '13px', color: colors.text.disabled, fontWeight: 400 }}>/{k.total}</span> : ''}
+            </div>
+            <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>{k.label}</div>
+            {k.total > 0 && (
+              <div style={{ height: '3px', background: colors.background.raised, borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                <div style={{ width: `${(k.val / k.total) * 100}%`, height: '100%', background: k.color, borderRadius: '2px' }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0 }}>
@@ -560,15 +622,23 @@ export default function SanteEquipe({ joueurs, educateurId }) {
       )}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        {[['tous', 'Tous'], ...Object.entries(STATUT_META).map(([k, v]) => [k, v.label])].map(([k, label]) => (
-          <button key={k} onClick={() => setFiltreStatut(k)}
-            style={{
-              background: filtreStatut === k ? colors.text.primary : colors.background.raised,
-              color: filtreStatut === k ? colors.background.base : colors.text.faint,
-              border: `1px solid ${filtreStatut === k ? colors.text.primary : colors.border.default}`,
-              borderRadius: '20px', padding: '5px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif',
-            }}>{label}</button>
-        ))}
+        {[['tous', 'Tous'], ...Object.entries(STATUT_META).map(([k, v]) => [k, v.label])].map(([k, label]) => {
+          const count = k === 'tous' ? blessures.length : blessures.filter(b => b.statut === k).length
+          const actif = filtreStatut === k
+          return (
+            <button key={k} onClick={() => setFiltreStatut(k)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: actif ? colors.text.primary : colors.background.raised,
+                color: actif ? colors.background.base : colors.text.faint,
+                border: `1px solid ${actif ? colors.text.primary : colors.border.default}`,
+                borderRadius: '20px', padding: '5px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+              }}>
+              {label}
+              <span style={{ background: actif ? colors.background.base + '22' : colors.border.default, color: actif ? colors.background.base : colors.text.disabled, borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>{count}</span>
+            </button>
+          )
+        })}
       </div>
 
       {blessuresFiltrees.length === 0 && (
@@ -587,7 +657,11 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {joueur?.avatar_url
                   ? <img src={joueur.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
-                  : <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint, fontSize: '12px', fontWeight: 700 }}>{joueur?.prenom?.[0] || '?'}</div>}
+                  : (() => {
+                      const c = couleurAvatar(joueur?.prenom)
+                      const initiales = `${joueur?.prenom?.[0] || ''}${joueur?.nom?.[0] || ''}`.toUpperCase() || '?'
+                      return <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: c + alpha.soft, border: `2px solid ${c}${alpha.light}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c, fontSize: '11px', fontWeight: 800, flexShrink: 0 }}>{initiales}</div>
+                    })()}
                 <div>
                   <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</div>
                   <div style={{ color: colors.text.secondary, fontSize: '12px' }}>{b.type_blessure}{b.zone_corps ? ` — ${b.zone_corps}` : ''}</div>
