@@ -556,6 +556,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [packAttribue, setPackAttribue] = useState(null) // equipement_packs attribué à ce joueur (equipement_attributions)
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [notesSeanceEnAttente, setNotesSeanceEnAttente] = useState([]) // seances_notes_demandes ouvertes, pas encore répondues
+  const [rdvMedicalAujourdhui, setRdvMedicalAujourdhui] = useState([]) // suivi_medical statut='prevu' du jour
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
@@ -697,6 +698,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setNotesSeanceEnAttente(demandes.filter(d => !repondues.has(d.id)))
   }
 
+  // Rdv médicaux (suivi_medical statut='prevu') prévus aujourd'hui — RLS
+  // (joueur_lit_suivi) scope déjà aux blessures du joueur, qu'il soit
+  // lui-même l'auteur du rdv ou que ce soit son éducateur, donc aucun filtre
+  // explicite sur l'identité n'est nécessaire ici (même logique que
+  // chargerBlessures dans SanteJoueur.jsx).
+  async function chargerRdvMedicalAujourdhui() {
+    const aujourdhui = new Date().toISOString().slice(0, 10)
+    const { data } = await supabase.from('suivi_medical')
+      .select('id, heure_rdv, blessures(type_blessure)')
+      .eq('statut', 'prevu').eq('date_consultation', aujourdhui)
+    setRdvMedicalAujourdhui(data || [])
+  }
+
   useEffect(() => {
     if (onglet === 'coach' && userId) {
       localStorage.setItem(`coach_read_${userId}`, new Date().toISOString())
@@ -757,6 +771,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     await chargerNotifPrefs(targetId)
     await chargerRecrutementProfil(targetId)
     await chargerDemandesBilanMedical(targetId)
+    chargerRdvMedicalAujourdhui()
     const { data } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
@@ -2146,8 +2161,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 const showConvocation = idConvocation && !alertesMasquees.has(idConvocation)
                 const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
                 const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
+                const rdvDuJour = rdvMedicalAujourdhui.filter(r => !alertesMasquees.has(`rdv_medical_${r.id}`))
                 const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
-                return (showConvocation || showEquipement || showCommentaire) && (
+                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0) && (
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
                     {showConvocation && (
@@ -2174,6 +2190,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, paddingLeft: '18px' }}>{mesNotes[0].commentaire}</p>
                       </div>
                     )}
+                    {rdvDuJour.map(r => (
+                      <div key={r.id} onClick={() => setOnglet('sante')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>
+                          Tu as rdv{r.heure_rdv ? ` à ${r.heure_rdv.slice(0, 5)}` : ''} aujourd'hui{r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''} — n'oublie pas de remplir le suivi médical à la suite de ton rdv.
+                        </p>
+                        <button onClick={e => { e.stopPropagation(); masquerAlerte(`rdv_medical_${r.id}`) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    ))}
                   </div>
                 )
               })()}

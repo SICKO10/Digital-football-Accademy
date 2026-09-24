@@ -15,6 +15,7 @@ const IcoBell         = () => <svg width="16" height="16" viewBox="0 0 24 24" fi
 const IcoClipboard    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-3"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
 const IcoRepeat       = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
 const IcoCheck        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+const IcoHeart        = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
 
 // Panneau d'alertes de l'accueil éducateur, remplace l'ancien "Dernières
 // réponses aux sondages" (peu actionnable — juste un historique). Regroupe des
@@ -39,6 +40,7 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
   const [evenements, setEvenements] = useState([])
   const [mesTaches, setMesTaches] = useState([])
   const [mesResponsabilites, setMesResponsabilites] = useState([])
+  const [rdvMedicaux, setRdvMedicaux] = useState([])
   const [evenementOuvert, setEvenementOuvert] = useState(null)
   const [tacheOuverte, setTacheOuverte] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -49,7 +51,7 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       const idsRoster = new Set(joueurs.map(j => j.joueur_id).filter(Boolean))
       const aujourdhui = new Date().toISOString().slice(0, 10)
 
-      const [{ data: commandes }, { data: deps }, { data: vehicules }, { data: evts }, { data: taches }, { data: resps }] = await Promise.all([
+      const [{ data: commandes }, { data: deps }, { data: vehicules }, { data: evts }, { data: taches }, { data: resps }, { data: rdvs }] = await Promise.all([
         clubId
           ? supabase.from('equipement_commandes').select('id, destinataire_id, destinataire_nom, statut').eq('club_id', clubId).eq('statut', 'pret')
           : Promise.resolve({ data: [] }),
@@ -71,6 +73,14 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
         clubId
           ? supabase.from('responsabilites_club').select('id, domaine, emoji, tache').eq('club_id', clubId).eq('responsable_id', educateurId)
           : Promise.resolve({ data: [] }),
+        // Rdv médicaux à venir programmés sur les blessures de cet éducateur
+        // (par lui ou par le joueur lui-même, cf. educateur_lit_tout_suivi,
+        // supabase_sante_rdv_medical.sql) — informe même quand c'est le
+        // joueur qui a programmé le rdv de son côté.
+        supabase.from('suivi_medical')
+          .select('id, date_consultation, heure_rdv, blessures!inner(equipe_joueur_id, type_blessure, educateur_id)')
+          .eq('statut', 'prevu').eq('blessures.educateur_id', educateurId).gte('date_consultation', aujourdhui)
+          .order('date_consultation'),
       ])
 
       setCommandesPretes((commandes || []).filter(c => idsRoster.has(c.destinataire_id)))
@@ -94,6 +104,7 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       setEvenements(evts || [])
       setMesTaches(taches || [])
       setMesResponsabilites(resps || [])
+      setRdvMedicaux(rdvs || [])
       setLoading(false)
     }
     charger()
@@ -152,6 +163,16 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
       sousTitre: r.domaine || 'Responsabilité qui vous a été confiée',
       onClick: () => setTacheOuverte({ type: 'responsabilite', ...r }),
     })),
+    ...rdvMedicaux.map(r => {
+      const j = joueurs.find(j => j.id === r.blessures?.equipe_joueur_id)
+      const estAujourdhui = r.date_consultation === new Date().toISOString().slice(0, 10)
+      return {
+        id: `rdv_medical_${r.id}`, Icon: IcoHeart, couleur: colors.accent.orange,
+        titre: `Rdv médical — ${j ? `${j.prenom} ${j.nom}` : 'Joueur'}${r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''}`,
+        sousTitre: `${estAujourdhui ? "Aujourd'hui" : new Date(`${r.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}${r.heure_rdv ? ` · ${r.heure_rdv.slice(0, 5)}` : ''}`,
+        onClick: () => setActiveSection?.('sante'),
+      }
+    }),
   ].filter(a => !masquees.has(a.id))
 
   if (loading) return null
