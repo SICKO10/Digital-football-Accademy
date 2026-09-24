@@ -12,7 +12,7 @@
 // Tactipad ailleurs dans l'app).
 const W = 260, H = 360
 
-export default function TerrainZonesSvg({ zones, fondUrl }) {
+export default function TerrainZonesSvg({ zones, fondUrl, zoneActiveId, onZoneClick }) {
   const cx = W / 2, cy = H / 2
   const boxW = W * 0.6, boxH = H * 0.16
   const sixW = W * 0.3, sixH = H * 0.06
@@ -69,10 +69,14 @@ export default function TerrainZonesSvg({ zones, fondUrl }) {
       {zones.map(z => {
         const x = (Number(z.x) || 0) / 100 * W, y = (Number(z.y) || 0) / 100 * H
         const w = (Number(z.largeur) || 0) / 100 * W, h = (Number(z.hauteur) || 0) / 100 * H
+        const active = zoneActiveId != null && z.id === zoneActiveId
+        const inactif = zoneActiveId != null && !active
         return (
-          <g key={z.id}>
-            <rect x={x} y={y} width={w} height={h} fill={(z.couleur || '#4ade80') + 'cc'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-            {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle">{z.label.toUpperCase()}</text>}
+          <g key={z.id} onClick={() => onZoneClick?.(z.id)} style={{ cursor: onZoneClick ? 'pointer' : 'default' }}>
+            <rect x={x} y={y} width={w} height={h}
+              fill={(z.couleur || '#4ade80') + (inactif ? '55' : 'cc')}
+              stroke={active ? '#fff' : 'rgba(0,0,0,0.3)'} strokeWidth={active ? 2 : 1} />
+            {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle" opacity={inactif ? 0.6 : 1}>{z.label.toUpperCase()}</text>}
           </g>
         )
       })}

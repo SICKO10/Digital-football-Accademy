@@ -7,8 +7,12 @@ import TerrainZonesSvg from './TerrainZonesSvg'
 import DemiTerrainSchema from './DemiTerrainSchema'
 
 // Un terrain + sa légende, pour une phase donnée — brique de base réutilisée
-// pour les 6 phases (offensif/défensif/transitions×2/CPA×2).
+// pour les 6 phases (offensif/défensif/transitions×2/CPA×2). La légende est
+// cliquable : sélectionner une zone la fait ressortir sur le terrain (fond
+// éclairci pour les autres) — purement une interaction d'affichage, ne
+// dépend d'aucun champ supplémentaire côté terrain_zones.
 function PanneauZones({ zones, titre, colors, fondUrl }) {
+  const [zoneActiveId, setZoneActiveId] = useState(null)
   const st = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px' },
   }
@@ -16,22 +20,31 @@ function PanneauZones({ zones, titre, colors, fondUrl }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '20px', alignItems: 'start' }}>
       <div style={st.card}>
         {titre && <p style={{ color: colors.text.faint, fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px', textAlign: 'center' }}>{titre}</p>}
-        <TerrainZonesSvg zones={zones} fondUrl={fondUrl} />
+        <TerrainZonesSvg zones={zones} fondUrl={fondUrl} zoneActiveId={zoneActiveId} onZoneClick={id => setZoneActiveId(prev => prev === id ? null : id)} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {zones.length === 0 ? (
           <div style={{ ...st.card, textAlign: 'center', padding: '32px 16px' }}>
             <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Ton club n'a pas encore personnalisé cette page.</p>
           </div>
-        ) : zones.map(z => (
-          <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', ...st.card, padding: '10px 14px' }}>
-            <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: z.couleur || '#4ade80', flexShrink: 0 }} />
-            <div>
-              <div style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 700 }}>{z.label}</div>
-              {z.description && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{z.description}</div>}
+        ) : zones.map(z => {
+          const couleur = z.couleur || '#4ade80'
+          const active = zoneActiveId === z.id
+          return (
+            <div key={z.id} onClick={() => setZoneActiveId(prev => prev === z.id ? null : z.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px', ...st.card, padding: '10px 14px', cursor: 'pointer',
+                borderLeft: `3px solid ${active ? couleur : 'transparent'}`,
+                background: active ? couleur + '14' : st.card.background,
+              }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: couleur, flexShrink: 0 }} />
+              <div>
+                <div style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 700 }}>{z.label}</div>
+                {z.description && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{z.description}</div>}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
