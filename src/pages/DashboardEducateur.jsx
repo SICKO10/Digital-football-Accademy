@@ -1713,9 +1713,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
     // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
     const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerNotifications(targetId)])
-    // Chargé ici (pas seulement quand l'onglet "materiel" est ouvert) pour que le
-    // widget "Alertes" de l'accueil puisse afficher "équipement prêt" dès l'arrivée.
-    if (clubAffiliationData?.club_id) await chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId)
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
     // localStorage, sinon la première) : charge joueurs/matchs/entraînements
@@ -1726,9 +1723,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try { idActif = localStorage.getItem('equipe_active_id') } catch { /* ignore */ }
     if (!mesEquipesData.some(e => e.id === idActif)) idActif = mesEquipesData[0]?.id || null
     if (idActif !== equipeActiveId) setEquipeActiveId(idActif)
-    const [, matchsData] = await Promise.all([chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif), chargerRapportsRecents(targetId, idActif)])
-    await chargerNotationsMatch(targetId, matchsData.map(m => m.id))
-    await chargerEvaluationsJoueurs(targetId)
+    // chargerMesTaillesEquipementEduc (chargé ici, pas seulement quand l'onglet
+    // "materiel" est ouvert, pour que le widget "Alertes" de l'accueil puisse
+    // afficher "équipement prêt" dès l'arrivée) ne dépend que de
+    // clubAffiliationData déjà résolu ci-dessus, pas de la phase 2 — lancé en
+    // parallèle plutôt qu'avant, un aller-retour de moins avant l'affichage.
+    const [, matchsData] = await Promise.all([
+      chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif), chargerRapportsRecents(targetId, idActif),
+      clubAffiliationData?.club_id ? chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId) : Promise.resolve(),
+    ])
+    // chargerEvaluationsJoueurs ne dépend pas de matchsData — indépendant de
+    // chargerNotationsMatch, plus besoin de les attendre l'un après l'autre.
+    await Promise.all([chargerNotationsMatch(targetId, matchsData.map(m => m.id)), chargerEvaluationsJoueurs(targetId)])
     setLoading(false)
   }
 
