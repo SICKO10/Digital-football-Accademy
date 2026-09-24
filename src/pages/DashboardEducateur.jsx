@@ -5,6 +5,7 @@ import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
+import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 import AnalyseVideo from '../components/AnalyseVideo'
@@ -1862,7 +1863,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const chargerMatchs = async (uid, catId) => {
-    let q = supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid).order('date', { ascending: false })
+    // Scopé à la saison en cours — sans borne, cette requête (jointe à
+    // stats_match/notations_match) ramenait l'historique complet du compte,
+    // toutes saisons confondues, à chaque chargement/changement d'équipe.
+    // Les saisons passées ont leur propre vue (historique_saisons, alimentée
+    // par GestionCloturesSaison), pas besoin de les relire ici.
+    const { date_debut, date_fin } = bornesSaison(saisonActuelle())
+    let q = supabase.from('matchs_equipe').select('*, stats_match(*), notations_match(id)').eq('educateur_id', uid)
+      .gte('date', date_debut).lte('date', date_fin).order('date', { ascending: false })
     if (catId) q = q.eq('club_categorie_id', catId)
     // chargerMatchIdsAvecRapport ne dépend que de uid, indépendant de la
     // requête ci-dessus — lancé en parallèle plutôt qu'après. chargerMatchs
@@ -6602,45 +6610,89 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   </div>
                 )
               }
+              const GRID_RESSENTI = '180px 1fr 80px 80px 120px'
+              // Pas de colonne "humeur" en base (seances_notes_joueurs n'a que
+              // charge_travail/notion_plaisir/mots_cles) — dérivée du plaisir,
+              // nuancée à la baisse quand la séance était à la fois dure et peu
+              // appréciée (charge haute + plaisir moyen/bas), plutôt qu'une
+              // simple redite du chiffre déjà affiché dans la colonne Plaisir.
+              const ressenti = (r) => {
+                const score = r.notion_plaisir - (r.charge_travail >= 4 && r.notion_plaisir <= 3 ? 1 : 0)
+                if (score >= 4) return { label: 'Très bien', color: colors.accent.green }
+                if (score >= 3) return { label: 'Bien', color: colors.accent.amber }
+                if (score >= 2) return { label: 'Moyen', color: colors.accent.amber }
+                return { label: 'Difficile', color: colors.accent.red }
+              }
               return demandesTriees.map(d => {
                 const reponses = reponsesNote.filter(r => r.demande_id === d.id)
                 const moy = (cle) => reponses.length ? (reponses.reduce((s, r) => s + r[cle], 0) / reponses.length).toFixed(1) : null
                 return (
-                  <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div key={d.id} style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${colors.border.subtle}`, overflow: 'hidden', marginBottom: '12px' }}>
+                    <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${colors.border.subtle}`, flexWrap: 'wrap', gap: '10px' }}>
                       <div>
-                        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{d.titre}</div>
-                        <div style={{ color: colors.text.disabled, fontSize: '12px', marginTop: '2px' }}>
-                          {reponses.length} réponse{reponses.length !== 1 ? 's' : ''}
-                          {' · '}
-                          <span style={{ color: d.statut === 'ouverte' ? colors.accent.green : colors.text.disabled }}>{d.statut === 'ouverte' ? 'En cours' : 'Fermée'}</span>
+                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{d.titre}</span>
+                        <span style={{ color: colors.text.disabled, fontSize: '12px', marginLeft: '10px' }}>{new Date(`${d.date_seance}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {reponses.length > 0 && (
+                          <>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ color: colors.accent.amber, fontSize: '18px', fontWeight: 900, lineHeight: 1 }}>{moy('charge_travail')}</div>
+                              <div style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Charge</div>
+                            </div>
+                            <div style={{ width: '1px', height: '28px', background: colors.border.subtle }} />
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ color: colors.accent.green, fontSize: '18px', fontWeight: 900, lineHeight: 1 }}>{moy('notion_plaisir')}</div>
+                              <div style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Plaisir</div>
+                            </div>
+                            <div style={{ width: '1px', height: '28px', background: colors.border.subtle }} />
+                          </>
+                        )}
+                        <div>
+                          <span style={{ padding: '3px 10px', borderRadius: '20px', background: d.statut === 'ouverte' ? colors.accent.green + '1a' : colors.background.raised, color: d.statut === 'ouverte' ? colors.accent.green : colors.text.disabled, fontSize: '11px', fontWeight: 700, border: `1px solid ${d.statut === 'ouverte' ? colors.accent.green + '40' : colors.border.default}` }}>
+                            {d.statut === 'ouverte' ? 'En cours' : 'Fermée'}
+                          </span>
+                          <div style={{ color: colors.text.disabled, fontSize: '10px', marginTop: '3px', textAlign: 'right' }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}</div>
                         </div>
                       </div>
-                      {reponses.length > 0 && (
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 900, color: colors.accent.green }}>{moy('charge_travail')}</div>
-                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Charge</div>
-                          </div>
-                          <div style={{ width: '1px', height: '32px', background: colors.border.subtle }} />
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '18px', fontWeight: 900, color: colors.accent.amber }}>{moy('notion_plaisir')}</div>
-                            <div style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Plaisir</div>
-                          </div>
-                        </div>
-                      )}
                     </div>
+
                     {reponses.length > 0 && (
-                      <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px' }}>
-                        {reponses.map(r => (
-                          <div key={r.joueur_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0', borderBottom: `1px solid ${colors.border.subtle}`, flexWrap: 'wrap' }}>
-                            <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600, minWidth: '110px', flex: 1 }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
-                            <span style={{ fontSize: '12px' }} title="Charge de travail">{'⭐'.repeat(r.charge_travail)}{'☆'.repeat(5 - r.charge_travail)}</span>
-                            <span style={{ fontSize: '12px' }} title="Plaisir">{'😄'.repeat(r.notion_plaisir)}{'😐'.repeat(5 - r.notion_plaisir)}</span>
-                            {r.mots_cles && <span style={{ color: colors.text.disabled, fontSize: '11px', fontStyle: 'italic' }}>{r.mots_cles}</span>}
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <div style={{ padding: '8px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                          {['Joueur', 'Thème', 'Charge', 'Plaisir', 'Ressenti'].map(h => (
+                            <span key={h} style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{h}</span>
+                          ))}
+                        </div>
+                        {reponses.map(r => {
+                          const chargeColor = r.charge_travail >= 4 ? colors.accent.red : r.charge_travail >= 3 ? colors.accent.amber : colors.accent.green
+                          const plaisirColor = r.notion_plaisir >= 4 ? colors.accent.green : r.notion_plaisir >= 3 ? colors.accent.amber : colors.accent.red
+                          const res = ressenti(r)
+                          return (
+                            <div key={r.joueur_id} style={{ padding: '12px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, alignItems: 'center', gap: '12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                              <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                              {r.mots_cles
+                                ? <span style={{ color: colors.text.faint, fontSize: '11px', fontStyle: 'italic', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{r.mots_cles}</span>
+                                : <span />}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ flex: 1, height: '4px', background: colors.background.raised, borderRadius: '2px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${(r.charge_travail / 5) * 100}%`, height: '100%', background: chargeColor, borderRadius: '2px' }} />
+                                </div>
+                                <span style={{ color: chargeColor, fontSize: '12px', fontWeight: 700, minWidth: '14px' }}>{r.charge_travail}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ flex: 1, height: '4px', background: colors.background.raised, borderRadius: '2px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${(r.notion_plaisir / 5) * 100}%`, height: '100%', background: plaisirColor, borderRadius: '2px' }} />
+                                </div>
+                                <span style={{ color: plaisirColor, fontSize: '12px', fontWeight: 700, minWidth: '14px' }}>{r.notion_plaisir}</span>
+                              </div>
+                              <span style={{ padding: '3px 10px', borderRadius: '6px', background: res.color + '15', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}30`, textAlign: 'center' }}>
+                                {res.label}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </>
                     )}
                   </div>
                 )
