@@ -31,12 +31,13 @@ const grilleDuMois = (offset) => {
 // Exporté pour réutilisation par SondageSemaine.jsx (vue mois du planning
 // joueur) — même rendu de puces événement que le calendrier éducateur/club,
 // pas une deuxième implémentation qui dériverait de celle-ci avec le temps.
-export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, onClickMatch, onClickEvenement }) {
+export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEntrainement, onClickMatch, onClickEvenement, onClickRdv }) {
   const colors = useColors()
   const items = [
     ...ents.map(e => ({ type: 'entrainement', data: e })),
     ...mts.map(m => ({ type: 'match', data: m })),
     ...evts.map(v => ({ type: 'evenement', data: v })),
+    ...rdvs.map(r => ({ type: 'rdv', data: r })),
   ]
   const max = compact ? 2 : items.length
   const visibles = items.slice(0, max)
@@ -54,6 +55,17 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
             }}>
             {compact ? (data.description || 'Entraînement') : `${data.heure ? `${data.heure} · ` : ''}${data.description || 'Entraînement'}`}
+          </div>
+        )
+        if (type === 'rdv') return (
+          <div key={`r-${data.id}`} onClick={() => onClickRdv?.(data)}
+            style={{
+              background: '#f9731620', border: '1px solid #f9731650', color: '#f97316',
+              borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
+              cursor: onClickRdv ? 'pointer' : 'default',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            }}>
+            {compact ? 'Rdv médical' : `${data.heure_rdv ? `${data.heure_rdv.slice(0, 5)} · ` : ''}Rdv médical${data.blessures?.type_blessure ? ` — ${data.blessures.type_blessure}` : ''}`}
           </div>
         )
         if (type === 'evenement') return (
@@ -123,7 +135,7 @@ export function EvenementsJour({ ents, mts, evts, compact, onClickEntrainement, 
 // dashboard club. Les couleurs des puces entraînement/match/événement restent
 // fixes (rouge/gris/violet) pour rester distinguables entre elles quel que soit
 // le dashboard hôte.
-export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], onClickEntrainement, onClickMatch, onClickEvenement, accentColor = '#60a5fa' }) {
+export default function PlanningSemaineWidget({ entrainements = [], matchs = [], evenements = [], rdvsMedicaux = [], onClickEntrainement, onClickMatch, onClickEvenement, onClickRdv, accentColor = '#60a5fa' }) {
   const colors = useColors()
   const [vue, setVue] = useState('semaine')
   const [offset, setOffset] = useState(0)
@@ -183,8 +195,9 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             const ents = entrainements.filter(e => e.date === s)
             const mts = matchs.filter(m => m.date === s)
             const evts = evenements.filter(v => v.date === s)
+            const rdvs = rdvsMedicaux.filter(r => r.date_consultation === s)
             const estAujourdhui = s === aujourdhuiStr
-            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0
+            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0 && rdvs.length === 0
             return (
               <div key={s} style={{
                 display: 'flex', gap: '10px', alignItems: vide ? 'center' : 'flex-start',
@@ -199,7 +212,7 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
                   {vide ? (
                     <p style={{ margin: 0, fontSize: '11px', color: colors.text.ghost }}>—</p>
                   ) : (
-                    <EvenementsJour ents={ents} mts={mts} evts={evts} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
+                    <EvenementsJour ents={ents} mts={mts} evts={evts} rdvs={rdvs} compact={false} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} onClickRdv={onClickRdv} />
                   )}
                 </div>
               </div>
@@ -213,8 +226,9 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
             const ents = entrainements.filter(e => e.date === s)
             const mts = matchs.filter(m => m.date === s)
             const evts = evenements.filter(v => v.date === s)
+            const rdvs = rdvsMedicaux.filter(r => r.date_consultation === s)
             const estAujourdhui = s === aujourdhuiStr
-            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0
+            const vide = ents.length === 0 && mts.length === 0 && evts.length === 0 && rdvs.length === 0
             const horsMois = vue === 'mois' && d.getMonth() !== moisCourant
             return (
               <div key={s} style={{
@@ -228,7 +242,7 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
                 <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? accentColor : vide ? colors.text.ghost : colors.text.faint }}>
                   {vue === 'semaine' ? `${JOURS[i % 7]} ${d.getDate()}` : d.getDate()}
                 </p>
-                <EvenementsJour ents={ents} mts={mts} evts={evts} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} />
+                <EvenementsJour ents={ents} mts={mts} evts={evts} rdvs={rdvs} compact={vue === 'mois'} onClickEntrainement={onClickEntrainement} onClickMatch={onClickMatch} onClickEvenement={onClickEvenement} onClickRdv={onClickRdv} />
               </div>
             )
           })}

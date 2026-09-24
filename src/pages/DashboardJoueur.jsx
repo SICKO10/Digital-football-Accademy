@@ -556,7 +556,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [packAttribue, setPackAttribue] = useState(null) // equipement_packs attribué à ce joueur (equipement_attributions)
   const [mesNotes, setMesNotes] = useState([]) // notations_match reçues, la plus récente d'abord
   const [notesSeanceEnAttente, setNotesSeanceEnAttente] = useState([]) // seances_notes_demandes ouvertes, pas encore répondues
-  const [rdvMedicalAujourdhui, setRdvMedicalAujourdhui] = useState([]) // suivi_medical statut='prevu' du jour
+  const [rdvsMedicaux, setRdvsMedicaux] = useState([]) // suivi_medical statut='prevu', tous à venir (planning + alerte du jour)
   const [evalOuverte, setEvalOuverte] = useState(null) // { affiliationId, index } — carré de note ouvert dans "Mes évaluations"
   const [moyennePerso, setMoyennePerso] = useState(null)
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
@@ -698,17 +698,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setNotesSeanceEnAttente(demandes.filter(d => !repondues.has(d.id)))
   }
 
-  // Rdv médicaux (suivi_medical statut='prevu') prévus aujourd'hui — RLS
-  // (joueur_lit_suivi) scope déjà aux blessures du joueur, qu'il soit
-  // lui-même l'auteur du rdv ou que ce soit son éducateur, donc aucun filtre
-  // explicite sur l'identité n'est nécessaire ici (même logique que
-  // chargerBlessures dans SanteJoueur.jsx).
-  async function chargerRdvMedicalAujourdhui() {
-    const aujourdhui = new Date().toISOString().slice(0, 10)
+  // Rdv médicaux à venir (suivi_medical statut='prevu') — RLS (joueur_lit_suivi)
+  // scope déjà aux blessures du joueur, qu'il soit lui-même l'auteur du rdv
+  // ou que ce soit son éducateur, donc aucun filtre explicite sur l'identité
+  // n'est nécessaire ici (même logique que chargerBlessures dans
+  // SanteJoueur.jsx). Pas de borne de date : la liste reste courte (quelques
+  // rdv par blessure en cours), et le planning hebdo/mensuel a besoin de
+  // pouvoir naviguer dans le temps sans recharger à chaque changement de vue.
+  async function chargerRdvsMedicaux() {
     const { data } = await supabase.from('suivi_medical')
-      .select('id, heure_rdv, blessures(type_blessure)')
-      .eq('statut', 'prevu').eq('date_consultation', aujourdhui)
-    setRdvMedicalAujourdhui(data || [])
+      .select('id, date_consultation, heure_rdv, blessures(type_blessure)')
+      .eq('statut', 'prevu')
+    setRdvsMedicaux(data || [])
   }
 
   useEffect(() => {
@@ -771,7 +772,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     await chargerNotifPrefs(targetId)
     await chargerRecrutementProfil(targetId)
     await chargerDemandesBilanMedical(targetId)
-    chargerRdvMedicalAujourdhui()
+    chargerRdvsMedicaux()
     const { data } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
     const { data: demandesData } = await supabase.from('demandes').select('*').eq('joueur_id', targetId).order('created_at', { ascending: false })
     // plan='coach' ne renvoie jamais rien : la contrainte CHECK de profiles.plan
@@ -2161,7 +2162,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 const showConvocation = idConvocation && !alertesMasquees.has(idConvocation)
                 const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
                 const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
-                const rdvDuJour = rdvMedicalAujourdhui.filter(r => !alertesMasquees.has(`rdv_medical_${r.id}`))
+                const aujourdhuiStr = new Date().toISOString().slice(0, 10)
+                const rdvDuJour = rdvsMedicaux.filter(r => r.date_consultation === aujourdhuiStr && !alertesMasquees.has(`rdv_medical_${r.id}`))
                 const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
                 return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0) && (
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2217,7 +2219,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               {edu && (
                 <div style={{ background: colors.background.surface, border: '2px solid #4ade8050', borderRadius: '16px', padding: '20px', marginBottom: '14px', boxShadow: '0 0 0 1px #4ade8010' }}>
                   <p style={{ fontWeight: 800, fontSize: '13px', margin: '0 0 12px', color: colors.accent.green, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-                  <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} />
+                  <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} rdvsMedicaux={rdvsMedicaux} onClickRdv={() => setOnglet('sante')} />
                 </div>
               )}
 
