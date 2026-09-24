@@ -10,6 +10,7 @@ import Avatar from '../components/Avatar'
 import SanteJoueur from '../components/SanteJoueur'
 import NutritionDashboard from '../components/NutritionDashboard'
 import { notifierJoueur } from '../lib/notifications'
+import { saisonActuelle, bornesSaison } from '../lib/saison'
 import NotificationBanner from '../components/NotificationBanner'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { ModalNotation, BadgeNote } from '../components/Notation'
@@ -560,6 +561,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // Onglet Compétition (lecture seule) — résultats/calendrier/classement de l'équipe de l'éducateur affilié
   const [resultatsCompetition, setResultatsCompetition] = useState([])
   const [calendrierCompetition, setCalendrierCompetition] = useState([])
+  const [competitionChargee, setCompetitionChargee] = useState(false)
   const [lienClassementCompetition, setLienClassementCompetition] = useState(null)
   // Mois affiché dans "Prochains matchs" (1er du mois, pour comparer par mois/année) — navigable via les flèches ‹ ›
   const [moisCalendrierCompetition, setMoisCalendrierCompetition] = useState(() => {
@@ -1170,8 +1172,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // pas de table calendrier_matchs séparée pour les matchs à venir — cf. la logique
   // équivalente dans DashboardEducateur.jsx, grouperMatchsParMois/matchJoue).
   const chargerCompetition = async (eduId, clubCategorieId) => {
-    if (!eduId) return
-    let qMatchs = supabase.from('matchs_equipe').select('*').eq('educateur_id', eduId).order('date', { ascending: false })
+    if (!eduId || competitionChargee) return
+    // Scopé à la saison en cours — sans borne, cette requête ramenait
+    // l'historique complet du compte, toutes saisons confondues (les
+    // saisons passées ont leur propre vue, historique_saisons). Chargé une
+    // seule fois par session (competitionChargee) : rouvrir l'onglet ne
+    // refait pas la requête à chaque clic.
+    const { date_debut, date_fin } = bornesSaison(saisonActuelle())
+    let qMatchs = supabase.from('matchs_equipe').select('*').eq('educateur_id', eduId)
+      .gte('date', date_debut).lte('date', date_fin).order('date', { ascending: false })
     if (clubCategorieId) qMatchs = qMatchs.eq('club_categorie_id', clubCategorieId)
     const [{ data: matchs }, { data: pe }] = await Promise.all([
       qMatchs,
@@ -1184,6 +1193,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setResultatsCompetition(joues) // pas de slice ici — navigation mois par mois dans renduCompetition
     setCalendrierCompetition(aVenir) // idem
     setLienClassementCompetition(pe?.ligue_url || null)
+    setCompetitionChargee(true)
   }
 
   const repondreDisponibilite = async (eventId, eventType, statut) => {
