@@ -193,6 +193,19 @@ const COTES_BUT = [
   { value: 'droite', label: 'Droite' },
 ]
 
+// Filtre "Résultats" par type de compétition — matchs_equipe.competition est
+// déjà un champ à 3 valeurs fixes dans le formulaire de création de match
+// (modalMatchForm : "Championnat" / "Coupe" / "Amical"), comparé ici en
+// minuscule pour rester robuste aux quelques formulaires qui laissent encore
+// ce champ en saisie libre (newMatch, scannerMatchData).
+const FILTRES_COMPETITION = [
+  { id: 'toutes', label: 'Toutes' },
+  { id: 'championnat', label: 'Championnat' },
+  { id: 'coupe', label: 'Coupe' },
+  { id: 'amical', label: 'Amical' },
+]
+const matchCorrespondFiltreComp = (m, filtre) => filtre === 'toutes' || (m.competition || '').trim().toLowerCase() === filtre
+
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IcoChart     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -1546,6 +1559,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
+  const [filtreCompResultats, setFiltreCompResultats] = useState('toutes') // championnat/coupe/amical, cf. matchs_equipe.competition (déjà un champ à 3 valeurs, modalMatchForm)
   const [ligueUrl, setLigueUrl] = useState('')
   const [savingLigueUrl, setSavingLigueUrl] = useState(false)
   // Calendrier scanner
@@ -6851,11 +6865,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   </div>
                 )}
 
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  {FILTRES_COMPETITION.map(f => (
+                    <button key={f.id} onClick={() => setFiltreCompResultats(f.id)} style={{
+                      padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                      background: filtreCompResultats === f.id ? '#4ade80' : '#1a1a1a',
+                      color: filtreCompResultats === f.id ? '#0a0a0a' : '#888',
+                      border: `1px solid ${filtreCompResultats === f.id ? '#4ade80' : '#333'}`,
+                    }}>{f.label}</button>
+                  ))}
+                </div>
+
                 {/* ── Bilan de saison — calculé depuis les matchs joués (pas de colonne
                     "resultat" en base, on compare score_nous/score_eux comme partout
                     ailleurs dans ce fichier, ex. widget Accueil) ── */}
                 {(() => {
-                  const matchsJoues = matchs.filter(matchJoue)
+                  const matchsJoues = matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats))
                   if (matchsJoues.length === 0) return null
                   const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
                   const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
@@ -6877,7 +6902,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 })()}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                  {grouperMatchsParMois(matchs.filter(matchJoue), true).map(([moisKey, { label, items }]) => (
+                  {grouperMatchsParMois(matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)), true).map(([moisKey, { label, items }]) => (
                     <div key={moisKey}>
                       <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -7014,7 +7039,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       </div>
                     </div>
                   ))}
-                  {matchs.filter(matchJoue).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
+                  {matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
                 </div>
               </div>
             )}

@@ -61,6 +61,19 @@ const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.filter(c => c !== 'Seniors'), 
 // ferait passer pour "nouvelle" au premier login de chaque joueur).
 const SEUIL_ALERTES_CALENDRIER = '2026-09-25T00:00:00Z'
 
+// Filtre résultats/calendrier par type de compétition — matchs_equipe.competition
+// est déjà un champ à 3 valeurs fixes côté formulaire éducateur ("Championnat" /
+// "Coupe" / "Amical", cf. modalMatchForm dans DashboardEducateur.jsx), comparé
+// ici en minuscule pour rester robuste aux quelques formulaires qui laissent
+// encore ce champ en saisie libre.
+const FILTRES_COMPETITION = [
+  { id: 'toutes', label: 'Toutes' },
+  { id: 'championnat', label: 'Championnat' },
+  { id: 'coupe', label: 'Coupe' },
+  { id: 'amical', label: 'Amical' },
+]
+const matchCorrespondFiltreComp = (m, filtre) => filtre === 'toutes' || (m.competition || '').trim().toLowerCase() === filtre
+
 const IconHome = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -581,6 +594,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // pour partir du mois du dernier match joué plutôt que du mois en cours (souvent
   // vide côté résultats passés) une fois resultatsCompetition chargé.
   const [moisResultatsCompetition, setMoisResultatsCompetition] = useState(null)
+  const [filtreCompCompetition, setFiltreCompCompetition] = useState('toutes') // championnat/coupe/amical, cf. matchs_equipe.competition (déjà un champ à 3 valeurs côté éducateur)
   const [savingDispo, setSavingDispo] = useState(false)
   const [dispoMap, setDispoMap] = useState({}) // { [entrainementOuMatchId]: statut } — pour la liste des 4 prochaines échéances
   const [codeEquipe, setCodeEquipe] = useState('')
@@ -1964,7 +1978,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     }
     return (
       <div style={{ padding: '24px 20px' }}>
-        <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '24px' }}>🏆 {t('jnav_competition', lang)}</h2>
+        <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '16px' }}>🏆 {t('jnav_competition', lang)}</h2>
+
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {FILTRES_COMPETITION.map(f => (
+            <button key={f.id} onClick={() => setFiltreCompCompetition(f.id)} style={{
+              padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+              background: filtreCompCompetition === f.id ? colors.accent.green : colors.background.raised,
+              color: filtreCompCompetition === f.id ? colors.black : colors.text.faint,
+              border: `1px solid ${filtreCompCompetition === f.id ? colors.accent.green : colors.border.default}`,
+            }}>{f.label}</button>
+          ))}
+        </div>
 
         {lienClassementCompetition && (
           <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', marginBottom: '20px', border: `1px solid ${colors.border.subtle}` }}>
@@ -1979,7 +2004,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {(() => {
           const moisMatchs = calendrierCompetition.filter(m => {
             const d = new Date(m.date + 'T12:00:00')
-            return d.getFullYear() === moisCalendrierCompetition.getFullYear() && d.getMonth() === moisCalendrierCompetition.getMonth()
+            return d.getFullYear() === moisCalendrierCompetition.getFullYear() && d.getMonth() === moisCalendrierCompetition.getMonth() && matchCorrespondFiltreComp(m, filtreCompCompetition)
           })
           const changerMois = (delta) => setMoisCalendrierCompetition(prev => {
             const d = new Date(prev); d.setMonth(d.getMonth() + delta); return d
@@ -2027,7 +2052,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           })()
           const moisResultats = resultatsCompetition.filter(r => {
             const d = new Date(r.date + 'T12:00:00')
-            return d.getFullYear() === moisEffectif.getFullYear() && d.getMonth() === moisEffectif.getMonth()
+            return d.getFullYear() === moisEffectif.getFullYear() && d.getMonth() === moisEffectif.getMonth() && matchCorrespondFiltreComp(r, filtreCompCompetition)
           })
           const changerMois = (delta) => setMoisResultatsCompetition(() => {
             const d = new Date(moisEffectif); d.setMonth(d.getMonth() + delta); return d
