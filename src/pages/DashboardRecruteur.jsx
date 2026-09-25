@@ -10,6 +10,7 @@ import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
 import BadgesJoueur from "../components/BadgesJoueur";
 import BadgeVideoVerifiee from "../components/BadgeVideoVerifiee";
+import { saisonActuelle } from "../lib/saison";
 import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
 import OnboardingGuide from "../components/OnboardingGuide";
@@ -134,6 +135,7 @@ export default function DashboardRecruteur() {
   const [modeAffichage, setModeAffichage] = useState("grille");
   const [toast, setToast] = useState(null);
   const [certifications, setCertifications] = useState({}); // { joueur_id: { niveau, saison, statut } }
+  const [veoStats, setVeoStats] = useState({}); // { joueur_id: row } — stats Veo auto-déclarées, saison en cours
 
   // Validation note de saison par le club
   const [validationsClub, setValidationsClub] = useState([])
@@ -176,6 +178,10 @@ export default function DashboardRecruteur() {
       const certifMap = {};
       (certifData || []).forEach(c => { certifMap[c.joueur_id] = c; });
       setCertifications(certifMap);
+      const { data: veoData } = await supabase.from("veo_stats_joueur").select("*").eq("saison", saisonActuelle());
+      const veoMap = {};
+      (veoData || []).forEach(v => { veoMap[v.joueur_id] = v; });
+      setVeoStats(veoMap);
       await chargerConversations(user.id);
       await chargerFavoris(user.id);
       setLoading(false);
@@ -576,6 +582,34 @@ export default function DashboardRecruteur() {
               </div>
             </div>
           </div>
+
+          {/* Stats Veo auto-déclarées par le joueur — distinct de "Vidéo
+              vérifiée" (import CSV éducateur, BadgeVideoVerifiee ci-dessus) :
+              purement déclaratif, affiché seulement si le joueur a saisi
+              quelque chose cette saison. */}
+          {veoStats[j.id] && (
+            <div style={{ marginBottom: "1.5rem", background: colors.background.surface, border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.5rem" }}>
+              <p style={{ color: colors.accent.blue, fontWeight: 700, fontSize: "12px", marginBottom: "10px" }}>
+                Stats Veo — Saison {saisonActuelle()}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                {[
+                  { label: "Matchs", val: veoStats[j.id].matchs },
+                  { label: "Buts", val: veoStats[j.id].buts },
+                  { label: "Tirs", val: veoStats[j.id].tirs },
+                  { label: "Passes", val: veoStats[j.id].passes_reussies },
+                  { label: "Conv.", val: `${veoStats[j.id].taux_conversion}%` },
+                  { label: "Événements", val: veoStats[j.id].nb_evenements },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: "center", background: colors.accent.blue + "0f", border: `1px solid ${colors.accent.blue}26`, borderRadius: "8px", padding: "8px 4px" }}>
+                    <div style={{ color: colors.accent.blue, fontWeight: 800, fontSize: "16px" }}>{s.val}</div>
+                    <div style={{ color: colors.text.faint, fontSize: "10px" }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ color: colors.text.disabled, fontSize: "10px", marginTop: "8px", marginBottom: 0, textAlign: "center" }}>Saisies par le joueur — déclaratif, non vérifié</p>
+            </div>
+          )}
 
           {/* Radar chart */}
           <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "1.5rem", background: colors.background.surface, border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.5rem", flexWrap: "wrap" }}>
