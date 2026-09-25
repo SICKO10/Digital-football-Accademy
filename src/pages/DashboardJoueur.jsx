@@ -22,6 +22,7 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import CarteJoueur from '../components/CarteJoueur'
+import VeoStatsJoueur from '../components/VeoStatsJoueur'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
@@ -594,16 +595,27 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // entrainements/matchs de l'éducateur, sans limite de date (navigation ← → dans le widget).
   const [planningEntrainements, setPlanningEntrainements] = useState([])
   const [planningMatchs, setPlanningMatchs] = useState([])
-  const chargerPlanningSemaine = async (educateurId, clubCategorieId) => {
-    if (!educateurId) return
-    let qEnt = supabase.from('entrainements').select('id, date, description, heure').eq('educateur_id', educateurId)
-    let qMt = supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile').eq('educateur_id', educateurId)
-    // Un éducateur qui gère plusieurs équipes (ex: U11 et U18) — sans ce filtre,
-    // un joueur voit le calendrier de toutes les équipes de son éducateur.
-    if (clubCategorieId) { qEnt = qEnt.eq('club_categorie_id', clubCategorieId); qMt = qMt.eq('club_categorie_id', clubCategorieId) }
-    const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMt])
-    setPlanningEntrainements(ents || [])
-    setPlanningMatchs(mts || [])
+  // affiliationsAcceptees : toutes les affiliations 'accepte' du joueur (pas
+  // une seule) — un joueur peut être affilié à deux équipes en même temps
+  // (même éducateur gérant 2 catégories, ou deux éducateurs différents) ; se
+  // limiter à la première (ancien comportement, cf. mesAffiliations.find())
+  // laissait le calendrier de la 2e équipe totalement invisible, donnant
+  // l'impression que "plus rien ne s'affiche" dès qu'une 2e affiliation
+  // apparaît. On agrège les séances/matchs de toutes les équipes.
+  const chargerPlanningSemaine = async (affiliationsAcceptees) => {
+    if (!affiliationsAcceptees?.length) return
+    const resultats = await Promise.all(affiliationsAcceptees.map(async a => {
+      if (!a.educateur_id) return { ents: [], mts: [] }
+      let qEnt = supabase.from('entrainements').select('id, date, description, heure').eq('educateur_id', a.educateur_id)
+      let qMt = supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile').eq('educateur_id', a.educateur_id)
+      // Un éducateur qui gère plusieurs équipes (ex: U11 et U18) — sans ce filtre,
+      // un joueur voit le calendrier de toutes les équipes de son éducateur.
+      if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMt = qMt.eq('club_categorie_id', a.club_categorie_id) }
+      const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMt])
+      return { ents: ents || [], mts: mts || [] }
+    }))
+    setPlanningEntrainements(resultats.flatMap(r => r.ents))
+    setPlanningMatchs(resultats.flatMap(r => r.mts))
   }
 
   useEffect(() => { getProfil() }, [])
@@ -746,8 +758,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id, a.club_categorie_id)
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
-      const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) { chargerCalendrierEtDispos(a.educateur_id, a.club_categorie_id); chargerPlanningSemaine(a.educateur_id, a.club_categorie_id); chargerTauxPresence(a.equipe_joueur_id, a.educateur_id, a.club_categorie_id); chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
+      // Le calendrier (widget + planning semaine) agrège TOUTES les
+      // affiliations acceptées — un joueur dans 2 équipes doit voir les 2
+      // plannings, pas seulement celui de la première trouvée. Stats/notes
+      // restent sur la première pour l'instant (pas le périmètre du bug
+      // rapporté : "plus rien ne s'affiche" concernait le calendrier).
+      const acceptees = mesAffiliations.filter(af => af.statut === 'accepte')
+      const a = acceptees[0]
+      if (acceptees.length > 0) { chargerCalendrierEtDispos(acceptees); chargerPlanningSemaine(acceptees) }
+      if (a) { chargerTauxPresence(a.equipe_joueur_id, a.educateur_id, a.club_categorie_id); chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
     }
     if (onglet === 'competition') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
@@ -1146,16 +1165,25 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setCloturesAEvaluer(enAttente)
   }
 
-  // Widget accueil : prochain entraînement + prochain match de l'éducateur, avec ma dispo déclarée
-  const chargerCalendrierEtDispos = async (educateurId, clubCategorieId) => {
-    if (!userId || !educateurId) return
+  // Widget accueil : prochain entraînement + prochain match, avec ma dispo
+  // déclarée — affiliationsAcceptees : toutes les équipes du joueur (cf.
+  // chargerPlanningSemaine), agrégées avant de retenir les 4 prochains
+  // évènements toutes équipes confondues.
+  const chargerCalendrierEtDispos = async (affiliationsAcceptees) => {
+    if (!userId || !affiliationsAcceptees?.length) return
     const aujourdHui = new Date().toISOString().split('T')[0]
     const dans30jours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-    let qEnt = supabase.from('entrainements').select('id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4)
-    let qMt = supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile').eq('educateur_id', educateurId).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4)
-    if (clubCategorieId) { qEnt = qEnt.eq('club_categorie_id', clubCategorieId); qMt = qMt.eq('club_categorie_id', clubCategorieId) }
-    const [{ data: entrainements }, { data: matchs }] = await Promise.all([qEnt, qMt])
+    const resultats = await Promise.all(affiliationsAcceptees.map(async a => {
+      if (!a.educateur_id) return { ents: [], mts: [] }
+      let qEnt = supabase.from('entrainements').select('id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant').eq('educateur_id', a.educateur_id).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4)
+      let qMt = supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, competition, domicile').eq('educateur_id', a.educateur_id).gte('date', aujourdHui).lte('date', dans30jours).order('date', { ascending: true }).limit(4)
+      if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMt = qMt.eq('club_categorie_id', a.club_categorie_id) }
+      const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMt])
+      return { ents: ents || [], mts: mts || [] }
+    }))
+    const entrainements = resultats.flatMap(r => r.ents)
+    const matchs = resultats.flatMap(r => r.mts)
 
     const events = [
       ...(entrainements || []).map(e => ({ type: 'entrainement', id: e.id, titre: e.description || t('aff_entrainement_titre', lang), date: e.date, heure: e.heure, lieu: e.lieu, sondage_clos: e.sondage_clos, cloture_sondage_avant: e.cloture_sondage_avant })),
@@ -4697,9 +4725,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Carte Joueur</h2>
               <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ta note globale et tes stats de la saison, calculées automatiquement.</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <CarteJoueur userId={userId} />
             </div>
+            <VeoStatsJoueur joueurId={userId} />
           </div>
         )}
 

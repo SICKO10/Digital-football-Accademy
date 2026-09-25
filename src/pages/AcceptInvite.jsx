@@ -202,7 +202,15 @@ function AcceptInvite() {
           const { error: errProfilInsert } = await supabase.from('profiles').insert({ id: user.id, email: user.email, prenom: meta.prenom || '', nom: meta.nom || '', plan: meta.plan || 'fan' })
           if (errProfilInsert) throw new Error(errProfilInsert.message)
         }
-        const { data: affiliationExistante, error: errAffSelect } = await supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('educateur_id', educateurId).maybeSingle()
+        // Scopé par equipe_joueur_id (la fiche de roster précise), pas juste
+        // educateur_id : un joueur peut légitimement être affilié à un même
+        // éducateur pour deux équipes différentes qu'il gère (ex: U18 et
+        // U20) — scoper sur educateur_id seul faisait sauter l'insert pour
+        // la 2e équipe (une affiliation "existait déjà" au sens large), donc
+        // equipe_joueurs.joueur_id se liait bien sur la 2e fiche mais aucune
+        // ligne affiliations ne la représentait, laissant le calendrier du
+        // joueur bloqué sur sa 1re équipe uniquement.
+        const { data: affiliationExistante, error: errAffSelect } = await supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('equipe_joueur_id', equipeJoueurId).maybeSingle()
         if (errAffSelect) throw new Error(errAffSelect.message)
         if (!affiliationExistante) {
           const { error: errAffInsert } = await supabase.from('affiliations').insert({ joueur_id: user.id, educateur_id: educateurId, equipe_joueur_id: equipeJoueurId, statut: 'accepte' })
