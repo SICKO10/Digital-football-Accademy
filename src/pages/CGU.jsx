@@ -145,9 +145,40 @@ function CGU() {
           </P>
         </Section>
 
+        <Section titre="7. Documents et données médicales (module Santé)">
+          <P>
+            La plateforme propose un espace « Santé » permettant à un joueur (ou, s'il est mineur, à son représentant
+            légal) de déclarer une blessure et d'y associer volontairement des documents médicaux : certificats,
+            comptes-rendus de consultation, ordonnances, bilans de rééducation, etc.
+          </P>
+          <P><strong style={{ color: 'white' }}>Dépôt volontaire et sous la responsabilité de l'utilisateur :</strong></P>
+          <ul style={{ paddingLeft: '1.5rem', margin: '0 0 0.75rem' }}>
+            <Li>Le dépôt de documents médicaux est <strong>entièrement facultatif</strong> — aucune fonctionnalité de la plateforme n'exige la transmission d'un document médical pour être utilisée.</Li>
+            <Li>L'utilisateur (ou son représentant légal s'il est mineur) garantit être en droit de déposer le document concerné et que son contenu est exact.</Li>
+            <Li>Ces documents ne sont utilisés que dans le cadre du suivi sportif et médical par l'éducateur ou le club auquel le joueur est affilié, et ne sont jamais transmis à un tiers (recruteur, sponsor, etc.) sans consentement explicite de l'utilisateur, sauf obligation légale.</Li>
+            <Li>Si le joueur est mineur, le dépôt d'un document médical relève de la seule décision et responsabilité de son représentant légal.</Li>
+          </ul>
+          <P><strong style={{ color: 'white' }}>Sécurité et limitation de responsabilité :</strong></P>
+          <P>
+            Digital Football met en œuvre des mesures techniques et organisationnelles raisonnables pour protéger ces
+            données (accès restreint à l'éducateur affilié et au joueur concerné, liens de téléchargement à durée de
+            vie limitée, hébergement sécurisé). Aucun système d'information ne pouvant garantir un risque nul, la
+            responsabilité de Digital Football ne saurait être engagée en cas d'accès non autorisé, de perte ou de
+            divulgation de documents médicaux résultant d'une cause qui ne lui est pas directement imputable
+            (notamment une action malveillante d'un tiers, une négligence de l'utilisateur dans la protection de ses
+            identifiants, ou un cas de force majeure), sous réserve des dispositions d'ordre public applicables en
+            matière de protection des données personnelles (RGPD). En cas de violation de données la concernant,
+            Digital Football s'engage à respecter ses obligations légales de notification.
+          </P>
+          <P>
+            L'utilisateur peut à tout moment supprimer un document médical déposé depuis son espace Santé. En cas de
+            suppression du compte, ces documents suivent la politique de rétention décrite à l'article 6.
+          </P>
+        </Section>
+
         <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', color: colors.text.faint, fontSize: '13px' }}>
           <p style={{ margin: '0 0 4px' }}>Digital Football — contact@digital-football.fr</p>
-          <p style={{ margin: 0 }}>En utilisant la plateforme, vous acceptez l'intégralité des présentes conditions.</p>
+          <p style={{ margin: 0 }}>En utilisant la plateforme, vous acceptez l'intégralité des présentes conditions et notre <a href="/confidentialite" style={{ color: colors.accent.green }}>Politique de Confidentialité</a>.</p>
         </div>
       </div>
     </div>

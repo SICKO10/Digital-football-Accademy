@@ -14,7 +14,7 @@ const ZONES_CORPS = [
 const SPECIALISTES = ['Médecin du sport', 'Kinésithérapeute', 'Ostéopathe', 'Chirurgien', 'Radiologue', 'Autre']
 
 const FORM_VIDE = { equipe_joueur_id: '', type_blessure: '', zone_corps: '', gravite: 'legere', date_debut: new Date().toISOString().slice(0, 10), notes: '' }
-const FORM_SUIVI_VIDE = { date_consultation: new Date().toISOString().slice(0, 10), specialiste: '', compte_rendu: '', fichier: null }
+const FORM_SUIVI_VIDE = { date_consultation: new Date().toISOString().slice(0, 10), specialiste: '', compte_rendu: '' }
 
 // Vue éducateur de "Mon équipe" → onglet Santé : déclaration et suivi des
 // blessures des joueurs de l'effectif actif (joueurs = equipe_joueurs, déjà
@@ -156,18 +156,6 @@ export default function SanteEquipe({ joueurs, educateurId }) {
   const ajouterSuivi = async () => {
     if (!formSuivi.compte_rendu.trim() || !formSuivi.date_consultation) return
     setEnvoiEnCours(true)
-    let document_path = null
-    let document_nom = null
-
-    if (formSuivi.fichier) {
-      const file = formSuivi.fichier
-      const path = `${blessureSelectionnee.equipe_joueur_id}/${blessureSelectionnee.id}/${Date.now()}_${file.name}`
-      const { error: uploadError } = await supabase.storage.from('documents-medicaux').upload(path, file)
-      if (uploadError) { console.error('upload document médical error:', uploadError); alert('Erreur upload : ' + uploadError.message); setEnvoiEnCours(false); return }
-      document_path = path
-      document_nom = file.name
-    }
-
     const { error } = await supabase.from('suivi_medical').insert({
       blessure_id: blessureSelectionnee.id,
       auteur_id: educateurId,
@@ -175,7 +163,6 @@ export default function SanteEquipe({ joueurs, educateurId }) {
       specialiste: formSuivi.specialiste || null,
       compte_rendu: formSuivi.compte_rendu,
       statut: 'effectue', // un ajout côté éducateur consigne toujours un compte-rendu déjà rédigé, jamais un rdv à venir (ça, c'est "+ Programmer un rendez-vous" côté joueur) — le défaut de la colonne est 'prevu', il faut le forcer explicitement ici.
-      document_path, document_nom,
     })
     setEnvoiEnCours(false)
     if (error) { console.error('ajouterSuivi error:', error); alert('Erreur : ' + error.message); return }
@@ -418,12 +405,6 @@ export default function SanteEquipe({ joueurs, educateurId }) {
                 <textarea style={s.textarea} value={formSuivi.compte_rendu}
                   onChange={e => setFormSuivi(p => ({ ...p, compte_rendu: e.target.value }))}
                   placeholder="Observations, protocole de soin, recommandations..." />
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={s.label}>Document médical (PDF, image)</label>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={e => setFormSuivi(p => ({ ...p, fichier: e.target.files[0] || null }))}
-                  style={{ color: colors.text.faint, fontSize: '12px' }} />
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterSuivi}>Enregistrer</button>

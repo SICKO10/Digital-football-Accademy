@@ -34,6 +34,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
 const CGU = lazy(() => import('./pages/CGU'))
+const PolitiqueConfidentialite = lazy(() => import('./pages/PolitiqueConfidentialite'))
 const ClubPublic = lazy(() => import('./pages/ClubPublic'))
 const PartenairePublic = lazy(() => import('./pages/PartenairePublic'))
 const TactipadPublic = lazy(() => import('./pages/TactipadPublic'))
@@ -120,6 +121,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/cgu" element={<CGU />} />
+        <Route path="/confidentialite" element={<PolitiqueConfidentialite />} />
         <Route path="/clubs/:id" element={<ClubPublic />} />
         <Route path="/partenaire/:token" element={<PartenairePublic />} />
         <Route path="/tactipad/:slug" element={<TactipadPublic />} />
