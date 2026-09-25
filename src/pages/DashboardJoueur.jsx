@@ -2068,6 +2068,28 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     </div>
   )
 
+  // Alertes équipe (rdv médical du jour, nouveau créneau, changement d'horaire)
+  // partagées entre les deux variantes du dashboard (plan fan affilié vs
+  // isPro), cf. popupEquipementPret ci-dessus — planningEntrainements/
+  // planningMatchs/rdvsMedicaux sont déjà chargés pour tout joueur affilié
+  // quel que soit son plan (chargerPlanningSemaine/chargerRdvsMedicaux, pas
+  // gated par estAffilie). "Changement d'horaire" ne se déclenche qu'après
+  // que le "nouveau" correspondant a été validé une première fois : sans ça,
+  // la toute première heure connue d'un créneau se ferait passer pour un
+  // changement. dismissNouveauEntrainement/dismissNouveauMatch valident les
+  // deux à la fois pour figer l'heure "déjà vue" au moment de l'accusé de
+  // réception.
+  const aujourdhuiStrAlertes = new Date().toISOString().slice(0, 10)
+  const entrainementsAVenir = planningEntrainements.filter(e => e.date >= aujourdhuiStrAlertes)
+  const matchsAVenir = planningMatchs.filter(m => m.date >= aujourdhuiStrAlertes)
+  const rdvDuJour = rdvsMedicaux.filter(r => r.date_consultation === aujourdhuiStrAlertes && !alertesMasquees.has(`rdv_medical_${r.id}`))
+  const entrainementsNouveaux = entrainementsAVenir.filter(e => !alertesMasquees.has(`entrainement_nouveau_${e.id}`))
+  const entrainementsHoraireChange = entrainementsAVenir.filter(e => alertesMasquees.has(`entrainement_nouveau_${e.id}`) && !alertesMasquees.has(`entrainement_horaire_${e.id}_${e.heure || ''}`))
+  const matchsNouveaux = matchsAVenir.filter(m => !alertesMasquees.has(`match_nouveau_${m.id}`))
+  const matchsHoraireChange = matchsAVenir.filter(m => alertesMasquees.has(`match_nouveau_${m.id}`) && !alertesMasquees.has(`match_horaire_${m.id}_${m.heure || ''}`))
+  const dismissNouveauEntrainement = (e) => { masquerAlerte(`entrainement_nouveau_${e.id}`); masquerAlerte(`entrainement_horaire_${e.id}_${e.heure || ''}`) }
+  const dismissNouveauMatch = (m) => { masquerAlerte(`match_nouveau_${m.id}`); masquerAlerte(`match_horaire_${m.id}_${m.heure || ''}`) }
+
   if (estAffilie) {
     const affiliation = mesAffiliations.find(a => a.statut === 'accepte')
     const edu = affiliation?.profil_educateur
@@ -2190,10 +2212,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 const showConvocation = idConvocation && !alertesMasquees.has(idConvocation)
                 const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
                 const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
-                const aujourdhuiStr = new Date().toISOString().slice(0, 10)
-                const rdvDuJour = rdvsMedicaux.filter(r => r.date_consultation === aujourdhuiStr && !alertesMasquees.has(`rdv_medical_${r.id}`))
                 const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
-                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0) && (
+                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsHoraireChange.length > 0 || matchsNouveaux.length > 0 || matchsHoraireChange.length > 0) && (
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
                     {showConvocation && (
@@ -2227,6 +2247,42 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                           Tu as rdv{r.heure_rdv ? ` à ${r.heure_rdv.slice(0, 5)}` : ''} aujourd'hui{r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''} — n'oublie pas de remplir le suivi médical à la suite de ton rdv.
                         </p>
                         <button onClick={e => { e.stopPropagation(); masquerAlerte(`rdv_medical_${r.id}`) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    ))}
+                    {entrainementsNouveaux.map(ent => (
+                      <div key={`ent_nouveau_${ent.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                          Nouvel entraînement le {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{ent.heure ? ` à ${ent.heure}` : ''}
+                        </p>
+                        <button onClick={() => dismissNouveauEntrainement(ent)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    ))}
+                    {entrainementsHoraireChange.map(ent => (
+                      <div key={`ent_horaire_${ent.id}_${ent.heure}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                          Horaire modifié — entraînement du {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {ent.heure ? `à ${ent.heure}` : 'sans horaire'}
+                        </p>
+                        <button onClick={() => masquerAlerte(`entrainement_horaire_${ent.id}_${ent.heure || ''}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    ))}
+                    {matchsNouveaux.map(m => (
+                      <div key={`match_nouveau_${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                          Nouveau match ajouté — {m.domicile ? 'vs' : '@'} {m.adversaire || 'adversaire à confirmer'} le {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                        <button onClick={() => dismissNouveauMatch(m)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      </div>
+                    ))}
+                    {matchsHoraireChange.map(m => (
+                      <div key={`match_horaire_${m.id}_${m.heure}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                          Horaire modifié — match {m.domicile ? 'vs' : '@'} {m.adversaire || ''} du {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {m.heure ? `à ${m.heure}` : 'sans horaire'}
+                        </p>
+                        <button onClick={() => masquerAlerte(`match_horaire_${m.id}_${m.heure || ''}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                       </div>
                     ))}
                   </div>
@@ -3450,6 +3506,65 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             </div>
 
+            {/* ── Alertes équipe — rdv médical du jour, nouveaux créneaux, changements
+                d'horaire. Convocation/équipement ont déjà leur propre traitement dans
+                cette variante (carte convocation ci-dessous, popupEquipementPret) : ce
+                panneau ne couvre que ce qui n'existe pas encore ici, cf. calcul partagé
+                avec la variante "fan affilié" juste avant le split estAffilie. ── */}
+            {(rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsHoraireChange.length > 0 || matchsNouveaux.length > 0 || matchsHoraireChange.length > 0) && (() => {
+              const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
+              return (
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: isMobile ? '16px' : '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
+                  {rdvDuJour.map(r => (
+                    <div key={r.id} onClick={() => setOnglet('sante')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>
+                        Tu as rdv{r.heure_rdv ? ` à ${r.heure_rdv.slice(0, 5)}` : ''} aujourd'hui{r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''} — n'oublie pas de remplir le suivi médical à la suite de ton rdv.
+                      </p>
+                      <button onClick={e => { e.stopPropagation(); masquerAlerte(`rdv_medical_${r.id}`) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                    </div>
+                  ))}
+                  {entrainementsNouveaux.map(ent => (
+                    <div key={`ent_nouveau_${ent.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                        Nouvel entraînement le {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{ent.heure ? ` à ${ent.heure}` : ''}
+                      </p>
+                      <button onClick={() => dismissNouveauEntrainement(ent)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                    </div>
+                  ))}
+                  {entrainementsHoraireChange.map(ent => (
+                    <div key={`ent_horaire_${ent.id}_${ent.heure}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                        Horaire modifié — entraînement du {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {ent.heure ? `à ${ent.heure}` : 'sans horaire'}
+                      </p>
+                      <button onClick={() => masquerAlerte(`entrainement_horaire_${ent.id}_${ent.heure || ''}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                    </div>
+                  ))}
+                  {matchsNouveaux.map(m => (
+                    <div key={`match_nouveau_${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                        Nouveau match ajouté — {m.domicile ? 'vs' : '@'} {m.adversaire || 'adversaire à confirmer'} le {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                      </p>
+                      <button onClick={() => dismissNouveauMatch(m)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                    </div>
+                  ))}
+                  {matchsHoraireChange.map(m => (
+                    <div key={`match_horaire_${m.id}_${m.heure}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
+                        Horaire modifié — match {m.domicile ? 'vs' : '@'} {m.adversaire || ''} du {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {m.heure ? `à ${m.heure}` : 'sans horaire'}
+                      </p>
+                      <button onClick={() => masquerAlerte(`match_horaire_${m.id}_${m.heure || ''}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+
             {/* CONVOCATION — publiée par l'éducateur pour un match à venir, disparaît
                 automatiquement le dimanche 20h suivant le match (filtré côté RLS, cf.
                 chargerConvocationActive) */}
@@ -3538,9 +3653,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 section : mêmes événements, boutons de présence en plus) au lieu de deux
                 blocs redondants côte à côte (si affilié à un éducateur) */}
             {(() => {
-              const aff = mesAffiliations.find(af => af.statut === 'accepte')
-              if (!aff) return null
-              return <SondageSemaine mode="joueur" userId={userId} educateurId={aff.educateur_id} equipeCategorieId={aff.club_categorie_id} accentColor={colors.accent.green} />
+              const accepteesAff = mesAffiliations.filter(af => af.statut === 'accepte')
+              if (accepteesAff.length === 0) return null
+              return <SondageSemaine mode="joueur" userId={userId} affiliations={accepteesAff} accentColor={colors.accent.green} />
             })()}
             {tauxPresenceAccueil && (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>

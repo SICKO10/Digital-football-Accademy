@@ -65,7 +65,13 @@ function LegendePresence() {
 // blessé / malade / convoqué, la table `disponibilites` existante), et
 // l'éducateur y voit la réponse de toute l'équipe, semaine par semaine,
 // avant de placer ses séances.
-export default function SondageSemaine({ mode, userId, educateurId, equipeCategorieId, accentColor = colors.accent.blue, onVoirFiche }) {
+// affiliations (mode 'joueur' uniquement) : liste des affiliations acceptées
+// du joueur ([{ educateur_id, club_categorie_id }, ...]) — un joueur peut
+// être rattaché à 2 équipes en même temps (même club, catégories
+// différentes, ou deux éducateurs distincts) ; s'en tenir à un seul
+// educateurId/equipeCategorieId (ancien comportement, toujours utilisé en
+// repli si non fourni) masquait complètement le planning de la 2e équipe.
+export default function SondageSemaine({ mode, userId, educateurId, equipeCategorieId, affiliations, accentColor = colors.accent.blue, onVoirFiche }) {
   const colors2 = useColors()
   // Vue mois : réservée au mode joueur (lecture/navigation seulement, cliquer un
   // événement ramène sur la semaine correspondante pour répondre au sondage) —
@@ -108,6 +114,13 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
   const debutStr = dateStr(jours[0]), finStr = dateStr(jours[jours.length - 1])
   const aujourdhuiStr = dateStr(new Date())
   const eduId = mode === 'joueur' ? educateurId : userId
+  // Repli sur educateurId/equipeCategorieId (ancien comportement) si
+  // affiliations n'est pas fourni — garde la compatibilité pour un éventuel
+  // autre appelant en mode joueur qui ne passerait qu'une seule équipe.
+  const listeAffiliations = mode === 'joueur'
+    ? (affiliations?.length ? affiliations : (educateurId ? [{ educateur_id: educateurId, club_categorie_id: equipeCategorieId }] : []))
+    : []
+  const affiliationsKey = listeAffiliations.map(a => `${a.educateur_id}:${a.club_categorie_id}`).join(',')
 
   // Bascule vers la semaine contenant cette date (clic sur un jour/événement en
   // vue mois) — la vue mois est volontairement une simple prévisualisation,
@@ -122,21 +135,27 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
   }
 
   const charger = async () => {
-    if (!eduId) return
-    setLoading(true)
-    // equipeCategorieId : un même éducateur peut gérer plusieurs équipes
-    // (switcher, cf. DashboardEducateur.jsx) — sans ce filtre, entraînements/
-    // matchs/roster des différentes équipes du coach se mélangeraient.
-    let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant, fiche_id').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
-    let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
-    if (equipeCategorieId) { qEnt = qEnt.eq('club_categorie_id', equipeCategorieId); qMts = qMts.eq('club_categorie_id', equipeCategorieId) }
-    const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
-    setEntrainements(ents || [])
-    setMatchs(mts || [])
-    const entIds = (ents || []).map(e => e.id)
-    const matchIds = (mts || []).map(m => m.id)
-
     if (mode === 'joueur') {
+      // Agrège entraînements/matchs de TOUTES les équipes du joueur — se
+      // limiter à une seule (ancien comportement, un seul educateurId/
+      // equipeCategorieId) masquait complètement le planning des autres
+      // équipes dès qu'un joueur est affilié à plus d'une.
+      if (listeAffiliations.length === 0) { setEntrainements([]); setMatchs([]); setLoading(false); return }
+      setLoading(true)
+      const resultats = await Promise.all(listeAffiliations.map(async a => {
+        if (!a.educateur_id) return { ents: [], mts: [] }
+        let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant, fiche_id').eq('educateur_id', a.educateur_id).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+        let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', a.educateur_id).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+        if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMts = qMts.eq('club_categorie_id', a.club_categorie_id) }
+        const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
+        return { ents: ents || [], mts: mts || [] }
+      }))
+      const ents = resultats.flatMap(r => r.ents)
+      const mts = resultats.flatMap(r => r.mts)
+      setEntrainements(ents)
+      setMatchs(mts)
+      const entIds = ents.map(e => e.id)
+      const matchIds = mts.map(m => m.id)
       const [{ data: de }, { data: dm }] = await Promise.all([
         entIds.length ? supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId).in('seance_id', entIds) : Promise.resolve({ data: [] }),
         matchIds.length ? supabase.from('disponibilites').select('match_id, statut').eq('joueur_id', userId).in('match_id', matchIds) : Promise.resolve({ data: [] }),
@@ -145,25 +164,39 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
       de?.forEach(d => { map[d.seance_id] = d.statut })
       dm?.forEach(d => { map[d.match_id] = d.statut })
       setMesDispos(map)
-    } else {
-      let qEq = supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom').eq('educateur_id', userId).not('joueur_id', 'is', null)
-      if (equipeCategorieId) qEq = qEq.eq('club_categorie_id', equipeCategorieId)
-      const { data: eq } = await qEq
-      setRoster(eq || [])
-      const [{ data: de }, { data: dm }] = await Promise.all([
-        entIds.length ? supabase.from('disponibilites').select('joueur_id, seance_id, statut').in('seance_id', entIds) : Promise.resolve({ data: [] }),
-        matchIds.length ? supabase.from('disponibilites').select('joueur_id, match_id, statut').in('match_id', matchIds) : Promise.resolve({ data: [] }),
-      ])
-      const map = {}
-      de?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
-      dm?.forEach(d => { if (!map[d.match_id]) map[d.match_id] = {}; map[d.match_id][d.joueur_id] = d.statut })
-      setDispoEquipe(map)
+      setLoading(false)
+      return
     }
+
+    // Mode éducateur : une seule équipe (equipeCategorieId, switcher côté
+    // DashboardEducateur.jsx) — pas de notion de multi-affiliation ici.
+    if (!eduId) return
+    setLoading(true)
+    let qEnt = supabase.from('entrainements').select('id, date, heure, description, lieu, sondage_clos, cloture_sondage_avant, fiche_id').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+    let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', eduId).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
+    if (equipeCategorieId) { qEnt = qEnt.eq('club_categorie_id', equipeCategorieId); qMts = qMts.eq('club_categorie_id', equipeCategorieId) }
+    const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
+    setEntrainements(ents || [])
+    setMatchs(mts || [])
+    const entIds = (ents || []).map(e => e.id)
+    const matchIds = (mts || []).map(m => m.id)
+    let qEq = supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom').eq('educateur_id', userId).not('joueur_id', 'is', null)
+    if (equipeCategorieId) qEq = qEq.eq('club_categorie_id', equipeCategorieId)
+    const { data: eq } = await qEq
+    setRoster(eq || [])
+    const [{ data: de }, { data: dm }] = await Promise.all([
+      entIds.length ? supabase.from('disponibilites').select('joueur_id, seance_id, statut').in('seance_id', entIds) : Promise.resolve({ data: [] }),
+      matchIds.length ? supabase.from('disponibilites').select('joueur_id, match_id, statut').in('match_id', matchIds) : Promise.resolve({ data: [] }),
+    ])
+    const map = {}
+    de?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
+    dm?.forEach(d => { if (!map[d.match_id]) map[d.match_id] = {}; map[d.match_id][d.joueur_id] = d.statut })
+    setDispoEquipe(map)
     setLoading(false)
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId, equipeCategorieId])
+  useEffect(() => { charger() }, [eduId, debutStr, finStr, mode, userId, equipeCategorieId, affiliationsKey])
 
   // Sur mobile/tablette, la grille 7 colonnes défile horizontalement (chaque
   // jour garde une largeur lisible plutôt que d'être écrasé) — centre la
