@@ -603,6 +603,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // entrainements/matchs de l'éducateur, sans limite de date (navigation ← → dans le widget).
   const [planningEntrainements, setPlanningEntrainements] = useState([])
   const [planningMatchs, setPlanningMatchs] = useState([])
+  const [entrainementsSupprimes, setEntrainementsSupprimes] = useState([]) // entrainements_supprimes (trigger côté DB, cf. supabase_alertes_calendrier_joueur.sql) — alerte joueur
   // affiliationsAcceptees : toutes les affiliations 'accepte' du joueur (pas
   // une seule) — un joueur peut être affilié à deux équipes en même temps
   // (même éducateur gérant 2 catégories, ou deux éducateurs différents) ; se
@@ -616,19 +617,21 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       if (!a.educateur_id) return { ents: [], mts: [] }
       let qEnt = supabase.from('entrainements').select('id, date, description, heure, created_at, updated_at').eq('educateur_id', a.educateur_id)
       let qMt = supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, created_at, updated_at').eq('educateur_id', a.educateur_id)
+      let qSupp = supabase.from('entrainements_supprimes').select('id, date, heure, supprime_at').eq('educateur_id', a.educateur_id)
       // Un éducateur qui gère plusieurs équipes (ex: U11 et U18) — sans ce filtre,
       // un joueur voit le calendrier de toutes les équipes de son éducateur.
-      if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMt = qMt.eq('club_categorie_id', a.club_categorie_id) }
-      const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMt])
+      if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMt = qMt.eq('club_categorie_id', a.club_categorie_id); qSupp = qSupp.eq('club_categorie_id', a.club_categorie_id) }
+      const [{ data: ents }, { data: mts }, { data: supp }] = await Promise.all([qEnt, qMt, qSupp])
       // jours_actifs (affiliations) : un joueur sur 2 équipes peut n'être
       // attendu aux entraînements de celle-ci que certains jours (l'autre
       // équipe couvrant le reste de la semaine) — ne s'applique qu'aux
       // entraînements, pas aux matchs (ponctuels, toujours tous affichés).
       const entsFiltres = a.jours_actifs?.length ? (ents || []).filter(e => a.jours_actifs.includes(jourKeyDeDate(e.date))) : (ents || [])
-      return { ents: entsFiltres, mts: mts || [] }
+      return { ents: entsFiltres, mts: mts || [], supp: supp || [] }
     }))
     setPlanningEntrainements(resultats.flatMap(r => r.ents))
     setPlanningMatchs(resultats.flatMap(r => r.mts))
+    setEntrainementsSupprimes(resultats.flatMap(r => r.supp))
   }
 
   useEffect(() => { getProfil() }, [])
@@ -2086,30 +2089,42 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     </div>
   )
 
-  // Alertes équipe (rdv médical du jour, nouveau créneau, changement
-  // d'horaire) partagées entre les deux variantes du dashboard (plan fan
-  // affilié vs isPro), cf. popupEquipementPret ci-dessus —
-  // planningEntrainements/planningMatchs/rdvsMedicaux sont déjà chargés pour
-  // tout joueur affilié quel que soit son plan (chargerPlanningSemaine/
+  // Alertes équipe (rdv médical du jour, séances ajoutées/supprimées,
+  // prochain match de la semaine, changement d'horaire d'un match) partagées
+  // entre les deux variantes du dashboard (plan fan affilié vs isPro), cf.
+  // popupEquipementPret ci-dessus — planningEntrainements/planningMatchs/
+  // rdvsMedicaux/entrainementsSupprimes sont déjà chargés pour tout joueur
+  // affilié quel que soit son plan (chargerPlanningSemaine/
   // chargerRdvsMedicaux, pas gated par estAffilie).
   //
-  // "Nouveau" et "changement d'horaire" se basent sur created_at/updated_at
-  // (cf. supabase_alertes_calendrier_joueur.sql), pas sur "jamais vu" — sinon
-  // toute la saison déjà planifiée avant la mise en service de cette
-  // fonctionnalité se ferait passer pour "nouvelle" au premier login de
-  // chaque joueur. SEUIL_ALERTES_CALENDRIER = date de mise en service :
-  // seul ce qui est créé après compte comme "nouveau". Le "changement
-  // d'horaire" ne dépend pas de ce seuil (une séance vieille d'un an
-  // modifiée demain doit alerter) mais exige un vrai écart créé/modifié
-  // (>1min) pour ignorer l'égalité créé=modifié d'une insertion normale.
+  // Séances : seulement ajout ou suppression, pas de changement d'horaire
+  // (demande explicite — trop de bruit sinon). "Ajoutée" se base sur
+  // created_at (cf. SEUIL_ALERTES_CALENDRIER ci-dessus : sans seuil, toute la
+  // saison déjà planifiée se ferait passer pour "nouvelle" au premier login).
+  // "Supprimée" vient de entrainements_supprimes (trigger BEFORE DELETE côté
+  // DB, cf. supabase_alertes_calendrier_joueur.sql) — la ligne d'origine
+  // n'existe plus, impossible de le détecter autrement.
+  //
+  // Matchs : pas de "nouveau match", remplacé par un rappel hebdomadaire "ton
+  // prochain match cette semaine" qui se réinitialise chaque lundi (clé
+  // d'alerte incluant le lundi de la semaine courante) — répété exprès plutôt
+  // que ponctuel. Le changement d'horaire reste alerté en plus (updated_at
+  // significativement postérieur à created_at, >1min pour ignorer l'égalité
+  // créé=modifié d'une insertion normale).
   const aujourdhuiStr = new Date().toISOString().slice(0, 10)
   const entrainementsAVenir = planningEntrainements.filter(e => e.date >= aujourdhuiStr)
   const matchsAVenir = planningMatchs.filter(m => m.date >= aujourdhuiStr)
   const rdvDuJour = rdvsMedicaux.filter(r => r.date_consultation === aujourdhuiStr && !alertesMasquees.has(`rdv_medical_${r.id}`))
   const modifieDepuisCreation = (ev) => ev.created_at && ev.updated_at && (new Date(ev.updated_at).getTime() - new Date(ev.created_at).getTime()) > 60000
   const entrainementsNouveaux = entrainementsAVenir.filter(e => e.created_at > SEUIL_ALERTES_CALENDRIER && !alertesMasquees.has(`entrainement_nouveau_${e.id}`))
-  const entrainementsHoraireChange = entrainementsAVenir.filter(e => modifieDepuisCreation(e) && !alertesMasquees.has(`entrainement_horaire_${e.id}_${e.updated_at}`))
-  const matchsNouveaux = matchsAVenir.filter(m => m.created_at > SEUIL_ALERTES_CALENDRIER && !alertesMasquees.has(`match_nouveau_${m.id}`))
+  const entrainementsSupprimesAlerte = entrainementsSupprimes.filter(es => !alertesMasquees.has(`entrainement_supprime_${es.id}`))
+  const lundiDeSemaine = (d) => { const dt = new Date(d); const jour = dt.getDay(); dt.setDate(dt.getDate() + (jour === 0 ? -6 : 1 - jour)); return dt.toISOString().slice(0, 10) }
+  const lundiCourant = lundiDeSemaine(new Date())
+  const dimancheCourantDate = new Date(`${lundiCourant}T00:00:00`)
+  dimancheCourantDate.setDate(dimancheCourantDate.getDate() + 6)
+  const dimancheCourant = dimancheCourantDate.toISOString().slice(0, 10)
+  const prochainMatchSemaine = matchsAVenir.filter(m => m.date <= dimancheCourant).sort((a, b) => a.date.localeCompare(b.date))[0]
+  const showProchainMatchSemaine = prochainMatchSemaine && !alertesMasquees.has(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)
   const matchsHoraireChange = matchsAVenir.filter(m => modifieDepuisCreation(m) && !alertesMasquees.has(`match_horaire_${m.id}_${m.updated_at}`))
 
   if (estAffilie) {
@@ -2235,7 +2250,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
                 const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
                 const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
-                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsHoraireChange.length > 0 || matchsNouveaux.length > 0 || matchsHoraireChange.length > 0) && (
+                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsSupprimesAlerte.length > 0 || showProchainMatchSemaine || matchsHoraireChange.length > 0) && (
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
                     {showConvocation && (
@@ -2280,24 +2295,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <button onClick={() => masquerAlerte(`entrainement_nouveau_${ent.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                       </div>
                     ))}
-                    {entrainementsHoraireChange.map(ent => (
-                      <div key={`ent_horaire_${ent.id}_${ent.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                    {entrainementsSupprimesAlerte.map(es => (
+                      <div key={`ent_supprime_${es.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
                         <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Horaire modifié — entraînement du {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {ent.heure ? `à ${ent.heure}` : 'sans horaire'}
+                          Séance supprimée — {new Date(`${es.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })}{es.heure ? ` à ${es.heure}` : ''}
                         </p>
-                        <button onClick={() => masquerAlerte(`entrainement_horaire_${ent.id}_${ent.updated_at}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                        <button onClick={() => masquerAlerte(`entrainement_supprime_${es.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                       </div>
                     ))}
-                    {matchsNouveaux.map(m => (
-                      <div key={`match_nouveau_${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                    {showProchainMatchSemaine && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
                         <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Nouveau match ajouté — {m.domicile ? 'vs' : '@'} {m.adversaire || 'adversaire à confirmer'} le {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                          Match cette semaine — {prochainMatchSemaine.domicile ? 'vs' : '@'} {prochainMatchSemaine.adversaire || 'adversaire à confirmer'} le {new Date(`${prochainMatchSemaine.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{prochainMatchSemaine.heure ? ` à ${prochainMatchSemaine.heure}` : ''}
                         </p>
-                        <button onClick={() => masquerAlerte(`match_nouveau_${m.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                        <button onClick={() => masquerAlerte(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                       </div>
-                    ))}
+                    )}
                     {matchsHoraireChange.map(m => (
                       <div key={`match_horaire_${m.id}_${m.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
@@ -3533,7 +3548,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 cette variante (carte convocation ci-dessous, popupEquipementPret) : ce
                 panneau ne couvre que ce qui n'existe pas encore ici, cf. calcul partagé
                 avec la variante "fan affilié" juste avant le split estAffilie. ── */}
-            {(rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsHoraireChange.length > 0 || matchsNouveaux.length > 0 || matchsHoraireChange.length > 0) && (() => {
+            {(rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsSupprimesAlerte.length > 0 || showProchainMatchSemaine || matchsHoraireChange.length > 0) && (() => {
               const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
               return (
                 <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: isMobile ? '16px' : '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -3556,24 +3571,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       <button onClick={() => masquerAlerte(`entrainement_nouveau_${ent.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                     </div>
                   ))}
-                  {entrainementsHoraireChange.map(ent => (
-                    <div key={`ent_horaire_${ent.id}_${ent.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
+                  {entrainementsSupprimesAlerte.map(es => (
+                    <div key={`ent_supprime_${es.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
                       <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Horaire modifié — entraînement du {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {ent.heure ? `à ${ent.heure}` : 'sans horaire'}
+                        Séance supprimée — {new Date(`${es.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })}{es.heure ? ` à ${es.heure}` : ''}
                       </p>
-                      <button onClick={() => masquerAlerte(`entrainement_horaire_${ent.id}_${ent.updated_at}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      <button onClick={() => masquerAlerte(`entrainement_supprime_${es.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                     </div>
                   ))}
-                  {matchsNouveaux.map(m => (
-                    <div key={`match_nouveau_${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
+                  {showProchainMatchSemaine && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
                       <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Nouveau match ajouté — {m.domicile ? 'vs' : '@'} {m.adversaire || 'adversaire à confirmer'} le {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                        Match cette semaine — {prochainMatchSemaine.domicile ? 'vs' : '@'} {prochainMatchSemaine.adversaire || 'adversaire à confirmer'} le {new Date(`${prochainMatchSemaine.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{prochainMatchSemaine.heure ? ` à ${prochainMatchSemaine.heure}` : ''}
                       </p>
-                      <button onClick={() => masquerAlerte(`match_nouveau_${m.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
+                      <button onClick={() => masquerAlerte(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
                     </div>
-                  ))}
+                  )}
                   {matchsHoraireChange.map(m => (
                     <div key={`match_horaire_${m.id}_${m.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
