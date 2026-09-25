@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { useColors } from '../lib/theme'
 import { sondageEstClos } from '../lib/sondage'
+import { jourKeyDeDate } from '../lib/jours'
 import { EvenementsJour } from './PlanningSemaineWidget'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -148,7 +149,10 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
         let qMts = supabase.from('matchs_equipe').select('id, date, heure, adversaire, lieu, domicile').eq('educateur_id', a.educateur_id).gte('date', debutStr).lte('date', finStr).order('date', { ascending: true })
         if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMts = qMts.eq('club_categorie_id', a.club_categorie_id) }
         const [{ data: ents }, { data: mts }] = await Promise.all([qEnt, qMts])
-        return { ents: ents || [], mts: mts || [] }
+        // jours_actifs : cf. DashboardJoueur.jsx chargerPlanningSemaine — ne
+        // s'applique qu'aux entraînements, pas aux matchs (ponctuels).
+        const entsFiltres = a.jours_actifs?.length ? (ents || []).filter(e => a.jours_actifs.includes(jourKeyDeDate(e.date))) : (ents || [])
+        return { ents: entsFiltres, mts: mts || [] }
       }))
       const ents = resultats.flatMap(r => r.ents)
       const mts = resultats.flatMap(r => r.mts)

@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
+import { JOURS_SEMAINE } from '../lib/jours'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 import AnalyseVideo from '../components/AnalyseVideo'
@@ -1532,6 +1533,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }, [openMenuJoueurId])
   const [joueurEnEdition, setJoueurEnEdition] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
+  // Jours actifs (affiliations.jours_actifs) pour la fiche en cours d'édition
+  // — un joueur affilié à 2 équipes peut n'être attendu que certains jours
+  // sur celle-ci (le reste de la semaine avec son autre équipe). Distinct de
+  // joueurEnEdition car ça vit sur affiliations, pas equipe_joueurs.
+  const [joursActifsEdit, setJoursActifsEdit] = useState([])
   const [joueurProfil, setJoueurProfil] = useState(null)
   const [joueurMoisDetail, setJoueurMoisDetail] = useState(null)
   const [inviteEmails, setInviteEmails] = useState({})
@@ -3945,12 +3951,24 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     // avant, on en ajoute a minima).
     const avant = joueurs.find(j => j.id === id)
     setJoueurs(prev => prev.map(j => (j.id === id ? { ...j, ...fields } : j)))
+    // jours_actifs vit sur affiliations (pas equipe_joueurs) — une seule
+    // ligne possible pour ce roster précis (equipe_joueur_id), retrouvée
+    // dans l'état affiliations déjà chargé pour cet éducateur.
+    const affiliationCourante = affiliations.find(a => a.equipe_joueur_id === id)
     setSavingEdit(true)
     setJoueurEnEdition(null)
-    const { error } = await supabase.from('equipe_joueurs').update(fields).eq('id', id)
+    const [{ error }, resAff] = await Promise.all([
+      supabase.from('equipe_joueurs').update(fields).eq('id', id),
+      affiliationCourante
+        ? supabase.from('affiliations').update({ jours_actifs: joursActifsEdit.length ? joursActifsEdit : null }).eq('id', affiliationCourante.id)
+        : Promise.resolve({ error: null }),
+    ])
     setSavingEdit(false)
-    if (error) {
-      alert('Erreur : ' + error.message)
+    if (affiliationCourante && !resAff.error) {
+      setAffiliations(prev => prev.map(a => (a.id === affiliationCourante.id ? { ...a, jours_actifs: joursActifsEdit.length ? joursActifsEdit : null } : a)))
+    }
+    if (error || resAff.error) {
+      alert('Erreur : ' + (error?.message || resAff.error?.message))
       if (avant) setJoueurs(prev => prev.map(j => (j.id === id ? avant : j)))
       setJoueurEnEdition({ id, ...fields })
     }
@@ -5758,7 +5776,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null) }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null); setJoursActifsEdit(affiliations.find(a => a.equipe_joueur_id === j.id)?.jours_actifs || []) }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
                         </div>
                       )}
                     </div>
@@ -5799,6 +5817,29 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       </div>
                     )}
                   </div>
+                  {affiliations.some(a => a.equipe_joueur_id === joueurEnEdition.id) && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={st.label}>Jours actifs sur cette équipe (optionnel)</label>
+                      <p style={{ color: colors.text.faint, fontSize: '11px', margin: '0 0 8px' }}>
+                        Utile seulement si ce joueur est aussi affilié à une autre équipe — restreint son planning à ces jours-là pour celle-ci. Laisser vide = tous les jours.
+                      </p>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {JOURS_SEMAINE.map(j => {
+                          const actif = joursActifsEdit.includes(j.key)
+                          return (
+                            <button key={j.key} type="button"
+                              onClick={() => setJoursActifsEdit(prev => actif ? prev.filter(k => k !== j.key) : [...prev, j.key])}
+                              style={{
+                                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                                background: actif ? colors.accent.blue : colors.background.raised,
+                                color: actif ? colors.black : colors.text.faint,
+                                border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`,
+                              }}>{j.label.slice(0, 3)}</button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
                     <button onClick={() => setJoueurEnEdition(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
