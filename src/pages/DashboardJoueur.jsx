@@ -785,8 +785,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       if (a) { chargerTauxPresence(a.equipe_joueur_id, a.educateur_id, a.club_categorie_id); chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
     }
     if (onglet === 'competition') {
-      const a = mesAffiliations.find(af => af.statut === 'accepte')
-      if (a) chargerCompetition(a.educateur_id, a.club_categorie_id)
+      const acceptees = mesAffiliations.filter(af => af.statut === 'accepte')
+      if (acceptees.length > 0) chargerCompetition(acceptees)
     }
   }, [onglet, userId, mesAffiliations])
 
@@ -1236,28 +1236,38 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // (matchs_equipe : domicile est un booléen, le score joué se lit sur score_nous,
   // pas de table calendrier_matchs séparée pour les matchs à venir — cf. la logique
   // équivalente dans DashboardEducateur.jsx, grouperMatchsParMois/matchJoue).
-  const chargerCompetition = async (eduId, clubCategorieId) => {
-    if (!eduId || competitionChargee) return
+  const chargerCompetition = async (affiliationsAcceptees) => {
+    if (!affiliationsAcceptees?.length || competitionChargee) return
     // Scopé à la saison en cours — sans borne, cette requête ramenait
     // l'historique complet du compte, toutes saisons confondues (les
     // saisons passées ont leur propre vue, historique_saisons). Chargé une
     // seule fois par session (competitionChargee) : rouvrir l'onglet ne
     // refait pas la requête à chaque clic.
+    // Agrège TOUTES les équipes du joueur — se limiter à la première affiliation
+    // trouvée masquait complètement les matchs des autres équipes dès qu'un
+    // joueur est affilié à plus d'une (même bug que le calendrier).
     const { date_debut, date_fin } = bornesSaison(saisonActuelle())
-    let qMatchs = supabase.from('matchs_equipe').select('*').eq('educateur_id', eduId)
-      .gte('date', date_debut).lte('date', date_fin).order('date', { ascending: false })
-    if (clubCategorieId) qMatchs = qMatchs.eq('club_categorie_id', clubCategorieId)
-    const [{ data: matchs }, { data: pe }] = await Promise.all([
-      qMatchs,
-      supabase.from('profil_educateur').select('ligue_url').eq('user_id', eduId).maybeSingle(),
-    ])
-    const joues = (matchs || []).filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
-    const aVenir = (matchs || [])
+    const resultats = await Promise.all(affiliationsAcceptees.map(async a => {
+      if (!a.educateur_id) return { matchs: [], ligue_url: null }
+      let qMatchs = supabase.from('matchs_equipe').select('*').eq('educateur_id', a.educateur_id)
+        .gte('date', date_debut).lte('date', date_fin)
+      if (a.club_categorie_id) qMatchs = qMatchs.eq('club_categorie_id', a.club_categorie_id)
+      const [{ data: matchs }, { data: pe }] = await Promise.all([
+        qMatchs,
+        supabase.from('profil_educateur').select('ligue_url').eq('user_id', a.educateur_id).maybeSingle(),
+      ])
+      return { matchs: matchs || [], ligue_url: pe?.ligue_url || null }
+    }))
+    const matchs = resultats.flatMap(r => r.matchs)
+    const joues = matchs
+      .filter(m => m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    const aVenir = matchs
       .filter(m => m.score_nous === '' || m.score_nous === null || m.score_nous === undefined)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
     setResultatsCompetition(joues) // pas de slice ici — navigation mois par mois dans renduCompetition
     setCalendrierCompetition(aVenir) // idem
-    setLienClassementCompetition(pe?.ligue_url || null)
+    setLienClassementCompetition(resultats.find(r => r.ligue_url)?.ligue_url || null)
     setCompetitionChargee(true)
   }
 
