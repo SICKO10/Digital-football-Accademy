@@ -317,8 +317,8 @@ function Home() {
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
         <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '16px' }}>La plateforme qui connecte les talents du football.</p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-          {['Instagram', 'TikTok', 'LinkedIn'].map(reseau => (
-            <a key={reseau} href="#" style={{ color: colors.text.faint, fontSize: '13px', textDecoration: 'none' }}>{reseau}</a>
+          {[['Instagram', 'https://www.instagram.com/digitalfootball10/'], ['TikTok', '#'], ['LinkedIn', '#']].map(([reseau, url]) => (
+            <a key={reseau} href={url} target={url === '#' ? undefined : '_blank'} rel={url === '#' ? undefined : 'noopener noreferrer'} style={{ color: colors.text.faint, fontSize: '13px', textDecoration: 'none' }}>{reseau}</a>
           ))}
         </div>
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
