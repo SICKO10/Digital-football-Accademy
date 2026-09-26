@@ -14,6 +14,7 @@ import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../compone
 import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
 import SanteEquipe from '../components/SanteEquipe'
 import ImportVeo from '../components/ImportVeo'
+import ViewersStats from '../components/ViewersStats'
 import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
@@ -1560,6 +1561,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
   const [filtreCompResultats, setFiltreCompResultats] = useState('toutes') // championnat/coupe/amical, cf. matchs_equipe.competition (déjà un champ à 3 valeurs, modalMatchForm)
+  const [filtreCompClassement, setFiltreCompClassement] = useState('toutes') // même principe que filtreCompResultats, scopé séparément à l'onglet Classement
   const [ligueUrl, setLigueUrl] = useState('')
   const [savingLigueUrl, setSavingLigueUrl] = useState(false)
   // Calendrier scanner
@@ -1731,6 +1733,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (!p || p.plan !== 'educateur') { navigate('/'); return }
     setUserId(targetId)
     setProfil(p)
+    // Log de connexion (onglet Viewers, cf. supabase_connexions_log.sql) — pas
+    // pour un dirigeant qui consulte le dashboard d'un éducateur (educateurIdOverride) :
+    // ce n'est pas cet éducateur qui se connecte. Best-effort, pas d'attente ni
+    // de gestion d'erreur : une connexion non tracée ne doit jamais bloquer le dashboard.
+    if (!educateurIdOverride) supabase.from('connexions_log').insert({ user_id: targetId, role: 'educateur' }).then(() => {})
     // Phase 1 — chargeurs indépendants de l'équipe active, plus club_categories
     // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
     // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
@@ -4887,10 +4894,15 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     await chargerEntrainements(userId, equipeActive?.id)
   }
 
-  // Classement calculé
-  const classement = () => {
+  // Classement calculé depuis nos propres résultats (V/N/D/buts/points face à
+  // chaque adversaire rencontré) — pas un vrai classement de championnat
+  // (qui demanderait les résultats des autres clubs entre eux, qu'on n'a
+  // pas), plutôt un récapitulatif "mon équipe vs chaque adversaire affronté".
+  // matchsScope filtrable (cf. filtreCompClassement, onglet Classement) —
+  // défaut sur tous les matchs joués si non précisé.
+  const classement = (matchsScope = matchs.filter(matchJoue)) => {
     const equipes = {}
-    matchs.filter(m => m.score_nous !== '' && m.score_eux !== '').forEach(m => {
+    matchsScope.forEach(m => {
       const nous = parseInt(m.score_nous)
       const eux = parseInt(m.score_eux)
       const nomNous = profil?.club || 'Mon équipe'
@@ -4985,7 +4997,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   // pour un dirigeant délégué via canView('dirigeants') à cet endroit.
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
-      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante'] },
+      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante', 'viewers'] },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
     ] },
@@ -5423,9 +5435,9 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           </>
         )}
 
-        {['equipe', 'stats', 'sante'].includes(activeSection) && (
+        {['equipe', 'stats', 'sante', 'viewers'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }].filter(it => canView(it.key))}
+            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }, { key: 'viewers', label: 'Viewers' }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -6817,6 +6829,14 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
           <SanteEquipe joueurs={joueurs} educateurId={userId} />
         )}
 
+        {activeSection === 'viewers' && (
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>Viewers</h1>
+            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '24px' }}>Statistiques de connexion des joueurs de ton équipe</p>
+            <ViewersStats joueurs={joueurs} />
+          </div>
+        )}
+
         {/* ===== COMPÉTITION ===== */}
         {activeSection === 'matchs' && (
           <>
@@ -7341,6 +7361,56 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       {t('comp_voir_classement', lang)} ↗
                     </a>
                   )}
+                </div>
+
+                {/* Classement calculé depuis nos propres résultats — pas le
+                    vrai classement du championnat (il faudrait les résultats
+                    des autres clubs entre eux), plutôt "mon équipe face à
+                    chaque adversaire affronté", filtrable comme Résultats. */}
+                <div style={st.card}>
+                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Classement calculé</p>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    {FILTRES_COMPETITION.map(f => (
+                      <button key={f.id} onClick={() => setFiltreCompClassement(f.id)} style={{
+                        padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                        background: filtreCompClassement === f.id ? '#4ade80' : '#1a1a1a',
+                        color: filtreCompClassement === f.id ? '#0a0a0a' : '#888',
+                        border: `1px solid ${filtreCompClassement === f.id ? '#4ade80' : '#333'}`,
+                      }}>{f.label}</button>
+                    ))}
+                  </div>
+                  {(() => {
+                    const lignes = classement(matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompClassement)))
+                    if (lignes.length === 0) return <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('comp_aucun_match', lang)}</p>
+                    return (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
+                              {['Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Pts'].map((h, i) => (
+                                <th key={h} style={{ textAlign: i === 0 ? 'left' : 'center', padding: '8px 6px', color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {lignes.map(e => (
+                              <tr key={e.nom} style={{ borderBottom: `1px solid ${colors.border.subtle}`, background: e.moi ? colors.accent.green + '0f' : 'transparent' }}>
+                                <td style={{ padding: '8px 6px', fontWeight: e.moi ? 800 : 600, color: e.moi ? colors.accent.green : colors.text.primary }}>{e.nom}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.j}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.v}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.n}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.d}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bp}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bc}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bp - e.bc > 0 ? `+${e.bp - e.bc}` : e.bp - e.bc}</td>
+                                <td style={{ textAlign: 'center', padding: '8px 6px', fontWeight: 800, color: colors.text.primary }}>{e.pts}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })()}
                 </div>
 
               </div>
