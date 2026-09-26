@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import { TYPE_LABEL } from './constants'
-import { saisonActuelle } from '../../lib/saison'
 import StatCard from '../../components/coachAdmin/StatCard'
 import Card from '../../components/coachAdmin/Card'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
@@ -12,7 +11,6 @@ const PERIODES = [
   { id: 'semaine', label: '7 jours' },
   { id: 'mois', label: '30 jours' },
   { id: 'annee', label: '12 mois' },
-  { id: 'saison', label: '1er septembre' },
 ]
 
 function dateDebut(periode) {
@@ -21,14 +19,11 @@ function dateDebut(periode) {
   if (periode === 'semaine') d.setDate(d.getDate() - 7)
   else if (periode === 'mois') d.setDate(d.getDate() - 30)
   else if (periode === 'annee') d.setFullYear(d.getFullYear() - 1)
-  else if (periode === 'saison') return `${saisonActuelle().split('-')[0]}-09-01T00:00:00.000Z`
   return d.toISOString()
 }
 
-// Un point par jour pour jour/semaine/mois serait illisible sur "12 mois" ou
-// "depuis le 1er septembre" (jusqu'à ~365 barres) — ces deux périodes sont
-// bucketées par mois à la place, sur la vraie plage écoulée (pas fixé à 12,
-// "depuis le 1er septembre" peut faire 1 à 12 mois selon la date du jour).
+// Un point par jour pour jour/semaine/mois serait illisible sur "12 mois"
+// (jusqu'à 365 barres) — cette période est bucketée par mois à la place.
 function moisEntre(debutISO) {
   const debut = new Date(debutISO)
   const fin = new Date()
@@ -46,8 +41,15 @@ function moisEntre(debutISO) {
 // — connexions_log n'a pas de club_id (cf. supabase_connexions_log.sql),
 // donc pas de filtre direct possible, mais l'admin peut lire club_educateurs
 // et affiliations en entier (cf. supabase_admin_lecture_club_scope.sql).
-async function resoudreIdsClub(clubId) {
-  const { data: ces } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', clubId).eq('statut', 'accepte')
+// Un compte éducateur seul (ex : clubtest@gmail.com, pas un profiles.plan
+// 'club') se résout directement via ses propres affiliations joueurs.
+async function resoudreIdsClub(profilId, plan) {
+  if (plan === 'educateur') {
+    const { data: aff } = await supabase.from('affiliations').select('joueur_id').eq('educateur_id', profilId).eq('statut', 'accepte')
+    const joueurIds = [...new Set((aff || []).map(r => r.joueur_id).filter(Boolean))]
+    return [...new Set([profilId, ...joueurIds])]
+  }
+  const { data: ces } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', profilId).eq('statut', 'accepte')
   const educateurIds = [...new Set((ces || []).map(r => r.educateur_id))]
   if (educateurIds.length === 0) return []
   const { data: aff } = await supabase.from('affiliations').select('joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte')
@@ -72,7 +74,10 @@ export default function Viewers() {
 
   useEffect(() => {
     supabase.from('profiles').select('id', { count: 'exact', head: true }).then(({ count }) => setTotalComptes(count ?? null))
-    supabase.from('profiles').select('id, nom_club, email').eq('plan', 'club').order('nom_club')
+    // clubtest@gmail.com : compte éducateur de test (pas profiles.plan='club')
+    // ajouté volontairement au filtre pour visualiser les stats d'une seule
+    // équipe sans dépendre d'un vrai club plan payant.
+    supabase.from('profiles').select('id, club, email, plan').or("plan.eq.club,email.eq.clubtest@gmail.com").order('club')
       .then(({ data }) => setClubs(data || []))
   }, [])
 
@@ -80,9 +85,10 @@ export default function Viewers() {
     let annule = false
     setIdsClub(null) // reset immédiat — évite de filtrer un instant avec le scope du club précédent le temps de la résolution
     if (!clubSelectionne) return
-    resoudreIdsClub(clubSelectionne).then(ids => { if (!annule) setIdsClub(ids) })
+    const profil = clubs.find(cl => cl.id === clubSelectionne)
+    resoudreIdsClub(clubSelectionne, profil?.plan).then(ids => { if (!annule) setIdsClub(ids) })
     return () => { annule = true }
-  }, [clubSelectionne])
+  }, [clubSelectionne, clubs])
 
   useEffect(() => {
     if (clubSelectionne && idsClub === null) return // scope club pas encore résolu
@@ -118,7 +124,7 @@ export default function Viewers() {
 
   const serie = useMemo(() => {
     if (!connexions) return null
-    if (periode === 'annee' || periode === 'saison') {
+    if (periode === 'annee') {
       const mois = moisEntre(dateDebut(periode))
       const parMois = Object.fromEntries(mois.map(m => [m.key, 0]))
       connexions.forEach(row => {
@@ -165,7 +171,7 @@ export default function Viewers() {
           background: c.surface2, color: c.text, border: `1px solid ${c.border}`, marginLeft: 'auto',
         }}>
           <option value="">Toute la plateforme</option>
-          {clubs.map(cl => <option key={cl.id} value={cl.id}>{cl.nom_club || cl.email}</option>)}
+          {clubs.map(cl => <option key={cl.id} value={cl.id}>{cl.club || cl.email}</option>)}
         </select>
       </div>
 
@@ -173,7 +179,11 @@ export default function Viewers() {
         <StatCard label="Visites" value={connexions === null ? '…' : totalVisites} accent={c.accent} />
         <StatCard label="Comptes actifs" value={connexions === null ? '…' : comptesActifs} accent={c.success} />
         {clubSelectionne ? (
-          <StatCard label="Comptes de ce club" value={idsClub === null ? '…' : idsClub.length} accent={c.warn} sub="éducateurs + joueurs affiliés" />
+          clubs.find(cl => cl.id === clubSelectionne)?.plan === 'educateur' ? (
+            <StatCard label="Comptes de cette équipe" value={idsClub === null ? '…' : idsClub.length} accent={c.warn} sub="éducateur + joueurs affiliés" />
+          ) : (
+            <StatCard label="Comptes de ce club" value={idsClub === null ? '…' : idsClub.length} accent={c.warn} sub="éducateurs + joueurs affiliés" />
+          )
         ) : (
           <StatCard label="Comptes plateforme" value={totalComptes ?? '…'} accent={c.warn} sub="tous plans confondus" />
         )}
