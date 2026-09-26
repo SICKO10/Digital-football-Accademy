@@ -90,14 +90,15 @@ export default function CommentFinancer() {
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
 
       {/* NAV */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
+      <nav style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
         <div onClick={() => navigate('/')} style={{ fontSize: 18, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           <span onClick={() => navigate('/')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Page d'accueil</span>
           <a href="/#comment" style={{ color: '#888', textDecoration: 'none', fontSize: 14 }}>Comment ça marche</a>
           <span onClick={() => navigate('/offres')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Offres</span>
           <span onClick={() => navigate('/jogabonito')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Jogabonito</span>
         </div>
+        <div />
       </nav>
 
       {/* HERO */}
