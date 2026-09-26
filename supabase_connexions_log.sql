@@ -15,12 +15,14 @@ CREATE TABLE IF NOT EXISTS connexions_log (
 
 ALTER TABLE connexions_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "connexions_log_insert_self" ON connexions_log;
 CREATE POLICY "connexions_log_insert_self" ON connexions_log
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Un joueur voit ses propres connexions ; un éducateur voit celles des
 -- joueurs qui lui sont affiliés (accepte), jamais celles d'un autre éducateur
 -- du même club.
+DROP POLICY IF EXISTS "connexions_log_select" ON connexions_log;
 CREATE POLICY "connexions_log_select" ON connexions_log
   FOR SELECT USING (
     auth.uid() = user_id
