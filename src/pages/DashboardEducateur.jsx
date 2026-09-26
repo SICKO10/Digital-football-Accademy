@@ -2049,8 +2049,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Note moyenne "coach" d'un joueur sur tous ses matchs notés (notations_match,
   // /10) — même agrégat que "Note coach" sur l'Accueil joueur (DashboardJoueur.jsx,
   // moyennePerso), utilisé pour le tri "Note" du classement.
-  const noteMoyenneMatch = (equipeJoueurId) => {
-    const notesJoueur = notationsMatch.filter(n => n.joueur_id === equipeJoueurId && !n.est_note_equipe)
+  const noteMoyenneMatch = (equipeJoueurId, matchIdsScope = null) => {
+    const notesJoueur = notationsMatch.filter(n => n.joueur_id === equipeJoueurId && !n.est_note_equipe && (!matchIdsScope || matchIdsScope.has(n.match_id)))
     if (!notesJoueur.length) return null
     const moy = notesJoueur.reduce((s, n) => s + Number(n.note), 0) / notesJoueur.length
     return { moyenne: Number(moy.toFixed(1)), nb: notesJoueur.length }
@@ -6245,7 +6245,17 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
                 {/* ─ Classement ─ */}
                 {statsSubTab === 'classement' && (() => {
-                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id) }))
+                  // Même filtre compétition que l'onglet Tableau (filtreCompTableau
+                  // partagé, cf. plus haut) — competition est un champ texte libre,
+                  // pas d'enum figé Championnat/Coupe/Amical en dur. Ne joue que sur
+                  // buts/passes/victoires/minutes (statsGlobalesJoueur accepte déjà un
+                  // matchsScope) et la note éducateur (via matchIdsFiltres, même
+                  // logique que noteMoyenne dans l'onglet Tableau) — la présence est
+                  // basée sur les entraînements, pas les matchs, donc non affectée.
+                  const competitionsDispo = [...new Set(matchs.map(m => m.competition).filter(Boolean))]
+                  const matchsFiltres = filtreCompTableau === 'all' ? matchs : matchs.filter(m => m.competition === filtreCompTableau)
+                  const matchIdsFiltresClassement = new Set(matchsFiltres.map(m => m.id))
+                  const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id, matchsFiltres), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id, matchIdsFiltresClassement) }))
                   const TRIS = [
                     { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unit: 'but' },
                     { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unit: 'passe' },
@@ -6258,6 +6268,25 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
                   return (
                     <div>
+                      {/* Filtre compétition */}
+                      {competitionsDispo.length > 1 && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => (
+                            <button
+                              key={f.key}
+                              onClick={() => setFiltreCompTableau(f.key)}
+                              style={{
+                                padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px',
+                                background: filtreCompTableau === f.key ? colors.accent.green : colors.background.raised,
+                                color: filtreCompTableau === f.key ? colors.black : colors.text.dim,
+                                fontWeight: filtreCompTableau === f.key ? 700 : 400,
+                              }}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {/* Sélecteur de critère */}
                       <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', marginBottom: '1.5rem' }}>
                         {TRIS.map(t => (
