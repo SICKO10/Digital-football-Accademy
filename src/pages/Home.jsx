@@ -136,6 +136,7 @@ function Home() {
         <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <a href="#comment" style={{ color: colors.text.dim, textDecoration: 'none', fontSize: '14px' }}>{t('home_comment_marche', lang)}</a>
           <span onClick={() => navigate('/offres')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>{t('home_offres', lang)}</span>
+          <span onClick={() => navigate('/comment-financer')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>{t('home_financement', lang)}</span>
           <span onClick={() => navigate('/jogabonito')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
           <div style={{ display: 'flex', gap: '4px' }}>
             {LANGS.map(l => (
