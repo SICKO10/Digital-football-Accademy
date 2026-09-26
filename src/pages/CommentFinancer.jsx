@@ -164,9 +164,9 @@ export default function CommentFinancer() {
                   <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#333', textTransform: 'uppercase' }}>Joueurs par équipe</div>
                   <span style={{ color: '#4ade80', fontWeight: 800, fontSize: 14 }}>{joueurs}</span>
                 </div>
-                <input type="range" min={10} max={30} value={joueurs} onChange={e => setJoueurs(+e.target.value)} style={{ width: '100%', accentColor: '#4ade80' }} />
+                <input type="range" min={15} max={30} value={joueurs} onChange={e => setJoueurs(+e.target.value)} style={{ width: '100%', accentColor: '#4ade80' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                  <span style={{ color: '#2a2a2a', fontSize: 10 }}>10</span>
+                  <span style={{ color: '#2a2a2a', fontSize: 10 }}>15</span>
                   <span style={{ color: '#2a2a2a', fontSize: 10 }}>30</span>
                 </div>
               </div>
@@ -192,9 +192,26 @@ export default function CommentFinancer() {
                 ))}
               </div>
               <div style={{ background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>📊 Mise en perspective</div>
-                <div style={{ color: '#666', fontSize: 12, lineHeight: 1.6 }}>
-                  La licence FFF coûte <strong style={{ color: '#888' }}>~200€/an</strong> par joueur (équipement inclus). Digital Football représente <strong style={{ color: '#4ade80' }}>+{parLicencie}€/an</strong> soit <strong style={{ color: '#4ade80' }}>+{Math.round((+parLicencie / 200) * 100)}%</strong> de la licence — souvent imperceptible.
+                <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 10 }}>📊 Mise en perspective — coût réel d'une saison</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+                  {[
+                    { label: 'Licence FFF + district + ligue', val: '~40€' },
+                    { label: 'Cotisation club (terrains, encadrement)', val: '~100€' },
+                    { label: 'Équipement (chaussures, maillot…)', val: '~80€' },
+                    { label: 'Déplacements matchs extérieur', val: '~30€' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                      <span style={{ color: '#555' }}>{r.label}</span>
+                      <span style={{ color: '#888', fontWeight: 700 }}>{r.val}</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: '1px solid rgba(74,222,128,0.20)', paddingTop: 6, marginTop: 2, display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: '#aaa', fontWeight: 700 }}>Total saison / joueur</span>
+                    <span style={{ color: '#fff', fontWeight: 900 }}>~250€/an</span>
+                  </div>
+                </div>
+                <div style={{ color: '#666', fontSize: 11, lineHeight: 1.6 }}>
+                  Digital Football représente <strong style={{ color: '#4ade80' }}>+{parLicencie}€/an</strong> soit <strong style={{ color: '#4ade80' }}>+{Math.round((+parLicencie / 250) * 100)}%</strong> du budget saison — <strong style={{ color: '#4ade80' }}>quasi imperceptible.</strong>
                 </div>
               </div>
             </div>
