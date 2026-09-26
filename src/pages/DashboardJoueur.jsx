@@ -817,6 +817,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!user) { navigate('/login'); return }
     const targetId = joueurIdOverride || user.id
     setUserId(targetId)
+    // Log de connexion (Viewers côté éducateur, cf. supabase_connexions_log.sql)
+    // — pas quand un tiers (parent, dirigeant, recruteur) consulte ce dashboard
+    // en lecture seule ou via override : ce n'est pas le joueur qui se connecte.
+    // Best-effort, pas d'attente ni de gestion d'erreur.
+    if (!joueurIdOverride && !readOnly) supabase.from('connexions_log').insert({ user_id: targetId, role: 'joueur' }).then(() => {})
     await chargerNotifications(targetId)
     await chargerNotifPrefs(targetId)
     await chargerRecrutementProfil(targetId)
