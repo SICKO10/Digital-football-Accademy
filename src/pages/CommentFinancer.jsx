@@ -109,7 +109,7 @@ export default function CommentFinancer() {
   const [palierIdx, setPalierIdx] = useState(2)
   const [joueurs, setJoueurs]     = useState(20)
   const [activeStrat, setActiveStrat] = useState(null)
-  const [sponsorNom, setSponsorNom]   = useState('Pharmacie du Stade')
+  const [sponsorNom, setSponsorNom]   = useState('Commerçant Local')
 
   const palier = PALIERS[palierIdx]
   const total  = palier.equipes * (joueurs + 1)
@@ -194,7 +194,7 @@ export default function CommentFinancer() {
               <div style={{ background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 12, padding: '14px 16px' }}>
                 <div style={{ color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>📊 Mise en perspective</div>
                 <div style={{ color: '#666', fontSize: 12, lineHeight: 1.6 }}>
-                  La licence FFF coûte <strong style={{ color: '#888' }}>~40€/an</strong> par joueur. Digital Football représente <strong style={{ color: '#4ade80' }}>+{parLicencie}€/an</strong> soit <strong style={{ color: '#4ade80' }}>+{Math.round((+parLicencie / 40) * 100)}%</strong> de la licence — souvent imperceptible.
+                  La licence FFF coûte <strong style={{ color: '#888' }}>~200€/an</strong> par joueur (équipement inclus). Digital Football représente <strong style={{ color: '#4ade80' }}>+{parLicencie}€/an</strong> soit <strong style={{ color: '#4ade80' }}>+{Math.round((+parLicencie / 200) * 100)}%</strong> de la licence — souvent imperceptible.
                 </div>
               </div>
             </div>
