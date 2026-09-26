@@ -6870,7 +6870,15 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
                       <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newMatch.heure} onChange={e => setNewMatch({ ...newMatch, heure: e.target.value })} /></div>
                       <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
-                      <div><label style={st.label}>{t('comp_competition', lang)}</label><input style={st.input} placeholder="Championnat, Coupe..." value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })} /></div>
+                      <div>
+                        <label style={st.label}>{t('comp_type_match', lang)}</label>
+                        <select style={st.input} value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })}>
+                          <option value="">—</option>
+                          <option value="Championnat">{t('comp_type_championnat', lang)}</option>
+                          <option value="Coupe">{t('comp_type_coupe', lang)}</option>
+                          <option value="Amical">{t('comp_type_amical', lang)}</option>
+                        </select>
+                      </div>
                       <div><label style={st.label}>{t('comp_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newMatch.lieu} onChange={e => setNewMatch({ ...newMatch, lieu: e.target.value })} /></div>
                       {!newMatch.domicile && (
                         <div><label style={st.label}>Ville (pour calculer le trajet)</label><input style={st.input} placeholder="Ex: Lyon" value={newMatch.ville} onChange={e => setNewMatch({ ...newMatch, ville: e.target.value })} /></div>
