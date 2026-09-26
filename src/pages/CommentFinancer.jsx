@@ -75,48 +75,11 @@ function hexToRgb(hex) {
   return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)].join(',')
 }
 
-function ApercuSponsor({ sponsor }) {
-  return (
-    <div style={{ background: '#0d0d0d', borderRadius: 14, border: '1px solid #1a1a1a', overflow: 'hidden' }}>
-      <div style={{ background: '#111', borderBottom: '1px solid #1a1a1a', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>Digital<span style={{ color: '#4ade80' }}>Football</span></span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.20)' }}>
-          <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sponsor officiel</span>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>{sponsor}</span>
-        </div>
-      </div>
-      <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-          {['Prochaine séance', 'Mon équipe', 'Mes stats'].map(l => (
-            <div key={l} style={{ background: '#111', borderRadius: 8, padding: 10, border: '1px solid #1a1a1a' }}>
-              <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, marginBottom: 6 }} />
-              <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, width: '60%' }} />
-              <div style={{ color: '#2a2a2a', fontSize: 9, marginTop: 6 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ color: '#f59e0b', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Partenaire du club</div>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>{sponsor}</div>
-          </div>
-          <div style={{ background: '#f59e0b', borderRadius: 6, padding: '4px 10px', fontSize: 10, fontWeight: 700, color: '#0a0a0a' }}>Découvrir →</div>
-        </div>
-        <div style={{ background: '#111', borderRadius: 8, padding: 10, border: '1px solid #1a1a1a' }}>
-          <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, marginBottom: 4 }} />
-          <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, width: '75%' }} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function CommentFinancer() {
   const navigate = useNavigate()
   const [palierIdx, setPalierIdx] = useState(2)
   const [joueurs, setJoueurs]     = useState(20)
   const [activeStrat, setActiveStrat] = useState(null)
-  const [sponsorNom, setSponsorNom]   = useState('Commerçant Local')
 
   const palier = PALIERS[palierIdx]
   const total  = palier.equipes * (joueurs + 1)
@@ -125,6 +88,17 @@ export default function CommentFinancer() {
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
+
+      {/* NAV */}
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
+        <div onClick={() => navigate('/')} style={{ fontSize: 18, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span onClick={() => navigate('/')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Page d'accueil</span>
+          <a href="/#comment" style={{ color: '#888', textDecoration: 'none', fontSize: 14 }}>Comment ça marche</a>
+          <span onClick={() => navigate('/offres')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Offres</span>
+          <span onClick={() => navigate('/jogabonito')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Jogabonito</span>
+        </div>
+      </nav>
 
       {/* HERO */}
       <div style={{ textAlign: 'center', padding: '72px 24px 48px', maxWidth: 720, margin: '0 auto' }}>
@@ -272,16 +246,11 @@ export default function CommentFinancer() {
           <div style={{ padding: '28px 28px 24px' }}>
             <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>Sponsoring local</div>
             <h3 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 10px' }}>Votre sponsor visible sur chaque dashboard</h3>
-            <p style={{ color: '#555', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
+            <p style={{ color: '#555', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
               Un partenaire local finance l'outil. En échange, son nom et logo apparaissent sur tous les dashboards joueurs et éducateurs — visibilité ciblée, hyper-locale, auprès des familles du club.
             </p>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
-              <input value={sponsorNom} onChange={e => setSponsorNom(e.target.value)} placeholder="Nom du sponsor..." style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid #222', background: '#0a0a0a', color: '#fff', fontSize: 13, outline: 'none', width: 260 }} />
-              <span style={{ color: '#333', fontSize: 12 }}>← Personnalisez l'aperçu</span>
-            </div>
           </div>
-          <div style={{ padding: '0 28px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
-            <ApercuSponsor sponsor={sponsorNom || 'Votre Sponsor'} />
+          <div style={{ padding: '0 28px 28px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { icon: '👁', val: `~${(palier.equipes * 21 * 30).toLocaleString('fr-FR')}`, label: 'vues/mois estimées', color: '#f59e0b' },
