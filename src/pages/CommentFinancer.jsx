@@ -23,14 +23,14 @@ const STRATEGIES = [
     tag: 'Le plus courant', tagColor: '#4ade80',
   },
   {
-    id: 'educateurs', icon: '🎓', titre: 'Contribution des éducateurs', color: '#60a5fa',
-    desc: 'Les éducateurs sont les premiers bénéficiaires. Une contribution mensuelle volontaire de 5€/mois couvre une part significative.',
+    id: 'educateurs', icon: '🎓', titre: 'Contribution interne des éducateurs', color: '#60a5fa',
+    desc: 'Les éducateurs sont les premiers utilisateurs de l\'outil. Une contribution volontaire et symbolique — décidée en réunion de bureau ou en AG — permet de couvrir une part significative sans toucher aux licences. Pas de procédure officielle : un simple accord interne suffit.',
     detail: (palier) => {
       const coachs = palier.equipes
       const couvert = Math.round((coachs * 5 * 12 / palier.an) * 100)
-      return `${coachs} coachs × 5€/mois = ${coachs * 60}€/an — couvre ${Math.min(couvert, 100)}% de l'abonnement.`
+      return `${coachs} éducateurs × 5€/mois = ${coachs * 60}€/an — couvre ${Math.min(couvert, 100)}% de l'abonnement. À voter en AG ou bureau directeur.`
     },
-    tag: 'Très populaire', tagColor: '#60a5fa',
+    tag: 'Décision interne', tagColor: '#60a5fa',
   },
   {
     id: 'sponsor', icon: '🏆', titre: 'Sponsoring local', color: '#f59e0b',
@@ -49,16 +49,20 @@ const STRATEGIES = [
   },
   {
     id: 'equipementier', icon: '👕', titre: 'Partenariat équipementier', color: '#f87171',
-    desc: 'Votre fournisseur maillots ou matériel intègre Digital Football dans son offre. Logo + lien boutique sur la page Équipement du dashboard.',
-    detail: () => 'Négociable directement avec votre revendeur local. Un deal "kit + outil digital" est de plus en plus courant dans les clubs pro-actifs.',
-    tag: 'Innovant', tagColor: '#f87171',
+    desc: 'Votre club achète déjà ses maillots, ballons et équipements quelque part. L\'équipementier local a tout intérêt à fidéliser votre club. Le deal : il prend en charge une partie de l\'abonnement Digital Football, et en échange il obtient son logo + un lien "boutique officielle du club" visible sur chaque dashboard joueur. Pour lui, c\'est de la publicité ciblée auprès de familles qui lui achètent déjà. Win-win concret, négociable en 1 rendez-vous.',
+    detail: (palier) => {
+      const vues = palier.equipes * 21 * 30
+      return `~${vues.toLocaleString('fr-FR')} vues/mois sur les dashboards. Proposer à votre revendeur habituel (maillots, chaussures, matériel) : il finance, vous l'exposez à sa propre clientèle.`
+    },
+    tag: 'Win-win', tagColor: '#f87171',
   },
   {
-    id: 'tournoi', icon: '⚽', titre: 'Tournoi de financement', color: '#34d399',
-    desc: 'Un tournoi de pré-saison avec droit d\'entrée dédié à la digitalisation. 1 journée suffit à couvrir l\'abonnement annuel complet.',
+    id: 'tournoi', icon: '⚽', titre: 'Tournoi géré via Digital Football', color: '#34d399',
+    desc: 'Organisez un tournoi inter-clubs de pré-saison et gérez-le directement depuis Digital Football : groupes, calendrier, résultats, classements en temps réel. Les droits d\'inscription financent directement l\'abonnement. L\'outil devient lui-même l\'argument pour convaincre les clubs invités.',
     detail: (palier) => {
-      const equipes = Math.ceil(palier.an / 150)
-      return `150€/équipe × ${equipes} équipes = ${palier.an}€. Pour ${palier.equipes} équipes, un tournoi de ${Math.ceil(equipes / 2)} matchs suffit.`
+      const PRIX_EQUIPE = 150
+      const equipes = Math.ceil(palier.an / PRIX_EQUIPE)
+      return `${PRIX_EQUIPE}€/équipe × ${equipes} équipes invitées = ${equipes * PRIX_EQUIPE}€. Poules, calendrier, résultats et classement gérés directement depuis Digital Football.`
     },
     tag: 'Mobilisateur', tagColor: '#34d399',
   },
