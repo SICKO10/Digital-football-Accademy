@@ -57,8 +57,8 @@ const STRATEGIES = [
     id: 'tournoi', icon: '⚽', titre: 'Tournoi de financement', color: '#34d399',
     desc: 'Un tournoi de pré-saison avec droit d\'entrée dédié à la digitalisation. 1 journée suffit à couvrir l\'abonnement annuel complet.',
     detail: (palier) => {
-      const equipes = Math.ceil(palier.an / 15)
-      return `15€/équipe × ${equipes} équipes = ${palier.an}€. Pour ${palier.equipes} équipes, un tournoi de ${Math.ceil(equipes / 2)} matchs suffit.`
+      const equipes = Math.ceil(palier.an / 150)
+      return `150€/équipe × ${equipes} équipes = ${palier.an}€. Pour ${palier.equipes} équipes, un tournoi de ${Math.ceil(equipes / 2)} matchs suffit.`
     },
     tag: 'Mobilisateur', tagColor: '#34d399',
   },
