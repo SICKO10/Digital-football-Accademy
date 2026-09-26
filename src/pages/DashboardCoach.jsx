@@ -10,12 +10,13 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
-import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone, IcoLibrary } from './coach/NavIcons'
+import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone, IcoLibrary, IcoEye } from './coach/NavIcons'
 import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
 import Subscriptions from './coach/Subscriptions'
 import Revenue from './coach/Revenue'
+import Viewers from './coach/Viewers'
 import Referrals from './coach/Referrals'
 import PlayerAnalysis from './coach/PlayerAnalysis'
 import Badges from './coach/Badges'
@@ -406,6 +407,7 @@ function DashboardCoachInner() {
       { id: 'users', label: 'Utilisateurs', Icon: IcoUsers, badge: 0 },
       { id: 'subscriptions', label: 'Abonnements', Icon: IcoCard, badge: 0 },
       { id: 'revenue', label: "Chiffre d'affaires", Icon: IcoDollar, badge: 0 },
+      { id: 'viewers', label: 'Viewers', Icon: IcoEye, badge: 0 },
     ] : []),
   ]
   const NAV_ACTIVITE = [
@@ -565,6 +567,7 @@ function DashboardCoachInner() {
           {activeSection === 'users' && isAdminClubs && <Users initialType={usersInitialType} />}
           {activeSection === 'subscriptions' && isAdminClubs && <Subscriptions />}
           {activeSection === 'revenue' && isAdminClubs && <Revenue />}
+          {activeSection === 'viewers' && isAdminClubs && <Viewers />}
           {activeSection === 'referrals' && isAdminClubs && <Referrals coachId={coachId} />}
           {activeSection === 'communication' && isAdminClubs && <Communication adminId={coachId} />}
 
