@@ -62,6 +62,7 @@ function PolitiqueConfidentialite() {
             </Li>
             <Li><strong>Données de paiement</strong> : les coordonnées bancaires ne sont jamais stockées par Digital Football — les paiements sont traités directement par notre prestataire Stripe.</Li>
             <Li><strong>Données techniques</strong> : identifiants de session strictement nécessaires à l'authentification (pas de cookies publicitaires ni de mesure d'audience tierce).</Li>
+            <Li><strong>Données de connexion</strong> : date et heure de chaque ouverture de session (compte, rôle). Utilisées pour des statistiques d'usage internes — savoir si la plateforme est réellement utilisée — et, sous forme agrégée uniquement (nombre total de connexions, pas de détail individuel), pour illustrer l'engagement de la plateforme auprès de ses partenaires (clubs, sponsors).</Li>
           </ul>
         </Section>
 
@@ -69,7 +70,7 @@ function PolitiqueConfidentialite() {
           <ul style={{ paddingLeft: '1.5rem', margin: '0 0 0.75rem' }}>
             <Li><strong>Exécution du contrat</strong> : gestion du compte, mise en relation joueurs/éducateurs/recruteurs, fonctionnement des modules (compétition, statistiques, équipement...).</Li>
             <Li><strong>Consentement explicite</strong> : pour toute donnée de santé, dont le traitement repose sur le consentement libre et éclairé de la personne concernée (ou de son représentant légal si mineur), conformément à l'article 9.2.a du RGPD. Ce consentement peut être retiré à tout moment.</Li>
-            <Li><strong>Intérêt légitime</strong> : sécurité de la plateforme, prévention de la fraude, amélioration du service.</Li>
+            <Li><strong>Intérêt légitime</strong> : sécurité de la plateforme, prévention de la fraude, amélioration du service, mesure de l'usage réel de la plateforme (statistiques de connexion) — y compris pour valoriser cet usage, de façon agrégée, auprès des clubs et sponsors partenaires.</Li>
             <Li><strong>Obligation légale</strong> : conservation de certaines données à des fins comptables ou en cas de réquisition des autorités.</Li>
           </ul>
         </Section>
@@ -81,6 +82,7 @@ function PolitiqueConfidentialite() {
             <Li>L'éducateur ou le club auquel le joueur est affilié, pour les données sportives et de santé nécessaires au suivi de l'équipe.</Li>
             <Li>Les recruteurs, uniquement pour les données de profil qu'un joueur a explicitement choisi de rendre visibles — jamais pour les données de santé.</Li>
             <Li>Nos sous-traitants techniques : hébergement, base de données et stockage de fichiers (Supabase), traitement des paiements (Stripe). Ces prestataires n'accèdent aux données que dans la mesure nécessaire à l'exécution de leur prestation.</Li>
+            <Li>L'équipe Digital Football, pour les statistiques de connexion (accès interne uniquement) — les clubs et sponsors partenaires ne reçoivent que des chiffres agrégés (nombre total de connexions, tendance d'usage), jamais le détail nominatif des connexions d'un utilisateur.</Li>
           </ul>
           <P>Digital Football ne vend ni ne loue aucune donnée personnelle à des tiers.</P>
         </Section>

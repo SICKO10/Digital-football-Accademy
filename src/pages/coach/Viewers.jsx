@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import { TYPE_LABEL } from './constants'
+import { saisonActuelle } from '../../lib/saison'
 import StatCard from '../../components/coachAdmin/StatCard'
 import Card from '../../components/coachAdmin/Card'
 import SimpleTable from '../../components/coachAdmin/SimpleTable'
@@ -11,6 +12,7 @@ const PERIODES = [
   { id: 'semaine', label: '7 jours' },
   { id: 'mois', label: '30 jours' },
   { id: 'annee', label: '12 mois' },
+  { id: 'saison', label: '1er septembre' },
 ]
 
 function dateDebut(periode) {
@@ -19,52 +21,87 @@ function dateDebut(periode) {
   if (periode === 'semaine') d.setDate(d.getDate() - 7)
   else if (periode === 'mois') d.setDate(d.getDate() - 30)
   else if (periode === 'annee') d.setFullYear(d.getFullYear() - 1)
+  else if (periode === 'saison') return `${saisonActuelle().split('-')[0]}-09-01T00:00:00.000Z`
   return d.toISOString()
 }
 
-function derniersMois(n) {
+// Un point par jour pour jour/semaine/mois serait illisible sur "12 mois" ou
+// "depuis le 1er septembre" (jusqu'à ~365 barres) — ces deux périodes sont
+// bucketées par mois à la place, sur la vraie plage écoulée (pas fixé à 12,
+// "depuis le 1er septembre" peut faire 1 à 12 mois selon la date du jour).
+function moisEntre(debutISO) {
+  const debut = new Date(debutISO)
+  const fin = new Date()
   const mois = []
-  const d = new Date()
-  d.setDate(1)
-  for (let i = n - 1; i >= 0; i--) {
-    const m = new Date(d.getFullYear(), d.getMonth() - i, 1)
-    mois.push({ key: `${m.getFullYear()}-${m.getMonth()}`, label: m.toLocaleDateString('fr-FR', { month: 'short' }) })
+  const cur = new Date(debut.getFullYear(), debut.getMonth(), 1)
+  while (cur <= fin) {
+    mois.push({ key: `${cur.getFullYear()}-${cur.getMonth()}`, label: cur.toLocaleDateString('fr-FR', { month: 'short' }) })
+    cur.setMonth(cur.getMonth() + 1)
   }
   return mois
 }
 
+// Résout un club (profiles.plan='club') vers l'ensemble des comptes de son
+// "équipe" (ses éducateurs affiliés + les joueurs affiliés à ces éducateurs)
+// — connexions_log n'a pas de club_id (cf. supabase_connexions_log.sql),
+// donc pas de filtre direct possible, mais l'admin peut lire club_educateurs
+// et affiliations en entier (cf. supabase_admin_lecture_club_scope.sql).
+async function resoudreIdsClub(clubId) {
+  const { data: ces } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', clubId).eq('statut', 'accepte')
+  const educateurIds = [...new Set((ces || []).map(r => r.educateur_id))]
+  if (educateurIds.length === 0) return []
+  const { data: aff } = await supabase.from('affiliations').select('joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte')
+  const joueurIds = [...new Set((aff || []).map(r => r.joueur_id).filter(Boolean))]
+  return [...new Set([...educateurIds, ...joueurIds])]
+}
+
 // Statistiques de connexion plateforme (connexions_log, cf.
 // supabase_connexions_log.sql) — data à but commercial (montrer l'engagement
-// réel de la plateforme à un club ou un sponsor), donc volontairement
-// globale (tous comptes, tous clubs), pas scopée à l'effectif d'un éducateur
-// (ça, c'était la V1 dans DashboardEducateur.jsx, retirée : un éducateur n'a
-// pas à voir ces chiffres, seul l'admin plateforme en a l'usage).
+// réel de la plateforme à un club ou un sponsor). Vue globale par défaut,
+// ou scopée à un club précis (sélecteur) pour donner une vraie idée de ce
+// qu'un club verrait de ses propres chiffres.
 export default function Viewers() {
   const { c, fonts } = useCoachTheme()
   const [periode, setPeriode] = useState('semaine')
+  const [clubs, setClubs] = useState([])
+  const [clubSelectionne, setClubSelectionne] = useState('')
+  const [idsClub, setIdsClub] = useState(null) // null = toute la plateforme, [] ou [...] = scope club
   const [connexions, setConnexions] = useState(null)
   const [profilsParId, setProfilsParId] = useState({})
   const [totalComptes, setTotalComptes] = useState(null)
 
   useEffect(() => {
     supabase.from('profiles').select('id', { count: 'exact', head: true }).then(({ count }) => setTotalComptes(count ?? null))
+    supabase.from('profiles').select('id, nom_club, email').eq('plan', 'club').order('nom_club')
+      .then(({ data }) => setClubs(data || []))
   }, [])
 
   useEffect(() => {
+    let annule = false
+    setIdsClub(null) // reset immédiat — évite de filtrer un instant avec le scope du club précédent le temps de la résolution
+    if (!clubSelectionne) return
+    resoudreIdsClub(clubSelectionne).then(ids => { if (!annule) setIdsClub(ids) })
+    return () => { annule = true }
+  }, [clubSelectionne])
+
+  useEffect(() => {
+    if (clubSelectionne && idsClub === null) return // scope club pas encore résolu
+    if (idsClub && idsClub.length === 0) { setConnexions([]); return }
     setConnexions(null)
-    supabase.from('connexions_log').select('user_id, role, created_at')
+    let query = supabase.from('connexions_log').select('user_id, role, created_at')
       .gte('created_at', dateDebut(periode))
       .order('created_at', { ascending: false })
-      .then(async ({ data, error }) => {
-        if (error) { console.error('Erreur connexions_log :', error); setConnexions([]); return }
-        const rows = data || []
-        setConnexions(rows)
-        const ids = [...new Set(rows.map(r => r.user_id))]
-        if (ids.length === 0) return
-        const { data: profils } = await supabase.from('profiles').select('id, prenom, nom, plan').in('id', ids)
-        setProfilsParId(Object.fromEntries((profils || []).map(p => [p.id, p])))
-      })
-  }, [periode])
+    if (idsClub) query = query.in('user_id', idsClub)
+    query.then(async ({ data, error }) => {
+      if (error) { console.error('Erreur connexions_log :', error); setConnexions([]); return }
+      const rows = data || []
+      setConnexions(rows)
+      const ids = [...new Set(rows.map(r => r.user_id))]
+      if (ids.length === 0) return
+      const { data: profils } = await supabase.from('profiles').select('id, prenom, nom, plan').in('id', ids)
+      setProfilsParId(Object.fromEntries((profils || []).map(p => [p.id, p])))
+    })
+  }, [periode, idsClub, clubSelectionne])
 
   const totalVisites = connexions?.length ?? 0
   const comptesActifs = useMemo(() => new Set((connexions || []).map(c2 => c2.user_id)).size, [connexions])
@@ -79,12 +116,10 @@ export default function Viewers() {
     return Object.values(acc).sort((a, b) => b.nb - a.nb)
   }, [connexions])
 
-  // Série du graphique : par jour pour jour/semaine/mois (peu de points), par
-  // mois pour "12 mois" (365 barres journalières seraient illisibles).
   const serie = useMemo(() => {
     if (!connexions) return null
-    if (periode === 'annee') {
-      const mois = derniersMois(12)
+    if (periode === 'annee' || periode === 'saison') {
+      const mois = moisEntre(dateDebut(periode))
       const parMois = Object.fromEntries(mois.map(m => [m.key, 0]))
       connexions.forEach(row => {
         const d = new Date(row.created_at)
@@ -114,21 +149,34 @@ export default function Viewers() {
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {PERIODES.map(p => (
-          <button key={p.id} onClick={() => setPeriode(p.id)} style={{
-            padding: '7px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-            background: periode === p.id ? c.accent : c.surface2,
-            color: periode === p.id ? '#fff' : c.textMuted,
-            border: `1px solid ${periode === p.id ? c.accent : c.border}`,
-          }}>{p.label}</button>
-        ))}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {PERIODES.map(p => (
+            <button key={p.id} onClick={() => setPeriode(p.id)} style={{
+              padding: '7px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              background: periode === p.id ? c.accent : c.surface2,
+              color: periode === p.id ? '#fff' : c.textMuted,
+              border: `1px solid ${periode === p.id ? c.accent : c.border}`,
+            }}>{p.label}</button>
+          ))}
+        </div>
+        <select value={clubSelectionne} onChange={e => setClubSelectionne(e.target.value)} style={{
+          padding: '7px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+          background: c.surface2, color: c.text, border: `1px solid ${c.border}`, marginLeft: 'auto',
+        }}>
+          <option value="">Toute la plateforme</option>
+          {clubs.map(cl => <option key={cl.id} value={cl.id}>{cl.nom_club || cl.email}</option>)}
+        </select>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '20px' }}>
         <StatCard label="Visites" value={connexions === null ? '…' : totalVisites} accent={c.accent} />
         <StatCard label="Comptes actifs" value={connexions === null ? '…' : comptesActifs} accent={c.success} />
-        <StatCard label="Comptes plateforme" value={totalComptes ?? '…'} accent={c.warn} sub="tous plans confondus" />
+        {clubSelectionne ? (
+          <StatCard label="Comptes de ce club" value={idsClub === null ? '…' : idsClub.length} accent={c.warn} sub="éducateurs + joueurs affiliés" />
+        ) : (
+          <StatCard label="Comptes plateforme" value={totalComptes ?? '…'} accent={c.warn} sub="tous plans confondus" />
+        )}
       </div>
 
       <Card style={{ marginBottom: '14px' }}>
