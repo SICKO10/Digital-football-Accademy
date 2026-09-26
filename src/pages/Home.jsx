@@ -274,6 +274,17 @@ function Home() {
 
       <EtapesSection {...TAB_CONFIG[tabActif]} onCta={() => navigate('/offres')} />
 
+      <section style={{ padding: '3.5rem 2rem', textAlign: 'center' }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem 2rem' }}>
+          <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', letterSpacing: '1px', fontWeight: 600 }}>POUR LES CLUBS</div>
+          <h2 style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 800, marginBottom: '0.75rem' }}>Comment financer l'abonnement de votre club ?</h2>
+          <p style={{ color: colors.text.dim, fontSize: '14px', lineHeight: 1.7, marginBottom: '1.75rem' }}>
+            Licence, sponsoring local, subventions... découvrez 6 stratégies concrètes et un calculateur pour couvrir l'outil sans impact sur les familles.
+          </p>
+          <button onClick={() => navigate('/comment-financer')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir le guide de financement →</button>
+        </div>
+      </section>
+
       <section style={{ position: 'relative', overflow: 'hidden', background: '#0f0f0f', padding: '3.5rem 2rem', textAlign: 'center' }}>
         <div style={{ position: 'absolute', top: '-1px', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, #4ade8040, transparent)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
