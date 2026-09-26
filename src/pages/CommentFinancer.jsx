@@ -43,8 +43,11 @@ const STRATEGIES = [
   },
   {
     id: 'subventions', icon: '🏛', titre: 'Aides & subventions publiques', color: '#a78bfa',
-    desc: 'La digitalisation des clubs sportifs est éligible à de nombreux dispositifs d\'aide. Beaucoup de clubs ne le savent pas.',
-    detail: () => 'CNDS, collectivités territoriales (mairie, département, région), DRAJES. Couverture possible : 30 à 50% du coût annuel selon le dossier.',
+    desc: `La digitalisation des clubs sportifs est une priorité nationale 2024-2026. Plusieurs dispositifs cumulables existent — beaucoup de clubs ne les connaissent pas.\n\n▸ FDVA 2 (Fonds de développement de la vie associative) : ouvert à tous les clubs sans condition de taille. Subvention moyenne 2 230€/an. Dossier via lecompteasso.gouv.fr.\n\n▸ PSF (Projet Sportif Fédéral FFF) : la FFF redistribue chaque année une enveloppe ANS aux clubs affiliés. Minimum 1 500€. Dossier via votre district FFF.\n\n▸ Mairie / Département / Région : votre mairie est souvent le premier financeur. Contactez le service des sports dès septembre. Formulaire Cerfa 12156.\n\n▸ Prérequis : association loi 1901, numéro SIRET, agrément Sport (délivré par le SDJES), compte sur lecompteasso.gouv.fr.`,
+    detail: (palier) => {
+      const couverture = Math.round(Math.min((2230 / palier.an) * 100, 100))
+      return `FDVA 2 seul (moy. 2 230€) couvre ${couverture}% de votre abonnement annuel. Cumulé avec une aide mairie (500–1 500€ courants), l'abonnement peut être entièrement couvert sans toucher aux licences.`
+    },
     tag: 'Souvent ignoré', tagColor: '#a78bfa',
   },
   {
@@ -250,7 +253,7 @@ export default function CommentFinancer() {
                 </div>
                 {isOpen && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1a1a1a', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
+                    <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{s.desc}</p>
                     <div style={{ background: '#0a0a0a', borderRadius: 12, padding: '14px 16px', border: `1px solid rgba(${hexToRgb(s.color)},0.20)` }}>
                       <div style={{ color: s.color, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Calcul pour votre club</div>
                       <div style={{ color: '#bbb', fontSize: 13, lineHeight: 1.7 }}>{s.detail(palier, joueurs)}</div>
