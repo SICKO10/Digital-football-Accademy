@@ -394,11 +394,11 @@ export default function Offres() {
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
                     style={{ padding: '10px 18px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                    {p.mensuelPrix}/mois
+                    {p.mensuelPrix}
                   </button>
                   <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
                     style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                    {p.annuelPrix}/an
+                    {p.annuelPrix}
                   </button>
                 </div>
               </div>
