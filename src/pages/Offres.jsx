@@ -405,6 +405,11 @@ export default function Offres() {
             ))}
           </div>
 
+          <div onClick={() => navigate('/comment-financer')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: `${colors.accent.green}0d`, border: `1px solid ${colors.accent.green}30`, borderRadius: 12, padding: '14px 20px', marginBottom: '2rem', cursor: 'pointer' }}>
+            <span style={{ fontSize: 13, color: colors.text.secondary }}>💡 Pas sûr de comment financer l'abonnement pour votre club ?</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: colors.accent.green, whiteSpace: 'nowrap' }}>Voir le guide →</span>
+          </div>
+
           <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.purpleLight}25`, borderRadius: 16, padding: '1.75rem' }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Prendre contact</p>
             <blockquote style={{ margin: '0 0 1.5rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: 10, fontSize: 13, color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
