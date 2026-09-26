@@ -6,6 +6,7 @@ import { CRITERES_EDU } from './DashboardEducateur'
 import { ModalGrilleSeance } from '../components/GrilleSeance'
 import { CATEGORIES as CATEGORIES_STANDARD, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import GestionSponsors from '../components/sponsors/GestionSponsors'
+import SponsorsBar from '../components/SponsorsBar'
 import Deplacements from '../components/Deplacements'
 import PlanningTerrains from '../components/PlanningTerrains'
 import Planning from './Planning'
@@ -7017,6 +7018,8 @@ export default function DashboardClub() {
           </div>
         )
       })()}
+
+      <SponsorsBar clubId={clubId} />
     </div>
   )
 }

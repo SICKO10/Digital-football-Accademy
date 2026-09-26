@@ -24,6 +24,7 @@ import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import CarteJoueur from '../components/CarteJoueur'
 import VeoStatsJoueur from '../components/VeoStatsJoueur'
+import SponsorsBar from '../components/SponsorsBar'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
@@ -5699,6 +5700,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       {classementOuvert && (
         <VoirToutClassement classement={classementOuvert} onClose={() => setClassementOuvert(null)} />
       )}
+
+      <SponsorsBar clubId={clubIdInventaire} />
     </div>
   )
 }

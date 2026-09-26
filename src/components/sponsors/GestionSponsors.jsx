@@ -271,7 +271,7 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
 }
 
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
-function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, onSupprimerDocument, saving, accentColor = '#4ade80' }) {
+function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, onSupprimerDocument, onAjouterLogo, saving, accentColor = '#4ade80' }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
@@ -286,6 +286,8 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
     date_signature: sponsor?.date_signature || '',
     date_fin: sponsor?.date_fin || '',
     notes: sponsor?.notes || '',
+    lien_url: sponsor?.lien_url || '',
+    afficher_bandeau: sponsor?.afficher_bandeau || false,
   }))
 
   const champ = (key, value) => setForm(f => ({ ...f, [key]: value }))
@@ -366,6 +368,36 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
             <label style={st.label}>Notes</label>
             <textarea style={{ ...st.input, resize: 'vertical', fontFamily: 'inherit' }} rows={3} value={form.notes} onChange={e => champ('notes', e.target.value)} />
           </div>
+
+          <div style={{ borderTop: `1px solid ${st.modalBorder}`, paddingTop: '12px', marginTop: '4px' }}>
+            <label style={{ ...st.label, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.afficher_bandeau} onChange={e => champ('afficher_bandeau', e.target.checked)} />
+              Afficher dans le bandeau "Nos partenaires" sur les dashboards
+            </label>
+          </div>
+          {form.afficher_bandeau && (
+            <>
+              <div>
+                <label style={st.label}>Lien du site sponsor (optionnel)</label>
+                <input style={st.input} value={form.lien_url} onChange={e => champ('lien_url', e.target.value)} placeholder="https://..." />
+              </div>
+              {sponsor && (
+                <div>
+                  <label style={st.label}>Logo affiché dans le bandeau</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {sponsor.logo_url && <img src={sponsor.logo_url} alt="" style={{ height: '28px', maxWidth: '80px', objectFit: 'contain' }} />}
+                    <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                      {sponsor.logo_url ? 'Changer le logo' : '+ Ajouter un logo'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onAjouterLogo(sponsor, e.target.files[0])} />
+                    </label>
+                  </div>
+                </div>
+              )}
+              {!sponsor && (
+                <p style={{ margin: 0, fontSize: '11px', color: st.textFaint }}>Le logo pourra être ajouté après la création du sponsor.</p>
+              )}
+            </>
+          )}
 
           {sponsor && (
             <div>
@@ -963,6 +995,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       date_signature: form.date_signature || null,
       date_fin: form.date_fin || null,
       notes: form.notes || null,
+      lien_url: form.lien_url || null,
+      afficher_bandeau: !!form.afficher_bandeau,
     }
     // Nouveau sponsor rattaché à un niveau : pré-remplit contreparties_suivi
     // (tableau structuré avec échéance/statut/preuve) depuis les contreparties
@@ -1040,6 +1074,20 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     if (error) { alert('Erreur : ' + error.message); return }
     setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, documents: nouveaux } : s)))
     setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, documents: nouveaux } : prev)
+  }
+
+  // Logo affiché dans le bandeau public — même bucket "documents" que les
+  // contrats/factures (déjà ouvert aux utilisateurs connectés), un seul
+  // fichier par sponsor donc pas de tableau comme pour documents[].
+  const ajouterLogoSponsor = async (sponsor, file) => {
+    const path = `sponsors/${sponsor.id}/logo_${Date.now()}_${file.name}`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+    if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
+    const { error } = await supabase.from('sponsors').update({ logo_url: urlData.publicUrl }).eq('id', sponsor.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, logo_url: urlData.publicUrl } : s)))
+    setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, logo_url: urlData.publicUrl } : prev)
   }
 
   const supprimerDocumentSponsor = async (sponsor, index) => {
@@ -1542,6 +1590,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           onSave={sauvegarderSponsor}
           onAjouterDocument={ajouterDocumentSponsor}
           onSupprimerDocument={supprimerDocumentSponsor}
+          onAjouterLogo={ajouterLogoSponsor}
           saving={saving}
           accentColor={accentColor}
         />

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import Tactipad from '../components/Tactipad'
+import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { JOURS_SEMAINE } from '../lib/jours'
@@ -11750,6 +11751,8 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       </div>
       )
     })()}
+
+    <SponsorsBar clubId={clubAffiliation?.club_id} />
 
     </>
   )
