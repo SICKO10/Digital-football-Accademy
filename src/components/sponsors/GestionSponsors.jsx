@@ -1018,12 +1018,15 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       : await supabase.from('sponsors').insert({ ...payload, paiements: [] }).select('*, niveaux_partenariat(nom, couleur, contreparties)').single()
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
-    setModalSponsor(null)
-    if (data) {
-      setSponsors(prev => estEdition ? prev.map(s => (s.id === data.id ? data : s)) : [...prev, data])
-    } else {
-      await loadData()
-    }
+    if (!data) { setModalSponsor(null); await loadData(); return }
+    setSponsors(prev => estEdition ? prev.map(s => (s.id === data.id ? data : s)) : [...prev, data])
+    // Création : on garde la modale ouverte en mode édition (sponsor = data,
+    // plus 'new') plutôt que de la fermer — l'upload du logo et des documents
+    // (ModalSponsor) n'apparaît que si `sponsor` existe déjà (besoin de son id
+    // pour le chemin de stockage), donc invisible tant que la création n'est
+    // pas passée par là. Sans ça, il fallait valider une première fois puis
+    // rouvrir en modification pour voir ces options apparaître.
+    setModalSponsor(estEdition ? null : data)
   }
 
   // Duplique un sponsor en fin de contrat vers la saison suivante — pas de
