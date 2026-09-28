@@ -34,7 +34,11 @@ import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
 import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
-import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
+// Composant réduit lui-même (64 lignes) mais importe PlanificationAnnuelle
+// (1200+ lignes, réutilisée du dashboard club) — sans lazy() ici, tout ce
+// poids restait embarqué dans le chunk principal malgré la taille modeste
+// du wrapper.
+const ProjetSportifEducateur = lazy(() => import('../components/ProjetSportifEducateur'))
 const ProjetClubCFF4 = lazy(() => import('../components/ProjetClubCFF4'))
 const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationJoueur'))
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
@@ -1754,7 +1758,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Phase 1 — chargeurs indépendants de l'équipe active, plus club_categories
     // (nécessaire pour savoir QUELLES équipes ce coach gère avant de pouvoir
     // charger joueurs/matchs/entraînements filtrés par équipe, cf. phase 2).
-    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeances(targetId), chargerMesSeancesOuvertes(targetId), chargerBiblio(targetId), chargerStaffClub(user.id), chargerDirigeants(targetId), chargerNotifications(targetId)])
+    // chargerMesSeances/chargerBiblio/chargerDirigeants ne servent qu'à des
+    // onglets spécifiques (Mes séances, Bibliothèque, Explorer > Dirigeants),
+    // jamais à l'Accueil — chargés à la demande via des useEffect scopés à
+    // activeSection plus bas (même pattern que chargerMonMateriel), pas ici.
+    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerNotifications(targetId)])
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
     // localStorage, sinon la première) : charge joueurs/matchs/entraînements
@@ -1770,13 +1778,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // afficher "équipement prêt" dès l'arrivée) ne dépend que de
     // clubAffiliationData déjà résolu ci-dessus, pas de la phase 2 — lancé en
     // parallèle plutôt qu'avant, un aller-retour de moins avant l'affichage.
-    const [, matchsData] = await Promise.all([
+    // chargerNotationsMatch/chargerEvaluationsJoueurs idem : Stats et Mon Équipe
+    // uniquement, chargés à la demande plus bas (useEffect activeSection).
+    await Promise.all([
       chargerJoueurs(targetId, idActif), chargerMatchs(targetId, idActif), chargerEntrainements(targetId, idActif), chargerRapportsRecents(targetId, idActif),
       clubAffiliationData?.club_id ? chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId) : Promise.resolve(),
     ])
-    // chargerEvaluationsJoueurs ne dépend pas de matchsData — indépendant de
-    // chargerNotationsMatch, plus besoin de les attendre l'un après l'autre.
-    await Promise.all([chargerNotationsMatch(targetId, matchsData.map(m => m.id)), chargerEvaluationsJoueurs(targetId)])
     setLoading(false)
   }
 
@@ -2698,6 +2705,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     chargerBiblio(userId, biblioRubrique)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, biblioRubrique])
+
+  // Chargeurs des autres onglets spécifiques (jamais utilisés sur l'Accueil,
+  // cf. init()) — même pattern que ci-dessus, à la demande plutôt qu'au
+  // chargement initial du dashboard.
+  useEffect(() => { if (activeSection === 'mes_seances' && userId) chargerMesSeances(userId) }, [activeSection, userId])
+  useEffect(() => { if (activeSection === 'explorer' && userId) chargerDirigeants(userId) }, [activeSection, userId])
+  useEffect(() => { if (activeSection === 'equipe' && userId) chargerEvaluationsJoueurs(userId) }, [activeSection, userId])
+  useEffect(() => {
+    if (activeSection !== 'stats' || !userId || matchs.length === 0) return
+    chargerNotationsMatch(userId, matchs.map(m => m.id))
+  }, [activeSection, matchs, userId])
 
   const sauvegarderProcede = async () => {
     if (!procedeForm.nom.trim()) return
@@ -10424,9 +10442,11 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         )}
 
         {activeSection === 'projet_sportif' && (
+          <Suspense fallback={<SectionLoader />}>
           <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id}
             readOnlyProjet={!(clubAffiliation?.peut_editer_projet_sportif ?? clubAffiliation?.club?.educateurs_editent_projet_sportif ?? false)}
             readOnlyPlanification={!(clubAffiliation?.peut_editer_planification ?? clubAffiliation?.club?.educateurs_editent_planification ?? false)} />
+          </Suspense>
         )}
 
         {activeSection === 'projet_club_cff4' && (
