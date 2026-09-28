@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react'
+import { useState, useEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
@@ -10,35 +10,39 @@ import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { JOURS_SEMAINE } from '../lib/jours'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
-import AnalyseVideo from '../components/AnalyseVideo'
-import RapportMatch, { genererPDFMatch, preRemplirDepuisMatch } from '../components/RapportMatch'
-import GestionPrepPhysique from '../components/prepphysique/GestionPrepPhysique'
-import SanteEquipe from '../components/SanteEquipe'
-import ImportVeo from '../components/ImportVeo'
-import GestionCloturesSaison from '../components/prepphysique/GestionCloturesSaison'
-import Deplacements from '../components/Deplacements'
-import PlanningTerrains from '../components/PlanningTerrains'
-import CauserieAvantMatch from '../components/CauserieAvantMatch'
-import BibliothequeVideos from '../components/BibliothequeVideos'
-import ScannerProc from '../components/ScannerProc'
-import MoteurRecrutement from './MoteurRecrutement'
+// Sections/modales chargées à la demande (lazy) plutôt qu'au chargement initial du
+// dashboard : elles pesaient ~10 000 lignes à elles seules dans le chunk
+// DashboardEducateur (1,06 Mo, le plus gros de l'app) alors que la plupart ne sont
+// jamais ouvertes dans une session donnée (une seule section/modale à la fois).
+const AnalyseVideo = lazy(() => import('../components/AnalyseVideo'))
+const RapportMatch = lazy(() => import('../components/RapportMatch'))
+const GestionPrepPhysique = lazy(() => import('../components/prepphysique/GestionPrepPhysique'))
+const SanteEquipe = lazy(() => import('../components/SanteEquipe'))
+const ImportVeo = lazy(() => import('../components/ImportVeo'))
+const GestionCloturesSaison = lazy(() => import('../components/prepphysique/GestionCloturesSaison'))
+const Deplacements = lazy(() => import('../components/Deplacements'))
+const PlanningTerrains = lazy(() => import('../components/PlanningTerrains'))
+const CauserieAvantMatch = lazy(() => import('../components/CauserieAvantMatch'))
+const BibliothequeVideos = lazy(() => import('../components/BibliothequeVideos'))
+const ScannerProc = lazy(() => import('../components/ScannerProc'))
+const MoteurRecrutement = lazy(() => import('./MoteurRecrutement'))
 import { calculerMoyennes } from '../lib/statsRecrutement'
-import SondageSemaine from '../components/SondageSemaine'
-import StatsEquipe from '../components/StatsEquipe'
-import NotationMatch from '../components/NotationMatch'
+const SondageSemaine = lazy(() => import('../components/SondageSemaine'))
+const StatsEquipe = lazy(() => import('../components/StatsEquipe'))
+const NotationMatch = lazy(() => import('../components/NotationMatch'))
 import TerrainsLiberesWidget from '../components/TerrainsLiberesWidget'
 import DeplacementsAssignesWidget from '../components/DeplacementsAssignesWidget'
 import AnnoncesClubWidget from '../components/AnnoncesClubWidget'
 import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
 import ProjetSportifEducateur from '../components/ProjetSportifEducateur'
-import ProjetClubCFF4 from '../components/ProjetClubCFF4'
-import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
+const ProjetClubCFF4 = lazy(() => import('../components/ProjetClubCFF4'))
+const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationJoueur'))
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
-import OnboardingGuide from '../components/OnboardingGuide'
-import FloatingHelper from '../components/FloatingHelper'
+const OnboardingGuide = lazy(() => import('../components/OnboardingGuide'))
+const FloatingHelper = lazy(() => import('../components/FloatingHelper'))
 import ParrainageWidget from '../components/ParrainageWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
@@ -52,6 +56,16 @@ import { notifierJoueur } from '../lib/notifications'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
+
+// Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
+// écran comme Loader.jsx/ChargementPage, qui masquerait le reste du dashboard
+// déjà affiché derrière) pendant le téléchargement du chunk à la demande.
+const SectionLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 20px' }}>
+    <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'dfeduSpin 0.7s linear infinite' }} />
+    <style>{'@keyframes dfeduSpin { to { transform: rotate(360deg) } }'}</style>
+  </div>
+)
 
 // "Générer une séance avec l'IA" pas encore assez fiable pour être proposée à
 // tous les éducateurs — visible seulement pour ce compte le temps de l'affiner
@@ -1943,6 +1957,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // pré-rempli à la volée depuis la feuille de match (mêmes données que le
   // pré-remplissage de la modale), sans le sauvegarder.
   const exporterRapportMatchPdf = async (m) => {
+    const { genererPDFMatch, preRemplirDepuisMatch } = await import('../components/RapportMatch')
     const { data } = await supabase.from('rapports_analyse').select('*').eq('educateur_id', userId).eq('mode_analyse', 'match')
     const existant = (data || []).find(r => r.contenu?.match_id === m.id)
     if (existant) {
@@ -5189,8 +5204,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
       </div>
     )}
-    <OnboardingGuide key={onboardingKey} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
-    <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
+    <Suspense fallback={null}>
+      <OnboardingGuide key={onboardingKey} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
+      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
+    </Suspense>
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
 
       {/* Overlay mobile */}
@@ -5518,6 +5535,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 onClick={() => setImportVeoOuvert(false)}>
                 <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '28px' }}
                   onClick={e => e.stopPropagation()}>
+                  <Suspense fallback={<SectionLoader />}>
                   <ImportVeo
                     educateurId={userId}
                     clubCategorieId={equipeActive?.id}
@@ -5525,6 +5543,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     onImporte={() => chargerJoueurs(userId, equipeActive?.id)}
                     onFermer={() => setImportVeoOuvert(false)}
                   />
+                  </Suspense>
                 </div>
               </div>
             )}
@@ -6225,7 +6244,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   return (
                   <div style={{ ...st.card, marginTop: '16px' }}>
                     <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Bilan de l'équipe</p>
-                    <StatsEquipe matchs={matchs} noteEquipe={noteEquipe} />
+                    <Suspense fallback={<SectionLoader />}><StatsEquipe matchs={matchs} noteEquipe={noteEquipe} /></Suspense>
                   </div>
                   )
                 })()}
@@ -6801,7 +6820,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
         {/* ===== SANTÉ ===== */}
         {activeSection === 'sante' && (
-          <SanteEquipe joueurs={joueurs} educateurId={userId} />
+          <Suspense fallback={<SectionLoader />}><SanteEquipe joueurs={joueurs} educateurId={userId} /></Suspense>
         )}
 
         {/* ===== COMPÉTITION ===== */}
@@ -6830,7 +6849,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               // une donnée partagée avec le club, pas de club_id nécessaire") —
               // accessible que le coach soit affilié à un club ou non, club_id
               // reste optionnel côté CauserieAvantMatch.
-              <CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} />
+              <Suspense fallback={<SectionLoader />}><CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} /></Suspense>
             )}
 
             {/* ── Résultats ── */}
@@ -7073,12 +7092,14 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, overflowY: 'auto', padding: '24px' }}
                 onClick={() => setMatchANoter(null)}>
                 <div onClick={e => e.stopPropagation()}>
+                  <Suspense fallback={<SectionLoader />}>
                   <NotationMatch
                     match={matchANoter}
                     joueurs={joueurs}
                     educateurId={userId}
                     onClose={() => { setMatchANoter(null); chargerMatchs(userId, equipeActive?.id) }}
                   />
+                  </Suspense>
                 </div>
               </div>
             )}
@@ -7454,6 +7475,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
             {/* ── Modale "Rapport de match" ── */}
             {rapportMatchOuvert && (
+              <Suspense fallback={<SectionLoader />}>
               <RapportMatch
                 match={rapportMatchOuvert}
                 joueurs={joueurs}
@@ -7466,6 +7488,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   setMatchIdsAvecRapport(prev => new Set(prev).add(rapportMatchOuvert.id))
                 }}
               />
+              </Suspense>
             )}
 
             {/* ── Modale "Marquer comme joué" ── */}
@@ -7647,7 +7670,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         {/* ===== DÉPLACEMENTS ===== */}
         {activeSection === 'deplacements' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} readOnly retourEditable />
+            <Suspense fallback={<SectionLoader />}><Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} readOnly retourEditable /></Suspense>
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
@@ -7663,7 +7686,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         {/* ===== TERRAINS ===== */}
         {activeSection === 'terrains' && (
           clubAffiliation?.club_id && clubAffiliation.statut === 'accepte' ? (
-            <PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} />
+            <Suspense fallback={<SectionLoader />}><PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} /></Suspense>
           ) : (
             <div>
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_terrains', lang)}</h1>
@@ -7847,8 +7870,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               ))}
             </div>
 
+            <Suspense fallback={<SectionLoader />}>
             <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue}
               onVoirFiche={ficheId => { const s = mesSeancesOuvertes.find(x => x.id === ficheId); if (s) setFicheApercu(s) }} />
+            </Suspense>
 
             {sousOngletEnt === 'prochaine' && (() => {
               const aujourdHui = new Date().toISOString().split('T')[0]
@@ -8447,6 +8472,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               </div>
             )}
             {evalJoueurOuverte && (
+              <Suspense fallback={<SectionLoader />}>
               <FicheEvaluationJoueur
                 equipeJoueurId={evalJoueurOuverte.id}
                 educateurId={userId}
@@ -8455,12 +8481,13 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 readOnly={!canEdit('notes')}
                 onClose={() => setEvalJoueurOuverte(null)}
               />
+              </Suspense>
             )}
           </>
         )}
 
         {/* ===== RECRUTEMENT (Mon Réseau) ===== */}
-        {activeSection === 'recrutement' && recrutementActif(profil?.email) && <MoteurRecrutement userId={userId} />}
+        {activeSection === 'recrutement' && recrutementActif(profil?.email) && <Suspense fallback={<SectionLoader />}><MoteurRecrutement userId={userId} /></Suspense>}
 
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
@@ -9987,10 +10014,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   ))}
                 </div>
                 {biblioVideoTab === 'perso' && (
-                  <BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} />
+                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} /></Suspense>
                 )}
                 {biblioVideoTab === 'df' && (
-                  <BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} />
+                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} /></Suspense>
                 )}
               </div>
             )}
@@ -10020,6 +10047,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
             onClick={() => setModalScannerProc(false)}>
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}>
+              <Suspense fallback={<SectionLoader />}>
               <ScannerProc
                 userId={userId}
                 clubId={clubAffiliation?.club_id}
@@ -10027,6 +10055,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 onFermer={() => setModalScannerProc(false)}
                 onImporte={() => { setModalScannerProc(false); chargerBiblio(userId, biblioRubrique === 'videos' ? 'personal' : biblioRubrique); afficherToast('Ajouté à la bibliothèque') }}
               />
+              </Suspense>
             </div>
           </div>
         )}
@@ -10375,15 +10404,15 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         )}
 
         {activeSection === 'analyse_video' && (
-          <AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} clubNom={profilEdu?.club} lang={lang} />
+          <Suspense fallback={<SectionLoader />}><AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} clubNom={profilEdu?.club} lang={lang} /></Suspense>
         )}
 
         {activeSection === 'prep_physique' && (
-          <GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} />
+          <Suspense fallback={<SectionLoader />}><GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} /></Suspense>
         )}
 
         {activeSection === 'clotures_saison' && (
-          <GestionCloturesSaison educateurId={userId} equipeActiveId={equipeActive?.id} lang={lang} />
+          <Suspense fallback={<SectionLoader />}><GestionCloturesSaison educateurId={userId} equipeActiveId={equipeActive?.id} lang={lang} /></Suspense>
         )}
 
         {activeSection === 'tactipad' && (
@@ -10401,7 +10430,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         )}
 
         {activeSection === 'projet_club_cff4' && (
-          <ProjetClubCFF4 userId={userId} clubId={clubAffiliation?.club_id} />
+          <Suspense fallback={<SectionLoader />}><ProjetClubCFF4 userId={userId} clubId={clubAffiliation?.club_id} /></Suspense>
         )}
 
         {activeSection === 'explorer' && (() => {
