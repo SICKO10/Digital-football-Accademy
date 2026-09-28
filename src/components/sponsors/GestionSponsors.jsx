@@ -276,7 +276,7 @@ function NiveauCard({ niveau, nbSponsors, montantTotal, onEdit, onDelete, readOn
 }
 
 // ── Modales (composants module-level : évite le remount/perte de focus) ─────
-function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, onSupprimerDocument, onAjouterLogo, saving, accentColor = '#4ade80' }) {
+function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, onSupprimerDocument, onAjouterLogo, onAjouterBanniere, saving, accentColor = '#4ade80' }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
@@ -387,19 +387,34 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
                 <input style={st.input} value={form.lien_url} onChange={e => champ('lien_url', e.target.value)} placeholder="https://..." />
               </div>
               {sponsor && (
-                <div>
-                  <label style={st.label}>Logo affiché dans le bandeau</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {sponsor.logo_url && <img src={sponsor.logo_url} alt="" style={{ height: '28px', maxWidth: '80px', objectFit: 'contain' }} />}
-                    <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
-                      {sponsor.logo_url ? 'Changer le logo' : '+ Ajouter un logo'}
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onAjouterLogo(sponsor, e.target.files[0])} />
-                    </label>
+                <>
+                  <div>
+                    <label style={st.label}>Logo affiché dans le bandeau</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {sponsor.logo_url && <img src={sponsor.logo_url} alt="" style={{ height: '28px', maxWidth: '80px', objectFit: 'contain' }} />}
+                      <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                        {sponsor.logo_url ? 'Changer le logo' : '+ Ajouter un logo'}
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onAjouterLogo(sponsor, e.target.files[0])} />
+                      </label>
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <label style={st.label}>Bannière large (optionnelle — prend le pas sur le logo dans le bandeau)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {sponsor.banniere_url && <img src={sponsor.banniere_url} alt="" style={{ height: '28px', maxWidth: '160px', objectFit: 'contain' }} />}
+                      <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
+                        {sponsor.banniere_url ? 'Changer la bannière' : '+ Ajouter une bannière'}
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onAjouterBanniere(sponsor, e.target.files[0])} />
+                      </label>
+                    </div>
+                    <p style={{ margin: '6px 0 0', fontSize: '11px', color: st.textFaint }}>
+                      📐 Format recommandé : 1200 × 80 px — JPEG ou WebP, fond transparent possible. Ratio paysage obligatoire (min. 8:1). Taille max conseillée : 200 Ko.
+                    </p>
+                  </div>
+                </>
               )}
               {!sponsor && (
-                <p style={{ margin: 0, fontSize: '11px', color: st.textFaint }}>Le logo pourra être ajouté après la création du sponsor.</p>
+                <p style={{ margin: 0, fontSize: '11px', color: st.textFaint }}>Le logo et la bannière pourront être ajoutés après la création du sponsor.</p>
               )}
             </>
           )}
