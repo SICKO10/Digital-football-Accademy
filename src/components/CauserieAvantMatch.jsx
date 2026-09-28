@@ -509,7 +509,26 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       ? await supabase.from('causeries').update(payload).eq('id', ficheCourante.id).select().single()
       : await supabase.from('causeries').insert(payload).select().single()
     setSaving(false)
-    if (res.error) { alert('Erreur : ' + res.error.message); return }
+    if (res.error) {
+      // Un "Load failed"/coupure réseau côté client (fréquent sur ce payload —
+      // les schémas Tactipad en base64 le rendent lourd) n'empêche pas
+      // toujours l'écriture d'aboutir côté serveur : avant d'annoncer un
+      // échec, on vérifie si la fiche a quand même été enregistrée.
+      const estErreurReseau = /load failed|network|failed to fetch/i.test(res.error.message || '')
+      if (estErreurReseau) {
+        const verif = ficheCourante?.id
+          ? await supabase.from('causeries').select().eq('id', ficheCourante.id).single()
+          : await supabase.from('causeries').select().eq('educateur_id', userId).eq('adversaire', payload.adversaire).eq('date_match', payload.date_match).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        if (verif.data) {
+          setFicheCourante(normaliserFiche(verif.data))
+          await charger()
+          setVue('fiche')
+          return
+        }
+      }
+      alert('Erreur : ' + res.error.message)
+      return
+    }
     setFicheCourante(normaliserFiche(res.data))
     await charger()
     setVue('fiche')
