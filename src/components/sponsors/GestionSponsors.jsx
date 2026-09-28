@@ -28,6 +28,11 @@ const ROLES_SPONSOR = [
   { val: 'naming', label: 'Naming' },
   { val: 'autre', label: 'Autre' },
 ]
+// Les clés Supabase Storage refusent accents/espaces/caractères spéciaux
+// ("Invalid key") — les noms de fichiers uploadés par l'utilisateur (ex :
+// captures ChatGPT, photos de téléphone) en contiennent presque toujours.
+const nomFichierSur = (nom) => nom.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_')
+
 const ROLE_LABEL = (role) => ROLES_SPONSOR.find(r => r.val === role)?.label || 'Autre'
 
 const CONTACT_ROLES = [
@@ -1068,7 +1073,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const ajouterDocumentSponsor = async (sponsor, file) => {
     const label = prompt('Nom du document (ex : Contrat 2026-2027, Facture n°42)', file.name)
     if (!label) return
-    const path = `sponsors/${sponsor.id}/${Date.now()}_${file.name}`
+    const path = `sponsors/${sponsor.id}/${Date.now()}_${nomFichierSur(file.name)}`
     const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
     if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
     const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
@@ -1083,7 +1088,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   // contrats/factures (déjà ouvert aux utilisateurs connectés), un seul
   // fichier par sponsor donc pas de tableau comme pour documents[].
   const ajouterLogoSponsor = async (sponsor, file) => {
-    const path = `sponsors/${sponsor.id}/logo_${Date.now()}_${file.name}`
+    const path = `sponsors/${sponsor.id}/logo_${Date.now()}_${nomFichierSur(file.name)}`
     const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
     if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
     const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
