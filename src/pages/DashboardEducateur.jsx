@@ -1561,7 +1561,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
   const [filtreCompResultats, setFiltreCompResultats] = useState('toutes') // championnat/coupe/amical, cf. matchs_equipe.competition (déjà un champ à 3 valeurs, modalMatchForm)
-  const [filtreCompClassement, setFiltreCompClassement] = useState('toutes') // même principe que filtreCompResultats, scopé séparément à l'onglet Classement
   const [ligueUrl, setLigueUrl] = useState('')
   const [savingLigueUrl, setSavingLigueUrl] = useState(false)
   // Calendrier scanner
@@ -4894,30 +4893,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     await chargerEntrainements(userId, equipeActive?.id)
   }
 
-  // Classement calculé depuis nos propres résultats (V/N/D/buts/points face à
-  // chaque adversaire rencontré) — pas un vrai classement de championnat
-  // (qui demanderait les résultats des autres clubs entre eux, qu'on n'a
-  // pas), plutôt un récapitulatif "mon équipe vs chaque adversaire affronté".
-  // matchsScope filtrable (cf. filtreCompClassement, onglet Classement) —
-  // défaut sur tous les matchs joués si non précisé.
-  const classement = (matchsScope = matchs.filter(matchJoue)) => {
-    const equipes = {}
-    matchsScope.forEach(m => {
-      const nous = parseInt(m.score_nous)
-      const eux = parseInt(m.score_eux)
-      const nomNous = profil?.club || 'Mon équipe'
-      if (!equipes[nomNous]) equipes[nomNous] = { nom: nomNous, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: true }
-      if (!equipes[m.adversaire]) equipes[m.adversaire] = { nom: m.adversaire, j: 0, v: 0, n: 0, d: 0, bp: 0, bc: 0, pts: 0, moi: false }
-      equipes[nomNous].j++; equipes[m.adversaire].j++
-      equipes[nomNous].bp += nous; equipes[nomNous].bc += eux
-      equipes[m.adversaire].bp += eux; equipes[m.adversaire].bc += nous
-      if (nous > eux) { equipes[nomNous].v++; equipes[nomNous].pts += 3; equipes[m.adversaire].d++ }
-      else if (nous < eux) { equipes[m.adversaire].v++; equipes[m.adversaire].pts += 3; equipes[nomNous].d++ }
-      else { equipes[nomNous].n++; equipes[nomNous].pts++; equipes[m.adversaire].n++; equipes[m.adversaire].pts++ }
-    })
-    return Object.values(equipes).sort((a, b) => b.pts - a.pts || (b.bp - b.bc) - (a.bp - a.bc))
-  }
-
   // Stats globales joueur
   const statsGlobalesJoueur = (joueurId, matchsScope = matchs) => {
     const allStats = matchsScope.flatMap(m => {
@@ -7353,56 +7328,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       {t('comp_voir_classement', lang)} ↗
                     </a>
                   )}
-                </div>
-
-                {/* Classement calculé depuis nos propres résultats — pas le
-                    vrai classement du championnat (il faudrait les résultats
-                    des autres clubs entre eux), plutôt "mon équipe face à
-                    chaque adversaire affronté", filtrable comme Résultats. */}
-                <div style={st.card}>
-                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>Classement calculé</p>
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                    {FILTRES_COMPETITION.map(f => (
-                      <button key={f.id} onClick={() => setFiltreCompClassement(f.id)} style={{
-                        padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                        background: filtreCompClassement === f.id ? '#4ade80' : '#1a1a1a',
-                        color: filtreCompClassement === f.id ? '#0a0a0a' : '#888',
-                        border: `1px solid ${filtreCompClassement === f.id ? '#4ade80' : '#333'}`,
-                      }}>{f.label}</button>
-                    ))}
-                  </div>
-                  {(() => {
-                    const lignes = classement(matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompClassement)))
-                    if (lignes.length === 0) return <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('comp_aucun_match', lang)}</p>
-                    return (
-                      <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                          <thead>
-                            <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              {['Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Pts'].map((h, i) => (
-                                <th key={h} style={{ textAlign: i === 0 ? 'left' : 'center', padding: '8px 6px', color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {lignes.map(e => (
-                              <tr key={e.nom} style={{ borderBottom: `1px solid ${colors.border.subtle}`, background: e.moi ? colors.accent.green + '0f' : 'transparent' }}>
-                                <td style={{ padding: '8px 6px', fontWeight: e.moi ? 800 : 600, color: e.moi ? colors.accent.green : colors.text.primary }}>{e.nom}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.j}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.v}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.n}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.d}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bp}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bc}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', color: colors.text.secondary }}>{e.bp - e.bc > 0 ? `+${e.bp - e.bc}` : e.bp - e.bc}</td>
-                                <td style={{ textAlign: 'center', padding: '8px 6px', fontWeight: 800, color: colors.text.primary }}>{e.pts}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )
-                  })()}
                 </div>
 
               </div>
