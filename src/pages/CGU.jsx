@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { colors, alpha } from '../tokens'
+import { CONTACT_EMAIL } from '../lib/stripeLinks'
 
 const Section = ({ titre, children }) => (
   <div style={{ marginBottom: '2.5rem' }}>
@@ -177,7 +178,7 @@ function CGU() {
         </Section>
 
         <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', color: colors.text.faint, fontSize: '13px' }}>
-          <p style={{ margin: '0 0 4px' }}>Digital Football — contact@digital-football.fr</p>
+          <p style={{ margin: '0 0 4px' }}>Digital Football — {CONTACT_EMAIL}</p>
           <p style={{ margin: 0 }}>En utilisant la plateforme, vous acceptez l'intégralité des présentes conditions et notre <a href="/confidentialite" style={{ color: colors.accent.green }}>Politique de Confidentialité</a>.</p>
         </div>
       </div>

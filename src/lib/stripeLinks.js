@@ -49,7 +49,7 @@ export const PALIERS_QUOTA_EQUIPES = {
   c0: 2, c100: 4, c200: 7, c300: 11, c400: 15, c500: 22,
 }
 
-export const CONTACT_EMAIL = 'contact@digital-football.fr'
+export const CONTACT_EMAIL = 'Jimmy.digital.football@gmail.com'
 
 // client_reference_id permet au webhook Stripe (supabase/functions/stripe-webhook)
 // d'identifier le profil à activer/créditer après paiement. prefilled_email

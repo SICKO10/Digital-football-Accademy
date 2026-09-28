@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { colors } from '../tokens'
+import { CONTACT_EMAIL } from '../lib/stripeLinks'
 
 const Section = ({ titre, children }) => (
   <div style={{ marginBottom: '2.5rem' }}>
@@ -45,7 +46,7 @@ function PolitiqueConfidentialite() {
           <P>
             Digital Football est responsable du traitement des données personnelles collectées via la plateforme.
             Pour toute question relative à vos données ou pour exercer vos droits, contactez-nous à
-            l'adresse <strong style={{ color: 'white' }}>contact@digital-football.fr</strong>.
+            l'adresse <strong style={{ color: 'white' }}>{CONTACT_EMAIL}</strong>.
           </P>
         </Section>
 
@@ -128,7 +129,7 @@ function PolitiqueConfidentialite() {
             <Li>Droit de retirer votre consentement à tout moment, notamment pour les données de santé</Li>
           </ul>
           <P>
-            Pour exercer ces droits, contactez-nous à <strong style={{ color: 'white' }}>contact@digital-football.fr</strong>.
+            Pour exercer ces droits, contactez-nous à <strong style={{ color: 'white' }}>{CONTACT_EMAIL}</strong>.
             Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr) si vous
             estimez que le traitement de vos données n'est pas conforme à la réglementation.
           </P>
@@ -143,7 +144,7 @@ function PolitiqueConfidentialite() {
         </Section>
 
         <div style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', color: colors.text.faint, fontSize: '13px' }}>
-          <p style={{ margin: '0 0 4px' }}>Digital Football — contact@digital-football.fr</p>
+          <p style={{ margin: '0 0 4px' }}>Digital Football — {CONTACT_EMAIL}</p>
           <p style={{ margin: 0 }}>Cette politique complète nos <a href="/cgu" style={{ color: colors.accent.green }}>Conditions Générales d'Utilisation</a>.</p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { STRIPE_LINKS_CLUB } from '../lib/stripeLinks'
+import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 
 const st = {
@@ -142,7 +142,7 @@ function FormulaireClub() {
       message,
     })
     setEnvoi(false)
-    if (error) { setErreur("Une erreur est survenue, réessaie ou écris-nous directement à contact@digital-football.fr."); return }
+    if (error) { setErreur(`Une erreur est survenue, réessaie ou écris-nous directement à ${CONTACT_EMAIL}.`); return }
     setEnvoye(true)
   }
 
