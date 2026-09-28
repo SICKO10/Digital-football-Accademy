@@ -1098,6 +1098,19 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, logo_url: urlData.publicUrl } : prev)
   }
 
+  // Bannière large — même logique que le logo, prend le pas dessus dans
+  // SponsorsBar.jsx quand les deux sont renseignés (cf. supabase_sponsors_banniere.sql).
+  const ajouterBanniereSponsor = async (sponsor, file) => {
+    const path = `sponsors/${sponsor.id}/banniere_${Date.now()}_${nomFichierSur(file.name)}`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+    if (uploadError) { alert('Erreur upload : ' + uploadError.message); return }
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path)
+    const { error } = await supabase.from('sponsors').update({ banniere_url: urlData.publicUrl }).eq('id', sponsor.id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setSponsors(prev => prev.map(s => (s.id === sponsor.id ? { ...s, banniere_url: urlData.publicUrl } : s)))
+    setModalSponsor(prev => (prev && prev !== 'new' && prev.id === sponsor.id) ? { ...prev, banniere_url: urlData.publicUrl } : prev)
+  }
+
   const supprimerDocumentSponsor = async (sponsor, index) => {
     const nouveaux = (sponsor.documents || []).filter((_, i) => i !== index)
     const { error } = await supabase.from('sponsors').update({ documents: nouveaux }).eq('id', sponsor.id)
@@ -1599,6 +1612,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           onAjouterDocument={ajouterDocumentSponsor}
           onSupprimerDocument={supprimerDocumentSponsor}
           onAjouterLogo={ajouterLogoSponsor}
+          onAjouterBanniere={ajouterBanniereSponsor}
           saving={saving}
           accentColor={accentColor}
         />

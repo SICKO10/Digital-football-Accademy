@@ -25,7 +25,7 @@ export default function SponsorsBar({ clubId }) {
   useEffect(() => {
     if (!clubId) return
     supabase.from('sponsors')
-      .select('id, entreprise, logo_url, lien_url, ordre_bandeau')
+      .select('id, entreprise, logo_url, banniere_url, lien_url, ordre_bandeau')
       .eq('club_id', clubId).eq('saison', saisonActuelle()).eq('afficher_bandeau', true)
       .order('ordre_bandeau', { ascending: true })
       .then(({ data }) => { setSponsors(data || []); setCurrent(0) })
@@ -135,8 +135,17 @@ export default function SponsorsBar({ clubId }) {
   )
 }
 
-// Sous-composant : logo ou nom stylisé
+// Sous-composant : bannière large (prend le pas si renseignée), sinon logo,
+// sinon nom stylisé.
 function SponsorInner({ sponsor, colors, isMobile }) {
+  if (sponsor.banniere_url) {
+    return (
+      <img className="sb-logo" src={sponsor.banniere_url} alt={sponsor.entreprise} style={{
+        height: isMobile ? 40 : 52, maxWidth: '100%', objectFit: 'contain', borderRadius: 6,
+        transition: 'opacity 0.2s, transform 0.2s',
+      }} />
+    )
+  }
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
