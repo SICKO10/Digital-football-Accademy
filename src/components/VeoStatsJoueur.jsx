@@ -7,9 +7,7 @@ const FORM_VIDE = { equipe_label: '', numero_maillot: '', matchs: '', buts: '', 
 
 // Stats Veo saisies volontairement par le joueur (app.veo.co → Analytics
 // Studio → Statistiques du joueur), affichées sur son profil recruteur.
-// Entièrement déclaratif, à son initiative — cf. supabase_veo_stats_joueur.sql
-// pour pourquoi c'est un type de badge distinct de la vidéo vérifiée par
-// import éducateur (joueur_video_badges/BadgeVideoVerifiee.jsx).
+// Entièrement déclaratif, à son initiative — cf. supabase_veo_stats_joueur.sql.
 export default function VeoStatsJoueur({ joueurId }) {
   const colors = useColors()
   const [stats, setStats] = useState(null)

@@ -9,7 +9,6 @@ import { notifierJoueur } from "../lib/notifications";
 import { CATEGORIES as CATEGORIES_BASE } from "../lib/categories";
 import HistoriqueSaisons from "../components/saisons/HistoriqueSaisons";
 import BadgesJoueur from "../components/BadgesJoueur";
-import BadgeVideoVerifiee from "../components/BadgeVideoVerifiee";
 import { saisonActuelle } from "../lib/saison";
 import AnalyseRapportRecruteur from "../components/AnalyseRapportRecruteur";
 import { STRIPE_LINKS_RECRUTEUR, stripeUrl } from "../lib/stripeLinks";
@@ -577,16 +576,12 @@ export default function DashboardRecruteur() {
               <div style={{ marginTop: "10px" }}>
                 <BadgesJoueur joueurId={j.id} afficherSaison={true} />
               </div>
-              <div style={{ marginTop: "6px" }}>
-                <BadgeVideoVerifiee joueurId={j.id} />
-              </div>
             </div>
           </div>
 
-          {/* Stats Veo auto-déclarées par le joueur — distinct de "Vidéo
-              vérifiée" (import CSV éducateur, BadgeVideoVerifiee ci-dessus) :
-              purement déclaratif, affiché seulement si le joueur a saisi
-              quelque chose cette saison. */}
+          {/* Stats Veo auto-déclarées par le joueur — purement déclaratif,
+              affiché seulement si le joueur a saisi quelque chose cette
+              saison. */}
           {veoStats[j.id] && (
             <div style={{ marginBottom: "1.5rem", background: colors.background.surface, border: "1px solid #1e1e1e", borderRadius: "12px", padding: "1.5rem" }}>
               <p style={{ color: colors.accent.blue, fontWeight: 700, fontSize: "12px", marginBottom: "10px" }}>
@@ -1115,7 +1110,6 @@ export default function DashboardRecruteur() {
 
                     <div style={{ marginBottom: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       <BadgesJoueur joueurId={j.id} limite={2} />
-                      <BadgeVideoVerifiee joueurId={j.id} />
                     </div>
 
                     {/* Stats + barres de progression */}
@@ -1165,7 +1159,6 @@ export default function DashboardRecruteur() {
                       <p style={{ margin: "1px 0 0", fontSize: "11px", color: colors.text.faint }}>{j.poste || "—"} · {j.categorie || "—"} · {j.region || "—"}</p>
                       <div style={{ marginTop: "4px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                         <BadgesJoueur joueurId={j.id} limite={1} />
-                        <BadgeVideoVerifiee joueurId={j.id} />
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "20px", fontSize: "12px", color: colors.text.dim }}>

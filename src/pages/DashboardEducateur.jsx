@@ -18,7 +18,6 @@ const AnalyseVideo = lazy(() => import('../components/AnalyseVideo'))
 const RapportMatch = lazy(() => import('../components/RapportMatch'))
 const GestionPrepPhysique = lazy(() => import('../components/prepphysique/GestionPrepPhysique'))
 const SanteEquipe = lazy(() => import('../components/SanteEquipe'))
-const ImportVeo = lazy(() => import('../components/ImportVeo'))
 const GestionCloturesSaison = lazy(() => import('../components/prepphysique/GestionCloturesSaison'))
 const Deplacements = lazy(() => import('../components/Deplacements'))
 const PlanningTerrains = lazy(() => import('../components/PlanningTerrains'))
@@ -1549,7 +1548,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
   const importRef = useRef(null)
   const [importPreview, setImportPreview] = useState(null) // { rows: [], importing: false, done: 0 }
-  const [importVeoOuvert, setImportVeoOuvert] = useState(false)
   const [importError, setImportError] = useState('')
   const [savingJoueur, setSavingJoueur] = useState(false)
   const [joueurActif, setJoueurActif] = useState(null)
@@ -5542,27 +5540,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   📥 {t('equipe_importer_excel_csv', lang)}
                 </button>
                 <input ref={importRef} type="file" accept=".xlsx,.xls,.csv,.numbers" style={{ display: 'none' }} onChange={handleImportFile} />
-                <button onClick={() => setImportVeoOuvert(true)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
-                  Import Veo
-                </button>
-              </div>
-            )}
-
-            {importVeoOuvert && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-                onClick={() => setImportVeoOuvert(false)}>
-                <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', padding: '28px' }}
-                  onClick={e => e.stopPropagation()}>
-                  <Suspense fallback={<SectionLoader />}>
-                  <ImportVeo
-                    educateurId={userId}
-                    clubCategorieId={equipeActive?.id}
-                    joueurs={joueurs}
-                    onImporte={() => chargerJoueurs(userId, equipeActive?.id)}
-                    onFermer={() => setImportVeoOuvert(false)}
-                  />
-                  </Suspense>
-                </div>
               </div>
             )}
 
