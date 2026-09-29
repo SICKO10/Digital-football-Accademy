@@ -837,6 +837,18 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     applyElements(elements.map(e => (e.id === updated.id ? updated : e)))
   }
 
+  // Clic droit sur une flèche/ligne posée : inverse son sens (la pointe d'une
+  // flèche passe à l'autre bout). Reverse les paires (x,y) dans l'ordre —
+  // marche pour n'importe quelle longueur de points (droite/pointillée:2,
+  // courbe:3, dribble:7), pas juste [...points].reverse() qui casserait
+  // l'appariement x/y.
+  const inverserDirection = (e) => {
+    const paires = []
+    for (let i = 0; i < e.points.length; i += 2) paires.push([e.points[i], e.points[i + 1]])
+    paires.reverse()
+    updateElement({ ...e, points: paires.flat() })
+  }
+
   // Double-clic sur une flèche courbe : bascule le sens de la courbure. Le
   // point de contrôle (2e paire de points) vaut milieu + normale*offset —
   // le réfléchir par rapport au milieu (x1,x2)/(y1,y2) revient à inverser
@@ -1436,14 +1448,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     </svg>
   )
   const outilsFlêches = [
-    { key: 'fleche-droite', label: '→', title: 'Flèche droite' },
-    { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe (double-clic pour inverser le sens de la courbe)' },
-    { key: 'fleche-pointillee', label: '⇢', title: 'Flèche pointillée' },
-    { key: 'fleche-dribble', label: iconeZigzag, title: 'Flèche dribble (zigzag)' },
+    { key: 'fleche-droite', label: '→', title: 'Flèche droite (clic droit dessus pour inverser le sens)' },
+    { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe (double-clic pour inverser la courbure, clic droit pour inverser le sens)' },
+    { key: 'fleche-pointillee', label: '⇢', title: 'Flèche pointillée (clic droit dessus pour inverser le sens)' },
+    { key: 'fleche-dribble', label: iconeZigzag, title: 'Flèche dribble (zigzag) (clic droit dessus pour inverser le sens)' },
   ]
   const outilsLignes = [
-    { key: 'ligne-pleine', label: iconeLignePleine, title: 'Ligne continue' },
-    { key: 'ligne-pointillee', label: iconeLignePointillee, title: 'Ligne pointillée' },
+    { key: 'ligne-pleine', label: iconeLignePleine, title: 'Ligne continue (clic droit dessus pour inverser le sens)' },
+    { key: 'ligne-pointillee', label: iconeLignePointillee, title: 'Ligne pointillée (clic droit dessus pour inverser le sens)' },
   ]
   const outilsZones = [
     { key: 'zone-rect', label: iconeCarre, title: 'Zone rectangle' },
@@ -1874,6 +1886,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                     strokeWidth={3} hitStrokeWidth={24} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
                     draggable onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                     onDblClick={() => { if (tool === 'select') flipperCourbe(e) }} onDblTap={() => { if (tool === 'select') flipperCourbe(e) }}
+                    onContextMenu={ev => { ev.evt.preventDefault(); if (tool === 'select') inverserDirection(e) }}
                     onDragEnd={ev => {
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
@@ -1908,6 +1921,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                     x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
                     stroke={e.color} strokeWidth={3} hitStrokeWidth={24} dash={e.style === 'pointillee' ? [10, 5] : undefined}
                     draggable onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
+                    onContextMenu={ev => { ev.evt.preventDefault(); if (tool === 'select') inverserDirection(e) }}
                     onDragEnd={ev => {
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
