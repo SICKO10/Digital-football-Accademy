@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Rect, RegularPolygon, Arrow, Line, Text } from 'react-konva'
 import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from './Tactipad'
 import { colors } from '../tokens'
 
@@ -110,6 +110,9 @@ export default function TactipadViewer({ schema, width = 640 }) {
           {elements.filter(e => e.type === 'zone-cercle').map(e => (
             <Circle key={e.id} x={e.x} y={e.y} radius={e.radius} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
           ))}
+          {elements.filter(e => e.type === 'zone-triangle').map(e => (
+            <RegularPolygon key={e.id} sides={3} x={e.x} y={e.y} radius={e.radius} rotation={e.rotation || 0} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
+          ))}
           {elements.filter(e => e.type === 'fleche').map(e => {
             const xs = e.points.filter((_, i) => i % 2 === 0)
             const ys = e.points.filter((_, i) => i % 2 === 1)
@@ -119,6 +122,17 @@ export default function TactipadViewer({ schema, width = 640 }) {
             return (
               <Arrow key={e.id} x={cx} y={cy} points={relPoints} rotation={e.rotation || 0} stroke={e.color} fill={e.color} strokeWidth={3}
                 tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
+            )
+          })}
+          {elements.filter(e => e.type === 'ligne').map(e => {
+            const xs = e.points.filter((_, i) => i % 2 === 0)
+            const ys = e.points.filter((_, i) => i % 2 === 1)
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+            const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+            const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
+            return (
+              <Line key={e.id} x={cx} y={cy} points={relPoints} rotation={e.rotation || 0} stroke={e.color} strokeWidth={3}
+                dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
             )
           })}
           {elements.filter(e => e.type === 'texte').map(e => (

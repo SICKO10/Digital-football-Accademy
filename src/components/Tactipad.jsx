@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Stage, Layer, Image as KonvaImage, Circle, Ellipse, Rect, Arrow, Line, Text, Group, Transformer } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Ellipse, Rect, RegularPolygon, Arrow, Line, Text, Group, Transformer } from 'react-konva'
 import GIF from 'gif.js'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
@@ -530,6 +530,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const [colorPickerOpen, setColorPickerOpen] = useState(null) // 'A' | 'B' | 'C' | 'D' | null
   const [tool, setTool] = useState('select')
   const [showMaterielPanel, setShowMaterielPanel] = useState(false)
+  const [showFlechesPanel, setShowFlechesPanel] = useState(false)
+  const [showLignesPanel, setShowLignesPanel] = useState(false)
+  const [showZonesPanel, setShowZonesPanel] = useState(false)
   // Panneau joueurs à droite : rétractable — sur un écran étroit (mobile/
   // tablette) ses 170px fixes mordent lourdement sur la largeur du terrain.
   const [panelOuvert, setPanelOuvert] = useState(true)
@@ -659,9 +662,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       const rx = width / prevW
       const ry = height / prevH
       const rescaleEl = (el) => {
-        if (el.type === 'fleche') return { ...el, points: el.points.map((p, i) => (i % 2 === 0 ? p * rx : p * ry)) }
+        if (el.type === 'fleche' || el.type === 'ligne') return { ...el, points: el.points.map((p, i) => (i % 2 === 0 ? p * rx : p * ry)) }
         if (el.type === 'zone-rect') return { ...el, x: el.x * rx, y: el.y * ry, width: el.width * rx, height: el.height * ry }
-        if (el.type === 'zone-cercle') return { ...el, x: el.x * rx, y: el.y * ry, radius: el.radius * ((rx + ry) / 2) }
+        if (el.type === 'zone-cercle' || el.type === 'zone-triangle') return { ...el, x: el.x * rx, y: el.y * ry, radius: el.radius * ((rx + ry) / 2) }
         return { ...el, x: el.x * rx, y: el.y * ry }
       }
       setElements(prev => prev.map(rescaleEl))
@@ -687,7 +690,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   }, [userId])
 
   const selectedElement = selectedId ? elements.find(e => e.id === selectedId) || null : null
-  const TRANSFORMABLE_TYPES = ['fleche', 'zone-rect', 'zone-cercle']
+  const TRANSFORMABLE_TYPES = ['fleche', 'ligne', 'zone-rect', 'zone-cercle', 'zone-triangle']
 
   useEffect(() => {
     if (trRef.current) {
@@ -832,6 +835,18 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     applyElements(elements.map(e => (e.id === updated.id ? updated : e)))
   }
 
+  // Double-clic sur une flèche courbe : bascule le sens de la courbure. Le
+  // point de contrôle (2e paire de points) vaut milieu + normale*offset —
+  // le réfléchir par rapport au milieu (x1,x2)/(y1,y2) revient à inverser
+  // l'offset, donc à courber de l'autre côté, sans recalcul trigonométrique.
+  const flipperCourbe = (e) => {
+    if (e.style !== 'courbe' || e.points.length !== 6) return
+    const [x1, y1, mx, my, x2, y2] = e.points
+    const milieuX = (x1 + x2) / 2, milieuY = (y1 + y2) / 2
+    const nmx = 2 * milieuX - mx, nmy = 2 * milieuY - my
+    updateElement({ ...e, points: [x1, y1, nmx, nmy, x2, y2] })
+  }
+
   const editerJoueur = (id) => {
     const el = elements.find(e => e.id === id)
     if (!el) return
@@ -931,8 +946,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     const stage = e.target.getStage()
     const pos = stage.getPointerPosition()
     if (!pos) return
+    // En mode sélection, un clic doit tomber sur du vide pour désélectionner
+    // (cliquer sur un élément le sélectionne via son propre onClick). Avec un
+    // outil de placement actif en revanche, on veut pouvoir poser un objet/
+    // joueur/coupelle par-dessus une zone ou un autre élément existant (ex :
+    // à l'intérieur d'un carré ou d'un rond) sans être obligé de cliquer à
+    // côté puis de le glisser dedans.
     const clickedOnEmpty = e.target === stage || e.target.getClassName() === 'Image'
-    if (!clickedOnEmpty) return
+    if (!clickedOnEmpty && tool === 'select') return
 
     if (tool === 'select') { setSelectedId(null); return }
 
@@ -978,14 +999,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       return
     }
 
-    if (['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble'].includes(tool)) {
+    if (tool === 'zone-triangle') {
+      applyElements([...elements, { id: uid(), type: 'zone-triangle', x: pos.x, y: pos.y, radius: 40, rotation: 0, color: arrowColor }])
+      setTool('select')
+      return
+    }
+
+    if (['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble', 'ligne-pleine', 'ligne-pointillee'].includes(tool)) {
       if (!pendingStart) {
         setPendingStart({ x: pos.x, y: pos.y })
         setMousePos({ x: pos.x, y: pos.y })
       } else {
-        const style = tool.replace('fleche-', '')
+        const estLigne = tool.startsWith('ligne-')
+        const style = estLigne ? tool.replace('ligne-', '') : tool.replace('fleche-', '')
         const points = computeArrowPoints(style, pendingStart.x, pendingStart.y, pos.x, pos.y)
-        applyElements([...elements, { id: uid(), type: 'fleche', style, points, color: arrowColor }])
+        applyElements([...elements, { id: uid(), type: estLigne ? 'ligne' : 'fleche', style, points, color: arrowColor }])
         setPendingStart(null)
         setMousePos(null)
         setTool('select') // revient en mode sélection après avoir posé la flèche, au lieu de rester en mode "prochain clic = nouvelle flèche"
@@ -1368,16 +1396,35 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
     </svg>
   )
+  const iconeTriangle = (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1.5 L14.8 14.5 L1.2 14.5 Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+    </svg>
+  )
+  const iconeLignePleine = (
+    <svg width="18" height="10" viewBox="0 0 20 10" xmlns="http://www.w3.org/2000/svg">
+      <line x1="1" y1="5" x2="19" y2="5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+    </svg>
+  )
+  const iconeLignePointillee = (
+    <svg width="18" height="10" viewBox="0 0 20 10" xmlns="http://www.w3.org/2000/svg">
+      <line x1="1" y1="5" x2="19" y2="5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeDasharray="4,3"/>
+    </svg>
+  )
   const outilsFlêches = [
     { key: 'fleche-droite', label: '→', title: 'Flèche droite' },
-    { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe' },
+    { key: 'fleche-courbe', label: '↝', title: 'Flèche courbe (double-clic pour inverser le sens de la courbe)' },
     { key: 'fleche-pointillee', label: '⇢', title: 'Flèche pointillée' },
     { key: 'fleche-dribble', label: iconeZigzag, title: 'Flèche dribble (zigzag)' },
+  ]
+  const outilsLignes = [
+    { key: 'ligne-pleine', label: iconeLignePleine, title: 'Ligne continue' },
+    { key: 'ligne-pointillee', label: iconeLignePointillee, title: 'Ligne pointillée' },
   ]
   const outilsZones = [
     { key: 'zone-rect', label: iconeCarre, title: 'Zone rectangle' },
     { key: 'zone-cercle', label: '○', title: 'Zone cercle' },
-    { key: 'texte', label: 'T', title: 'Texte libre' },
+    { key: 'zone-triangle', label: iconeTriangle, title: 'Zone triangle' },
   ]
   // Coupelle générique (cone), mannequin et plot retirés de la palette — le
   // nouveau panneau Matériel (coupelles colorées, cônes, cerceau, échelles)
@@ -1427,7 +1474,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const hasJoueurs = joueursParEquipe.length > 0 || jokers.length > 0
 
   // Style du tool actif pour preview flèche
-  const arrowPreviewStyle = tool.replace('fleche-', '')
+  const estOutilLigne = tool.startsWith('ligne-')
+  const arrowPreviewStyle = estOutilLigne ? tool.replace('ligne-', '') : tool.replace('fleche-', '')
 
   return (
     <div onClick={() => colorPickerOpen && setColorPickerOpen(null)}>
@@ -1530,17 +1578,74 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           <button ref={el => (tourRefs.current.select = el)} onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
           <button ref={el => (tourRefs.current.grid = el)} onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
           <div style={{ height: '1px', background: colors.border.default }} />
-          <div ref={el => (tourRefs.current.fleches = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {outilsFlêches.map(o => (
-              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-            ))}
+          <div ref={el => (tourRefs.current.fleches = el)} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowFlechesPanel(v => !v)}
+              title="Flèches"
+              style={btnStyle(showFlechesPanel || outilsFlêches.some(o => o.key === tool))}
+            >
+              {outilsFlêches.find(o => o.key === tool)?.label || '→'}
+            </button>
+            {showFlechesPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px',
+                display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', width: '108px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                {outilsFlêches.map(o => (
+                  <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowFlechesPanel(false) }}
+                    style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div ref={el => (tourRefs.current.lignes = el)} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowLignesPanel(v => !v)}
+              title="Lignes"
+              style={btnStyle(showLignesPanel || outilsLignes.some(o => o.key === tool))}
+            >
+              {outilsLignes.find(o => o.key === tool)?.label || iconeLignePleine}
+            </button>
+            {showLignesPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px',
+                display: 'flex', flexDirection: 'column', gap: '8px', width: '58px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                {outilsLignes.map(o => (
+                  <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowLignesPanel(false) }}
+                    style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ height: '1px', background: colors.border.default }} />
-          <div ref={el => (tourRefs.current.zones = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {outilsZones.map(o => (
-              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-            ))}
+          <div ref={el => (tourRefs.current.zones = el)} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowZonesPanel(v => !v)}
+              title="Zones"
+              style={btnStyle(showZonesPanel || outilsZones.some(o => o.key === tool))}
+            >
+              {iconeCarre}
+            </button>
+            {showZonesPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px',
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', width: '154px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                {outilsZones.map(o => (
+                  <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowZonesPanel(false) }}
+                    style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
+                ))}
+              </div>
+            )}
           </div>
+          <button onClick={() => { setTool('texte'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'texte')} title="Texte libre">T</button>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div ref={el => (tourRefs.current.objets = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {outilsObjets.map(o => (
@@ -1653,7 +1758,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               {elements.filter(e => e.type === 'zone-rect').map(e => (
                 <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
-                  onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
+                  onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
                   onTransformEnd={ev => {
                     const node = ev.target
@@ -1664,11 +1769,22 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               {elements.filter(e => e.type === 'zone-cercle').map(e => (
                 <Circle key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} radius={e.radius}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
-                  onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
+                  onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
                   onTransformEnd={ev => {
                     const node = ev.target
                     updateElement({ ...e, x: node.x(), y: node.y(), radius: Math.max(6, e.radius * node.scaleX()) })
+                    node.scaleX(1); node.scaleY(1)
+                  }} />
+              ))}
+              {elements.filter(e => e.type === 'zone-triangle').map(e => (
+                <RegularPolygon key={e.id} ref={n => (nodeRefs.current[e.id] = n)} sides={3} x={e.x} y={e.y} radius={e.radius} rotation={e.rotation || 0}
+                  fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
+                  onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
+                  onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
+                  onTransformEnd={ev => {
+                    const node = ev.target
+                    updateElement({ ...e, x: node.x(), y: node.y(), rotation: node.rotation(), radius: Math.max(6, e.radius * node.scaleX()) })
                     node.scaleX(1); node.scaleY(1)
                   }} />
               ))}
@@ -1686,7 +1802,28 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                     x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
                     stroke={e.color} fill={e.color}
                     strokeWidth={3} hitStrokeWidth={24} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
-                    draggable onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
+                    draggable onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
+                    onDblClick={() => { if (tool === 'select') flipperCourbe(e) }} onDblTap={() => { if (tool === 'select') flipperCourbe(e) }}
+                    onDragEnd={ev => {
+                      const node = ev.target
+                      const dx = node.x() - cx, dy = node.y() - cy
+                      updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
+                    }}
+                    onTransformEnd={ev => { updateElement({ ...e, rotation: ev.target.rotation() }) }} />
+                )
+              })}
+              {elements.filter(e => e.type === 'ligne').map(e => {
+                // Même logique de pivot que les flèches, sans pointe ni tension.
+                const xs = e.points.filter((_, i) => i % 2 === 0)
+                const ys = e.points.filter((_, i) => i % 2 === 1)
+                const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+                const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+                const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
+                return (
+                  <Line key={e.id} ref={n => (nodeRefs.current[e.id] = n)}
+                    x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
+                    stroke={e.color} strokeWidth={3} hitStrokeWidth={24} dash={e.style === 'pointillee' ? [10, 5] : undefined}
+                    draggable onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                     onDragEnd={ev => {
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
@@ -1697,19 +1834,19 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               })}
               {elements.filter(e => e.type === 'texte').map(e => (
                 <Text key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
-                  onClick={() => setSelectedId(e.id)} onTap={() => setSelectedId(e.id)}
-                  onDblClick={() => { const t = prompt('Modifier le texte :', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
+                  onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
+                  onDblClick={() => { if (tool !== 'select') return; const t = prompt('Modifier le texte :', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
                   onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
-                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement}
+                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }} onChange={updateElement}
                   onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
                   onRotate={() => updateElement({ ...e, rotation: ((e.rotation || 0) + 45) % 360 })}
                   dragBoundFunc={dragBound}
                 />
               ))}
               {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={setSelectedId} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
+                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
               ))}
 
               {/* ── Rectangle de sélection multiple en cours de glisser ────────── */}
@@ -1720,12 +1857,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 />
               )}
 
-              {/* ── NOUVEAU : preview flèche en temps réel ──────────────────── */}
-              {pendingStart && mousePos && ['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble'].includes(tool) && (
+              {/* ── Preview flèche/ligne en temps réel ──────────────────── */}
+              {pendingStart && mousePos && ['fleche-droite', 'fleche-courbe', 'fleche-pointillee', 'fleche-dribble', 'ligne-pleine', 'ligne-pointillee'].includes(tool) && (
                 <>
                   {/* Point de départ */}
                   <Circle x={pendingStart.x} y={pendingStart.y} radius={5} fill={arrowColor} opacity={0.8} listening={false} />
-                  {/* Flèche preview */}
+                  {/* Flèche/ligne preview — une ligne n'a pas de pointe (pointerLength/Width à 0) */}
                   <Arrow
                     points={computeArrowPoints(
                       arrowPreviewStyle,
@@ -1739,8 +1876,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                     dash={[6, 4]}
                     tension={arrowPreviewStyle === 'courbe' ? 0.5 : 0}
                     listening={false}
-                    pointerLength={10}
-                    pointerWidth={8}
+                    pointerLength={estOutilLigne ? 0 : 10}
+                    pointerWidth={estOutilLigne ? 0 : 8}
                   />
                 </>
               )}
@@ -1748,9 +1885,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               <Transformer
                 ref={trRef}
                 flipEnabled={false}
-                rotateEnabled={selectedElement?.type === 'fleche' || selectedElement?.type === 'zone-rect'}
-                resizeEnabled={selectedElement?.type === 'zone-rect' || selectedElement?.type === 'zone-cercle'}
-                keepRatio={selectedElement?.type === 'zone-cercle'}
+                rotateEnabled={['fleche', 'ligne', 'zone-rect', 'zone-triangle'].includes(selectedElement?.type)}
+                resizeEnabled={['zone-rect', 'zone-cercle', 'zone-triangle'].includes(selectedElement?.type)}
+                keepRatio={selectedElement?.type === 'zone-cercle' || selectedElement?.type === 'zone-triangle'}
                 borderStroke="#4ade80"
                 anchorStroke="#4ade80"
                 anchorSize={8}

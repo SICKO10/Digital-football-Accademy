@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Stage, Layer, Image as KonvaImage, Circle, Rect, Arrow, Text } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Rect, RegularPolygon, Arrow, Line, Text } from 'react-konva'
 import { supabase } from '../supabase'
 import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from '../components/Tactipad'
 import { useLang } from '../hooks/useLang'
@@ -73,6 +73,9 @@ export default function TactipadPublic() {
           {elements.filter(e => e.type === 'zone-cercle').map(e => (
             <Circle key={e.id} x={e.x} y={e.y} radius={e.radius} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
           ))}
+          {elements.filter(e => e.type === 'zone-triangle').map(e => (
+            <RegularPolygon key={e.id} sides={3} x={e.x} y={e.y} radius={e.radius} rotation={e.rotation || 0} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
+          ))}
           {elements.filter(e => e.type === 'fleche').map(e => {
             // Même logique de pivot que dans l'éditeur : rotation stockée = rotation
             // autour du centre de la boîte englobante des points, pas de (0,0).
@@ -84,6 +87,17 @@ export default function TactipadPublic() {
             return (
               <Arrow key={e.id} x={cx} y={cy} points={relPoints} rotation={e.rotation || 0} stroke={e.color} fill={e.color} strokeWidth={3}
                 tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
+            )
+          })}
+          {elements.filter(e => e.type === 'ligne').map(e => {
+            const xs = e.points.filter((_, i) => i % 2 === 0)
+            const ys = e.points.filter((_, i) => i % 2 === 1)
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+            const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+            const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
+            return (
+              <Line key={e.id} x={cx} y={cy} points={relPoints} rotation={e.rotation || 0} stroke={e.color} strokeWidth={3}
+                dash={e.style === 'pointillee' ? [10, 5] : undefined} listening={false} />
             )
           })}
           {elements.filter(e => e.type === 'texte').map(e => (
