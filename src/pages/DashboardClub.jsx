@@ -7019,7 +7019,7 @@ export default function DashboardClub() {
         )
       })()}
 
-      <SponsorsBar clubId={clubId} />
+      {activeTab === 'accueil' && <SponsorsBar clubId={clubId} />}
     </div>
   )
 }

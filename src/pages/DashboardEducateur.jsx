@@ -11726,7 +11726,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       )
     })()}
 
-    <SponsorsBar clubId={clubAffiliation?.club_id} />
+    {activeSection === 'accueil' && <SponsorsBar clubId={clubAffiliation?.club_id} />}
 
     </>
   )
