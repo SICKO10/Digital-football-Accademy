@@ -6062,12 +6062,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                           const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
                           const cat = j.club_categorie_id ? clubCategories.find(c => c.id === j.club_categorie_id) : null
                           return (
-                            <div key={j.id} style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px 16px' }}>
+                            <div key={j.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ position: 'relative', flexShrink: 0 }}>
                                   <Avatar person={j} size={44} bg={groupe.color + '20'} border="none" textColor={groupe.color} />
                                   {j.joueur_id && (
-                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#4ade80', border: '2px solid #111' }} />
+                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#4ade80', border: `2px solid ${colors.background.surface}` }} />
                                   )}
                                 </div>
 
@@ -6085,7 +6085,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                                   )}
                                   <div className="joueur-menu-wrapper" style={{ position: 'relative' }}>
                                     <button onClick={() => setOpenMenuJoueurId(openMenuJoueurId === j.id ? null : j.id)}
-                                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#666', fontSize: '16px', padding: '5px 9px', cursor: 'pointer' }}>
+                                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', padding: '5px 9px', cursor: 'pointer' }}>
                                       ···
                                     </button>
                                     {openMenuJoueurId === j.id && (
@@ -6976,17 +6976,17 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                           const scoreColor = isVictoire ? '#4ade80' : isNul ? '#888' : '#f87171'
                           const resultLabel = isVictoire ? 'Victoire' : isNul ? 'Nul' : 'Défaite'
                           return (
-                      <div key={m.id} style={{ background: '#111', border: '1px solid #1e1e1e', borderLeft: `4px solid ${borderColor}`, borderRadius: '12px', padding: '16px' }}>
+                      <div key={m.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${borderColor}`, borderRadius: '12px', padding: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: '#fff', fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {m.domicile ? 'vs' : '@'} {m.adversaire}
                             </div>
-                            <div style={{ color: '#666', fontSize: '12px', marginTop: '2px' }}>
+                            <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px' }}>
                               {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                               {m.heure ? ` · ${m.heure}` : ''}
                             </div>
-                            <div style={{ color: '#555', fontSize: '12px' }}>
+                            <div style={{ color: colors.text.disabled, fontSize: '12px' }}>
                               {m.competition ? `${m.competition} · ` : ''}{m.domicile ? '🏠 Domicile' : '✈️ Extérieur'}{m.lieu ? ` · ${m.lieu}` : ''}
                             </div>
                           </div>
@@ -7010,7 +7010,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                             <div style={{ position: 'relative', flexShrink: 0 }} onClick={ev => ev.stopPropagation()}>
                               <button
                                 onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
-                                style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#666', fontSize: '16px', padding: '6px 10px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
+                                style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', padding: '6px 10px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
                               >···</button>
                               {menuResultatOuvert === m.id && (
                                 <>
