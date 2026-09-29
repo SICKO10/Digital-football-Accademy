@@ -252,6 +252,46 @@ function computeArrowPoints(style, x1, y1, x2, y2) {
   return [x1, y1, x2, y2]
 }
 
+const rotatePoint = (px, py, cx, cy, angleDeg) => {
+  const rad = (angleDeg * Math.PI) / 180
+  const cos = Math.cos(rad), sin = Math.sin(rad)
+  const dx = px - cx, dy = py - cy
+  return [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos]
+}
+
+// Poignées aux 2 extrémités d'une flèche/ligne sélectionnée — glisser la
+// pointe (ou le départ) pointe directement une nouvelle direction, plus
+// simple que le Transformer générique (boîte englobante) utilisé pour les
+// zones. Pas de mise à jour en continu pendant le drag (onDragEnd seulement,
+// pas onDragMove) : éviterait de pousser une entrée d'historique undo par
+// pixel déplacé — Konva déplace déjà la poignée elle-même nativement pendant
+// le geste, la flèche se met à jour au relâcher.
+function PoigneesExtremites({ element, onChange }) {
+  const xs = element.points.filter((_, i) => i % 2 === 0)
+  const ys = element.points.filter((_, i) => i % 2 === 1)
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+  const rot = element.rotation || 0
+  const n = element.points.length
+  const [startX, startY] = rotatePoint(element.points[0], element.points[1], cx, cy, rot)
+  const [endX, endY] = rotatePoint(element.points[n - 2], element.points[n - 1], cx, cy, rot)
+
+  const bougerExtremite = (bout, dragX, dragY) => {
+    const nouveauxPoints = bout === 'debut'
+      ? computeArrowPoints(element.style, dragX, dragY, endX, endY)
+      : computeArrowPoints(element.style, startX, startY, dragX, dragY)
+    onChange({ ...element, points: nouveauxPoints, rotation: 0 })
+  }
+
+  const styleCommun = { radius: 7, fill: '#ffffff', stroke: '#4ade80', strokeWidth: 2, draggable: true }
+  return (
+    <>
+      <Circle x={startX} y={startY} {...styleCommun} onDragEnd={ev => bougerExtremite('debut', ev.target.x(), ev.target.y())} />
+      <Circle x={endX} y={endY} {...styleCommun} onDragEnd={ev => bougerExtremite('fin', ev.target.x(), ev.target.y())} />
+    </>
+  )
+}
+
 // couleurs : surcharge optionnelle { A, B, C, D } — permet à l'éditeur de
 // personnaliser les couleurs d'équipe (cf. equipesCouleurs) sans toucher aux
 // couleurs par défaut d'EQUIPES_CONFIG, réutilisées telles quelles par
@@ -692,7 +732,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   }, [userId])
 
   const selectedElement = selectedId ? elements.find(e => e.id === selectedId) || null : null
-  const TRANSFORMABLE_TYPES = ['fleche', 'ligne', 'zone-rect', 'zone-cercle', 'zone-triangle']
+  const TRANSFORMABLE_TYPES = ['zone-rect', 'zone-cercle', 'zone-triangle']
 
   useEffect(() => {
     if (trRef.current) {
@@ -1891,21 +1931,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
-                    }}
-                    onTransformEnd={ev => {
-                      // Étirer/réduire via les 2 poignées d'angle du Transformer : le
-                      // scale s'applique aux points relatifs (repère non-tourné), puis
-                      // on les replace dans l'espace absolu au nouveau centre/rotation.
-                      const node = ev.target
-                      const scaleX = node.scaleX(), scaleY = node.scaleY()
-                      const newCx = node.x(), newCy = node.y()
-                      const newRelPoints = relPoints.map((p, i) => p * (i % 2 === 0 ? scaleX : scaleY))
-                      updateElement({
-                        ...e,
-                        points: newRelPoints.map((p, i) => p + (i % 2 === 0 ? newCx : newCy)),
-                        rotation: node.rotation(),
-                      })
-                      node.scaleX(1); node.scaleY(1)
                     }} />
                 )
               })}
@@ -1926,21 +1951,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
-                    }}
-                    onTransformEnd={ev => {
-                      const node = ev.target
-                      const scaleX = node.scaleX(), scaleY = node.scaleY()
-                      const newCx = node.x(), newCy = node.y()
-                      const newRelPoints = relPoints.map((p, i) => p * (i % 2 === 0 ? scaleX : scaleY))
-                      updateElement({
-                        ...e,
-                        points: newRelPoints.map((p, i) => p + (i % 2 === 0 ? newCx : newCy)),
-                        rotation: node.rotation(),
-                      })
-                      node.scaleX(1); node.scaleY(1)
                     }} />
                 )
               })}
+              {tool === 'select' && selectedElement && ['fleche', 'ligne'].includes(selectedElement.type) && (
+                <PoigneesExtremites element={selectedElement} onChange={updateElement} />
+              )}
               {elements.filter(e => e.type === 'texte').map(e => (
                 <Text key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
@@ -1994,11 +2010,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               <Transformer
                 ref={trRef}
                 flipEnabled={false}
-                rotateEnabled={['fleche', 'ligne', 'zone-rect', 'zone-triangle'].includes(selectedElement?.type)}
-                resizeEnabled={['fleche', 'ligne', 'zone-rect', 'zone-cercle', 'zone-triangle'].includes(selectedElement?.type)}
-                enabledAnchors={['fleche', 'ligne'].includes(selectedElement?.type)
-                  ? ['top-left', 'bottom-right']
-                  : ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']}
+                rotateEnabled={['zone-rect', 'zone-triangle'].includes(selectedElement?.type)}
+                resizeEnabled={['zone-rect', 'zone-cercle', 'zone-triangle'].includes(selectedElement?.type)}
                 keepRatio={selectedElement?.type === 'zone-cercle' || selectedElement?.type === 'zone-triangle'}
                 borderStroke="#4ade80"
                 anchorStroke="#4ade80"
