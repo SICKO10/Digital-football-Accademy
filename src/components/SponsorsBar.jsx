@@ -54,10 +54,18 @@ export default function SponsorsBar({ clubId }) {
       position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
       background: `linear-gradient(to right, ${colors.background.sunken}, ${colors.background.surface}, ${colors.background.sunken})`,
       boxShadow: `0 -1px 0 0 ${amber}${alpha.medium}, 0 -8px 32px rgba(0,0,0,0.45)`,
-      height: isMobile ? 56 : 68,
-      display: 'flex', alignItems: 'center',
-      padding: isMobile ? '0 14px' : '0 24px',
+      // Sans ça, la barre s'arrête au-dessus de la zone du bandeau
+      // d'accueil (home indicator) sur iPhone — le fond blanc par défaut
+      // de la page apparaît sous la barre, "autour" de la bannière sponsor.
+      // Le contenu (icônes, texte) garde une hauteur fixe ci-dessous ; ce
+      // padding ne fait qu'étendre le fond sombre jusqu'au vrai bord.
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
+      <div style={{
+        height: isMobile ? 56 : 68,
+        display: 'flex', alignItems: 'center',
+        padding: isMobile ? '0 14px' : '0 24px',
+      }}>
       <style>{`
         @keyframes sb-shimmer { 0% { background-position: -400px 0 } 100% { background-position: 400px 0 } }
         @keyframes sb-pulse-dot { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.5; transform: scale(0.75) } }
@@ -131,6 +139,7 @@ export default function SponsorsBar({ clubId }) {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   )
