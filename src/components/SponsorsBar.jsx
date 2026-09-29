@@ -89,19 +89,20 @@ export default function SponsorsBar({ clubId }) {
         )}
       </div>
 
-      {/* ─── CENTRE : sponsor (logo ou nom) ─── */}
+      {/* ─── CENTRE : sponsor (bannière plein format, logo ou nom) ─── */}
       <div style={{
         flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 0,
+        height: '100%', overflow: 'hidden',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(4px)',
         transition: 'opacity 0.35s ease, transform 0.35s ease',
       }}>
         {sponsor.lien_url ? (
-          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" className="sb-logo-wrap" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}>
+          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}>
             <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} />
           </a>
         ) : (
-          <div className="sb-logo-wrap" style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          <div className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', minWidth: 0 }}>
             <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} />
           </div>
         )}
@@ -139,10 +140,12 @@ export default function SponsorsBar({ clubId }) {
 // sinon nom stylisé.
 function SponsorInner({ sponsor, colors, isMobile }) {
   if (sponsor.banniere_url) {
+    // Plein format : remplit toute la zone centrale (largeur + hauteur de la
+    // barre), pas juste une image contenue avec marges.
     return (
       <img className="sb-logo" src={sponsor.banniere_url} alt={sponsor.entreprise} style={{
-        height: isMobile ? 40 : 52, maxWidth: '100%', objectFit: 'contain', borderRadius: 6,
-        transition: 'opacity 0.2s, transform 0.2s',
+        width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center',
+        display: 'block', transition: 'transform 0.3s ease',
       }} />
     )
   }
