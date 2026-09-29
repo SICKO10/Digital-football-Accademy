@@ -149,17 +149,16 @@ export default function SponsorsBar({ clubId }) {
 // sinon nom stylisé.
 function SponsorInner({ sponsor, colors, isMobile }) {
   if (sponsor.banniere_url) {
-    // objectFit 'cover' (avant) étirait/rognait la bannière pour remplir
-    // toute la largeur — si l'image a un fond blanc (cas courant d'une
-    // bannière publicitaire), ce fond blanc devenait la quasi-totalité de la
-    // barre sur mobile, où il n'y a pas de texte/CTA sombre de part et
-    // d'autre pour le "cadrer" comme sur desktop. 'contain' garde l'image
-    // à ses proportions réelles ; le fond dégradé sombre de la barre
-    // (hérité, pas de background ici) comble l'espace autour au lieu que
-    // le blanc de l'image s'étale dessus.
+    // 'contain' testé puis abandonné : la bannière source (large, ratio type
+    // 1536x270) porte une zone blanche/transparente importante au-dessus de
+    // la bande sombre elle-même — avec 'contain', c'est TOUTE l'image (marge
+    // blanche comprise) qu'il faut faire rentrer dans la barre, donc encore
+    // plus de blanc visible qu'avant. 'cover' (le blanc autour venait plutôt
+    // du safe-area iOS, corrigé séparément, cf. 8372e68) reste le moins pire
+    // tant que l'image source n'est pas recadrée sur la seule bande sombre.
     return (
       <img className="sb-logo" src={sponsor.banniere_url} alt={sponsor.entreprise} style={{
-        width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center',
+        width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center',
         display: 'block', transition: 'transform 0.3s ease',
       }} />
     )
