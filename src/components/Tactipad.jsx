@@ -17,10 +17,6 @@ const COULEURS = [
 // centre d'un élement glissé ne sorte jamais visuellement du terrain.
 const ELEMENT_DRAG_MARGIN = 18
 
-// Espacement du quadrillage repère, en unités Stage (le Stage se redimensionne
-// dynamiquement — pas de largeur/hauteur fixes comme TacticalBoard.jsx).
-const GRID_SIZE = 50
-
 // Jusqu'à 4 équipes sur le plateau (utile pour les exercices à plusieurs
 // groupes, pas seulement une opposition A vs B) — couleur/label lookupés
 // partout au lieu d'un ternaire binaire A/B codé en dur.
@@ -419,7 +415,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // barre du haut. -1 = fermé.
   const TOUR_STEPS = [
     { ref: 'select', titre: t('tac_tour_1_titre', lang), texte: t('tac_tour_1_texte', lang) },
-    { ref: 'grid', titre: t('tac_tour_2_titre', lang), texte: t('tac_tour_2_texte', lang) },
     { ref: 'fleches', titre: t('tac_tour_3_titre', lang), texte: t('tac_tour_3_texte', lang) },
     { ref: 'zones', titre: t('tac_tour_4_titre', lang), texte: t('tac_tour_4_texte', lang) },
     { ref: 'objets', titre: t('tac_tour_5_titre', lang), texte: t('tac_tour_5_texte', lang) },
@@ -536,7 +531,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // Panneau joueurs à droite : rétractable — sur un écran étroit (mobile/
   // tablette) ses 170px fixes mordent lourdement sur la largeur du terrain.
   const [panelOuvert, setPanelOuvert] = useState(true)
-  const [showGrid, setShowGrid] = useState(false)
   const [arrowColor, setArrowColor] = useState('#ffffff')
   const [pendingStart, setPendingStart] = useState(null)
   // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
@@ -879,15 +873,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
 
   // Pose n joueurs d'un coup (ex: "8" → 8 joueurs), numérotés à la suite en
   // partant du numéro saisi dans le picker (ou du prochain numéro dispo pour
-  // cette équipe si le champ N° est vide), en colonne verticale centrée sur
-  // le point cliqué.
+  // cette équipe si le champ N° est vide), en ligne horizontale centrée sur
+  // le point cliqué (plus de place en largeur qu'en hauteur sur le terrain).
+  // Chaque position est bornée aux mêmes limites que dragBound plus bas — sans
+  // ça, une série posée près d'un bord ou trop nombreuse plaçait des joueurs
+  // hors du terrain, où ils restaient coincés (dragBound ne s'applique qu'au
+  // déplacement, jamais à la position initiale).
   const ajouterJoueursMultiples = () => {
     const n = Math.max(1, parseInt(pickerNbJoueurs, 10) || 1)
     const depart = parseInt(pickerNumero, 10) || (elements.filter(e => e.type === 'joueur' && e.equipe === equipeActive).length + 1)
+    const clampX = x => Math.max(ELEMENT_DRAG_MARGIN, Math.min(width - ELEMENT_DRAG_MARGIN, x))
+    const clampY = y => Math.max(ELEMENT_DRAG_MARGIN, Math.min(height - ELEMENT_DRAG_MARGIN, y))
     const nouveaux = Array.from({ length: n }, (_, i) => ({
       id: uid(), type: 'joueur', equipe: equipeActive, gardien: false,
       numero: String(depart + i), nom: '',
-      x: pickerStagePos.x, y: pickerStagePos.y + (i - (n - 1) / 2) * 36,
+      x: clampX(pickerStagePos.x + (i - (n - 1) / 2) * 36), y: clampY(pickerStagePos.y),
     }))
     applyElements([...elements, ...nouveaux])
     setShowPickerJoueur(false)
@@ -896,20 +896,24 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
 
   // Pose n exemplaires du même matériel d'un coup (ex: "6" coupelles rouges),
   // en grille centrée sur le point cliqué — même logique que
-  // ajouterJoueursMultiples, pour éviter de reposer un plot à la fois.
+  // ajouterJoueursMultiples, pour éviter de reposer un plot à la fois. Même
+  // borne aux limites du terrain que ci-dessus, même raison (matériel signalé
+  // avec le même problème que les joueurs).
   const ajouterMaterielMultiple = () => {
     const n = Math.max(1, parseInt(pickerNbMateriel, 10) || 1)
     const spacing = 28
     const parLigne = 6
     const nbLignes = Math.ceil(n / parLigne)
+    const clampX = x => Math.max(ELEMENT_DRAG_MARGIN, Math.min(width - ELEMENT_DRAG_MARGIN, x))
+    const clampY = y => Math.max(ELEMENT_DRAG_MARGIN, Math.min(height - ELEMENT_DRAG_MARGIN, y))
     const nouveaux = Array.from({ length: n }, (_, i) => {
       const ligne = Math.floor(i / parLigne)
       const col = i % parLigne
       const nbColLigne = Math.min(parLigne, n - ligne * parLigne)
       return {
         id: uid(), type: 'objet', kind: pickerMaterielKind, rotation: 0,
-        x: pickerStagePos.x + (col - (nbColLigne - 1) / 2) * spacing,
-        y: pickerStagePos.y + (ligne - (nbLignes - 1) / 2) * spacing,
+        x: clampX(pickerStagePos.x + (col - (nbColLigne - 1) / 2) * spacing),
+        y: clampY(pickerStagePos.y + (ligne - (nbLignes - 1) / 2) * spacing),
       }
     })
     applyElements([...elements, ...nouveaux])
@@ -1525,37 +1529,42 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             l'équipe active, aucun joueur n'apparaît tout seul — il faut soit les
             poser un par un/en série (outil 👤), soit choisir un dispositif dans
             le menu ci-dessus pour poser les 11 d'un coup.
-            Clic droit : ouvre la palette de couleur de l'équipe (clic gauche = sélection). */}
-        {Object.keys(EQUIPES_CONFIG).map(eq => {
-          const couleur = equipesCouleurs[eq]
-          const actif = equipeActive === eq
-          return (
-            <div key={eq} style={{ position: 'relative' }}>
-              <button
-                onClick={() => setEquipeActive(eq)}
-                onContextMenu={e => { e.preventDefault(); setColorPickerOpen(colorPickerOpen === eq ? null : eq) }}
-                style={{
-                  padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
-                  border: actif ? `1px solid ${couleur}` : `1px solid ${couleur}40`,
-                  background: actif ? `${couleur}30` : `${couleur}15`,
-                  color: couleur, fontSize: '12px', fontWeight: 700,
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleur, display: 'inline-block' }} />
-                {t(EQUIPES_CONFIG[eq].label, lang)}
-                <span style={{ fontSize: '10px', opacity: 0.5 }}>▾</span>
-              </button>
-              {colorPickerOpen === eq && (
-                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
-                  {PALETTE_COULEURS_EQUIPE.map(c => (
-                    <button key={c} onClick={() => { setEquipesCouleurs(prev => ({ ...prev, [eq]: c })); setColorPickerOpen(null) }}
-                      style={{ width: '28px', height: '28px', borderRadius: '6px', background: c, border: couleur === c ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+            Clic droit : ouvre la palette de couleur de l'équipe (clic gauche = sélection).
+            Regroupées dans leur propre conteneur flex non-wrappable : sans ça,
+            le flexWrap du conteneur parent pouvait isoler l'équipe D toute
+            seule sur sa propre ligne dès que la largeur venait à manquer. */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'nowrap' }}>
+          {Object.keys(EQUIPES_CONFIG).map(eq => {
+            const couleur = equipesCouleurs[eq]
+            const actif = equipeActive === eq
+            return (
+              <div key={eq} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setEquipeActive(eq)}
+                  onContextMenu={e => { e.preventDefault(); setColorPickerOpen(colorPickerOpen === eq ? null : eq) }}
+                  style={{
+                    padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
+                    border: actif ? `1px solid ${couleur}` : `1px solid ${couleur}40`,
+                    background: actif ? `${couleur}30` : `${couleur}15`,
+                    color: couleur, fontSize: '12px', fontWeight: 700,
+                    display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
+                  }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleur, display: 'inline-block' }} />
+                  {t(EQUIPES_CONFIG[eq].label, lang)}
+                  <span style={{ fontSize: '10px', opacity: 0.5 }}>▾</span>
+                </button>
+                {colorPickerOpen === eq && (
+                  <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
+                    {PALETTE_COULEURS_EQUIPE.map(c => (
+                      <button key={c} onClick={() => { setEquipesCouleurs(prev => ({ ...prev, [eq]: c })); setColorPickerOpen(null) }}
+                        style={{ width: '28px', height: '28px', borderRadius: '6px', background: c, border: couleur === c ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
         <button onClick={() => setTourEtape(0)} title={t('tac_tour_revoir', lang)}
           style={{
             marginLeft: 'auto', width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
@@ -1576,7 +1585,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         {/* Toolbar gauche */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
           <button ref={el => (tourRefs.current.select = el)} onClick={() => { setTool('select'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'select')} title="Sélection [Échap]">↖</button>
-          <button ref={el => (tourRefs.current.grid = el)} onClick={() => setShowGrid(v => !v)} style={btnStyle(showGrid)} title="Quadrillage">⊞</button>
+          <button ref={el => (tourRefs.current.joueur = el)} onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div ref={el => (tourRefs.current.fleches = el)} style={{ position: 'relative' }}>
             <button
@@ -1652,7 +1661,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
             ))}
           </div>
-          <button ref={el => (tourRefs.current.joueur = el)} onClick={() => { setTool('joueur'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'joueur')} title={`Ajouter un joueur individuel (${t(EQUIPES_CONFIG[equipeActive].label, lang)})`}>👤</button>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div style={{ position: 'relative' }}>
             <button
@@ -1741,19 +1749,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           >
             <Layer>
               {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
-
-              {/* Quadrillage repère — listening=false, comme dans TacticalBoard.jsx : ne
-                  capte jamais les clics/drag, purement visuel. */}
-              {showGrid && (
-                <>
-                  {Array.from({ length: Math.floor(width / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(x => (
-                    <Line key={`gv-${x}`} points={[x, 0, x, height]} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} dash={[4, 4]} listening={false} />
-                  ))}
-                  {Array.from({ length: Math.floor(height / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).map(y => (
-                    <Line key={`gh-${y}`} points={[0, y, width, y]} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} dash={[4, 4]} listening={false} />
-                  ))}
-                </>
-              )}
 
               {elements.filter(e => e.type === 'zone-rect').map(e => (
                 <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}
