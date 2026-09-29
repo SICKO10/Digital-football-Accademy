@@ -314,7 +314,7 @@ export function JoueurNode({ el, isSelected, onSelect = () => {}, onChange = () 
   const color = isJoker ? '#ffffff' : (couleurs?.[el.equipe] ?? EQUIPES_CONFIG[el.equipe]?.color ?? EQUIPES_CONFIG.A.color)
   return (
     <Group
-      x={el.x} y={el.y} draggable={draggable} dragBoundFunc={dragBoundFunc}
+      id={el.id} x={el.x} y={el.y} draggable={draggable} dragBoundFunc={dragBoundFunc}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDblClick={() => onEdit(el.id)}
@@ -381,7 +381,7 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
 
   return (
     <Group
-      x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable} dragBoundFunc={dragBoundFunc}
+      id={el.id} x={el.x} y={el.y} rotation={el.rotation || 0} draggable={draggable} dragBoundFunc={dragBoundFunc}
       onClick={() => onSelect(el.id)}
       onTap={() => onSelect(el.id)}
       onDblClick={() => draggable && onRotate()}
@@ -647,6 +647,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // décalage croissant à chaque collage successif (offsetCount), remis à 0
   // à chaque nouvelle copie.
   const clipboardRef = useRef({ elements: [], offsetCount: 0 })
+  // Déplacement groupé : quand le drag démarre sur un élément qui fait partie
+  // d'une sélection multiple (selectedIds), on déplace les autres à la main
+  // (node.x()/y() directement, sans passer par React à chaque frame — juste
+  // du Konva impératif pour rester fluide) puis on commit tout en un seul
+  // applyElements au relâcher, cf. gererDragStart/Move/EndGroupe plus bas.
+  const groupDragRef = useRef(null)
 
   // Largeur du canvas Konva — mesurée sur son propre conteneur (canvasRef) via
   // ResizeObserver plutôt que dérivée de window.innerWidth : Tactipad est
@@ -928,6 +934,51 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     for (let i = 0; i < e.points.length; i += 2) paires.push([e.points[i], e.points[i + 1]])
     paires.reverse()
     updateElement({ ...e, points: paires.flat() })
+  }
+
+  // Déplacement groupé (voir groupDragRef) : démarre quand le drag touche un
+  // élément qui fait partie d'une sélection multiple d'au moins 2 éléments.
+  // Retrouve les autres nœuds Konva via leur id (cf. prop id={e.id} posée
+  // sur chaque élément), pas via nodeRefs (pas peuplé pour objet/joueur).
+  const gererDragStart = (ev) => {
+    const id = ev.target.id()
+    if (!id || selectedIds.size <= 1 || !selectedIds.has(id)) return
+    const stage = ev.target.getStage()
+    const autres = [...selectedIds].filter(oid => oid !== id).map(oid => {
+      const node = stage.findOne('#' + oid)
+      return node ? { id: oid, node, startX: node.x(), startY: node.y() } : null
+    }).filter(Boolean)
+    if (autres.length === 0) return
+    groupDragRef.current = { originId: id, startX: ev.target.x(), startY: ev.target.y(), autres }
+  }
+
+  // Repositionne directement les nœuds Konva des autres éléments du groupe
+  // (impératif, pas de setElements ici) — suit le même delta que l'élément
+  // réellement en train d'être glissé par l'utilisateur.
+  const gererDragMove = (ev) => {
+    const g = groupDragRef.current
+    if (!g || ev.target.id() !== g.originId) return
+    const dx = ev.target.x() - g.startX
+    const dy = ev.target.y() - g.startY
+    g.autres.forEach(a => { a.node.x(a.startX + dx); a.node.y(a.startY + dy) })
+  }
+
+  // Commit unique de tout le groupe au relâcher (un seul applyElements, donc
+  // une seule entrée undo) — les onDragEnd individuels de chaque élément se
+  // désactivent tant que groupDragRef est posé (cf. leur garde), pour éviter
+  // que plusieurs setElements successifs se marchent dessus.
+  const gererDragEndGroupe = (ev) => {
+    const g = groupDragRef.current
+    if (!g || ev.target.id() !== g.originId) return
+    const dx = ev.target.x() - g.startX
+    const dy = ev.target.y() - g.startY
+    groupDragRef.current = null
+    const idsGroupe = new Set([g.originId, ...g.autres.map(a => a.id)])
+    applyElements(elements.map(el => {
+      if (!idsGroupe.has(el.id)) return el
+      if (el.type === 'fleche' || el.type === 'ligne') return { ...el, points: el.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) }
+      return { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy }
+    }))
   }
 
   // Double-clic sur une flèche courbe : bascule le sens de la courbure. Le
@@ -1915,14 +1966,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             onMouseUp={handleStageMouseUp}
             style={{ borderRadius: '12px', overflow: 'hidden', cursor: pendingStart ? 'crosshair' : 'default' }}
           >
-            <Layer>
+            <Layer onDragStart={gererDragStart} onDragMove={gererDragMove} onDragEnd={gererDragEndGroupe}>
               {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
 
               {elements.filter(e => e.type === 'zone-rect').map(e => (
-                <Rect key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}
+                <Rect key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
-                  onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
+                  onDragEnd={ev => { if (groupDragRef.current) return; updateElement({ ...e, x: ev.target.x(), y: ev.target.y() }) }}
                   onTransformEnd={ev => {
                     const node = ev.target
                     updateElement({ ...e, x: node.x(), y: node.y(), rotation: node.rotation(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()) })
@@ -1930,10 +1981,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   }} />
               ))}
               {elements.filter(e => e.type === 'zone-cercle').map(e => (
-                <Circle key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} radius={e.radius}
+                <Circle key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} radius={e.radius}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
-                  onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
+                  onDragEnd={ev => { if (groupDragRef.current) return; updateElement({ ...e, x: ev.target.x(), y: ev.target.y() }) }}
                   onTransformEnd={ev => {
                     const node = ev.target
                     updateElement({ ...e, x: node.x(), y: node.y(), radius: Math.max(6, e.radius * node.scaleX()) })
@@ -1941,10 +1992,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   }} />
               ))}
               {elements.filter(e => e.type === 'zone-triangle').map(e => (
-                <RegularPolygon key={e.id} ref={n => (nodeRefs.current[e.id] = n)} sides={3} x={e.x} y={e.y} radius={e.radius} rotation={e.rotation || 0}
+                <RegularPolygon key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)} sides={3} x={e.x} y={e.y} radius={e.radius} rotation={e.rotation || 0}
                   fill={e.color + '40'} stroke={e.color} strokeWidth={2} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
-                  onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })}
+                  onDragEnd={ev => { if (groupDragRef.current) return; updateElement({ ...e, x: ev.target.x(), y: ev.target.y() }) }}
                   onTransformEnd={ev => {
                     const node = ev.target
                     updateElement({ ...e, x: node.x(), y: node.y(), rotation: node.rotation(), radius: Math.max(6, e.radius * node.scaleX()) })
@@ -1961,7 +2012,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 const cy = (Math.min(...ys) + Math.max(...ys)) / 2
                 const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
                 return (
-                  <Arrow key={e.id} ref={n => (nodeRefs.current[e.id] = n)}
+                  <Arrow key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)}
                     x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
                     stroke={e.color} fill={e.color}
                     strokeWidth={3} hitStrokeWidth={24} tension={e.style === 'courbe' ? 0.5 : 0} dash={e.style === 'pointillee' ? [10, 5] : undefined}
@@ -1969,6 +2020,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                     onDblClick={() => { if (tool === 'select') flipperCourbe(e) }} onDblTap={() => { if (tool === 'select') flipperCourbe(e) }}
                     onContextMenu={ev => { ev.evt.preventDefault(); if (tool === 'select') inverserDirection(e) }}
                     onDragEnd={ev => {
+                      if (groupDragRef.current) return
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
@@ -1983,12 +2035,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 const cy = (Math.min(...ys) + Math.max(...ys)) / 2
                 const relPoints = e.points.map((p, i) => p - (i % 2 === 0 ? cx : cy))
                 return (
-                  <Line key={e.id} ref={n => (nodeRefs.current[e.id] = n)}
+                  <Line key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)}
                     x={cx} y={cy} points={relPoints} rotation={e.rotation || 0}
                     stroke={e.color} strokeWidth={3} hitStrokeWidth={24} dash={e.style === 'pointillee' ? [10, 5] : undefined}
                     draggable onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                     onContextMenu={ev => { ev.evt.preventDefault(); if (tool === 'select') inverserDirection(e) }}
                     onDragEnd={ev => {
+                      if (groupDragRef.current) return
                       const node = ev.target
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
@@ -1999,20 +2052,23 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 <PoigneesExtremites element={selectedElement} onChange={updateElement} />
               )}
               {elements.filter(e => e.type === 'texte').map(e => (
-                <Text key={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
+                <Text key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
                   onDblClick={() => { if (tool !== 'select') return; const t = prompt('Modifier le texte :', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
-                  onDragEnd={ev => updateElement({ ...e, x: ev.target.x(), y: ev.target.y() })} />
+                  onDragEnd={ev => { if (groupDragRef.current) return; updateElement({ ...e, x: ev.target.x(), y: ev.target.y() }) }} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
-                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }} onChange={updateElement}
+                <ObjetNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }}
+                  onChange={updated => { if (groupDragRef.current) return; updateElement(updated) }}
                   onDelete={() => applyElements(elements.filter(x => x.id !== e.id))}
                   onRotate={() => updateElement({ ...e, rotation: ((e.rotation || 0) + 45) % 360 })}
                   dragBoundFunc={dragBound}
                 />
               ))}
               {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }} onChange={updateElement} onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
+                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }}
+                  onChange={updated => { if (groupDragRef.current) return; updateElement(updated) }}
+                  onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
               ))}
 
               {/* ── Rectangle de sélection multiple en cours de glisser ────────── */}
