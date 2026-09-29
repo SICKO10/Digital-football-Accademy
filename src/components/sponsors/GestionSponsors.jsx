@@ -4,6 +4,7 @@ import { makeUseSt } from '../../lib/theme'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
 import CatalogueOffres from './CatalogueOffres'
 import ValorisationClub from './ValorisationClub'
+import StatsSponsors from './StatsSponsors'
 import DossierCommercialTemplate from './DossierCommercialTemplate'
 
 const COULEURS_NIVEAU = [
@@ -1277,6 +1278,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             { id: 'niveaux', label: 'Niveaux' },
             { id: 'offres', label: 'Offres' },
             { id: 'valorisation', label: 'Valorisation' },
+            { id: 'stats', label: 'Statistiques' },
           ].map(t => (
             <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
           ))}
@@ -1284,7 +1286,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {vue === 'prospects' ? (
             !readOnly && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
-          ) : ['offres', 'valorisation'].includes(vue) ? null : (
+          ) : ['offres', 'valorisation', 'stats'].includes(vue) ? null : (
             <>
               <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
                 {SAISONS.map(s => <option key={s}>{s}</option>)}
@@ -1616,6 +1618,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
       {vue === 'valorisation' && (
         <ValorisationClub clubId={clubId} readOnly={readOnly} accentColor={accentColor} />
+      )}
+
+      {vue === 'stats' && (
+        <StatsSponsors clubId={clubId} sponsors={sponsors} accentColor={accentColor} />
       )}
 
       {modalSponsor && !readOnly && (

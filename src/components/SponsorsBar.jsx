@@ -49,6 +49,14 @@ export default function SponsorsBar({ clubId }) {
   const sponsor = sponsors[current] || sponsors[0]
   const amber = colors.accent.amber
 
+  // Fire-and-forget : le lien s'ouvre dans un nouvel onglet (target="_blank")
+  // qu'il y ait erreur d'insertion ou non, pas la peine de bloquer/attendre
+  // avec preventDefault(). cf. supabase_sponsors_clics.sql — utilisé par
+  // StatsSponsors.jsx (GestionSponsors.jsx, onglet Statistiques).
+  const loggerClic = (type) => {
+    supabase.from('sponsor_clics_log').insert({ sponsor_id: sponsor.id, club_id: clubId, type }).then(() => {})
+  }
+
   return (
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
@@ -106,7 +114,7 @@ export default function SponsorsBar({ clubId }) {
         transition: 'opacity 0.35s ease, transform 0.35s ease',
       }}>
         {sponsor.lien_url ? (
-          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}>
+          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" onClick={() => loggerClic('banniere')} className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}>
             <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} />
           </a>
         ) : (
@@ -119,7 +127,7 @@ export default function SponsorsBar({ clubId }) {
       {/* ─── DROITE : CTA + pagination ─── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: isMobile ? 0 : 180, justifyContent: 'flex-end', flexShrink: 0 }}>
         {sponsor.lien_url && !isMobile && (
-          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" className="sb-cta" style={{
+          <a href={sponsor.lien_url} target="_blank" rel="noreferrer" onClick={() => loggerClic('cta')} className="sb-cta" style={{
             textDecoration: 'none', fontSize: 10, fontWeight: 700, color: amber, padding: '5px 12px', borderRadius: 8,
             border: `1px solid ${amber}${alpha.light}`, background: `${amber}${alpha.faint}`,
             letterSpacing: '0.04em', transition: 'all 0.15s', whiteSpace: 'nowrap',
