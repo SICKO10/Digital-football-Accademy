@@ -534,6 +534,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const [showFlechesPanel, setShowFlechesPanel] = useState(false)
   const [showLignesPanel, setShowLignesPanel] = useState(false)
   const [showZonesPanel, setShowZonesPanel] = useState(false)
+  const [showBallonPanel, setShowBallonPanel] = useState(false)
+  const [showCagesPanel, setShowCagesPanel] = useState(false)
   // Panneau joueurs à droite : rétractable — sur un écran étroit (mobile/
   // tablette) ses 170px fixes mordent lourdement sur la largeur du terrain.
   const [panelOuvert, setPanelOuvert] = useState(true)
@@ -904,9 +906,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // en grille centrée sur le point cliqué — même logique que
   // ajouterJoueursMultiples, pour éviter de reposer un plot à la fois. Même
   // borne aux limites du terrain que ci-dessus, même raison (matériel signalé
-  // avec le même problème que les joueurs).
-  const ajouterMaterielMultiple = () => {
-    const n = Math.max(1, parseInt(pickerNbMateriel, 10) || 1)
+  // avec le même problème que les joueurs). Factorisé pour être appelable
+  // directement (ex: raccourci "Série de 5 ballons") sans passer par le
+  // picker de quantité manuel.
+  const placerMateriel = (kind, n, pos) => {
     const spacing = 28
     const parLigne = 6
     const nbLignes = Math.ceil(n / parLigne)
@@ -917,12 +920,17 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       const col = i % parLigne
       const nbColLigne = Math.min(parLigne, n - ligne * parLigne)
       return {
-        id: uid(), type: 'objet', kind: pickerMaterielKind, rotation: 0,
-        x: clampX(pickerStagePos.x + (col - (nbColLigne - 1) / 2) * spacing),
-        y: clampY(pickerStagePos.y + (ligne - (nbLignes - 1) / 2) * spacing),
+        id: uid(), type: 'objet', kind, rotation: 0,
+        x: clampX(pos.x + (col - (nbColLigne - 1) / 2) * spacing),
+        y: clampY(pos.y + (ligne - (nbLignes - 1) / 2) * spacing),
       }
     })
     applyElements([...elements, ...nouveaux])
+  }
+
+  const ajouterMaterielMultiple = () => {
+    const n = Math.max(1, parseInt(pickerNbMateriel, 10) || 1)
+    placerMateriel(pickerMaterielKind, n, pickerStagePos)
     setShowPickerMateriel(false)
     setTool('select')
   }
@@ -975,6 +983,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       setPickerNumero(String(dejaPlaces + 1))
       setPickerNom('')
       setShowPickerJoueur(true)
+      return
+    }
+
+    if (tool === 'ballon-x5') {
+      placerMateriel('ballon', 5, pos)
+      setTool('select')
       return
     }
 
@@ -1440,8 +1454,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // nouveau panneau Matériel (coupelles colorées, cônes, cerceau, échelles)
   // les remplace. Rendu conservé côté ObjetNode pour ne pas casser l'affichage
   // des schémas déjà enregistrés qui contiennent encore ces kind.
-  const outilsObjets = [
+  const outilsBallon = [
     { key: 'ballon', label: '⚽', title: 'Ballon' },
+    { key: 'ballon-x5', label: '⚽×5', title: 'Série de 5 ballons (posés directement, sans passer par le picker de quantité)' },
+  ]
+  const outilsCages = [
     { key: 'petite_cage', label: '🥅', title: 'Petite cage (double-clic pour pivoter)' },
     { key: 'grande_cage', label: '🥅', title: 'Grande cage (double-clic pour pivoter)' },
   ]
@@ -1671,10 +1688,53 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           </div>
           <button onClick={() => { setTool('texte'); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === 'texte')} title="Texte libre">T</button>
           <div style={{ height: '1px', background: colors.border.default }} />
-          <div ref={el => (tourRefs.current.objets = el)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {outilsObjets.map(o => (
-              <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null) }} style={btnStyle(tool === o.key)} title={o.title}>{o.label}</button>
-            ))}
+          <div ref={el => (tourRefs.current.objets = el)} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowBallonPanel(v => !v)}
+              title="Ballon"
+              style={btnStyle(showBallonPanel || outilsBallon.some(o => o.key === tool))}
+            >
+              ⚽
+            </button>
+            {showBallonPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px',
+                display: 'flex', flexDirection: 'column', gap: '8px', width: '108px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                {outilsBallon.map(o => (
+                  <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowBallonPanel(false) }}
+                    style={{ ...btnStyle(tool === o.key), width: '100%', fontSize: '13px' }} title={o.title}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowCagesPanel(v => !v)}
+              title="Cages"
+              style={btnStyle(showCagesPanel || outilsCages.some(o => o.key === tool))}
+            >
+              🥅
+            </button>
+            {showCagesPanel && (
+              <div style={{
+                position: 'absolute', top: 0, left: '100%', marginLeft: '8px', zIndex: 1000,
+                background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px',
+                display: 'flex', flexDirection: 'column', gap: '8px', width: '108px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}>
+                {outilsCages.map(o => (
+                  <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowCagesPanel(false) }}
+                    style={{ ...btnStyle(tool === o.key), width: '100%' }} title={o.title}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div style={{ position: 'relative' }}>
@@ -1819,7 +1879,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
                     }}
-                    onTransformEnd={ev => { updateElement({ ...e, rotation: ev.target.rotation() }) }} />
+                    onTransformEnd={ev => {
+                      // Étirer/réduire via les 2 poignées d'angle du Transformer : le
+                      // scale s'applique aux points relatifs (repère non-tourné), puis
+                      // on les replace dans l'espace absolu au nouveau centre/rotation.
+                      const node = ev.target
+                      const scaleX = node.scaleX(), scaleY = node.scaleY()
+                      const newCx = node.x(), newCy = node.y()
+                      const newRelPoints = relPoints.map((p, i) => p * (i % 2 === 0 ? scaleX : scaleY))
+                      updateElement({
+                        ...e,
+                        points: newRelPoints.map((p, i) => p + (i % 2 === 0 ? newCx : newCy)),
+                        rotation: node.rotation(),
+                      })
+                      node.scaleX(1); node.scaleY(1)
+                    }} />
                 )
               })}
               {elements.filter(e => e.type === 'ligne').map(e => {
@@ -1839,7 +1913,18 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       const dx = node.x() - cx, dy = node.y() - cy
                       updateElement({ ...e, points: e.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) })
                     }}
-                    onTransformEnd={ev => { updateElement({ ...e, rotation: ev.target.rotation() }) }} />
+                    onTransformEnd={ev => {
+                      const node = ev.target
+                      const scaleX = node.scaleX(), scaleY = node.scaleY()
+                      const newCx = node.x(), newCy = node.y()
+                      const newRelPoints = relPoints.map((p, i) => p * (i % 2 === 0 ? scaleX : scaleY))
+                      updateElement({
+                        ...e,
+                        points: newRelPoints.map((p, i) => p + (i % 2 === 0 ? newCx : newCy)),
+                        rotation: node.rotation(),
+                      })
+                      node.scaleX(1); node.scaleY(1)
+                    }} />
                 )
               })}
               {elements.filter(e => e.type === 'texte').map(e => (
@@ -1896,7 +1981,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 ref={trRef}
                 flipEnabled={false}
                 rotateEnabled={['fleche', 'ligne', 'zone-rect', 'zone-triangle'].includes(selectedElement?.type)}
-                resizeEnabled={['zone-rect', 'zone-cercle', 'zone-triangle'].includes(selectedElement?.type)}
+                resizeEnabled={['fleche', 'ligne', 'zone-rect', 'zone-cercle', 'zone-triangle'].includes(selectedElement?.type)}
+                enabledAnchors={['fleche', 'ligne'].includes(selectedElement?.type)
+                  ? ['top-left', 'bottom-right']
+                  : ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']}
                 keepRatio={selectedElement?.type === 'zone-cercle' || selectedElement?.type === 'zone-triangle'}
                 borderStroke="#4ade80"
                 anchorStroke="#4ade80"
@@ -2294,7 +2382,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             minWidth: '200px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           }}>
             <div style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '8px', fontWeight: '700' }}>
-              {[...outilsObjets, ...outilsMateriel].find(o => o.key === pickerMaterielKind)?.title?.toUpperCase() || 'MATÉRIEL'}
+              {[...outilsBallon, ...outilsCages, ...outilsMateriel].find(o => o.key === pickerMaterielKind)?.title?.toUpperCase() || 'MATÉRIEL'}
             </div>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
