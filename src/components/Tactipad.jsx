@@ -36,6 +36,19 @@ const PALETTE_COULEURS_EQUIPE = [
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
+// Clone un élément avec un nouvel id, décalé de (dx,dy) — utilisé par
+// dupliquer (Cmd/Ctrl+D) et coller (Cmd/Ctrl+V). fleche/ligne n'ont pas de
+// x/y au premier niveau (juste points), contrairement à tous les autres
+// types : décaler points au lieu de x/y sinon le clone se superposerait
+// exactement à l'original sans aucun décalage visible.
+const cloneAvecDecalage = (el, dx, dy) => {
+  const id = uid()
+  if (el.type === 'fleche' || el.type === 'ligne') {
+    return { ...el, id, points: el.points.map((p, i) => p + (i % 2 === 0 ? dx : dy)) }
+  }
+  return { ...el, id, x: (el.x || 0) + dx, y: (el.y || 0) + dy }
+}
+
 const lerp = (a, b, t) => a + (b - a) * t
 const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 
@@ -629,6 +642,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const stageRef = useRef(null)
   const trRef = useRef(null)
   const nodeRefs = useRef({})
+  // Presse-papier interne au composant (pas l'API Clipboard système) — Cmd/
+  // Ctrl+C stocke les éléments sélectionnés, Cmd/Ctrl+V les repose avec un
+  // décalage croissant à chaque collage successif (offsetCount), remis à 0
+  // à chaque nouvelle copie.
+  const clipboardRef = useRef({ elements: [], offsetCount: 0 })
 
   // Largeur du canvas Konva — mesurée sur son propre conteneur (canvasRef) via
   // ResizeObserver plutôt que dérivée de window.innerWidth : Tactipad est
@@ -742,70 +760,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     }
   }, [selectedId, elements])
 
-  // ── NOUVEAU : raccourcis clavier ──────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e) => {
-      const tag = e.target.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
-
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
-        e.preventDefault()
-        setElements(prev => prev.filter(el => !selectedIds.has(el.id)))
-        setSelectedIds(new Set())
-        return
-      }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        e.preventDefault()
-        setElements(prev => prev.filter(el => el.id !== selectedId))
-        setSelectedId(null)
-        return
-      }
-      if (e.key === 'Escape') {
-        setSelectedId(null)
-        setSelectedIds(new Set())
-        setPendingStart(null)
-        setMousePos(null)
-        setTool('select')
-        return
-      }
-      if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
-        e.preventDefault()
-        setHistory(h => {
-          if (h.length === 0) return h
-          const prev = h[h.length - 1]
-          setFuture(f => [elements, ...f])
-          setElements(prev)
-          setSelectedId(null)
-          return h.slice(0, -1)
-        })
-        return
-      }
-      if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-        e.preventDefault()
-        setFuture(f => {
-          if (f.length === 0) return f
-          const next = f[0]
-          setHistory(h => [...h, elements])
-          setElements(next)
-          setSelectedId(null)
-          return f.slice(1)
-        })
-        return
-      }
-      if (e.ctrlKey && e.key === 'd' && selectedId) {
-        e.preventDefault()
-        setElements(prev => {
-          const el = prev.find(el => el.id === selectedId)
-          if (!el) return prev
-          return [...prev, { ...el, id: uid(), x: (el.x || 0) + 20, y: (el.y || 0) + 20 }]
-        })
-        return
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [selectedId, selectedIds, elements])
-
   const pushHistory = () => {
     setHistory(h => [...h, elements])
     setFuture([])
@@ -833,6 +787,93 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     setElements(next)
     setSelectedId(null)
   }
+
+  // ── NOUVEAU : raccourcis clavier ──────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = e.target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+        e.preventDefault()
+        setElements(prev => prev.filter(el => !selectedIds.has(el.id)))
+        setSelectedIds(new Set())
+        return
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault()
+        setElements(prev => prev.filter(el => el.id !== selectedId))
+        setSelectedId(null)
+        return
+      }
+      if (e.key === 'Escape') {
+        setSelectedId(null)
+        setSelectedIds(new Set())
+        setPendingStart(null)
+        setMousePos(null)
+        setTool('select')
+        return
+      }
+      // ctrlKey OU metaKey : sur Mac ces raccourcis se pressent avec Cmd, pas Ctrl.
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+        e.preventDefault()
+        setHistory(h => {
+          if (h.length === 0) return h
+          const prev = h[h.length - 1]
+          setFuture(f => [elements, ...f])
+          setElements(prev)
+          setSelectedId(null)
+          return h.slice(0, -1)
+        })
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+        e.preventDefault()
+        setFuture(f => {
+          if (f.length === 0) return f
+          const next = f[0]
+          setHistory(h => [...h, elements])
+          setElements(next)
+          setSelectedId(null)
+          return f.slice(1)
+        })
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && (selectedIds.size > 0 || selectedId)) {
+        e.preventDefault()
+        const ids = selectedIds.size > 0 ? selectedIds : new Set([selectedId])
+        const nouveaux = elements.filter(el => ids.has(el.id)).map(el => cloneAvecDecalage(el, 20, 20))
+        if (nouveaux.length === 0) return
+        applyElements([...elements, ...nouveaux])
+        if (nouveaux.length === 1) { setSelectedId(nouveaux[0].id); setSelectedIds(new Set()) }
+        else { setSelectedId(null); setSelectedIds(new Set(nouveaux.map(n => n.id))) }
+        return
+      }
+      // Presse-papier interne (pas l'API Clipboard système) : copie les
+      // éléments sélectionnés en mémoire, colle avec un décalage qui
+      // s'accumule à chaque Cmd/Ctrl+V successif (reset à la copie suivante),
+      // pour éviter que plusieurs collages d'affilée se superposent pile.
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && (selectedIds.size > 0 || selectedId)) {
+        e.preventDefault()
+        const ids = selectedIds.size > 0 ? selectedIds : new Set([selectedId])
+        clipboardRef.current = { elements: elements.filter(el => ids.has(el.id)), offsetCount: 0 }
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current.elements.length > 0) {
+        e.preventDefault()
+        const { elements: copies, offsetCount } = clipboardRef.current
+        const decalage = 20 * (offsetCount + 1)
+        const nouveaux = copies.map(el => cloneAvecDecalage(el, decalage, decalage))
+        applyElements([...elements, ...nouveaux])
+        clipboardRef.current = { elements: copies, offsetCount: offsetCount + 1 }
+        if (nouveaux.length === 1) { setSelectedId(nouveaux[0].id); setSelectedIds(new Set()) }
+        else { setSelectedId(null); setSelectedIds(new Set(nouveaux.map(n => n.id))) }
+        return
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedId, selectedIds, elements])
 
   const supprimerSelection = () => {
     if (!selectedId) return
