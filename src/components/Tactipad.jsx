@@ -523,6 +523,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     return init
   })
   const [colorPickerOpen, setColorPickerOpen] = useState(null) // 'A' | 'B' | 'C' | 'D' | null
+  // position:fixed calculée au clic droit (pas absolute/relative au bouton) —
+  // son conteneur (les 4 boutons équipe) a maintenant un overflowX:auto pour
+  // le mobile étroit, et un ancêtre avec overflow non-visible sur un axe
+  // rend l'autre axe non-visible aussi (règle CSS overflow-x/y) : un popup
+  // absolute y aurait été rogné verticalement.
+  const [colorPickerPos, setColorPickerPos] = useState({ x: 0, y: 0 })
   const [tool, setTool] = useState('select')
   const [showMaterielPanel, setShowMaterielPanel] = useState(false)
   const [showFlechesPanel, setShowFlechesPanel] = useState(false)
@@ -1532,8 +1538,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             Clic droit : ouvre la palette de couleur de l'équipe (clic gauche = sélection).
             Regroupées dans leur propre conteneur flex non-wrappable : sans ça,
             le flexWrap du conteneur parent pouvait isoler l'équipe D toute
-            seule sur sa propre ligne dès que la largeur venait à manquer. */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'nowrap' }}>
+            seule sur sa propre ligne dès que la largeur venait à manquer.
+            overflowX: les 4 boutons réunis (~410px) peuvent dépasser la largeur
+            d'un mobile étroit (~360-375px) — pas de flexWrap interne possible
+            (casserait "toujours sur la même ligne"), donc défilement horizontal
+            scopé à ce seul groupe plutôt qu'un débordement de toute la page. */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
           {Object.keys(EQUIPES_CONFIG).map(eq => {
             const couleur = equipesCouleurs[eq]
             const actif = equipeActive === eq
@@ -1541,7 +1551,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               <div key={eq} style={{ position: 'relative' }}>
                 <button
                   onClick={() => setEquipeActive(eq)}
-                  onContextMenu={e => { e.preventDefault(); setColorPickerOpen(colorPickerOpen === eq ? null : eq) }}
+                  onContextMenu={e => {
+                    e.preventDefault()
+                    const r = e.currentTarget.getBoundingClientRect()
+                    setColorPickerPos({ x: r.left, y: r.bottom + 6 })
+                    setColorPickerOpen(colorPickerOpen === eq ? null : eq)
+                  }}
                   style={{
                     padding: '7px 14px', borderRadius: '8px', cursor: 'pointer',
                     border: actif ? `1px solid ${couleur}` : `1px solid ${couleur}40`,
@@ -1554,7 +1569,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   <span style={{ fontSize: '10px', opacity: 0.5 }}>▾</span>
                 </button>
                 {colorPickerOpen === eq && (
-                  <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', left: 0, zIndex: 100, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: colorPickerPos.y, left: colorPickerPos.x, zIndex: 100, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', boxShadow: '0 8px 32px #00000080' }}>
                     {PALETTE_COULEURS_EQUIPE.map(c => (
                       <button key={c} onClick={() => { setEquipesCouleurs(prev => ({ ...prev, [eq]: c })); setColorPickerOpen(null) }}
                         style={{ width: '28px', height: '28px', borderRadius: '6px', background: c, border: couleur === c ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
