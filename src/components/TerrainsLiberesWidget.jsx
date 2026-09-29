@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
-import { ZONES, couleurZone } from './PlanningTerrains'
+import { ZONES, couleurZone } from '../lib/terrainZones'
 import { useColors } from '../lib/theme'
 
 // Date du jour au format local YYYY-MM-DD — jamais toISOString() (convertit en
