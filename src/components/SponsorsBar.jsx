@@ -149,11 +149,17 @@ export default function SponsorsBar({ clubId }) {
 // sinon nom stylisé.
 function SponsorInner({ sponsor, colors, isMobile }) {
   if (sponsor.banniere_url) {
-    // Plein format : remplit toute la zone centrale (largeur + hauteur de la
-    // barre), pas juste une image contenue avec marges.
+    // objectFit 'cover' (avant) étirait/rognait la bannière pour remplir
+    // toute la largeur — si l'image a un fond blanc (cas courant d'une
+    // bannière publicitaire), ce fond blanc devenait la quasi-totalité de la
+    // barre sur mobile, où il n'y a pas de texte/CTA sombre de part et
+    // d'autre pour le "cadrer" comme sur desktop. 'contain' garde l'image
+    // à ses proportions réelles ; le fond dégradé sombre de la barre
+    // (hérité, pas de background ici) comble l'espace autour au lieu que
+    // le blanc de l'image s'étale dessus.
     return (
       <img className="sb-logo" src={sponsor.banniere_url} alt={sponsor.entreprise} style={{
-        width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center',
+        width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center',
         display: 'block', transition: 'transform 0.3s ease',
       }} />
     )
