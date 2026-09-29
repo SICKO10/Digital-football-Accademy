@@ -59,13 +59,20 @@ serve(async (req) => {
     // (transitoire, vaut le coup de retenter), soit un quota de plan/billing
     // épuisé ("quota" dans le message) — ce dernier ne se régénère pas en
     // quelques secondes, retenter ne fait qu'ajouter 3 échecs pour rien.
+    // gemini-flash-latest pointe vers le modèle le plus récent — donc le plus
+    // demandé, avec un pool de capacité qui sature plus souvent en pratique
+    // qu'un modèle établi. Un 503 y bascule sur gemini-2.5-flash (pool de
+    // capacité distinct) au lieu de retenter le même modèle saturé.
+    const MODELE_PRINCIPAL = 'gemini-flash-latest'
+    const MODELE_SECOURS = 'gemini-2.5-flash'
     let response
     let errText = ''
     // 4 tentatives, backoff exponentiel 2s/4s/8s : un 503 Gemini est aléatoire
     // et court côté Google, il passe presque toujours avant la 4e tentative.
     for (let tentative = 0; tentative < 4; tentative++) {
+      const modele = tentative === 0 ? MODELE_PRINCIPAL : MODELE_SECOURS
       response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
