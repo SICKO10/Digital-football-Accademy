@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../hooks/useLang'
-import { t, LANGS } from '../lib/translations'
+// Sous-ensemble dédié (23 clés, pas les ~1000+ de translations.js) — cf.
+// commentaire en tête de lib/translationsHome.js. Home.jsx est la seule page
+// importée statiquement dans App.jsx (pas de lazy()), donc la seule dont les
+// imports finissent dans le bundle "index" chargé par tout visiteur.
+import { t, LANGS } from '../lib/translationsHome'
 import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
 import NewsletterForm from '../components/NewsletterForm'
