@@ -3031,6 +3031,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setSavingFiche(false)
     setFicheFichierUrl(null)
     setFicheExtraite(false)
+    // Seule confirmation visible pour l'éducateur que l'enregistrement a
+    // réussi — sans ça, le bouton reprend son libellé initial sans rien
+    // indiquer de plus, ce qui poussait à cliquer plusieurs fois par doute
+    // (créant autant de séances dupliquées dans "Mes séances").
+    afficherToast('Séance enregistrée')
 
     const [, pdfBlob] = await Promise.all([
       lierFicheAEntrainementCorrespondant(inserted.id, fiche.date).catch(e => console.error('Erreur liaison fiche/entraînement:', e)),
