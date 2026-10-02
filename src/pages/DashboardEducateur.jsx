@@ -2305,6 +2305,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [uploadingSeanceOuverte, setUploadingSeanceOuverte] = useState(false)
   const [ficheFichierUrl, setFicheFichierUrl] = useState(null) // image du scan d'origine, portée jusqu'à la sauvegarde de la fiche
   const [ficheExtraite, setFicheExtraite] = useState(false) // bandeau "fiche extraite" affiché après un scan IA
+  const [apercuFicheEnCoursOuvert, setApercuFicheEnCoursOuvert] = useState(false) // aperçu en grand de la fiche en cours de rédaction (lecture seule, ne touche pas à `fiche`)
   const [ficheApercu, setFicheApercu] = useState(null) // fiche archivée (seances_uploadees row) affichée dans le modal aperçu
   const [modeEditionApercu, setModeEditionApercu] = useState(false)
   const [ficheApercuEdit, setFicheApercuEdit] = useState(null) // copie éditable de ficheApercu.fiche_seance + categorie_tactique, tant que modeEditionApercu est actif
@@ -9367,10 +9368,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   </button>
                 )}
                 <button
-                  onClick={() => { setFiche(ficheVide); setSport('football'); setFicheFichierUrl(null); setFicheExtraite(false); setDerniereGenerationIA(null); window.print() }}
+                  onClick={() => setApercuFicheEnCoursOuvert(true)}
                   style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
                 >
-                  📄 {t('seance_fiche_vierge', lang)}
+                  {t('seance_apercu', lang)}
                 </button>
               </div>
             </div>
@@ -11468,6 +11469,30 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     )}
 
     <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
+
+    {/* Aperçu en grand de la fiche en cours de rédaction — purement lecture
+        seule (ne touche jamais à `fiche`/`sport`), contrairement à l'ancien
+        bouton "Fiche vierge" qui vidait la fiche puis imprimait : à cause du
+        batching React, window.print() capturait encore le DOM rempli (d'où
+        l'illusion que ça marchait), mais l'état repassait bien à ficheVide
+        juste après — fermer l'aperçu faisait donc disparaître la séance. */}
+    {apercuFicheEnCoursOuvert && (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
+        onClick={() => setApercuFicheEnCoursOuvert(false)}>
+        <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
+            <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              ✕ {t('btn_fermer', lang)}
+            </button>
+          </div>
+          <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
+            {fiche.mode_diplome === 'BEF'
+              ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
+              : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
+          </div>
+        </div>
+      </div>
+    )}
 
     {ficheApercu && (() => {
       // Le modal .fiche-render est une feuille blanche (texte noir, cf. index.css)

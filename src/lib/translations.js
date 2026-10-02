@@ -273,7 +273,7 @@ export const T = {
   seance_variables:         { fr: 'Variables / progressions', en: 'Variables / progressions', pt: 'Variáveis / progressões', es: 'Variables / progresiones', it: 'Variabili / progressioni', de: 'Variablen / Progressionen' },
   seance_sauvegarder_fiche: { fr: 'Sauvegarder la fiche',     en: 'Save sheet',            pt: 'Guardar ficha',         es: 'Guardar ficha',         it: 'Salva scheda',          de: 'Blatt speichern'       },
   seance_imprimer_fiche:    { fr: 'Imprimer la fiche',        en: 'Print sheet',           pt: 'Imprimir ficha',        es: 'Imprimir ficha',        it: 'Stampa scheda',         de: 'Blatt drucken'         },
-  seance_fiche_vierge:      { fr: 'Fiche vierge',             en: 'Blank sheet',           pt: 'Ficha em branco',       es: 'Ficha en blanco',       it: 'Scheda vuota',          de: 'Leeres Blatt'          },
+  seance_apercu:            { fr: 'Aperçu',                   en: 'Preview',               pt: 'Pré-visualização',      es: 'Vista previa',          it: 'Anteprima',             de: 'Vorschau'               },
   seance_aucune_envoyee:    { fr: "Aucune séance envoyée pour l'instant.", en: 'No sessions sent yet.', pt: 'Sem sessões enviadas por agora.', es: 'Sin sesiones enviadas por ahora.', it: 'Nessuna seduta inviata per ora.', de: 'Noch keine Einheiten gesendet.' },
   seance_sans_theme:        { fr: 'Sans thème',               en: 'No theme',              pt: 'Sem tema',              es: 'Sin tema',              it: 'Senza tema',            de: 'Kein Thema'            },
   seance_supprimer_q:       { fr: 'Supprimer ?',              en: 'Delete?',               pt: 'Eliminar?',             es: '¿Eliminar?',            it: 'Eliminare?',            de: 'Löschen?'              },
