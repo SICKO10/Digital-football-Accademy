@@ -361,8 +361,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   const isEchelleH = el.kind === 'echelle_h'
   const isHaie = el.kind === 'haie'
   const isBarre = el.kind === 'barre'
-  const cageW = el.kind === 'grande_cage' ? 44 : 30
-  const cageH = el.kind === 'grande_cage' ? 24 : 18
+  const cageW = el.kind === 'grande_cage' ? 50 : 30
+  const cageH = el.kind === 'grande_cage' ? 27 : 18
 
   // Décalage du bouton × et rayon de l'anneau de sélection — dépendent de la
   // taille de chaque forme, faute d'une bounding box générique côté Konva ici.
@@ -1602,9 +1602,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     { key: 'ballon', label: '⚽', title: 'Ballon' },
     { key: 'ballon-x5', label: '⚽×5', title: 'Série de 5 ballons (posés directement, sans passer par le picker de quantité)' },
   ]
+  // Deux aperçus de taille différente (plutôt que le même 🥅 pour les deux,
+  // impossible à distinguer autrement qu'au survol du titre) — proportions
+  // alignées sur cageW/cageH réels d'ObjetNode (30×18 / 50×27).
   const outilsCages = [
-    { key: 'petite_cage', label: '🥅', title: 'Petite cage (double-clic pour pivoter)' },
-    { key: 'grande_cage', label: '🥅', title: 'Grande cage (double-clic pour pivoter)' },
+    { key: 'petite_cage', title: 'Petite cage (double-clic pour pivoter)', apercu: <svg width="22" height="14" viewBox="0 0 30 18"><rect x="2" y="2" width="26" height="14" fill="none" stroke="#fff" strokeWidth="2"/><path d="M2 16 L6 18 L24 18 L28 16" stroke="#fff" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
+    { key: 'grande_cage', title: 'Grande cage (double-clic pour pivoter)', apercu: <svg width="30" height="17" viewBox="0 0 50 27"><rect x="2" y="2" width="46" height="23" fill="none" stroke="#fff" strokeWidth="2"/><path d="M2 25 L8 27 L42 27 L48 25" stroke="#fff" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
   ]
 
   // Matériel tactique : cliquer une vignette active l'outil (comme les autres
@@ -1873,8 +1876,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               }}>
                 {outilsCages.map(o => (
                   <button key={o.key} onClick={() => { setTool(o.key); setPendingStart(null); setMousePos(null); setShowCagesPanel(false) }}
-                    style={{ ...btnStyle(tool === o.key), width: '100%' }} title={o.title}>
-                    {o.label}
+                    style={{ ...btnStyle(tool === o.key), width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={o.title}>
+                    {o.apercu}
                   </button>
                 ))}
               </div>
