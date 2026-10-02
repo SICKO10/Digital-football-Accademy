@@ -393,8 +393,8 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
       {isSelected && <Circle radius={selRadius} fill="#ffffff20" stroke="#fff" strokeWidth={1} />}
       {isCage ? (
         <>
-          <Rect x={-cageW / 2} y={-cageH / 2} width={cageW} height={cageH} fill="transparent" stroke="#fff" strokeWidth={2} cornerRadius={1} />
-          <Line points={[-cageW / 2, cageH / 2, -cageW / 2 + 6, cageH / 2 + 6, cageW / 2 - 6, cageH / 2 + 6, cageW / 2, cageH / 2]} stroke="#fff" strokeWidth={1.2} dash={[3, 2]} />
+          <Rect x={-cageW / 2} y={-cageH / 2} width={cageW} height={cageH} fill="transparent" stroke={el.color || '#fff'} strokeWidth={2} cornerRadius={1} />
+          <Line points={[-cageW / 2, cageH / 2, -cageW / 2 + 6, cageH / 2 + 6, cageW / 2 - 6, cageH / 2 + 6, cageW / 2, cageH / 2]} stroke={el.color || '#fff'} strokeWidth={1.2} dash={[3, 2]} />
         </>
       ) : isPlot ? (
         <>
@@ -1059,12 +1059,19 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     const nbLignes = Math.ceil(n / parLigne)
     const clampX = x => Math.max(ELEMENT_DRAG_MARGIN, Math.min(width - ELEMENT_DRAG_MARGIN, x))
     const clampY = y => Math.max(ELEMENT_DRAG_MARGIN, Math.min(height - ELEMENT_DRAG_MARGIN, y))
+    // color seulement pour les cages : les autres matériels (coupelles, cônes...)
+    // ont une couleur fixée par leur kind (MATERIEL_COULEURS, ObjetNode) qui
+    // ignore el.color — leur ajouter ce champ ferait apparaître à tort le
+    // panneau "COULEUR" de l'élément sélectionné (conditionné à 'color' in
+    // selectedElement) sans que le swatch choisi ait le moindre effet visuel.
+    const isCage = kind === 'petite_cage' || kind === 'grande_cage'
     const nouveaux = Array.from({ length: n }, (_, i) => {
       const ligne = Math.floor(i / parLigne)
       const col = i % parLigne
       const nbColLigne = Math.min(parLigne, n - ligne * parLigne)
       return {
         id: uid(), type: 'objet', kind, rotation: 0,
+        ...(isCage ? { color: arrowColor } : {}),
         x: clampX(pos.x + (col - (nbColLigne - 1) / 2) * spacing),
         y: clampY(pos.y + (ligne - (nbLignes - 1) / 2) * spacing),
       }
