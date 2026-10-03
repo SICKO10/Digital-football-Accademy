@@ -9,6 +9,7 @@ import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import SanteJoueur from '../components/SanteJoueur'
 import NutritionDashboard from '../components/NutritionDashboard'
+import MontageVideo from '../components/MontageVideo'
 import { notifierJoueur } from '../lib/notifications'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { jourKeyDeDate } from '../lib/jours'
@@ -152,6 +153,12 @@ const IconNutrition = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 20c-4.4 0-8-3.6-8-9 0-4 2.5-7 5.5-7 1.3 0 2 .5 2.5 1 .5-.5 1.2-1 2.5-1 3 0 5.5 3 5.5 7 0 5.4-3.6 9-8 9Z"/>
     <path d="M12 5c0-1.5 1-3 3-3"/>
+  </svg>
+)
+const IconVideoEdit = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="6" width="14" height="12" rx="2"/>
+    <path d="m22 8-6 4 6 4V8Z"/>
   </svg>
 )
 const IconHealth = () => (
@@ -2188,6 +2195,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       { id: 'prep_physique', label: t('jnav_prep_physique', lang),  icon: <IconDumbbell /> },
       { id: 'sante',         label: t('nav_sante', lang),           icon: <IconHealth /> },
       { id: 'nutrition',     label: t('jnav_nutrition', lang),      icon: <IconNutrition />, locked: true },
+      { id: 'montage_video', label: t('jnav_montage_video', lang),  icon: <IconVideoEdit />, locked: true },
 
       { id: 'jogabonito',    label: 'Jogabonito',                   icon: <span style={{ fontSize: '18px' }}>🎬</span>, section: t('aff_explorer', lang) },
       { id: 'feed',          label: t('recrut_feed', lang),         icon: <IconGlobe />,  locked: true },
@@ -3057,6 +3065,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           )}
 
           {onglet === 'nutrition' && <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
+          {onglet === 'montage_video' && <UpgradeCard titre={t('jnav_montage_video', lang)} texte={t('aff_montage_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
 
           {onglet === 'equipement' && (
             <div>
@@ -3298,6 +3307,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'sante', label: t('nav_sante', lang), icon: <IconHealth /> },
     { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
+    { id: 'montage_video', label: t('jnav_montage_video', lang), icon: <IconVideoEdit />, locked: !isPro, section: t('jsec_developpement', lang) },
     { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
     { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
     { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
@@ -4568,6 +4578,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </>
             ) : (
               <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />
+            )}
+          </div>
+        )}
+
+        {onglet === 'montage_video' && (
+          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            {isPro ? (
+              <MontageVideo joueurId={userId} />
+            ) : (
+              <UpgradeCard titre={t('jnav_montage_video', lang)} texte={t('aff_montage_desc', lang)} lang={lang} userId={userId} email={profil?.email} />
             )}
           </div>
         )}

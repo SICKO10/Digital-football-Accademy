@@ -751,6 +751,22 @@ export default function DashboardRecruteur() {
             </>
           )}
 
+          {/* Compile générée via l'outil Montage Vidéo (profiles.montage_url) —
+              distincte de clip_url ci-dessus, toujours une vidéo Cloudinary
+              directe (jamais un lien Veo/YouTube), pas besoin de la même
+              détection de plateforme. */}
+          {j.montage_url && (
+            <>
+              <p style={st.sectionTitle}>Compile du joueur</p>
+              <div style={st.videoBox}>
+                <video src={j.montage_url} controls style={{ width: "100%", borderRadius: "8px", maxHeight: "300px", background: colors.black }} />
+                <a href={j.montage_url} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: "8px", color: colors.accent.orange, fontSize: "12px", textDecoration: "none" }}>
+                  🔗 Ouvrir dans un nouvel onglet
+                </a>
+              </div>
+            </>
+          )}
+
           {/* ── Validation note de saison ─────────────────────────────────── */}
           <div style={{ marginTop: "2rem", background: "#0d1a0d", border: "1px solid #1e3a1e", borderRadius: "14px", padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
