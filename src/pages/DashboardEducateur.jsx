@@ -2656,6 +2656,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       categorie_age: ficheApercuEdit.categorie_age || null,
       type_seance: ficheApercuEdit.type_seance || 'collectif',
       fiche_seance: ficheApercuEdit,
+      // Le PDF déjà archivé (fichier_url) correspond au contenu d'AVANT cette
+      // modification — signalé : un joueur qui télécharge/imprime depuis ce
+      // lien voyait toujours l'ancien texte, la modification n'y apparaissait
+      // jamais. On l'efface ici plutôt que de le régénérer tout de suite : au
+      // moment de ce save, .fiche-render affiche encore le formulaire d'édition
+      // (modeEditionApercu), pas le rendu imprimable propre — un PDF capturé
+      // maintenant aurait les champs de saisie au lieu d'un document fini.
+      // Le bouton "Partager" (genererEtPartagerFicheApercu) régénère un PDF à
+      // jour à la demande dès que fichier_url est vide.
+      fichier_url: null,
     }
     const { error } = await avecRetrySession(() => supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id))
     setSavingFicheApercu(false)
