@@ -3295,7 +3295,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   // ── DASHBOARD PRINCIPAL ──
-  const isPro = profil?.plan === 'joueur_pro'
+  // abonnement_actif obligatoire en plus du plan : à la résiliation (cf.
+  // stripe-webhook/index.ts, customer.subscription.deleted), seul
+  // abonnement_actif repasse à false — profiles.plan reste 'joueur_pro'
+  // indéfiniment (aucune donnée n'est perdue/réinitialisée). Sans ce
+  // second check, un joueur Pro affilié à une équipe gardait un accès Pro
+  // illimité après résiliation : l'écran "Abonnement non actif" (plus bas)
+  // est lui-même court-circuité dès qu'une affiliation est acceptée, et
+  // isPro ne regardait jusqu'ici que le plan.
+  const isPro = profil?.plan === 'joueur_pro' && !!profil?.abonnement_actif
 
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
