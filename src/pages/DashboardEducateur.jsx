@@ -1539,6 +1539,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
+  const [moisPointsSeanceSelectionne, setMoisPointsSeanceSelectionne] = useState(null) // clé 'YYYY-MM' choisie dans l'historique (onglet Mois) — null = mois en cours
   const [biblioVideoTab, setBiblioVideoTab] = useState('perso') // 'perso' | 'club' | 'df'
   const [statsTri, setStatsTri] = useState('buts') // pour classement
 
@@ -2311,6 +2312,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [ficheApercuEdit, setFicheApercuEdit] = useState(null) // copie éditable de ficheApercu.fiche_seance + categorie_tactique, tant que modeEditionApercu est actif
   const [savingFicheApercu, setSavingFicheApercu] = useState(false)
   const [generantPartage, setGenerantPartage] = useState(false)
+  const [regenererApercuApresEdit, setRegenererApercuApresEdit] = useState(false) // déclenche la régénération auto du PDF une fois l'aperçu en lecture seule réaffiché après un save
   const [scanImageFile, setScanImageFile] = useState(null)
   const [scanImagePreview, setScanImagePreview] = useState(null)
   const [scanImageBase64, setScanImageBase64] = useState(null)
@@ -2659,12 +2661,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       // Le PDF déjà archivé (fichier_url) correspond au contenu d'AVANT cette
       // modification — signalé : un joueur qui télécharge/imprime depuis ce
       // lien voyait toujours l'ancien texte, la modification n'y apparaissait
-      // jamais. On l'efface ici plutôt que de le régénérer tout de suite : au
-      // moment de ce save, .fiche-render affiche encore le formulaire d'édition
-      // (modeEditionApercu), pas le rendu imprimable propre — un PDF capturé
-      // maintenant aurait les champs de saisie au lieu d'un document fini.
-      // Le bouton "Partager" (genererEtPartagerFicheApercu) régénère un PDF à
-      // jour à la demande dès que fichier_url est vide.
+      // jamais. Effacé ici, régénéré automatiquement juste en dessous une fois
+      // l'aperçu en lecture seule réaffiché (cf. regenererApercuApresEdit) —
+      // au moment précis de ce save, .fiche-render montre encore le formulaire
+      // d'édition, pas le rendu imprimable propre, donc pas capturable ici.
       fichier_url: null,
     }
     const { error } = await avecRetrySession(() => supabase.from('seances_uploadees').update(payload).eq('id', ficheApercu.id))
@@ -2675,6 +2675,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setMesSeancesOuvertes(prev => prev.map(s => (s.id === updated.id ? updated : s)))
     setModeEditionApercu(false)
     setFicheApercuEdit(null)
+    setRegenererApercuApresEdit(true)
   }
 
   // ── Bibliothèque de procédés ──────────────────────────────────────────────────
@@ -2984,25 +2985,33 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     window.open(`https://wa.me/?text=${encodeURIComponent(`${titre ? titre + ' — ' : ''}${url}`)}`, '_blank')
   }
 
-  // Une fiche importée/saisie manuellement (uploaderMaSeance) n'a de fichier_url
-  // que si un fichier a été explicitement uploadé — sinon rien à partager. On
-  // génère le PDF à la volée depuis le rendu .fiche-render déjà affiché dans le
+  // Génère un PDF depuis le rendu .fiche-render actuellement affiché dans le
   // modal d'aperçu (même styling imprimable que #fiche-print, cf. index.css),
-  // on l'archive comme fichier_url de cette fiche, puis on enchaîne le partage.
+  // l'archive au storage et met à jour fichier_url (DB + state local). Factorisé
+  // de genererEtPartagerFicheApercu pour être réutilisé par la régénération
+  // automatique après une édition (cf. l'effet sur regenererApercuApresEdit) —
+  // seule la suite (partager ou non) diffère entre les deux appelants.
+  const regenererPdfApercu = async () => {
+    const el = document.querySelector('.fiche-render')
+    if (!el) throw new Error('Rendu de la fiche introuvable')
+    const blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
+    const path = `fiches/${userId}/${Date.now()}.pdf`
+    const { error: uploadError } = await supabase.storage.from('documents').upload(path, blob, { contentType: 'application/pdf', upsert: true })
+    if (uploadError) throw uploadError
+    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
+    await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', ficheApercu.id)
+    setFicheApercu(prev => (prev ? { ...prev, fichier_url: publicUrl } : prev))
+    setMesSeancesOuvertes(prev => prev.map(s => s.id === ficheApercu.id ? { ...s, fichier_url: publicUrl } : s))
+    return publicUrl
+  }
+
+  // Une fiche importée/saisie manuellement (uploaderMaSeance) n'a de fichier_url
+  // que si un fichier a été explicitement uploadé — sinon rien à partager.
   const genererEtPartagerFicheApercu = async () => {
     if (!ficheApercu) return
     setGenerantPartage(true)
     try {
-      const el = document.querySelector('.fiche-render')
-      if (!el) throw new Error('Rendu de la fiche introuvable')
-      const blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
-      const path = `fiches/${userId}/${Date.now()}.pdf`
-      const { error: uploadError } = await supabase.storage.from('documents').upload(path, blob, { contentType: 'application/pdf', upsert: true })
-      if (uploadError) throw uploadError
-      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-      await supabase.from('seances_uploadees').update({ fichier_url: publicUrl }).eq('id', ficheApercu.id)
-      setFicheApercu(prev => ({ ...prev, fichier_url: publicUrl }))
-      setMesSeancesOuvertes(prev => prev.map(s => s.id === ficheApercu.id ? { ...s, fichier_url: publicUrl } : s))
+      const publicUrl = await regenererPdfApercu()
       await partagerFiche(publicUrl, ficheApercu.theme)
     } catch (e) {
       console.error('Erreur génération PDF pour partage:', e)
@@ -3011,6 +3020,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setGenerantPartage(false)
     }
   }
+
+  // Régénération automatique du PDF archivé juste après une édition de fiche
+  // déjà enregistrée (sauvegarderFicheApercuEdit met fichier_url à null et
+  // arme ce déclencheur) — sans ce délai d'un effet, .fiche-render afficherait
+  // encore le formulaire d'édition au lieu du rendu imprimable propre : il
+  // faut attendre que modeEditionApercu soit passé à false et que l'aperçu en
+  // lecture seule ait eu le temps de se (ré)afficher avant de le capturer.
+  useEffect(() => {
+    if (!regenererApercuApresEdit) return
+    setGenerantPartage(true)
+    regenererPdfApercu()
+      .catch(e => console.error('Erreur régénération PDF après édition:', e))
+      .finally(() => { setGenerantPartage(false); setRegenererApercuApresEdit(false) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regenererApercuApresEdit])
 
   const sauvegarderFiche = async () => {
     setSavingFiche(true)
@@ -6627,16 +6651,37 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   .sort((a, b) => b.pts - a.pts)
               }
 
-              const podiumActuel = getPodium(moisCourant)
+              // Historique : mois choisi dans la frise ci-dessous, mois en
+              // cours par défaut tant qu'aucun n'a été cliqué. Si le mois
+              // sélectionné n'a plus de données (ex: changement d'équipe),
+              // on retombe silencieusement sur le mois en cours.
+              const moisActif = (moisPointsSeanceSelectionne && pointsParJoueurMois[moisPointsSeanceSelectionne]) ? moisPointsSeanceSelectionne : moisCourant
+              const podiumActuel = getPodium(moisActif)
               const topAll = totalPoints()
               const medals = ['🥇', '🥈', '🥉']
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <ExplicationPtsSeance />
-                  {/* Mois en cours */}
+                  {/* Historique des mois — clique un mois pour voir son classement */}
+                  {moisKeys.length > 1 && (
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {moisKeys.map(k => (
+                        <button key={k} onClick={() => setMoisPointsSeanceSelectionne(k)} style={{
+                          flexShrink: 0, padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                          whiteSpace: 'nowrap', textTransform: 'capitalize',
+                          background: k === moisActif ? colors.accent.amber : colors.background.surface,
+                          color: k === moisActif ? colors.black : colors.text.secondary,
+                          border: `1px solid ${k === moisActif ? colors.accent.amber : colors.border.subtle}`,
+                        }}>
+                          {k === moisCourant ? t('stats_mois_en_cours', lang) : moisLabel(k)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Mois sélectionné (en cours par défaut) */}
                   <div style={st.card}>
-                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisCourant)}</p>
+                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisActif)}</p>
                     {podiumActuel.length === 0 ? (
                       <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
                     ) : (
