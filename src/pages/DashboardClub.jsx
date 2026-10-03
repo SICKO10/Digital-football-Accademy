@@ -3434,7 +3434,7 @@ export default function DashboardClub() {
         </div>
 
         {/* ── COLONNE PRINCIPALE ── */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
           <div style={{
             background: colors.background.surface, borderBottom: `1px solid ${colors.border.faint}`,
             padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 1.5rem',
