@@ -48,9 +48,51 @@ export default function MontageVideo({ joueurId }) {
 
   useEffect(() => { charger(); return () => clearInterval(pollRef.current) }, [joueurId])
 
+  // Au-delà d'environ 100 Mo, l'endpoint Cloudinary standard (un seul POST)
+  // refuse la requête — il faut découper le fichier et l'envoyer par
+  // morceaux (même endpoint, un header X-Unique-Upload-Id commun à tous les
+  // morceaux + Content-Range par morceau ; Cloudinary réassemble et ne
+  // renvoie secure_url que sur la réponse du dernier). Sans ça, un simple
+  // relèvement de la limite d'affichage aurait laissé passer des fichiers
+  // que l'upload aurait de toute façon rejetés.
+  const CHUNK_SIZE = 20 * 1024 * 1024 // 20 Mo par morceau — recommandation Cloudinary, large tolérance tous plans
+  const uploaderParMorceaux = (file, url, champs) => new Promise((resolve, reject) => {
+    const uploadId = `df-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    let start = 0
+
+    const envoyerMorceau = () => {
+      const fin = Math.min(start + CHUNK_SIZE, file.size)
+      const morceau = file.slice(start, fin)
+      const formData = new FormData()
+      Object.entries(champs).forEach(([k, v]) => formData.append(k, v))
+      formData.append('file', morceau)
+
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = e => {
+        if (!e.lengthComputable) return
+        const envoye = start + e.loaded
+        setProgress(10 + Math.round((envoye / file.size) * 85))
+      }
+      xhr.onload = () => {
+        let res
+        try { res = JSON.parse(xhr.responseText) } catch { reject(new Error('Réponse Cloudinary invalide')); return }
+        if (xhr.status >= 400) { reject(new Error(res.error?.message || 'Upload échoué')); return }
+        start = fin
+        if (start >= file.size) resolve(res) // dernier morceau : réponse complète (secure_url, duration...)
+        else envoyerMorceau()
+      }
+      xhr.onerror = () => reject(new Error('Erreur réseau'))
+      xhr.open('POST', url)
+      xhr.setRequestHeader('X-Unique-Upload-Id', uploadId)
+      xhr.setRequestHeader('Content-Range', `bytes ${start}-${fin - 1}/${file.size}`)
+      xhr.send(formData)
+    }
+    envoyerMorceau()
+  })
+
   const uploadClip = async (file) => {
     setErreurUpload('')
-    if (file.size > 500 * 1024 * 1024) { setErreurUpload('Fichier trop volumineux (max 500 Mo).'); return }
+    if (file.size > 2 * 1024 * 1024 * 1024) { setErreurUpload('Fichier trop volumineux (max 2 Go).'); return }
     setUploading(true)
     setProgress(0)
     try {
@@ -61,26 +103,11 @@ export default function MontageVideo({ joueurId }) {
       const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
       setProgress(10)
 
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', String(timestamp))
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
-
-      const resultat = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(10 + Math.round((e.loaded / e.total) * 85)) }
-        xhr.onload = () => {
-          const res = JSON.parse(xhr.responseText)
-          if (res.secure_url) resolve(res)
-          else reject(new Error(res.error?.message || 'Upload échoué'))
-        }
-        xhr.onerror = () => reject(new Error('Erreur réseau'))
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
-        xhr.send(formData)
-      })
+      const resultat = await uploaderParMorceaux(
+        file,
+        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
+        { signature, timestamp: String(timestamp), folder, public_id, api_key }
+      )
 
       await supabase.from('montage_clips').insert({
         joueur_id: joueurId,
@@ -190,7 +217,7 @@ export default function MontageVideo({ joueurId }) {
         <span style={{ color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>
           {uploading ? `Upload ${progress}%...` : '+ Ajouter un clip vidéo'}
         </span>
-        <span style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>MP4, MOV — max 500 Mo</span>
+        <span style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>MP4, MOV — max 2 Go</span>
         <input type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} disabled={uploading}
           onChange={e => e.target.files[0] && uploadClip(e.target.files[0])} />
       </label>
