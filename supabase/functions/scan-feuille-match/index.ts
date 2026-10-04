@@ -49,6 +49,40 @@ equipe_droite). Si la minute d'un but n'est pas visible, ne mets pas
 d'élément pour ce but plutôt qu'une minute inventée — le but reste quand
 même listé dans buts_gauche/buts_droite.`
 
+// "This model is currently experiencing high demand..." (Gemini 503/
+// UNAVAILABLE) — Google indique elle-même que c'est temporaire. Un coach
+// qui scanne juste après un match tombe facilement sur un pic de charge ;
+// 2 nouvelles tentatives avec backoff court évitent de le renvoyer relancer
+// le scan à la main pour un simple aléa réseau côté Gemini.
+const MAX_TENTATIVES = 3
+const estSurcharge = (data) =>
+  data?.error?.code === 503 || /high demand|overloaded|unavailable/i.test(data?.error?.message || '')
+
+async function appellerGemini(imageBase64, mimeType, apiKey, tentative = 1) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
+          ],
+        }],
+        generationConfig: { temperature: 0.1 },
+      }),
+    }
+  )
+  const data = await response.json()
+  if (estSurcharge(data) && tentative < MAX_TENTATIVES) {
+    await new Promise(r => setTimeout(r, tentative * 1500))
+    return appellerGemini(imageBase64, mimeType, apiKey, tentative + 1)
+  }
+  return data
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -56,24 +90,7 @@ serve(async (req) => {
     const { imageBase64, mimeType } = await req.json()
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-            ],
-          }],
-          generationConfig: { temperature: 0.1 },
-        }),
-      }
-    )
-
-    const data = await response.json()
+    const data = await appellerGemini(imageBase64, mimeType, GEMINI_API_KEY)
     if (data.error) throw new Error(data.error.message)
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
