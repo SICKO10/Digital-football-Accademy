@@ -59,11 +59,12 @@ serve(async (req) => {
     // (transitoire, vaut le coup de retenter), soit un quota de plan/billing
     // épuisé ("quota" dans le message) — ce dernier ne se régénère pas en
     // quelques secondes, retenter ne fait qu'ajouter 3 échecs pour rien.
-    // gemini-flash-latest pointe vers le modèle le plus récent — donc le plus
-    // demandé, avec un pool de capacité qui sature plus souvent en pratique
-    // qu'un modèle établi. Un 503 y bascule sur gemini-2.5-flash (pool de
-    // capacité distinct) au lieu de retenter le même modèle saturé.
-    const MODELE_PRINCIPAL = 'gemini-flash-latest'
+    // Épinglé (pas l'alias "gemini-flash-latest" utilisé avant — Google le
+    // permute vers un nouveau modèle sans prévenir, ce qui faisait varier la
+    // qualité d'extraction d'un scan à l'autre sans rien changer ici). Un
+    // 503 bascule sur gemini-2.5-flash (pool de capacité distinct) au lieu
+    // de retenter le même modèle saturé.
+    const MODELE_PRINCIPAL = 'gemini-3.7-flash'
     const MODELE_SECOURS = 'gemini-2.5-flash'
     let response
     let errText = ''

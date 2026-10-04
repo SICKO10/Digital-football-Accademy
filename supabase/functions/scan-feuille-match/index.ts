@@ -54,13 +54,20 @@ même listé dans buts_gauche/buts_droite.`
 // qui scanne juste après un match tombe facilement sur un pic de charge ;
 // 2 nouvelles tentatives avec backoff court évitent de le renvoyer relancer
 // le scan à la main pour un simple aléa réseau côté Gemini.
+//
+// Modèle volontairement épinglé (gemini-3.7-flash) plutôt que l'alias
+// "gemini-flash-latest" utilisé avant : Google permute cet alias vers un
+// nouveau modèle sans prévenir (juste ~2 semaines de préavis dans sa doc),
+// ce qui peut faire varier silencieusement la qualité d'extraction d'un
+// scan à l'autre sans aucun changement de notre côté — exactement le
+// symptôme "ça marchait avant, plus maintenant" vécu ici.
 const MAX_TENTATIVES = 3
 const estSurcharge = (data) =>
   data?.error?.code === 503 || /high demand|overloaded|unavailable/i.test(data?.error?.message || '')
 
 async function appellerGemini(imageBase64, mimeType, apiKey, tentative = 1) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
