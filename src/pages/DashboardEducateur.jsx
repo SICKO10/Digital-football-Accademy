@@ -4488,39 +4488,56 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   const normaliserPourMatching = (str) => (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
 
   // Matching fuzzy : trouve le joueur de notre équipe à partir d'un nom sur la feuille.
-  // La feuille affiche "PRENOM NOM" (ou "PRENOM N.") — matche d'abord par prénom ; s'il
-  // y a plusieurs joueurs du même prénom (homonymes, ex. deux "Mathis"), départage avec
-  // l'initiale du nom fournie par l'IA. Sans quoi tous les homonymes retombaient sur le
-  // premier trouvé dans la liste.
+  // Selon la source (feuille papier, appli club, composition FFF...), l'ordre
+  // varie et n'est pas annoncé à l'avance : "Prénom Nom" (le plus courant),
+  // "Nom Prénom" (certaines compositions FFF), ou "L. Nom" (prénom abrégé à
+  // son initiale, ex. résumés type Veo). On essaie les interprétations dans
+  // cet ordre et on garde la première qui matche réellement un joueur de
+  // l'effectif — pas de format présupposé, on laisse les données trancher.
+  const matcherParPrenom = (prenom, resteNom, listeJoueurs) => {
+    const prenomN = normaliserPourMatching(prenom).replace(/\.$/, '')
+    if (!prenomN) return null
+    const candidats = listeJoueurs.filter(j => j.prenom && normaliserPourMatching(j.prenom) === prenomN)
+    if (candidats.length === 0) return null
+    if (candidats.length === 1) return candidats[0]
+    // Homonymes (ex. deux "Mathis") : départage avec l'initiale du nom.
+    const initiale = normaliserPourMatching(resteNom).charAt(0)
+    return candidats.find(j => j.nom && normaliserPourMatching(j.nom).charAt(0) === initiale) || candidats[0]
+  }
+  const matcherParNom = (nom, restePrenom, listeJoueurs) => {
+    const nomN = normaliserPourMatching(nom)
+    if (!nomN) return null
+    const candidats = listeJoueurs.filter(j => j.nom && normaliserPourMatching(j.nom) === nomN)
+    if (candidats.length === 0) return null
+    if (candidats.length === 1) return candidats[0]
+    // Homonymes de nom de famille : départage avec l'initiale du prénom.
+    const initiale = normaliserPourMatching(restePrenom).replace(/\.$/, '').charAt(0)
+    return candidats.find(j => j.prenom && normaliserPourMatching(j.prenom).charAt(0) === initiale) || candidats[0]
+  }
+
   const matcherJoueurParNom = (nomSurFeuille, listeJoueurs) => {
     if (!nomSurFeuille) return null
     const mots = nomSurFeuille.trim().split(/\s+/).filter(Boolean)
     if (mots.length === 0) return null
-    const premier = normaliserPourMatching(mots[0]).replace(/\.$/, '')
-    if (!premier) return null
 
-    // Certaines compositions d'appli (ex: résumés de match type Veo/club)
-    // abrègent le prénom à son initiale — "L. ANTONIETTI" au lieu de "Lucas
-    // ANTONIETTI". Dans ce cas le 1er mot n'est qu'une lettre : impossible de
-    // matcher par prénom complet comme pour le format standard "PRENOM NOM",
-    // donc on matche par nom de famille à la place (le reste des mots — un
-    // nom composé comme "ZOZO BOLI" peut lui-même en faire plusieurs),
-    // départagé par l'initiale du prénom en cas d'homonymes de nom de famille.
-    if (premier.length === 1 && mots.length > 1) {
-      const nomFeuille = normaliserPourMatching(mots.slice(1).join(' '))
-      const candidatsParNom = listeJoueurs.filter(j => j.nom && normaliserPourMatching(j.nom) === nomFeuille)
-      if (candidatsParNom.length <= 1) return candidatsParNom[0] || null
-      return candidatsParNom.find(j => j.prenom && normaliserPourMatching(j.prenom).charAt(0) === premier) || candidatsParNom[0]
+    if (mots.length === 1) {
+      return matcherParPrenom(mots[0], '', listeJoueurs) || matcherParNom(mots[0], '', listeJoueurs)
     }
 
-    // Format standard "PRENOM NOM" : matche d'abord par prénom ; s'il y a
-    // plusieurs joueurs du même prénom (homonymes, ex. deux "Mathis"),
-    // départage avec l'initiale du nom fournie par l'IA.
-    const prenomFeuille = premier
-    const initialeFeuille = normaliserPourMatching(mots[1] || '').charAt(0)
-    const candidats = listeJoueurs.filter(j => j.prenom && normaliserPourMatching(j.prenom) === prenomFeuille)
-    if (candidats.length <= 1) return candidats[0] || null
-    return candidats.find(j => j.nom && normaliserPourMatching(j.nom).charAt(0) === initialeFeuille) || candidats[0]
+    const premier = normaliserPourMatching(mots[0]).replace(/\.$/, '')
+    // "L. Nom" : le 1er mot n'est qu'une initiale — forcément un prénom
+    // abrégé, donc on matche directement par nom de famille (le reste, qui
+    // peut être composé — "ZOZO BOLI").
+    if (premier.length === 1) {
+      return matcherParNom(mots.slice(1).join(' '), premier, listeJoueurs)
+    }
+
+    // Ordre inconnu entre "Prénom Nom" (essayé en premier, le plus courant)
+    // et "Nom Prénom" (repli si le premier essai ne matche personne) — les
+    // deux noms de famille composés (ex. "ZOZO BOLI K.") sont couverts en
+    // prenant le dernier mot comme prénom et tout le reste comme nom.
+    return matcherParPrenom(mots[0], mots.slice(1).join(' '), listeJoueurs)
+      || matcherParNom(mots.slice(0, -1).join(' '), mots[mots.length - 1], listeJoueurs)
   }
 
   // Redimensionne (sans jamais agrandir) et recompresse une photo de feuille de
