@@ -4494,10 +4494,30 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   // premier trouvé dans la liste.
   const matcherJoueurParNom = (nomSurFeuille, listeJoueurs) => {
     if (!nomSurFeuille) return null
-    const mots = nomSurFeuille.trim().split(/\s+/)
-    const prenomFeuille = normaliserPourMatching(mots[0])
-    if (!prenomFeuille) return null
-    const initialeFeuille = normaliserPourMatching(mots[1]).charAt(0)
+    const mots = nomSurFeuille.trim().split(/\s+/).filter(Boolean)
+    if (mots.length === 0) return null
+    const premier = normaliserPourMatching(mots[0]).replace(/\.$/, '')
+    if (!premier) return null
+
+    // Certaines compositions d'appli (ex: résumés de match type Veo/club)
+    // abrègent le prénom à son initiale — "L. ANTONIETTI" au lieu de "Lucas
+    // ANTONIETTI". Dans ce cas le 1er mot n'est qu'une lettre : impossible de
+    // matcher par prénom complet comme pour le format standard "PRENOM NOM",
+    // donc on matche par nom de famille à la place (le reste des mots — un
+    // nom composé comme "ZOZO BOLI" peut lui-même en faire plusieurs),
+    // départagé par l'initiale du prénom en cas d'homonymes de nom de famille.
+    if (premier.length === 1 && mots.length > 1) {
+      const nomFeuille = normaliserPourMatching(mots.slice(1).join(' '))
+      const candidatsParNom = listeJoueurs.filter(j => j.nom && normaliserPourMatching(j.nom) === nomFeuille)
+      if (candidatsParNom.length <= 1) return candidatsParNom[0] || null
+      return candidatsParNom.find(j => j.prenom && normaliserPourMatching(j.prenom).charAt(0) === premier) || candidatsParNom[0]
+    }
+
+    // Format standard "PRENOM NOM" : matche d'abord par prénom ; s'il y a
+    // plusieurs joueurs du même prénom (homonymes, ex. deux "Mathis"),
+    // départage avec l'initiale du nom fournie par l'IA.
+    const prenomFeuille = premier
+    const initialeFeuille = normaliserPourMatching(mots[1] || '').charAt(0)
     const candidats = listeJoueurs.filter(j => j.prenom && normaliserPourMatching(j.prenom) === prenomFeuille)
     if (candidats.length <= 1) return candidats[0] || null
     return candidats.find(j => j.nom && normaliserPourMatching(j.nom).charAt(0) === initialeFeuille) || candidats[0]
