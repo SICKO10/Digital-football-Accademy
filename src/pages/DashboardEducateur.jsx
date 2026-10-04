@@ -1651,6 +1651,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [scannerModalLoading, setScannerModalLoading] = useState(false)
   const [scannerModalStatus, setScannerModalStatus] = useState(null)
   const [scannerModalError, setScannerModalError] = useState(null)
+  const [scannerModalWarning, setScannerModalWarning] = useState(null) // avertissement si peu/pas de joueurs matchés (cf. scannerWarning, même logique pour le scan depuis "Marquer comme joué")
 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
@@ -4262,6 +4263,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setScannerModalImageBase64(null)
     setScannerModalImagePreview(null)
     setScannerModalError(null)
+    setScannerModalWarning(null)
   }
 
   const ouvrirModalMatchJoue = (m) => {
@@ -4270,6 +4272,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setScannerModalImageBase64(null)
     setScannerModalImagePreview(null)
     setScannerModalError(null)
+    setScannerModalWarning(null)
     setScannerModalButsDetail(m.buts_detail || [])
   }
 
@@ -4635,11 +4638,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     if (!scannerModalImageBase64 || !modalMatchJoue) return
     setScannerModalLoading(true)
     setScannerModalError(null)
+    setScannerModalWarning(null)
     try {
       const { scoreNous, scoreAdv, statsParJoueur, butsDetail } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
       setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
       setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
       setScannerModalButsDetail(butsDetail)
+      // Même garde-fou que le scanner "nouveau match" (scannerMatch) — sans ça,
+      // un échec de lecture des noms (photo floue, écriture peu lisible) laisse
+      // la feuille de match entièrement vide sans aucun signal, comme si le
+      // scan n'avait rien fait alors que le score, lui, a bien été lu.
+      const nbDetectes = Object.keys(statsParJoueur).length
+      setScannerModalWarning(
+        joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
+          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Le score a bien été lu, mais les noms n'ont pas pu être reconnus — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous.`
+          : null
+      )
     } catch (e) {
       setScannerModalError(e.message)
     } finally {
@@ -7591,6 +7605,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       </button>
                     </div>
                     {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>{scannerModalError}</p>}
+                    {scannerModalWarning && <p style={{ color: colors.accent.amber, fontSize: '12px', margin: '10px 0 0' }}>{scannerModalWarning}</p>}
                   </div>
 
                   <div style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', borderRadius: '10px', padding: '10px 14px', marginBottom: '18px', fontSize: '12px', color: colors.text.secondary, lineHeight: 1.5 }}>
