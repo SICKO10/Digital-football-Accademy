@@ -4537,7 +4537,19 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     const { data, error } = await supabase.functions.invoke('scan-feuille-match', {
       body: { imageBase64 },
     })
-    if (error || data?.error) throw new Error(error?.message || data?.error)
+    if (error) {
+      // supabase-js n'expose que "Edge Function returned a non-2xx status
+      // code" sur `error.message` — le vrai message (ex: erreur Gemini) est
+      // dans le corps de la réponse, accessible via error.context (le
+      // Response brut), pas directement sur l'objet error.
+      let detail = error.message
+      try {
+        const body = await error.context?.json()
+        if (body?.error) detail = body.error
+      } catch { /* corps non-JSON ou déjà consommé — on garde le message générique */ }
+      throw new Error(detail)
+    }
+    if (data?.error) throw new Error(data.error)
     const parsed = data.resultat
 
     // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
