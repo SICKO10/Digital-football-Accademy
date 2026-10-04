@@ -4597,7 +4597,11 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       .filter(b => typeof b.minute === 'number' && (b.colonne === 'gauche' || b.colonne === 'droite'))
       .map(b => ({ minute: b.minute, equipe: b.colonne === notreEquipeCote ? 'nous' : 'eux' }))
 
-    return { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail }
+    // nosNomsIA renvoyé pour diagnostic : si le matching échoue, c'est la
+    // seule façon de voir CE QUE Gemini a réellement lu sans aller fouiller
+    // les logs de l'Edge Function — utile pour distinguer une mauvaise OCR
+    // d'un format "NOM Prénom" inversé par rapport à "PRENOM NOM" attendu.
+    return { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail, nosNomsIA }
   }
 
   const scannerMatch = async () => {
@@ -4605,7 +4609,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setScannerLoading(true)
     setScannerError(null)
     try {
-      const { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail } = await scannerFeuilleDeMatch(scannerImageBase64, setScannerStatus)
+      const { parsed, scoreNous, scoreAdv, statsParJoueur, butsDetail, nosNomsIA } = await scannerFeuilleDeMatch(scannerImageBase64, setScannerStatus)
       setScannerResult(parsed)
       setScannerMatchData({
         date: parsed.date || '',
@@ -4619,11 +4623,13 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       setScannerButsDetail(butsDetail)
       // Avertit si l'IA a détecté sensiblement moins de joueurs que l'effectif
       // de l'équipe — seuil relatif (70%) plutôt qu'un nombre fixe, une petite
-      // équipe (U7...) pouvant légitimement avoir un effectif réduit.
+      // équipe (U7...) pouvant légitimement avoir un effectif réduit. Noms
+      // bruts affichés pour diagnostiquer sans aller fouiller les logs (ex:
+      // format "NOM Prénom" inversé par rapport à "Prénom NOM" attendu).
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerWarning(
         joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
-          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées).`
+          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées).${nosNomsIA?.length ? ` Noms lus par l'IA : ${nosNomsIA.join(', ')}.` : ''}`
           : null
       )
     } catch (e) {
@@ -4640,18 +4646,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setScannerModalError(null)
     setScannerModalWarning(null)
     try {
-      const { scoreNous, scoreAdv, statsParJoueur, butsDetail } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
+      const { scoreNous, scoreAdv, statsParJoueur, butsDetail, nosNomsIA } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
       setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
       setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
       setScannerModalButsDetail(butsDetail)
       // Même garde-fou que le scanner "nouveau match" (scannerMatch) — sans ça,
-      // un échec de lecture des noms (photo floue, écriture peu lisible) laisse
+      // un échec de lecture des noms (photo floue, écriture peu lisible, ou
+      // format "NOM Prénom" inversé par rapport à "Prénom NOM" attendu) laisse
       // la feuille de match entièrement vide sans aucun signal, comme si le
-      // scan n'avait rien fait alors que le score, lui, a bien été lu.
+      // scan n'avait rien fait alors que le score, lui, a bien été lu. On
+      // affiche les noms bruts lus par l'IA pour comprendre pourquoi le
+      // rapprochement avec l'effectif a échoué, sans avoir à aller fouiller
+      // les logs de l'Edge Function.
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerModalWarning(
         joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
-          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Le score a bien été lu, mais les noms n'ont pas pu être reconnus — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous.`
+          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Le score a bien été lu, mais les noms n'ont pas pu être reconnus — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous.${nosNomsIA?.length ? ` Noms lus par l'IA : ${nosNomsIA.join(', ')}.` : ''}`
           : null
       )
     } catch (e) {
