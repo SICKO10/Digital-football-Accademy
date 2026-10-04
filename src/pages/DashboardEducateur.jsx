@@ -4672,15 +4672,20 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       })
       setScannerStats(statsParJoueur)
       setScannerButsDetail(butsDetail)
-      // Avertit si l'IA a détecté sensiblement moins de joueurs que l'effectif
-      // de l'équipe — seuil relatif (70%) plutôt qu'un nombre fixe, une petite
-      // équipe (U7...) pouvant légitimement avoir un effectif réduit. Noms
-      // bruts affichés pour diagnostiquer sans aller fouiller les logs (ex:
-      // format "NOM Prénom" inversé par rapport à "Prénom NOM" attendu).
+      // Avertit si l'IA a réussi à rapprocher sensiblement moins de joueurs
+      // que ce qu'elle a réellement lu sur la photo — comparé au nombre de
+      // noms lus (nosNomsIA), pas à l'effectif total du club : une
+      // composition ne liste que les joueurs convoqués ce match-là (souvent
+      // 15-18), pas les 20+ du roster. Comparer à l'effectif entier faisait
+      // apparaître un faux avertissement même quand le scan avait bien
+      // fonctionné sur tout ce qui était photographié. Seuil relatif (70%)
+      // plutôt qu'un nombre fixe. Noms bruts affichés pour diagnostiquer les
+      // vrais ratés sans aller fouiller les logs.
+      const nbLus = nosNomsIA?.length || 0
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerWarning(
-        joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
-          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées).${nosNomsIA?.length ? ` Noms lus par l'IA : ${nosNomsIA.join(', ')}.` : ''}`
+        nbLus > 0 && nbDetectes < nbLus * 0.7
+          ? `⚠️ ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées). Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
           : null
       )
     } catch (e) {
@@ -4701,18 +4706,19 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
       setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
       setScannerModalButsDetail(butsDetail)
-      // Même garde-fou que le scanner "nouveau match" (scannerMatch) — sans ça,
-      // un échec de lecture des noms (photo floue, écriture peu lisible, ou
-      // format "NOM Prénom" inversé par rapport à "Prénom NOM" attendu) laisse
-      // la feuille de match entièrement vide sans aucun signal, comme si le
-      // scan n'avait rien fait alors que le score, lui, a bien été lu. On
-      // affiche les noms bruts lus par l'IA pour comprendre pourquoi le
-      // rapprochement avec l'effectif a échoué, sans avoir à aller fouiller
-      // les logs de l'Edge Function.
+      // Même garde-fou que le scanner "nouveau match" (scannerMatch), comparé
+      // au nombre de noms réellement lus sur la photo (nosNomsIA) et pas à
+      // l'effectif total du club — une composition ne liste que les joueurs
+      // convoqués ce match-là, pas tout le roster (cf. commentaire détaillé
+      // dans scannerMatch). Sans ce garde-fou, un échec de lecture des noms
+      // (photo floue, écriture peu lisible, format inattendu) laisse la
+      // feuille de match entièrement vide sans aucun signal, comme si le
+      // scan n'avait rien fait alors que le score, lui, a bien été lu.
+      const nbLus = nosNomsIA?.length || 0
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerModalWarning(
-        joueurs.length > 0 && nbDetectes < joueurs.length * 0.7
-          ? `⚠️ Seulement ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} détecté${nbDetectes > 1 ? 's' : ''} sur ${joueurs.length} dans l'effectif. Le score a bien été lu, mais les noms n'ont pas pu être reconnus — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous.${nosNomsIA?.length ? ` Noms lus par l'IA : ${nosNomsIA.join(', ')}.` : ''}`
+        nbLus > 0 && nbDetectes < nbLus * 0.7
+          ? `⚠️ ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Le score a bien été lu — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous pour les joueurs non reconnus. Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
           : null
       )
     } catch (e) {
