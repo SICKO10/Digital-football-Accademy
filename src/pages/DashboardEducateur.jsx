@@ -4555,7 +4555,11 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
   // d'extraction/matching. setStatus n'a plus de file d'attente à refléter
   // (Edge Function directe, pas de rate-limit client) — conservé dans la
   // signature pour ne pas toucher les deux appelants.
-  const scannerFeuilleDeMatch = async (imageBase64, setStatus) => {
+  // domicileConnu (optionnel) : si le statut domicile/extérieur du match est
+  // déjà connu avec certitude (match déjà au calendrier, indépendamment du
+  // scan) plutôt que déduit du scan lui-même — sert de départage quand le
+  // matching par nom ne donne aucun signal (cf. plus bas).
+  const scannerFeuilleDeMatch = async (imageBase64, setStatus, domicileConnu) => {
     setStatus?.(null)
     const { data, error } = await supabase.functions.invoke('scan-feuille-match', {
       body: { imageBase64 },
@@ -4576,12 +4580,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     const parsed = data.resultat
 
     // Identifie quelle colonne (gauche/droite) correspond à notre équipe : celle dont
-    // le plus de noms matchent notre roster (matching JS, pas d'IA)
+    // le plus de noms matchent notre roster (matching JS, pas d'IA) — c'est
+    // le signal le plus fiable quand il en trouve un. Mais à égalité (le
+    // plus souvent 0-0 : format de composition non reconnu par le matching,
+    // ex. prénoms abrégés), ce signal ne dit rien du tout, et retomber
+    // bêtement sur "gauche" se trompe une fois sur deux. On se rabat alors
+    // sur la convention domicile à gauche / extérieur à droite — fiable
+    // seulement si le statut domicile/extérieur est déjà connu indépendamment
+    // du scan (domicileConnu, cf. scannerFeuilleModal : match déjà au
+    // calendrier), pas déduit à l'aveugle d'un scan qui a déjà échoué une fois.
     const nomsGauche = parsed.equipe_gauche || []
     const nomsDroite = parsed.equipe_droite || []
     const scoreGaucheMatch = nomsGauche.filter(n => matcherJoueurParNom(n, joueurs)).length
     const scoreDroiteMatch = nomsDroite.filter(n => matcherJoueurParNom(n, joueurs)).length
-    const notreEquipeCote = scoreGaucheMatch >= scoreDroiteMatch ? 'gauche' : 'droite'
+    const notreEquipeCote = scoreGaucheMatch !== scoreDroiteMatch
+      ? (scoreGaucheMatch > scoreDroiteMatch ? 'gauche' : 'droite')
+      : (domicileConnu === undefined || domicileConnu ? 'gauche' : 'droite')
     const nosNomsIA = notreEquipeCote === 'gauche' ? nomsGauche : nomsDroite
     const butsIA = notreEquipeCote === 'gauche' ? (parsed.buts_gauche || []) : (parsed.buts_droite || [])
     const scoreNous = notreEquipeCote === 'gauche' ? (parsed.score_domicile ?? 0) : (parsed.score_exterieur ?? 0)
@@ -4666,7 +4680,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     setScannerModalError(null)
     setScannerModalWarning(null)
     try {
-      const { scoreNous, scoreAdv, statsParJoueur, butsDetail, nosNomsIA } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus)
+      const { scoreNous, scoreAdv, statsParJoueur, butsDetail, nosNomsIA } = await scannerFeuilleDeMatch(scannerModalImageBase64, setScannerModalStatus, modalMatchJoue.domicile)
       setScoreJoueForm({ score_nous: String(scoreNous), score_eux: String(scoreAdv) })
       setStatsMatch(prev => ({ ...prev, [modalMatchJoue.id]: statsParJoueur }))
       setScannerModalButsDetail(butsDetail)
