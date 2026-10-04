@@ -2601,6 +2601,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     })
   }
 
+  // direction: -1 (monter) ou +1 (descendre) — renumérote après le swap,
+  // même logique que retirerProcedeFiche, pour que "Procédé N" affiché reste
+  // toujours la position réelle dans l'ordre de la séance.
+  const deplacerProcedeFiche = (index, direction) => {
+    setFiche(f => {
+      const cible = index + direction
+      if (cible < 0 || cible >= f.procedes.length) return f
+      const procedes = [...f.procedes]
+      ;[procedes[index], procedes[cible]] = [procedes[cible], procedes[index]]
+      return { ...f, procedes: procedes.map((p, i) => ({ ...p, numero: i + 1 })) }
+    })
+  }
+
   // ── Édition d'une fiche archivée (modal "aperçu", seances_uploadees) ───────────
   // Copie éditable séparée de `fiche`/`setFiche` (celle-ci sert à la RÉDACTION
   // d'une nouvelle fiche dans l'onglet dédié, avec sa propre sauvegarde en INSERT
@@ -9249,13 +9262,29 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: colors.accent.green }}>{t('seance_procede', lang)} {p.numero}</p>
-                    {fiche.procedes.length > 1 && (
-                      <button type="button" onClick={() => retirerProcedeFiche(i)}
-                        style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
-                        title={t('btn_supprimer', lang)}>
-                        ✕
-                      </button>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {fiche.procedes.length > 1 && (
+                        <>
+                          <button type="button" onClick={() => deplacerProcedeFiche(i, -1)} disabled={i === 0}
+                            style={{ background: 'none', border: 'none', color: i === 0 ? colors.text.disabled : colors.text.faint, cursor: i === 0 ? 'default' : 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                            title="Monter">
+                            ↑
+                          </button>
+                          <button type="button" onClick={() => deplacerProcedeFiche(i, 1)} disabled={i === fiche.procedes.length - 1}
+                            style={{ background: 'none', border: 'none', color: i === fiche.procedes.length - 1 ? colors.text.disabled : colors.text.faint, cursor: i === fiche.procedes.length - 1 ? 'default' : 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                            title="Descendre">
+                            ↓
+                          </button>
+                        </>
+                      )}
+                      {fiche.procedes.length > 1 && (
+                        <button type="button" onClick={() => retirerProcedeFiche(i)}
+                          style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                          title={t('btn_supprimer', lang)}>
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <input
