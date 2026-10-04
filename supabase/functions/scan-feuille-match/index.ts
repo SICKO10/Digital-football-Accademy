@@ -49,11 +49,16 @@ equipe_droite). Si la minute d'un but n'est pas visible, ne mets pas
 d'élément pour ce but plutôt qu'une minute inventée — le but reste quand
 même listé dans buts_gauche/buts_droite.`
 
-// "This model is currently experiencing high demand..." (Gemini 503/
-// UNAVAILABLE) — Google indique elle-même que c'est temporaire. Un coach
-// qui scanne juste après un match tombe facilement sur un pic de charge ;
-// 2 nouvelles tentatives avec backoff court évitent de le renvoyer relancer
-// le scan à la main pour un simple aléa réseau côté Gemini.
+// "This model is currently experiencing high demand..." (503/UNAVAILABLE)
+// ou "Quota exceeded... limit: 5" (429/RESOURCE_EXHAUSTED — palier gratuit
+// de l'API Gemini, ex: 5 requêtes/minute) — Google indique elle-même que
+// c'est temporaire dans les deux cas. 2 nouvelles tentatives évitent de
+// renvoyer relancer le scan à la main pour un pic de charge ou une minute
+// trop chargée. Sur un 429, Google renvoie souvent un délai d'attente
+// suggéré (error.details[].retryDelay, ex "15s") — on le respecte plutôt
+// que d'inventer un délai au hasard, plafonné à 20s pour ne pas traîner la
+// fonction trop longtemps si jamais un quota plus long (journalier) était
+// retourné avec le même format.
 //
 // Modèle volontairement épinglé (gemini-3.7-flash) plutôt que l'alias
 // "gemini-flash-latest" utilisé avant : Google permute cet alias vers un
@@ -62,8 +67,17 @@ même listé dans buts_gauche/buts_droite.`
 // scan à l'autre sans aucun changement de notre côté — exactement le
 // symptôme "ça marchait avant, plus maintenant" vécu ici.
 const MAX_TENTATIVES = 3
-const estSurcharge = (data) =>
-  data?.error?.code === 503 || /high demand|overloaded|unavailable/i.test(data?.error?.message || '')
+const DELAI_MAX_MS = 20000
+
+const estTransitoire = (data) =>
+  data?.error?.code === 503 || data?.error?.code === 429 ||
+  /high demand|overloaded|unavailable|quota|rate limit/i.test(data?.error?.message || '')
+
+const delaiSuggereMs = (data) => {
+  const info = (data?.error?.details || []).find(d => d['@type']?.includes('RetryInfo'))
+  const secondes = info?.retryDelay ? parseFloat(info.retryDelay) : null
+  return Number.isFinite(secondes) ? Math.min(secondes * 1000, DELAI_MAX_MS) : null
+}
 
 async function appellerGemini(imageBase64, mimeType, apiKey, tentative = 1) {
   const response = await fetch(
@@ -83,8 +97,8 @@ async function appellerGemini(imageBase64, mimeType, apiKey, tentative = 1) {
     }
   )
   const data = await response.json()
-  if (estSurcharge(data) && tentative < MAX_TENTATIVES) {
-    await new Promise(r => setTimeout(r, tentative * 1500))
+  if (estTransitoire(data) && tentative < MAX_TENTATIVES) {
+    await new Promise(r => setTimeout(r, delaiSuggereMs(data) ?? tentative * 1500))
     return appellerGemini(imageBase64, mimeType, apiKey, tentative + 1)
   }
   return data
