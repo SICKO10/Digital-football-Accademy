@@ -7724,22 +7724,31 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     {joueurs.map(j => {
                       const key = modalMatchJoue.id
                       const s = (statsMatch[key] || {})[j.id] || {}
+                      // Même repère visuel que le scanner "nouveau match" : une
+                      // ligne avec au moins une valeur (scan ou saisie manuelle)
+                      // ressort en vert — sinon, avec 15-20 lignes identiques,
+                      // impossible de voir d'un coup d'œil qui reste à compléter
+                      // sans comparer à la main avec la liste de noms du
+                      // bandeau d'avertissement.
+                      const detected = Object.keys(s).length > 0
                       const val = (field) => s[field] !== undefined ? s[field] : ''
                       return (
-                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? '#0d1a0d' : 'transparent', borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : 'transparent'}` }}>
+                          <span style={{ fontSize: '14px', fontWeight: detected ? 700 : 600, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ""}.
+                          </span>
                           <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), minutes: parseInt(e.target.value) || 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" placeholder="Buts" min="0" value={val('buts')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), buts: parseInt(e.target.value) || 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), passes_dec: parseInt(e.target.value) || 0 } } }))}
                             style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                           <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: e.target.value === '1' } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
                             onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))} />
                           <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
@@ -7748,7 +7757,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       )
                     })}
                   </div>
-                  <p style={{ fontSize: '13px', color: colors.text.faint, margin: '10px 0 0' }}>Min · Buts · PD · CS</p>
+                  <p style={{ fontSize: '13px', color: colors.text.faint, margin: '10px 0 0' }}>✓ = ligne avec une donnée (scan ou saisie manuelle) · Min · Buts · PD · CS</p>
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
                     <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}</button>
