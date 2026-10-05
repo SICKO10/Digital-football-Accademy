@@ -2724,11 +2724,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setBiblioLoading(false)
   }
 
+  // Signalé : "Importer un procédé" (depuis un bloc de Création entraînement,
+  // modalBiblioImport) affichait "Aucun procédé" dans toutes les catégories,
+  // sur toutes les plateformes — pas un souci mobile, biblio n'était chargée
+  // que via l'onglet Bibliothèque ; un éducateur arrivant directement sur
+  // Création entraînement sans jamais être passé par cet onglet dans la
+  // session voyait donc toujours une bibliothèque vide depuis cette modale.
   useEffect(() => {
-    if (activeSection !== 'bibliotheque' || biblioRubrique === 'videos' || !userId) return
+    if ((activeSection !== 'bibliotheque' && modalBiblioImport === null) || biblioRubrique === 'videos' || !userId) return
     chargerBiblio(userId, biblioRubrique)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, biblioRubrique])
+  }, [activeSection, biblioRubrique, modalBiblioImport])
 
   // Chargeurs des autres onglets spécifiques (jamais utilisés sur l'Accueil,
   // cf. init()) — même pattern que ci-dessus, à la demande plutôt qu'au
