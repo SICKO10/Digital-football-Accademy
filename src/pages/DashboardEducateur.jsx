@@ -2322,6 +2322,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [ficheFichierUrl, setFicheFichierUrl] = useState(null) // image du scan d'origine, portée jusqu'à la sauvegarde de la fiche
   const [ficheExtraite, setFicheExtraite] = useState(false) // bandeau "fiche extraite" affiché après un scan IA
   const [apercuFicheEnCoursOuvert, setApercuFicheEnCoursOuvert] = useState(false) // aperçu en grand de la fiche en cours de rédaction (lecture seule, ne touche pas à `fiche`)
+  // Barre d'actions des modals d'aperçu fiche : pleine (avec libellés) tout
+  // en haut du scroll, réduite à une simple croix flottante dès qu'on défile
+  // — une barre noire opaque qui reste collée en permanence par-dessus le
+  // contenu gênait la lecture (signalé sur mobile, cf. capture utilisateur).
+  // Remis à true à chaque ouverture directement dans les onClick qui
+  // affichent ces modals (cf. plus bas) plutôt que via un effet déclenché
+  // par le changement d'état — sinon un modal rouvert après avoir défilé la
+  // dernière fois repartirait directement en mode croix flottante.
+  const [apercuEnCoursEnHaut, setApercuEnCoursEnHaut] = useState(true)
+  const [ficheApercuEnHaut, setFicheApercuEnHaut] = useState(true)
   const [ficheApercu, setFicheApercu] = useState(null) // fiche archivée (seances_uploadees row) affichée dans le modal aperçu
   const [modeEditionApercu, setModeEditionApercu] = useState(false)
   const [ficheApercuEdit, setFicheApercuEdit] = useState(null) // copie éditable de ficheApercu.fiche_seance + categorie_tactique, tant que modeEditionApercu est actif
@@ -8074,7 +8084,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
 
             <Suspense fallback={<SectionLoader />}>
             <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue}
-              onVoirFiche={ficheId => { const s = mesSeancesOuvertes.find(x => x.id === ficheId); if (s) setFicheApercu(s) }} />
+              onVoirFiche={ficheId => { const s = mesSeancesOuvertes.find(x => x.id === ficheId); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} />
             </Suspense>
 
             {sousOngletEnt === 'prochaine' && (() => {
@@ -8163,7 +8173,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     </div>
                     {prochaineSeance.fiche_id ? (
                       <button
-                        onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) setFicheApercu(s) }}
+                        onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
                         style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         📄 Voir la fiche
                       </button>
@@ -8454,7 +8464,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                           {e.fiche_id && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
                               <span
-                                onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) setFicheApercu(s) }}
+                                onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
                                 style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px 0 0 10px', cursor: 'pointer' }}>
                                 📄 {t('ent_voir_fiche', lang)}
                               </span>
@@ -9585,7 +9595,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   </button>
                 )}
                 <button
-                  onClick={() => setApercuFicheEnCoursOuvert(true)}
+                  onClick={() => { setApercuFicheEnCoursOuvert(true); setApercuEnCoursEnHaut(true) }}
                   style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
                 >
                   {t('seance_apercu', lang)}
@@ -9666,7 +9676,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button onClick={() => setFicheApercu(s)}
+                        <button onClick={() => { setFicheApercu(s); setFicheApercuEnHaut(true) }}
                           style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
                           📋 {t('seance_voir', lang)}
                         </button>
@@ -9687,7 +9697,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                         {s.fichier_url && (
                           <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
                         )}
-                        <button onClick={(ev) => { ev.stopPropagation(); s.fichier_url ? partagerFiche(s.fichier_url, s.theme) : setFicheApercu(s) }}
+                        <button onClick={(ev) => { ev.stopPropagation(); if (s.fichier_url) { partagerFiche(s.fichier_url, s.theme) } else { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
                           style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           Partager
                         </button>
@@ -11695,13 +11705,21 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
         juste après — fermer l'aperçu faisait donc disparaître la séance. */}
     {apercuFicheEnCoursOuvert && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
-        onClick={() => setApercuFicheEnCoursOuvert(false)}>
+        onClick={() => setApercuFicheEnCoursOuvert(false)}
+        onScroll={e => setApercuEnCoursEnHaut(e.currentTarget.scrollTop <= 20)}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
-            <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              ✕ {t('btn_fermer', lang)}
+          {apercuEnCoursEnHaut ? (
+            <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
+              <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                ✕ {t('btn_fermer', lang)}
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setApercuFicheEnCoursOuvert(false)} title={t('btn_fermer', lang)}
+              style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+              ✕
             </button>
-          </div>
+          )}
           {fiche.mode_diplome === 'BEF' && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               📱 Tourne ton téléphone en paysage pour une meilleure lecture
@@ -11726,8 +11744,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       const champEditTextareaStyle = { ...champEditStyle, resize: 'vertical', display: 'block' }
       return (
       <div style={{ position: 'fixed', inset: 0, background: '#000000dd', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', overflowY: 'auto' }}
-        onClick={() => { if (!modeEditionApercu) setFicheApercu(null) }}>
+        onClick={() => { if (!modeEditionApercu) setFicheApercu(null) }}
+        onScroll={e => setFicheApercuEnHaut(e.currentTarget.scrollTop <= 20)}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
+          {(modeEditionApercu || ficheApercuEnHaut) ? (
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
             {!modeEditionApercu && (
               ficheApercu.fichier_url ? (
@@ -11774,6 +11794,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               </>
             )}
           </div>
+          ) : (
+            <button onClick={() => setFicheApercu(null)} title={t('btn_fermer', lang)}
+              style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+              ✕
+            </button>
+          )}
           {!modeEditionApercu && ficheApercu.fiche_seance?.mode_diplome === 'BEF' && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               📱 Tourne ton téléphone en paysage pour une meilleure lecture
