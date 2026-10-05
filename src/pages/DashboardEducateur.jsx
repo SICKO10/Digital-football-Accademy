@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment, lazy, Suspense } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
@@ -229,22 +229,16 @@ const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoChart     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
 const IcoTrophy    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
 const IcoRun       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15.5 8.5L14 13l3 3-2 5"/><path d="M8.5 8.5L10 13l-3 3 2 5"/><path d="M10 13h4"/></svg>
-const IcoFilm      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
 const IcoDumbbell  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12"/></svg>
 const IcoLayout    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
 const IcoVideo     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
 const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
-const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-const IcoExternal  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoCompass   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
 const IcoSend      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
-const IcoMic       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-const IcoEdit      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
@@ -252,12 +246,9 @@ const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fil
 const IcoUser        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IcoZap         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 const IcoActivity    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-const IcoPoll        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
 const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-const IcoXCircle     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-const IcoAlertCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoLogOut      = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 const IcoChevronLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -375,13 +366,6 @@ export const CRITERES_EDU = [
   ]},
 ]
 
-// Extrait l'ID d'une URL YouTube (watch?v=, youtu.be/, embed/, shorts/) et renvoie
-// l'URL d'embed correspondante, ou null si ce n'est pas une URL YouTube reconnaissable.
-const youtubeEmbedUrl = (url) => {
-  const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-  return m ? `https://www.youtube.com/embed/${m[1]}` : null
-}
-
 // ── Charge SheetJS depuis CDN (xlsx) ─────────────────────────────────────────
 function loadSheetJS() {
   return new Promise((resolve) => {
@@ -465,23 +449,6 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
       </svg>
       <span style={{ fontSize: '11px', color: colors.text.faint, fontFamily: 'Inter,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
     </div>
-  )
-}
-
-// ── Mini donut présence (anneau simple) ──────────────────────────────────────
-function DonutPresence({ taux }) {
-  const colors = useColors()
-  const r = 16, circ = 2 * Math.PI * r
-  const dash = (taux / 100) * circ
-  const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
-  return (
-    <svg width="42" height="42" viewBox="0 0 42 42">
-      <circle cx="21" cy="21" r={r} fill="none" stroke={colors.background.raised} strokeWidth="5" />
-      <circle cx="21" cy="21" r={r} fill="none" stroke={color} strokeWidth="5"
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        transform="rotate(-90 21 21)" />
-      <text x="21" y="25" textAnchor="middle" fontSize="9" fontWeight="700" fill={color} fontFamily="Inter,sans-serif">{taux}%</text>
-    </svg>
   )
 }
 
@@ -850,6 +817,54 @@ function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
         : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />}
     </div>,
     document.body
+  )
+}
+
+// Réduit à l'échelle un aperçu de fiche (.fiche-render, largeur fixe —
+// 980px générique, 1500px gabarit BEF, cf. index.css) pour qu'il tienne
+// dans l'écran plutôt que de déborder hors cadre sur tablette/téléphone.
+// transform:scale uniquement pour L'AFFICHAGE : le contenu garde sa vraie
+// largeur (mesurée via scrollWidth, jamais déformée), donc aucun impact sur
+// le texte/la mise en page — juste la taille visuelle qui s'adapte. Le
+// wrapper expose la classe "fiche-apercu-scale-wrap" : regenererPdfApercu
+// (seule fonction qui capture .fiche-render en PDF, cf. plus bas) neutralise
+// ce transform juste avant de capturer, pour ne jamais fausser l'export déjà
+// en place (indépendant de ce changement, ne doit jamais changer de
+// comportement).
+function ApercuFicheResponsive({ children }) {
+  const wrapRef = useRef(null)
+  const contentRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  const [hauteurMiseEchelle, setHauteurMiseEchelle] = useState(null)
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current
+    const content = contentRef.current
+    if (!wrap || !content) return
+    // Observe les deux : le conteneur (rotation d'écran, redimensionnement
+    // fenêtre) ET le contenu lui-même (ex: une textarea qui grandit en mode
+    // édition) — un seul recalcul idempotent couvre les deux cas.
+    const recalculer = () => {
+      const largeurDispo = wrap.clientWidth
+      const largeurNaturelle = content.scrollWidth
+      const hauteurNaturelle = content.scrollHeight
+      const s = largeurNaturelle > largeurDispo && largeurDispo > 0 ? largeurDispo / largeurNaturelle : 1
+      setScale(s)
+      setHauteurMiseEchelle(hauteurNaturelle * s)
+    }
+    recalculer()
+    const ro = new ResizeObserver(recalculer)
+    ro.observe(wrap)
+    ro.observe(content)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div ref={wrapRef} style={{ width: '100%', overflow: 'hidden', height: hauteurMiseEchelle ?? undefined }}>
+      <div ref={contentRef} className="fiche-apercu-scale-wrap" style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 'max-content' }}>
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -1660,7 +1675,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [entrainementEnEdition, setEntrainementEnEdition] = useState(null)
   const [savingEntrainementEdit, setSavingEntrainementEdit] = useState(false)
   const [showImportFiche, setShowImportFiche] = useState(false)
-  const [presences, setPresences] = useState({})
   const [entrainementActif, setEntrainementActif] = useState(null)
   const [dispoJoueurs, setDispoJoueurs] = useState({}) // { [entrainement_id]: { [profil_joueur_id]: statut } } — auto-déclaré par le joueur
   const [demandesNote, setDemandesNote] = useState({}) // { [entrainement_id]: demande } — seances_notes_demandes
@@ -2809,7 +2823,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // avec le join `educateur:educateur_id(...)` — ce champ imbriqué n'est pas
     // une colonne de bibliotheque_exercices et ferait échouer l'update/insert
     // ("Could not find the 'educateur' column...") s'il restait dans le form.
-    const { educateur, ...rest } = procede
+    const { educateur: _educateur, ...rest } = procede
     setProcedeEnEdition(procede)
     setProcedeForm({ ...rest, duree: procede.duree?.toString() || '' })
     setModalProcede(true)
@@ -3014,7 +3028,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const regenererPdfApercu = async () => {
     const el = document.querySelector('.fiche-render')
     if (!el) throw new Error('Rendu de la fiche introuvable')
-    const blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
+    // .fiche-render est entouré d'un wrapper .fiche-apercu-scale-wrap qui le
+    // réduit à l'échelle pour l'affichage (cf. ApercuFicheResponsive) — ne
+    // doit jamais être actif pendant une capture, sinon html2canvas
+    // capturerait la version réduite au lieu du document plein format.
+    // Neutralisé ici, restauré juste après (même principe que genererPdfFiche
+    // pour #fiche-print un peu plus haut) : l'export ne doit jamais changer
+    // de comportement, qu'on l'ait regardé en petit ou en grand avant.
+    const wrapperEchelle = el.closest('.fiche-apercu-scale-wrap')
+    const transformAvant = wrapperEchelle?.style.transform
+    if (wrapperEchelle) {
+      wrapperEchelle.style.transform = 'none'
+      await new Promise(r => requestAnimationFrame(r))
+    }
+    let blob
+    try {
+      blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
+    } finally {
+      if (wrapperEchelle) wrapperEchelle.style.transform = transformAvant || ''
+    }
     const path = `fiches/${userId}/${Date.now()}.pdf`
     const { error: uploadError } = await supabase.storage.from('documents').upload(path, blob, { contentType: 'application/pdf', upsert: true })
     if (uploadError) throw uploadError
@@ -3861,7 +3893,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
       const updated = { ...profilEduEdit, diplome_url: publicUrl, diplome_verifie: false }
       setProfilEduEdit(updated)
-      const { avatar_url, ...champsProfilEducateur } = updated
+      const { avatar_url: _avatar_url, ...champsProfilEducateur } = updated
       await supabase.from('profil_educateur').upsert({ ...champsProfilEducateur, user_id: userId }, { onConflict: 'user_id' })
       await chargerProfilEdu(userId)
     }
@@ -4083,11 +4115,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       if (avant) setJoueurs(prev => prev.map(j => (j.id === id ? avant : j)))
       setJoueurEnEdition({ id, ...fields })
     }
-  }
-
-  const assignerCategorieClub = async (joueurId, categorieId) => {
-    await supabase.from('equipe_joueurs').update({ club_categorie_id: categorieId || null }).eq('id', joueurId)
-    await chargerJoueurs(userId, equipeActive?.id)
   }
 
   const telechargerTemplate = () => {
@@ -4791,7 +4818,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     // disparaît aussitôt de la liste au rechargement — elle semblait "ne pas
     // se créer" alors qu'aucune erreur n'était renvoyée par Supabase.
     const payload = { ...newEntrainement, educateur_id: userId, club_categorie_id: equipeActive?.id || null }
-    const { data, error } = await supabase.from('entrainements').insert(payload).select()
+    const { error } = await supabase.from('entrainements').insert(payload).select()
     if (error) {
       afficherToast(`Erreur lors de la création de la séance : ${error.message}`, 'erreur')
       return
@@ -4874,7 +4901,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     const newDates = dates.filter(d => !existingDates.has(d.date))
     setPlanProgress({ done: 0, total: newDates.length })
     for (let i = 0; i < newDates.length; i++) {
-      const { data } = await supabase.from('entrainements').insert({
+      await supabase.from('entrainements').insert({
         date: newDates[i].date,
         heure: newDates[i].heure,
         description: planSaison.theme || '',
@@ -6126,9 +6153,8 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                         const ordre = ['Gardien','Défenseur central','Latéral droit','Latéral gauche','Milieu défensif','Milieu central','Milieu offensif','Ailier droit','Ailier gauche','Attaquant']
                         return (ordre.indexOf(a.poste) === -1 ? 99 : ordre.indexOf(a.poste)) - (ordre.indexOf(b.poste) === -1 ? 99 : ordre.indexOf(b.poste))
                       })
-                      .map((j, i) => {
+                      .map((j) => {
                         const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-                        const tx = tauxPresence(j.id)
                         const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
                         return (
                           <tr key={j.id} style={{ borderBottom: '1px solid #0f0f0f' }}>
@@ -6544,8 +6570,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                   const totalAbsents   = allTx.reduce((s, t) => s + t.absents, 0)
                   const totalBlesses   = allTx.reduce((s, t) => s + t.blesses, 0)
                   const totalMalades   = allTx.reduce((s, t) => s + t.malade, 0)
-                  const tauxMoyen      = allTx.length ? Math.round(allTx.reduce((s, t) => s + t.taux, 0) / allTx.length) : 0
-                  const seancesSaisies = allTx.length ? allTx[0].total : 0
                   const presenceParMois = (joueurId) => {
                     const mois = {}
                     entrainements.forEach(e => {
@@ -11678,11 +11702,18 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               ✕ {t('btn_fermer', lang)}
             </button>
           </div>
-          <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
-            {fiche.mode_diplome === 'BEF'
-              ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
-              : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
-          </div>
+          {fiche.mode_diplome === 'BEF' && (
+            <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
+              📱 Tourne ton téléphone en paysage pour une meilleure lecture
+            </p>
+          )}
+          <ApercuFicheResponsive>
+            <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
+              {fiche.mode_diplome === 'BEF'
+                ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
+                : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
+            </div>
+          </ApercuFicheResponsive>
         </div>
       </div>
     )}
@@ -11743,6 +11774,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               </>
             )}
           </div>
+          {!modeEditionApercu && ficheApercu.fiche_seance?.mode_diplome === 'BEF' && (
+            <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
+              📱 Tourne ton téléphone en paysage pour une meilleure lecture
+            </p>
+          )}
+          <ApercuFicheResponsive>
           <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
             {modeEditionApercu && ficheApercuEdit ? (
               <>
@@ -11882,6 +11919,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               />
             )}
           </div>
+          </ApercuFicheResponsive>
         </div>
       </div>
       )

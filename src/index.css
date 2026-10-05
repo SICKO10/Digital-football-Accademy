@@ -157,6 +157,15 @@ input[type="date"] {
   #fiche-print { display: block; }
 }
 
+/* Aperçu fiche BEF (gabarit large, cf. .bef-doc) sur téléphone en portrait :
+   ApercuFicheResponsive le réduit déjà à l'échelle pour qu'il tienne à
+   l'écran, mais le texte devient vite minuscule à cette largeur — suggère
+   la rotation plutôt que de forcer un redesign complet du gabarit fédéral
+   pour du portrait étroit. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .fiche-apercu-hint-paysage { display: block !important; }
+}
+
 /* Légende présence (LegendePresence, SondageSemaine.jsx) — labels toujours
    visibles sur mobile/tablette (pas de survol possible), repliés sur
    desktop où l'initiale colorée suffit, révélés au survol de chaque item. */
