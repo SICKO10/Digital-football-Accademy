@@ -109,7 +109,9 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
   const sauvegarder = async () => {
     setSaving(true)
     setErreur(null)
-    const { id, created_at, ...reste } = form
+    const reste = { ...form }
+    delete reste.id
+    delete reste.created_at
     const payload = { ...reste, equipe_joueur_id: equipeJoueurId, educateur_id: educateurId, saison, periode: periodeActive, updated_at: new Date().toISOString() }
     if (role === 'educateur') payload.verrouillee_joueur = true
     const { data, error } = await upsertEvaluation(payload)

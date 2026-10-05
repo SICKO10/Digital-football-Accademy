@@ -17,5 +17,10 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Convention du projet : préfixer en _ un champ volontairement
+      // destructuré pour l'exclure d'un objet (ex: { _inclure, ...rest }).
+      'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
+    },
   },
 ])

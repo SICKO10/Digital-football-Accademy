@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 import { CONTACT_EMAIL } from '../lib/stripeLinks'
 
 const Section = ({ titre, children }) => (

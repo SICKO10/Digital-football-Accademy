@@ -5,7 +5,7 @@ import { supabase } from '../supabase'
 import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from '../components/Tactipad'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 
 export default function TactipadPublic() {
   const { slug } = useParams()

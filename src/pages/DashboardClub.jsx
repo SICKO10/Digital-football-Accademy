@@ -53,7 +53,6 @@ const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoCarteBadge = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><line x1="14" y1="10" x2="19" y2="10"/><line x1="14" y1="14" x2="19" y2="14"/></svg>
 const IcoBallon    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7l3.5 2.5-1.3 4.1h-4.4L8.5 9.5z"/><path d="M12 2v5M8.5 9.5L4 8M15.5 9.5L20 8M9.8 13.6l-2.3 4.6M14.2 13.6l2.3 4.6"/></svg>
 const IcoHorloge   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-const IcoUserPlus  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
 const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoTerrain   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1206,7 +1205,7 @@ export default function DashboardClub() {
   const [effectifVue, setEffectifVue] = useState('poste') // 'poste' | 'liste'
   const [joueurDetail, setJoueurDetail] = useState(null) // id du joueur affiché en fiche individuelle
   const [clubMatchs, setClubMatchs] = useState({}) // { categorieId: [matchs] }
-  const [loadingMatchs, setLoadingMatchs] = useState(false)
+  const [, setLoadingMatchs] = useState(false)
   const [ligueUrls, setLigueUrls] = useState({}) // { categorieId: url }
 
   // Accueil (club-wide, tous éducateurs affiliés confondus)
@@ -6304,7 +6303,6 @@ export default function DashboardClub() {
         {activeTab === 'newsletter' && canViewSection('newsletter') && (
           <Newsletter
             clubId={clubId}
-            clubNom={club?.club}
             auteurId={moi?.id}
             auteurNom={monRole === 'president' ? (club?.club || 'Le club') : `${moi?.prenom || ''} ${moi?.nom || ''}`.trim()}
             couleurPrincipale={couleurPrincipale}

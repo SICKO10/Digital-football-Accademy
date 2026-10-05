@@ -492,7 +492,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('dashboard')
-  const [classementActif, setClassementActif] = useState('buteurs')
   const [stats, setStats] = useState({})
   const [savingStats, setSavingStats] = useState(false)
   const [statsSaved, setStatsSaved] = useState(false)
@@ -615,7 +614,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [notePublic, setNotePublic] = useState(true)
   const [noteSaison, setNoteSaison] = useState('2024-2025')
   const [savingNote, setSavingNoteEdu] = useState(false)
-  const [noteSaved, setNoteSaved] = useState(false)
+  const [, setNoteSaved] = useState(false)
   const [cloturesAEvaluer, setCloturesAEvaluer] = useState([]) // saisons clôturées par le coach, pas encore évaluées
   const [rappelClotureFerme, setRappelClotureFerme] = useState(false)
 

@@ -86,7 +86,6 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
   const [joueurParcours, setJoueurParcours] = useState([]);
   const [favoris, setFavoris] = useState([]); // [{id, user_id, joueur_id, dossier}]
   const [dossierActif, setDossierActif] = useState("Tous");
-  const [nouveauDossier, setNouveauDossier] = useState("");
   const [assignDossierJoueur, setAssignDossierJoueur] = useState(null);
 
   // Messagerie
@@ -437,7 +436,6 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     const map = { "Attaquant": { bg: "#f9731615", text: "#f97316" }, "Milieu": { bg: "#f9731615", text: "#f97316" }, "Défenseur": { bg: "#60a5fa15", text: "#60a5fa" }, "Gardien": { bg: "#a855f715", text: "#a855f7" } };
     return map[p] || { bg: colors.background.raised, text: colors.text.secondary };
   };
-  const getInitials = (j) => `${(j.prenom || "?")[0]}${(j.nom || "?")[0]}`.toUpperCase();
   const isVeo = (url) => url && url.includes("veo.co");
   const isYoutube = (url) => url && (url.includes("youtube.com") || url.includes("youtu.be"));
   const isCloudinary = (url) => url && url.includes("cloudinary.com");
@@ -1339,7 +1337,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 
         {/* ── CONTACTER LE COACH ── */}
         {activeTab === "coach" && (
-          <CoachContact coaches={coaches} userId={userId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} ouvrirConversation={ouvrirConversation} conversations={conversations} st={st} />
+          <CoachContact coaches={coaches} userId={userId} contacterCoach={contacterCoach} chargerConversations={chargerConversations} setActiveTab={setActiveTab} />
         )}
 
         {activeTab === "profil" && (
@@ -1449,7 +1447,7 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
 }
 
 // ── Composant Contact Coach ─────────────────────────────────────────────────
-function CoachContact({ coaches, userId, contacterCoach, chargerConversations, setActiveTab, ouvrirConversation, conversations, st }) {
+function CoachContact({ coaches, userId, contacterCoach, chargerConversations, setActiveTab }) {
   const colors = useColors();
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [message, setMessage] = useState("");

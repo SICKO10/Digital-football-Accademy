@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 
 // Brouillon — page autonome, non liée au funnel d'inscription principal (/register).
 // TODO: remplacer par les vrais Payment Links Stripe avant de la relier au site.

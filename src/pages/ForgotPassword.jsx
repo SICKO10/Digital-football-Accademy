@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 
 function ForgotPassword() {
   const navigate = useNavigate()

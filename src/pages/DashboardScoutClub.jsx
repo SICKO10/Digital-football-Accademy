@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
-import { colors, alpha } from "../tokens";
+import { colors } from "../tokens";
 import { useNavigate } from "react-router-dom";
 import ScoutCenter from "../components/ScoutCenter";
 

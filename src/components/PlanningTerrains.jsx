@@ -5,7 +5,7 @@ import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
 import { labelCategorie } from '../lib/categories'
 import { makeUseSt } from '../lib/theme'
 import { useWindowWidth } from '../hooks/useWindowWidth'
-import { ZONES, ZONE_COLORS_FIXES, couleurZone } from '../lib/terrainZones'
+import { ZONES, couleurZone } from '../lib/terrainZones'
 
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },

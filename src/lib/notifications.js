@@ -1,12 +1,5 @@
 import { supabase } from '../supabase'
 
-const SUJETS = {
-  analyse: (contenu) => `🎬 Ton analyse vidéo est prête !`,
-  like: (contenu) => `❤️ ${contenu?.auteur || 'Quelqu\'un'} a aimé ta vidéo`,
-  commentaire: (contenu) => `💬 Nouveau commentaire sur ta vidéo`,
-  message: (contenu) => `✉️ Nouveau message de ${contenu?.auteur || 'quelqu\'un'}`,
-}
-
 export async function notifierJoueur({ type, userId, titre, contenu, lien }) {
   // 1. Toujours créer la notification dans la clochette
   await supabase.from('notifications').insert({

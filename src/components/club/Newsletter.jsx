@@ -16,7 +16,7 @@ const CIBLES = [
 // affiliés à ces éducateurs) — il n'existe pas de colonne profiles.role, le
 // rattachement au club passe toujours par ces deux tables (cf.
 // DashboardClub.jsx pour le même schéma).
-export default function Newsletter({ clubId, clubNom, auteurNom, auteurId, couleurPrincipale, readOnly }) {
+export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincipale, readOnly }) {
   const colors = useColors()
   const accent = couleurPrincipale || colors.accent.green
   const [annonces, setAnnonces] = useState([])

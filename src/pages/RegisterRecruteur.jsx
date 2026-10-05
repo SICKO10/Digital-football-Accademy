@@ -4,7 +4,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, stripeUrl } from '../lib/stripeLinks'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 
 function RegisterRecruteur() {
   const navigate = useNavigate()

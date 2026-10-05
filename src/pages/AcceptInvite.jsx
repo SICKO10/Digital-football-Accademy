@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
-import { colors, alpha } from '../tokens'
+import { colors } from '../tokens'
 
 // Style partagé pour les différents écrans de cette page — fonction, pas un
 // composant, pour ne pas être remonté à chaque render.
