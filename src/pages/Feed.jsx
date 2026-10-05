@@ -187,7 +187,7 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
           <button onClick={() => onOpenProfile(j)} style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('feed_profil_fleche', lang)}</button>
           {profil?.plan === 'scout' && !isOwner && (
             <button
-              onClick={() => navigate(isClub ? '/club' : '/scout-club', { state: { contactJoueur: j } })}
+              onClick={() => navigate('/scout-club', { state: { contactJoueur: j } })}
               style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
             >
               {t('feed_contacter_fleche', lang)}
