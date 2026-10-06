@@ -1409,7 +1409,14 @@ export default function DashboardClub() {
     setClub(clubProfile)
     setMoi({ id: user.id, prenom: profile.prenom || '', nom: profile.nom || '' })
     setMonRole(role)
-    setAutreRole(profile.plan === 'educateur' ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
+    // club_educateurs vérifié en plus de plan === 'educateur' : un compte
+    // 'club' invité comme éducateur garde ce plan (cf. 341b631, ne plus
+    // jamais l'écraser) — sans ce check, le bouton "Vue Éducateur" ne
+    // s'affichait que pour un plan 'educateur' d'origine, jamais pour ce cas.
+    const { data: accesEducateur } = profile.plan !== 'educateur'
+      ? await supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle()
+      : { data: null }
+    setAutreRole(profile.plan === 'educateur' || accesEducateur ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '', stades: clubProfile.stades || [] })
     setThemeEdit({
       couleur_principale: clubProfile.couleur_principale || colors.accent.green,
