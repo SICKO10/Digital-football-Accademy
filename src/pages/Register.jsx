@@ -8,6 +8,33 @@ import { colors } from '../tokens'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
+// Détecte un signUp() qui échoue parce que l'email a déjà un compte — deux
+// signaux possibles côté Supabase : soit une erreur explicite ("User already
+// registered", selon la version/config du projet), soit — quand "Confirm
+// email" est activé — un succès silencieux avec data.user.identities vide,
+// mécanisme volontaire de Supabase pour empêcher l'énumération d'emails.
+function emailDejaUtilise(error, data) {
+  if (error) return /already registered|already exists|already been registered/i.test(error.message)
+  return !!data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0
+}
+
+// Un même email n'a qu'un seul compte (profiles.plan est une valeur unique) —
+// un rôle supplémentaire (éducateur, parent, staff club...) se greffe sur ce
+// compte existant via une invitation (cf. lib/multiRole.js et les boutons de
+// bascule sur les 4 dashboards), jamais en recréant un compte ici.
+function messageEmailExistant(navigate) {
+  return (
+    <>
+      Un compte existe déjà avec cette adresse email.{' '}
+      <button type="button" onClick={() => navigate('/login')}
+        style={{ background: 'transparent', border: 'none', color: colors.accent.green, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px', padding: 0 }}>
+        Connecte-toi
+      </button>{' '}
+      pour y accéder. Besoin d'un rôle supplémentaire (éducateur, parent...) ? Il doit être ajouté à ce compte via une invitation, pas en créant un nouveau compte.
+    </>
+  )
+}
+
 const SPLIT_MEDIA_QUERY = `
   @media (max-width: 768px) {
     .register-left { display: none !important; }
@@ -112,6 +139,7 @@ export default function Register() {
       email, password,
       options: { data: { prenom: prenom.trim(), nom: nom.trim(), plan } },
     })
+    if (emailDejaUtilise(error, data)) { setErreur(messageEmailExistant(navigate)); setLoading(false); return }
     if (error) { setErreur(error.message); setLoading(false); return }
 
     const userId = data.user?.id
@@ -437,6 +465,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
       email, password,
       options: { data: { prenom: prenom.trim(), nom: nom.trim(), plan: 'club' } },
     })
+    if (emailDejaUtilise(error, data)) { setErreur(messageEmailExistant(navigate)); setLoading(false); return }
     if (error) { setErreur(error.message); setLoading(false); return }
     const uid = data.user?.id
     if (uid) {
