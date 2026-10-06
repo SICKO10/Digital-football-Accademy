@@ -12,6 +12,7 @@ import NutritionDashboard from '../components/NutritionDashboard'
 import { notifierJoueur } from '../lib/notifications'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { jourKeyDeDate } from '../lib/jours'
+import { chargerMesRoles } from '../lib/multiRole'
 import NotificationBanner from '../components/NotificationBanner'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { ModalNotation, BadgeNote } from '../components/Notation'
@@ -463,6 +464,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const { masquees: alertesMasquees, masquer: masquerAlerte } = useAlertesMasquees()
   const [hoveredCard, setHoveredCard] = useState(null)
   const [profil, setProfil] = useState(null)
+  const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/éducateur/parent), cf. lib/multiRole — chargé seulement sur son propre dashboard (pas via joueurIdOverride)
   const [notifications, setNotifications] = useState([])
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({ email_analyse: true, email_like: true, email_commentaire: true, email_message: true })
@@ -817,6 +819,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!user) { navigate('/login'); return }
     const targetId = joueurIdOverride || user.id
     setUserId(targetId)
+    // Autres rôles du compte RÉELLEMENT connecté, jamais de targetId — en
+    // lecture via joueurIdOverride (parent/dirigeant consultant ce profil),
+    // ce ne sont pas ses propres rôles à basculer, cf. commentaire
+    // connexions_log juste en dessous pour le même raisonnement.
+    if (!joueurIdOverride) chargerMesRoles(user.id).then(setMesRoles)
     // Log de connexion (Viewers côté éducateur, cf. supabase_connexions_log.sql)
     // — pas quand un tiers (parent, dirigeant, recruteur) consulte ce dashboard
     // en lecture seule ou via override : ce n'est pas le joueur qui se connecte.
@@ -2245,6 +2252,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             ))}
           </nav>
+          {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
+            <div style={{ padding: '8px 10px 0' }}>
+              {mesRoles.club && (
+                <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
+              )}
+              {mesRoles.educateur && (
+                <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
+              )}
+              {mesRoles.parent && (
+                <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
+              )}
+            </div>
+          )}
           <div style={{ padding: '16px 12px', borderTop: `1px solid ${colors.border.subtle}` }}>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[['fr','🇫🇷'],['en','🇬🇧'],['pt','🇧🇷'],['es','🇪🇸'],['it','🇮🇹'],['de','🇩🇪']].map(([code, flag]) => (
@@ -3420,6 +3440,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           ))}
         </nav>
+
+        {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
+          <div style={{ padding: '0 10px 8px' }}>
+            {mesRoles.club && (
+              <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
+            )}
+            {mesRoles.educateur && (
+              <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
+            )}
+            {mesRoles.parent && (
+              <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
+            )}
+          </div>
+        )}
 
         {/* Clochette notifications */}
         <div style={{ padding: '0 10px 12px', position: 'relative' }}>

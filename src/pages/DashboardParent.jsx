@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
 import { useColors } from '../lib/theme'
+import { chargerMesRoles } from '../lib/multiRole'
 import DashboardJoueur from './DashboardJoueur'
 
 // Dashboard parent : le vrai DashboardJoueur.jsx, rendu pour le joueur qui a
@@ -27,7 +28,7 @@ export default function DashboardParent() {
   const [formParent, setFormParent] = useState({ prenom: '', nom: '', telephone: '', email: '', profession: '' })
   const [savingProfil, setSavingProfil] = useState(false)
   const [consentement, setConsentement] = useState(false)
-  const [autreAcces, setAutreAcces] = useState({ educateur: false, club: false }) // double accès : même personne, aussi éducateur et/ou staff d'un club
+  const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/éducateur/joueur), cf. lib/multiRole
 
   useEffect(() => {
     const init = async () => {
@@ -42,19 +43,9 @@ export default function DashboardParent() {
 
       // SmartDashboard (App.jsx) route en priorité vers /dashboard-parent dès
       // qu'un parents_acces accepté existe — un même compte qui est aussi
-      // éducateur (plan='educateur' ou club_educateurs) ou staff d'un club
-      // (plan='club' ou staff_club) n'avait jusqu'ici aucun moyen d'atteindre
-      // son autre dashboard depuis ici. Mêmes deux sources que autreRole côté
-      // DashboardClub.jsx.
-      const [{ data: monProfil }, { data: eduAcces }, { data: staffAcces }] = await Promise.all([
-        supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
-        supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle(),
-        supabase.from('staff_club').select('id').eq('user_id', user.id).maybeSingle(),
-      ])
-      setAutreAcces({
-        educateur: monProfil?.plan === 'educateur' || !!eduAcces,
-        club: monProfil?.plan === 'club' || !!staffAcces,
-      })
+      // club/éducateur/joueur (via son propre plan ou une relation) n'avait
+      // jusqu'ici aucun moyen d'atteindre son autre dashboard depuis ici.
+      setMesRoles(await chargerMesRoles(user.id))
 
       const [{ data: pp }, { data: joueurProfil }] = await Promise.all([
         supabase.from('profil_parent').select('*').eq('user_id', user.id).maybeSingle(),
@@ -150,11 +141,14 @@ export default function DashboardParent() {
     <div>
       <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
-        {autreAcces.club && (
+        {mesRoles?.club && (
           <button onClick={() => navigate('/club')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '20px', color: colors.accent.blue, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club</button>
         )}
-        {autreAcces.educateur && (
+        {mesRoles?.educateur && (
           <button onClick={() => navigate('/educateur')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '20px', color: colors.accent.green, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
+        )}
+        {mesRoles?.joueur && (
+          <button onClick={() => navigate('/dashboard-joueur')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '20px', color: colors.accent.amber, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>⚽ Vue Joueur</button>
         )}
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>

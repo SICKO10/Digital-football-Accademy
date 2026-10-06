@@ -760,6 +760,7 @@ export const T = {
   // ── Dashboard club — Navbar / header ─────────────────────────────────────────
   club_vue_educateur:        { fr: 'Vue Éducateur',   en: 'Coach View',       pt: 'Vista Educador',  es: 'Vista Entrenador', it: 'Vista Educatore', de: 'Trainer-Ansicht'  },
   club_vue_joueur:           { fr: 'Vue Joueur',      en: 'Player View',      pt: 'Vista Jogador',   es: 'Vista Jugador',    it: 'Vista Giocatore', de: 'Spieler-Ansicht'  },
+  club_vue_parent:           { fr: 'Vue Parent',      en: 'Parent View',      pt: 'Vista Encarregado', es: 'Vista Tutor',    it: 'Vista Genitore',  de: 'Eltern-Ansicht'   },
   club_mon_club:             { fr: 'Mon club',        en: 'My club',          pt: 'O meu clube',     es: 'Mi club',          it: 'Il mio club',     de: 'Mein Verein'      },
   club_categorie_sing:       { fr: 'catégorie',       en: 'category',         pt: 'categoria',       es: 'categoría',        it: 'categoria',       de: 'Kategorie'        },
   club_categorie_plur:       { fr: 'catégories',      en: 'categories',       pt: 'categorias',      es: 'categorías',       it: 'categorie',       de: 'Kategorien'       },

@@ -21,6 +21,7 @@ import ParrainageWidget from '../components/ParrainageWidget'
 import { libelleStatutGroq } from '../lib/groqQueue'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
+import { chargerMesRoles } from '../lib/multiRole'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
@@ -1070,7 +1071,7 @@ export default function DashboardClub() {
   // AlertesClub) pour leurs callbacks de navigation existants.
   const [, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
-  const [autreRole, setAutreRole] = useState(null) // 'educateur' | 'joueur' | null — double accès staff + autre plan
+  const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (éducateur/joueur/parent), cf. lib/multiRole
   const [saisonActuelle] = useState(() => {
     const now = new Date()
     const y = now.getFullYear()
@@ -1409,14 +1410,11 @@ export default function DashboardClub() {
     setClub(clubProfile)
     setMoi({ id: user.id, prenom: profile.prenom || '', nom: profile.nom || '' })
     setMonRole(role)
-    // club_educateurs vérifié en plus de plan === 'educateur' : un compte
-    // 'club' invité comme éducateur garde ce plan (cf. 341b631, ne plus
-    // jamais l'écraser) — sans ce check, le bouton "Vue Éducateur" ne
-    // s'affichait que pour un plan 'educateur' d'origine, jamais pour ce cas.
-    const { data: accesEducateur } = profile.plan !== 'educateur'
-      ? await supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle()
-      : { data: null }
-    setAutreRole(profile.plan === 'educateur' || accesEducateur ? 'educateur' : ['pro', 'fan'].includes(profile.plan) ? 'joueur' : null)
+    // Tous les autres rôles de ce compte (éducateur/joueur/parent), pas
+    // qu'un seul à la fois — cf. lib/multiRole. club_educateurs vérifié en
+    // plus de plan === 'educateur' : un compte 'club' invité comme éducateur
+    // garde ce plan (cf. 341b631, ne plus jamais l'écraser).
+    setMesRoles(await chargerMesRoles(user.id))
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '', stades: clubProfile.stades || [] })
     setThemeEdit({
       couleur_principale: clubProfile.couleur_principale || colors.accent.green,
@@ -3385,16 +3383,22 @@ export default function DashboardClub() {
           </button>
         ))}
       </div>
-      {autreRole === 'educateur' && (
+      {mesRoles?.educateur && (
         <button onClick={() => navigate('/educateur')}
           style={{ padding: '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
           🎓 {t('club_vue_educateur', lang)}
         </button>
       )}
-      {autreRole === 'joueur' && (
+      {mesRoles?.joueur && (
         <button onClick={() => navigate('/dashboard-joueur')}
           style={{ padding: '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
           ⚽ {t('club_vue_joueur', lang)}
+        </button>
+      )}
+      {mesRoles?.parent && (
+        <button onClick={() => navigate('/dashboard-parent')}
+          style={{ padding: '6px 16px', background: colors.background.raised, border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
+          👁️ {t('club_vue_parent', lang)}
         </button>
       )}
       {monRole === 'president' && (

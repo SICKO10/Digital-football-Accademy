@@ -67,7 +67,8 @@ function SmartDashboard() {
         supabase.from('dirigeant_acces').select('id').eq('dirigeant_id', user.id).eq('statut', 'accepte').maybeSingle(),
         supabase.from('parents_acces').select('id').eq('parent_id', user.id).eq('statut', 'accepte').maybeSingle(),
         supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle(),
-      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }, { data: parentAcces }, { data: educateurClub }]) => {
+        supabase.from('affiliations').select('id').eq('joueur_id', user.id).eq('statut', 'accepte').maybeSingle(),
+      ]).then(([{ data: profil }, { data: staff }, { data: dirigeant }, { data: parentAcces }, { data: educateurClub }, { data: affiliation }]) => {
         // Membre du staff d'un club (rôle géré et détecté par DashboardClub lui-même)
         if (staff) { setDest('/club'); return }
         // Dirigeant délégué par un éducateur (plan reste 'fan', accès géré par dirigeant_acces)
@@ -79,6 +80,13 @@ function SmartDashboard() {
         // l'invitation (ex. joueur) peut avoir un plan resté désynchronisé,
         // cf. bug maxime.bertrand96@outlook.fr (sept. 2026).
         if (educateurClub) { setDest('/educateur'); return }
+        // Affilié comme joueur (équipe) — même raisonnement : un plan 'club'
+        // ou 'educateur' qui joue aussi sur une équipe n'a pas de plan
+        // 'fan' pour autant. Les plans joueur (fan/joueur_pro/...) tombent
+        // de toute façon sur /dashboard-joueur via le fallback plus bas ;
+        // ce check ne sert qu'aux comptes dont le plan n'est PAS un plan
+        // joueur mais qui ont quand même une affiliation acceptée.
+        if (affiliation) { setDest('/dashboard-joueur'); return }
         const plan = profil?.plan
         if (plan === 'educateur') setDest('/educateur')
         else if (plan === 'scout') setDest('/recruteur')

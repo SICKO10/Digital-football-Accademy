@@ -8,6 +8,7 @@ import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { JOURS_SEMAINE } from '../lib/jours'
+import { chargerMesRoles } from '../lib/multiRole'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 // Sections/modales chargées à la demande (lazy) plutôt qu'au chargement initial du
@@ -1534,8 +1535,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const { lang, setLang } = useLang()
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
-  const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
-  const [parentAcces, setParentAcces] = useState(null) // { joueur_id } si ce compte a aussi un accès parent (lecture seule)
+  const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/joueur/parent), cf. lib/multiRole
   const [activeSection, setActiveSection] = useState('accueil')
   const [loading, setLoading] = useState(true)
   // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
@@ -1788,7 +1788,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // onglets spécifiques (Mes séances, Bibliothèque, Explorer > Dirigeants),
     // jamais à l'Accueil — chargés à la demande via des useEffect scopés à
     // activeSection plus bas (même pattern que chargerMonMateriel), pas ici.
-    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerParentAcces(user.id), chargerNotifications(targetId)])
+    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerMesAutresRoles(user.id), chargerNotifications(targetId)])
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
     // localStorage, sinon la première) : charge joueurs/matchs/entraînements
@@ -1823,26 +1823,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, lu: true } : n))
   }
 
-  const chargerStaffClub = async (uid) => {
-    // Ce compte éducateur est-il aussi membre du staff d'un club ? (double accès)
-    const { data } = await supabase
-      .from('staff_club')
-      .select('club_id, profiles!staff_club_club_id_fkey(club)')
-      .eq('user_id', uid)
-      .maybeSingle()
-    setStaffClub(data || null)
-  }
-
-  const chargerParentAcces = async (uid) => {
-    // Ce compte éducateur a-t-il aussi un accès parent (lecture seule) au
-    // profil d'un joueur ? (double accès, même esprit que chargerStaffClub)
-    // Deux requêtes séparées plutôt qu'un embed PostgREST : le nom exact de
-    // la contrainte FK n'est pas vérifiable depuis ce repo (même pattern que
-    // DashboardParent.jsx pour le nom du joueur).
-    const { data: acces } = await supabase.from('parents_acces').select('joueur_id').eq('parent_id', uid).eq('statut', 'accepte').maybeSingle()
-    if (!acces) { setParentAcces(null); return }
-    const { data: joueur } = await supabase.from('profiles').select('prenom, nom').eq('id', acces.joueur_id).maybeSingle()
-    setParentAcces({ joueur_id: acces.joueur_id, prenom: joueur?.prenom, nom: joueur?.nom })
+  const chargerMesAutresRoles = async (uid) => {
+    // Ce compte éducateur a-t-il aussi accès à un dashboard club (plan='club'
+    // ou staff_club), joueur (plan joueur ou affiliations) ou parent
+    // (parents_acces) ? cf. lib/multiRole — centralisé pour les 4 dashboards.
+    setMesRoles(await chargerMesRoles(uid))
   }
 
   const chargerClubAffiliation = async (uid) => {
@@ -5560,16 +5545,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
             <span style={{ flexShrink: 0 }}><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
           </button>
-          {staffClub && !isTablet && (
+          {mesRoles?.club && !isTablet && (
             <button onClick={() => navigate('/club')}
               style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: '1px solid #60a5fa', borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
-              🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
+              🏢 Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}
             </button>
           )}
-          {parentAcces && !isTablet && (
+          {mesRoles?.joueur && !isTablet && (
+            <button onClick={() => navigate('/dashboard-joueur')}
+              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+              ⚽ Vue Joueur
+            </button>
+          )}
+          {mesRoles?.parent && !isTablet && (
             <button onClick={() => navigate('/dashboard-parent')}
               style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
-              👁️ Vue Parent{parentAcces.prenom ? ` — ${parentAcces.prenom} ${parentAcces.nom || ''}`.trimEnd() : ''}
+              👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}
             </button>
           )}
 
