@@ -1161,6 +1161,7 @@ export default function DashboardClub() {
   const [invitingEducateur, setInvitingEducateur] = useState(false)
   const [inviteEducateurMessage, setInviteEducateurMessage] = useState(null) // { type: 'ok' | 'avertissement' | 'erreur', texte }
   const [invitationsEducateurEnvoyees, setInvitationsEducateurEnvoyees] = useState([])
+  const [renvoyantInvitationId, setRenvoyantInvitationId] = useState(null)
 
   // Profil club
   const [profilClubEdit, setProfilClubEdit] = useState({ club: '', region: '', ville: '', description: '', stades: [] })
@@ -2983,6 +2984,26 @@ export default function DashboardClub() {
     setInvitationsEducateurEnvoyees(data || [])
   }
 
+  // Renvoie une invitation (lien expiré ou non) : crée une nouvelle invitation
+  // (nouveau token, 7 jours) via envoyer-invitation, puis marque l'ancienne
+  // ligne comme 'expire' pour qu'elle disparaisse de la liste "en attente".
+  const renvoyerInvitationEducateur = async (inv) => {
+    setRenvoyantInvitationId(inv.id)
+    setInviteEducateurMessage(null)
+    const { data, error } = await supabase.functions.invoke('envoyer-invitation', {
+      body: { email: inv.email, role: 'educateur', club_id: clubId, prenom: inv.prenom, nom: inv.nom },
+    })
+    if (error || data?.error) {
+      setRenvoyantInvitationId(null)
+      setInviteEducateurMessage({ type: 'erreur', texte: error?.message || data?.error })
+      return
+    }
+    await supabase.from('invitations').update({ statut: 'expire' }).eq('id', inv.id)
+    setInviteEducateurMessage({ type: 'ok', texte: `Nouvelle invitation envoyée à ${inv.email}` })
+    await chargerInvitationsEducateurEnvoyees(clubId)
+    setRenvoyantInvitationId(null)
+  }
+
   const retirerEducateur = async (id) => {
     if (!confirm('Retirer cet éducateur du club ?')) return
     await supabase.from('club_educateurs').delete().eq('id', id)
@@ -3922,15 +3943,26 @@ export default function DashboardClub() {
               {invitationsEducateurEnvoyees.length > 0 && (
                 <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invitations envoyées, en attente ({invitationsEducateurEnvoyees.length})</p>
-                  {invitationsEducateurEnvoyees.map(inv => (
-                    <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px' }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{inv.prenom} {inv.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{inv.email}</p>
+                  {invitationsEducateurEnvoyees.map(inv => {
+                    const estExpiree = new Date(inv.expires_at) < new Date()
+                    return (
+                      <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px', gap: '10px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{inv.prenom} {inv.nom}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{inv.email}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                          <span style={{ fontSize: '11px', color: estExpiree ? colors.accent.red : colors.accent.amber, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {estExpiree ? '⚠️ Expirée' : '⏳ En attente'}
+                          </span>
+                          <button onClick={() => renvoyerInvitationEducateur(inv)} disabled={renvoyantInvitationId === inv.id}
+                            style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap', opacity: renvoyantInvitationId === inv.id ? 0.5 : 1 }}>
+                            {renvoyantInvitationId === inv.id ? '...' : 'Renvoyer'}
+                          </button>
+                        </div>
                       </div>
-                      <span style={{ fontSize: '11px', color: colors.accent.amber, fontWeight: 600 }}>⏳ En attente</span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
