@@ -7061,7 +7061,7 @@ export default function DashboardClub() {
         )
       })()}
 
-      {activeTab === 'accueil' && <SponsorsBar clubId={clubId} />}
+      {activeTab === 'accueil' && <SponsorsBar clubId={clubId} sidebarWidth={240} />}
     </div>
   )
 }

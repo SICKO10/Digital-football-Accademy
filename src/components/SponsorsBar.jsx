@@ -4,6 +4,7 @@ import { useColors } from '../lib/theme'
 import { alpha } from '../tokens'
 import { saisonActuelle } from '../lib/saison'
 import { useWindowWidth } from '../hooks/useWindowWidth'
+import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 
 // Bandeau "Nos partenaires" — cf. supabase_sponsors_bandeau.sql. Ne jamais
 // select('*') ici : la table sponsors porte aussi des données de contrat
@@ -14,9 +15,16 @@ import { useWindowWidth } from '../hooks/useWindowWidth'
 // bascule en thème clair verrait sinon un bandeau resté "câblé sombre".
 // L'ambre reste volontairement fixe (colors.accent.amber) — c'est la couleur
 // de marque du bandeau partenaire, pas celle du club/dashboard courant.
-export default function SponsorsBar({ clubId }) {
+export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
   const colors = useColors()
   const isMobile = useWindowWidth() < 640
+  // Même seuil que la sidebar des dashboards (position: sticky, colonne
+  // persistante) : en dessous, elle bascule en drawer hors-écran et le
+  // bandeau peut légitimement prendre toute la largeur ; au-dessus, elle
+  // reste affichée en permanence et le bandeau "position: fixed" (relatif
+  // au viewport, pas à la colonne de contenu) doit s'arrêter à son bord
+  // pour ne pas passer par-dessus les dernières rubriques du menu.
+  const sidebarPersistante = !useIsMobileOrTablet()
   const [sponsors, setSponsors] = useState([])
   const [current, setCurrent] = useState(0)
   const [visible, setVisible] = useState(true)
@@ -59,7 +67,7 @@ export default function SponsorsBar({ clubId }) {
 
   return (
     <div style={{
-      position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
+      position: 'fixed', left: sidebarPersistante ? sidebarWidth : 0, right: 0, bottom: 0, zIndex: 30,
       background: `linear-gradient(to right, ${colors.background.sunken}, ${colors.background.surface}, ${colors.background.sunken})`,
       boxShadow: `0 -1px 0 0 ${amber}${alpha.medium}, 0 -8px 32px rgba(0,0,0,0.45)`,
       // Sans ça, la barre s'arrête au-dessus de la zone du bandeau

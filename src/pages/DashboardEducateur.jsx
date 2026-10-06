@@ -12001,7 +12001,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       )
     })()}
 
-    {activeSection === 'accueil' && <SponsorsBar clubId={clubAffiliation?.club_id} />}
+    {activeSection === 'accueil' && <SponsorsBar clubId={clubAffiliation?.club_id} sidebarWidth={220} />}
 
     </>
   )

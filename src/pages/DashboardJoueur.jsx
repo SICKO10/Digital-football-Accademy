@@ -5728,7 +5728,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         <VoirToutClassement classement={classementOuvert} onClose={() => setClassementOuvert(null)} />
       )}
 
-      {(onglet === 'accueil' || onglet === 'dashboard') && <SponsorsBar clubId={clubIdInventaire} />}
+      {(onglet === 'accueil' || onglet === 'dashboard') && <SponsorsBar clubId={clubIdInventaire} sidebarWidth={220} />}
     </div>
   )
 }
