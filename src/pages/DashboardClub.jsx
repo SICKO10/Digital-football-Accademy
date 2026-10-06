@@ -1159,7 +1159,7 @@ export default function DashboardClub() {
   // l'invitation staff mais scopé club_id/club_educateurs au lieu de staff_club.
   const [ajoutEducateurForm, setAjoutEducateurForm] = useState({ prenom: '', nom: '', email: '' })
   const [invitingEducateur, setInvitingEducateur] = useState(false)
-  const [inviteEducateurMessage, setInviteEducateurMessage] = useState(null) // { type: 'ok' | 'erreur', texte }
+  const [inviteEducateurMessage, setInviteEducateurMessage] = useState(null) // { type: 'ok' | 'avertissement' | 'erreur', texte }
   const [invitationsEducateurEnvoyees, setInvitationsEducateurEnvoyees] = useState([])
 
   // Profil club
@@ -2967,7 +2967,12 @@ export default function DashboardClub() {
       setInviteEducateurMessage({ type: 'erreur', texte: error?.message || data?.error })
       return
     }
-    setInviteEducateurMessage({ type: 'ok', texte: data?.linked ? 'Compte existant lié directement.' : `Invitation envoyée à ${ajoutEducateurForm.email}` })
+    setInviteEducateurMessage({
+      type: data?.mailError ? 'avertissement' : 'ok',
+      texte: data?.linked
+        ? (data?.mailError ? "Accès accordé, mais l'email de notification n'a pas pu être envoyé — préviens-le autrement." : 'Compte existant lié directement.')
+        : `Invitation envoyée à ${ajoutEducateurForm.email}`,
+    })
     setAjoutEducateurForm({ prenom: '', nom: '', email: '' })
     if (data?.linked) await chargerEducateurs(clubId)
     else await chargerInvitationsEducateurEnvoyees(clubId)
@@ -3912,7 +3917,7 @@ export default function DashboardClub() {
                 </button>
               </div>
               {inviteEducateurMessage && (
-                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.green : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.green : inviteEducateurMessage.type === 'avertissement' ? colors.accent.amber : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
               )}
               {invitationsEducateurEnvoyees.length > 0 && (
                 <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>

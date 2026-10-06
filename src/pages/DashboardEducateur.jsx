@@ -1761,7 +1761,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // (bouton "Vue Club" propre à qui est réellement staff, pas au dirigeant délégué).
     const targetId = educateurIdOverride || user.id
     const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId).maybeSingle()
-    if (!p || p.plan !== 'educateur') { navigate('/'); return }
+    if (!p) { navigate('/'); return }
+    if (p.plan !== 'educateur') {
+      // Un compte avec un autre plan d'origine (ex: 'club') peut avoir
+      // accepté une invitation éducateur sans que plan ne change — plan
+      // reste la propriété de son rôle principal, club_educateurs est la
+      // vraie source de vérité pour cet accès-ci (même pattern que
+      // staff_club côté DashboardClub.jsx). SmartDashboard (App.jsx) route
+      // déjà vers /educateur sur cette même base, indépendamment du plan —
+      // sans ce garde-fou ici, la page rejetait quand même ces comptes.
+      const { data: accesEducateur } = await supabase.from('club_educateurs').select('id').eq('educateur_id', targetId).eq('statut', 'accepte').maybeSingle()
+      if (!accesEducateur) { navigate('/'); return }
+    }
     setUserId(targetId)
     setProfil(p)
     // Log de connexion (onglet Viewers, cf. supabase_connexions_log.sql) — pas

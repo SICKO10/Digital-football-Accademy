@@ -221,10 +221,14 @@ serve(async (req) => {
         await supabase.from('club_educateurs').upsert({
           club_id, educateur_id: existingUser.id, statut: 'accepte', methode: 'invite',
         }, { onConflict: 'club_id,educateur_id' })
-        // Le compte existait déjà (souvent avec un plan joueur) — sans ce
-        // forçage il reste coincé sur son ancien dashboard malgré
-        // l'affiliation club_educateurs acceptée (bug déjà vu en prod).
-        await supabase.from('profiles').update({ plan: 'educateur' }).eq('id', existingUser.id)
+        // Ne JAMAIS écraser plan ici — forçait auparavant 'educateur' pour
+        // débloquer le dashboard (le compte restait coincé malgré
+        // club_educateurs accepté), mais écrasait aussi au passage le plan
+        // d'un compte 'club' existant (son propre rôle détruit). Le vrai
+        // fix est côté accès : DashboardEducateur.jsx accepte maintenant
+        // club_educateurs comme preuve d'accès alternative au plan (même
+        // pattern que staff_club côté DashboardClub.jsx), et SmartDashboard
+        // (App.jsx) route déjà sur cette base indépendamment du plan.
       }
 
       // Compte déjà existant → accès accordé immédiatement en base, mais SANS email
@@ -247,16 +251,20 @@ serve(async (req) => {
           ? `${club} t'a ajouté comme éducateur sur Digital Football`
           : `Tu as rejoint ${club}${categorie} sur Digital Football`
 
+      let mailError = null
       try {
         await envoyerEmail(sujetExistant, titreExistant, texteExistant, lienDashboard, 'Se connecter')
       } catch (mailErr) {
         // L'accès est déjà accordé en base à ce stade — un échec d'envoi d'email ne
         // doit pas transformer ça en erreur 500 côté joueur/éducateur qui invite.
+        // Remonté dans la réponse (mailError) plutôt qu'avalé en silence : sans ça,
+        // le frontend affiche un succès alors qu'aucun email n'est jamais parti.
         console.error('[envoyer-invitation] email compte existant non envoyé:', mailErr.message)
+        mailError = mailErr.message
       }
 
       return new Response(
-        JSON.stringify({ success: true, linked: true, message: 'Compte existant lié directement' }),
+        JSON.stringify({ success: true, linked: true, message: 'Compte existant lié directement', mailError }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
