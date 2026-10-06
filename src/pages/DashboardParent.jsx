@@ -148,13 +148,13 @@ export default function DashboardParent() {
 
   return (
     <div>
-      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
         {autreAcces.club && (
-          <span onClick={() => navigate('/club')} style={{ color: colors.accent.green, cursor: 'pointer', fontWeight: 700 }}>🏟️ Vue Club</span>
+          <button onClick={() => navigate('/club')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '20px', color: colors.accent.blue, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club</button>
         )}
         {autreAcces.educateur && (
-          <span onClick={() => navigate('/educateur')} style={{ color: colors.accent.green, cursor: 'pointer', fontWeight: 700 }}>🎓 Vue Éducateur</span>
+          <button onClick={() => navigate('/educateur')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '20px', color: colors.accent.green, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
         )}
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>

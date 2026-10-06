@@ -1535,6 +1535,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [staffClub, setStaffClub] = useState(null) // { club_id } si ce compte est aussi staff d'un club
+  const [parentAcces, setParentAcces] = useState(null) // { joueur_id } si ce compte a aussi un accès parent (lecture seule)
   const [activeSection, setActiveSection] = useState('accueil')
   const [loading, setLoading] = useState(true)
   // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
@@ -1787,7 +1788,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // onglets spécifiques (Mes séances, Bibliothèque, Explorer > Dirigeants),
     // jamais à l'Accueil — chargés à la demande via des useEffect scopés à
     // activeSection plus bas (même pattern que chargerMonMateriel), pas ici.
-    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerNotifications(targetId)])
+    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerStaffClub(user.id), chargerParentAcces(user.id), chargerNotifications(targetId)])
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
     // localStorage, sinon la première) : charge joueurs/matchs/entraînements
@@ -1830,6 +1831,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       .eq('user_id', uid)
       .maybeSingle()
     setStaffClub(data || null)
+  }
+
+  const chargerParentAcces = async (uid) => {
+    // Ce compte éducateur a-t-il aussi un accès parent (lecture seule) au
+    // profil d'un joueur ? (double accès, même esprit que chargerStaffClub)
+    // Deux requêtes séparées plutôt qu'un embed PostgREST : le nom exact de
+    // la contrainte FK n'est pas vérifiable depuis ce repo (même pattern que
+    // DashboardParent.jsx pour le nom du joueur).
+    const { data: acces } = await supabase.from('parents_acces').select('joueur_id').eq('parent_id', uid).eq('statut', 'accepte').maybeSingle()
+    if (!acces) { setParentAcces(null); return }
+    const { data: joueur } = await supabase.from('profiles').select('prenom, nom').eq('id', acces.joueur_id).maybeSingle()
+    setParentAcces({ joueur_id: acces.joueur_id, prenom: joueur?.prenom, nom: joueur?.nom })
   }
 
   const chargerClubAffiliation = async (uid) => {
@@ -5551,6 +5564,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
             <button onClick={() => navigate('/club')}
               style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: '1px solid #60a5fa', borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
               🏢 Vue Club{staffClub.profiles?.club ? ` — ${staffClub.profiles.club}` : ''}
+            </button>
+          )}
+          {parentAcces && !isTablet && (
+            <button onClick={() => navigate('/dashboard-parent')}
+              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+              👁️ Vue Parent{parentAcces.prenom ? ` — ${parentAcces.prenom} ${parentAcces.nom || ''}`.trimEnd() : ''}
             </button>
           )}
 
