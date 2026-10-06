@@ -27,6 +27,7 @@ export default function DashboardParent() {
   const [formParent, setFormParent] = useState({ prenom: '', nom: '', telephone: '', email: '', profession: '' })
   const [savingProfil, setSavingProfil] = useState(false)
   const [consentement, setConsentement] = useState(false)
+  const [autreAcces, setAutreAcces] = useState({ educateur: false, club: false }) // double accès : même personne, aussi éducateur et/ou staff d'un club
 
   useEffect(() => {
     const init = async () => {
@@ -38,6 +39,22 @@ export default function DashboardParent() {
         .eq('parent_id', user.id).eq('statut', 'accepte').maybeSingle()
       if (!accesData) { navigate('/'); return }
       setAcces(accesData)
+
+      // SmartDashboard (App.jsx) route en priorité vers /dashboard-parent dès
+      // qu'un parents_acces accepté existe — un même compte qui est aussi
+      // éducateur (plan='educateur' ou club_educateurs) ou staff d'un club
+      // (plan='club' ou staff_club) n'avait jusqu'ici aucun moyen d'atteindre
+      // son autre dashboard depuis ici. Mêmes deux sources que autreRole côté
+      // DashboardClub.jsx.
+      const [{ data: monProfil }, { data: eduAcces }, { data: staffAcces }] = await Promise.all([
+        supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle(),
+        supabase.from('club_educateurs').select('id').eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle(),
+        supabase.from('staff_club').select('id').eq('user_id', user.id).maybeSingle(),
+      ])
+      setAutreAcces({
+        educateur: monProfil?.plan === 'educateur' || !!eduAcces,
+        club: monProfil?.plan === 'club' || !!staffAcces,
+      })
 
       const [{ data: pp }, { data: joueurProfil }] = await Promise.all([
         supabase.from('profil_parent').select('*').eq('user_id', user.id).maybeSingle(),
@@ -131,8 +148,14 @@ export default function DashboardParent() {
 
   return (
     <div>
-      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
+        {autreAcces.club && (
+          <span onClick={() => navigate('/club')} style={{ color: colors.accent.green, cursor: 'pointer', fontWeight: 700 }}>🏟️ Vue Club</span>
+        )}
+        {autreAcces.educateur && (
+          <span onClick={() => navigate('/educateur')} style={{ color: colors.accent.green, cursor: 'pointer', fontWeight: 700 }}>🎓 Vue Éducateur</span>
+        )}
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>
       <DashboardJoueur joueurIdOverride={acces.joueur_id} readOnly />
