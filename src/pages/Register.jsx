@@ -4,7 +4,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, stripeUrl } from '../lib/stripeLinks'
-import { colors } from '../tokens'
+import { colors, alpha } from '../tokens'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
@@ -41,6 +41,20 @@ const SPLIT_MEDIA_QUERY = `
     .register-right { width: 100% !important; max-width: 540px !important; flex: none !important; margin: 0 auto; }
     .register-mobile-logo { display: block !important; }
   }
+`
+
+// Étape 2, profil éducateur uniquement (cf. EducateurFormPanel) : grille 2
+// colonnes sur desktop, pitch de gauche masqué sur mobile (formulaire seul,
+// pleine largeur) — même principe que SPLIT_MEDIA_QUERY ci-dessus mais pour
+// ce panneau dédié. .edu-reg-input:focus en CSS pur : un style inline ne
+// peut pas cibler :focus, cf. convention déjà utilisée ailleurs dans le
+// projet pour les états que l'inline style ne couvre pas (hover, focus...).
+const EDU_SPLIT_MEDIA_QUERY = `
+  @media (max-width: 768px) {
+    .edu-register-grid { display: block !important; }
+    .edu-register-left { display: none !important; }
+  }
+  .edu-reg-input:focus { border-color: ${colors.accent.green} !important; }
 `
 
 export default function Register() {
@@ -267,6 +281,20 @@ export default function Register() {
     )
   }
 
+  // ── Étape 2, profil éducateur : panneau dédié 2 colonnes ──
+  if (profilChoisi?.id === 'educateur') {
+    return (
+      <EducateurFormPanel
+        profilChoisi={profilChoisi} cycle={cycle} setCycle={setCycle}
+        prenom={prenom} setPrenom={setPrenom} nom={nom} setNom={setNom}
+        email={email} setEmail={setEmail} password={password} setPassword={setPassword}
+        rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted}
+        erreur={erreur} loading={loading} inscrire={inscrire}
+        lang={lang} setEtape={setEtape}
+      />
+    )
+  }
+
   // ── Étape 2 : formulaire, layout centré inchangé (pas de split-screen) ──
   return (
     <div style={{
@@ -426,6 +454,153 @@ export default function Register() {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// Panneau d'inscription dédié au profil éducateur (étape 2) : vitrine à
+// gauche + formulaire à droite sur desktop, formulaire seul sur mobile
+// (cf. EDU_SPLIT_MEDIA_QUERY). Repose entièrement sur l'état et la logique
+// de Register() (inscrire, setEtape...), passés en props — ne duplique
+// aucune logique métier, uniquement l'affichage.
+function EducateurFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom, setNom, email, setEmail, password, setPassword, rgpdAccepted, setRgpdAccepted, erreur, loading, inscrire, lang, setEtape }) {
+  const FEATURES = [
+    { icon: '📅', label: t('reginsc_edu_pitch_feat1', lang) },
+    { icon: '🎯', label: t('reginsc_edu_pitch_feat2', lang) },
+    { icon: '📊', label: t('reginsc_edu_pitch_feat3', lang) },
+    { icon: '🧠', label: t('reginsc_edu_pitch_feat4', lang) },
+    { icon: '📹', label: t('reginsc_edu_pitch_feat5', lang) },
+  ]
+  const champStyle = {
+    width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`,
+    borderRadius: '10px', color: colors.text.primary, padding: '0 14px', height: '48px',
+    fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  }
+  const labelStyle = { display: 'block', fontSize: '12px', color: colors.text.faint, marginBottom: '6px', fontWeight: 600 }
+  const champ = (label, value, onChange, props = {}) => (
+    <div style={{ flex: 1 }}>
+      <label style={labelStyle}>{label}</label>
+      <input className="edu-reg-input" value={value} onChange={onChange} style={champStyle} {...props} />
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
+      <style>{EDU_SPLIT_MEDIA_QUERY}</style>
+      <div className="edu-register-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '100vh' }}>
+
+        {/* ── Colonne gauche — vitrine, masquée sur mobile ── */}
+        <div className="edu-register-left" style={{ background: colors.background.base, padding: '48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: colors.text.primary }}>
+            Digital<span style={{ color: colors.accent.green }}>Football</span>
+          </div>
+
+          <div>
+            <h2 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '28px', lineHeight: 1.3, margin: '0 0 32px', letterSpacing: '-0.5px' }}>
+              {t('reginsc_edu_pitch_titre', lang)}
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {FEATURES.map(f => (
+                <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ fontSize: '22px', flexShrink: 0 }}>{f.icon}</span>
+                  <span style={{ color: colors.text.secondary, fontSize: '15px', fontWeight: 600 }}>{f.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 14px' }}>{t('reginsc_edu_pitch_social', lang)}</p>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}30`, borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
+              🔒 {t('reginsc_edu_pitch_badge', lang)}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Colonne droite — formulaire ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div style={{ width: '100%', maxWidth: '420px', background: colors.background.surface, borderRadius: '16px', padding: '40px', boxSizing: 'border-box' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ color: colors.text.primary, fontWeight: 800, fontSize: '20px', margin: '0 0 4px' }}>{t('register_creer_compte', lang)}</p>
+              <p style={{ fontSize: '12px', color: colors.text.disabled, margin: 0 }}>
+                {`${t('reginsc_inscription_prefix', lang)} ${profilChoisi.label}`}{' '}
+                <button type="button" onClick={() => setEtape(1)}
+                  style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', textDecoration: 'underline', padding: 0 }}>
+                  {t('reginsc_changer', lang)}
+                </button>
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {champ(t('equipe_prenom', lang) + ' *', prenom, e => setPrenom(e.target.value))}
+                {champ(t('equipe_nom', lang), nom, e => setNom(e.target.value))}
+              </div>
+              {champ(t('aff_email', lang) + ' *', email, e => setEmail(e.target.value), { type: 'email' })}
+              {champ(t('reginsc_mdp_placeholder', lang) + ' *', password, e => setPassword(e.target.value), { type: 'password' })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
+              {[
+                { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: '10€/mois', desc: t('reginsc_cycle_mensuel_desc', lang) },
+                { key: 'annuel', titre: t('reginsc_cycle_annuel_titre', lang), prix: '100€/an', desc: t('reginsc_cycle_annuel_desc', lang), badge: t('reginsc_cycle_2mois_offerts', lang) },
+              ].map(opt => (
+                <button key={opt.key} type="button" onClick={() => setCycle(opt.key)}
+                  style={{
+                    flex: 1, textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: cycle === opt.key ? colors.accent.green + alpha.subtle : colors.background.base,
+                    border: `2px solid ${cycle === opt.key ? colors.accent.green : colors.border.faint}`,
+                    borderRadius: '10px', padding: '12px 14px', position: 'relative',
+                  }}>
+                  {opt.badge && (
+                    <span style={{ position: 'absolute', top: '-9px', right: '10px', background: colors.accent.green, color: colors.black, fontSize: '9px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{opt.badge}</span>
+                  )}
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: cycle === opt.key ? colors.accent.green : colors.text.primary }}>{opt.titre}</p>
+                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{opt.prix}</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '10px', color: colors.text.dim, lineHeight: 1.4 }}>{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {erreur && (
+              <p style={{ color: '#f87171', fontSize: '13px', marginTop: '14px', textAlign: 'center' }}>{erreur}</p>
+            )}
+
+            <div style={{ background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}25`, borderRadius: '10px', padding: '12px 14px', marginTop: '14px' }}>
+              <p style={{ fontSize: '12px', color: colors.accent.green, margin: 0, lineHeight: 1.6 }}>{t('reginsc_educateur_info', lang)}</p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '18px' }}>
+              <input type="checkbox" id="rgpd-edu" checked={rgpdAccepted} onChange={e => setRgpdAccepted(e.target.checked)}
+                style={{ marginTop: '3px', accentColor: colors.accent.green, cursor: 'pointer' }} />
+              <label htmlFor="rgpd-edu" style={{ fontSize: '11px', color: colors.text.disabled, lineHeight: 1.5, cursor: 'pointer' }}>
+                J'accepte les{' '}
+                <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                  Conditions Générales d'Utilisation
+                </a>{' '}et les{' '}
+                <a href="/cgv" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                  Conditions Générales de Vente
+                </a>{' '}et la{' '}
+                <a href="/confidentialite" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                  Politique de Confidentialité
+                </a>. Mes données sont traitées conformément au RGPD.
+              </label>
+            </div>
+
+            <button onClick={inscrire} disabled={loading || !rgpdAccepted}
+              style={{
+                width: '100%', height: '52px', background: colors.accent.green, color: colors.background.base,
+                border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800,
+                cursor: (loading || !rgpdAccepted) ? 'not-allowed' : 'pointer',
+                fontFamily: 'Inter, sans-serif', marginTop: '18px',
+                opacity: (loading || !rgpdAccepted) ? 0.5 : 1, transition: 'opacity 0.15s',
+              }}>
+              {loading ? t('register_creation_cours', lang) : t('reginsc_btn_payer', lang)}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
