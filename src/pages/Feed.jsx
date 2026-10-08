@@ -153,8 +153,12 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
   const handleDeleteVideo = async () => {
     if (!window.confirm(t('feed_confirm_supprimer_video', lang))) return
     setDeleting(true)
+    // Ce clip uniquement : son reel miroir (même video_url), pas tous les
+    // reels de l'auteur comme avant.
+    if (!user || user.id !== j.id) { setDeleting(false); return }
+    const clip = j.clip_url
     const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
-    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', user.id)
+    const { error: errReel } = clip ? await supabase.from('reels').delete().eq('joueur_id', user.id).eq('video_url', clip) : { error: null }
     setDeleting(false)
     if (errProfile) { alert(t('feed_erreur_suppression_profil', lang) + errProfile.message); return }
     if (errReel) { alert(t('feed_erreur_suppression_reel', lang) + errReel.message); return }

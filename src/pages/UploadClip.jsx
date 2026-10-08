@@ -43,11 +43,14 @@ export default function UploadClip() {
   const platform = lien ? detectPlatform(lien) : null
 
   async function sauvegarderVideo(videoUrl) {
+    const ancienClip = profil?.clip_url
     const { error: e1 } = await supabase.from('profiles').update({ clip_url: videoUrl }).eq('id', user.id)
     if (e1) throw e1
 
-    // Supprime l'ancien reel si existant puis recrée
-    await supabase.from('reels').delete().eq('joueur_id', user.id)
+    // Remplace uniquement le reel miroir de l'ancien clip Pro (même
+    // video_url) — avant, TOUS les reels du joueur étaient supprimés, y
+    // compris ceux publiés via « Publier un Reel ».
+    if (ancienClip) await supabase.from('reels').delete().eq('joueur_id', user.id).eq('video_url', ancienClip)
     const { error: e2 } = await supabase.from('reels').insert({
       joueur_id: user.id,
       video_url: videoUrl,

@@ -139,7 +139,7 @@ export default function UploadReel() {
         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{t('uploadreel_publie_titre', lang)}</h2>
         <p style={{ color: colors.text.dim, marginBottom: '2rem' }}>{t('uploadreel_publie_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button onClick={() => navigate('/reels')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>{t('uploadreel_voir_reels', lang)}</button>
+          <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>{t('uploadreel_voir_reels', lang)}</button>
           <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer' }}>Dashboard</button>
         </div>
       </div>

@@ -141,14 +141,29 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
   }
 
   // ── Suppression du reel (propriétaire uniquement) ──
+  // Ne cible QUE cette vidéo : par son id (et l'auteur, en plus des règles
+  // RLS), plus jamais par joueur_id seul — ce qui effaçait tous les reels de
+  // l'auteur. Un pseudo-reel construit depuis profiles.clip_url (repli quand
+  // la table reels est vide, cf. chargerReels) n'a pas de ligne reels : seul
+  // son clip_url est vidé. clip_url n'est vidé que s'il correspond à CETTE
+  // vidéo (clip Pro recopié dans reels). .select('id') permet de détecter une
+  // suppression refusée silencieusement (0 ligne) au lieu d'afficher un succès.
   const handleDelete = async () => {
+    if (!user || user.id !== reel.joueur_id) return
     setDeleting(true)
-    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', user.id)
-    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id)
+    let message = null
+    if (!reel._depuisProfil) {
+      const { data: supprimes, error: errReel } = await supabase.from('reels').delete().eq('id', reel.id).eq('joueur_id', user.id).select('id')
+      if (errReel) message = t('feed_erreur_suppression_reel', lang) + errReel.message
+      else if (!supprimes?.length) message = t('feed_erreur_suppression_reel', lang) + t('reel_suppression_aucune', lang)
+    }
+    if (!message) {
+      const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', user.id).eq('clip_url', reel.video_url)
+      if (errProfile) message = t('feed_erreur_suppression_profil', lang) + errProfile.message
+    }
     setDeleting(false)
     setShowDeleteConfirm(false)
-    if (errReel) { alert(t('feed_erreur_suppression_reel', lang) + errReel.message); return }
-    if (errProfile) { alert(t('feed_erreur_suppression_profil', lang) + errProfile.message); return }
+    if (message) { alert(message); return }
     if (onDelete) onDelete()
   }
 
@@ -484,6 +499,7 @@ function Jogabonito() {
         titre: null,
         description: j.bio || null,
         profiles: j,
+        _depuisProfil: true,
       }))
       setReels(fakeReels)
     } else {
