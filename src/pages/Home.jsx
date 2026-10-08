@@ -10,6 +10,7 @@ import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
 import NewsletterForm from '../components/NewsletterForm'
 import HeroDashboardsPreview from '../components/HeroDashboardsPreview'
+import DemoSemaineMatch from '../components/DemoSemaineMatch'
 
 const etapesEducateur = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil éducateur en 2 minutes' },
@@ -275,6 +276,8 @@ function Home() {
         </div>
       </section>
 
+      <DemoSemaineMatch lang={lang} />
+
       <section style={{ background: '#0f0f0f', padding: '3.5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731640', color: colors.accent.orange, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', fontWeight: 600 }}>{t('home_nouveau', lang)}</div>
         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '0.75rem' }}>{t('home_tiktok_football', lang)}</h2>
@@ -292,9 +295,9 @@ function Home() {
         <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('home_voir_jogabonito', lang)}</button>
       </section>
 
-      {/* Emplacement réservé à la future section premium "Digital Football en
-          action" (vrais dashboards Joueur/Éducateur/Club) — pas développée
-          pour l'instant. L'ancienne section témoignages a été retirée : ses
+      {/* La section "Digital Football en action" (DemoSemaineMatch) est
+          placée avant Jogabonito, juste après les 3 univers. L'ancienne
+          section témoignages a été retirée : ses
           citations n'étaient rattachées à aucun utilisateur réel ni source
           vérifiable (pas de nom, pas de table Supabase), décision du
           2026-10-08. */}
