@@ -95,7 +95,9 @@ const etapesClub = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton espace club selon ta taille' },
   { num: 'ÉTAPE 2', titre: 'Tu organises', desc: 'Invite gratuitement tes éducateurs, dirigeants et secrétaires' },
   { num: 'ÉTAPE 3', titre: 'Tu gères', desc: 'Budget, sponsors, multi-équipes, tout au même endroit' },
-  { num: 'ÉTAPE 4', titre: 'Tu te développes', desc: 'Connecte tes éducateurs et scouts aux joueurs pour trouver le bon profil' },
+  // desc traduite via t('home_club_etape4_desc') dans TAB_CONFIG (seule étape
+  // club passée par translationsHome pour l'instant).
+  { num: 'ÉTAPE 4', titre: 'Tu te développes' },
 ]
 
 function EtapesSection({ badge, titre, etapes, color, ctaLabel, onCta }) {
@@ -178,7 +180,7 @@ function Home() {
     joueur: { badge: t('home_processus', lang), titre: t('home_comment_marche', lang), etapes: etapesJoueur, color: colors.accent.green, ctaLabel: 'Voir les tarifs joueur' },
     educateur: { badge: 'TARIFS ÉDUCATEURS', titre: 'Développe tes joueurs', etapes: etapesEducateur, color: colors.accent.blue, ctaLabel: 'Voir les tarifs éducateur' },
     recruteur: { badge: 'SCOUTS / RECRUTEURS', titre: 'Trouve tes prochains talents', etapes: etapesRecruteur, color: colors.accent.orange, ctaLabel: 'Voir les tarifs recruteur' },
-    club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub, color: colors.accent.purpleLight, ctaLabel: 'Voir les tarifs club' },
+    club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub.map(e => e.desc ? e : { ...e, desc: t('home_club_etape4_desc', lang) }), color: colors.accent.purpleLight, ctaLabel: 'Voir les tarifs club' },
   }
 
   return (
