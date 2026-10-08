@@ -1660,13 +1660,51 @@ export const T = {
   // gauche split-screen) — copy plus développée que reginsc_feat_edu_1..5
   // ci-dessus (badges courts de la carte de sélection d'étape 1).
   reginsc_edu_pitch_titre:      { fr: 'Tout ce dont vous avez besoin pour coacher', en: 'Everything you need to coach', pt: 'Tudo o que precisa para treinar', es: 'Todo lo que necesitas para entrenar', it: 'Tutto il necessario per allenare', de: 'Alles, was du zum Coachen brauchst' },
-  reginsc_edu_pitch_feat1:      { fr: "Gestion d'équipe & planning", en: 'Team management & scheduling', pt: 'Gestão de equipa & calendário', es: 'Gestión de equipo & calendario', it: 'Gestione squadra & pianificazione', de: 'Teamverwaltung & Planung' },
-  reginsc_edu_pitch_feat2:      { fr: "Bibliothèque d'exercices & séances", en: 'Drill library & training sessions', pt: 'Biblioteca de exercícios & sessões', es: 'Biblioteca de ejercicios & sesiones', it: 'Libreria esercizi & sessioni', de: 'Übungsbibliothek & Trainingseinheiten' },
-  reginsc_edu_pitch_feat3:      { fr: 'Statistiques & évaluations joueurs', en: 'Player stats & evaluations', pt: 'Estatísticas & avaliações de jogadores', es: 'Estadísticas & evaluaciones de jugadores', it: 'Statistiche & valutazioni giocatori', de: 'Spielerstatistiken & -bewertungen' },
-  reginsc_edu_pitch_feat4:      { fr: 'Préparation tactique & physique', en: 'Tactical & physical preparation', pt: 'Preparação tática & física', es: 'Preparación táctica & física', it: 'Preparazione tattica & fisica', de: 'Taktische & physische Vorbereitung' },
-  reginsc_edu_pitch_feat5:      { fr: 'Analyse vidéo & IA', en: 'Video analysis & AI', pt: 'Análise de vídeo & IA', es: 'Análisis de vídeo & IA', it: 'Analisi video & IA', de: 'Videoanalyse & KI' },
+  // Liste exhaustive (14) calquée sur les vraies sections du dashboard
+  // éducateur (sidebarSections, DashboardEducateur.jsx ~L5306-5327) : Mon
+  // équipe (+santé), Compétition, Organisation (matériel/terrains/
+  // déplacements), Création entraînement, Bibliothèque, sondages de
+  // présence, Préparation physique, Tacticboard, Projet Sportif, Projet
+  // Club CFF4, Rapports & Évaluations (+analyse vidéo), Recrutement/Explorer.
+  reginsc_edu_pitch_feat1:      { fr: 'Gestion de l\'effectif & des licences', en: 'Roster & licence management', pt: 'Gestão do plantel & licenças', es: 'Gestión de la plantilla & licencias', it: 'Gestione rosa & tesseramenti', de: 'Kaderverwaltung & Lizenzen' },
+  reginsc_edu_pitch_feat2:      { fr: 'Suivi santé & blessures des joueurs', en: 'Player health & injury tracking', pt: 'Acompanhamento de saúde & lesões', es: 'Seguimiento de salud & lesiones', it: 'Monitoraggio salute & infortuni', de: 'Gesundheits- & Verletzungsmonitoring' },
+  reginsc_edu_pitch_feat3:      { fr: 'Compétition & résultats de matchs', en: 'Competition & match results', pt: 'Competição & resultados de jogos', es: 'Competición & resultados de partidos', it: 'Competizione & risultati partite', de: 'Wettbewerb & Spielergebnisse' },
+  reginsc_edu_pitch_feat4:      { fr: 'Matériel, terrains & déplacements', en: 'Equipment, pitches & travel', pt: 'Material, campos & deslocações', es: 'Material, campos & desplazamientos', it: 'Materiale, campi & trasferte', de: 'Material, Plätze & Fahrten' },
+  reginsc_edu_pitch_feat5:      { fr: 'Création d\'entraînements', en: 'Training session builder', pt: 'Criação de treinos', es: 'Creación de entrenamientos', it: 'Creazione allenamenti', de: 'Trainingseinheiten erstellen' },
+  reginsc_edu_pitch_feat6:      { fr: 'Bibliothèque de séances & procédés', en: 'Session & drill library', pt: 'Biblioteca de sessões & exercícios', es: 'Biblioteca de sesiones & ejercicios', it: 'Libreria sessioni & esercizi', de: 'Bibliothek für Einheiten & Übungen' },
+  reginsc_edu_pitch_feat7:      { fr: 'Sondages de présence aux entraînements', en: 'Training attendance polls', pt: 'Sondagens de presença nos treinos', es: 'Encuestas de asistencia a entrenamientos', it: 'Sondaggi presenza agli allenamenti', de: 'Anwesenheitsumfragen für Training' },
+  reginsc_edu_pitch_feat8:      { fr: 'Préparation physique', en: 'Physical preparation', pt: 'Preparação física', es: 'Preparación física', it: 'Preparazione fisica', de: 'Physische Vorbereitung' },
+  reginsc_edu_pitch_feat9:      { fr: 'Tacticboard interactif', en: 'Interactive tacticboard', pt: 'Quadro tático interativo', es: 'Pizarra táctica interactiva', it: 'Lavagna tattica interattiva', de: 'Interaktives Taktikboard' },
+  reginsc_edu_pitch_feat10:     { fr: 'Projet sportif de l\'équipe', en: 'Team sporting project', pt: 'Projeto desportivo da equipa', es: 'Proyecto deportivo del equipo', it: 'Progetto sportivo della squadra', de: 'Sportliches Teamkonzept' },
+  reginsc_edu_pitch_feat11:     { fr: 'Projet Club — CFF4', en: 'Club Project — CFF4', pt: 'Projeto de Clube — CFF4', es: 'Proyecto de Club — CFF4', it: 'Progetto Club — CFF4', de: 'Vereinsprojekt — CFF4' },
+  reginsc_edu_pitch_feat12:     { fr: 'Rapports & évaluations des joueurs', en: 'Player reports & evaluations', pt: 'Relatórios & avaliações de jogadores', es: 'Informes & evaluaciones de jugadores', it: 'Report & valutazioni giocatori', de: 'Berichte & Spielerbewertungen' },
+  reginsc_edu_pitch_feat13:     { fr: 'Analyse vidéo', en: 'Video analysis', pt: 'Análise de vídeo', es: 'Análisis de vídeo', it: 'Analisi video', de: 'Videoanalyse' },
+  reginsc_edu_pitch_feat14:     { fr: 'Recrutement & réseau de contacts', en: 'Recruitment & network', pt: 'Recrutamento & rede de contactos', es: 'Reclutamiento & red de contactos', it: 'Reclutamento & rete di contatti', de: 'Rekrutierung & Netzwerk' },
   reginsc_edu_pitch_social:     { fr: 'Rejoignez les clubs qui font confiance à Digital Football', en: 'Join the clubs who trust Digital Football', pt: 'Junte-se aos clubes que confiam na Digital Football', es: 'Únete a los clubes que confían en Digital Football', it: 'Unisciti ai club che si fidano di Digital Football', de: 'Schließ dich den Vereinen an, die Digital Football vertrauen' },
   reginsc_edu_pitch_badge:      { fr: 'Résiliable à tout moment · Paiement sécurisé', en: 'Cancel anytime · Secure payment', pt: 'Cancelável a qualquer momento · Pagamento seguro', es: 'Cancelable en cualquier momento · Pago seguro', it: 'Annullabile in qualsiasi momento · Pagamento sicuro', de: 'Jederzeit kündbar · Sichere Zahlung' },
+  // Liste exhaustive (16) calquée sur les vraies sections du dashboard club
+  // (NAV_SPORTIF/NAV_ADMINISTRATIF, DashboardClub.jsx ~L3364-3392) — sans
+  // doublon avec les 14 ci-dessus (Projet Club CFF4, Planifier séance et
+  // Profil club volontairement absents : déjà couverts par la liste
+  // éducateur ajoutée à la suite côté panneau club, cf. Register.jsx).
+  reginsc_club_pitch_feat1:     { fr: 'Vue d\'ensemble du club', en: 'Club overview dashboard', pt: 'Visão geral do clube', es: 'Panorama general del club', it: 'Panoramica del club', de: 'Vereinsübersicht' },
+  reginsc_club_pitch_feat2:     { fr: 'Gestion des catégories & équipes', en: 'Age groups & teams management', pt: 'Gestão de categorias & equipas', es: 'Gestión de categorías & equipos', it: 'Gestione categorie & squadre', de: 'Verwaltung von Kategorien & Teams' },
+  reginsc_club_pitch_feat3:     { fr: 'Planning général du club', en: 'Club-wide scheduling', pt: 'Calendário geral do clube', es: 'Calendario general del club', it: 'Pianificazione generale del club', de: 'Vereinsweite Planung' },
+  reginsc_club_pitch_feat4:     { fr: 'Organisation de tournois', en: 'Tournament organization', pt: 'Organização de torneios', es: 'Organización de torneos', it: 'Organizzazione tornei', de: 'Turnierorganisation' },
+  reginsc_club_pitch_feat5:     { fr: 'Classements & statistiques d\'équipe', en: 'Standings & team stats', pt: 'Classificações & estatísticas de equipa', es: 'Clasificaciones & estadísticas de equipo', it: 'Classifiche & statistiche squadra', de: 'Tabellen & Teamstatistiken' },
+  reginsc_club_pitch_feat6:     { fr: 'Recrutement de joueurs', en: 'Player recruitment', pt: 'Recrutamento de jogadores', es: 'Reclutamiento de jugadores', it: 'Reclutamento giocatori', de: 'Spielerrekrutierung' },
+  reginsc_club_pitch_feat7:     { fr: 'Gestion des éducateurs affiliés', en: 'Affiliated coaches management', pt: 'Gestão de treinadores afiliados', es: 'Gestión de entrenadores afiliados', it: 'Gestione allenatori affiliati', de: 'Verwaltung angeschlossener Trainer' },
+  reginsc_club_pitch_feat8:     { fr: 'Planning des terrains', en: 'Pitch scheduling', pt: 'Calendário de campos', es: 'Calendario de campos', it: 'Pianificazione campi', de: 'Platzbelegungsplan' },
+  reginsc_club_pitch_feat9:     { fr: 'Organisation des déplacements', en: 'Travel organization', pt: 'Organização de deslocações', es: 'Organización de desplazamientos', it: 'Organizzazione trasferte', de: 'Organisation von Fahrten' },
+  reginsc_club_pitch_feat10:    { fr: 'Gestion des sponsors & partenaires', en: 'Sponsors & partners management', pt: 'Gestão de patrocinadores & parceiros', es: 'Gestión de patrocinadores & socios', it: 'Gestione sponsor & partner', de: 'Sponsoren- & Partnerverwaltung' },
+  reginsc_club_pitch_feat11:    { fr: 'Suivi budgétaire', en: 'Budget tracking', pt: 'Acompanhamento orçamental', es: 'Seguimiento presupuestario', it: 'Monitoraggio budget', de: 'Budgetverfolgung' },
+  reginsc_club_pitch_feat12:    { fr: 'Événements & projets du club', en: 'Club events & projects', pt: 'Eventos & projetos do clube', es: 'Eventos & proyectos del club', it: 'Eventi & progetti del club', de: 'Vereinsevents & -projekte' },
+  reginsc_club_pitch_feat13:    { fr: 'Tâches & responsabilités', en: 'Tasks & responsibilities', pt: 'Tarefas & responsabilidades', es: 'Tareas & responsabilidades', it: 'Compiti & responsabilità', de: 'Aufgaben & Verantwortlichkeiten' },
+  reginsc_club_pitch_feat14:    { fr: 'Gestion de l\'inventaire', en: 'Inventory management', pt: 'Gestão de inventário', es: 'Gestión de inventario', it: 'Gestione inventario', de: 'Inventarverwaltung' },
+  reginsc_club_pitch_feat15:    { fr: 'Newsletter interne', en: 'Internal newsletter', pt: 'Newsletter interna', es: 'Newsletter interna', it: 'Newsletter interna', de: 'Interner Newsletter' },
+  reginsc_club_pitch_feat16:    { fr: 'Organigramme & gestion du staff', en: 'Org chart & staff management', pt: 'Organograma & gestão de staff', es: 'Organigrama & gestión de staff', it: 'Organigramma & gestione staff', de: 'Organigramm & Teamverwaltung' },
+  reginsc_club_pitch_group_club: { fr: 'Outils club', en: 'Club tools', pt: 'Ferramentas de clube', es: 'Herramientas de club', it: 'Strumenti club', de: 'Vereins-Tools' },
+  reginsc_club_pitch_group_edu:  { fr: '+ tous les outils éducateur', en: '+ all coach tools', pt: '+ todas as ferramentas de treinador', es: '+ todas las herramientas de entrenador', it: '+ tutti gli strumenti allenatore', de: '+ alle Trainer-Tools' },
   // Même panneau vitrine, décliné pour les 3 autres profils payants + le
   // profil gratuit (Register.jsx, PITCH_PAR_PROFIL) — titre et badge
   // uniquement, les features réutilisent reginsc_feat_{starter,pro,scout,club}_N

@@ -57,7 +57,7 @@ const SPLIT_MEDIA_QUERY = `
 // les états que l'inline style ne couvre pas (hover, focus...).
 const SPLIT2_MEDIA_QUERY = `
   @media (max-width: 768px) {
-    .reg2-grid { display: block !important; }
+    .reg2-grid { display: block !important; height: auto !important; }
     .reg2-left { display: none !important; }
   }
   .reg2-input:focus { border-color: ${colors.accent.green} !important; }
@@ -121,16 +121,29 @@ export default function Register() {
     },
     {
       id: 'club', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
-      color: colors.accent.green, badge: 'Dès 50€/mois', assistant: true,
+      color: colors.accent.green, badge: 'Tarif selon vos besoins', assistant: true,
       features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
     },
   ]
 
   // Panneau vitrine (colonne gauche, cf. SplitRegisterLayout) par profil —
   // titre + features (coche IcoCheck, pas d'icône par feature — rendu plus
-  // sobre que l'emoji par ligne utilisé avant). Les features réutilisent le
-  // texte déjà traduit de PROFILS[].features ci-dessus (reginsc_feat_*),
-  // seul le titre leur est propre ici.
+  // sobre que l'emoji par ligne utilisé avant). `features` pour une liste
+  // simple, `featureGroups` pour une liste scindée en sous-titres (club
+  // uniquement : ses propres outils + tous ceux de l'éducateur, un compte
+  // club couvrant aussi la gestion d'équipe déléguée).
+  const OUTILS_EDUCATEUR = [
+    t('reginsc_edu_pitch_feat1', lang), t('reginsc_edu_pitch_feat2', lang), t('reginsc_edu_pitch_feat3', lang), t('reginsc_edu_pitch_feat4', lang),
+    t('reginsc_edu_pitch_feat5', lang), t('reginsc_edu_pitch_feat6', lang), t('reginsc_edu_pitch_feat7', lang), t('reginsc_edu_pitch_feat8', lang),
+    t('reginsc_edu_pitch_feat9', lang), t('reginsc_edu_pitch_feat10', lang), t('reginsc_edu_pitch_feat11', lang), t('reginsc_edu_pitch_feat12', lang),
+    t('reginsc_edu_pitch_feat13', lang), t('reginsc_edu_pitch_feat14', lang),
+  ]
+  const OUTILS_CLUB = [
+    t('reginsc_club_pitch_feat1', lang), t('reginsc_club_pitch_feat2', lang), t('reginsc_club_pitch_feat3', lang), t('reginsc_club_pitch_feat4', lang),
+    t('reginsc_club_pitch_feat5', lang), t('reginsc_club_pitch_feat6', lang), t('reginsc_club_pitch_feat7', lang), t('reginsc_club_pitch_feat8', lang),
+    t('reginsc_club_pitch_feat9', lang), t('reginsc_club_pitch_feat10', lang), t('reginsc_club_pitch_feat11', lang), t('reginsc_club_pitch_feat12', lang),
+    t('reginsc_club_pitch_feat13', lang), t('reginsc_club_pitch_feat14', lang), t('reginsc_club_pitch_feat15', lang), t('reginsc_club_pitch_feat16', lang),
+  ]
   const PITCH_PAR_PROFIL = {
     joueur_starter: {
       titre: t('reginsc_pitch_titre_starter', lang),
@@ -145,7 +158,7 @@ export default function Register() {
     educateur: {
       titre: t('reginsc_edu_pitch_titre', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [t('reginsc_edu_pitch_feat1', lang), t('reginsc_edu_pitch_feat2', lang), t('reginsc_edu_pitch_feat3', lang), t('reginsc_edu_pitch_feat4', lang), t('reginsc_edu_pitch_feat5', lang)],
+      features: OUTILS_EDUCATEUR,
     },
     scout: {
       titre: t('reginsc_pitch_titre_scout', lang),
@@ -156,7 +169,10 @@ export default function Register() {
     club: {
       titre: t('reginsc_pitch_titre_club', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
+      featureGroups: [
+        { titre: t('reginsc_club_pitch_group_club', lang), features: OUTILS_CLUB },
+        { titre: t('reginsc_club_pitch_group_edu', lang), features: OUTILS_EDUCATEUR },
+      ],
     },
   }
 
@@ -363,33 +379,55 @@ export default function Register() {
 // (children). Ne connaît rien du contenu du formulaire lui-même — ProfilFormPanel
 // et ClubWizard sont interchangeables tant qu'ils tiennent dans une largeur
 // de 420px.
+// Grille 2 colonnes compacte pour une liste de features (14-16 items chez
+// éducateur/club contre 3-5 ailleurs, cf. demande d'exhaustivité outillage)
+// — trop haute en liste simple colonne, cf. historique de ce composant.
+function GrilleFeatures({ features }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px', rowGap: '11px' }}>
+      {features.map(f => (
+        <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px' }}>
+          <span style={{ color: colors.accent.green, flexShrink: 0, display: 'flex', marginTop: '2px' }}><IcoCheck /></span>
+          <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600, lineHeight: 1.35 }}>{f}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function SplitRegisterLayout({ pitch, lang, onRetour, children }) {
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
       <style>{SPLIT2_MEDIA_QUERY}</style>
-      <div className="reg2-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '100vh' }}>
+      <div className="reg2-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100vh' }}>
 
-        {/* ── Colonne gauche — vitrine, masquée sur mobile ── */}
-        <div className="reg2-left" style={{ background: colors.background.base, padding: '48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: colors.text.primary }}>
+        {/* ── Colonne gauche — vitrine, masquée sur mobile. Défilement propre
+            (overflowY) pour que les listes longues (club) ne poussent jamais
+            la colonne droite à s'étirer hors de l'écran. ── */}
+        <div className="reg2-left" style={{ background: colors.background.base, padding: '40px 48px', display: 'flex', flexDirection: 'column', gap: '28px', overflowY: 'auto' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: colors.text.primary, flexShrink: 0 }}>
             Digital<span style={{ color: colors.accent.green }}>Football</span>
           </div>
 
           <div>
-            <h2 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '28px', lineHeight: 1.3, margin: '0 0 32px', letterSpacing: '-0.5px' }}>
+            <h2 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '26px', lineHeight: 1.3, margin: '0 0 24px', letterSpacing: '-0.5px' }}>
               {pitch.titre}
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {pitch.features.map(f => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ color: colors.accent.green, flexShrink: 0, display: 'flex' }}><IcoCheck /></span>
-                  <span style={{ color: colors.text.secondary, fontSize: '15px', fontWeight: 600 }}>{f}</span>
-                </div>
-              ))}
-            </div>
+            {pitch.featureGroups ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                {pitch.featureGroups.map(g => (
+                  <div key={g.titre}>
+                    <p style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>{g.titre}</p>
+                    <GrilleFeatures features={g.features} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <GrilleFeatures features={pitch.features} />
+            )}
           </div>
 
-          <div>
+          <div style={{ flexShrink: 0 }}>
             <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 14px' }}>{t('reginsc_edu_pitch_social', lang)}</p>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}30`, borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
               <span style={{ color: colors.accent.green, display: 'flex' }}><IcoLock /></span> {pitch.badge}
@@ -398,8 +436,8 @@ function SplitRegisterLayout({ pitch, lang, onRetour, children }) {
         </div>
 
         {/* ── Colonne droite — contenu (formulaire ou wizard club) ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-          <div style={{ width: '100%', maxWidth: '420px', background: colors.background.surface, borderRadius: '16px', padding: '40px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: '420px', background: colors.background.surface, borderRadius: '16px', padding: '40px', boxSizing: 'border-box', margin: 'auto' }}>
             {onRetour && (
               <button type="button" onClick={onRetour}
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: 600, padding: 0, marginBottom: '20px' }}>
