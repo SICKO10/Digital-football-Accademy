@@ -1,28 +1,28 @@
-// Source unique des liens de paiement Stripe (mode TEST — préfixe `test_`).
-// Avant mise en prod : recréer les mêmes produits dans l'environnement Stripe
-// production et remplacer les URLs ci-dessous (sans `test_`).
+// Source unique des liens de paiement Stripe (mode LIVE).
 //
 // Le webhook (supabase/functions/stripe-webhook) identifie le produit acheté
-// par son montant (10€/100€/60€), pas par ces clés — elles ne servent qu'à
-// choisir le bon lien côté front.
+// par son montant (10€/100€/60€/paliers club), pas par ces clés — elles ne
+// servent qu'à choisir le bon lien côté front. Penser à mettre à jour aussi
+// les secrets STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET côté Supabase (clé
+// live + endpoint webhook enregistré en mode live, cf. Developers > Webhooks).
 
 export const STRIPE_LINKS = {
-  starter: 'https://buy.stripe.com/test_cNi3cw3sg10R0q6gGM4ko07', // joueur mensuel — 10€/mois
-  pro: 'https://buy.stripe.com/test_dRmfZi4wk10R4Gm2PW4ko06', // joueur annuel — 100€/an
-  analyse_unite: 'https://buy.stripe.com/test_aFabJ27Iw6lbegW4Y44ko05', // analyse à l'unité — 60€
+  starter: 'https://buy.stripe.com/fZu28sf9JgIKeu53xcdZ60g', // joueur mensuel — 10€/mois — live
+  pro: 'https://buy.stripe.com/dRm00k3r1eACbhTffUdZ60e', // joueur annuel — 100€/an — live
+  analyse_unite: 'https://buy.stripe.com/7sY7sM8Llakmeu55FkdZ60h', // analyse à l'unité — 60€ — live
 }
 
 export const STRIPE_LINKS_EDU = {
-  edu_mensuel: 'https://buy.stripe.com/test_3cI14o2oc8tj7Sy9ek4ko0p', // 10€/mois
-  edu_annuel: 'https://buy.stripe.com/test_bJeeVegf2gZPfl01LS4ko0o', // 100€/an
+  edu_mensuel: 'https://buy.stripe.com/eVq9AU5z92RUdq15FkdZ604', // 10€/mois — live
+  edu_annuel: 'https://buy.stripe.com/bJe3cw0ePfEG0Df2t8dZ607', // 100€/an — live
 }
 
 // Recruteur (interne : plan === 'recruteur'). "Scout" est le libellé marketing
 // utilisé à l'inscription — ne pas renommer le plan, cf. DashboardScoutClub.jsx
 // qui utilise déjà "Scout" pour une fonctionnalité différente (comptes club).
 export const STRIPE_LINKS_RECRUTEUR = {
-  mensuel: 'https://buy.stripe.com/test_eVqfZiaUIbFvc8OfCI4ko0k', // 10€/mois
-  annuel: 'https://buy.stripe.com/test_bJedRad2Q8tj3CieyE4ko0l', // 100€/an
+  mensuel: 'https://buy.stripe.com/4gM3cwf9J1NQadP6JodZ601', // 10€/mois — live
+  annuel: 'https://buy.stripe.com/8x25kE0ePakmgCd0l0dZ603', // 100€/an — live
 }
 
 // Club — la facturation reste basée sur le nombre de licenciés (montants
@@ -31,12 +31,12 @@ export const STRIPE_LINKS_RECRUTEUR = {
 // chiffres doivent rester synchronisés avec PALIERS_QUOTA_EQUIPES ci-dessous
 // et avec le trigger SQL sync_quota_equipes (supabase_profiles_quota_equipes.sql).
 export const STRIPE_LINKS_CLUB = {
-  c0: { mensuel: 'https://buy.stripe.com/test_28E4gA4wkgZP4GmgGM4ko08', annuel: 'https://buy.stripe.com/test_6oUfZibYMfVL1ua8ag4ko0m', label: "Jusqu'à 2 équipes", mensuelPrix: '50€/mois', annuelPrix: '500€/an' },
-  c100: { mensuel: 'https://buy.stripe.com/test_14A14o1k88tj7Syaio4ko0n', annuel: 'https://buy.stripe.com/test_14AfZie6UgZP2yecqw4ko09', label: "Jusqu'à 4 équipes", mensuelPrix: '100€/mois', annuelPrix: '1000€/an' },
-  c200: { mensuel: 'https://buy.stripe.com/test_9B67sM4wk24V3CiduA4ko0a', annuel: 'https://buy.stripe.com/test_3cIbJ22oc10R0q62PW4ko0b', label: "Jusqu'à 7 équipes", mensuelPrix: '130€/mois', annuelPrix: '1300€/an' },
-  c300: { mensuel: 'https://buy.stripe.com/test_aFaaEYgf238Z8WC3U04ko0c', annuel: 'https://buy.stripe.com/test_6oUdRa8MAfVLb4Kbms4ko0d', label: "Jusqu'à 11 équipes", mensuelPrix: '160€/mois', annuelPrix: '1600€/an' },
-  c400: { mensuel: 'https://buy.stripe.com/test_6oU8wQbYM6lbdcSeyE4ko0e', annuel: 'https://buy.stripe.com/test_4gMdRaaUI5h7a0G76c4ko0f', label: "Jusqu'à 15 équipes", mensuelPrix: '190€/mois', annuelPrix: '1900€/an' },
-  c500: { mensuel: 'https://buy.stripe.com/test_8x24gAd2QdND0q6gGM4ko0i', annuel: 'https://buy.stripe.com/test_6oU6oI9QE10R0q6cqw4ko0j', label: "Jusqu'à 22 équipes", mensuelPrix: '250€/mois', annuelPrix: '2500€/an' },
+  c0: { mensuel: 'https://buy.stripe.com/4gM5kE1iT1NQ85HebQdZ60i', annuel: 'https://buy.stripe.com/7sYdRa3r1eAC5Xz6JodZ609', label: "Jusqu'à 2 équipes", mensuelPrix: '50€/mois', annuelPrix: '500€/an' },
+  c100: { mensuel: 'https://buy.stripe.com/eVq4gA2mX2RUadP3xcdZ605', annuel: 'https://buy.stripe.com/6oU9AU5z9csu5Xz2t8dZ60f', label: "Jusqu'à 4 équipes", mensuelPrix: '100€/mois', annuelPrix: '1000€/an' },
+  c200: { mensuel: 'https://buy.stripe.com/14A6oI7HhfEG2Lnc3IdZ60c', annuel: 'https://buy.stripe.com/7sY14ogdN64671D1p4dZ60d', label: "Jusqu'à 7 équipes", mensuelPrix: '130€/mois', annuelPrix: '1300€/an' },
+  c300: { mensuel: 'https://buy.stripe.com/3cI9AU1iT8ce0Df3xcdZ60b', annuel: 'https://buy.stripe.com/6oU14o8Llcsu5XzffUdZ606', label: "Jusqu'à 11 équipes", mensuelPrix: '160€/mois', annuelPrix: '1600€/an' },
+  c400: { mensuel: 'https://buy.stripe.com/6oU6oI8Lldwy5Xz8RwdZ608', annuel: 'https://buy.stripe.com/fZu9AU6DddwyclX5FkdZ602', label: "Jusqu'à 15 équipes", mensuelPrix: '190€/mois', annuelPrix: '1900€/an' },
+  c500: { mensuel: 'https://buy.stripe.com/00w6oIf9J2RU0DfebQdZ60a', annuel: 'https://buy.stripe.com/bJe8wQ6Dd2RUfy92t8dZ600', label: "Jusqu'à 22 équipes", mensuelPrix: '250€/mois', annuelPrix: '2500€/an' },
 }
 
 // Quota d'équipes (club_categories) inclus par palier — même clés que
