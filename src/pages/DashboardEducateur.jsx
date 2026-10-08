@@ -2257,7 +2257,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioFiltreTheme, setBiblioFiltreTheme] = useState('')
   const [biblioFiltreCategorieAge, setBiblioFiltreCategorieAge] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
-  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
+  const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, categorie_age: ['Pour tous'], partage_club: false, partage_platform: false }
   // Filet de secours si l'enregistrement d'un procédé échoue (session expirée,
   // coupure réseau...) : la modale se ferme en optimiste AVANT la réponse
   // serveur (cf. sauvegarderProcede), donc sans ça une erreur fait disparaître
@@ -2269,6 +2269,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // les filtres) — seul l'affichage est traduit ; les tranches U6-U7 etc.
   // sont déjà identiques dans toutes les langues proposées.
   const labelAgeProcede = c => c === 'Pour tous' ? t('biblio_age_pour_tous', lang) : c === 'Senior' ? t('biblio_age_senior', lang) : c
+  // categorie_age est un tableau (un procédé peut s'adapter à plusieurs
+  // tranches d'âge, cf. supabase_bibliotheque_categorie_age_multiple.sql) —
+  // toggle générique réutilisé par les deux formulaires de sauvegarde
+  // (modale complète + sauvegarde rapide depuis la fiche).
+  const toggleDansListe = (liste, val) => (liste || []).includes(val) ? liste.filter(x => x !== val) : [...(liste || []), val]
   // Le thème d'un procédé peut être soit une valeur FFF (cf. themeSeanceInfo,
   // ex. 'conservation'), soit — depuis la modale de sauvegarde enrichie — un
   // libellé de phase brut ('Offensif'/'Défensif'/...) : les deux gardent leur
@@ -2289,7 +2294,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
   const labelTheme = value => THEME_FFF_CLES[value] ? t(THEME_FFF_CLES[value], lang) : themeSeanceInfo(value)?.label || value
   const labelPhase = phase => phase === 'offensif' ? t('biblio_theme_offensif', lang) : phase === 'defensif' ? t('biblio_theme_defensif', lang) : phase
-  const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: '', type: 'exercice', partage_platform: true }
+  const METAPROC_VIDE = { nom: '', theme: '', principe: '', categorie_age: [], type: 'exercice', partage_platform: true }
   const [modalProcede, setModalProcede] = useState(false)
   const [showTactipadBiblio, setShowTactipadBiblio] = useState(false)
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
@@ -2908,7 +2913,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // club toujours actif et le partage plateforme en opt-out (coché par défaut).
   const sauvegarderProcedeBibliotheque = async () => {
     const p = showVisibilityPicker
-    if (!p || !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age) return
+    if (!p || !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age?.length) return
     const payload = {
       type: metaProc.type,
       nom: metaProc.nom.trim(),
@@ -9531,7 +9536,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 const champLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
                 const champInput = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '14px', boxSizing: 'border-box' }
                 const pastilleMeta = (actif) => ({ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + alpha.subtle : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' })
-                const invalide = !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age
+                const invalide = !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age?.length
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
                     onClick={() => setShowVisibilityPicker(null)}>
@@ -9592,10 +9597,10 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                       )}
 
                       <div style={{ marginBottom: '20px' }}>
-                        <label style={champLabel}>{t('biblio_categorie_age_label', lang)} *</label>
+                        <label style={champLabel}>{t('biblio_categorie_age_label', lang)} * <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span></label>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {CATEGORIES_AGE_PROCEDE.map(c => (
-                            <button key={c} type="button" onClick={() => setMetaProc(p => ({ ...p, categorie_age: c }))} style={pastilleMeta(metaProc.categorie_age === c)}>
+                            <button key={c} type="button" onClick={() => setMetaProc(p => ({ ...p, categorie_age: toggleDansListe(p.categorie_age, c) }))} style={pastilleMeta(metaProc.categorie_age?.includes(c))}>
                               {labelAgeProcede(c)}
                             </button>
                           ))}
@@ -10103,10 +10108,13 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               })
               // Filtre thème (phase Offensif/Défensif + thème officiel FFF, cf.
               // src/lib/themesSeance.js — même système que "Mes séances") :
-              // réservé aux bibliothèques partagées (club/platform), assez
-              // fournies pour en justifier le classement ; "Ma bibliothèque"
-              // n'affiche ni la barre ni les dossiers.
-              const avecThemes = ['club', 'platform'].includes(biblioRubrique)
+              // disponible partout, y compris "Ma bibliothèque", dès qu'elle
+              // contient assez de procédés pour en justifier le tri. Le
+              // classement en dossiers reste réservé aux bibliothèques
+              // partagées (avecDossiers, plus bas) — une liste perso reste en
+              // général trop réduite pour ça, mais le filtre seul s'applique
+              // bien à tout volume.
+              const avecThemes = ['personal', 'club', 'platform'].includes(biblioRubrique)
               const themesDeLaPhase = biblioFiltrePhase !== 'tous' ? THEMES_SEANCE[biblioFiltrePhase].themes : []
               // Deux échelles de thème coexistent sur `theme` : les valeurs FFF (cf.
               // THEMES_SEANCE, ex. 'conservation') pour les procédés créés via le
@@ -10119,7 +10127,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 const matchSearch = !biblioSearch.trim() || `${p.nom} ${p.theme} ${p.tags} ${p.description}`.toLowerCase().includes(biblioSearch.toLowerCase())
                 const matchPhase = !avecThemes || biblioFiltrePhase === 'tous' || phaseDuTheme(p.theme) === biblioFiltrePhase
                 const matchTheme = !avecThemes || !biblioFiltreTheme || p.theme === biblioFiltreTheme
-                const matchCategorieAge = !biblioFiltreCategorieAge || p.categorie_age === biblioFiltreCategorieAge
+                const matchCategorieAge = !biblioFiltreCategorieAge || (p.categorie_age || []).includes(biblioFiltreCategorieAge)
                 return matchTab && matchSearch && matchPhase && matchTheme && matchCategorieAge
               })
               const barreThemes = avecThemes && (
@@ -10268,11 +10276,12 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               // Dossiers par phase (Offensif/Défensif, comme "Mes séances") : pour
               // les bibliothèques partagées (club/platform), potentiellement
               // fournies par plusieurs éducateurs ; "Ma bibliothèque" reste une
-              // liste plate, en général trop réduite pour justifier des dossiers.
+              // liste plate (le filtre thème ci-dessus y suffit), en général
+              // trop réduite pour justifier des dossiers en plus.
               // Masqués dès qu'un type précis (pastilles au-dessus) ou un
               // thème/phase (barre ci-dessus) est déjà sélectionné — le
               // classement ferait alors doublon avec le filtre.
-              const avecDossiers = avecThemes && biblioTab === 'tous' && biblioFiltrePhase === 'tous' && !biblioFiltreTheme
+              const avecDossiers = ['club', 'platform'].includes(biblioRubrique) && biblioTab === 'tous' && biblioFiltrePhase === 'tous' && !biblioFiltreTheme
               if (!avecDossiers) return (
                 <>
                   {barreThemes}
@@ -10453,6 +10462,23 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                     </optgroup>
                   ))}
                 </select>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>
+                  {t('biblio_categorie_age_label', lang)} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {CATEGORIES_AGE_PROCEDE.map(c => {
+                    const actif = procedeForm.categorie_age?.includes(c)
+                    return (
+                      <button key={c} type="button" onClick={() => setProcedeForm(f => ({ ...f, categorie_age: toggleDansListe(f.categorie_age, c) }))}
+                        style={{ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
+                        {labelAgeProcede(c)}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {[

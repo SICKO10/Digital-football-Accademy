@@ -36,7 +36,11 @@ const normaliser = (valeur, options) => {
   return trouve || ''
 }
 
-const PROCEDE_SCAN_VIDE = { type: 'exercice', nom: '', theme: '', principe: '', categorie_age: '', nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true, schema_data: null, schema_png: null }
+const PROCEDE_SCAN_VIDE = { type: 'exercice', nom: '', theme: '', principe: '', categorie_age: [], nb_joueurs: '', duree: '', but: '', organisation: '', consignes: '', variables: '', criteres_realisation: '', partage_platform: true, schema_data: null, schema_png: null }
+
+// categorie_age est un tableau (un procédé peut s'adapter à plusieurs
+// tranches d'âge) — même helper que DashboardEducateur.jsx.
+const toggleDansListe = (liste, val) => (liste || []).includes(val) ? liste.filter(x => x !== val) : [...(liste || []), val]
 
 // Terrain de référence pour convertir les positions % renvoyées par Gemini en
 // coordonnées absolues — Tactipad stocke terrain.w/h dans le schéma et
@@ -172,7 +176,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
         nom: p.nom || '',
         theme,
         principe: normaliser(p.principe_jeu, [...PRINCIPES_OFFENSIFS, ...PRINCIPES_DEFENSIFS].map(pr => pr.label)),
-        categorie_age: normaliser(p.categorie_age, CATEGORIES_AGE) || 'Pour tous',
+        categorie_age: [normaliser(p.categorie_age, CATEGORIES_AGE) || 'Pour tous'],
         nb_joueurs: p.nb_joueurs != null ? String(p.nb_joueurs) : '',
         duree: p.duree != null ? String(p.duree) : '',
         but: p.but || '',
@@ -210,7 +214,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       nom: resultat.nom.trim(),
       theme: resultat.theme || null,
       principe_jeu: resultat.principe || null,
-      categorie_age: resultat.categorie_age || 'Pour tous',
+      categorie_age: resultat.categorie_age?.length ? resultat.categorie_age : ['Pour tous'],
       nb_joueurs: resultat.nb_joueurs || '',
       duree: resultat.duree ? parseInt(resultat.duree) : null,
       but: resultat.but || '',
@@ -332,10 +336,10 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
           )}
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={champLabel}>{t('biblio_categorie_age_label', lang)}</label>
+            <label style={champLabel}>{t('biblio_categorie_age_label', lang)} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span></label>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {CATEGORIES_AGE.map(c => (
-                <button key={c} type="button" onClick={() => setResultat(r => ({ ...r, categorie_age: c }))} style={pastille(resultat.categorie_age === c)}>
+                <button key={c} type="button" onClick={() => setResultat(r => ({ ...r, categorie_age: toggleDansListe(r.categorie_age, c) }))} style={pastille(resultat.categorie_age?.includes(c))}>
                   {c === 'Pour tous' ? t('biblio_age_pour_tous', lang) : c === 'Senior' ? t('biblio_age_senior', lang) : c}
                 </button>
               ))}
