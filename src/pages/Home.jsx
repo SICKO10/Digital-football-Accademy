@@ -183,6 +183,22 @@ function Home() {
     club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub.map(e => e.desc ? e : { ...e, desc: t('home_club_etape4_desc', lang) }), color: colors.accent.purpleLight, ctaLabel: 'Voir les tarifs club' },
   }
 
+  // « Voir la démo » : défilement vers le titre de la section « Une semaine de
+  // match » (DemoSemaineMatch, h2#dsm-titre) en retranchant la hauteur de la
+  // nav sticky + une marge, pour que le titre ne passe pas dessous. Le focus
+  // est ensuite déplacé sur ce titre (lecteurs d'écran, navigation clavier)
+  // sans re-défiler. href="#dsm-titre" reste le repli sans JS.
+  const allerALaDemo = (e) => {
+    const cible = document.getElementById('dsm-titre')
+    if (!cible) return
+    e.preventDefault()
+    const hauteurNav = document.querySelector('nav.navbar-home')?.offsetHeight || 0
+    const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: cible.getBoundingClientRect().top + window.scrollY - hauteurNav - 24, behavior: reduit ? 'auto' : 'smooth' })
+    if (!cible.hasAttribute('tabindex')) cible.setAttribute('tabindex', '-1')
+    cible.focus({ preventScroll: true })
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
@@ -194,25 +210,32 @@ function Home() {
           garder exactement le même retour à la ligne qu'avant. */}
       <section style={{ position: 'relative', padding: '3.5rem 2rem 3rem', textAlign: 'center', maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '480px', background: 'radial-gradient(ellipse 60% 40% at 50% 50%, #4ade8018 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>NOUVEAU · SAISON 2025/2026</div>
-        <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>L'écosystème numérique<br/>du <span style={{ color: colors.accent.green }}>football amateur.</span></h1>
-        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, maxWidth: '800px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, feed vidéo — une seule plateforme pour joueurs, éducateurs et clubs.</p>
+        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600, textTransform: 'uppercase' }}>{t('hero_badge', lang)}</div>
+        {/* lang + hyphens : césure propre des mots longs (ex. « Amateurfußball »
+            en allemand) au lieu d'un débordement sur mobile. */}
+        <h1 lang={lang} style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px', hyphens: 'auto', WebkitHyphens: 'auto' }}>
+          <span style={{ display: 'block' }}>{t('hero_titre_1', lang)}</span>
+          <span style={{ display: 'block', color: colors.accent.green }}>{t('hero_titre_2', lang)}</span>
+        </h1>
+        <p lang={lang} style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, maxWidth: '760px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>{t('hero_soustitre', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/register')}
             onMouseEnter={() => setHeroCta1Hover(true)}
             onMouseLeave={() => setHeroCta1Hover(false)}
             style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none', fontFamily: 'Inter, sans-serif' }}>
-            {t('home_envoyer_video', lang)}
+            {t('hero_cta_compte', lang)}
           </button>
-          <button
-            onClick={() => navigate('/jogabonito')}
+          <a
+            href="#dsm-titre"
+            onClick={allerALaDemo}
             onMouseEnter={() => setHeroCta2Hover(true)}
             onMouseLeave={() => setHeroCta2Hover(false)}
-            style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none', fontFamily: 'Inter, sans-serif' }}>
-            {t('home_voir_jogabonito', lang)}
-          </button>
+            style={{ display: 'inline-block', background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none', fontFamily: 'Inter, sans-serif' }}>
+            {t('hero_cta_demo', lang)}
+          </a>
         </div>
+        <p style={{ fontSize: '13px', color: colors.text.faint, margin: '1rem 0 0' }}>{t('hero_micro', lang)}</p>
 
         <HeroDashboardsPreview lang={lang} />
       </section>

@@ -21,9 +21,9 @@ const IMG_H = 797
 // défaut) ; joueur actif → club à gauche, éducateur à droite. Donne un
 // effet "carrousel" cohérent plutôt qu'un réarrangement arbitraire.
 const PROFILS = [
-  { id: 'joueur', navKey: 'hero_preview_nav_joueur', msgKey: 'hero_preview_msg_joueur', color: colors.accent.green, image: dashboardJoueur, alt: 'Aperçu du dashboard Joueur Digital Football' },
-  { id: 'educateur', navKey: 'hero_preview_nav_educateur', msgKey: 'hero_preview_msg_educateur', color: colors.accent.blue, image: dashboardEducateur, alt: 'Aperçu du dashboard Éducateur Digital Football' },
-  { id: 'club', navKey: 'hero_preview_nav_club', msgKey: 'hero_preview_msg_club', color: colors.accent.purpleLight, image: dashboardClub, alt: 'Aperçu du dashboard Club Digital Football' },
+  { id: 'joueur', navKey: 'hero_preview_nav_joueur', msgKey: 'hero_preview_msg_joueur', color: colors.accent.green, image: dashboardJoueur, altKey: 'hero_preview_alt_joueur' },
+  { id: 'educateur', navKey: 'hero_preview_nav_educateur', msgKey: 'hero_preview_msg_educateur', color: colors.accent.blue, image: dashboardEducateur, altKey: 'hero_preview_alt_educateur' },
+  { id: 'club', navKey: 'hero_preview_nav_club', msgKey: 'hero_preview_msg_club', color: colors.accent.purpleLight, image: dashboardClub, altKey: 'hero_preview_alt_club' },
 ]
 const ORDRE_CYCLE = PROFILS.map(p => p.id)
 const getRole = (id, activeId) => {
@@ -125,7 +125,7 @@ function Panels({ mobile, profilActif, setProfilActif, lang }) {
               : panelStyleDesktop(role, p.color)
             }>
             <img
-              src={p.image} alt={p.alt} width={IMG_W} height={IMG_H}
+              src={p.image} alt={t(p.altKey, lang)} width={IMG_W} height={IMG_H}
               loading={p.id === 'educateur' ? 'eager' : 'lazy'}
               {...(p.id === 'educateur' ? { fetchPriority: 'high' } : {})}
               style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -139,7 +139,7 @@ function Panels({ mobile, profilActif, setProfilActif, lang }) {
 
 function NavTabs({ profilActif, setProfilActif, lang }) {
   return (
-    <div role="tablist" aria-label="Choisir un profil" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}>
+    <div role="tablist" aria-label={t('hero_preview_onglets', lang)} style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}>
       {PROFILS.map(p => {
         const estActif = p.id === profilActif
         return (
