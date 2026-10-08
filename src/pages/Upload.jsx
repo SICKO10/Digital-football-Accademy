@@ -1,3 +1,5 @@
+import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
+import { validerLienVideo, cleErreurLien } from '../lib/liensVideo'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
@@ -61,6 +63,8 @@ export default function Upload() {
 
   async function handleSubmitLien() {
     if (!lien.trim() || !user) return
+    const lienValide = validerLienVideo(lien)
+    if (!lienValide.ok) { setErreur(t(cleErreurLien(lienValide.raison), lang)); return }
 
     if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
       setErreur(t('upload_quota_utilise_ce_mois', lang))
@@ -71,7 +75,7 @@ export default function Upload() {
     setErreur('')
     try {
       const { error: e1 } = await supabase.from('profiles').update({
-        clip_url: lien.trim(),
+        clip_url: lienValide.url,
       }).eq('id', user.id)
       if (e1) throw e1
 
@@ -114,27 +118,13 @@ export default function Upload() {
     setProgress(10)
 
     try {
-      const sigRes = await fetch('/api/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      })
-
-      if (!sigRes.ok) {
-        const err = await sigRes.json()
-        throw new Error(err.error || t('upload_erreur_signature', lang))
-      }
-
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureUpload('video')
+      const { cloud_name } = sig
       setProgress(20)
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', String(timestamp))
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
 
       const xhr = new XMLHttpRequest()
 

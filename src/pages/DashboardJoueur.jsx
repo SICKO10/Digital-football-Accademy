@@ -1,3 +1,4 @@
+import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
@@ -1737,20 +1738,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!file || !userId) return
     setAvatarUploading(true)
     try {
-      const sigRes = await fetch('/api/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureUpload('image')
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
+      ajouterChampsSignes(formData, sig)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (uploadData.secure_url) {
         await supabase.from('profiles').update({ avatar_url: uploadData.secure_url }).eq('id', userId)
