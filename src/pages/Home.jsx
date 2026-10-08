@@ -5,10 +5,11 @@ import { useLang } from '../hooks/useLang'
 // commentaire en tête de lib/translationsHome.js. Home.jsx est la seule page
 // importée statiquement dans App.jsx (pas de lazy()), donc la seule dont les
 // imports finissent dans le bundle "index" chargé par tout visiteur.
-import { t, LANGS } from '../lib/translationsHome'
+import { t } from '../lib/translationsHome'
 import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
 import NewsletterForm from '../components/NewsletterForm'
+import HomeNav from '../components/HomeNav'
 import HeroDashboardsPreview from '../components/HeroDashboardsPreview'
 import DemoSemaineMatch from '../components/DemoSemaineMatch'
 
@@ -182,35 +183,7 @@ function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }} className="navbar-home">
-        <div className="navbar-logo" style={{ fontSize: '18px', fontWeight: 700, flexShrink: 0 }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
-        <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          <a href="#comment" style={{ color: colors.text.dim, textDecoration: 'none', fontSize: '14px' }}>{t('home_comment_marche', lang)}</a>
-          <span onClick={() => navigate('/offres')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>{t('home_offres', lang)}</span>
-          <span onClick={() => navigate('/comment-financer')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>{t('home_financement', lang)}</span>
-          <span onClick={() => navigate('/jogabonito')} style={{ color: colors.text.dim, fontSize: '14px', cursor: 'pointer' }}>Jogabonito</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {LANGS.map(l => (
-              <button key={l.code} onClick={() => setLang(l.code)}
-                style={{ background: lang === l.code ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${lang === l.code ? colors.accent.green : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>
-                {l.flag}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-          <button className="navbar-cta-btn" onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('auth_connexion_titre', lang)}</button>
-          <button className="navbar-cta-btn" onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('home_commencer', lang)}</button>
-        </div>
-      </nav>
-      <style>{`
-        @media (max-width: 768px) { .nav-links { display: none !important; } }
-        @media (max-width: 400px) {
-          .navbar-home { padding-left: 1rem !important; padding-right: 1rem !important; gap: 8px; }
-          .navbar-logo { font-size: 15px !important; }
-          .navbar-cta-btn { padding: 7px 12px !important; font-size: 12.5px !important; }
-        }
-      `}</style>
+      <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
 
       {/* maxWidth élargi de 800px à 1400px (strictement pour laisser la place
           à HeroDashboardsPreview et sa composition en profondeur). Badge/H1/
@@ -379,7 +352,7 @@ function Home() {
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
           {[[t('recrut_feed', lang), '/feed'], ['Jogabonito', '/jogabonito'], [t('home_cgu', lang), '/cgu'], [t('home_cgv', lang), '/cgv'], [t('home_inscription', lang), '/register']].map(([label, path]) => (<span key={label} onClick={() => navigate(path)} style={{ color: colors.text.faint, fontSize: '13px', cursor: 'pointer' }}>{label}</span>))}
         </div>
-        <p style={{ color: colors.border.strong, fontSize: '12px', margin: 0 }}>2025 Digital Football</p>
+        <p style={{ color: colors.border.strong, fontSize: '12px', margin: 0 }}>© {new Date().getFullYear()} Digital Football</p>
       </footer>
     </div>
   )
