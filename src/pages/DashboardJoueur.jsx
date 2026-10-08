@@ -660,51 +660,60 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // compte que present/convoque comme "présent" (même convention que
   // tauxPresence côté DashboardEducateur.jsx — un joueur convoqué en équipe
   // sup n'est pas un absent).
-  async function chargerTauxPresence(equipeJoueurId, educateurId, clubCategorieId) {
-    if (!equipeJoueurId) { setTauxPresenceAccueil(null); return }
-    // Le total ne doit pas se limiter aux séances déjà saisies manuellement par
-    // l'éducateur dans presences_entrainement (souvent très partiel, l'éducateur
-    // n'ayant pas forcément pointé chaque séance) : on part de TOUTES les séances
-    // de l'équipe (entrainements), et pour chacune, on prend le statut saisi
-    // manuellement si présent, sinon on retombe sur la réponse au sondage de
-    // présence (disponibilites) — même logique que tauxPresence() côté éducateur
-    // (DashboardEducateur.jsx), pour rester cohérent des deux côtés.
-    let qEntrainements = supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0])
-    if (clubCategorieId) qEntrainements = qEntrainements.eq('club_categorie_id', clubCategorieId)
-    const [{ data: entrainementsData }, { data: presences }, { data: dispos }, { data: statsMatch }] = await Promise.all([
-      qEntrainements,
-      supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', equipeJoueurId),
-      supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
-      supabase.from('stats_match').select('buts, passes_dec, minutes').eq('joueur_id', equipeJoueurId),
-    ])
+  //
+  // Agrège TOUTES les affiliations acceptées (pas seulement la première) :
+  // un joueur qui change de catégorie/équipe au sein du même club (ex. U18 →
+  // U20) garde souvent son ancienne affiliation ouverte (date_fin non
+  // renseignée) en plus de la nouvelle — en ne lisant que acceptees[0], les
+  // stats_match/présences de l'ancienne équipe (parfois tout son historique)
+  // disparaissaient du widget au profit de la nouvelle équipe, encore vide.
+  async function chargerTauxPresence(affiliations) {
+    const valides = (affiliations || []).filter(a => a.equipe_joueur_id)
+    if (valides.length === 0) { setTauxPresenceAccueil(null); return }
 
-    const presenceMap = {}
-    presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+    const { data: dispos } = await supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId)
     const dispoMap = {}
     dispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
-    const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
 
-    const saisies = (entrainementsData || []).filter(e => statutEffectif(e.id) !== null)
-    if (saisies.length === 0) { setTauxPresenceAccueil(null); return }
-    const total = saisies.length
-    const statuts = saisies.map(e => statutEffectif(e.id))
-    const presents = statuts.filter(s => s === 'present').length
-    const convoque = statuts.filter(s => s === 'convoque').length
-    const absents = statuts.filter(s => s === 'absent').length
-    const blesses = statuts.filter(s => s === 'blesse').length
-    const malade = statuts.filter(s => s === 'malade').length
+    const parEquipe = await Promise.all(valides.map(async a => {
+      let qEntrainements = supabase.from('entrainements').select('id, date').eq('educateur_id', a.educateur_id).lte('date', new Date().toISOString().split('T')[0])
+      if (a.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', a.club_categorie_id)
+      const [{ data: entrainementsData }, { data: presences }, { data: statsMatch }] = await Promise.all([
+        qEntrainements,
+        supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', a.equipe_joueur_id),
+        supabase.from('stats_match').select('buts, passes_dec, minutes').eq('joueur_id', a.equipe_joueur_id),
+      ])
+      const presenceMap = {}
+      presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+      const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+      const saisies = (entrainementsData || [])
+        .filter(e => statutEffectif(e.id) !== null)
+        .map(e => ({ date: e.date, statut: statutEffectif(e.id) }))
+      return { saisies, statsMatch: statsMatch || [] }
+    }))
+
+    const toutesSaisies = parEquipe.flatMap(r => r.saisies)
+    if (toutesSaisies.length === 0) { setTauxPresenceAccueil(null); return }
+    const total = toutesSaisies.length
+    const presents = toutesSaisies.filter(s => s.statut === 'present').length
+    const convoque = toutesSaisies.filter(s => s.statut === 'convoque').length
+    const absents = toutesSaisies.filter(s => s.statut === 'absent').length
+    const blesses = toutesSaisies.filter(s => s.statut === 'blesse').length
+    const malade = toutesSaisies.filter(s => s.statut === 'malade').length
     const present = presents + convoque // présent + convoqué comptent comme présence, cf. estPresent
 
-    // Série de présences consécutives : mêmes séances "saisies", triées de la
-    // plus récente à la plus ancienne, jusqu'à la première absence.
-    const parDate = saisies.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+    // Série de présences consécutives : toutes les séances "saisies" (toutes
+    // équipes confondues), triées de la plus récente à la plus ancienne,
+    // jusqu'à la première absence.
+    const parDate = toutesSaisies.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
     let serie = 0
-    for (const e of parDate) { if (estPresent(statutEffectif(e.id))) serie++; else break }
+    for (const s of parDate) { if (estPresent(s.statut)) serie++; else break }
 
-    const buts = statsMatch?.reduce((s, m) => s + (m.buts || 0), 0) || 0
-    const passes = statsMatch?.reduce((s, m) => s + (m.passes_dec || 0), 0) || 0
-    const minutesJouees = statsMatch?.reduce((s, m) => s + (m.minutes || 0), 0) || 0
-    const matchsJoues = statsMatch?.filter(m => (m.minutes || 0) > 0).length || 0
+    const toutesStats = parEquipe.flatMap(r => r.statsMatch)
+    const buts = toutesStats.reduce((s, m) => s + (m.buts || 0), 0)
+    const passes = toutesStats.reduce((s, m) => s + (m.passes_dec || 0), 0)
+    const minutesJouees = toutesStats.reduce((s, m) => s + (m.minutes || 0), 0)
+    const matchsJoues = toutesStats.filter(m => (m.minutes || 0) > 0).length
 
     setTauxPresenceAccueil({
       taux: Math.round((present / total) * 100), present, total, serie,
@@ -790,15 +799,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id, a.club_categorie_id)
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
-      // Le calendrier (widget + planning semaine) agrège TOUTES les
-      // affiliations acceptées — un joueur dans 2 équipes doit voir les 2
-      // plannings, pas seulement celui de la première trouvée. Stats/notes
-      // restent sur la première pour l'instant (pas le périmètre du bug
-      // rapporté : "plus rien ne s'affiche" concernait le calendrier).
+      // Le calendrier (widget + planning semaine) et les stats agrègent TOUTES
+      // les affiliations acceptées — un joueur dans 2 équipes (ex. changement
+      // de catégorie en cours de saison) doit voir les 2 plannings et le
+      // cumul de ses stats, pas seulement ceux de la première trouvée.
       const acceptees = mesAffiliations.filter(af => af.statut === 'accepte')
       const a = acceptees[0]
-      if (acceptees.length > 0) { chargerCalendrierEtDispos(acceptees); chargerPlanningSemaine(acceptees) }
-      if (a) { chargerTauxPresence(a.equipe_joueur_id, a.educateur_id, a.club_categorie_id); chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
+      if (acceptees.length > 0) { chargerCalendrierEtDispos(acceptees); chargerPlanningSemaine(acceptees); chargerTauxPresence(acceptees) }
+      if (a) { chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
     }
     if (onglet === 'competition') {
       const acceptees = mesAffiliations.filter(af => af.statut === 'accepte')
