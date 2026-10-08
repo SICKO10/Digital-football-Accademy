@@ -9,6 +9,7 @@ import { t, LANGS } from '../lib/translationsHome'
 import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
 import NewsletterForm from '../components/NewsletterForm'
+import HeroDashboardsPreview from '../components/HeroDashboardsPreview'
 
 const etapesEducateur = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton profil éducateur en 2 minutes' },
@@ -180,19 +181,7 @@ function Home() {
           </button>
         </div>
 
-        {/* Mockup flottant — preview stylisée du dashboard joueur */}
-        <div style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', maxWidth: '600px', margin: '3rem auto 0', padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
-            <span style={{ marginLeft: '8px', fontSize: '12px', color: colors.text.faint }}>Dashboard Joueur</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ height: '8px', width: '70%', borderRadius: '4px', background: `linear-gradient(90deg, ${colors.accent.green}30, transparent)` }} />
-            <div style={{ height: '8px', width: '45%', borderRadius: '4px', background: `linear-gradient(90deg, ${colors.accent.green}30, transparent)` }} />
-          </div>
-        </div>
+        <HeroDashboardsPreview lang={lang} />
       </section>
 
       <section style={{ padding: '3.5rem 2rem', maxWidth: '960px', margin: '0 auto' }}>

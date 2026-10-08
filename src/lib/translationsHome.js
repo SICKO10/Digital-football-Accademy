@@ -40,6 +40,14 @@ const T_HOME = {
   home_tiktok_desc:         { fr: 'Clips courts, format vertical. Swipe entre les vidéos et découvre les meilleurs talents du moment.', en: 'Short clips, vertical format. Swipe through videos and discover the best talents of the moment.', pt: 'Clips curtos, formato vertical. Faz swipe entre os vídeos e descobre os melhores talentos do momento.', es: 'Clips cortos, formato vertical. Desliza entre los videos y descubre a los mejores talentos del momento.', it: 'Clip brevi, formato verticale. Scorri tra i video e scopri i migliori talenti del momento.', de: 'Kurze Clips im Hochformat. Wische durch die Videos und entdecke die besten Talente des Moments.' },
   home_tiktok_football:     { fr: 'Le TikTok du Football',     en: 'The TikTok of Football', pt: 'O TikTok do Futebol',   es: 'El TikTok del Fútbol',   it: 'Il TikTok del Calcio',  de: 'Das TikTok des Fußballs' },
   home_voir_jogabonito:     { fr: 'Voir Jogabonito',           en: 'See Jogabonito',         pt: 'Ver Jogabonito',        es: 'Ver Jogabonito',         it: 'Vedi Jogabonito',       de: 'Jogabonito ansehen'   },
+  // Composant HeroDashboardsPreview (src/components/) — nav des 3 profils +
+  // phrase courte affichée sous le panneau actif.
+  hero_preview_nav_joueur:    { fr: 'Joueur',    en: 'Player',  pt: 'Jogador',    es: 'Jugador',    it: 'Giocatore',  de: 'Spieler'  },
+  hero_preview_nav_educateur: { fr: 'Éducateur', en: 'Coach',   pt: 'Treinador',  es: 'Entrenador',  it: 'Allenatore', de: 'Trainer'  },
+  hero_preview_nav_club:      { fr: 'Club',      en: 'Club',    pt: 'Clube',      es: 'Club',        it: 'Club',       de: 'Verein'   },
+  hero_preview_msg_joueur:    { fr: 'Suis ta progression. Développe ton potentiel.', en: 'Track your progress. Unlock your potential.', pt: 'Acompanha a tua evolução. Desenvolve o teu potencial.', es: 'Sigue tu progreso. Desarrolla tu potencial.', it: 'Segui i tuoi progressi. Sviluppa il tuo potenziale.', de: 'Verfolge deinen Fortschritt. Entfalte dein Potenzial.' },
+  hero_preview_msg_educateur: { fr: "Prépare, organise et accompagne ton équipe.", en: 'Prepare, organize and support your team.', pt: 'Prepara, organiza e acompanha a tua equipa.', es: 'Prepara, organiza y acompaña a tu equipo.', it: 'Prepara, organizza e accompagna la tua squadra.', de: 'Bereite, organisiere und begleite dein Team.' },
+  hero_preview_msg_club:      { fr: "Pilote ton club, du terrain à l'administration.", en: 'Run your club, from the pitch to admin.', pt: 'Gere o teu clube, do campo à administração.', es: 'Gestiona tu club, del campo a la administración.', it: "Gestisci il tuo club, dal campo all'amministrazione.", de: 'Führe deinen Verein, vom Platz bis zur Verwaltung.' },
   recrut_feed:          { fr: 'Feed',                  en: 'Feed',              pt: 'Feed',              es: 'Feed',              it: 'Feed',              de: 'Feed'              },
 }
 
