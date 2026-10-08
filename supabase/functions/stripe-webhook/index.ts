@@ -226,9 +226,19 @@ Deno.serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session
         const email = session.customer_details?.email ?? null
         const stripeCustomerId = typeof session.customer === 'string' ? session.customer : null
+        // montant = ce qui a réellement été encaissé (après code promo), utilisé
+        // pour la journalisation (table paiements). montantBrut = amount_subtotal,
+        // le prix AVANT remise — c'est lui qu'il faut utiliser pour reconnaître
+        // quel produit a été acheté (resoudreCycleEtPlan/MONTANT_ANALYSE_UNITE/
+        // estMontantClub ci-dessous) : un code promo (ex. LANCEMENT70, -70% sur
+        // le 1er mois) fait chuter amount_total à une valeur qui ne correspond à
+        // aucun des montants attendus, et le paiement n'était jamais reconnu —
+        // le compte restait "Abonnement non actif" malgré un paiement Stripe
+        // confirmé (bug constaté en prod le 08/10/2026).
         const montant = session.amount_total ?? 0
+        const montantBrut = session.amount_subtotal ?? montant
 
-        if (session.mode === 'payment' && montant === MONTANT_ANALYSE_UNITE) {
+        if (session.mode === 'payment' && montantBrut === MONTANT_ANALYSE_UNITE) {
           // Analyse vidéo à l'unité — achat ponctuel, crédité immédiatement.
           const profileId = await trouverProfilId({ clientReferenceId: session.client_reference_id, email })
           if (!profileId) { console.error('[stripe-webhook] checkout.session.completed (analyse unité): profil introuvable', { clientReferenceId: session.client_reference_id, email }); break }
@@ -248,11 +258,11 @@ Deno.serve(async (req) => {
             // 10000 centimes (100€, normalement ambigu) est donc traité comme
             // club ici : l'autre interprétation (joueur/edu annuel) suppose un
             // compte déjà existant, qu'on vient d'exclure.
-            const estMontantClub = MONTANTS_CLUB_MENSUEL.includes(montant) || MONTANTS_CLUB_ANNUEL.includes(montant)
+            const estMontantClub = MONTANTS_CLUB_MENSUEL.includes(montantBrut) || MONTANTS_CLUB_ANNUEL.includes(montantBrut)
             if (estMontantClub && email) {
               await creerInvitationClub(email, stripeCustomerId)
             } else {
-              console.error('[stripe-webhook] checkout.session.completed (abonnement): profil introuvable', { clientReferenceId: session.client_reference_id, email, montant })
+              console.error('[stripe-webhook] checkout.session.completed (abonnement): profil introuvable', { clientReferenceId: session.client_reference_id, email, montantBrut })
             }
             break
           }
@@ -260,8 +270,8 @@ Deno.serve(async (req) => {
           const { data: profilActuel, error: profilErr } = await supabaseAdmin.from('profiles').select('plan').eq('id', profileId).maybeSingle()
           if (profilErr) console.error('[stripe-webhook] erreur lecture profil', profilErr)
 
-          const resolu = resoudreCycleEtPlan(montant, profilActuel?.plan)
-          if (!resolu) { console.error('[stripe-webhook] checkout.session.completed: montant non reconnu', { montant, plan: profilActuel?.plan }); break }
+          const resolu = resoudreCycleEtPlan(montantBrut, profilActuel?.plan)
+          if (!resolu) { console.error('[stripe-webhook] checkout.session.completed: montant non reconnu', { montantBrut, montant, plan: profilActuel?.plan }); break }
           const { cycle, estClub } = resolu
 
           // profiles.plan est contraint par une CHECK constraint côté base à :
@@ -277,7 +287,7 @@ Deno.serve(async (req) => {
           const planSansPalier = ['educateur', 'scout'].includes(profilActuel?.plan ?? '')
           const nouveauPlan = estClub ? 'club' : planSansPalier ? profilActuel!.plan : 'joueur_pro'
 
-          const palierClub = estClub ? resoudrePalierClub(montant, cycle) : null
+          const palierClub = estClub ? resoudrePalierClub(montantBrut, cycle) : null
 
           const { error: updateErr } = await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
@@ -298,7 +308,11 @@ Deno.serve(async (req) => {
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice
         const stripeCustomerId = typeof invoice.customer === 'string' ? invoice.customer : null
+        // Même logique que checkout.session.completed ci-dessus : montant =
+        // réellement encaissé (journalisation), montantBrut = invoice.subtotal
+        // (avant remise/coupon) pour la reconnaissance du produit.
         const montant = invoice.amount_paid ?? 0
+        const montantBrut = invoice.subtotal ?? montant
 
         const profileId = await trouverProfilId({
           stripeCustomerId,
@@ -309,8 +323,8 @@ Deno.serve(async (req) => {
         const { data: profil, error: profilErr } = await supabaseAdmin.from('profiles').select('plan, abonnement_mois_payes').eq('id', profileId).maybeSingle()
         if (profilErr) console.error('[stripe-webhook] erreur lecture profil (invoice.paid)', profilErr)
 
-        const resoluInvoice = resoudreCycleEtPlan(montant, profil?.plan)
-        if (!resoluInvoice) { console.error('[stripe-webhook] invoice.paid: montant non reconnu', { montant, plan: profil?.plan }); break }
+        const resoluInvoice = resoudreCycleEtPlan(montantBrut, profil?.plan)
+        if (!resoluInvoice) { console.error('[stripe-webhook] invoice.paid: montant non reconnu', { montantBrut, montant, plan: profil?.plan }); break }
         const { cycle, estClub } = resoluInvoice
 
         // Journalisé ici uniquement (jamais dans la branche subscription de
