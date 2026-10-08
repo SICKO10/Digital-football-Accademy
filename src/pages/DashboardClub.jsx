@@ -3274,6 +3274,56 @@ export default function DashboardClub() {
 
   if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: colors.accent.green }}>Chargement...</p></div>
 
+  // ── ABONNEMENT NON ACTIF ──
+  // profiles.plan est déjà posé à 'club' dès l'inscription, avant tout
+  // paiement (cf. Register.jsx : l'upsert initial écrit plan: 'club' et
+  // abonnement_actif: false) — rien ne vérifiait abonnement_actif ici, donc
+  // un compte club fraîchement inscrit (ou un membre du staff invité sur ce
+  // compte) avait un accès complet et permanent sans jamais payer. S'applique
+  // au président ET au staff : club est toujours le profil du COMPTE club
+  // lui-même (cf. init() plus haut), jamais celui du membre staff connecté.
+  if (!club?.abonnement_actif) {
+    const palierActif = palierChoisiProfil || ''
+    const p = STRIPE_LINKS_CLUB[palierActif]
+    const lien = p ? stripeUrl(p[cycleChoisiProfil], clubId, club?.email) : null
+    return (
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
+          <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Le paiement de {club?.club || 'ce club'} n'a pas encore été confirmé.</p>
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+            <select value={palierChoisiProfil} onChange={e => setPalierChoisiProfil(e.target.value)}
+              style={{ flex: 1, minWidth: '200px', padding: '11px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.primary, fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
+              <option value="" disabled>Choisir un palier...</option>
+              {Object.entries(STRIPE_LINKS_CLUB).map(([key, pal]) => (
+                <option key={key} value={key}>{pal.label} — {cycleChoisiProfil === 'annuel' ? pal.annuelPrix : pal.mensuelPrix}</option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden' }}>
+              {[['mensuel', 'Mensuel'], ['annuel', 'Annuel']].map(([c, label]) => (
+                <button key={c} type="button" onClick={() => setCycleChoisiProfil(c)}
+                  style={{ padding: '11px 16px', border: 'none', background: cycleChoisiProfil === c ? colors.accent.green : 'transparent', color: cycleChoisiProfil === c ? colors.black : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <a href={lien || undefined} target="_blank" rel="noopener noreferrer"
+            aria-disabled={!lien}
+            onClick={e => { if (!lien) e.preventDefault() }}
+            style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '10px', border: 'none', background: lien ? colors.accent.green : colors.background.raised, color: lien ? colors.black : colors.text.faint, fontWeight: 800, fontSize: '14px', cursor: lien ? 'pointer' : 'not-allowed', textDecoration: 'none', marginBottom: '1.5rem' }}>
+            {p ? `Activer — ${cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}` : 'Choisir un palier'}
+          </a>
+
+          <span onClick={handleLogout} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>{t('btn_deconnexion', lang)}</span>
+        </div>
+      </div>
+    )
+  }
+
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 

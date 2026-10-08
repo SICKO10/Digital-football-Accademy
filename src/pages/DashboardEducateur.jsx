@@ -5243,6 +5243,34 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
     </div>
   )
 
+  // ── ABONNEMENT NON ACTIF ──
+  // profiles.plan est déjà posé à 'educateur' dès l'inscription, avant tout
+  // paiement (cf. RegisterRecruteur.jsx : l'upsert initial écrit
+  // plan: 'educateur' et abonnement_actif: false, PUIS ouvre Stripe dans un
+  // nouvel onglet) — SmartDashboard route donc déjà vers ce dashboard sur la
+  // seule valeur de plan. Sans ce garde-fou, un compte fraîchement inscrit
+  // avait un accès complet et permanent sans jamais confirmer le paiement
+  // (il suffisait de se connecter, ou de faire "retour" depuis Stripe).
+  // Bypass si affilié (accepté) à un club : c'est alors le club qui paie
+  // l'accès, pas l'éducateur individuellement (cf. chargerClubAffiliation).
+  const clubAffilieAccepte = clubAffiliation?.statut === 'accepte'
+  if (!profil?.abonnement_actif && !clubAffilieAccepte) {
+    return (
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
+          <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_mensuel', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_annuel', lang)}</button>
+          </div>
+          <span onClick={() => { signOutSafe(); navigate('/') }} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>{t('btn_deconnexion', lang)}</span>
+        </div>
+      </div>
+    )
+  }
+
   // Regroupement en 4 groupes logiques — les clés réelles de activeSection ne
   // changent pas (aucun contenu de page déplacé/renommé), seuls les points
   // d'entrée de la nav sont fusionnés via `subKeys` : un item avec subKeys

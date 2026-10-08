@@ -541,6 +541,31 @@ export default function DashboardRecruteur() {
 
   if (loading) return <div style={{ ...st.page, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: colors.accent.orange }}>Chargement...</div></div>;
 
+  // ── ABONNEMENT NON ACTIF ──
+  // profiles.plan est déjà posé à 'scout' dès l'inscription, avant tout
+  // paiement (cf. RegisterRecruteur.jsx : l'upsert initial écrit
+  // plan: 'scout' et abonnement_actif: false, PUIS ouvre Stripe dans un
+  // nouvel onglet) — seul plan !== 'scout' était vérifié ci-dessus, jamais
+  // abonnement_actif. Sans ce garde-fou, un compte fraîchement inscrit avait
+  // un accès complet et permanent sans jamais confirmer le paiement (il
+  // suffisait de se connecter, ou de faire "retour" depuis Stripe).
+  if (!recruteur?.abonnement_actif) {
+    return (
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
+          <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.mensuel, recruteurId, recruteur?.email), '_blank')} style={{ background: "transparent", color: "white", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>Activer — Mensuel (10€/mois)</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.annuel, recruteurId, recruteur?.email), '_blank')} style={{ background: colors.accent.orange, color: colors.black, border: "none", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>Activer — Annuel (100€/an)</button>
+          </div>
+          <span onClick={handleLogout} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
+        </div>
+      </div>
+    );
+  }
+
   // ── Profil joueur ──────────────────────────────────────────────────────────
   if (selectedJoueur) {
     const j = selectedJoueur;
