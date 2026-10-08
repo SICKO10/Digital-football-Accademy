@@ -25,17 +25,69 @@ const etapesRecruteur = [
   { num: 'ÉTAPE 4', titre: 'Tu recrutes', desc: "Contacte directement les talents qui t'intéressent" },
 ]
 
+// Section "Une plateforme. Trois univers." — textes via t('profils_*_<id>')
+// dans translationsHome.js, label réutilisé depuis hero_preview_nav_<id>.
+// Destinations : /register?profil=joueur_starter présélectionne bien l'offre
+// gratuite (PROFILS.find dans Register.jsx → étape 2 directe). Offres.jsx
+// n'a aucun mécanisme de présélection (ni paramètre, ni ancre lue au
+// chargement), donc éducateur et club pointent simplement vers /offres.
 const profilsCards = [
-  { color: colors.accent.green, label: 'JOUEUR',
-    titre: 'Tu veux progresser et être repéré',
-    solution: 'Ton coach te note après chaque match. Ton profil tourne auprès des recruteurs, même quand tu ne cherches pas.' },
-  { color: colors.accent.blue, label: 'ÉDUCATEUR',
-    titre: 'Tu prépares tes matchs sur 3 outils différents',
-    solution: 'Causerie, tactique, notation joueurs, scanner feuille de match IA — tout en un, en 20 minutes.' },
-  { color: colors.accent.purpleLight, label: 'CLUB',
-    titre: "Faire tourner un club, c'est un travail à plein temps",
-    solution: "Planning terrains, gestion d'équipes, déplacements, recrutement — centralisé en un seul endroit. Nos outils et notre IA te font gagner des heures chaque semaine." },
+  { id: 'joueur', color: colors.accent.green, route: '/register?profil=joueur_starter',
+    icon: <><path d="M3 17l6-6 4 4 8-8" /><path d="M14 7h7v7" /></> },
+  { id: 'educateur', color: colors.accent.blue, route: '/offres',
+    icon: <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1" /><path d="M9 11h6M9 15h4" /></> },
+  { id: 'club', color: colors.accent.purpleLight, route: '/offres',
+    icon: <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" /> },
 ]
+
+const cardVars = c => ({
+  '--pc': c, '--pc-border': c + '45', '--pc-border-cta': c + '55', '--pc-border-hover': c + '90',
+  '--pc-glow': c + '24', '--pc-shadow': c + '70', '--pc-bg': c + '1a', '--pc-bg-hover': c + '2e',
+})
+
+// Hover/focus/responsive impossibles en style inline — même approche que
+// HDP_STYLE (HeroDashboardsPreview). Couleur de profil passée en variable CSS
+// (--pc + déclinaisons hex+alpha, cf. cardVars) pour une seule règle par
+// état — pas de color-mix(), absent de Safari < 16.2. Tablette : 2 colonnes,
+// la 3e carte centrée à largeur identique plutôt qu'étirée sur la ligne.
+const PROFILS_STYLE = `
+  .pc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+  .pc-card { position: relative; display: flex; flex-direction: column; overflow: hidden;
+    background: linear-gradient(180deg, ${colors.background.surfaceAlt} 0%, ${colors.background.sunken} 100%);
+    border: 1px solid var(--pc-border); border-radius: 18px; padding: 1.75rem 1.5rem 1.5rem;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+  .pc-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.55;
+    background: radial-gradient(ellipse 80% 45% at 50% 0%, var(--pc-glow) 0%, transparent 70%);
+    transition: opacity 0.25s ease; }
+  .pc-card > * { position: relative; }
+  .pc-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: Inter, sans-serif; cursor: pointer;
+    color: var(--pc); background: var(--pc-bg); border: 1px solid var(--pc-border-cta);
+    transition: background 0.2s ease, border-color 0.2s ease; }
+  .pc-cta svg { transition: transform 0.2s ease; }
+  .pc-cta:focus-visible { outline: 2px solid var(--pc); outline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) {
+    .pc-card:hover { transform: translateY(-4px); border-color: var(--pc-border-hover);
+      box-shadow: 0 18px 40px -18px var(--pc-shadow); }
+    .pc-card:hover::before { opacity: 1; }
+    .pc-cta:hover { background: var(--pc-bg-hover); border-color: var(--pc-border-hover); }
+    .pc-cta:hover svg { transform: translateX(3px); }
+  }
+  @media (max-width: 960px) {
+    .pc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pc-card:last-child { grid-column: 1 / -1; justify-self: center; width: calc(50% - 0.625rem); }
+  }
+  @media (max-width: 640px) {
+    .pc-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .pc-card:last-child { width: auto; justify-self: stretch; }
+    .pc-card { padding: 1.5rem 1.25rem 1.25rem; }
+    .pc-section { padding-left: 1rem !important; padding-right: 1rem !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pc-card, .pc-card::before, .pc-cta, .pc-cta svg { transition: none !important; }
+    .pc-card:hover, .pc-cta:hover svg { transform: none !important; }
+  }
+`
 
 const etapesClub = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton espace club selon ta taille' },
@@ -189,18 +241,36 @@ function Home() {
         <HeroDashboardsPreview lang={lang} />
       </section>
 
-      <section style={{ padding: '3.5rem 2rem', maxWidth: '960px', margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, marginBottom: '0.5rem' }}>Une plateforme. Trois univers.</h2>
-        <p style={{ textAlign: 'center', color: colors.text.dim, fontSize: '14px', marginBottom: '2.5rem', maxWidth: '560px', margin: '0 auto 2.5rem' }}>
-          Là où les autres outils s'adressent à un seul maillon, DigitalFootball crée de la valeur pour tous simultanément.
+      <section className="pc-section" aria-labelledby="profils-titre" style={{ padding: '4rem 2rem', maxWidth: '1120px', margin: '0 auto' }}>
+        <style>{PROFILS_STYLE}</style>
+        <h2 id="profils-titre" style={{ textAlign: 'center', fontSize: 'clamp(24px, 4vw, 34px)', fontWeight: 800, letterSpacing: '-0.5px', margin: '0 0 0.75rem' }}>{t('profils_section_titre', lang)}</h2>
+        <p style={{ textAlign: 'center', color: colors.text.dim, fontSize: '15px', lineHeight: 1.6, maxWidth: '600px', margin: '0 auto 2.75rem' }}>
+          {t('profils_section_soustitre', lang)}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="pc-grid">
           {profilsCards.map(card => (
-            <div key={card.label} style={{ background: colors.background.surface, border: `1px solid ${card.color}`, borderRadius: '14px', padding: '1.25rem' }}>
-              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: card.color }}>{card.label}</div>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '8px 0 6px' }}>{card.titre}</h3>
-              <p style={{ fontSize: '12px', color: colors.text.dim, lineHeight: 1.6, margin: 0 }}>{card.solution}</p>
-            </div>
+            <article key={card.id} className="pc-card" style={cardVars(card.color)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
+                <div aria-hidden="true" style={{ width: '40px', height: '40px', flexShrink: 0, borderRadius: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: card.color + alpha.subtle, border: `1px solid ${card.color}${alpha.light}`, color: card.color }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{card.icon}</svg>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: card.color }}>{t(`hero_preview_nav_${card.id}`, lang)}</span>
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, lineHeight: 1.3, letterSpacing: '-0.2px', margin: '0 0 0.75rem', color: colors.text.primary }}>{t(`profils_titre_${card.id}`, lang)}</h3>
+              <p style={{ fontSize: '14px', color: colors.text.dim, lineHeight: 1.65, margin: '0 0 1.25rem' }}>{t(`profils_desc_${card.id}`, lang)}</p>
+              <ul style={{ listStyle: 'none', padding: '1.25rem 0 0', margin: '0 0 1.75rem', borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[1, 2, 3].map(n => (
+                  <li key={n} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '13.5px', lineHeight: 1.5, color: colors.text.secondary }}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={card.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                    {t(`profils_feat_${card.id}_${n}`, lang)}
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="pc-cta" onClick={() => navigate(card.route)}>
+                {t(`profils_cta_${card.id}`, lang)}
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </button>
+            </article>
           ))}
         </div>
       </section>
