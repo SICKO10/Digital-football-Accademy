@@ -12,7 +12,10 @@ html, body, #root {
 
 body {
   color: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Inter chargée globalement dans index.html — gardée en tête ici pour que
+     tout élément qui n'écrase pas font-family explicitement (la plupart des
+     styles inline du projet le font déjà) en hérite par défaut aussi. */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 #fiche-print, .fiche-render {

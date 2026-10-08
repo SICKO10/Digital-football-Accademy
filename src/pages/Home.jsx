@@ -34,10 +34,13 @@ const profilsCards = [
   { color: colors.accent.purpleLight, label: 'CLUB',
     titre: "Faire tourner un club, c'est un travail à plein temps",
     solution: "Planning terrains, gestion d'équipes, déplacements, recrutement — centralisé en un seul endroit. Nos outils et notre IA te font gagner des heures chaque semaine." },
-  { color: colors.accent.orange, label: 'RECRUTEUR',
-    titre: 'Le repérage coûte cher et prend du temps',
-    solution: 'Un ailier gauche U19 sur la Côte d\'Azur ? 3 filtres, résultats immédiats. Sans quitter ton bureau.' },
 ]
+
+// Section désactivée temporairement plus bas (cf. commentaire sur cette
+// section) — un identifiant nommé plutôt qu'un littéral `false` directement
+// dans le JSX, pour que `no-constant-binary-expression` (eslint) ne la
+// signale pas comme une faute de frappe (`1 &&`/`0 &&` typiques).
+const TEMOIGNAGES_ACTIFS = false
 
 const quotesUtilisateurs = [
   { quote: '"Grâce à tes stats et la connexion à ton coach, tu sais ce qu\'il attend exactement de toi pour progresser."',
@@ -87,11 +90,16 @@ function EtapesSection({ badge, titre, etapes, color, ctaLabel, onCta }) {
   )
 }
 
+// Recruteur retiré de la communication grand public (onglet + cartes
+// profilsCards ci-dessous) — la vitrine met désormais en avant 3 univers
+// (joueur/éducateur/club). Le profil recruteur reste entièrement
+// fonctionnel : route /recruteur, inscription /register?profil=scout et
+// etapesRecruteur/TAB_CONFIG.recruteur plus bas ne sont pas touchés, juste
+// devenus inatteignables depuis ces deux listes.
 const TABS = [
   { id: 'joueur', label: 'Joueur', color: colors.accent.green },
   { id: 'educateur', label: 'Éducateur', color: colors.accent.blue },
-  { id: 'recruteur', label: 'Recruteur', color: colors.accent.orange },
-  { id: 'club', label: 'Club', color: colors.accent.purple },
+  { id: 'club', label: 'Club', color: colors.accent.purpleLight },
 ]
 
 function Home() {
@@ -130,7 +138,7 @@ function Home() {
     joueur: { badge: t('home_processus', lang), titre: t('home_comment_marche', lang), etapes: etapesJoueur, color: colors.accent.green, ctaLabel: 'Voir les tarifs joueur' },
     educateur: { badge: 'TARIFS ÉDUCATEURS', titre: 'Développe tes joueurs', etapes: etapesEducateur, color: colors.accent.blue, ctaLabel: 'Voir les tarifs éducateur' },
     recruteur: { badge: 'SCOUTS / RECRUTEURS', titre: 'Trouve tes prochains talents', etapes: etapesRecruteur, color: colors.accent.orange, ctaLabel: 'Voir les tarifs recruteur' },
-    club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub, color: colors.accent.purple, ctaLabel: 'Voir les tarifs club' },
+    club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub, color: colors.accent.purpleLight, ctaLabel: 'Voir les tarifs club' },
   }
 
   return (
@@ -169,7 +177,7 @@ function Home() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '480px', background: 'radial-gradient(ellipse 60% 40% at 50% 50%, #4ade8018 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>NOUVEAU · SAISON 2025/2026</div>
         <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>L'écosystème numérique<br/>du <span style={{ color: colors.accent.green }}>football amateur.</span></h1>
-        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, recrutement, feed vidéo — une seule plateforme pour joueurs, éducateurs, clubs et recruteurs.</p>
+        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, feed vidéo — une seule plateforme pour joueurs, éducateurs et clubs.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/register')}
@@ -212,7 +220,7 @@ function Home() {
       </section>
 
       <section style={{ padding: '3.5rem 2rem', maxWidth: '960px', margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, marginBottom: '0.5rem' }}>Une plateforme. Quatre acteurs.</h2>
+        <h2 style={{ textAlign: 'center', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, marginBottom: '0.5rem' }}>Une plateforme. Trois univers.</h2>
         <p style={{ textAlign: 'center', color: colors.text.dim, fontSize: '14px', marginBottom: '2.5rem', maxWidth: '560px', margin: '0 auto 2.5rem' }}>
           Là où les autres outils s'adressent à un seul maillon, DigitalFootball crée de la valeur pour tous simultanément.
         </p>
@@ -244,6 +252,15 @@ function Home() {
         <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>{t('home_voir_jogabonito', lang)}</button>
       </section>
 
+      {/* Section témoignages désactivée temporairement (pas supprimée) : les
+          citations de quotesUtilisateurs ci-dessus ne sont rattachées à
+          aucun utilisateur réel ni aucune source dans le code (pas de nom,
+          pas de table Supabase, aucun commentaire d'origine) — impossible
+          d'en garantir l'authenticité. À remplacer par une présentation
+          visuelle des vrais outils Digital Football (cf. décision du
+          2026-10-08). Remettre à `true` si une source de témoignages réels
+          est branchée entre-temps. */}
+      {TEMOIGNAGES_ACTIFS && (
       <section style={{ background: '#0d0d0d', padding: '3.5rem 2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', letterSpacing: '1px', fontWeight: 600 }}>ILS EN PARLENT MIEUX QUE NOUS</div>
         <h2 style={{ fontSize: 'clamp(22px, 4vw, 30px)', fontWeight: 800, marginBottom: '3rem' }}>Ce que nos utilisateurs retiennent</h2>
@@ -256,6 +273,7 @@ function Home() {
           ))}
         </div>
       </section>
+      )}
 
       <section id="comment" style={{ padding: '3.5rem 2rem 0', textAlign: 'center' }}>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -322,7 +340,12 @@ function Home() {
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
         <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '16px' }}>La plateforme qui connecte les talents du football.</p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-          {[['Instagram', 'https://www.instagram.com/digitalfootball10/'], ['TikTok', '#'], ['LinkedIn', '#']].map(([reseau, url]) => (
+          {/* TikTok/LinkedIn retirés : aucune URL officielle de la marque
+              trouvée ailleurs dans le projet (seulement du code générique de
+              détection de lien TikTok dans Feed/Jogabonito/Upload, sans
+              rapport avec un compte Digital Football) — à remettre dès que
+              ces comptes existent réellement. */}
+          {[['Instagram', 'https://www.instagram.com/digitalfootball10/']].map(([reseau, url]) => (
             <a key={reseau} href={url} target={url === '#' ? undefined : '_blank'} rel={url === '#' ? undefined : 'noopener noreferrer'} style={{ color: colors.text.faint, fontSize: '13px', textDecoration: 'none' }}>{reseau}</a>
           ))}
         </div>

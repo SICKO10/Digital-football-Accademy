@@ -6,10 +6,10 @@
 // en commentaire). Les valeurs one-off (un seul usage isolé) ne sont pas
 // listées individuellement.
 //
-// Rien n'importe ce fichier pour l'instant — l'app entière est en styles inline
-// (style={{ ... }} avec des littéraux directs), pas en styled-components/CSS
-// modules. Introduire ces tokens dans le code existant serait un refactor à
-// part, fichier par fichier, pas fait ici.
+// Déjà importé dans ~47 fichiers (adoption progressive, pas un refactor fait
+// d'un coup) — l'app reste en styles inline (style={{ ... }} avec des
+// littéraux directs) plutôt qu'en styled-components/CSS modules, mais de plus
+// en plus de fichiers consomment ces tokens plutôt que des hex en dur.
 
 export const colors = {
   // Fonds — thème sombre, du plus profond (page) au plus clair (survol/actif)

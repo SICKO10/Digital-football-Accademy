@@ -15,7 +15,16 @@
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
     <!-- SEO -->
-    <meta name="description" content="La plateforme qui relie joueurs, éducateurs, clubs et recruteurs pour simplifier le quotidien de chacun." />
+    <meta name="description" content="La plateforme qui relie joueurs, éducateurs et clubs pour simplifier le quotidien de chacun." />
+
+    <!-- Police Inter chargée ici une seule fois pour toute l'app — avant,
+         chaque page publique déclarait fontFamily: 'Inter, sans-serif' en
+         style inline sans jamais charger la police elle-même (une seule
+         page, Offres.jsx, le faisait via son propre @import), donc la
+         plupart du site retombait silencieusement sur la police système. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Digital Football — L'écosystème qui connecte le football amateur et semi-pro</title>

@@ -24,7 +24,7 @@ function CGV() {
   const tdStyle = { color: colors.text.faint, padding: '8px 12px', fontSize: '12px', border: `1px solid ${colors.border.subtle}` }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', borderBottom: '1px solid #222' }}>
         <div style={{ fontSize: '18px', fontWeight: '700', cursor: 'pointer' }} onClick={() => navigate('/')}>
           Digital<span style={{ color: colors.accent.green }}>Football</span>
