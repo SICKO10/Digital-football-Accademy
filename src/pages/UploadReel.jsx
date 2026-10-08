@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
+import { validerLienVideo, cleErreurLien } from '../lib/liensVideo'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
@@ -53,6 +55,8 @@ export default function UploadReel() {
 
   const handleSubmitLien = async () => {
     if (!lien.trim()) { setError(t('upload_colle_lien', lang)); return }
+    const lienValide = validerLienVideo(lien)
+    if (!lienValide.ok) { setError(t(cleErreurLien(lienValide.raison), lang)); return }
     setUploading(true)
     setError('')
     try {
@@ -60,7 +64,7 @@ export default function UploadReel() {
       if (!user) { setError(t('upload_non_connecte', lang)); setUploading(false); return }
       const { error: err } = await supabase.from('reels').insert({
         joueur_id: user.id,
-        video_url: lien.trim(),
+        video_url: lienValide.url,
         titre: titre.trim() || null,
         description: description.trim() || null,
       })
@@ -79,22 +83,13 @@ export default function UploadReel() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError(t('upload_non_connecte', lang)); setUploading(false); return }
 
-      const sigRes = await fetch('/api/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id })
-      })
-      if (!sigRes.ok) throw new Error(t('upload_erreur_signature', lang))
-      const { signature, timestamp, api_key, cloud_name, folder, public_id } = await sigRes.json()
+      const sig = await demanderSignatureUpload('video')
+      const { cloud_name } = sig
       if (!cloud_name) throw new Error(t('upload_config_cloudinary_manquante', lang))
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('api_key', api_key)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
+      ajouterChampsSignes(formData, sig)
 
       const videoUrl = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
+import { validerLienVideo, cleErreurLien } from '../lib/liensVideo'
 import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
@@ -26,7 +28,11 @@ export default function UploadClip() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { navigate('/login'); return }
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
-    if (!p || p.plan !== 'pro' || !p.abonnement_actif) { navigate('/dashboard'); return }
+    // Même condition que isPro (DashboardJoueur.jsx) : plan 'joueur_pro' ET
+    // abonnement actif. L'ancienne valeur 'pro' n'existe plus nulle part
+    // (Register/webhook écrivent 'joueur_pro') : tous les Pro étaient renvoyés
+    // au dashboard sans pouvoir publier.
+    if (!p || p.plan !== 'joueur_pro' || !p.abonnement_actif) { navigate('/dashboard'); return }
     setUser(user)
     setProfil(p)
   }
@@ -62,10 +68,12 @@ export default function UploadClip() {
 
   async function handleSubmitLien() {
     if (!lien.trim()) { setErreur(t('uploadclip_colle_lien_video', lang)); return }
+    const lienValide = validerLienVideo(lien)
+    if (!lienValide.ok) { setErreur(t(cleErreurLien(lienValide.raison), lang)); return }
     setUploading(true)
     setErreur('')
     try {
-      await sauvegarderVideo(lien.trim())
+      await sauvegarderVideo(lienValide.url)
       setSuccess(true)
     } catch (e) { setErreur(e.message || t('uploadclip_erreur_publication', lang)) }
     setUploading(false)
@@ -77,22 +85,13 @@ export default function UploadClip() {
     setErreur('')
     setProgress(0)
     try {
-      const sigRes = await fetch('/api/upload-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      })
-      if (!sigRes.ok) { const err = await sigRes.json(); throw new Error(err.error || t('upload_erreur_signature', lang)) }
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureUpload('video')
+      const { cloud_name } = sig
       setProgress(10)
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', String(timestamp))
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
 
       const videoUrl = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()

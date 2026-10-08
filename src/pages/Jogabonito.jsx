@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { estLienVideoAffichable } from '../lib/liensVideo'
 import { supabase } from '../supabase'
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
@@ -205,10 +206,17 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       {(type === 'instagram' || type === 'link') && (
         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: colors.background.base }}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>{type === 'instagram' ? '📸' : '🎬'}</div>
-          <a href={reel.video_url} target="_blank" rel="noreferrer"
+          {/* Lien externe ouvert seulement s'il vise une plateforme prise en
+              charge (données anciennes ou insérées hors appli) — sinon rien
+              de cliquable : pas de redirection vers un domaine arbitraire. */}
+          {estLienVideoAffichable(reel.video_url) ? (
+          <a href={reel.video_url} target="_blank" rel="noopener noreferrer"
             style={{ background: type === 'instagram' ? '#E1306C' : colors.accent.green, color: colors.text.primary, padding: '14px 28px', borderRadius: '12px', fontWeight: 700, fontSize: '16px', textDecoration: 'none' }}>
             {t('feed_ouvrir_sur', lang)} {type === 'instagram' ? 'Instagram' : t('jogab_le_lien', lang)} →
           </a>
+          ) : (
+            <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0 }}>{t('lien_video_non_affichable', lang)}</p>
+          )}
         </div>
       )}
 
