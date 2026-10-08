@@ -34,6 +34,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
 const CGU = lazy(() => import('./pages/CGU'))
+const CGV = lazy(() => import('./pages/CGV'))
 const CommentFinancer = lazy(() => import('./pages/CommentFinancer'))
 const PolitiqueConfidentialite = lazy(() => import('./pages/PolitiqueConfidentialite'))
 const ClubPublic = lazy(() => import('./pages/ClubPublic'))
@@ -130,6 +131,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/cgu" element={<CGU />} />
+        <Route path="/cgv" element={<CGV />} />
         <Route path="/comment-financer" element={<CommentFinancer />} />
         <Route path="/confidentialite" element={<PolitiqueConfidentialite />} />
         <Route path="/clubs/:id" element={<ClubPublic />} />

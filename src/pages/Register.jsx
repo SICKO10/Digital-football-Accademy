@@ -388,9 +388,17 @@ export default function Register() {
               J'accepte les{' '}
               <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
                 Conditions Générales d'Utilisation
-              </a>{' '}
-              et la{' '}
-              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+              </a>
+              {profilChoisi.stripeMensuel && (
+                <>
+                  {' '}et les{' '}
+                  <a href="/cgv" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
+                    Conditions Générales de Vente
+                  </a>
+                </>
+              )}
+              {' '}et la{' '}
+              <a href="/confidentialite" target="_blank" rel="noreferrer" style={{ color: colors.accent.green, textDecoration: 'underline' }}>
                 Politique de Confidentialité
               </a>
               . Mes données sont traitées conformément au RGPD.
@@ -549,8 +557,12 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
               <a href="/cgu" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
                 Conditions Générales d'Utilisation
               </a>{' '}
+              et les{' '}
+              <a href="/cgv" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
+                Conditions Générales de Vente
+              </a>{' '}
               et la{' '}
-              <a href="/cgu" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
+              <a href="/confidentialite" target="_blank" rel="noreferrer" style={{ color, textDecoration: 'underline' }}>
                 Politique de Confidentialité
               </a>
               . Mes données sont traitées conformément au RGPD.
@@ -616,7 +628,9 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
 
       <p style={{ textAlign: 'center', fontSize: '11px', color: colors.border.strong, marginTop: '14px', lineHeight: 1.6 }}>
         En continuant, vous acceptez nos{' '}
-        <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.text.disabled }}>CGU</a>.
+        <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: colors.text.disabled }}>CGU</a>{' '}
+        et nos{' '}
+        <a href="/cgv" target="_blank" rel="noreferrer" style={{ color: colors.text.disabled }}>CGV</a>.
       </p>
     </div>
   )

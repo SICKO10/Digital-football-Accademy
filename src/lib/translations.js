@@ -1168,6 +1168,7 @@ export const T = {
   home_like_commente:       { fr: 'Like et commente',          en: 'Like and comment',       pt: 'Gosta e comenta',       es: 'Da like y comenta',      it: 'Metti like e commenta', de: 'Liken und kommentieren' },
   home_suis_talents:        { fr: 'Suis les talents',          en: 'Follow the talents',     pt: 'Segue os talentos',     es: 'Sigue a los talentos',   it: 'Segui i talenti',       de: 'Talenten folgen'      },
   home_cgu:                 { fr: 'CGU',                       en: 'Terms',                  pt: 'Termos',                es: 'Términos',               it: 'Termini',               de: 'AGB'                  },
+  home_cgv:                 { fr: 'CGV',                       en: 'Sale terms',             pt: 'Termos de venda',       es: 'Términos de venta',      it: 'Termini di vendita',    de: 'Verkaufsbedingungen'  },
   home_inscription:         { fr: 'Inscription',               en: 'Sign up',                pt: 'Registo',               es: 'Registro',               it: 'Iscrizione',            de: 'Registrierung'        },
 
   // ── TactipadPublic ─────────────────────────────────────────────────────────────
