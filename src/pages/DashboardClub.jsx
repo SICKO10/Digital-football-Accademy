@@ -539,20 +539,48 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   const nbEducateurs = educateursAcceptes.length
   const nbEnAttente = educateursEnAttente.length
 
-  const catLabel = (educateurId) => {
-    const cat = categories.find(c => c.educateur_id === educateurId)
+  // club_categorie_id (fiable) en priorité — un même éducateur peut gérer
+  // plusieurs catégories (ex. U18 réelle + U11 de test), educateur_id seul
+  // mélangerait leurs matchs et afficherait le mauvais nom de catégorie
+  // (même bug déjà corrigé pour le classement, cf. chargerMatchsCategorie).
+  // Repli sur educateur_id seul uniquement si ce coach n'a qu'UNE catégorie.
+  const catLabel = (m) => {
+    let cat = m.club_categorie_id ? categories.find(c => c.id === m.club_categorie_id) : null
+    if (!cat) {
+      const candidats = categories.filter(c => c.educateur_id === m.educateur_id)
+      if (candidats.length === 1) cat = candidats[0]
+    }
     return cat ? `${labelCategorie(cat.nom)}${cat.equipe ? ` ${cat.equipe}` : ''}` : null
   }
 
+  // Week-end (samedi+dimanche, semaine lundi-dimanche) décalé de `decalageSemaines`
+  // par rapport à la semaine en cours (0 = cette semaine, -1 = précédente...).
+  const weekendDecale = (decalageSemaines) => {
+    const d = new Date()
+    const jour = d.getDay() // 0 = dimanche ... 6 = samedi
+    const diffLundi = jour === 0 ? -6 : 1 - jour
+    d.setDate(d.getDate() + diffLundi + decalageSemaines * 7) // d = lundi de la semaine visée
+    const samedi = new Date(d); samedi.setDate(d.getDate() + 5)
+    const dimanche = new Date(d); dimanche.setDate(d.getDate() + 6)
+    return { samedi: samedi.toISOString().split('T')[0], dimanche: dimanche.toISOString().split('T')[0] }
+  }
+  const weekendCetteSemaine = weekendDecale(0)
+  // Dernier week-end joué : celui de cette semaine si déjà atteint (on est
+  // samedi ou dimanche), sinon celui de la semaine précédente — un résultat
+  // du samedi matin apparaît donc sans attendre le dimanche soir.
+  const dernierWeekend = weekendCetteSemaine.samedi <= aujourdHui ? weekendCetteSemaine : weekendDecale(-1)
+  // Prochain week-end : toujours celui de la semaine en cours (à venir, ou
+  // déjà en cours si on y est) — un match daté aujourd'hui reste exclu par
+  // le filtre `date > aujourdHui` ci-dessous.
+  const prochainWeekend = weekendCetteSemaine
+
   const derniersResultats = matchsClub
-    .filter(m => m.date <= aujourdHui && m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
+    .filter(m => m.date >= dernierWeekend.samedi && m.date <= dernierWeekend.dimanche && m.date <= aujourdHui && m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5)
 
   const prochainsMatchs = matchsClub
-    .filter(m => m.date > aujourdHui)
+    .filter(m => m.date >= prochainWeekend.samedi && m.date <= prochainWeekend.dimanche && m.date > aujourdHui)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 5)
 
   const ACTIONS = [
     { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
@@ -573,7 +601,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           d'entraînement, qui restent une vue éducateur. */}
       <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
         <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m.educateur_id) }))} evenements={evenementsClub.filter(e => e.sur_planning !== false)} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m) }))} evenements={evenementsClub.filter(e => e.sur_planning !== false)} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
       </div>
 
       {/* Widgets résumé */}
@@ -631,7 +659,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
                 const eux = parseInt(m.score_eux)
                 const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
                 const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? colors.accent.red : '#f59e0b'
-                const label = catLabel(m.educateur_id)
+                const label = catLabel(m)
                 return (
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -656,7 +684,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {prochainsMatchs.map(m => {
-                const label = catLabel(m.educateur_id)
+                const label = catLabel(m)
                 return (
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div style={{ minWidth: 0 }}>
