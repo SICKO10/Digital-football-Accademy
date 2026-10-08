@@ -159,11 +159,16 @@ function Home() {
         }
       `}</style>
 
-      <section style={{ position: 'relative', padding: '3.5rem 2rem 3rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+      {/* maxWidth élargi de 800px à 1400px (strictement pour laisser la place
+          à HeroDashboardsPreview et sa composition en profondeur). Badge/H1/
+          CTA non affectés (largeur naturelle ou saut de ligne explicite) ;
+          le sous-titre récupère son propre maxWidth 800px ci-dessous pour
+          garder exactement le même retour à la ligne qu'avant. */}
+      <section style={{ position: 'relative', padding: '3.5rem 2rem 3rem', textAlign: 'center', maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '480px', background: 'radial-gradient(ellipse 60% 40% at 50% 50%, #4ade8018 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1.5rem', letterSpacing: '1px', fontWeight: 600 }}>NOUVEAU · SAISON 2025/2026</div>
         <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.25rem', letterSpacing: '-2px' }}>L'écosystème numérique<br/>du <span style={{ color: colors.accent.green }}>football amateur.</span></h1>
-        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, marginBottom: '2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, feed vidéo — une seule plateforme pour joueurs, éducateurs et clubs.</p>
+        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.125rem)', color: colors.text.dim, maxWidth: '800px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>Dashboard stats, causerie tactique, feed vidéo — une seule plateforme pour joueurs, éducateurs et clubs.</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/register')}
