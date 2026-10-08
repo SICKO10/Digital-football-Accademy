@@ -33,14 +33,24 @@ export default async function handler(req, res) {
   // encore (seulement stripe_customer_id). Fallback : retrouver la
   // subscription active via l'API Stripe à partir du customer, plutôt que de
   // bloquer la résiliation en attendant un backfill manuel en base.
+  let customerId = profil.stripe_customer_id
   let subscriptionId = profil.stripe_subscription_id
   if (!subscriptionId) {
-    if (!profil.stripe_customer_id) return res.status(400).json({ error: 'Aucun abonnement actif trouvé' })
     try {
-      const subs = await stripe.subscriptions.list({ customer: profil.stripe_customer_id, status: 'active', limit: 1 })
-      subscriptionId = subs.data[0]?.id
+      // Certains comptes n'ont même pas stripe_customer_id (ex. : le webhook
+      // avait échoué AVANT d'atteindre l'update qui l'écrit — cas vécu avec
+      // un paiement par code promo non reconnu avant le correctif du
+      // webhook). Dernier recours : retrouver le customer Stripe par email.
+      if (!customerId && profil.email) {
+        const customers = await stripe.customers.list({ email: profil.email, limit: 1 })
+        customerId = customers.data[0]?.id || null
+      }
+      if (customerId) {
+        const subs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 1 })
+        subscriptionId = subs.data[0]?.id
+      }
     } catch (err) {
-      console.error('Erreur Stripe lookup subscription par customer:', err.message)
+      console.error('Erreur Stripe lookup subscription:', err.message)
     }
     if (!subscriptionId) return res.status(400).json({ error: 'Aucun abonnement actif trouvé' })
   }
@@ -50,10 +60,13 @@ export default async function handler(req, res) {
     await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     })
-    // Persiste l'id retrouvé pour que la prochaine lecture n'ait plus besoin
-    // du fallback ci-dessus.
-    if (!profil.stripe_subscription_id) {
-      await supabase.from('profiles').update({ stripe_subscription_id: subscriptionId }).eq('id', user.id)
+    // Persiste les ids retrouvés pour que la prochaine lecture n'ait plus
+    // besoin du fallback ci-dessus.
+    const aMettreAJour = {}
+    if (!profil.stripe_subscription_id) aMettreAJour.stripe_subscription_id = subscriptionId
+    if (!profil.stripe_customer_id && customerId) aMettreAJour.stripe_customer_id = customerId
+    if (Object.keys(aMettreAJour).length > 0) {
+      await supabase.from('profiles').update(aMettreAJour).eq('id', user.id)
     }
 
     console.log(`Résiliation programmée pour ${profil.email} (sub: ${subscriptionId})`)
