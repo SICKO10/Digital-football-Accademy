@@ -1879,8 +1879,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (readOnly) return
     if (!window.confirm('Supprimer ta vidéo ? Elle sera retirée du feed et de Jogabonito.')) return
     setDeletingVideo(true)
+    // Clip du profil + son seul reel miroir (même video_url), pas tous les
+    // reels Jogabonito du joueur.
+    const clip = profil?.clip_url
     const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
-    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', userId)
+    const { error: errReel } = clip ? await supabase.from('reels').delete().eq('joueur_id', userId).eq('video_url', clip) : { error: null }
     setDeletingVideo(false)
     if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
     if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
@@ -1890,14 +1893,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const handleDeleteReel = async () => {
     if (readOnly) return
     if (!window.confirm('Supprimer ta vidéo Jogabonito ? Elle ne sera plus visible dans le feed.')) return
+    if (!reelJogabonito?.id) return
     setDeletingReel(true)
-    const { error: errReel } = await supabase.from('reels').delete().eq('joueur_id', userId)
-    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId)
+    // Uniquement le reel affiché (par id + auteur) ; .select('id') détecte un
+    // refus silencieux (0 ligne). clip_url n'est vidé que s'il pointe sur CE
+    // reel. Le reel suivant le plus récent (s'il existe) est ensuite affiché.
+    const { data: supprimes, error: errReel } = await supabase.from('reels').delete().eq('id', reelJogabonito.id).eq('joueur_id', userId).select('id')
+    if (errReel || !supprimes?.length) {
+      setDeletingReel(false)
+      alert('Erreur suppression reel : ' + (errReel ? errReel.message : t('reel_suppression_aucune', lang)))
+      return
+    }
+    const { error: errProfile } = await supabase.from('profiles').update({ clip_url: null }).eq('id', userId).eq('clip_url', reelJogabonito.video_url)
+    const { data: restants } = await supabase.from('reels').select('id, video_url').eq('joueur_id', userId).order('created_at', { ascending: false }).limit(1)
     setDeletingReel(false)
-    if (errReel) { alert('Erreur suppression reel : ' + errReel.message); return }
     if (errProfile) { alert('Erreur suppression profil : ' + errProfile.message); return }
-    setReelJogabonito(null)
-    setProfil(prev => ({ ...prev, clip_url: null }))
+    if (profil?.clip_url === reelJogabonito.video_url) setProfil(prev => ({ ...prev, clip_url: null }))
+    setReelJogabonito(restants?.[0] || null)
   }
 
   const chargerFanFavoris = async () => {
