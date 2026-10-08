@@ -181,9 +181,19 @@ serve(async (req) => {
     }
 
     // Utilisateur déjà enregistré ? On cherche dans auth.users (pas profiles) : beaucoup
-    // de comptes auth.users n'ont pas de ligne profiles correspondante.
-    const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-    const existingUser = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    // de comptes auth.users n'ont pas de ligne profiles correspondante. listUsers()
+    // pagine par 1000 — une seule page suffisait tant que la plateforme avait moins de
+    // 1000 comptes, mais ratait silencieusement les comptes au-delà (ex. compte club
+    // existant jamais retrouvé → reparti sur le chemin "nouvelle invitation" au lieu
+    // d'être lié directement). On parcourt donc toutes les pages jusqu'à trouver l'email
+    // ou épuiser la liste.
+    const emailLower = email.toLowerCase()
+    let existingUser = null
+    for (let page = 1; !existingUser; page++) {
+      const { data: listData } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+      existingUser = listData?.users?.find(u => u.email?.toLowerCase() === emailLower) || null
+      if (!listData?.users || listData.users.length < 1000) break
+    }
 
     if (existingUser) {
       const { data: profilExistant } = await supabase.from('profiles').select('id').eq('id', existingUser.id).maybeSingle()
@@ -323,10 +333,20 @@ serve(async (req) => {
         : `${nomInviteur} t'invite à rejoindre <strong style="color:#fff;">${club}${categorie}</strong> ${role === 'joueur' ? 'en tant que joueur' : 'en tant que dirigeant'} sur Digital Football.`
     const boutonEmail = role === 'joueur' ? "Rejoindre l'équipe" : role === 'dirigeant' ? 'Rejoindre le staff' : role === 'educateur' ? 'Rejoindre le club' : 'Accéder au profil'
 
-    await envoyerEmail(sujetEmail, titreEmail, texteEmail, lienAccept, boutonEmail, "Ce lien est valable 7 jours.<br>Si tu n'attendais pas cette invitation, ignore cet email.")
+    // L'invitation est déjà enregistrée en base à ce stade (insert ci-dessus) — un
+    // échec d'envoi d'email (Resend en panne, domaine non vérifié...) ne doit pas
+    // transformer ça en erreur 500 côté personne qui invite, comme pour le chemin
+    // "compte existant" plus haut. Remonté dans mailError plutôt qu'avalé en silence.
+    let mailError = null
+    try {
+      await envoyerEmail(sujetEmail, titreEmail, texteEmail, lienAccept, boutonEmail, "Ce lien est valable 7 jours.<br>Si tu n'attendais pas cette invitation, ignore cet email.")
+    } catch (mailErr) {
+      console.error('[envoyer-invitation] email nouvelle invitation non envoyé:', mailErr.message)
+      mailError = mailErr.message
+    }
 
     return new Response(
-      JSON.stringify({ success: true, linked: false, message: 'Invitation envoyée' }),
+      JSON.stringify({ success: true, linked: false, message: 'Invitation envoyée', mailError }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {

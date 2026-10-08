@@ -3007,7 +3007,7 @@ export default function DashboardClub() {
       type: data?.mailError ? 'avertissement' : 'ok',
       texte: data?.linked
         ? (data?.mailError ? "Accès accordé, mais l'email de notification n'a pas pu être envoyé — préviens-le autrement." : 'Compte existant lié directement.')
-        : `Invitation envoyée à ${ajoutEducateurForm.email}`,
+        : (data?.mailError ? "Invitation enregistrée, mais l'email n'a pas pu être envoyé — préviens-le autrement ou réessaie." : `Invitation envoyée à ${ajoutEducateurForm.email}`),
     })
     setAjoutEducateurForm({ prenom: '', nom: '', email: '' })
     if (data?.linked) await chargerEducateurs(clubId)
