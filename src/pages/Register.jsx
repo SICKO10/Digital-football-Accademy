@@ -295,21 +295,26 @@ export default function Register() {
       <div style={{ display: 'flex', minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
         <style>{SPLIT_MEDIA_QUERY}</style>
 
-        {/* ── Colonne gauche — vitrine, cachée sur mobile ── */}
+        {/* ── Colonne gauche — vitrine, cachée sur mobile. Photo + dégradé vert
+            de marque (au lieu du dégradé gris neutre d'origine) pour rester
+            lisible tout en gardant une vraie photo de football. ── */}
         <div className="register-left" style={{
           flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem',
-          background: colors.background.base,
+          backgroundImage: 'url(https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80)',
+          backgroundSize: 'cover', backgroundPosition: 'center',
         }}>
-          <div style={{ fontSize: '20px', fontWeight: 800 }}>
+          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, ${colors.background.base}eb 0%, ${colors.background.base}d9 55%, ${colors.accent.green}26 100%)` }} />
+
+          <div style={{ position: 'relative', fontSize: '20px', fontWeight: 800 }}>
             Digital<span style={{ color: colors.accent.green }}>Football</span>
           </div>
 
-          <div>
+          <div style={{ position: 'relative' }}>
             <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>Rejoins la communauté.</h2>
             <p style={{ color: colors.text.dim, fontSize: '15px', marginTop: '12px' }}>Joueur, éducateur, recruteur ou club — ta place est ici.</p>
           </div>
 
-          <div>
+          <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
               {PILLS.map(pill => (
                 <span key={pill} style={{ background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}30`, borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
