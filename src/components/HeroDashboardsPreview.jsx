@@ -14,46 +14,58 @@ import dashboardClub from '../assets/dashboards/dashboard-club.png'
 const IMG_W = 1600
 const IMG_H = 797
 
-// Ordre circulaire (pas un ordre d'affichage fixe gauche/centre/droite,
-// cf. getSlot) : quel que soit le profil actif, les deux autres se
-// répartissent automatiquement à gauche/droite selon leur position dans ce
-// cycle — ex. éducateur actif → joueur à gauche, club à droite (= la
-// disposition par défaut) ; joueur actif → club à gauche, éducateur à
-// droite. Donne un effet "carrousel" cohérent plutôt qu'un réarrangement
-// arbitraire à chaque clic.
+// Ordre circulaire (jamais un ordre d'affichage fixe gauche/centre/droite) :
+// quel que soit le profil actif, les deux autres se répartissent
+// automatiquement à gauche/droite selon leur position dans ce cycle — ex.
+// éducateur actif → joueur à gauche, club à droite (= la disposition par
+// défaut) ; joueur actif → club à gauche, éducateur à droite. Donne un
+// effet "carrousel" cohérent plutôt qu'un réarrangement arbitraire.
 const PROFILS = [
   { id: 'joueur', navKey: 'hero_preview_nav_joueur', msgKey: 'hero_preview_msg_joueur', color: colors.accent.green, image: dashboardJoueur, alt: 'Aperçu du dashboard Joueur Digital Football' },
   { id: 'educateur', navKey: 'hero_preview_nav_educateur', msgKey: 'hero_preview_msg_educateur', color: colors.accent.blue, image: dashboardEducateur, alt: 'Aperçu du dashboard Éducateur Digital Football' },
   { id: 'club', navKey: 'hero_preview_nav_club', msgKey: 'hero_preview_msg_club', color: colors.accent.purpleLight, image: dashboardClub, alt: 'Aperçu du dashboard Club Digital Football' },
 ]
 const ORDRE_CYCLE = PROFILS.map(p => p.id)
-const getSlot = (id, activeId) => {
-  if (id === activeId) return 'center'
+const getRole = (id, activeId) => {
+  if (id === activeId) return 'active'
   const i = ORDRE_CYCLE.indexOf(id)
   const a = ORDRE_CYCLE.indexOf(activeId)
   return (a + 1) % ORDRE_CYCLE.length === i ? 'right' : 'left'
 }
 
-// Desktop = composition en profondeur, panneau actif large au premier plan,
-// les 2 autres réduits et partiellement superposés derrière (cf. getSlot
-// pour quel profil va à gauche/droite). En dessous de 900px les 3 panneaux
-// deviennent trop étroits pour rester lisibles (cf. consigne tablette) — on
-// bascule alors sur la même présentation qu'en mobile, un seul dashboard +
-// onglets. Hover exclu sur tactile (cf. consigne dédiée) ; prefers-reduced-
-// motion coupe toutes les transitions/animations plutôt que de les
-// réduire, plus simple et sans perte de fonctionnalité (le changement
-// d'onglet reste instantané).
+// Décalage horizontal des panneaux secondaires depuis le centre de la scène
+// — en clamp(vw) pour rester proportionné de 1280px à grand écran (cf.
+// consigne desktop 1280/1440px+), jamais une valeur fixe qui déborderait ou
+// paraîtrait écrasée selon la largeur réelle.
+const DECALAGE_X = 'clamp(190px, 18vw, 330px)'
+const LARGEUR_ACTIF = 'clamp(600px, 56vw, 950px)'
+const LARGEUR_SECONDAIRE = 'clamp(230px, 21vw, 370px)'
+
+// scene: conteneur de positionnement (position:relative), chaque panneau en
+// position:absolute positionné selon son rôle (actif/gauche/droite) — pas
+// selon son index dans le DOM, pour que le panneau actif soit TOUJOURS
+// centré sous les onglets, quel que soit le profil cliqué (cf. bug
+// précédent : une répartition flex en ordre DOM décalait visuellement le
+// panneau actif dès qu'il n'était pas celui du milieu). En dessous de
+// 900px les 3 panneaux deviennent trop étroits pour rester lisibles (cf.
+// consigne tablette) — on bascule alors sur la même présentation qu'en
+// mobile, un seul dashboard + onglets ; display:none (pas opacity/
+// visibility) pour que les 3 panneaux desktop ne restent jamais
+// accessibles au clavier quand ils sont masqués. Hover exclu sur tactile ;
+// prefers-reduced-motion coupe toutes les transitions/animations plutôt
+// que de les réduire, plus simple et sans perte de fonctionnalité (le
+// changement d'onglet reste instantané).
 const HDP_STYLE = `
   @keyframes hdp-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   .hdp-stagger { opacity: 0; animation: hdp-fade-up 0.6s ease forwards; }
-  .hdp-desktop { display: flex; }
+  .hdp-desktop { display: block; }
   .hdp-mobile { display: none; }
   @media (max-width: 900px) {
     .hdp-desktop { display: none; }
     .hdp-mobile { display: flex; }
   }
   @media (hover: hover) and (pointer: fine) {
-    .hdp-panel-side:hover { filter: brightness(1.25); opacity: 0.85 !important; }
+    .hdp-panel-side:hover { filter: brightness(1.25) !important; opacity: 0.85 !important; }
     .hdp-tab:hover { opacity: 0.85; }
   }
   .hdp-tab:focus-visible, .hdp-panel-btn:focus-visible {
@@ -66,29 +78,30 @@ const HDP_STYLE = `
   }
 `
 
-// Panneau actif : grande vedette, nette et lumineuse — 750 à 950px visés sur
-// grand écran (clamp borné par le viewport, pas juste par le conteneur, pour
-// vraiment "remplir" l'espace comme demandé). Panneaux secondaires : ~40%
-// de la largeur du panneau actif, superposés derrière lui (margin négative)
-// via un slot gauche/droite, assombris mais jamais proches de l'invisible
-// (opacity 0.7, pas 0.3) pour qu'on comprenne qu'il existe 3 univers.
-const slotStyle = (slot, color) => {
-  if (slot === 'center') {
-    return {
-      width: 'clamp(600px, 58vw, 950px)', maxWidth: '92vw',
-      zIndex: 3, opacity: 1, filter: 'none', transform: 'translateY(0) scale(1)',
-      border: `1.5px solid ${color}`, boxShadow: `0 32px 70px -18px ${color}66, 0 0 0 1px ${color}33`,
-      marginLeft: 0, marginRight: 0,
-    }
-  }
-  const decale = slot === 'left' ? '26px' : '-26px'
-  return {
-    width: 'clamp(260px, 25vw, 400px)',
-    zIndex: 1, opacity: 0.7, filter: 'brightness(0.78) saturate(0.9)', transform: `translateY(${decale}) scale(0.94)`,
-    border: `1px solid ${colors.border.subtle}`, boxShadow: '0 14px 32px -16px rgba(0,0,0,0.6)',
-    marginLeft: slot === 'right' ? '-90px' : 0, marginRight: slot === 'left' ? '-90px' : 0,
-  }
+// Transform = ancre centrale (left:50%; top:50%) + décalage par rôle. Les
+// translate() restent en % de la boîte NON mise à l'échelle (scale() placé
+// en dernier dans chaque chaîne), donc le centrage -50%/-50% est toujours
+// exact quelle que soit la taille finale du panneau.
+const ROLE_CONFIG = {
+  active: { width: LARGEUR_ACTIF, translate: 'translate(-50%, -50%) scale(1)', zIndex: 3, opacity: 1, filter: 'none' },
+  left: { width: LARGEUR_SECONDAIRE, translate: `translate(calc(-50% - ${DECALAGE_X}), calc(-50% + 22px)) scale(0.92)`, zIndex: 1, opacity: 0.68, filter: 'brightness(0.78) saturate(0.9)' },
+  right: { width: LARGEUR_SECONDAIRE, translate: `translate(calc(-50% + ${DECALAGE_X}), calc(-50% + 22px)) scale(0.92)`, zIndex: 1, opacity: 0.68, filter: 'brightness(0.78) saturate(0.9)' },
 }
+
+const panelStyleDesktop = (role, color) => ({
+  position: 'absolute', top: '50%', left: '50%', minWidth: 0,
+  width: ROLE_CONFIG[role].width,
+  transform: ROLE_CONFIG[role].translate,
+  zIndex: ROLE_CONFIG[role].zIndex,
+  opacity: ROLE_CONFIG[role].opacity,
+  filter: ROLE_CONFIG[role].filter,
+  transition: 'width 0.34s cubic-bezier(0.22,1,0.36,1), transform 0.34s cubic-bezier(0.22,1,0.36,1), opacity 0.34s ease, filter 0.34s ease, box-shadow 0.34s ease, border-color 0.34s ease',
+  background: colors.background.surface,
+  border: `${role === 'active' ? '1.5px' : '1px'} solid ${role === 'active' ? color : colors.border.subtle}`,
+  borderRadius: '14px', overflow: 'hidden', padding: 0,
+  boxShadow: role === 'active' ? `0 32px 70px -18px ${color}66, 0 0 0 1px ${color}33` : '0 14px 32px -16px rgba(0,0,0,0.6)',
+  cursor: role === 'active' ? 'default' : 'pointer',
+})
 
 // Déclarés hors du composant (pas recréés à chaque rendu, cf.
 // react-hooks/static-components) — état du profil actif reçu en props.
@@ -97,8 +110,8 @@ function Panels({ mobile, profilActif, setProfilActif, lang }) {
   return (
     <>
       {(mobile ? [actif] : PROFILS).map(p => {
-        const estActif = p.id === profilActif
-        const slot = mobile ? 'center' : getSlot(p.id, profilActif)
+        const role = mobile ? 'active' : getRole(p.id, profilActif)
+        const estActif = role === 'active'
         return (
           <button
             key={p.id}
@@ -109,13 +122,7 @@ function Panels({ mobile, profilActif, setProfilActif, lang }) {
             aria-label={t(p.navKey, lang)}
             style={mobile
               ? { width: '100%', background: colors.background.surface, border: `1px solid ${p.color}`, borderRadius: '14px', overflow: 'hidden', padding: 0, cursor: 'default', boxShadow: `0 20px 48px -18px ${p.color}55` }
-              : {
-                  ...slotStyle(slot, p.color),
-                  position: 'relative', minWidth: 0, flexShrink: 0,
-                  transition: 'width 0.34s cubic-bezier(0.22,1,0.36,1), margin 0.34s cubic-bezier(0.22,1,0.36,1), transform 0.34s cubic-bezier(0.22,1,0.36,1), opacity 0.34s ease, filter 0.34s ease, box-shadow 0.34s ease, border-color 0.34s ease',
-                  background: colors.background.surface, borderRadius: '14px', overflow: 'hidden', padding: 0,
-                  cursor: estActif ? 'default' : 'pointer',
-                }
+              : panelStyleDesktop(role, p.color)
             }>
             <img
               src={p.image} alt={p.alt} width={IMG_W} height={IMG_H}
@@ -171,12 +178,13 @@ export default function HeroDashboardsPreview({ lang }) {
         <NavTabs profilActif={profilActif} setProfilActif={setProfilActif} lang={lang} />
       </div>
 
-      {/* ── Desktop/tablette large : panneau actif en vedette, 2 autres
-          superposés derrière (cf. slotStyle) — overflow visible car les
-          panneaux secondaires débordent volontairement sous le panneau
-          actif ; le root de Home.jsx a déjà overflowX:hidden, filet de
-          sécurité si jamais ça dépasse sur un écran étroit. ── */}
-      <div className="hdp-desktop" style={{ justifyContent: 'center', alignItems: 'center', padding: '20px 8px 0' }}>
+      {/* ── Desktop/tablette large : scène position:relative, les 3 panneaux
+          sont en position:absolute centrés sur ce conteneur (cf.
+          panelStyleDesktop) — le panneau actif est TOUJOURS ancré à
+          left:50%/translateX(-50%), donc toujours centré sous les onglets
+          quel que soit le profil. Hauteur en clamp pour suivre le ratio des
+          captures (797/1600) sur la plage de largeurs du panneau actif. ── */}
+      <div className="hdp-desktop" style={{ position: 'relative', height: 'clamp(300px, 29vw, 480px)', padding: '0 8px' }}>
         <Panels mobile={false} profilActif={profilActif} setProfilActif={setProfilActif} lang={lang} />
       </div>
 
