@@ -2799,9 +2799,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setProcedeForm(PROCEDE_VIDE)
     let error
     if (idEnEdition) {
-      ;({ error } = await supabase.from('bibliotheque_exercices').update(payload).eq('id', idEnEdition.id))
+      ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').update(payload).eq('id', idEnEdition.id)))
     } else {
-      ;({ error } = await supabase.from('bibliotheque_exercices').insert(payload))
+      ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').insert(payload)))
     }
     setSavingProcede(false)
     if (error) {
@@ -2832,7 +2832,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     delete rest.club_id
     delete rest.partage_club
     delete rest.partage_platform
-    const { error } = await supabase.from('bibliotheque_exercices').insert({ ...rest, educateur_id: userId, club_id: clubAffiliation?.club_id || null, partage_club: false, partage_platform: false })
+    const { error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').insert({ ...rest, educateur_id: userId, club_id: clubAffiliation?.club_id || null, partage_club: false, partage_platform: false }))
     if (error) { alert('Erreur : ' + error.message); return }
     alert('Copié dans ta bibliothèque personnelle.')
   }
@@ -2880,7 +2880,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       partage_platform: metaProc.partage_platform,
     }
     setShowVisibilityPicker(null)
-    const { error } = await supabase.from('bibliotheque_exercices').insert(payload)
+    const { error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').insert(payload))
     if (error) { alert('Erreur : ' + error.message); return }
     setMetaProc(METAPROC_VIDE)
     afficherToast('Ajouté à la bibliothèque')
