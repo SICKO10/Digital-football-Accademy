@@ -193,15 +193,6 @@ function Home() {
             <div style={{ height: '8px', width: '45%', borderRadius: '4px', background: `linear-gradient(90deg, ${colors.accent.green}30, transparent)` }} />
           </div>
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginTop: '4rem', paddingTop: '3rem', borderTop: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
-          {[{ num: '500+', label: t('home_stat_joueurs_analyses', lang) }, { num: '98%', label: t('home_stat_satisfaction', lang) }, { num: '50+', label: t('home_stat_clubs_partenaires', lang) }].map(s => (
-            <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: 800 }}>{s.num}</div>
-              <div style={{ fontSize: '13px', color: colors.text.faint, marginTop: '4px' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section style={{ padding: '3.5rem 2rem', maxWidth: '960px', margin: '0 auto' }}>
