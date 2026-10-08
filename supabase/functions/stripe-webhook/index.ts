@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
             ...(palierClub ? { palier: palierClub } : {}),
           }).eq('id', profileId)
           if (updateErr) console.error('[stripe-webhook] erreur update profil (checkout.session.completed)', updateErr)
-          // Le crédit d'analyses (annuel: +2, mensuel: bonus tous les 6 mois)
+          // Le crédit d'analyses (annuel: +3, mensuel: bonus tous les 6 mois)
           // est géré par invoice.paid ci-dessous, y compris pour ce premier paiement.
         }
         break
@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
         })
 
         if (cycle === 'annuel') {
-          await crediterAnalyses(profileId, 2)
+          await crediterAnalyses(profileId, 3)
           const { error } = await supabaseAdmin.from('profiles').update({
             abonnement_actif: true,
             // Filet de sécurité : renseigne stripe_subscription_id ici aussi

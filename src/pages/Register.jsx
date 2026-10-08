@@ -114,7 +114,10 @@ export default function Register() {
       id: 'scout', label: t('regchoix_scout_titre', lang), desc: t('reginsc_scout_desc', lang),
       color: colors.accent.green, badge: 'Dès 10€/mois',
       stripeMensuel: STRIPE_LINKS_RECRUTEUR.mensuel, stripeAnnuel: STRIPE_LINKS_RECRUTEUR.annuel,
-      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
+      // reginsc_feat_scout_4 (messagerie) volontairement absente : pas encore
+      // affichée tant que la restriction "joueurs majeurs uniquement" n'est
+      // pas en place côté messagerie (cf. commentaire sur la clé elle-même).
+      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang)],
     },
     {
       id: 'club', label: t('regchoix_club_titre', lang), desc: t('reginsc_club_desc', lang),
@@ -147,7 +150,8 @@ export default function Register() {
     scout: {
       titre: t('reginsc_pitch_titre_scout', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
+      // reginsc_feat_scout_4 (messagerie) volontairement absente, cf. PROFILS ci-dessus.
+      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang)],
     },
     club: {
       titre: t('reginsc_pitch_titre_club', lang),
@@ -430,11 +434,13 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
     </div>
   )
 
-  // Même texte d'info par profil que l'ancien formulaire centré (un seul
-  // paragraphe, contenu inchangé) — juste restylé en vert pour rester
-  // cohérent avec le reste du panneau au lieu de sa couleur dédiée d'origine.
+  // Même texte d'info par profil que l'ancien formulaire centré — juste
+  // restylé en vert pour rester cohérent avec le reste du panneau au lieu de
+  // sa couleur dédiée d'origine. joueur_pro diffère selon le cycle choisi :
+  // la mécanique de crédit d'analyses n'est pas la même en mensuel (1 après
+  // 6 mois) qu'en annuel (3 dès l'activation, cf. reginsc_pro_info_annuel).
   const INFO_PAR_PROFIL = {
-    joueur_pro: t('reginsc_pro_info', lang),
+    joueur_pro: cycle === 'annuel' ? t('reginsc_pro_info_annuel', lang) : t('reginsc_pro_info', lang),
     joueur_starter: t('reginsc_starter_info', lang),
     scout: t('reginsc_scout_info', lang),
     educateur: t('reginsc_educateur_info', lang),
