@@ -1795,8 +1795,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // scopés à cette seule équipe pour ne jamais mélanger les données de 2
     // équipes gérées par le même coach.
     const mesEquipesData = clubCategoriesData.filter(c => c.educateur_id === targetId)
-    let idActif = null
-    try { idActif = localStorage.getItem('equipe_active_id') } catch { /* ignore */ }
+    // Priorité au choix mémorisé côté serveur (profiles.equipe_active_id) :
+    // le localStorage est propre à CHAQUE appareil, donc une tablette jamais
+    // utilisée avant retombait sur la première équipe de la liste au lieu de
+    // celle réellement active sur l'ordi/téléphone du coach — ses widgets
+    // (présences du prochain entraînement, etc.) semblaient alors vides
+    // alors que les données existaient bien, juste pour une autre équipe.
+    // Le localStorage reste un fallback pour les comptes pas encore
+    // resynchronisés (valeur serveur encore nulle avant leur premier
+    // changerEquipe post-migration).
+    let idActif = p.equipe_active_id || null
+    if (!idActif) {
+      try { idActif = localStorage.getItem('equipe_active_id') } catch { /* ignore */ }
+    }
     if (!mesEquipesData.some(e => e.id === idActif)) idActif = mesEquipesData[0]?.id || null
     if (idActif !== equipeActiveId) setEquipeActiveId(idActif)
     // chargerMesTaillesEquipementEduc (chargé ici, pas seulement quand l'onglet
@@ -2194,6 +2205,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const changerEquipe = (equipe) => {
     setEquipeActiveId(equipe.id)
     try { localStorage.setItem('equipe_active_id', equipe.id) } catch { /* ignore */ }
+    // Persisté aussi côté serveur (best-effort, fire-and-forget) pour que
+    // les autres appareils du coach retrouvent la même équipe active —
+    // cf. résolution dans init() ci-dessus.
+    avecRetrySession(() => supabase.from('profiles').update({ equipe_active_id: equipe.id }).eq('id', userId)).then(() => {})
     chargerJoueurs(userId, equipe.id)
     chargerMatchs(userId, equipe.id).then(matchs => chargerNotationsMatch(userId, matchs.map(m => m.id)))
     chargerEvaluationsJoueurs(userId)
