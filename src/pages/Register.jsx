@@ -6,7 +6,14 @@ import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, stripeUrl } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 
-const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
+const PILLS = ['Joueurs actifs', 'Clubs actifs', 'Éducateurs actifs']
+
+// Icônes sobres (pas d'emoji, cf. demande explicite — même style que les
+// Ico* du reste du projet : SVG trait, 24x24, currentColor) réutilisées pour
+// toutes les features des panneaux vitrine (coche) et le badge de confiance
+// (cadenas), à la place des emoji par feature utilisés avant.
+const IcoCheck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+const IcoLock = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
 
 // Détecte un signUp() qui échoue parce que l'email a déjà un compte — deux
 // signaux possibles côté Supabase : soit une erreur explicite ("User already
@@ -117,61 +124,35 @@ export default function Register() {
   ]
 
   // Panneau vitrine (colonne gauche, cf. SplitRegisterLayout) par profil —
-  // titre + features avec icône. Les features réutilisent le texte déjà
-  // traduit de PROFILS[].features ci-dessus (reginsc_feat_*), seules les
-  // icônes et le titre leur sont propres ici.
+  // titre + features (coche IcoCheck, pas d'icône par feature — rendu plus
+  // sobre que l'emoji par ligne utilisé avant). Les features réutilisent le
+  // texte déjà traduit de PROFILS[].features ci-dessus (reginsc_feat_*),
+  // seul le titre leur est propre ici.
   const PITCH_PAR_PROFIL = {
     joueur_starter: {
       titre: t('reginsc_pitch_titre_starter', lang),
       badge: t('reginsc_pitch_badge_gratuit', lang),
-      features: [
-        { icon: '📝', label: t('reginsc_feat_starter_1', lang) },
-        { icon: '🤝', label: t('reginsc_feat_starter_2', lang) },
-        { icon: '💬', label: t('reginsc_feat_starter_3', lang) },
-        { icon: '👀', label: t('reginsc_feat_starter_4', lang) },
-      ],
+      features: [t('reginsc_feat_starter_1', lang), t('reginsc_feat_starter_2', lang), t('reginsc_feat_starter_3', lang), t('reginsc_feat_starter_4', lang)],
     },
     joueur_pro: {
       titre: t('reginsc_pitch_titre_pro', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [
-        { icon: '✅', label: t('reginsc_feat_pro_1', lang) },
-        { icon: '📰', label: t('reginsc_feat_pro_2', lang) },
-        { icon: '🔍', label: t('reginsc_feat_pro_3', lang) },
-        { icon: '📹', label: t('reginsc_feat_pro_4', lang) },
-        { icon: '🎥', label: t('reginsc_feat_pro_5', lang) },
-      ],
+      features: [t('reginsc_feat_pro_1', lang), t('reginsc_feat_pro_2', lang), t('reginsc_feat_pro_3', lang), t('reginsc_feat_pro_4', lang), t('reginsc_feat_pro_5', lang)],
     },
     educateur: {
       titre: t('reginsc_edu_pitch_titre', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [
-        { icon: '📅', label: t('reginsc_edu_pitch_feat1', lang) },
-        { icon: '🎯', label: t('reginsc_edu_pitch_feat2', lang) },
-        { icon: '📊', label: t('reginsc_edu_pitch_feat3', lang) },
-        { icon: '🧠', label: t('reginsc_edu_pitch_feat4', lang) },
-        { icon: '📹', label: t('reginsc_edu_pitch_feat5', lang) },
-      ],
+      features: [t('reginsc_edu_pitch_feat1', lang), t('reginsc_edu_pitch_feat2', lang), t('reginsc_edu_pitch_feat3', lang), t('reginsc_edu_pitch_feat4', lang), t('reginsc_edu_pitch_feat5', lang)],
     },
     scout: {
       titre: t('reginsc_pitch_titre_scout', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [
-        { icon: '🔎', label: t('reginsc_feat_scout_1', lang) },
-        { icon: '🎯', label: t('reginsc_feat_scout_2', lang) },
-        { icon: '⭐', label: t('reginsc_feat_scout_3', lang) },
-        { icon: '💬', label: t('reginsc_feat_scout_4', lang) },
-      ],
+      features: [t('reginsc_feat_scout_1', lang), t('reginsc_feat_scout_2', lang), t('reginsc_feat_scout_3', lang), t('reginsc_feat_scout_4', lang)],
     },
     club: {
       titre: t('reginsc_pitch_titre_club', lang),
       badge: t('reginsc_edu_pitch_badge', lang),
-      features: [
-        { icon: '👥', label: t('reginsc_feat_club_1', lang) },
-        { icon: '📊', label: t('reginsc_feat_club_2', lang) },
-        { icon: '🏆', label: t('reginsc_feat_club_3', lang) },
-        { icon: '💶', label: t('reginsc_feat_club_4', lang) },
-      ],
+      features: [t('reginsc_feat_club_1', lang), t('reginsc_feat_club_2', lang), t('reginsc_feat_club_3', lang), t('reginsc_feat_club_4', lang)],
     },
   }
 
@@ -317,7 +298,7 @@ export default function Register() {
               ))}
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}30`, borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
-              🔒 {t('reginsc_edu_pitch_badge', lang)}
+              <span style={{ color: colors.accent.green, display: 'flex' }}><IcoLock /></span> {t('reginsc_edu_pitch_badge', lang)}
             </span>
           </div>
         </div>
@@ -355,7 +336,7 @@ export default function Register() {
   // ProfilFormPanel, qui réutilise exactement la même logique/les mêmes
   // champs que l'ancien formulaire centré (aucun changement de state/handler).
   return (
-    <SplitRegisterLayout pitch={PITCH_PAR_PROFIL[profilChoisi.id]} lang={lang}>
+    <SplitRegisterLayout pitch={PITCH_PAR_PROFIL[profilChoisi.id]} lang={lang} onRetour={() => setEtape(1)}>
       {profilChoisi.id === 'club' ? (
         <ClubWizard color={colors.accent.green} navigate={navigate} palierInitial={searchParams.get('palier') || ''} cycleInitial={searchParams.get('cycle') === 'annuel' ? 'annuel' : 'mensuel'} redirectApres={redirectApres} />
       ) : (
@@ -365,7 +346,7 @@ export default function Register() {
           email={email} setEmail={setEmail} password={password} setPassword={setPassword}
           rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted}
           erreur={erreur} loading={loading} inscrire={inscrire}
-          lang={lang} setEtape={setEtape}
+          lang={lang}
         />
       )}
     </SplitRegisterLayout>
@@ -378,7 +359,7 @@ export default function Register() {
 // (children). Ne connaît rien du contenu du formulaire lui-même — ProfilFormPanel
 // et ClubWizard sont interchangeables tant qu'ils tiennent dans une largeur
 // de 420px.
-function SplitRegisterLayout({ pitch, lang, children }) {
+function SplitRegisterLayout({ pitch, lang, onRetour, children }) {
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
       <style>{SPLIT2_MEDIA_QUERY}</style>
@@ -396,9 +377,9 @@ function SplitRegisterLayout({ pitch, lang, children }) {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               {pitch.features.map(f => (
-                <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ fontSize: '22px', flexShrink: 0 }}>{f.icon}</span>
-                  <span style={{ color: colors.text.secondary, fontSize: '15px', fontWeight: 600 }}>{f.label}</span>
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ color: colors.accent.green, flexShrink: 0, display: 'flex' }}><IcoCheck /></span>
+                  <span style={{ color: colors.text.secondary, fontSize: '15px', fontWeight: 600 }}>{f}</span>
                 </div>
               ))}
             </div>
@@ -407,7 +388,7 @@ function SplitRegisterLayout({ pitch, lang, children }) {
           <div>
             <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 14px' }}>{t('reginsc_edu_pitch_social', lang)}</p>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.accent.green + alpha.faint, border: `1px solid ${colors.accent.green}30`, borderRadius: '20px', padding: '8px 16px', fontSize: '12px', color: colors.text.dim }}>
-              🔒 {pitch.badge}
+              <span style={{ color: colors.accent.green, display: 'flex' }}><IcoLock /></span> {pitch.badge}
             </span>
           </div>
         </div>
@@ -415,6 +396,13 @@ function SplitRegisterLayout({ pitch, lang, children }) {
         {/* ── Colonne droite — contenu (formulaire ou wizard club) ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div style={{ width: '100%', maxWidth: '420px', background: colors.background.surface, borderRadius: '16px', padding: '40px', boxSizing: 'border-box' }}>
+            {onRetour && (
+              <button type="button" onClick={onRetour}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: 600, padding: 0, marginBottom: '20px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                Retour
+              </button>
+            )}
             {children}
           </div>
         </div>
@@ -427,7 +415,7 @@ function SplitRegisterLayout({ pitch, lang, children }) {
 // à 3 étapes). Repose entièrement sur l'état et la logique de Register()
 // (inscrire, setEtape...), passés en props — ne duplique aucune logique
 // métier, uniquement l'affichage. Rendu à l'intérieur de SplitRegisterLayout.
-function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom, setNom, email, setEmail, password, setPassword, rgpdAccepted, setRgpdAccepted, erreur, loading, inscrire, lang, setEtape }) {
+function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom, setNom, email, setEmail, password, setPassword, rgpdAccepted, setRgpdAccepted, erreur, loading, inscrire, lang }) {
   const champStyle = {
     width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`,
     borderRadius: '10px', color: colors.text.primary, padding: '0 14px', height: '48px',
@@ -458,11 +446,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
       <div style={{ marginBottom: '24px' }}>
         <p style={{ color: colors.text.primary, fontWeight: 800, fontSize: '20px', margin: '0 0 4px' }}>{t('register_creer_compte', lang)}</p>
         <p style={{ fontSize: '12px', color: colors.text.disabled, margin: 0 }}>
-          {`${t('reginsc_inscription_prefix', lang)} ${profilChoisi.label}`}{' '}
-          <button type="button" onClick={() => setEtape(1)}
-            style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', textDecoration: 'underline', padding: 0 }}>
-            {t('reginsc_changer', lang)}
-          </button>
+          {`${t('reginsc_inscription_prefix', lang)} ${profilChoisi.label}`}
         </p>
       </div>
 
