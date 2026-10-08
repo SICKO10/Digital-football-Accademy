@@ -36,21 +36,6 @@ const profilsCards = [
     solution: "Planning terrains, gestion d'équipes, déplacements, recrutement — centralisé en un seul endroit. Nos outils et notre IA te font gagner des heures chaque semaine." },
 ]
 
-// Section désactivée temporairement plus bas (cf. commentaire sur cette
-// section) — un identifiant nommé plutôt qu'un littéral `false` directement
-// dans le JSX, pour que `no-constant-binary-expression` (eslint) ne la
-// signale pas comme une faute de frappe (`1 &&`/`0 &&` typiques).
-const TEMOIGNAGES_ACTIFS = false
-
-const quotesUtilisateurs = [
-  { quote: '"Grâce à tes stats et la connexion à ton coach, tu sais ce qu\'il attend exactement de toi pour progresser."',
-    profil: 'Joueur', color: colors.accent.green },
-  { quote: '"Tu prépares tes matchs et tes séances en quelques minutes au lieu de plusieurs heures grâce à l\'IA et aux outils à notre disposition."',
-    profil: 'Éducateur', color: colors.accent.blue },
-  { quote: '"Accède à des centaines de joueurs qualifiés sans quitter ton bureau."',
-    profil: 'Recruteur / Scout', color: colors.accent.orange },
-]
-
 const etapesClub = [
   { num: 'ÉTAPE 1', titre: "Tu t'inscris", desc: 'Crée ton espace club selon ta taille' },
   { num: 'ÉTAPE 2', titre: 'Tu organises', desc: 'Invite gratuitement tes éducateurs, dirigeants et secrétaires' },
@@ -153,15 +138,15 @@ function Home() {
           <div style={{ display: 'flex', gap: '4px' }}>
             {LANGS.map(l => (
               <button key={l.code} onClick={() => setLang(l.code)}
-                style={{ background: lang === l.code ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${lang === l.code ? colors.accent.green : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px' }}>
+                style={{ background: lang === l.code ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${lang === l.code ? colors.accent.green : colors.border.default}`, borderRadius: '6px', padding: '3px 6px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>
                 {l.flag}
               </button>
             ))}
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-          <button className="navbar-cta-btn" onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('auth_connexion_titre', lang)}</button>
-          <button className="navbar-cta-btn" onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('home_commencer', lang)}</button>
+          <button className="navbar-cta-btn" onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('auth_connexion_titre', lang)}</button>
+          <button className="navbar-cta-btn" onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{t('home_commencer', lang)}</button>
         </div>
       </nav>
       <style>{`
@@ -183,14 +168,14 @@ function Home() {
             onClick={() => navigate('/register')}
             onMouseEnter={() => setHeroCta1Hover(true)}
             onMouseLeave={() => setHeroCta1Hover(false)}
-            style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none' }}>
+            style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none', fontFamily: 'Inter, sans-serif' }}>
             {t('home_envoyer_video', lang)}
           </button>
           <button
             onClick={() => navigate('/jogabonito')}
             onMouseEnter={() => setHeroCta2Hover(true)}
             onMouseLeave={() => setHeroCta2Hover(false)}
-            style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none' }}>
+            style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none', fontFamily: 'Inter, sans-serif' }}>
             {t('home_voir_jogabonito', lang)}
           </button>
         </div>
@@ -249,31 +234,15 @@ function Home() {
             </div>
           ))}
         </div>
-        <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>{t('home_voir_jogabonito', lang)}</button>
+        <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('home_voir_jogabonito', lang)}</button>
       </section>
 
-      {/* Section témoignages désactivée temporairement (pas supprimée) : les
-          citations de quotesUtilisateurs ci-dessus ne sont rattachées à
-          aucun utilisateur réel ni aucune source dans le code (pas de nom,
-          pas de table Supabase, aucun commentaire d'origine) — impossible
-          d'en garantir l'authenticité. À remplacer par une présentation
-          visuelle des vrais outils Digital Football (cf. décision du
-          2026-10-08). Remettre à `true` si une source de témoignages réels
-          est branchée entre-temps. */}
-      {TEMOIGNAGES_ACTIFS && (
-      <section style={{ background: '#0d0d0d', padding: '3.5rem 2rem', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', letterSpacing: '1px', fontWeight: 600 }}>ILS EN PARLENT MIEUX QUE NOUS</div>
-        <h2 style={{ fontSize: 'clamp(22px, 4vw, 30px)', fontWeight: 800, marginBottom: '3rem' }}>Ce que nos utilisateurs retiennent</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-          {quotesUtilisateurs.map((q, i) => (
-            <div key={i} style={{ background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '16px', padding: '1.75rem', textAlign: 'left' }}>
-              <p style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1.5, color: 'white', marginBottom: '1rem' }}>{q.quote}</p>
-              <div style={{ fontSize: '10px', textTransform: 'uppercase', color: q.color, fontWeight: 700, letterSpacing: '1px' }}>{q.profil}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-      )}
+      {/* Emplacement réservé à la future section premium "Digital Football en
+          action" (vrais dashboards Joueur/Éducateur/Club) — pas développée
+          pour l'instant. L'ancienne section témoignages a été retirée : ses
+          citations n'étaient rattachées à aucun utilisateur réel ni source
+          vérifiable (pas de nom, pas de table Supabase), décision du
+          2026-10-08. */}
 
       <section id="comment" style={{ padding: '3.5rem 2rem 0', textAlign: 'center' }}>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -304,7 +273,7 @@ function Home() {
           <p style={{ color: colors.text.dim, fontSize: '14px', lineHeight: 1.7, marginBottom: '1.75rem' }}>
             Licence, sponsoring local, subventions... découvrez 6 stratégies concrètes et un calculateur pour couvrir l'outil sans impact sur les familles.
           </p>
-          <button onClick={() => navigate('/comment-financer')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Voir le guide de financement →</button>
+          <button onClick={() => navigate('/comment-financer')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir le guide de financement →</button>
         </div>
       </section>
 
@@ -313,8 +282,8 @@ function Home() {
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
         <h2 style={{ position: 'relative', zIndex: 1, fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>Prêt à rejoindre l'écosystème ?</h2>
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>Créer mon profil</button>
-          <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}>{t('auth_connexion_titre', lang)}</button>
+          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Créer mon profil</button>
+          <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('auth_connexion_titre', lang)}</button>
         </div>
       </section>
 
