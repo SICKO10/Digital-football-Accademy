@@ -14,6 +14,9 @@ import { t, LANGS } from '../lib/translationsHome'
 const BREAKPOINT = 1100
 
 const HN_STYLE = `
+  /* Nav sticky (~72px) : les ancres natives (#comment) s'arrêtent sous la
+     nav plutôt que derrière. Style monté avec la Home uniquement. */
+  html { scroll-padding-top: 88px; }
   .hn-burger, .hn-panel { display: none; }
   .hn-link:focus-visible, .hn-lang:focus-visible, .hn-burger:focus-visible, .hn-cta:focus-visible {
     outline: 2px solid ${colors.accent.green}; outline-offset: 2px; }

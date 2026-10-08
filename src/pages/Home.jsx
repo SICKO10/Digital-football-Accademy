@@ -183,8 +183,8 @@ function Home() {
     club: { badge: 'CLUBS', titre: 'Gérez votre club de A à Z', etapes: etapesClub.map(e => e.desc ? e : { ...e, desc: t('home_club_etape4_desc', lang) }), color: colors.accent.purpleLight, ctaLabel: 'Voir les tarifs club' },
   }
 
-  // « Voir la démo » : défilement vers le titre de la section « Une semaine de
-  // match » (DemoSemaineMatch, h2#dsm-titre) en retranchant la hauteur de la
+  // « Voir la démo » : défilement vers l'en-tête de la section « Une semaine de
+  // football » (DemoSemaineMatch, autour du h2#dsm-titre) en retranchant la hauteur de la
   // nav sticky + une marge, pour que le titre ne passe pas dessous. Le focus
   // est ensuite déplacé sur ce titre (lecteurs d'écran, navigation clavier)
   // sans re-défiler. href="#dsm-titre" reste le repli sans JS.
@@ -194,14 +194,25 @@ function Home() {
     e.preventDefault()
     const hauteurNav = document.querySelector('nav.navbar-home')?.offsetHeight || 0
     const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    window.scrollTo({ top: cible.getBoundingClientRect().top + window.scrollY - hauteurNav - 24, behavior: reduit ? 'auto' : 'smooth' })
+    // Bloc d'en-tête (badge + titre + sous-titre) plutôt que le h2 seul,
+    // pour que le badge au-dessus du titre ne passe pas sous la nav sticky.
+    const entete = cible.parentElement || cible
+    window.scrollTo({ top: entete.getBoundingClientRect().top + window.scrollY - hauteurNav - 24, behavior: reduit ? 'auto' : 'smooth' })
     if (!cible.hasAttribute('tabindex')) cible.setAttribute('tabindex', '-1')
     cible.focus({ preventScroll: true })
   }
 
+  // HomeNav est volontairement HORS du conteneur à overflowX:hidden : un
+  // ancêtre en overflow hidden devient le conteneur de défilement de
+  // référence du position:sticky, qui ne collait donc jamais au viewport
+  // (la nav défilait avec la page). overflow-x:clip aurait le même effet
+  // mais n'existe pas avant Safari 16 ; ici la nav (sans débordement de
+  // 360 à 1440px) n'a pas besoin de ce garde-fou, le reste de la page le
+  // conserve.
   return (
+    <>
+    <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
 
       {/* maxWidth élargi de 800px à 1400px (strictement pour laisser la place
           à HeroDashboardsPreview et sa composition en profondeur). Badge/H1/
@@ -380,6 +391,7 @@ function Home() {
         <p style={{ color: colors.border.strong, fontSize: '12px', margin: 0 }}>© {new Date().getFullYear()} Digital Football</p>
       </footer>
     </div>
+    </>
   )
 }
 export default Home
