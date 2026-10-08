@@ -24,7 +24,7 @@ import carteJoueur from '../assets/demos/carte-joueur.webp'
 // promet qu'elle est accessible à tous les profils.
 const SCENES = [
   { profil: 'club', color: colors.accent.purpleLight,
-    desktop: { src: terrainsDesktop, w: 1600, h: 1058 }, mobile: { src: terrainsMobile, w: 720, h: 901 } },
+    desktop: { src: terrainsDesktop, w: 1600, h: 1204 }, mobile: { src: terrainsMobile, w: 720, h: 901 } },
   { profil: 'club', color: colors.accent.purpleLight,
     desktop: { src: deplacementsDesktop, w: 1600, h: 943 }, mobile: { src: deplacementsMobile, w: 720, h: 901 } },
   { profil: 'educateur', color: colors.accent.blue,
@@ -42,7 +42,8 @@ const num = i => String(i + 1).padStart(2, '0')
 // impossibles en style inline. Couleur de scène passée en --dsm (hex) et
 // --dsm-soft/--dsm-line (hex+alpha) — pas de color-mix(), absent de
 // Safari < 16.2. ≤1024px : onglets horizontaux au-dessus de l'aperçu ;
-// ≤640px : carrousel natif (scroll-snap), display:none sur l'autre bloc pour
+// césure automatique des titres d'onglets (lang sur la section — ex.
+// « Verfügbarkeiten » en allemand à 680px) ; ≤640px : carrousel natif (scroll-snap), display:none sur l'autre bloc pour
 // qu'il sorte de l'arbre d'accessibilité et que ses images lazy ne se
 // chargent pas.
 const DSM_STYLE = `
@@ -78,7 +79,7 @@ const DSM_STYLE = `
     .dsm-desktop { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
     .dsm-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
     .dsm-tab { border-left-width: 1px; border-top: 3px solid transparent; padding: 10px 12px; }
-    .dsm-tab-titre { font-size: 13px !important; }
+    .dsm-tab-titre { font-size: 13px !important; -webkit-hyphens: auto; hyphens: auto; }
     .dsm-tab[aria-selected="true"] { border-top-color: var(--dsm); }
   }
   @media (max-width: 640px) {
@@ -166,7 +167,7 @@ export default function DemoSemaineMatch({ lang }) {
   })
 
   return (
-    <section aria-labelledby="dsm-titre" style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }} className="dsm-section">
+    <section aria-labelledby="dsm-titre" lang={lang} style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }} className="dsm-section">
       <style>{DSM_STYLE + '@media (max-width: 640px) { .dsm-section { padding-left: 1rem !important; padding-right: 1rem !important; } }'}</style>
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
         <div style={{ display: 'inline-block', background: colors.background.surface, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, fontSize: '11px', padding: '4px 14px', borderRadius: '20px', marginBottom: '1rem', letterSpacing: '1px', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -195,14 +196,15 @@ export default function DemoSemaineMatch({ lang }) {
           <div className="dsm-stage">
             {SCENES.map((s, i) => (
               <div key={i} className={`dsm-layer${actif === i ? ' is-active' : ''}`} aria-hidden={actif !== i}>
-                {/* Fiche (88 % de haut ≈ 71 % de large) + carte (68 % ≈ 27 %) côte à
-                    côte sans chevauchement : la carte ne masque aucun contenu de la fiche. */}
+                {/* Fiche (93 % de haut ≈ 76 % de large) + carte (58 % ≈ 23 %) côte à
+                    côte, centrées verticalement, ~1 % d'écart : aucun chevauchement,
+                    la carte ne masque aucun contenu de la fiche. */}
                 {s.secondaire ? (
                   <>
                     <img src={s.desktop.src} alt={t(`action_alt_${i + 1}`, lang)} width={s.desktop.w} height={s.desktop.h} loading="lazy" decoding="async"
-                      style={{ position: 'absolute', left: 0, top: '6%', height: '88%', width: 'auto' }} />
+                      style={{ position: 'absolute', left: 0, top: '3.5%', height: '93%', width: 'auto' }} />
                     <img src={s.secondaire.src} alt={t('action_alt_carte', lang)} width={s.secondaire.w} height={s.secondaire.h} loading="lazy" decoding="async"
-                      style={{ position: 'absolute', right: 0, top: '16%', height: '68%', width: 'auto', filter: 'drop-shadow(0 18px 30px rgba(0,0,0,0.6))' }} />
+                      style={{ position: 'absolute', right: 0, top: '21%', height: '58%', width: 'auto', filter: 'drop-shadow(0 18px 30px rgba(0,0,0,0.6))' }} />
                   </>
                 ) : (
                   <img src={s.desktop.src} alt={t(`action_alt_${i + 1}`, lang)} width={s.desktop.w} height={s.desktop.h} loading="lazy" decoding="async"
