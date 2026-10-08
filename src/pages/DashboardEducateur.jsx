@@ -2258,6 +2258,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioFiltreCategorieAge, setBiblioFiltreCategorieAge] = useState('')
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, partage_club: false, partage_platform: false }
+  // Filet de secours si l'enregistrement d'un procédé échoue (session expirée,
+  // coupure réseau...) : la modale se ferme en optimiste AVANT la réponse
+  // serveur (cf. sauvegarderProcede), donc sans ça une erreur fait disparaître
+  // la saisie sans aucune trace. Conservé en localStorage (survit même à un
+  // rechargement de page) jusqu'au prochain enregistrement réussi.
+  const PROCEDE_BROUILLON_KEY = 'df_procede_brouillon'
   const CATEGORIES_AGE_PROCEDE = ['Pour tous', 'U6-U7', 'U8-U9', 'U10-U11', 'U12-U13', 'U14-U15', 'U16-U17', 'U18-U19', 'Senior']
   // Valeur stockée toujours en français (canonique, comparée telle quelle par
   // les filtres) — seul l'affichage est traduit ; les tranches U6-U7 etc.
@@ -2289,6 +2295,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [procedeEnEdition, setProcedeEnEdition] = useState(null) // null = nouveau
   const [procedeForm, setProcedeForm] = useState(PROCEDE_VIDE)
   const [savingProcede, setSavingProcede] = useState(false)
+  const [procedeBrouillon, setProcedeBrouillon] = useState(() => {
+    try {
+      const raw = localStorage.getItem(PROCEDE_BROUILLON_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  })
   const [modalBiblioImport, setModalBiblioImport] = useState(null) // index du procédé cible dans la fiche, ou null si fermé
   const [procedeActif, setProcedeActif] = useState(null) // procédé affiché en grand (modale d'aperçu bibliothèque), ou null si fermée
   const [biblioSelectionMode, setBiblioSelectionMode] = useState(false)
@@ -2813,20 +2825,44 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setProcedeEnEdition(null)
     setProcedeForm(PROCEDE_VIDE)
     let error
-    if (idEnEdition) {
-      ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').update(payload).eq('id', idEnEdition.id)))
-    } else {
-      ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').insert(payload)))
+    try {
+      if (idEnEdition) {
+        ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').update(payload).eq('id', idEnEdition.id)))
+      } else {
+        ;({ error } = await avecRetrySession(() => supabase.from('bibliotheque_exercices').insert(payload)))
+      }
+    } catch (e) {
+      // Coupure réseau, refreshSession qui échoue... : avecRetrySession peut
+      // rejeter au lieu de renvoyer { error }. Sans ce catch, la saisie
+      // disparaissait silencieusement (modale déjà fermée en optimiste
+      // ci-dessus) sans alerte ni trace nulle part.
+      error = e
     }
     setSavingProcede(false)
     if (error) {
-      alert('Erreur : ' + error.message)
+      try { localStorage.setItem(PROCEDE_BROUILLON_KEY, JSON.stringify({ form: formSnapshot, idEnEdition, savedAt: Date.now() })) } catch { /* ignore */ }
+      setProcedeBrouillon({ form: formSnapshot, idEnEdition, savedAt: Date.now() })
+      alert(`Erreur : ${error.message || 'connexion impossible'}\n\nTon procédé a été conservé en brouillon sur cet appareil (visible en haut de la bibliothèque) — tu pourras le ré-enregistrer dès que possible.`)
       setProcedeForm(formSnapshot)
       setProcedeEnEdition(idEnEdition)
       setModalProcede(true)
       return
     }
+    try { localStorage.removeItem(PROCEDE_BROUILLON_KEY) } catch { /* ignore */ }
+    setProcedeBrouillon(null)
     await chargerBiblio(userId, biblioRubrique === 'videos' ? 'personal' : biblioRubrique)
+  }
+
+  const restaurerProcedeBrouillon = () => {
+    if (!procedeBrouillon) return
+    setProcedeForm(procedeBrouillon.form)
+    setProcedeEnEdition(procedeBrouillon.idEnEdition ? { id: procedeBrouillon.idEnEdition } : null)
+    setModalProcede(true)
+  }
+
+  const ignorerProcedeBrouillon = () => {
+    try { localStorage.removeItem(PROCEDE_BROUILLON_KEY) } catch { /* ignore */ }
+    setProcedeBrouillon(null)
   }
 
   const supprimerProcede = async (id) => {
@@ -9982,6 +10018,21 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
               <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Rejoins un club (code club, dans ton profil) pour accéder à sa bibliothèque partagée.</p>
             ) : (
             <>
+            {biblioRubrique === 'personal' && procedeBrouillon && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>
+                  Un procédé n'a pas pu être enregistré (« {procedeBrouillon.form?.nom || 'sans titre'} ») — conservé en brouillon sur cet appareil.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button onClick={restaurerProcedeBrouillon} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Restaurer
+                  </button>
+                  <button onClick={ignorerProcedeBrouillon} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Ignorer
+                  </button>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
