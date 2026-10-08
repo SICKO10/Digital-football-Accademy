@@ -100,6 +100,8 @@ export default function DashboardRecruteur() {
   const colors = useColors();
   const [recruteur, setRecruteur] = useState(null);
   const [recruteurId, setRecruteurId] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelDone, setCancelDone] = useState(false);
   const [joueurs, setJoueurs] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -387,6 +389,24 @@ export default function DashboardRecruteur() {
       setRecruteur(avant);
       setToast('Erreur lors de la mise à jour du profil');
     }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm("Résilier ton abonnement ? Tu garderas l'accès jusqu'à la fin de la période en cours, puis ton compte sera désactivé. Toutes tes données (joueurs suivis, favoris, messages...) sont conservées et seront intactes si tu réactives plus tard.")) return;
+    setCancelling(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur résiliation');
+      setCancelDone(true);
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+    }
+    setCancelling(false);
   };
 
   const handleAvatarUpload = async (e) => {
@@ -1513,11 +1533,29 @@ export default function DashboardRecruteur() {
             {/* Abonnement */}
             <div style={{ background: colors.background.surface, border: "1px solid #1a1a1a", borderRadius: "16px", padding: "24px", marginTop: "16px" }}>
               <p style={{ margin: "0 0 6px", fontWeight: 700, fontSize: "14px" }}>💳 Mon abonnement</p>
-              <p style={{ margin: "0 0 14px", fontSize: "12px", color: colors.text.faint, lineHeight: 1.6 }}>Accès complet à la recherche de joueurs, aux favoris et à la messagerie.</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.mensuel, recruteurId, recruteur?.email), '_blank')} style={{ background: "transparent", color: "white", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>Mensuel — 10€/mois</button>
-                <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.annuel, recruteurId, recruteur?.email), '_blank')} style={{ background: colors.accent.orange, color: colors.black, border: "none", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>Annuel — 100€/an</button>
-              </div>
+              {recruteur?.abonnement_actif ? (
+                cancelDone ? (
+                  <div>
+                    <p style={{ fontSize: '13px', color: colors.accent.orange, fontWeight: 700, marginBottom: '4px' }}>Résiliation programmée</p>
+                    <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>Ton accès reste actif jusqu'à la fin de la période déjà payée. Tes données ne sont pas supprimées : si tu réactives un jour, tu retrouves tout exactement comme avant.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ margin: "0 0 14px", fontSize: "12px", color: colors.text.faint, lineHeight: 1.6 }}>Accès complet à la recherche de joueurs, aux favoris et à la messagerie.</p>
+                    <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: "transparent", border: "1px solid #ef444425", color: cancelling ? colors.text.disabled : colors.accent.red, padding: "10px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: cancelling ? "wait" : "pointer" }}>
+                      {cancelling ? "Résiliation en cours..." : "Résilier mon abonnement"}
+                    </button>
+                  </div>
+                )
+              ) : (
+                <>
+                  <p style={{ margin: "0 0 14px", fontSize: "12px", color: colors.text.faint, lineHeight: 1.6 }}>Accès complet à la recherche de joueurs, aux favoris et à la messagerie.</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.mensuel, recruteurId, recruteur?.email), '_blank')} style={{ background: "transparent", color: "white", border: "1px solid #2a2a2a", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>Mensuel — 10€/mois</button>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_RECRUTEUR.annuel, recruteurId, recruteur?.email), '_blank')} style={{ background: colors.accent.orange, color: colors.black, border: "none", padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>Annuel — 100€/an</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

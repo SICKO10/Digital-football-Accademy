@@ -237,6 +237,7 @@ Deno.serve(async (req) => {
         // confirmé (bug constaté en prod le 08/10/2026).
         const montant = session.amount_total ?? 0
         const montantBrut = session.amount_subtotal ?? montant
+        const stripeSubscriptionId = typeof session.subscription === 'string' ? session.subscription : null
 
         if (session.mode === 'payment' && montantBrut === MONTANT_ANALYSE_UNITE) {
           // Analyse vidéo à l'unité — achat ponctuel, crédité immédiatement.
@@ -291,6 +292,13 @@ Deno.serve(async (req) => {
 
           const { error: updateErr } = await supabaseAdmin.from('profiles').update({
             stripe_customer_id: stripeCustomerId,
+            // stripe_subscription_id n'était jamais écrit nulle part dans ce
+            // fichier (ni ailleurs dans le projet) malgré son usage par
+            // /api/cancel-subscription pour résilier via l'API Stripe — le
+            // bouton "Résilier" échouait donc systématiquement ("Aucun
+            // abonnement actif trouvé") pour tout compte dont la subscription
+            // n'avait pas été renseignée manuellement en base. Corrigé ici.
+            ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
             abonnement_actif: true,
             abonnement_cycle: cycle,
             abonnement_mois_payes: 0,
@@ -313,6 +321,7 @@ Deno.serve(async (req) => {
         // (avant remise/coupon) pour la reconnaissance du produit.
         const montant = invoice.amount_paid ?? 0
         const montantBrut = invoice.subtotal ?? montant
+        const stripeSubscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : null
 
         const profileId = await trouverProfilId({
           stripeCustomerId,
@@ -341,13 +350,19 @@ Deno.serve(async (req) => {
 
         if (cycle === 'annuel') {
           await crediterAnalyses(profileId, 2)
-          const { error } = await supabaseAdmin.from('profiles').update({ abonnement_actif: true }).eq('id', profileId)
+          const { error } = await supabaseAdmin.from('profiles').update({
+            abonnement_actif: true,
+            // Filet de sécurité : renseigne stripe_subscription_id ici aussi
+            // si jamais checkout.session.completed ne l'avait pas encore fait.
+            ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
+          }).eq('id', profileId)
           if (error) console.error('[stripe-webhook] erreur update abonnement_actif (invoice.paid annuel)', error)
         } else {
           const nouveauCompte = (profil?.abonnement_mois_payes ?? 0) + 1
           const { error } = await supabaseAdmin.from('profiles').update({
             abonnement_mois_payes: nouveauCompte,
             abonnement_actif: true,
+            ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
           }).eq('id', profileId)
           if (error) console.error('[stripe-webhook] erreur update abonnement_mois_payes (invoice.paid mensuel)', error)
           if (nouveauCompte % 6 === 0) await crediterAnalyses(profileId, 1)

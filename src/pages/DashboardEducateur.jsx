@@ -2122,6 +2122,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [affiliations, setAffiliations] = useState([])
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelDone, setCancelDone] = useState(false)
   const [annoncesClub, setAnnoncesClub] = useState([])
   const [annoncesLuesIds, setAnnoncesLuesIds] = useState(new Set())
   const [monMateriel, setMonMateriel] = useState([]) // materiel_distribution où educateur_id = userId
@@ -3921,6 +3923,24 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
       return
     }
     if (data) { setProfilEdu({ ...data, avatar_url }); setProfilEduEdit({ ...data, avatar_url }) }
+  }
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm("Résilier ton abonnement ? Tu garderas l'accès jusqu'à la fin de la période en cours, puis ton compte sera désactivé. Toutes tes données (équipes, joueurs, séances, stats...) sont conservées et seront intactes si tu réactives plus tard.")) return
+    setCancelling(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur résiliation')
+      setCancelDone(true)
+    } catch (e) {
+      alert('Erreur : ' + e.message)
+    }
+    setCancelling(false)
   }
 
   // Même flux que l'avatar joueur/club (signature Cloudinary via
@@ -11423,11 +11443,29 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
                 {/* Abonnement */}
                 <div className="profil-abonnement" style={st.card}>
                   <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('edu_offre_titre', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
-                  </div>
+                  {profil?.abonnement_actif ? (
+                    cancelDone ? (
+                      <div>
+                        <p style={{ fontSize: '13px', color: colors.accent.orange, fontWeight: 700, marginBottom: '4px' }}>Résiliation programmée</p>
+                        <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>Ton accès reste actif jusqu'à la fin de la période déjà payée. Tes données ne sont pas supprimées : si tu réactives un jour, tu retrouves tout exactement comme avant.</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
+                        <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: cancelling ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          {cancelling ? 'Résiliation en cours...' : 'Résilier mon abonnement'}
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <>
+                      <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: 'white', border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
+                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

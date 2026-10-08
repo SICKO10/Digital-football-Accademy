@@ -1059,6 +1059,8 @@ export default function DashboardClub() {
   const { lang, setLang } = useLang()
   const [club, setClub] = useState(null)
   const [clubId, setClubId] = useState(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelDone, setCancelDone] = useState(false)
   const [moi, setMoi] = useState(null) // { id, prenom, nom } — le compte réellement connecté (club OU staff délégué), distinct de clubId (portée des données)
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobileOrTablet()
@@ -3099,6 +3101,24 @@ export default function DashboardClub() {
     }
   }
 
+  const handleCancelSubscription = async () => {
+    if (!window.confirm("Résilier l'abonnement du club ? Vous garderez l'accès jusqu'à la fin de la période en cours, puis le compte sera désactivé. Toutes les données (équipes, joueurs, éducateurs, séances, stats...) sont conservées et seront intactes si vous réactivez plus tard.")) return
+    setCancelling(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur résiliation')
+      setCancelDone(true)
+    } catch (e) {
+      alert('Erreur : ' + e.message)
+    }
+    setCancelling(false)
+  }
+
   const ajouterStade = () => {
     setProfilClubEdit(p => ({ ...p, stades: [...p.stades, { id: crypto.randomUUID(), nom: '', adresse: '' }] }))
   }
@@ -4507,6 +4527,21 @@ export default function DashboardClub() {
                 <p style={{ color: colors.text.ghost, fontSize: '12px', textAlign: 'center', marginTop: '10px' }}>
                   Paiement sécurisé via Stripe · <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Question abonnement — ' + (profilClubEdit.club || club?.club || ''))}`} style={{ color: colors.text.faint }}>Une question ?</a>
                 </p>
+
+                {club?.abonnement_actif && (
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${colors.border.faint}` }}>
+                    {cancelDone ? (
+                      <div>
+                        <p style={{ fontSize: '13px', color: colors.accent.orange, fontWeight: 700, marginBottom: '4px' }}>Résiliation programmée</p>
+                        <p style={{ fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>L'accès reste actif jusqu'à la fin de la période déjà payée. Les données du club ne sont pas supprimées : en cas de réactivation, tout est retrouvé intact.</p>
+                      </div>
+                    ) : (
+                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: cancelling ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {cancelling ? 'Résiliation en cours...' : 'Résilier mon abonnement'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Avis reçus */}
