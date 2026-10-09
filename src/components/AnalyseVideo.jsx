@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
-import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { makeUseSt } from '../lib/theme'
 import { genererPDFMatch } from './RapportMatch'
 
@@ -235,50 +235,11 @@ export default function AnalyseVideo({ userId, equipeActiveId, equipeUnique = tr
     setLoading(true)
     setErreurIA(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-
-      const periodeLabel = { complet: 'Match complet', premiere: '1ère mi-temps', deuxieme: '2ème mi-temps' }[playerInfo.periodeMatch] || 'Match complet'
-      const typeLabel = playerInfo.typeMatch === 'retour' ? 'Match retour' : 'Match aller'
-
-      const prompt = `Tu es un analyste football expert. Voici la transcription d'une analyse vocale d'un éducateur/coach sur un joueur.
-
-Joueur: ${playerInfo.prenom} ${playerInfo.nom}, Poste: ${playerInfo.poste}, Numéro: ${playerInfo.numero}
-Club adverse: ${playerInfo.nomClub || 'non précisé'}
-Type: ${typeLabel} — ${periodeLabel}
-
-Transcription de l'analyse:
-${transcript}
-
-Génère un rapport d'analyse football structuré en JSON avec ce format EXACT (sans markdown, juste le JSON):
-{
-  "sequences": [
-    { "minute": "XX:XX", "description": "description de l'action ou séquence mentionnée" }
-  ],
-  "pointsPositifs": ["point 1", "point 2", "point 3"],
-  "pointsAmeliorer": ["point 1", "point 2", "point 3"],
-  "synthese": "résumé global de la performance du joueur",
-  "note": 7.5
-}
-
-Instructions:
-- Si des minutes/timestamps sont mentionnés dans la transcription, utilise-les pour les séquences
-- Extrais les points positifs et axes d'amélioration de ce qui est dit
-- La note est sur 10
-- Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication`
-
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-oss-20b',
-          reasoning_effort: 'low',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,
-        }),
+      // Prompt construit côté serveur (api/_promptsIA.js) : seule la donnée
+      // métier part du navigateur, la clé Groq reste sur le serveur.
+      const data = await enqueueIARequest('analyse_video', {
+        joueur: { prenom: playerInfo.prenom, nom: playerInfo.nom, poste: playerInfo.poste, numero: playerInfo.numero, nomClub: playerInfo.nomClub, periodeMatch: playerInfo.periodeMatch, typeMatch: playerInfo.typeMatch },
+        transcription: transcript,
       }, setLoadingStatus)
       if (data.error) throw new Error(data.error.message)
       const text = data.choices?.[0]?.message?.content

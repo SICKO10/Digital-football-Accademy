@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { normaliserHeure, normaliserCle, trouverFeuilleAvecDonnees } from '../lib/excelImport'
-import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { labelCategorie } from '../lib/categories'
 import { makeUseSt } from '../lib/theme'
 import { useWindowWidth } from '../hooks/useWindowWidth'
@@ -402,8 +402,6 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
     setImporting(true)
     setIaStatus(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
       const XLSX = await import('xlsx')
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
@@ -424,52 +422,21 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
       grille.slice(0, 55).forEach((row, i) => {
         row.forEach((cell, j) => {
           const val = String(cell ?? '').trim()
-          if (val && val !== '0') cellsNonVides.push(`L${i + 1}C${j + 1}: "${val}"`)
+          // Valeur bornée à 200 caractères (limite du serveur, cf. api/_promptsIA.js).
+          if (val && val !== '0') cellsNonVides.push({ l: i + 1, c: j + 1, v: val.slice(0, 200) })
         })
       })
       if (cellsNonVides.length === 0) throw new Error('Fichier vide ou illisible.')
       if (cellsNonVides.length > 150) {
         console.warn(`Import planning terrains IA : ${cellsNonVides.length} cellules non vides détectées, seules les 150 premières sont envoyées à l'IA.`)
       }
-      const sample = cellsNonVides.slice(0, 150).join('\n')
-
-      const prompt = `Voici la liste des cellules non vides d'un planning d'occupation de terrains de football club (format Excel), sous une forme quelconque (grille par semaine, tableau croisé, liste...). Chaque ligne indique la position de la cellule (Lx = ligne x, Cy = colonne y) et sa valeur — les cellules d'une même ligne Lx sont sur la même ligne du fichier, celles d'une même colonne Cy sont dans la même colonne :
-
----DEBUT FICHIER---
-${sample}
----FIN FICHIER---
-
-Terrains existants dans ce club (réutilise ces noms exacts si tu les reconnais dans le fichier) : ${terrains.map(t => t.nom).join(', ') || 'aucun terrain enregistré'}
-
-RÈGLE IMPORTANTE — plusieurs équipes peuvent partager un même terrain au même horaire, sur des zones différentes :
-- Foot à 11 (catégories U13, U14, U15, U16, U17, U18, U19, U20, Seniors, R1, R2...) : chaque équipe occupe UN DEMI-TERRAIN, donc au plus 2 équipes simultanées sur un terrain plein (zones "demi-A" et "demi-B").
-- Foot à 5 / futsal / U6, U7, U8, U9, U10, U11, U12 : jusqu'à 5 groupes peuvent se partager un même terrain (zones "zone-1" à "zone-5").
-- Si une seule équipe/groupe occupe tout le terrain à cet horaire, ou si tu ne peux pas déterminer de partage, mets zone "plein".
-
-Extrait tous les créneaux d'occupation. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant/après, sans balise markdown, format exact :
-[{ "terrain": "...", "equipe": "...", "educateur": "...", "jour": "lundi", "heure_debut": "HH:MM", "heure_fin": "HH:MM", "zone": "plein" }]
-
-Règles :
-- "jour" en minuscules parmi lundi/mardi/mercredi/jeudi/vendredi/samedi/dimanche
-- "heure_debut"/"heure_fin" au format HH:MM, chaîne vide si absent du fichier
-- "educateur" = nom de l'éducateur/coach si visible, sinon chaîne vide
-- "zone" parmi plein/demi-A/demi-B/zone-1/zone-2/zone-3/zone-4/zone-5, selon la règle de partage ci-dessus déduite de la catégorie de l'équipe
-- Ignore les lignes/colonnes vides ou de mise en forme (titres, totaux...)
-- Ne retourne que des créneaux réels trouvés dans le fichier, jamais d'exemple`
-
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'openai/gpt-oss-20b',
-          reasoning_effort: 'low',
-          messages: [
-            { role: 'system', content: 'Réponds uniquement avec du JSON valide. Aucune réflexion préalable.' },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.1,
-          max_completion_tokens: 4000,
-        }),
+      // Prompt construit côté serveur (api/_promptsIA.js, texte inchangé) :
+      // seules les cellules (150 max) et les noms de terrains partent du
+      // navigateur ; droits vérifiés côté serveur (édition « terrains »).
+      const data = await enqueueIARequest('import_planning', {
+        clubId,
+        cellules: cellsNonVides.slice(0, 150),
+        terrains: terrains.map(t => t.nom),
       }, setIaStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''

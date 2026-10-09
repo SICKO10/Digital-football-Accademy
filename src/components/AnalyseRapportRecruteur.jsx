@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
-import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 
 const playerInfoVide = () => ({
   prenom: '',
@@ -222,52 +222,11 @@ export default function AnalyseRapportRecruteur({ userId }) {
     setLoading(true)
     setErreurIA(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-
-      const periodeLabel = { complet: 'Match complet', premiere: '1ère mi-temps', deuxieme: '2ème mi-temps' }[playerInfo.periodeMatch] || 'Match complet'
-      const typeLabel = playerInfo.typeMatch === 'retour' ? 'Match retour' : 'Match aller'
-
-      const prompt = `Tu es un scout/recruteur football expert. Voici la transcription d'une observation vocale d'un recruteur sur un joueur qu'il envisage de recruter ou de suivre.
-
-Joueur observé: ${playerInfo.prenom} ${playerInfo.nom}, Poste: ${playerInfo.poste}, Numéro: ${playerInfo.numero}
-Club observé: ${playerInfo.club || 'non précisé'}
-Type: ${typeLabel} — ${periodeLabel}
-
-Transcription de l'observation:
-${transcript}
-
-Génère un rapport de scouting structuré en JSON avec ce format EXACT (sans markdown, juste le JSON):
-{
-  "sequences": [
-    { "minute": "XX:XX", "description": "description de l'action ou séquence mentionnée" }
-  ],
-  "pointsPositifs": ["point 1", "point 2", "point 3"],
-  "pointsAmeliorer": ["point 1", "point 2", "point 3"],
-  "synthese": "résumé global du potentiel et du niveau du joueur",
-  "recommandation": "recruter | a_suivre | pas_prioritaire",
-  "note": 7.5
-}
-
-Instructions:
-- Si des minutes/timestamps sont mentionnés dans la transcription, utilise-les pour les séquences
-- Extrais les points forts et axes de progression de ce qui est dit, du point de vue d'un recruteur évaluant un potentiel transfert
-- "recommandation" doit être choisi parmi exactement ces 3 valeurs : "recruter", "a_suivre", "pas_prioritaire", en fonction du ton global de l'observation
-- La note est sur 10
-- Réponds UNIQUEMENT avec le JSON brut, sans backticks ni explication`
-
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-oss-20b',
-          reasoning_effort: 'low',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,
-        }),
+      // Prompt construit côté serveur (api/_promptsIA.js) : seule la donnée
+      // métier part du navigateur, la clé Groq reste sur le serveur.
+      const data = await enqueueIARequest('rapport_recruteur', {
+        joueur: { prenom: playerInfo.prenom, nom: playerInfo.nom, poste: playerInfo.poste, numero: playerInfo.numero, club: playerInfo.club, periodeMatch: playerInfo.periodeMatch, typeMatch: playerInfo.typeMatch },
+        transcription: transcript,
       }, setLoadingStatus)
       if (data.error) throw new Error(data.error.message)
       const text = data.choices?.[0]?.message?.content
