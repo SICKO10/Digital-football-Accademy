@@ -1,3 +1,4 @@
+import { demanderSignatureMontage } from '../lib/signatureUpload'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
@@ -96,17 +97,13 @@ export default function MontageVideo({ joueurId }) {
     setUploading(true)
     setProgress(0)
     try {
-      const sigRes = await fetch('/api/upload-montage-clip', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: joueurId }),
-      })
-      if (!sigRes.ok) { const err = await sigRes.json(); throw new Error(err.error || 'Erreur de signature') }
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureMontage(joueurId)
       setProgress(10)
 
       const resultat = await uploaderParMorceaux(
         file,
-        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
-        { signature, timestamp: String(timestamp), folder, public_id, api_key }
+        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`,
+        Object.fromEntries(Object.entries(sig.params).map(([k, v]) => [k, String(v)]))
       )
 
       await supabase.from('montage_clips').insert({

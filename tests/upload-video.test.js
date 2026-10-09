@@ -100,7 +100,8 @@ test('type image (avatars) : formats image uniquement', async () => {
   await handler(requete({ auth: 'Bearer jeton-A', corps: { kind: 'image' } }), res)
   assert.equal(res.statut, 200)
   assert.equal(res.corps.resource_type, 'image')
-  assert.equal(res.corps.params.allowed_formats, 'jpg,jpeg,png,webp')
+  assert.equal(res.corps.params.allowed_formats, TYPES_UPLOAD.image.allowed_formats)
+  assert.ok(!TYPES_UPLOAD.image.allowed_formats.includes('svg'))
 })
 
 test('type de fichier non prévu : 400', async () => {
