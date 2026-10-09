@@ -17,7 +17,7 @@ import { ACTIONS, MODELE, ErreurEntree } from './_promptsIA.js'
 //   rien changer au traitement côté interface. 429 renvoyé tel quel : la
 //   file d'attente du navigateur (groqQueue) réessaie comme avant.
 
-export const config = { maxDuration: 60 }
+// Durée maximale (60 s) déclarée dans vercel.json → functions["api/ia.js"].
 
 const URL_GROQ = 'https://api.groq.com/openai/v1/chat/completions'
 const MSG_INDISPONIBLE = 'Le service IA est indisponible pour le moment. Réessaie dans quelques minutes.'
