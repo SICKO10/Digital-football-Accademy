@@ -1,4 +1,4 @@
-import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
+import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
@@ -2593,15 +2593,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const uploaderFichierSeance = async (file) => {
-    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) })
-    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+    const sig = await demanderSignatureImage({ usage: 'seance' })
+    const { cloud_name } = sig
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('signature', signature)
-    formData.append('timestamp', timestamp)
-    formData.append('folder', folder)
-    formData.append('public_id', public_id)
-    formData.append('api_key', api_key)
+    ajouterChampsSignes(formData, sig)
     const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
     const uploadData = await uploadRes.json()
     return uploadData.secure_url || null

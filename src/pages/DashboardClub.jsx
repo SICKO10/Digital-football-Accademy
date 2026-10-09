@@ -1,3 +1,5 @@
+import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
+import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
 import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
@@ -263,27 +265,8 @@ const PERMISSION_SECTIONS = [
   { id: 'projet_club_cff4', label: 'Projet Club — CFF4' },
 ]
 
-// Comportement avant toute configuration explicite par le président (aucune ligne
-// en base pour ce club/rôle/section) — reproduit les règles d'accès qui existaient
-// avant ce système, pour ne rien casser pour les clubs déjà en production. Section
-// toute nouvelle (evenements) : pas de règle historique à préserver, donc personne
-// d'autre que le président n'y a accès tant qu'il ne l'accorde pas explicitement.
-const PERMISSION_DEFAULTS = {
-  sportif: ['president', 'directeur_sportif'],
-  seances: ['president', 'directeur_sportif'],
-  terrains: ['president', 'directeur_sportif'],
-  deplacements: ['president', 'marketing', 'secretaire'],
-  budget: ['president', 'secretaire'],
-  sponsors: ['president', 'marketing', 'secretaire'],
-  profil: ['president', 'marketing', 'secretaire'],
-  evenements: [],
-  organigramme: [],
-  staff: [],
-  inventaire: [],
-  newsletter: [],
-  taches: [],
-  projet_club_cff4: [],
-}
+// PERMISSION_DEFAULTS : déplacée dans src/lib/permissionsClub.js (partagée
+// avec le serveur, cf. api/upload-image.js) — contenu inchangé.
 
 const TYPES_EVENEMENT = [
   { val: 'tournoi', label: 'Tournoi', emoji: '🏆' },
@@ -3161,15 +3144,11 @@ export default function DashboardClub() {
     const file = e.target.files[0]
     if (!file || !clubId) return
     setAvatarClubUploading(true)
-    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId }) })
-    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+    const sig = await demanderSignatureImage({ usage: 'avatar_club', clubId })
+    const { cloud_name } = sig
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('signature', signature)
-    formData.append('timestamp', timestamp)
-    formData.append('folder', folder)
-    formData.append('public_id', public_id)
-    formData.append('api_key', api_key)
+    ajouterChampsSignes(formData, sig)
     const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
     const uploadData = await uploadRes.json()
     if (uploadData.secure_url) {
@@ -3201,15 +3180,11 @@ export default function DashboardClub() {
     if (!file || !clubId) return
     setThemeUploading(champ)
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'theme' }) })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureImage({ usage: 'theme', clubId })
+      const { cloud_name } = sig
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')

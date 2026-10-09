@@ -1,3 +1,4 @@
+import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useEffect, useState } from "react";
 import { supabase, signOutSafe } from "../supabase";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -246,15 +247,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     if (!file || !userId) return;
     setValLicenceUploading(true);
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userId }) });
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+      const sig = await demanderSignatureImage({ usage: 'licence' });
+      const { cloud_name } = sig;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('signature', signature);
-      formData.append('timestamp', timestamp);
-      formData.append('folder', folder);
-      formData.append('public_id', public_id);
-      formData.append('api_key', api_key);
+      ajouterChampsSignes(formData, sig);
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
       const uploadData = await uploadRes.json();
       if (uploadData.secure_url) setValLicenceUrl(uploadData.secure_url);
@@ -266,15 +263,12 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     if (!file || !userId) return;
     setValFeuillesUploading(prev => { const a = [...prev]; a[index] = true; return a; });
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userId }) });
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+      const sig = await demanderSignatureImage({ usage: 'feuille' });
+      const { cloud_name } = sig;
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('signature', signature);
-      formData.append('timestamp', timestamp);
-      formData.append('folder', folder);
-      formData.append('public_id', public_id);
-      formData.append('api_key', api_key);
+      ajouterChampsSignes(formData, sig);
+      ajouterChampsSignes(formData, sig);
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
       const uploadData = await uploadRes.json();
       if (uploadData.secure_url) {
@@ -358,15 +352,11 @@ export default function ScoutCenter({ userId, profil, embedded = false }) {
     const file = e.target.files[0];
     if (!file || !userId) return;
     setAvatarUploading(true);
-    const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userId }) });
-    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+    const sig = await demanderSignatureImage({ usage: 'avatar' });
+    const { cloud_name } = sig;
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('signature', signature);
-    formData.append('timestamp', timestamp);
-    formData.append('folder', folder);
-    formData.append('public_id', public_id);
-    formData.append('api_key', api_key);
+    ajouterChampsSignes(formData, sig);
     const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData });
     const uploadData = await uploadRes.json();
     if (uploadData.secure_url) {

@@ -1,3 +1,4 @@
+import { demanderSignatureImage, ajouterChampsSignes } from '../../lib/signatureUpload'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
@@ -110,15 +111,11 @@ export function SectionPrincipes({ pole, clubId, readOnly }) {
     if (!file || !clubId) return
     setPhotoUploading(phase)
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'principe_photo' }) })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureImage({ usage: 'principe_photo', clubId })
+      const { cloud_name } = sig
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
@@ -343,15 +340,11 @@ export function SectionZones({ pole, clubId, readOnly }) {
     if (!file || !clubId) return
     setFondUploading(true)
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'terrain_fond' }) })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureImage({ usage: 'terrain_fond', clubId })
+      const { cloud_name } = sig
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')
@@ -387,15 +380,11 @@ export function SectionZones({ pole, clubId, readOnly }) {
     if (!file || !clubId) return
     setGalerieUploading(true)
     try {
-      const sigRes = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: clubId, type: 'terrain_galerie' }) })
-      const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json()
+      const sig = await demanderSignatureImage({ usage: 'terrain_galerie', clubId })
+      const { cloud_name } = sig
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signature)
-      formData.append('timestamp', timestamp)
-      formData.append('folder', folder)
-      formData.append('public_id', public_id)
-      formData.append('api_key', api_key)
+      ajouterChampsSignes(formData, sig)
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadData.secure_url) throw new Error(uploadData.error?.message || 'Échec upload')

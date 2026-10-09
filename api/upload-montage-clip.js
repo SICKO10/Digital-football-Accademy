@@ -1,37 +1,35 @@
-import { v2 as cloudinary } from 'cloudinary'
+import { FORMATS_VIDEO, verifierJetonSupabase, configCloudinaryDepuisEnv, authentifier, repondreSignature } from './_securite.js'
 
-// Même pattern que upload-video.js (signature pour upload direct navigateur
-// → Cloudinary) — dossier séparé pour ne pas mélanger les clips de montage
-// avec le clip unique de profiles.clip_url.
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' })
+// Signature d'upload des clips de montage (MontageVideo.jsx) — dossier
+// séparé du clip de profil. Identité = jeton Supabase vérifié ; le joueur
+// ne peut signer que pour lui-même (un joueurId différent => 403) ; dossier,
+// identifiant et formats vidéo imposés par le serveur.
+// NB : MontageVideo n'est importé par aucune page à ce jour ; l'endpoint
+// reste néanmoins exposé, d'où sa sécurisation.
 
-  const { userId } = req.body || {}
-  if (!userId) return res.status(400).json({ error: 'userId manquant' })
+export function creerHandler({ verifierJeton, lireConfig, maintenant = () => Date.now() }) {
+  return async function handler(req, res) {
+    const utilisateur = await authentifier(req, res, verifierJeton)
+    if (!utilisateur) return
 
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  })
+    const { joueurId } = req.body || {}
+    if (joueurId && joueurId !== utilisateur.id) return res.status(403).json({ error: 'Accès refusé pour ce joueur' })
 
-  const timestamp = Math.round(Date.now() / 1000)
-  const folder = `montages/${userId}`
-  const public_id = `clip_${timestamp}`
+    const config = lireConfig()
+    if (!config) return res.status(500).json({ error: 'Configuration serveur incomplète' })
 
-  const paramsToSign = { folder, public_id, timestamp }
-
-  const signature = cloudinary.utils.api_sign_request(
-    paramsToSign,
-    process.env.CLOUDINARY_API_SECRET
-  )
-
-  return res.status(200).json({
-    signature,
-    timestamp,
-    folder,
-    public_id,
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-  })
+    const timestamp = Math.round(maintenant() / 1000)
+    return repondreSignature(res, {
+      config,
+      resource_type: 'video',
+      params: {
+        folder: `montages/${utilisateur.id}`,
+        public_id: `clip_${timestamp}`,
+        timestamp,
+        allowed_formats: FORMATS_VIDEO,
+      },
+    })
+  }
 }
+
+export default creerHandler({ verifierJeton: verifierJetonSupabase, lireConfig: configCloudinaryDepuisEnv })
