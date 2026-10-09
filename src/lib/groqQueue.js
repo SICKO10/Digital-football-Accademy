@@ -13,6 +13,8 @@
 // inter-utilisateurs demanderait de faire transiter ces appels par un
 // serveur (Edge Function) qui centralise la séquence, pas juste ce module.
 
+import { supabase } from '../supabase'
+
 const RETRY_DELAY_MS = 35000
 const MAX_RETRIES = 10 // ~6 min avant d'abandonner et de remonter une erreur propre
 
@@ -75,6 +77,23 @@ export function enqueueGroqRequest(url, options, onStatus) {
     notifierPositions()
     traiterFile()
   })
+}
+
+/**
+ * Requête IA via le proxy serveur authentifié /api/ia (la clé Groq ne quitte
+ * plus le serveur). action : 'rapport_recruteur' | 'analyse_video' |
+ * 'import_planning' | 'seance_ia' ; entrees : données métier (le prompt est
+ * construit côté serveur). Même file d'attente et mêmes ré-essais sur 429
+ * qu'avant ; renvoie le même format que l'API Groq ({ choices } ou { error }).
+ */
+export async function enqueueIARequest(action, entrees, onStatus) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return { error: { message: 'Session expirée : reconnecte-toi puis réessaie.' } }
+  return enqueueGroqRequest('/api/ia', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ action, entrees }),
+  }, onStatus)
 }
 
 // Libellé prêt à afficher pour un status renvoyé par onStatus — jamais de

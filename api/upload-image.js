@@ -1,8 +1,8 @@
 import {
-  FORMATS_IMAGE, FORMATS_DOCUMENT, verifierJetonSupabase, configCloudinaryDepuisEnv, clientServiceSupabase,
+  FORMATS_IMAGE, FORMATS_DOCUMENT, verifierJetonSupabase, configCloudinaryDepuisEnv,
   authentifier, repondreSignature, aleatoire,
 } from './_securite.js'
-import { peutEditerSection } from '../src/lib/permissionsClub.js'
+import { donneesSupabase, peutEditerPourClub, estUuid } from './_droits.js'
 
 // Signature d'upload Cloudinary pour images et documents (avatars, pièces de
 // certification, licence/feuilles recruteur, fiches de séance, thème et
@@ -34,31 +34,9 @@ export const USAGES = {
   terrain_galerie: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif', educateursProjet: true },
 }
 
-const estId = (v) => typeof v === 'string' && /^[0-9a-f-]{8,64}$/i.test(v)
-
-// Droit d'agir pour un club (lectures seules, clé service côté serveur).
-export async function peutAgirPourClub({ donnees, userId, clubId, usage }) {
-  const regle = USAGES[usage]
-  if (userId === clubId) {
-    const club = await donnees.profil(clubId)
-    if (club?.plan === 'club') return true
-  }
-  const staff = await donnees.staffClub(userId, clubId)
-  if (staff) {
-    // Même repli que DashboardClub.jsx : rôle absent => président.
-    const role = staff.role || 'president'
-    const ligne = role === 'president' ? null : await donnees.permissionRole(clubId, role, regle.section)
-    if (peutEditerSection({ role, section: regle.section, ligne })) return true
-  }
-  if (regle.educateursProjet) {
-    const aff = await donnees.affiliationEducateur(userId, clubId)
-    if (aff) {
-      const club = await donnees.profil(clubId)
-      if (aff.peut_editer_projet_sportif ?? club?.educateurs_editent_projet_sportif ?? false) return true
-    }
-  }
-  return false
-}
+// Droit d'agir pour un club : règle partagée (api/_droits.js).
+export const peutAgirPourClub = ({ donnees, userId, clubId, usage }) =>
+  peutEditerPourClub({ donnees, userId, clubId, section: USAGES[usage].section, educateursProjet: !!USAGES[usage].educateursProjet })
 
 export function creerHandler({ verifierJeton, lireConfig, donnees, maintenant = () => Date.now() }) {
   return async function handler(req, res) {
@@ -74,13 +52,13 @@ export function creerHandler({ verifierJeton, lireConfig, donnees, maintenant = 
     let proprietaire = utilisateur.id
     try {
       if (regle.cible.includes('club')) {
-        if (!estId(corps.clubId)) return res.status(400).json({ error: 'Club manquant' })
+        if (!estUuid(corps.clubId)) return res.status(400).json({ error: 'Club manquant' })
         if (!(await peutAgirPourClub({ donnees, userId: utilisateur.id, clubId: corps.clubId, usage }))) {
           return res.status(403).json({ error: 'Accès refusé pour ce club' })
         }
         proprietaire = corps.clubId
       } else if (corps.joueurId && corps.joueurId !== utilisateur.id) {
-        if (!regle.cible.includes('enfant') || !estId(corps.joueurId) || !(await donnees.parentAccepte(utilisateur.id, corps.joueurId))) {
+        if (!regle.cible.includes('enfant') || !estUuid(corps.joueurId) || !(await donnees.parentAccepte(utilisateur.id, corps.joueurId))) {
           return res.status(403).json({ error: 'Accès refusé pour ce joueur' })
         }
         proprietaire = corps.joueurId
@@ -103,23 +81,6 @@ export function creerHandler({ verifierJeton, lireConfig, donnees, maintenant = 
         allowed_formats: regle.formats,
       },
     })
-  }
-}
-
-// Accès réel aux données (lecture seule, clé service). Toute erreur Supabase
-// est remontée => 500, jamais un accès accordé par défaut.
-export function donneesSupabase() {
-  const lire = async (requete) => {
-    const { data, error } = await requete
-    if (error) throw error
-    return data
-  }
-  return {
-    profil: (id) => lire(clientServiceSupabase().from('profiles').select('plan, educateurs_editent_projet_sportif').eq('id', id).maybeSingle()),
-    staffClub: (userId, clubId) => lire(clientServiceSupabase().from('staff_club').select('role').eq('user_id', userId).eq('club_id', clubId).maybeSingle()),
-    permissionRole: (clubId, role, section) => lire(clientServiceSupabase().from('role_permissions').select('can_view, can_edit').eq('club_id', clubId).eq('role', role).eq('section', section).maybeSingle()),
-    affiliationEducateur: (userId, clubId) => lire(clientServiceSupabase().from('club_educateurs').select('peut_editer_projet_sportif').eq('educateur_id', userId).eq('club_id', clubId).eq('statut', 'accepte').maybeSingle()),
-    parentAccepte: async (parentId, joueurId) => !!(await lire(clientServiceSupabase().from('parents_acces').select('id').eq('parent_id', parentId).eq('joueur_id', joueurId).eq('statut', 'accepte').maybeSingle())),
   }
 }
 

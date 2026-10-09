@@ -50,7 +50,7 @@ const OnboardingGuide = lazy(() => import('../components/OnboardingGuide'))
 const FloatingHelper = lazy(() => import('../components/FloatingHelper'))
 import ParrainageWidget from '../components/ParrainageWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
-import { enqueueGroqRequest, libelleStatutGroq } from '../lib/groqQueue'
+import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
@@ -3220,70 +3220,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setGeneratingIA(true)
     setGenerationIAError(null)
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY
-      if (!apiKey) throw new Error('Clé VITE_GROQ_API_KEY manquante dans .env')
-      const systemPrompt = `Tu es un entraîneur UEFA A spécialisé football de formation.
-Tes séances respectent OBLIGATOIREMENT :
-- La progression pédagogique : analytique → synthétique → global
-- Des situations jouées réelles (jeux réduits, jeux de position)
-- Des ratios travail/repos adaptés à la catégorie d'âge
-- Des exercices avec opposition réelle (pas juste des passes en ligne)
-- Des indicateurs de performance mesurables pour l'éducateur
-- La logique interne du football (prise d'information, décision, action)
-
-INTERDIT : exercices sans ballon majoritaires, slaloms de cônes sans opposition, passes en ligne statiques.
-
-Génère une séance structurée en 3 phases :
-1. Échauffement (20% du temps)
-2. Corps de séance (65% du temps)
-3. Retour au calme (15% du temps)
-
-Chaque exercice DOIT contenir : nom, durée, organisation spatiale précise (dimensions du
-terrain, dispositif), nombre de joueurs par équipe (format de jeu), règles du jeu,
-consignes coach, critères de réussite mesurables, variante (facilitation ET complexification).
-Réponds en JSON structuré.`
-      const userPrompt = `Objectif tactique : ${generationIAForm.objectif}
-Durée totale : ${generationIAForm.duree} minutes
-Nombre de joueurs : ${generationIAForm.nb_joueurs || 'non précisé'}
-Catégorie d'âge : ${generationIAForm.categorie_age}
-Niveau : ${generationIAForm.niveau}
-
-Réponds UNIQUEMENT avec ce JSON (aucun texte hors JSON) :
-{
-  "phases": [
-    { "phase": "echauffement", "exercices": [ {
-      "nom": "...", "duree": "...",
-      "format_equipes": "nombre de joueurs par équipe / format de jeu, ex: 2 équipes de 4 + 2 jokers",
-      "organisation_spatiale": "dimensions du terrain et dispositif précis",
-      "regles_du_jeu": "...",
-      "consignes_coach": "...",
-      "criteres_reussite": "indicateurs de performance mesurables",
-      "variante": "variante plus facile ET variante plus difficile"
-    } ] },
-    { "phase": "corps_de_seance", "exercices": [ ... ] },
-    { "phase": "retour_au_calme", "exercices": [ ... ] }
-  ]
-}`
-      const data = await enqueueGroqRequest('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          // openai/gpt-oss-20b avec reasoning_effort: 'low' plutôt que qwen3.6-27b :
-          // qwen3.6 est un modèle de raisonnement qui continue de "penser"
-          // longuement même avec /no_think (jusqu'à ~3000 tokens de <think>), au
-          // point de ne parfois plus laisser assez de budget pour produire le JSON
-          // demandé — c'est un problème de modèle, pas de parsing. Sur gpt-oss, le
-          // raisonnement est renvoyé dans un champ "reasoning" séparé (message.content
-          // reste le JSON final), et reasoning_effort: 'low' limite ce raisonnement.
-          model: 'openai/gpt-oss-20b',
-          reasoning_effort: 'low',
-          messages: [
-            { role: 'system', content: `${systemPrompt}\nRéponds uniquement avec du JSON valide, sans aucun texte avant ou après.` },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 6000,
-        }),
+      // Prompt construit côté serveur (api/_promptsIA.js, modèle et
+      // paramètres inchangés) : la clé Groq ne quitte plus le serveur.
+      const data = await enqueueIARequest('seance_ia', {
+        objectif: generationIAForm.objectif,
+        duree: generationIAForm.duree,
+        nb_joueurs: generationIAForm.nb_joueurs,
+        categorie_age: generationIAForm.categorie_age,
+        niveau: generationIAForm.niveau,
       }, setGenerationIAStatus)
       if (data.error) throw new Error(data.error.message || JSON.stringify(data.error))
       const raw = data.choices?.[0]?.message?.content || ''
