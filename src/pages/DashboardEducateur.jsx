@@ -50,7 +50,7 @@ const OnboardingGuide = lazy(() => import('../components/OnboardingGuide'))
 const FloatingHelper = lazy(() => import('../components/FloatingHelper'))
 import ParrainageWidget from '../components/ParrainageWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
-import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
+import { enqueueIARequest, libelleStatutGroq, chargerCapacitesIA } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
@@ -72,10 +72,12 @@ const SectionLoader = () => (
   </div>
 )
 
-// "Générer une séance avec l'IA" pas encore assez fiable pour être proposée à
-// tous les éducateurs — visible seulement pour ce compte le temps de l'affiner
-// en conditions réelles, à retirer de cette liste (ou vider) une fois prête.
-const SEANCE_IA_BETA_EMAILS = ['clubtest@gmail.com']
+// "Générer une séance avec l'IA" (et le mode évaluation club qui l'accompagne)
+// pas encore assez fiable pour tous les éducateurs : bêta fermée décidée
+// CÔTÉ SERVEUR (variable SEANCE_IA_BETA_USER_IDS, cf. api/_droits.js) — plus
+// aucune adresse en dur ici. L'interface interroge /api/ia (« capacites »)
+// pour savoir quoi afficher ; le serveur refuse de toute façon l'action
+// seance_ia aux autres comptes.
 
 // Onglet "Recrutement" masqué le temps de le préparer pour tout le monde sauf
 // le compte test (AS CANNES) — pas supprimé, juste retiré de la nav ailleurs.
@@ -2423,6 +2425,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [modalGenerationIA, setModalGenerationIA] = useState(false)
   const GENERATION_IA_VIDE = { objectif: '', duree: '60', nb_joueurs: '', categorie_age: 'U13', niveau: 'Intermédiaire' }
   const [generationIAForm, setGenerationIAForm] = useState(GENERATION_IA_VIDE)
+  // Accès à la bêta du générateur, fourni par le serveur (false tant que non
+  // confirmé). Jamais pour un dirigeant délégué : le serveur répond selon le
+  // compte connecté, qui n'est alors pas l'éducateur.
+  const [seanceIABeta, setSeanceIABeta] = useState(false)
+  useEffect(() => {
+    if (!userId || educateurIdOverride) return
+    let actif = true
+    chargerCapacitesIA().then(c => { if (actif) setSeanceIABeta(c.seance_ia) })
+    return () => { actif = false }
+  }, [userId, educateurIdOverride])
+  const afficherSeanceIA = seanceIABeta && !educateurIdOverride
   const [generatingIA, setGeneratingIA] = useState(false)
   const [generationIAStatus, setGenerationIAStatus] = useState(null)
   const [generationIAError, setGenerationIAError] = useState(null)
@@ -8769,7 +8782,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               >
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
-              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
+              {afficherSeanceIA && (
                 <button
                   onClick={() => setModalGenerationIA(true)}
                   style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
@@ -8783,7 +8796,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               >
                 📷 {t('seance_scanner', lang)}
               </button>
-              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
+              {afficherSeanceIA && (
                 <button
                   onClick={() => setModeSeance('club')}
                   style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}

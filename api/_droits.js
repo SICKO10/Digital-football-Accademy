@@ -1,3 +1,4 @@
+/* global process */
 import { clientServiceSupabase } from './_securite.js'
 import { peutEditerSection } from '../src/lib/permissionsClub.js'
 
@@ -65,7 +66,7 @@ export async function estRecruteurActif({ donnees, userId }) {
 // délégué (dirigeant_acces accepté, cf. DashboardDirigeant.jsx) agit pour
 // son éducateur, à condition que celui-ci soit lui-même éligible — comme
 // dans l'interface, qui ne rattache aucune clé de permission aux outils IA.
-async function educateurEligible({ donnees, educateurId }) {
+export async function educateurEligible({ donnees, educateurId }) {
   const p = await donnees.profil(educateurId)
   if (p?.plan === 'educateur' && p.abonnement_actif) return true
   return donnees.affiliationEducateurAcceptee(educateurId)
@@ -75,6 +76,21 @@ export async function peutUtiliserOutilsEducateur({ donnees, userId }) {
   if (await educateurEligible({ donnees, educateurId: userId })) return true
   const delegation = await donnees.delegationDirigeant(userId)
   return !!(delegation?.educateur_id && await educateurEligible({ donnees, educateurId: delegation.educateur_id }))
+}
+
+// Bêta fermée du générateur de séances IA : identifiants d'utilisateurs
+// Supabase (UUID) listés dans la variable serveur SEANCE_IA_BETA_USER_IDS
+// (séparés par des virgules) — jamais dans le code, dépôt public. Variable
+// absente ou vide => personne. Valeurs mal formées ignorées.
+export const lireIdsBetaSeanceIA = () => (process.env.SEANCE_IA_BETA_USER_IDS || '')
+  .split(',').map((s) => s.trim().toLowerCase()).filter((s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s))
+
+// Accès bêta : l'utilisateur CONNECTÉ (id du jeton vérifié) doit être listé
+// ET être lui-même éducateur éligible. Pas de délégation : un dirigeant
+// délégué n'agit pas pour l'éducateur sur cet outil.
+export async function peutUtiliserSeanceIABeta({ donnees, userId, idsBeta }) {
+  if (!idsBeta.includes(String(userId).toLowerCase())) return false
+  return educateurEligible({ donnees, educateurId: userId })
 }
 
 export const estUuid = (v) => typeof v === 'string' && /^[0-9a-f-]{8,64}$/i.test(v)

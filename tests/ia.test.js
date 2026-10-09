@@ -4,6 +4,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { creerHandler, creerLimiteur, appelerGroqReel } from '../api/ia.js'
+import { lireIdsBetaSeanceIA } from '../api/_droits.js'
 import { MODELE } from '../api/_promptsIA.js'
 
 const id = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
@@ -51,17 +52,20 @@ const ENTREES = {
   seance_ia: { objectif: 'Conservation du ballon', duree: '60', nb_joueurs: '14', categorie_age: 'U13', niveau: 'Intermédiaire' },
 }
 
-async function appeler({ qui, action, entrees, extra = {}, groq, donnees = donneesTest(), limiteur, auth, methode = 'POST' }) {
+// Par défaut, seul eduPayant est dans la bêta du générateur de séances.
+async function appeler({ qui, action, entrees, extra = {}, groq, donnees = donneesTest(), limiteur, auth, methode = 'POST', idsBeta = [U.eduPayant] }) {
   const appels = []
   const handler = creerHandler({
     verifierJeton: async (j) => JETONS[j] || null,
     donnees,
     appelerGroq: groq || (async (req) => { appels.push(req); return { statut: 200, data: { choices: [{ message: { content: '{"ok":true}', reasoning: 'raisonnement interne' } }] } } }),
     limiteur: limiteur || creerLimiteur({ max: 100 }),
+    lireIdsBeta: () => idsBeta,
   })
   const res = reponse()
   const entete = auth !== undefined ? auth : (qui ? `Bearer jeton-${qui}` : undefined)
-  await handler({ method: methode, headers: entete ? { authorization: entete } : {}, body: { action, entrees: entrees ?? ENTREES[action], ...extra } }, res)
+  const corps = action === 'capacites' ? { action } : { action, entrees: entrees ?? ENTREES[action], ...extra }
+  await handler({ method: methode, headers: entete ? { authorization: entete } : {}, body: corps }, res)
   return { res, appels }
 }
 
@@ -133,16 +137,76 @@ test('rapport recruteur : recruteur abonné uniquement', async () => {
     assert.equal(appels.length, 0)
   }
 })
-test('outils éducateur (analyse vidéo, séance) : abonné, affilié club ou dirigeant délégué d’un éducateur éligible', async () => {
-  for (const action of ['analyse_video', 'seance_ia']) {
-    for (const qui of ['eduPayant', 'eduClub', 'dirigeantOk']) assert.equal((await appeler({ qui, action })).res.statut, 200, `${action} ${qui}`)
-    for (const qui of ['eduSansAcces', 'dirigeantKo', 'joueur', 'scoutActif']) {
-      const { res, appels } = await appeler({ qui, action })
-      assert.equal(res.statut, 403, `${action} ${qui}`)
-      assert.equal(appels.length, 0)
-    }
+test('analyse vidéo : abonné, affilié club ou dirigeant délégué d’un éducateur éligible (inchangé)', async () => {
+  for (const qui of ['eduPayant', 'eduClub', 'dirigeantOk']) assert.equal((await appeler({ qui, action: 'analyse_video' })).res.statut, 200, qui)
+  for (const qui of ['eduSansAcces', 'dirigeantKo', 'joueur', 'scoutActif']) {
+    const { res, appels } = await appeler({ qui, action: 'analyse_video' })
+    assert.equal(res.statut, 403, qui)
+    assert.equal(appels.length, 0)
   }
 })
+
+// ── Bêta fermée du générateur de séances (SEANCE_IA_BETA_USER_IDS) ─────────
+test('séance IA : seul le compte listé ET éducateur éligible ; autres éducateurs refusés sans appel Groq', async () => {
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'seance_ia' })).res.statut, 200)
+  for (const qui of ['eduClub', 'eduSansAcces', 'scoutActif', 'joueur', 'club']) {
+    const { res, appels } = await appeler({ qui, action: 'seance_ia' })
+    assert.equal(res.statut, 403, qui)
+    assert.equal(appels.length, 0, qui)
+    assert.equal(typeof res.corps.error.message, 'string')
+  }
+})
+test('séance IA : dirigeant délégué du compte bêta refusé (pas de délégation)', async () => {
+  const { res, appels } = await appeler({ qui: 'dirigeantOk', action: 'seance_ia' })
+  assert.equal(res.statut, 403)
+  assert.equal(appels.length, 0)
+})
+test('séance IA : liste vide => refus pour tous ; compte listé mais non éducateur => refus', async () => {
+  for (const qui of ['eduPayant', 'eduClub']) assert.equal((await appeler({ qui, action: 'seance_ia', idsBeta: [] })).res.statut, 403, qui)
+  assert.equal((await appeler({ qui: 'joueur', action: 'seance_ia', idsBeta: [U.joueur] })).res.statut, 403)
+  assert.equal((await appeler({ qui: 'eduSansAcces', action: 'seance_ia', idsBeta: [U.eduSansAcces] })).res.statut, 403)
+})
+test('SEANCE_IA_BETA_USER_IDS : absente => [] ; valeurs mal formées ignorées ; casse et espaces normalisés', async () => {
+  const sauve = process.env.SEANCE_IA_BETA_USER_IDS
+  try {
+    delete process.env.SEANCE_IA_BETA_USER_IDS
+    assert.deepEqual(lireIdsBetaSeanceIA(), [])
+    process.env.SEANCE_IA_BETA_USER_IDS = ''
+    assert.deepEqual(lireIdsBetaSeanceIA(), [])
+    process.env.SEANCE_IA_BETA_USER_IDS = ` ${U.eduPayant.toUpperCase()} , pas-un-uuid, *, ${U.eduClub}x, ,${U.club}`
+    assert.deepEqual(lireIdsBetaSeanceIA(), [U.eduPayant, U.club])
+  } finally {
+    if (sauve === undefined) delete process.env.SEANCE_IA_BETA_USER_IDS
+    else process.env.SEANCE_IA_BETA_USER_IDS = sauve
+  }
+})
+test('capacites : reflète la règle serveur, sans appel Groq', async () => {
+  const oui = await appeler({ qui: 'eduPayant', action: 'capacites' })
+  assert.equal(oui.res.statut, 200)
+  assert.deepEqual(oui.res.corps, { seance_ia: true })
+  assert.equal(oui.appels.length, 0)
+  for (const qui of ['eduClub', 'dirigeantOk', 'joueur', 'scoutActif']) {
+    const r = await appeler({ qui, action: 'capacites' })
+    assert.deepEqual(r.res.corps, { seance_ia: false }, qui)
+  }
+  assert.deepEqual((await appeler({ qui: 'eduPayant', action: 'capacites', idsBeta: [] })).res.corps, { seance_ia: false })
+  const anonyme = await appeler({ action: 'capacites' })
+  assert.equal(anonyme.res.statut, 401)
+})
+test('format d’erreur de /api/ia : { error: { message } } partout (401, 405, 400, 403)', async () => {
+  const cas = [
+    await appeler({ action: 'seance_ia' }),
+    await appeler({ auth: 'Bearer jeton-inconnu', action: 'seance_ia' }),
+    await appeler({ qui: 'eduPayant', action: 'seance_ia', methode: 'GET' }),
+    await appeler({ qui: 'eduPayant', action: 'inconnue' }),
+    await appeler({ qui: 'eduClub', action: 'seance_ia' }),
+  ]
+  for (const { res } of cas) {
+    assert.equal(typeof res.corps.error, 'object')
+    assert.ok(res.corps.error.message.length > 0)
+  }
+})
+
 test('import planning : club ou staff avec droit « terrains » sur CE club', async () => {
   assert.equal((await appeler({ qui: 'club', action: 'import_planning' })).res.statut, 200)
   assert.equal((await appeler({ qui: 'directeurSportif', action: 'import_planning' })).res.statut, 200)
@@ -165,13 +229,13 @@ test('limite par utilisateur : 429 au-delà, sans appel Groq ; autre utilisateur
   const limiteur = creerLimiteur({ max: 2, fenetreMs: 60000, maintenant: () => t })
   const groqAppels = []
   const groq = async (r) => { groqAppels.push(r); return { statut: 200, data: { choices: [{ message: { content: '{}' } }] } } }
-  assert.equal((await appeler({ qui: 'eduPayant', action: 'seance_ia', limiteur, groq })).res.statut, 200)
-  assert.equal((await appeler({ qui: 'eduPayant', action: 'seance_ia', limiteur, groq })).res.statut, 200)
-  assert.equal((await appeler({ qui: 'eduPayant', action: 'seance_ia', limiteur, groq })).res.statut, 429)
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'analyse_video', limiteur, groq })).res.statut, 200)
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'analyse_video', limiteur, groq })).res.statut, 200)
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'analyse_video', limiteur, groq })).res.statut, 429)
   assert.equal(groqAppels.length, 2)
-  assert.equal((await appeler({ qui: 'eduClub', action: 'seance_ia', limiteur, groq })).res.statut, 200)
+  assert.equal((await appeler({ qui: 'eduClub', action: 'analyse_video', limiteur, groq })).res.statut, 200)
   t = 61000
-  assert.equal((await appeler({ qui: 'eduPayant', action: 'seance_ia', limiteur, groq })).res.statut, 200)
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'analyse_video', limiteur, groq })).res.statut, 200)
 })
 
 // ── Réponses Groq simulées ─────────────────────────────────────────────────

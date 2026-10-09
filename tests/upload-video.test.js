@@ -40,6 +40,8 @@ test('anonyme (sans en-tête Authorization) : 401, aucune signature, vérificate
   const res = reponse()
   await handler(requete({ corps: { userId: 'utilisateur-A' } }), res)
   assert.equal(res.statut, 401)
+  // Format inchangé pour les endpoints Cloudinary (lu tel quel par signatureUpload.js).
+  assert.equal(typeof res.corps.error, 'string')
   assert.equal(res.corps.params, undefined)
   assert.equal(appels.length, 0)
 })

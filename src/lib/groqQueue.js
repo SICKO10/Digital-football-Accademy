@@ -96,6 +96,27 @@ export async function enqueueIARequest(action, entrees, onStatus) {
   }, onStatus)
 }
 
+// Outils IA à afficher pour l'utilisateur connecté, selon les règles
+// serveur (/api/ia, action « capacites ») — ex. bêta fermée du générateur de
+// séances (SEANCE_IA_BETA_USER_IDS, variable serveur). En cas d'erreur ou de
+// session absente : tout masqué (jamais affiché par défaut).
+export async function chargerCapacitesIA() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return { seance_ia: false }
+    const res = await fetch('/api/ia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action: 'capacites' }),
+    })
+    if (!res.ok) return { seance_ia: false }
+    const data = await res.json()
+    return { seance_ia: data?.seance_ia === true }
+  } catch {
+    return { seance_ia: false }
+  }
+}
+
 // Libellé prêt à afficher pour un status renvoyé par onStatus — jamais de
 // détail technique (429, code HTTP...), toujours un message utilisateur.
 export function libelleStatutGroq(status) {

@@ -181,7 +181,7 @@ Règles :
 
   // ── DashboardEducateur.jsx (génération de séance) ──
   seance_ia: {
-    profil: 'educateur',
+    profil: 'educateur_beta',
     valider: (e) => ({
       objectif: texte(e.objectif, { max: 500, requis: true, nom: 'objectif' }),
       duree: entier(e.duree, { min: 10, max: 300, nom: 'durée', defaut: 60 }),

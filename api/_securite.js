@@ -41,15 +41,18 @@ export function configCloudinaryDepuisEnv() {
 
 // Authentification commune : renvoie l'utilisateur vérifié, ou envoie la
 // réponse d'erreur et renvoie null.
-export async function authentifier(req, res, verifierJeton) {
-  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return null }
+// formater : forme du corps d'erreur — { error: '…' } par défaut (endpoints
+// Cloudinary, lus par signatureUpload.js) ; /api/ia passe { error: { message } },
+// format Groq attendu par les composants IA (data.error.message).
+export async function authentifier(req, res, verifierJeton, formater = (message) => ({ error: message })) {
+  if (req.method !== 'POST') { res.status(405).json(formater('Method Not Allowed')); return null }
   const jeton = lireJeton(req)
-  if (!jeton) { res.status(401).json({ error: 'Authentification requise' }); return null }
+  if (!jeton) { res.status(401).json(formater('Authentification requise')); return null }
   let utilisateur
   try { utilisateur = await verifierJeton(jeton) } catch {
-    res.status(500).json({ error: 'Configuration serveur incomplète' }); return null
+    res.status(500).json(formater('Configuration serveur incomplète')); return null
   }
-  if (!utilisateur?.id) { res.status(401).json({ error: 'Jeton invalide ou expiré' }); return null }
+  if (!utilisateur?.id) { res.status(401).json(formater('Jeton invalide ou expiré')); return null }
   return utilisateur
 }
 

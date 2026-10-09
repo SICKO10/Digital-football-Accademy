@@ -1,6 +1,6 @@
 /* global process */
 import { verifierJetonSupabase, authentifier } from './_securite.js'
-import { donneesSupabase, peutEditerPourClub, estRecruteurActif, peutUtiliserOutilsEducateur, estUuid } from './_droits.js'
+import { donneesSupabase, peutEditerPourClub, estRecruteurActif, peutUtiliserOutilsEducateur, peutUtiliserSeanceIABeta, lireIdsBetaSeanceIA, estUuid } from './_droits.js'
 import { ACTIONS, MODELE, ErreurEntree } from './_promptsIA.js'
 
 // Proxy IA authentifié vers Groq. Remplace les appels faits auparavant
@@ -56,10 +56,12 @@ export async function appelerGroqReel({ messages, params }) {
   }
 }
 
-async function autoriser({ action, donnees, userId, entrees }) {
+async function autoriser({ action, donnees, userId, entrees, idsBeta }) {
   switch (ACTIONS[action].profil) {
     case 'recruteur': return estRecruteurActif({ donnees, userId })
     case 'educateur': return peutUtiliserOutilsEducateur({ donnees, userId })
+    // Génération de séance : bêta fermée (SEANCE_IA_BETA_USER_IDS), sans délégation.
+    case 'educateur_beta': return peutUtiliserSeanceIABeta({ donnees, userId, idsBeta })
     // Import du planning : même droit que l'édition de la section « terrains »
     // (PlanningTerrains rendu en mode dirigeant avec readOnly = !canEditSection('terrains')).
     case 'club_terrains': return estUuid(entrees.clubId) && peutEditerPourClub({ donnees, userId, clubId: entrees.clubId, section: 'terrains' })
@@ -67,11 +69,24 @@ async function autoriser({ action, donnees, userId, entrees }) {
   }
 }
 
-export function creerHandler({ verifierJeton, donnees, appelerGroq, limiteur = creerLimiteur() }) {
+export function creerHandler({ verifierJeton, donnees, appelerGroq, limiteur = creerLimiteur(), lireIdsBeta = lireIdsBetaSeanceIA }) {
   return async function handler(req, res) {
-    const utilisateur = await authentifier(req, res, verifierJeton)
+    const formater = (message) => ({ error: { message } })
+    const utilisateur = await authentifier(req, res, verifierJeton, formater)
     if (!utilisateur) return
-    const erreur = (statut, message) => res.status(statut).json({ error: { message } })
+    const erreur = (statut, message) => res.status(statut).json(formater(message))
+    const idsBeta = lireIdsBeta()
+
+    // « capacites » : indique à l'interface quels outils afficher (aucun
+    // appel Groq, aucune donnée sensible renvoyée) — l'affichage suit ainsi
+    // la même règle serveur que l'autorisation, sans identifiant dans le code.
+    if ((req.body || {}).action === 'capacites') {
+      try {
+        return res.status(200).json({ seance_ia: await peutUtiliserSeanceIABeta({ donnees, userId: utilisateur.id, idsBeta }) })
+      } catch {
+        return erreur(500, 'Vérification des droits impossible.')
+      }
+    }
 
     const corps = req.body || {}
     const action = corps.action
@@ -87,7 +102,7 @@ export function creerHandler({ verifierJeton, donnees, appelerGroq, limiteur = c
     }
 
     try {
-      if (!(await autoriser({ action, donnees, userId: utilisateur.id, entrees }))) return erreur(403, "Cette fonctionnalité n'est pas disponible pour ton compte.")
+      if (!(await autoriser({ action, donnees, userId: utilisateur.id, entrees, idsBeta }))) return erreur(403, "Cette fonctionnalité n'est pas disponible pour ton compte.")
     } catch {
       return erreur(500, 'Vérification des droits impossible.')
     }
