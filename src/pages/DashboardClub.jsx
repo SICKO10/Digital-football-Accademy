@@ -2845,36 +2845,32 @@ export default function DashboardClub() {
     // accepterEducateur/autoAssignerJoueurs : équipe 'A' par défaut, faute de
     // distinction A/B dans le champ libre categorie) pour ne pas dépendre
     // d'une resynchronisation manuelle.
+    // Repli d'AFFICHAGE uniquement : la simple consultation des classements
+    // ne modifie jamais l'équipe d'un joueur en base (un joueur B aurait pu
+    // être rattaché d'office à l'équipe A). Le rattachement persistant reste
+    // une action explicite : bouton "Auto-assigner" (autoAssignerJoueurs,
+    // onglet Catégories) ou acceptation de l'éducateur (accepterEducateur).
     const grouped = {}
-    const aReassigner = []
     categories.forEach(cat => {
       const joueursCat = joueurs.filter(j => {
         if (j.club_categorie_id === cat.id) return true
         if (j.club_categorie_id || !j.categorie) return false
-        const memeNom = cat.nom.toLowerCase() === j.categorie.trim().toLowerCase()
-        if (!memeNom) return false
-        // Repli équipe 'A' par défaut (cf. accepterEducateur/autoAssignerJoueurs),
-        // sauf si ce nom de catégorie n'existe qu'une fois chez cet éducateur —
-        // là, pas d'ambiguïté A/B possible, on peut rattacher même une équipe B
-        // (jusqu'ici jamais couverte par ce repli, effectif qui reste vide en
-        // permanence pour toute catégorie B tant qu'aucun bouton manuel n'existe).
+        // Même règle que resoudreCategorie (Équipement, Organigramme) :
+        // parmi les catégories de CET éducateur portant ce nom, l'équipe 'A'
+        // par défaut (cf. accepterEducateur/autoAssignerJoueurs), sinon la
+        // seule existante (pas d'ambiguïté A/B, même une équipe B). Restreint
+        // à l'éducateur du joueur : sans ça, un joueur de l'U18 B d'un autre
+        // éducateur apparaissait aussi dans l'U18 A (compté deux fois).
         const candidats = categories.filter(c => c.educateur_id === j.educateur_id && c.nom.toLowerCase() === j.categorie.trim().toLowerCase())
-        return cat.equipe === 'A' || candidats.length === 1
+        const cible = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
+        return cible?.id === cat.id
       })
-      joueursCat.forEach(j => { if (!j.club_categorie_id) aReassigner.push({ id: j.id, club_categorie_id: cat.id }) })
       grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j) })) }
     })
 
     setStatsParCategorie(grouped)
     if (!categorieActive && categories.length > 0) setCategorieActive(categories[0].id)
     setLoadingClassements(false)
-
-    // Persiste le rattachement trouvé par repli, pour que les prochains
-    // chargements n'aient plus besoin de ce repli (auto-réparation, sans
-    // bouton manuel à cliquer).
-    for (const r of aReassigner) {
-      await supabase.from('equipe_joueurs').update({ club_categorie_id: r.club_categorie_id }).eq('id', r.id)
-    }
   }
 
   const GROUPES_POSTE = [

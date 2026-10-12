@@ -1143,12 +1143,14 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
   // pas encore "validée" par l'éducateur mais déjà répondue par les joueurs
   // ressortait comme si elle n'avait aucune donnée, ce qui faussait le taux
   // (ex: 25% sur 1 séance au lieu de ~90% sur plusieurs, cf. bug rapporté).
-  const getStatutJoueurSemaine = (e, j) => {
-    const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id)
-    const nonSaisi = !p || (!p.statut && !p.present)
-    if (!nonSaisi) return p.statut || (p.present ? 'present' : 'absent')
-    return j.joueur_id ? (dispoJoueurs[e.id]?.[j.joueur_id] || null) : null
-  }
+  // Statut via la règle commune (lib/presence) — seule différence avec
+  // l'ancien calcul local : une ligne au statut 'non_saisi' est traitée comme
+  // une absence de saisie (repli sur le sondage) et non plus comme une séance
+  // saisie non présente. Période et effectif inchangés (filtre ci-dessous).
+  const getStatutJoueurSemaine = (e, j) => statutPresenceEffectif(
+    (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id),
+    j.joueur_id ? dispoJoueurs[e.id]?.[j.joueur_id] : null,
+  )
   // Strictement avant aujourd'hui, pas "jusqu'à aujourd'hui inclus" : le
   // sondage d'une séance du jour même peut encore recevoir des réponses,
   // l'inclure donnerait un chiffre provisoire plutôt que factuel sur des
