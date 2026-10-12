@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
+import { fetchToutesLignes, fetchToutesLignesIn } from '../../lib/supabasePagination'
 
 const CIBLES = [
   { val: 'tous', label: 'Tout le monde' },
@@ -37,7 +38,7 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
     const educateurIds = [...new Set((educRows || []).map(r => r.educateur_id).filter(Boolean))]
     let joueurIds = []
     if (educateurIds.length > 0) {
-      const { data: affRows } = await supabase.from('affiliations').select('joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte')
+      const { data: affRows } = await fetchToutesLignes(() => supabase.from('affiliations').select('id, joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte').order('id'))
       joueurIds = [...new Set((affRows || []).map(r => r.joueur_id).filter(Boolean))]
     }
     setCompteurs({ tous: educateurIds.length + joueurIds.length, educateurs: educateurIds.length, joueurs: joueurIds.length })
@@ -70,13 +71,15 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
     let ids = []
     if (cible === 'tous' || cible === 'educateurs') ids.push(...educateurIds)
     if ((cible === 'tous' || cible === 'joueurs') && educateurIds.length > 0) {
-      const { data: affRows } = await supabase.from('affiliations').select('joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte')
+      const { data: affRows } = await fetchToutesLignes(() => supabase.from('affiliations').select('id, joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte').order('id'))
       ids.push(...(affRows || []).map(r => r.joueur_id).filter(Boolean))
     }
     ids = [...new Set(ids)]
     if (ids.length === 0) return []
 
-    const { data: profils } = await supabase.from('profiles').select('email, prenom, nom').in('id', ids)
+    // Paginé : au-delà de 1000 joueurs affiliés, les suivants ne recevaient
+    // pas l'email (cf. lib/supabasePagination).
+    const { data: profils } = await fetchToutesLignesIn(ids, paquet => supabase.from('profiles').select('id, email, prenom, nom').in('id', paquet).order('id'))
     return (profils || []).filter(p => p.email).map(p => ({ email: p.email, nom: `${p.prenom || ''} ${p.nom || ''}`.trim() }))
   }
 

@@ -46,6 +46,39 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 403, headers: corsHeaders })
     }
 
+    // La liste destinataires vient du navigateur : on ne l'utilise que filtrée
+    // sur les membres réels du club — éducateurs affiliés (club_educateurs
+    // accepté) et joueurs affiliés à ces éducateurs. Une newsletter club ne
+    // doit jamais partir vers d'autres éducateurs de la plateforme (l'envoi à
+    // tous est réservé au coach admin, send-notification-plateforme).
+    // Requêtes paginées : PostgREST tronque à 1000 lignes sans erreur.
+    const toutesLignes = async (build: () => any) => {
+      const lignes: any[] = []
+      for (let debut = 0; ; debut += 1000) {
+        const { data, error } = await build().range(debut, debut + 999)
+        if (error) throw error
+        lignes.push(...(data || []))
+        if (!data || data.length < 1000) return lignes
+      }
+    }
+    const educRows = await toutesLignes(() => supabase.from('club_educateurs').select('educateur_id').eq('club_id', club_id).eq('statut', 'accepte').order('educateur_id'))
+    const educateurIds = [...new Set(educRows.map((r: any) => r.educateur_id).filter(Boolean))]
+    const membresIds = new Set<string>(educateurIds as string[])
+    for (let i = 0; i < educateurIds.length; i += 150) {
+      const paquet = educateurIds.slice(i, i + 150)
+      const affRows = await toutesLignes(() => supabase.from('affiliations').select('id, joueur_id').in('educateur_id', paquet).eq('statut', 'accepte').order('id'))
+      affRows.forEach((r: any) => { if (r.joueur_id) membresIds.add(r.joueur_id) })
+    }
+    const idsMembres = [...membresIds]
+    const emailsAutorises = new Set<string>()
+    for (let i = 0; i < idsMembres.length; i += 150) {
+      const paquet = idsMembres.slice(i, i + 150)
+      const profils = await toutesLignes(() => supabase.from('profiles').select('id, email').in('id', paquet).order('id'))
+      profils.forEach((p: any) => { if (p.email) emailsAutorises.add(p.email.toLowerCase()) })
+    }
+    const destinatairesValides = destinataires.filter((d: { email?: string }) => d?.email && emailsAutorises.has(d.email.toLowerCase()))
+    const ignores = destinataires.length - destinatairesValides.length
+
     const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', club_id).maybeSingle()
     const club = clubProfile?.club || 'Ton club'
 
@@ -65,7 +98,7 @@ serve(async (req) => {
 </html>`
 
     const results = await Promise.allSettled(
-      destinataires.map((dest: { email: string; nom?: string }) =>
+      destinatairesValides.map((dest: { email: string; nom?: string }) =>
         fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -89,7 +122,7 @@ serve(async (req) => {
       await supabase.from('annonces_club').update({ envoye_email: true }).eq('id', annonce_id).eq('club_id', club_id)
     }
 
-    return new Response(JSON.stringify({ success: true, envoyes, erreurs }), {
+    return new Response(JSON.stringify({ success: true, envoyes, erreurs, ignores }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
