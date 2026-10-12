@@ -36,6 +36,8 @@ import TournoiClub from '../components/club/TournoiClub'
 import PlanificationSeances from '../components/club/PlanificationSeances'
 import NotificationBanner from '../components/NotificationBanner'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
+import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
+import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -1459,9 +1461,11 @@ export default function DashboardClub() {
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
     if (educateurIds.length === 0) { setMatchsClub([]); setJoueursClub([]); return }
 
+    // Paginées (lib/supabasePagination) : tout le club, toutes saisons confondues —
+    // dépasse vite le plafond silencieux de 1000 lignes de PostgREST.
     const [{ data: matchs }, { data: joueurs }] = await Promise.all([
-      supabase.from('matchs_equipe').select('*').in('educateur_id', educateurIds).order('date', { ascending: false }),
-      supabase.from('equipe_joueurs').select('id, prenom, nom, poste, educateur_id, created_at').in('educateur_id', educateurIds).order('created_at', { ascending: false }),
+      fetchToutesLignes(() => supabase.from('matchs_equipe').select('*').in('educateur_id', educateurIds).order('date', { ascending: false }).order('id')),
+      fetchToutesLignes(() => supabase.from('equipe_joueurs').select('id, prenom, nom, poste, educateur_id, created_at').in('educateur_id', educateurIds).order('created_at', { ascending: false }).order('id')),
     ])
     setMatchsClub(matchs || [])
     setJoueursClub(joueurs || [])
@@ -1474,17 +1478,20 @@ export default function DashboardClub() {
     const { data: educs } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', uid).eq('statut', 'accepte')
     const educateurIds = [...new Set((educs || []).map(e => e.educateur_id).filter(Boolean))]
     const [{ data: joueurs }, { data: champs }, { data: tailles }, { data: commandes }, { data: catalogue }, { data: masque }, { data: stock }, { data: distribution }, { data: packs }, { data: attributions }, { data: recuperations }] = await Promise.all([
-      educateurIds.length ? supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id, club_categorie_id').in('educateur_id', educateurIds).order('nom') : Promise.resolve({ data: [] }),
+      // Paginées : une ligne par joueur × champ (tailles) ou par article
+      // remis, sur tout le club — au-delà de 1000, des joueurs perdaient
+      // leurs tailles/attributions sans aucune erreur (cf. lib/supabasePagination).
+      educateurIds.length ? fetchToutesLignes(() => supabase.from('equipe_joueurs').select('id, joueur_id, prenom, nom, poste, categorie, numero_maillot, educateur_id, club_categorie_id').in('educateur_id', educateurIds).order('nom').order('id')) : Promise.resolve({ data: [] }),
       supabase.from('equipement_champs').select('*').eq('club_id', uid).eq('actif', true).order('ordre'),
-      supabase.from('equipement_tailles').select('*').eq('club_id', uid),
-      supabase.from('equipement_commandes').select('*').eq('club_id', uid),
+      fetchToutesLignes(() => supabase.from('equipement_tailles').select('*').eq('club_id', uid).order('id')),
+      fetchToutesLignes(() => supabase.from('equipement_commandes').select('*').eq('club_id', uid).order('id')),
       supabase.from('materiel_catalogue').select('*').eq('actif', true).or(`club_id.is.null,club_id.eq.${uid}`).order('categorie').order('nom'),
       supabase.from('materiel_catalogue_masque').select('catalogue_id').eq('club_id', uid),
       supabase.from('materiel_stock').select('*').eq('club_id', uid),
-      supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }),
+      fetchToutesLignes(() => supabase.from('materiel_distribution').select('*').eq('club_id', uid).order('date_distribution', { ascending: false }).order('id')),
       supabase.from('equipement_packs').select('*').eq('club_id', uid).eq('actif', true).order('created_at'),
-      supabase.from('equipement_attributions').select('*').eq('club_id', uid),
-      supabase.from('equipement_recuperations').select('*').eq('club_id', uid).order('valide_le', { ascending: false }),
+      fetchToutesLignes(() => supabase.from('equipement_attributions').select('*').eq('club_id', uid).order('id')),
+      fetchToutesLignes(() => supabase.from('equipement_recuperations').select('*').eq('club_id', uid).order('valide_le', { ascending: false }).order('id')),
     ])
     setJoueursInventaire(joueurs || [])
     setEquipementChamps(champs || [])
@@ -2563,10 +2570,10 @@ export default function DashboardClub() {
   // référence auth.users(id), pas profiles(id), l'alias d'embed PostgREST
   // n'est pas garanti de résoudre vers profiles dans ce cas.
   const chargerParentsClub = async () => {
-    const { data: parents } = await supabase.from('profil_parent').select('*').eq('profil_complet', true)
+    const { data: parents } = await fetchToutesLignes(() => supabase.from('profil_parent').select('*').eq('profil_complet', true).order('id'))
     if (!parents?.length) { setParentsClub([]); return }
     const joueurIds = [...new Set(parents.map(p => p.joueur_id))]
-    const { data: joueurs } = await supabase.from('profiles').select('id, prenom, nom, categorie, niveau_equipe, club').in('id', joueurIds)
+    const { data: joueurs } = await fetchToutesLignesIn(joueurIds, ids => supabase.from('profiles').select('id, prenom, nom, categorie, niveau_equipe, club').in('id', ids).order('id'))
     const joueurMap = {}
     joueurs?.forEach(j => { joueurMap[j.id] = j })
     setParentsClub(parents.map(p => ({ ...p, joueur: joueurMap[p.joueur_id] })))
@@ -2732,28 +2739,60 @@ export default function DashboardClub() {
     const educateurIds = [...new Set(categories.map(c => c.educateur_id).filter(Boolean))]
     if (educateurIds.length === 0) { setLoadingClassements(false); return }
 
-    const { data: joueurs } = await supabase
+    const { data: joueurs } = await fetchToutesLignes(() => supabase
       .from('equipe_joueurs')
-      .select('id, prenom, nom, poste, educateur_id, club_categorie_id, numero_maillot')
+      .select('id, joueur_id, prenom, nom, poste, categorie, educateur_id, club_categorie_id, numero_maillot')
       .in('educateur_id', educateurIds)
+      .order('id'))
 
     if (!joueurs || joueurs.length === 0) { setStatsParCategorie({}); setLoadingClassements(false); return }
 
     const joueurIds = joueurs.map(j => j.id)
 
-    const [{ data: statsMatch }, { data: presences }, { data: notes }] = await Promise.all([
-      supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', joueurIds),
-      supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainements(date)').in('joueur_id', joueurIds),
-      supabase.from('evaluations_joueur').select('equipe_joueur_id, note_globale_saison').eq('periode', 'fin_saison').in('equipe_joueur_id', joueurIds),
+    // Toutes ces requêtes portent sur tout le club : elles dépassent vite le
+    // plafond de 1000 lignes de PostgREST, d'où la pagination (lib/supabasePagination) —
+    // sans elle, des mois entiers manquaient au hasard selon les joueurs.
+    // Les réponses au sondage (disponibilites, rattachées au compte du joueur
+    // = equipe_joueurs.joueur_id) servent de repli quand l'éducateur n'a pas
+    // validé la séance, comme dans DashboardEducateur — sinon le taux du club
+    // ne comptait que les séances pointées et différait de celui du coach.
+    const profilIds = [...new Set(joueurs.map(j => j.joueur_id).filter(Boolean))]
+    const [{ data: statsMatch }, { data: presences }, { data: notes }, { data: dispos }, { data: entrainementsClub }] = await Promise.all([
+      fetchToutesLignesIn(joueurIds, ids => supabase.from('stats_match').select('joueur_id, match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', ids).order('match_id').order('joueur_id')),
+      fetchToutesLignesIn(joueurIds, ids => supabase.from('presences_entrainement').select('entrainement_id, joueur_id, statut, present, point_seance').in('joueur_id', ids).order('entrainement_id').order('joueur_id')),
+      fetchToutesLignesIn(joueurIds, ids => supabase.from('evaluations_joueur').select('id, equipe_joueur_id, note_globale_saison').eq('periode', 'fin_saison').in('equipe_joueur_id', ids).order('id')),
+      profilIds.length
+        ? fetchToutesLignesIn(profilIds, ids => supabase.from('disponibilites').select('id, joueur_id, seance_id, statut').in('joueur_id', ids).not('seance_id', 'is', null).order('id'))
+        : Promise.resolve({ data: [] }),
+      fetchToutesLignes(() => supabase.from('entrainements').select('id, date, educateur_id').in('educateur_id', educateurIds).order('id')),
     ])
 
-    const buildStats = (joueurId) => {
+    const entrainementParId = {}
+    ;(entrainementsClub || []).forEach(e => { entrainementParId[e.id] = e })
+
+    const buildStats = (joueur) => {
+      const joueurId = joueur.id
       const sm = (statsMatch || []).filter(s => s.joueur_id === joueurId)
-      const pr = (presences || []).filter(p => p.joueur_id === joueurId)
       const note = (notes || []).find(n => n.equipe_joueur_id === joueurId)
-      const totalPresences = pr.filter(p => p.statut && p.statut !== 'non_saisi').length
-      const presents = pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length
-      const points = pr.filter(p => p.point_seance).length
+
+      // Une ligne par séance de l'éducateur du joueur (déjà passée) ayant une
+      // saisie OU une réponse au sondage — mêmes règles que tauxPresence côté
+      // éducateur (statutPresenceEffectif + seanceComptable).
+      const presenceParSeance = {}
+      ;(presences || []).forEach(p => { if (p.joueur_id === joueurId) presenceParSeance[p.entrainement_id] = p })
+      const sondageParSeance = {}
+      if (joueur.joueur_id) (dispos || []).forEach(d => { if (d.joueur_id === joueur.joueur_id) sondageParSeance[d.seance_id] = d.statut })
+      const pr = [...new Set([...Object.keys(presenceParSeance), ...Object.keys(sondageParSeance)])]
+        .map(id => entrainementParId[id])
+        .filter(e => e && e.educateur_id === joueur.educateur_id && seanceComptable(e.date))
+        .map(e => ({
+          date: e.date,
+          statut: statutPresenceEffectif(presenceParSeance[e.id], sondageParSeance[e.id]),
+          point_seance: !!presenceParSeance[e.id]?.point_seance,
+        }))
+      const totalPresences = pr.filter(p => p.statut).length
+      const presents = pr.filter(p => estStatutPresent(p.statut)).length
+      const points = (presences || []).filter(p => p.joueur_id === joueurId && p.point_seance).length
       const noteGlobale = note?.note_globale_saison ?? null
 
       // Matchs réellement joués (minutes > 0) — le résultat V/N/D vient du match lié, pas d'une
@@ -2767,13 +2806,11 @@ export default function DashboardClub() {
       // Présence par mois (pour les barres horizontales de la fiche individuelle)
       const moisMap = {}
       pr.forEach(p => {
-        const date = p.entrainements?.date
-        if (!date) return
-        const key = date.slice(0, 7)
+        const key = p.date.slice(0, 7)
         if (!moisMap[key]) moisMap[key] = { present: 0, total: 0, points: 0 }
-        if (p.statut && p.statut !== 'non_saisi') {
+        if (p.statut) {
           moisMap[key].total++
-          if (p.statut === 'present' || p.statut === 'convoque') moisMap[key].present++
+          if (estStatutPresent(p.statut)) moisMap[key].present++
         }
         if (p.point_seance) moisMap[key].points++
       })
@@ -2792,7 +2829,7 @@ export default function DashboardClub() {
         // Compteurs bruts (présent stricto sensu, sans convoqué) pour le taux de présence
         // effectif agrégé au niveau équipe, dans l'onglet Classements.
         presenceEffectifTotal: totalPresences,
-        presenceEffectifPresents: pr.filter(p => p.statut === 'present' || p.statut === 'convoque').length,
+        presenceEffectifPresents: presents,
         pointsSeance: points,
         noteGlobale,
         presenceMensuelle,
@@ -2825,7 +2862,7 @@ export default function DashboardClub() {
         return cat.equipe === 'A' || candidats.length === 1
       })
       joueursCat.forEach(j => { if (!j.club_categorie_id) aReassigner.push({ id: j.id, club_categorie_id: cat.id }) })
-      grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j.id) })) }
+      grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j) })) }
     })
 
     setStatsParCategorie(grouped)
@@ -2881,11 +2918,12 @@ export default function DashboardClub() {
     const educateurIds = [...new Set(categories.map(c => c.educateur_id).filter(Boolean))]
     if (educateurIds.length === 0) { setAutoAssignLoading(false); return }
 
-    const { data: joueurs } = await supabase
+    const { data: joueurs } = await fetchToutesLignes(() => supabase
       .from('equipe_joueurs')
       .select('id, categorie, club_categorie_id')
       .in('educateur_id', educateurIds)
       .is('club_categorie_id', null)
+      .order('id'))
 
     if (!joueurs || joueurs.length === 0) {
       setAutoAssignResult({ count: 0 })

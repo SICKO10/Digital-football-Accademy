@@ -34,6 +34,8 @@ import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import MesStats from './MesStats'
 import { getPosteFamille } from '../lib/postes'
+import { statutPresenceEffectif } from '../lib/presence'
+import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import CompositionTerrain from '../components/CompositionTerrain'
@@ -632,13 +634,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (!affiliationsAcceptees?.length) return
     const resultats = await Promise.all(affiliationsAcceptees.map(async a => {
       if (!a.educateur_id) return { ents: [], mts: [] }
-      let qEnt = supabase.from('entrainements').select('id, date, description, heure, created_at, updated_at').eq('educateur_id', a.educateur_id)
-      let qMt = supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, created_at, updated_at').eq('educateur_id', a.educateur_id)
-      let qSupp = supabase.from('entrainements_supprimes').select('id, date, heure, supprime_at').eq('educateur_id', a.educateur_id)
-      // Un éducateur qui gère plusieurs équipes (ex: U11 et U18) — sans ce filtre,
-      // un joueur voit le calendrier de toutes les équipes de son éducateur.
-      if (a.club_categorie_id) { qEnt = qEnt.eq('club_categorie_id', a.club_categorie_id); qMt = qMt.eq('club_categorie_id', a.club_categorie_id); qSupp = qSupp.eq('club_categorie_id', a.club_categorie_id) }
-      const [{ data: ents }, { data: mts }, { data: supp }] = await Promise.all([qEnt, qMt, qSupp])
+      // Un éducateur qui gère plusieurs équipes (ex: U11 et U18) — sans le
+      // filtre club_categorie_id, un joueur voit le calendrier de toutes les
+      // équipes de son éducateur. Paginées (lib/supabasePagination) : toutes
+      // saisons confondues ; requête reconstruite à chaque page.
+      const scope = (q) => (a.club_categorie_id ? q.eq('club_categorie_id', a.club_categorie_id) : q).order('id')
+      const [{ data: ents }, { data: mts }, { data: supp }] = await Promise.all([
+        fetchToutesLignes(() => scope(supabase.from('entrainements').select('id, date, description, heure, created_at, updated_at').eq('educateur_id', a.educateur_id))),
+        fetchToutesLignes(() => scope(supabase.from('matchs_equipe').select('id, date, heure, adversaire, domicile, created_at, updated_at').eq('educateur_id', a.educateur_id))),
+        fetchToutesLignes(() => scope(supabase.from('entrainements_supprimes').select('id, date, heure, supprime_at').eq('educateur_id', a.educateur_id))),
+      ])
       // jours_actifs (affiliations) : un joueur sur 2 équipes peut n'être
       // attendu aux entraînements de celle-ci que certains jours (l'autre
       // équipe couvrant le reste de la semaine) — ne s'applique qu'aux
@@ -677,16 +682,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     dispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
 
     const parEquipe = await Promise.all(valides.map(async a => {
-      let qEntrainements = supabase.from('entrainements').select('id, date').eq('educateur_id', a.educateur_id).lte('date', new Date().toISOString().split('T')[0])
-      if (a.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', a.club_categorie_id)
+      const qEntrainements = () => {
+        const q = supabase.from('entrainements').select('id, date').eq('educateur_id', a.educateur_id).lte('date', new Date().toISOString().split('T')[0])
+        return (a.club_categorie_id ? q.eq('club_categorie_id', a.club_categorie_id) : q).order('id')
+      }
       const [{ data: entrainementsData }, { data: presences }, { data: statsMatch }] = await Promise.all([
-        qEntrainements,
-        supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', a.equipe_joueur_id),
+        fetchToutesLignes(qEntrainements),
+        supabase.from('presences_entrainement').select('statut, present, entrainement_id').eq('joueur_id', a.equipe_joueur_id),
         supabase.from('stats_match').select('buts, passes_dec, minutes').eq('joueur_id', a.equipe_joueur_id),
       ])
       const presenceMap = {}
-      presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
-      const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+      presences?.forEach(p => { presenceMap[p.entrainement_id] = p })
+      const statutEffectif = (entId) => statutPresenceEffectif(presenceMap[entId], dispoMap[entId])
       const saisies = (entrainementsData || [])
         .filter(e => statutEffectif(e.id) !== null)
         .map(e => ({ date: e.date, statut: statutEffectif(e.id) }))
@@ -777,10 +784,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (onglet === 'clubs' && educateursListe.length === 0 && clubsListe.length === 0 && recruteursList.length === 0) {
       setClubsLoading(true)
       Promise.all([
-        supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur'),
-        supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club'),
-        supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout'),
-        supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true),
+        // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
+        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').order('id')),
+        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
+        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout').order('id')),
+        fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
       ]).then(([{ data: edu }, { data: clu }, { data: rec }, { data: recrut }]) => {
         setEducateursListe(edu || [])
         setClubsListe(clu || [])
@@ -1356,28 +1364,30 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // entrainements/matchs_equipe/equipe_joueurs rattachés chacun à une seule
     // club_categorie_id — sans ce filtre en plus de educateur_id, "Mon Équipe"
     // mélangeait classement/effectif/calendrier de toutes ses équipes.
-    let qMesEntrainements = supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0])
-    let qTousEntrainements = supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId)
-    if (clubCategorieId) { qMesEntrainements = qMesEntrainements.eq('club_categorie_id', clubCategorieId); qTousEntrainements = qTousEntrainements.eq('club_categorie_id', clubCategorieId) }
+    // Requêtes reconstruites à chaque page (fetchToutesLignes) : toutes
+    // saisons confondues, un éducateur dépasse vite 1000 séances/stats.
+    const scopeEquipe = (q) => (clubCategorieId ? q.eq('club_categorie_id', clubCategorieId) : q)
+    const qMesEntrainements = () => scopeEquipe(supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId).lte('date', new Date().toISOString().split('T')[0])).order('id')
+    const qTousEntrainements = () => scopeEquipe(supabase.from('entrainements').select('id, date').eq('educateur_id', educateurId)).order('id')
     const [
       { data: presencesMoi },
       { data: mesEntrainements },
       { data: mesDispos },
       { data: tousEntrainements },
     ] = await Promise.all([
-      supabase.from('presences_entrainement').select('statut, point_seance, entrainement_id').eq('joueur_id', equipeJoueurId),
-      qMesEntrainements,
+      supabase.from('presences_entrainement').select('statut, present, point_seance, entrainement_id').eq('joueur_id', equipeJoueurId),
+      fetchToutesLignes(qMesEntrainements),
       supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
-      qTousEntrainements,
+      fetchToutesLignes(qTousEntrainements),
     ])
 
     const presenceMap = {}
-    presencesMoi?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+    presencesMoi?.forEach(p => { presenceMap[p.entrainement_id] = p })
     const dispoMap = {}
     mesDispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
     const pointsMap = {}
     presencesMoi?.forEach(p => { if (p.point_seance) pointsMap[p.entrainement_id] = true })
-    const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+    const statutEffectif = (entId) => statutPresenceEffectif(presenceMap[entId], dispoMap[entId])
     const saisies = (mesEntrainements || []).filter(e => statutEffectif(e.id) !== null)
 
     // 2. Dates des entraînements pour le mensuel
@@ -1397,9 +1407,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // les joueur_id de l'effectif déjà scopé. calendrier_matchs n'a pas non
     // plus cette colonne (widget "prochains matchs" laissé tel quel, redondant
     // avec l'onglet Compétition qui lui est déjà scopé via matchs_equipe).
-    let qEffectif = supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId)
-    let qMatchsEquipe = supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId)
-    if (clubCategorieId) { qEffectif = qEffectif.eq('club_categorie_id', clubCategorieId); qMatchsEquipe = qMatchsEquipe.eq('club_categorie_id', clubCategorieId) }
+    const qEffectif = scopeEquipe(supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId))
+    const qMatchsEquipe = () => scopeEquipe(supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId)).order('id')
     const [
       { data: toutesPresences },
       [
@@ -1413,15 +1422,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       ],
     ] = await Promise.all([
       tousEntIds.length
-        ? supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', tousEntIds)
+        ? fetchToutesLignesIn(tousEntIds, ids => supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', ids).order('entrainement_id').order('joueur_id'))
         : Promise.resolve({ data: [] }),
       Promise.all([
         supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
-        supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId),
+        // Une ligne par joueur et par match de l'éducateur : ~1000 par saison.
+        fetchToutesLignes(() => supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId).order('match_id').order('joueur_id')),
         supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
         supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
         qEffectif,
-        qMatchsEquipe,
+        fetchToutesLignes(qMatchsEquipe),
         supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
       ]),
     ])
@@ -1622,11 +1632,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   const chargerConversations = async (uid) => {
-    const { data } = await supabase
+    const { data } = await fetchToutesLignes(() => supabase
       .from('messages')
       .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, plan, email), receiver:profiles!messages_receiver_id_fkey(prenom, nom, plan, email)')
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }))
     if (!data) return
     setMessages(data)
     const map = {}

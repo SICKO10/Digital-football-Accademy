@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { creerFetchPagine } from './lib/fetchPagine'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -8,8 +9,12 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // exactement ce qui permet aux scanners de liens (Outlook Safe Links, Gmail,
 // Apple Mail) de consommer un lien à usage unique avant que l'utilisateur clique.
 // Voir src/pages/AcceptInvite.jsx, qui échange le token manuellement au clic.
+//
+// global.fetch : toute lecture tronquée à 1000 lignes par PostgREST est
+// complétée automatiquement, page par page (cf. lib/fetchPagine.js).
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { detectSessionInUrl: false },
+  global: { fetch: creerFetchPagine() },
 })
 
 // supabase.auth.signOut() renvoie une 403 si appelée sans session valide (déjà

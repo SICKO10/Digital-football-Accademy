@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
+import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 
 // ─── OVR CALCULATION ───
 function calculerOVR({ buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct }) {
@@ -78,23 +79,24 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
     let presencePct = 0
     if (affiliation?.educateur_id && affiliation?.equipe_joueur_id) {
       const { data: equipeJoueur } = await supabase.from('equipe_joueurs').select('club_categorie_id').eq('id', affiliation.equipe_joueur_id).maybeSingle()
-      let qEntrainements = supabase.from('entrainements').select('id')
+      let qEntrainements = supabase.from('entrainements').select('id, date')
         .eq('educateur_id', affiliation.educateur_id).gte('date', date_debut).lte('date', finPeriode)
       if (equipeJoueur?.club_categorie_id) qEntrainements = qEntrainements.eq('club_categorie_id', equipeJoueur.club_categorie_id)
       const [{ data: entrainementsSaison }, { data: presences }, { data: dispos }] = await Promise.all([
         qEntrainements,
-        supabase.from('presences_entrainement').select('statut, entrainement_id').eq('joueur_id', affiliation.equipe_joueur_id),
+        supabase.from('presences_entrainement').select('statut, present, entrainement_id').eq('joueur_id', affiliation.equipe_joueur_id),
         supabase.from('disponibilites').select('seance_id, statut').eq('joueur_id', userId),
       ])
       const presenceMap = {}
-      presences?.forEach(p => { presenceMap[p.entrainement_id] = p.statut })
+      presences?.forEach(p => { presenceMap[p.entrainement_id] = p })
       const dispoMap = {}
       dispos?.forEach(d => { if (d.seance_id) dispoMap[d.seance_id] = d.statut })
-      const statutEffectif = (entId) => presenceMap[entId] || dispoMap[entId] || null
+      // Règles communes aux dashboards (lib/presence).
+      const statutEffectif = (entId) => statutPresenceEffectif(presenceMap[entId], dispoMap[entId])
 
-      const saisies = (entrainementsSaison || []).filter(e => statutEffectif(e.id) !== null)
+      const saisies = (entrainementsSaison || []).filter(e => seanceComptable(e.date) && statutEffectif(e.id) !== null)
       if (saisies.length > 0) {
-        const present = saisies.filter(e => statutEffectif(e.id) === 'present' || statutEffectif(e.id) === 'convoque').length
+        const present = saisies.filter(e => estStatutPresent(statutEffectif(e.id))).length
         presencePct = Math.round((present / saisies.length) * 100)
       }
     }

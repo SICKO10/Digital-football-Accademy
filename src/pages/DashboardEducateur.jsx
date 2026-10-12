@@ -58,6 +58,8 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 import { notifierJoueur } from '../lib/notifications'
+import { statutPresenceEffectif, seanceComptable } from '../lib/presence'
+import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import { colors, alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
@@ -1975,7 +1977,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // depuis leur dashboard, juste jamais affichées côté éducateur)
     const matchIds = (data || []).map(m => m.id)
     if (matchIds.length > 0) {
-      const { data: dispos } = await supabase.from('disponibilites').select('id, joueur_id, match_id, statut, created_at').in('match_id', matchIds)
+      const { data: dispos } = await fetchToutesLignesIn(matchIds, ids => supabase.from('disponibilites').select('id, joueur_id, match_id, statut, created_at').in('match_id', ids).order('id'))
       const map = {}
       dispos?.forEach(d => { if (!map[d.match_id]) map[d.match_id] = {}; map[d.match_id][d.joueur_id] = d.statut })
       setDispoJoueursMatch(map)
@@ -2014,15 +2016,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const chargerEntrainements = async (uid, catId) => {
-    let q = supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', uid).order('date', { ascending: false })
-    if (catId) q = q.eq('club_categorie_id', catId)
-    const { data } = await q
+    // Paginé (lib/supabasePagination) : toutes saisons et équipes confondues,
+    // un éducateur finit par dépasser 1000 séances.
+    const { data } = await fetchToutesLignes(() => {
+      let q = supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', uid).order('date', { ascending: false }).order('id')
+      if (catId) q = q.eq('club_categorie_id', catId)
+      return q
+    })
     setEntrainements(data || [])
 
     // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
     const entrainementIds = (data || []).map(e => e.id)
     if (entrainementIds.length > 0) {
-      const { data: dispos } = await supabase.from('disponibilites').select('id, joueur_id, seance_id, statut, created_at').in('seance_id', entrainementIds)
+      // Paginé : une équipe dépasse vite les 1000 réponses sur une saison
+      // (25 joueurs × 3 séances/semaine), plafond PostgREST au-delà duquel des
+      // séances entières perdaient leurs réponses en silence (cf. lib/supabasePagination).
+      const { data: dispos } = await fetchToutesLignesIn(entrainementIds, ids => supabase.from('disponibilites').select('id, joueur_id, seance_id, statut, created_at').in('seance_id', ids).order('id'))
       const map = {}
       dispos?.forEach(d => { if (!map[d.seance_id]) map[d.seance_id] = {}; map[d.seance_id][d.joueur_id] = d.statut })
       setDispoJoueurs(map)
@@ -2037,8 +2046,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
     const demandeIds = (demandes || []).map(d => d.id)
     if (demandeIds.length > 0) {
-      const { data: reponses } = await supabase.from('seances_notes_joueurs')
-        .select('*, profiles(prenom, nom, avatar_url)').in('demande_id', demandeIds)
+      // ~25 réponses par demande : dépasse 1000 en une saison.
+      const { data: reponses } = await fetchToutesLignesIn(demandeIds, ids => supabase.from('seances_notes_joueurs')
+        .select('*, profiles(prenom, nom, avatar_url)').in('demande_id', ids).order('id'))
       setReponsesNote(reponses || [])
     } else {
       setReponsesNote([])
@@ -2087,7 +2097,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // perturbent pas le calcul de moyenne par joueur ci-dessous.
   const chargerNotationsMatch = async (uid, matchIds = []) => {
     if (matchIds.length === 0) { setNotationsMatch([]); return }
-    const { data } = await supabase.from('notations_match').select('joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid).in('match_id', matchIds)
+    // Une note par joueur et par match : ~1000 lignes par saison et par équipe.
+    const { data } = await fetchToutesLignesIn(matchIds, ids => supabase.from('notations_match').select('id, joueur_id, note, match_id, est_note_equipe').eq('educateur_id', uid).in('match_id', ids).order('id'))
     setNotationsMatch(data || [])
   }
 
@@ -2096,7 +2107,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // equipe_joueurs.id (= joueurs[].id dans ce fichier), pas profiles.id.
   const [evaluationsJoueurs, setEvaluationsJoueurs] = useState([])
   const chargerEvaluationsJoueurs = async (uid) => {
-    const { data } = await supabase.from('evaluations_joueur').select('equipe_joueur_id, note_globale_saison, updated_at').eq('educateur_id', uid)
+    const { data } = await fetchToutesLignes(() => supabase.from('evaluations_joueur').select('id, equipe_joueur_id, note_globale_saison, updated_at').eq('educateur_id', uid).order('id'))
     setEvaluationsJoueurs(data || [])
   }
   // Dernière évaluation renseignée pour un joueur (toutes périodes/saisons
@@ -2761,11 +2772,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Un procédé peut être partagé en club ET/OU en platform en plus de rester
     // dans "Ma bibliothèque" (pas de rubrique exclusive) — "Ma bibliothèque"
     // montre donc tout ce que ce coach a créé, peu importe ses partages.
-    let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? '*' : '*, educateur:educateur_id(prenom, nom)')
-    if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('partage_club', true)
-    else if (rubrique === 'platform') query = query.eq('partage_platform', true)
-    else query = query.eq('educateur_id', uid)
-    const { data } = await query.order('type').order('nom')
+    // Paginé : la bibliothèque partagée de toute la plateforme dépasse 1000 procédés.
+    const { data } = await fetchToutesLignes(() => {
+      let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? '*' : '*, educateur:educateur_id(prenom, nom)')
+      if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('partage_club', true)
+      else if (rubrique === 'platform') query = query.eq('partage_platform', true)
+      else query = query.eq('educateur_id', uid)
+      return query.order('type').order('nom').order('id')
+    })
     let procedes = data || []
     // Diplôme/catégorie de l'auteur (profil_educateur, pas profiles) — affichés
     // sur les cartes des bibliothèques partagées uniquement, un 2e aller-retour
@@ -5150,15 +5164,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const tauxPresence = (joueurId) => {
     // On prend en compte à la fois les saisies manuelles (presences_entrainement)
     // ET les réponses auto au sondage (dispoJoueurs) pour les joueurs non encore saisis.
+    // Séances à venir exclues (seanceComptable) : une réponse au sondage n'est
+    // pas encore une présence — mêmes règles que DashboardClub/DashboardJoueur.
     const joueur = joueurs.find(j => j.id === joueurId)
-    const getStatutEffectif = (e) => {
-      const p = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
-      const nonSaisi = !p || (!p.statut && !p.present)
-      if (!nonSaisi) return p?.statut || (p?.present ? 'present' : 'absent')
-      // Pas de saisie manuelle → on utilise la réponse auto au sondage si elle existe
-      return joueur?.joueur_id ? (dispoJoueurs[e.id]?.[joueur.joueur_id] || null) : null
-    }
-    const saisies = entrainements.filter(e => getStatutEffectif(e) !== null)
+    const getStatutEffectif = (e) => statutPresenceEffectif(
+      (e.presences_entrainement || []).find(p => p.joueur_id === joueurId),
+      joueur?.joueur_id ? dispoJoueurs[e.id]?.[joueur.joueur_id] : null,
+    )
+    const saisies = entrainements.filter(e => seanceComptable(e.date) && getStatutEffectif(e) !== null)
     if (!saisies.length) return null
     const presents  = saisies.filter(e => getStatutEffectif(e) === 'present').length
     const convoque  = saisies.filter(e => getStatutEffectif(e) === 'convoque').length
@@ -5286,9 +5299,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerExplorer = async () => {
     setExplorerLoading(true)
     const [{ data: edu }, { data: clu }, { data: recrut }] = await Promise.all([
-      supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId),
-      supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club'),
-      supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true),
+      // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
+      fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId).order('id')),
+      fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
+      fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
     ])
     setEducateursExplorer(edu || [])
     setClubsExplorer(clu || [])
@@ -5303,11 +5317,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // par rôle, donc réutilisable telle quelle entre deux éducateurs ou avec
   // un club, sans nouvelle table ni policy.
   const chargerMessagesExplorer = async () => {
-    const { data } = await supabase
+    // Paginé : trié du plus ancien au plus récent, la troncature à 1000
+    // lignes faisait disparaître les messages les PLUS RÉCENTS.
+    const { data } = await fetchToutesLignes(() => supabase
       .from('messages')
       .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, avatar_url), receiver:profiles!messages_receiver_id_fkey(prenom, nom, avatar_url)')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }))
     setExplorerMessages(data || [])
   }
 
@@ -6632,16 +6648,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const totalAbsents   = allTx.reduce((s, t) => s + t.absents, 0)
                   const totalBlesses   = allTx.reduce((s, t) => s + t.blesses, 0)
                   const totalMalades   = allTx.reduce((s, t) => s + t.malade, 0)
+                  // Même repli sur le sondage que tauxPresence — sans lui, un mois
+                  // où l'éducateur n'avait pas validé les présences (seulement les
+                  // réponses des joueurs) disparaissait du détail mensuel.
                   const presenceParMois = (joueurId) => {
+                    const joueur = joueurs.find(j => j.id === joueurId)
                     const mois = {}
                     entrainements.forEach(e => {
-                      const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === joueurId)
-                      if (!p || (!p.statut && !p.present)) return
+                      if (!seanceComptable(e.date)) return
+                      const st = statutPresenceEffectif(
+                        (e.presences_entrainement || []).find(pr => pr.joueur_id === joueurId),
+                        joueur?.joueur_id ? dispoJoueurs[e.id]?.[joueur.joueur_id] : null,
+                      )
+                      if (!st) return
                       const d = new Date(e.date)
                       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
                       if (!mois[key]) mois[key] = { presents:0, convoque:0, absents:0, blesses:0, malade:0, total:0 }
                       mois[key].total++
-                      const st = p.statut || (p.present ? 'present' : 'absent')
                       if (st==='present') mois[key].presents++
                       else if (st==='convoque') mois[key].convoque++
                       else if (st==='absent') mois[key].absents++

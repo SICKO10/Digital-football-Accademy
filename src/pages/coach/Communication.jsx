@@ -6,6 +6,7 @@ import Pill from '../../components/coachAdmin/Pill'
 import StatCard from '../../components/coachAdmin/StatCard'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { IcoMegaphone } from './NavIcons'
+import { fetchToutesLignes } from '../../lib/supabasePagination'
 
 const TYPES = [
   { id: 'info', label: 'Info', pill: 'info' },
@@ -61,10 +62,14 @@ export default function Communication({ adminId }) {
       if (error) throw error
 
       if (form.envoyer_email && notif) {
-        let query = supabase.from('profiles').select('email, prenom, nom')
+        // Paginé : toute la plateforme dépasse 1000 profils — sans ça, seuls
+        // les 1000 premiers recevaient l'email (cf. lib/supabasePagination).
         const plans = CIBLE_PLANS[form.cible]
-        if (plans) query = query.in('plan', plans)
-        const { data: membres } = await query.not('email', 'is', null)
+        const { data: membres } = await fetchToutesLignes(() => {
+          let query = supabase.from('profiles').select('id, email, prenom, nom').not('email', 'is', null).order('id')
+          if (plans) query = query.in('plan', plans)
+          return query
+        })
         const destinataires = (membres || []).map(m => ({ email: m.email, nom: `${m.prenom || ''} ${m.nom || ''}`.trim() }))
         if (destinataires.length > 0) {
           const { data: result } = await supabase.functions.invoke('send-notification-plateforme', {

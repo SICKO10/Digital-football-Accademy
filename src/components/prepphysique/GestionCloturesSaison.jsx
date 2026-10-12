@@ -3,6 +3,8 @@ import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
 import { makeUseSt } from '../../lib/theme'
 import Avatar from '../Avatar'
+import { statutPresenceEffectif, estStatutPresent } from '../../lib/presence'
+import { fetchToutesLignes, fetchToutesLignesIn } from '../../lib/supabasePagination'
 
 const stSombre = {
   card: '#111', card2: '#1a1a1a', border: '#222',
@@ -157,6 +159,39 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
   const [joueurs, setJoueurs] = useState([])
   const [historiques, setHistoriques] = useState([])
   const [presences, setPresences] = useState({}) // { joueur_id: { realisees, total } }
+
+  // Présences aux entraînements de la saison clôturée, avec les mêmes règles
+  // que les dashboards (lib/presence) : saisie de l'éducateur sinon réponse au
+  // sondage, convoqué = présent, séances passées uniquement. Avant, seules
+  // les lignes presences_entrainement étaient lues — sans filtre de saison,
+  // sans les sondages, convoqué compté absent, et tronquées au-delà de 1000
+  // lignes : les chiffres archivés ne correspondaient pas aux dashboards.
+  const chargerPresencesSaison = async (profilIds) => {
+    const [debut, fin] = saison.split('-').map(Number)
+    const aujourdHui = new Date().toISOString().split('T')[0]
+    const finSaison = `${fin}-06-30`
+    const { data: seances } = await fetchToutesLignes(() => {
+      let q = supabase.from('entrainements').select('id').eq('educateur_id', educateurId)
+        .gte('date', `${debut}-07-01`).lte('date', finSaison < aujourdHui ? finSaison : aujourdHui).order('id')
+      if (equipeActiveId) q = q.eq('club_categorie_id', equipeActiveId)
+      return q
+    })
+    const seanceIds = (seances || []).map(e => e.id)
+    if (seanceIds.length === 0) return { statutsJoueur: () => [] }
+    const [{ data: lignes }, { data: dispos }] = await Promise.all([
+      fetchToutesLignesIn(seanceIds, ids => supabase.from('presences_entrainement').select('entrainement_id, joueur_id, statut, present').in('entrainement_id', ids).order('entrainement_id').order('joueur_id')),
+      fetchToutesLignesIn(seanceIds, ids => supabase.from('disponibilites').select('id, joueur_id, seance_id, statut').in('seance_id', ids).in('joueur_id', profilIds).order('id')),
+    ])
+    const lignesParCle = {}
+    ;(lignes || []).forEach(p => { lignesParCle[`${p.entrainement_id}|${p.joueur_id}`] = p })
+    const sondageParCle = {}
+    ;(dispos || []).forEach(d => { sondageParCle[`${d.seance_id}|${d.joueur_id}`] = d.statut })
+    return {
+      statutsJoueur: (equipeJoueurId, profilId) => seanceIds
+        .map(id => statutPresenceEffectif(lignesParCle[`${id}|${equipeJoueurId}`], sondageParCle[`${id}|${profilId}`]))
+        .filter(Boolean),
+    }
+  }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [saison, setSaison] = useState(getSaison())
@@ -220,9 +255,7 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
       joueurIds.length > 0
         ? supabase.from('historique_saisons').select('*').eq('educateur_id', educateurId).eq('saison', saison).in('joueur_id', joueurIds)
         : Promise.resolve({ data: [], error: null }),
-      equipeJoueurIds.length > 0
-        ? supabase.from('presences_entrainement').select('joueur_id, statut').eq('educateur_id', educateurId).in('joueur_id', equipeJoueurIds)
-        : Promise.resolve({ data: [] }),
+      equipeJoueurIds.length > 0 ? chargerPresencesSaison(joueurIds) : Promise.resolve(null),
       // Évaluations reçues (notes_educateur, tous joueurs confondus, toutes
       // saisons) — moyenne générale affichée en en-tête de cet historique.
       supabase.from('notes_educateur').select('note').eq('educateur_id', educateurId).eq('auteur_type', 'joueur'),
@@ -234,10 +267,10 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
     if (equipeJoueurIds.length > 0) {
       (joueursData || []).forEach(j => {
         const equipeJoueurId = equipeJoueurIdMap[j.id]
-        const pr = (presencesRes.data || []).filter(p => p.joueur_id === equipeJoueurId)
+        const statuts = presencesRes ? presencesRes.statutsJoueur(equipeJoueurId, j.id) : []
         presenceMap[j.id] = {
-          realisees: pr.filter(p => p.statut === 'present').length,
-          total: pr.length,
+          realisees: statuts.filter(estStatutPresent).length,
+          total: statuts.length,
         }
       })
     }
