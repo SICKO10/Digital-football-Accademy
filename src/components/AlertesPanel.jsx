@@ -32,7 +32,13 @@ const IcoHeart        = () => <svg width="18" height="18" viewBox="0 0 24 24" fi
 // widget dédié et éprouvé (TerrainsLiberesWidget, avec abonnement realtime) —
 // dupliquer cette requête ici aurait fait cohabiter deux implémentations du
 // même signal, à faire diverger avec le temps.
-export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs = [], setActiveSection }) {
+// onResume (optionnel) : reçoit le décompte des alertes réellement affichées
+// ici (après masquage), par catégorie — pour le résumé compact du briefing
+// (accueil éducateur). Aucune donnée en plus, aucune priorité calculée :
+// uniquement le nombre d'éléments de chaque catégorie de ce panneau.
+// compact (optionnel) : sans en-tête (le parent porte le titre) et liste
+// répartie en colonnes pour rester basse — mêmes alertes, mêmes actions.
+export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs = [], setActiveSection, onResume, compact = false }) {
   const colors = useColors()
   const { masquees, masquer } = useAlertesMasquees()
   const [commandesPretes, setCommandesPretes] = useState([])
@@ -175,24 +181,45 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
     }),
   ].filter(a => !masquees.has(a.id))
 
+  // Catégorie = préfixe de l'id déjà attribué à chaque alerte ci-dessus.
+  const CATEGORIES = ['carton', 'materiel', 'deplacement', 'evenement', 'tache', 'responsabilite', 'rdv_medical']
+  const parCategorie = {}
+  alertes.forEach(a => {
+    const cat = CATEGORIES.find(c => a.id.startsWith(`${c}_`))
+    if (cat) parCategorie[cat] = (parCategorie[cat] || 0) + 1
+  })
+  const cleResume = loading ? null : JSON.stringify(parCategorie)
+  useEffect(() => {
+    if (cleResume === null || !onResume) return
+    const decompte = JSON.parse(cleResume)
+    onResume({ total: Object.values(decompte).reduce((s, n) => s + n, 0), parCategorie: decompte })
+    // onResume volontairement hors dépendances : seul un changement réel du
+    // décompte doit notifier le parent (pas une nouvelle référence de callback).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleResume])
+
   if (loading) return null
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <p style={{ fontWeight: 700, fontSize: '13px', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBell /> Alertes & infos</p>
-        {alertes.length > 0 && (
-          <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
-        )}
-      </div>
+      {!compact && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <p style={{ fontWeight: 700, fontSize: '13px', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBell /> Alertes & infos</p>
+          {alertes.length > 0 && (
+            <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertes.length}</span>
+          )}
+        </div>
+      )}
 
       {alertes.length === 0 ? (
         <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune alerte pour le moment.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={compact
+          ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }
+          : { display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {alertes.map(a => (
             <div key={a.id} onClick={a.onClick}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: colors.background.raised, border: `1px solid ${a.couleur}30`, borderLeft: `3px solid ${a.couleur}`, borderRadius: '10px', cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: compact ? '8px 10px' : '10px', background: compact ? colors.background.surface : colors.background.raised, border: `1px solid ${a.couleur}30`, borderLeft: `3px solid ${a.couleur}`, borderRadius: compact ? '8px' : '10px', cursor: 'pointer', minWidth: 0 }}>
               <span style={{ color: a.couleur, flexShrink: 0, display: 'flex' }}><a.Icon /></span>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titre}</p>

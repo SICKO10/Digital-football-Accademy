@@ -230,7 +230,6 @@ const matchCorrespondFiltreComp = (m, filtre) => filtre === 'toutes' || (m.compe
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-const IcoChart     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
 const IcoTrophy    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
 const IcoRun       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15.5 8.5L14 13l3 3-2 5"/><path d="M8.5 8.5L10 13l-3 3 2 5"/><path d="M10 13h4"/></svg>
 const IcoDumbbell  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12"/></svg>
@@ -247,11 +246,16 @@ const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+// Ajoutée pour remplacer l'emoji 📅 du titre "Planning de la semaine" par une
+// icône cohérente avec le reste des en-têtes de section (refonte visuelle
+// Accueil éducateur, 2026-10-12) — même style trait/stroke que les icônes
+// ci-dessus, aucune nouvelle dépendance.
+const IcoCalendar    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoUser        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-const IcoZap         = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-const IcoActivity    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoLink        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></svg>
+const IcoCadenas     = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
 const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoLogOut      = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1034,7 +1038,7 @@ function ExplicationPtsSeance() {
   )
 }
 
-function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, rapportsRecents, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs }) {
+function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -1056,14 +1060,6 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
     .slice(0, 3)
   const prochainEnt = prochainesEntrainements[0] || null
 
-  const STATUTS_PRESENCE = [
-    { val: 'present', label: 'Présent', color: colors.accent.green },
-    { val: 'absent', label: 'Absent', color: colors.accent.red },
-    { val: 'malade', label: 'Malade', color: colors.accent.blue },
-    { val: 'blesse', label: 'Blessé', color: colors.accent.blue },
-    { val: 'convoque', label: 'Convoqué', color: colors.accent.blue },
-  ]
-
   // Les réponses des joueurs au sondage "seras-tu présent ?" du prochain entraînement
   // sont dans `disponibilites` (seance_id), pas dans presences_entrainement (qui sert
   // à la prise de présence a posteriori par l'éducateur, après la séance).
@@ -1078,6 +1074,35 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
   }, [prochainEnt?.id])
 
   const compterStatutPresence = (val) => dispoProchainEnt.filter(d => d.statut === val).length
+
+  // Résumé compact des alertes (briefing) — alimenté par AlertesPanel
+  // lui-même (onResume) : mêmes alertes que le panneau détaillé, après
+  // masquage, sans requête ni priorité supplémentaires. null = pas encore
+  // chargé (rien n'est affiché plutôt qu'un "0" provisoire).
+  const [resumeAlertes, setResumeAlertes] = useState(null)
+  const panneauAlertesRef = useRef(null)
+  const ouvrirPanneauAlertes = () => {
+    const el = panneauAlertesRef.current
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    el.focus({ preventScroll: true })
+  }
+  // Une formulation par catégorie, fidèle à ce que signale le panneau
+  // (ex. cartons : joueurs à 2 jaunes ou plus), accordée au nombre.
+  const PHRASES_ALERTES = {
+    carton: n => `${n} joueur${n > 1 ? 's' : ''} à 2 cartons jaunes ou plus`,
+    materiel: n => `${n} pack${n > 1 ? 's' : ''} prêt${n > 1 ? 's' : ''} à récupérer`,
+    deplacement: n => `${n} déplacement${n > 1 ? 's' : ''} avec places insuffisantes`,
+    evenement: n => `${n} événement${n > 1 ? 's' : ''} club à venir`,
+    tache: n => `${n} tâche${n > 1 ? 's' : ''} confiée${n > 1 ? 's' : ''}`,
+    responsabilite: n => `${n} responsabilité${n > 1 ? 's' : ''}`,
+    rdv_medical: n => `${n} rdv médica${n > 1 ? 'ux' : 'l'} à venir`,
+  }
+  const phraseResumeAlertes = (parCategorie) => {
+    const morceaux = Object.entries(parCategorie).filter(([cat]) => PHRASES_ALERTES[cat]).map(([cat, n]) => PHRASES_ALERTES[cat](n))
+    if (morceaux.length <= 1) return morceaux[0] || ''
+    return `${morceaux.slice(0, -1).join(', ')} et ${morceaux[morceaux.length - 1]}`
+  }
 
   // Fiche déplacement — les déplacements eux-mêmes sont chargés (et tenus à
   // jour en temps réel) par DeplacementsAssignesWidget, affiché plus haut sur
@@ -1174,289 +1199,381 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
     .filter(m => m.date >= aujourdHui && (m.score_nous === '' || m.score_nous === null || m.score_nous === undefined))
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
 
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-        {club && (
-          club.avatar_url
-            ? <img src={club.avatar_url} alt={club.club || ''} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${colors.border.subtle}`, flexShrink: 0 }} />
-            : <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: colors.accent.green + '20', color: colors.accent.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>{clubInitiale}</div>
-        )}
-        <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> Accueil</h1>
-      </div>
-      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{club?.club ? `${club.club} · ` : ''}Vue d'ensemble de ton équipe</p>
+  // Bilan V/N/D — calcul déplacé ici (hors IIFE) pour être partagé par la
+  // bande de score (V2 "centre de commandement", 2026-10-12) ; même calcul
+  // exact qu'avant, juste sorti de la fonction anonyme qui l'encapsulait.
+  const matchsJoues = matchs.filter(m => matchJoue(m))
+  const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
+  const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
+  const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+  const totalMatchsJoues = matchsJoues.length
+  const pctBilan = (n) => totalMatchsJoues ? Math.round(n / totalMatchsJoues * 100) : 0
 
-      {/* ── Planning de la semaine — dynamique, généré depuis entrainements + matchs ── */}
-      <div style={{ background: colors.background.surface, border: '2px solid #60a5fa50', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 0 0 1px #60a5fa10' }}>
-        <p style={{ fontWeight: 800, fontSize: '14px', margin: '0 0 12px', color: colors.accent.blue, display: 'flex', alignItems: 'center', gap: '6px' }}>📅 {t('planning_semaine_titre', lang)}</p>
-        <PlanningSemaineWidget
-          entrainements={entrainements}
-          matchs={matchs}
-          onClickEntrainement={() => setActiveSection('entrainements')}
-          onClickMatch={() => setActiveSection('matchs')}
-        />
-      </div>
+  // ── V2 "Centre de commandement" (2026-10-12) — styles partagés ──────────
+  // Eyebrow éditorial (petites capitales + filet) : remplace les en-têtes de
+  // section avec icône répétée par un dispositif typographique, cohérent
+  // avec la direction "feuille de match" plutôt que "carte SaaS".
+  const eyebrowSt = { fontSize: '11px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint, margin: '0 0 12px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }
+  // Carte standard : angles modérés (8px, pas 14-16px), pas de halo ni de
+  // dégradé — seule la position dans la page porte la hiérarchie désormais.
+  const cardSt = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '1.25rem' }
+  // Segment de la bande de score : pas de bordure individuelle, la grille
+  // parente dessine les filets (1px de fond visible dans les interstices).
+  const segLabelSt = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint, margin: '0 0 6px' }
+  const segValueSt = { fontSize: '24px', fontWeight: 800, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.3px' }
 
+  // Zone "Club" (annonces / terrains / déplacements) — définie une seule
+  // fois, affichée soit en colonne latérale (desktop), soit juste après le
+  // briefing (mobile, point 5 : une info club urgente n'est jamais reléguée
+  // en bas de page faute de colonne). Contenu et comportement strictement
+  // inchangés par rapport à la V1.
+  // V2.5 : section pleine largeur sous le planning (plus de colonne
+  // latérale). Desktop : rangée adaptative — annonces et créneaux ne
+  // prennent une place que s'ils ont du contenu (les deux widgets
+  // renvoient null sinon), le déplacement occupe alors toute la ligne.
+  // Mobile : empilé.
+  const zoneClub = (
+    <div style={isMobile
+      ? { display: 'flex', flexDirection: 'column', gap: '12px' }
+      : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', alignItems: 'start' }}>
       {clubId && <AnnoncesClubWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} onVoirTout={() => setActiveSection('annonces')} />}
       {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
-      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} />
+      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} horizontal={!isMobile} />
+    </div>
+  )
 
-      {/* Widgets résumé */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '2rem' }}>
-        {(() => {
-          const matchsJoues = matchs.filter(m => matchJoue(m))
-          const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
-          const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
-          const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
-          const totalM = matchsJoues.length
-          const pct = (n) => totalM ? Math.round(n / totalM * 100) : 0
-          return (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingBottom: '1rem' }}>
-                <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> Effectif</p>
-                <p style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>{totalJoueurs}</p>
-                <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>joueur{totalJoueurs > 1 ? 's' : ''} dans l'équipe</p>
-              </div>
+  return (
+    <div>
+      {/* En-tête */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '6px' }}>
+        {club && (
+          club.avatar_url
+            ? <img src={club.avatar_url} alt={club.club || ''} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${colors.border.subtle}`, flexShrink: 0 }} />
+            : <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + '20', color: colors.accent.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{clubInitiale}</div>
+        )}
+        <div>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '10px' }}><IcoHome /> Accueil</h1>
+          <p style={{ color: colors.text.secondary, fontSize: '14px', margin: '4px 0 0' }}>{club?.club ? `${club.club} · ` : ''}Vue d'ensemble de ton équipe</p>
+        </div>
+      </div>
 
-              <div style={{ height: '1px', background: colors.border.subtle, flexShrink: 0 }} />
+      <div style={{ height: '1px', background: colors.border.subtle, margin: '1.25rem 0 1.5rem' }} />
 
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', paddingTop: '1rem' }}>
-                <DonutVND v={victoires} n={nuls} d={defaites} size={64} />
-                <div style={{ display: 'flex', gap: '14px' }}>
-                  {[
-                    { label: 'V', val: victoires, color: colors.accent.green },
-                    { label: 'N', val: nuls, color: '#facc15' },
-                    { label: 'D', val: defaites, color: colors.accent.red },
-                  ].map(s => (
-                    <div key={s.label} style={{ textAlign: 'center' }}>
-                      <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: s.color }}>{s.label}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 700 }}>{pct(s.val)}%</p>
-                    </div>
-                  ))}
+      {/* Bande de score — remplace les 4 cartes KPI (demande de validation du
+          2026-10-12, point 1). Une seule ligne continue, filets fins entre
+          segments (via le gap sur fond coloré, pas de bordure par bloc),
+          chiffres en tabular-nums. Données et calculs strictement inchangés. */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : '0.8fr 1.3fr 0.8fr 1.4fr', gap: '1px', background: colors.border.subtle, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', overflow: 'hidden', marginBottom: '1.75rem' }}>
+        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
+          <p style={segLabelSt}>Effectif</p>
+          <p style={segValueSt}>{totalJoueurs}</p>
+        </div>
+
+        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
+          <p style={segLabelSt}>Bilan</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <DonutVND v={victoires} n={nuls} d={defaites} size={38} />
+            {/* Pourcentages en blanc, couleur portée par un repère discret
+                (mêmes teintes que le donut). Calculs inchangés (pctBilan). */}
+            <div style={{ display: 'flex', gap: isMobile ? '10px' : '16px', flexWrap: 'wrap', minWidth: 0 }}>
+              {[
+                { label: 'Victoires', val: victoires, color: '#4ade80' },
+                { label: 'Nuls', val: nuls, color: '#facc15' },
+                { label: 'Défaites', val: defaites, color: '#ef4444' },
+              ].map(s => (
+                <div key={s.label} style={{ minWidth: 0 }}>
+                  <p style={{ margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', color: colors.text.faint, whiteSpace: 'nowrap' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.color, flexShrink: 0 }} />{s.label}
+                  </p>
+                  <p style={{ ...segValueSt, fontSize: '16px', color: colors.text.primary }}>{pctBilan(s.val)}<span style={{ fontSize: '10px', opacity: 0.6 }}>%</span></p>
                 </div>
-              </div>
+              ))}
             </div>
-          )
-        })()}
-
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoRun /> Prochaines séances</p>
-          {prochainesEntrainements.length === 0 ? (
-            <p style={{ fontSize: '14px', color: colors.text.disabled, margin: 0 }}>Aucune séance planifiée</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {prochainesEntrainements.map((entr, idx) => {
-                const dateEntr = new Date(entr.date + 'T12:00:00')
-                const estAujourdHui = entr.date === aujourdHui
-                const demain = new Date(); demain.setDate(demain.getDate() + 1)
-                const estDemain = entr.date === demain.toISOString().split('T')[0]
-                const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-                return (
-                  <div key={entr.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: idx === 0 ? '#60a5fa0f' : colors.background.base, borderRadius: '10px', border: `1px solid ${idx === 0 ? colors.accent.blue + alpha.light : colors.background.raised}` }}>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: idx === 0 ? colors.accent.blue : colors.border.default, color: idx === 0 ? colors.background.base : colors.text.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                      {idx + 1}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entr.description || mesSeancesOuvertes.find(s => s.id === entr.fiche_id)?.theme || 'Séance'}</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{labelDate}{entr.heure ? ` · ${entr.heure}` : ''}</p>
-                    </div>
-                    <span title={sondageEstClos(entr) ? 'Sondage clôturé' : 'Sondage ouvert'}
-                      style={{ width: '9px', height: '9px', borderRadius: '50%', background: sondageEstClos(entr) ? colors.accent.red : colors.accent.green, flexShrink: 0 }} />
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          </div>
         </div>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoChart /> Présence cette semaine</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: colors.accent.blue }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
-          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{seancesSemaine.length > 0 ? `sur ${seancesSemaine.length} séance${seancesSemaine.length > 1 ? 's' : ''}` : 'aucune séance saisie'}</p>
+        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
+          <p style={segLabelSt}>Présence S.</p>
+          <p style={{ ...segValueSt, color: colors.accent.blue }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem', minWidth: 0 }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> Prochain match</p>
+        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0, gridColumn: isMobile ? 'span 2' : 'auto' }}>
+          <p style={segLabelSt}>Prochain match</p>
           {prochainMatch ? (
-            <>
-              <p style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
-              <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', background: prochainMatch.domicile ? colors.accent.green + alpha.soft : colors.accent.orange + alpha.soft, color: prochainMatch.domicile ? colors.accent.green : colors.accent.orange, border: `1px solid ${prochainMatch.domicile ? colors.accent.green + alpha.medium : colors.accent.orange + alpha.medium}` }}>
-                {prochainMatch.domicile && <IcoHome />} {prochainMatch.domicile ? 'Domicile' : 'Déplacement'}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+              <p style={{ ...segValueSt, fontSize: '16px' }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
+              <span style={{ fontSize: '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</span>
+              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', color: prochainMatch.domicile ? colors.accent.green : colors.accent.orange }}>
+                {prochainMatch.domicile ? 'DOM' : 'EXT'}
               </span>
-            </>
+            </div>
           ) : (
-            <p style={{ fontSize: '14px', color: colors.text.disabled, margin: 0 }}>Aucun match planifié</p>
+            <p style={{ fontSize: '13px', color: colors.text.disabled, margin: 0 }}>Aucun match planifié</p>
           )}
         </div>
       </div>
 
-      {/* Classement séances — version compacte de Stats > Joueur du mois (mêmes
-          données : point_seance par entrainement, groupé par mois via entrainements.date
-          déjà chargé — pas de nouvelle requête, pas de colonne "points"/equipe_id qui
-          n'existent pas dans ce schéma). Pas de "3 derniers" façon palmarès inversé :
-          la version complète (Stats > Joueur du mois) ne le fait pas non plus, et
-          afficher publiquement qui a le moins d'étoiles n'apporte rien de bon ici. */}
-      {(() => {
-        const now = new Date()
-        const moisPrecedentDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        const moisKeyDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-        const moisCourantKey = moisKeyDe(now)
-        const moisPrecedentKey = moisKeyDe(moisPrecedentDate)
+      {/* Ligne médiane — signature graphique football (filet + rond central),
+          utilisée une seule fois, purement graphique, sans couleur ni glow. */}
+      <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 1.75rem' }}>
+        <div style={{ flex: 1, height: '1px', background: colors.border.subtle }} />
+        <div style={{ width: '7px', height: '7px', borderRadius: '50%', border: `1.5px solid ${colors.border.strong}`, margin: '0 10px', flexShrink: 0 }} />
+        <div style={{ flex: 1, height: '1px', background: colors.border.subtle }} />
+      </div>
 
-        const podiumDuMois = (moisKey) => {
-          const pts = {}
-          entrainements.forEach(e => {
-            if (!e.date || moisKeyDe(new Date(e.date)) !== moisKey) return
-            ;(e.presences_entrainement || []).forEach(p => {
-              if (!p.point_seance) return
-              pts[p.joueur_id] = (pts[p.joueur_id] || 0) + 1
-            })
-          })
-          return Object.entries(pts)
-            .map(([jid, count]) => ({ joueur: joueurs.find(j => j.id === jid), count }))
-            .filter(x => x.joueur)
-            .sort((a, b) => b.count - a.count)
-        }
-
-        const podiumActuel = podiumDuMois(moisCourantKey)
-        const podiumPrecedent = podiumDuMois(moisPrecedentKey)
-
-        return (
-          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '1.25rem', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <p style={{ fontWeight: 700, fontSize: '15px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>🏅 Classement séances</p>
-              <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
-                style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Voir tout →
-              </button>
-            </div>
-
-            <p style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
-              {now.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' })}
-            </p>
-            {podiumActuel.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {podiumActuel.slice(0, 3).map((item, idx) => (
-                  <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.base, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
-                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? colors.accent.amber : idx === 1 ? '#9ca3af' : '#cd7f32', color: colors.background.base, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {idx + 1}
-                    </span>
-                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{item.joueur.prenom} {item.joueur.nom}</span>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {podiumPrecedent.length > 0 && (
-              <>
-                <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
-                  {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.75 }}>
-                  <span style={{ fontSize: '14px' }}>🥇</span>
-                  <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.amber }}>{podiumPrecedent[0].count} ⭐</span>
-                </div>
-              </>
-            )}
-          </div>
-        )
-      })()}
-
-      {/* Actions rapides */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoZap /> Actions rapides</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
-        {prochainEnt ? (() => {
+      {/* Prochaine séance — bloc prioritaire (demande de validation du
+          2026-10-12) : regroupe les informations qui étaient éclatées entre
+          la carte "Dernier sondage" (Actions rapides) et la carte
+          "Présences — Prochain entraînement" (Activité, toujours affichée
+          plus bas, qui elle détaille les 5 statuts de réponse — malade/blessé/
+          convoqué distincts — alors qu'ici on n'affiche que les 3 compteurs
+          demandés : présents/absents/en attente, pour rester lisible en un
+          coup d'œil). Les deux raccourcis réutilisent exactement les mêmes
+          mécanismes que le reste de l'app (setFicheApercu/setFicheApercuEnHaut,
+          déjà utilisés ailleurs ; même garde `if (s)` en cas de fiche_id
+          orphelin — cf. bouton "Voir la fiche" de l'onglet Entraînements). */}
+      <p style={eyebrowSt}>Prochaine séance</p>
+      {/* V2.1 : composition en 3 zones sur desktop (identité de la séance |
+          compteurs | raccourcis) au lieu d'un empilement vertical qui laissait
+          la largeur vide ; empilée sur mobile. Données, calculs et actions
+          strictement inchangés — seule la disposition change. */}
+      <div style={{ ...cardSt, marginBottom: '1.75rem' }}>
+        {!prochainEnt ? (
+          <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucune séance planifiée.</p>
+        ) : (() => {
           const presents = compterStatutPresence('present') + compterStatutPresence('convoque')
           const absents = compterStatutPresence('absent') + compterStatutPresence('blesse') + compterStatutPresence('malade')
           const enAttente = Math.max(0, totalJoueurs - dispoProchainEnt.length)
           const clos = sondageEstClos(prochainEnt)
+          const dateEntr = new Date(prochainEnt.date + 'T12:00:00')
+          const estAujourdHui = prochainEnt.date === aujourdHui
+          const demain = new Date(); demain.setDate(demain.getDate() + 1)
+          const estDemain = prochainEnt.date === demain.toISOString().split('T')[0]
+          const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })
+          const btnSeanceSt = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'transparent', padding: '8px 16px', minHeight: '40px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flex: isMobile ? '1 1 auto' : 'none' }
           return (
-            <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
-              style={{ background: clos ? colors.background.raised : 'rgba(74,222,128,0.1)', border: `1px solid ${clos ? colors.border.strong : colors.accent.green}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
-              <div style={{ fontSize: '10px', color: colors.text.dim, marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>DERNIER SONDAGE</div>
-              <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                📋 {prochainEnt.description || 'Entraînement'}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.4fr) auto auto', gap: isMobile ? '16px' : '0', alignItems: 'center' }}>
+              {/* Zone 1 — identité de la séance : pavé date façon feuille de
+                  match + thème, date/heure et statut du sondage. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, paddingRight: isMobile ? 0 : '24px' }}>
+                <div style={{ width: '54px', flexShrink: 0, textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '6px', overflow: 'hidden' }}>
+                  <p style={{ margin: 0, padding: '3px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint, background: colors.background.raised }}>{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                  <p style={{ margin: 0, padding: '4px 0 0', fontSize: '22px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
+                  <p style={{ margin: 0, padding: '2px 0 5px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{prochainEnt.description || mesSeancesOuvertes.find(s => s.id === prochainEnt.fiche_id)?.theme || 'Entraînement'}</p>
+                  <p style={{ margin: '4px 0 8px', fontSize: '12px', color: colors.text.faint }}>{labelDate}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''}</p>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: clos ? colors.background.raised : colors.accent.green + alpha.subtle, border: `1px solid ${clos ? colors.border.strong : colors.accent.green + alpha.medium}`, color: clos ? colors.text.faint : colors.accent.green, whiteSpace: 'nowrap' }}>
+                    {clos
+                      ? <><IcoCadenas /> Sondage clos</>
+                      : <><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} /> Sondage ouvert</>}
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-                <span style={{ color: colors.accent.green }}>✅ {presents}</span>
-                <span style={{ color: colors.accent.red }}>❌ {absents}</span>
-                <span style={{ color: colors.text.dim }}>⏳ {enAttente}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: clos ? colors.background.base : 'rgba(74,222,128,0.15)', color: clos ? colors.text.faint : colors.accent.green }}>
-                  {clos ? '🔒 Fermé' : '🟢 Ouvert'}
-                </span>
+
+              {/* Zone 2 — compteurs, séparés par des filets (desktop :
+                  verticaux ; mobile : horizontaux). */}
+              <div style={{ display: 'flex', gap: isMobile ? '0' : '28px', justifyContent: isMobile ? 'space-around' : 'flex-start', padding: isMobile ? '14px 0' : '4px 28px', borderLeft: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, borderRight: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, borderTop: isMobile ? `1px solid ${colors.border.subtle}` : 'none', borderBottom: isMobile ? `1px solid ${colors.border.subtle}` : 'none' }}>
+                <div><p style={segLabelSt}>Présents</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.accent.green }}>{presents}</p></div>
+                <div><p style={segLabelSt}>Absents</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.accent.red }}>{absents}</p></div>
+                <div><p style={segLabelSt}>En attente</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.text.dim }}>{enAttente}</p></div>
               </div>
-            </button>
+
+              {/* Zone 3 — raccourcis (mêmes actions qu'avant). */}
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', flexWrap: 'wrap', gap: '8px', paddingLeft: isMobile ? 0 : '24px', alignItems: 'stretch' }}>
+                <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
+                  style={{ ...btnSeanceSt, border: `1px solid ${colors.border.default}`, color: colors.accent.blue }}>
+                  <IcoCheckCircle /> Voir les joueurs présents
+                </button>
+                {prochainEnt.fiche_id ? (
+                  <button
+                    onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochainEnt.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
+                    style={{ ...btnSeanceSt, border: '1px solid #4ade8040', color: colors.accent.green }}>
+                    <IcoFileText /> Voir la fiche séance
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setModalImportFicheEntrainement(prochainEnt.id)}
+                    style={{ ...btnSeanceSt, border: '1px solid #4ade8040', color: colors.accent.green }}>
+                    <IcoLink /> Attacher une fiche
+                  </button>
+                )}
+              </div>
+            </div>
           )
-        })() : (
-          <button onClick={() => setActiveSection('equipe')}
-            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
-            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
-            <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><IcoPlus /></span>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>Ajouter un joueur</span>
-          </button>
-        )}
-        {[
-          { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
-          { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
-        ].map(a => (
-          <button key={a.section} onClick={() => setActiveSection(a.section)}
-            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium}
-            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
-            <span style={{ display: 'inline-flex', transform: 'scale(1.6)' }}><a.Icon /></span>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
-          </button>
-        ))}
-        {prochainMatch && (
-          <DerniereCauserieWidget userId={userId} prochainMatch={prochainMatch} accentColor={colors.accent.green}
-            onOuvrir={() => { setActiveSection('matchs'); setCompetitionSubTab('causerie') }} />
-        )}
+        })()}
       </div>
 
-      {/* Fil d'activité récente */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoActivity /> Activité récente</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <AlertesPanel educateurId={userId} clubId={clubId} joueurs={joueurs} matchs={matchs} setActiveSection={setActiveSection} />
-        </div>
+      {/* Composition asymétrique : briefing du coach (colonne large) + club
+          (colonne secondaire, toujours visible sur desktop — jamais reléguée
+          en bas de page, demande de validation du 2026-10-12, points 2 et 5).
+          V2.2 : ~80 % / ~20 % (club plancher 240px) pour faire du planning
+          l'élément central ; tablette et mobile (isMobile) : une colonne. */}
+      {/* V2.5 : une seule colonne pleine largeur (desktop et mobile) à
+          partir du briefing — planning, Club, classement, actions, alertes. */}
+      <div>
+        <div style={{ minWidth: 0 }}>
+          <p style={eyebrowSt}>Briefing de la semaine</p>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCheckCircle /> Présences — Prochain entraînement</p>
-          {!prochainEnt ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune séance planifiée.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {STATUTS_PRESENCE.map(s => (
-                <div key={s.val} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{s.label}</span>
-                  <span style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{compterStatutPresence(s.val)}</span>
-                </div>
-              ))}
+          {/* V2.1 — résumé compact des alertes : uniquement les catégories
+              présentes dans le panneau "Alertes & infos" (même décompte,
+              sans niveau d'urgence ajouté) + accès au panneau détaillé, qui
+              reste affiché plus bas dans Activité. */}
+          {resumeAlertes && (
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '10px 12px', marginBottom: '1rem', border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', background: colors.background.surface }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: resumeAlertes.total === 0 ? colors.text.faint : colors.text.secondary, lineHeight: 1.5, flex: '1 1 220px', minWidth: 0 }}>
+                {resumeAlertes.total === 0 ? 'Aucune alerte pour le moment.' : `${phraseResumeAlertes(resumeAlertes.parCategorie)}.`}
+              </span>
+              {resumeAlertes.total > 0 && (
+                <button onClick={ouvrirPanneauAlertes}
+                  style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 2px', minHeight: '32px' }}>
+                  Voir le détail →
+                </button>
+              )}
             </div>
           )}
+
+          {/* Planning hebdomadaire — widget partagé avec Club/Joueur, non modifié
+              (demande de validation : les 7 jours doivent rester lisibles,
+              donc placé dans la colonne large, pas la colonne secondaire). */}
+          <div style={{ ...cardSt, marginBottom: '1.25rem' }}>
+            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px', color: colors.accent.blue, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> {t('planning_semaine_titre', lang)}</p>
+            <PlanningSemaineWidget
+              entrainements={entrainements}
+              matchs={matchs}
+              onClickEntrainement={() => setActiveSection('entrainements')}
+              onClickMatch={() => setActiveSection('matchs')}
+            />
+          </div>
+
+          {/* Club — juste sous le planning, sur tous les formats. */}
+          <div style={{ marginBottom: '1.75rem' }}>
+            <p style={eyebrowSt}>Club</p>
+            {zoneClub}
+          </div>
+
+          {/* Classement séances — version compacte de Stats > Joueur du mois (mêmes
+              données : point_seance par entrainement, groupé par mois via entrainements.date
+              déjà chargé — pas de nouvelle requête, pas de colonne "points"/equipe_id qui
+              n'existent pas dans ce schéma). Pas de "3 derniers" façon palmarès inversé :
+              la version complète (Stats > Joueur du mois) ne le fait pas non plus, et
+              afficher publiquement qui a le moins d'étoiles n'apporte rien de bon ici. */}
+          {(() => {
+            const now = new Date()
+            const moisPrecedentDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            const moisKeyDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+            const moisCourantKey = moisKeyDe(now)
+            const moisPrecedentKey = moisKeyDe(moisPrecedentDate)
+
+            const podiumDuMois = (moisKey) => {
+              const pts = {}
+              entrainements.forEach(e => {
+                if (!e.date || moisKeyDe(new Date(e.date)) !== moisKey) return
+                ;(e.presences_entrainement || []).forEach(p => {
+                  if (!p.point_seance) return
+                  pts[p.joueur_id] = (pts[p.joueur_id] || 0) + 1
+                })
+              })
+              return Object.entries(pts)
+                .map(([jid, count]) => ({ joueur: joueurs.find(j => j.id === jid), count }))
+                .filter(x => x.joueur)
+                .sort((a, b) => b.count - a.count)
+            }
+
+            const podiumActuel = podiumDuMois(moisCourantKey)
+            const podiumPrecedent = podiumDuMois(moisPrecedentKey)
+
+            return (
+              <div style={{ marginBottom: '1.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+                  <p style={{ ...eyebrowSt, margin: 0, border: 'none', padding: 0, flex: 1 }}>Classement du mois</p>
+                  <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
+                    style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Voir tout →
+                  </button>
+                </div>
+                <div style={{ height: '1px', background: colors.border.subtle, marginBottom: '14px' }} />
+
+                {podiumActuel.length === 0 ? (
+                  <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {podiumActuel.slice(0, 3).map((item, idx) => (
+                      <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.surface, borderRadius: '6px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
+                        <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? colors.accent.amber : idx === 1 ? '#9ca3af' : '#cd7f32', color: colors.background.base, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {idx + 1}
+                        </span>
+                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{item.joueur.prenom} {item.joueur.nom}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {podiumPrecedent.length > 0 && (
+                  <>
+                    <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
+                      {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.75 }}>
+                      <span style={{ fontSize: '14px' }}>🥇</span>
+                      <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.amber }}>{podiumPrecedent[0].count} ⭐</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Actions rapides */}
+          <p style={eyebrowSt}>Actions rapides</p>
+          {/* V2.1 : raccourcis compacts horizontaux (icône + libellé sur une
+              ligne, hauteur 44px min. pour le tactile) au lieu de grandes
+              cartes verticales. Mêmes actions, mêmes conditions, mêmes
+              destinations. Sur mobile : 2 par ligne, causerie en pleine largeur. */}
+          {(() => {
+            const raccourciSt = { display: 'inline-flex', alignItems: 'center', gap: '10px', minHeight: '44px', padding: '10px 14px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', cursor: 'pointer', color: colors.text.primary, fontSize: '13px', fontWeight: 600, fontFamily: 'Inter, sans-serif', textAlign: 'left', minWidth: 0, boxSizing: 'border-box', flex: isMobile ? '1 1 calc(50% - 4px)' : '0 1 auto' }
+            const survol = { onMouseEnter: e => { e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium }, onMouseLeave: e => { e.currentTarget.style.borderColor = colors.border.subtle } }
+            return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1.75rem' }}>
+            {/* L'ancien slot conditionnel "Dernier sondage" (identique au
+                contenu du bloc "Prochaine séance" ci-dessus) a été retiré
+                pour éviter la redondance — son info vit maintenant uniquement
+                dans ce bloc dédié. "Ajouter un joueur" devient inconditionnel
+                (c'était déjà une action du dashboard, juste affichée en
+                remplacement avant) plutôt que de laisser un slot vide. */}
+            {[
+              { Icon: IcoPlus, label: 'Ajouter un joueur', section: 'equipe' },
+              { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
+              { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
+            ].map(a => (
+              <button key={a.section} onClick={() => setActiveSection(a.section)} style={raccourciSt} {...survol}>
+                <span style={{ display: 'inline-flex', color: colors.accent.blue, flexShrink: 0 }}><a.Icon /></span>
+                <span style={isMobile ? { lineHeight: 1.25, minWidth: 0 } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{a.label}</span>
+              </button>
+            ))}
+            {prochainMatch && (
+              <DerniereCauserieWidget userId={userId} prochainMatch={prochainMatch} accentColor={colors.accent.green}
+                variante="raccourci" styleRaccourci={{ ...raccourciSt, flex: isMobile ? '1 1 100%' : '0 1 auto' }}
+                onOuvrir={() => { setActiveSection('matchs'); setCompetitionSubTab('causerie') }} />
+            )}
+          </div>
+            )
+          })()}
+
+          {/* Alertes & infos — seul contenu restant de l'ex-zone Activité
+              (V2.3) : pas de carte isolée, l'eyebrow porte le titre et la
+              liste se répartit en colonnes (AlertesPanel compact) pour
+              rester basse. Cible du lien "Voir le détail" du briefing. */}
+          <div ref={panneauAlertesRef} tabIndex={-1} style={{ scrollMarginTop: '16px', outline: 'none' }}>
+            <p style={eyebrowSt}>Alertes &amp; infos</p>
+            <AlertesPanel compact educateurId={userId} clubId={clubId} joueurs={joueurs} matchs={matchs} setActiveSection={setActiveSection} onResume={setResumeAlertes} />
+
+          </div>
         </div>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoFileText /> Derniers rapports générés</p>
-          {rapportsRecents.length === 0 ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun rapport pour l'instant.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {rapportsRecents.map(r => (
-                <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{r.prenom_joueur || 'Sans nom'}{r.poste ? ` — ${r.poste}` : ''}</p>
-                  <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>{r.date_analyse ? new Date(r.date_analyse).toLocaleDateString('fr-FR') : ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {deplacementFicheOuverte && (() => {
@@ -3778,10 +3895,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const { data, error } = await supabase.functions.invoke('scan-fiche-seance', {
         body: { imageBase64: scanImageBase64, mimeType: scanImageFile.type },
       })
-      if (error || data?.error) throw new Error(error?.message || data?.error)
+      // Sur une réponse en erreur, le corps (message + code : ia_saturee,
+      // lecture_impossible…) est dans error.context — relu pour afficher la
+      // vraie cause au lieu d'un message "image floue" systématique.
+      if (error || data?.error) {
+        let detail = data
+        try { if (error?.context?.json) detail = await error.context.json() } catch { /* corps illisible */ }
+        throw Object.assign(new Error(detail?.error || error?.message || 'Erreur scan'), { code: detail?.code })
+      }
       const extrait = data.fiche
 
-      const url = await uploaderFichierSeance(scanImageFile)
+      let url
+      try {
+        url = await uploaderFichierSeance(scanImageFile)
+      } catch (e) {
+        throw Object.assign(e, { code: 'upload_image' })
+      }
 
       // format_detecte vient de l'étiquette [DF-XXX] imprimée sur les fiches
       // officielles (cf. genererFicheVierge) — absente/invalide sur une fiche
@@ -3826,7 +3955,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setScanImageBase64(null)
     } catch (e) {
       console.error('Erreur scan fiche:', e)
-      setScanFicheError('L\'IA n\'a pas pu lire la fiche. Assure-toi que l\'image est nette et bien éclairée.')
+      setScanFicheError(
+        e?.code === 'ia_saturee'
+          ? 'Le service d\'analyse est momentanément saturé. Réessaie dans quelques instants.'
+          : e?.code === 'upload_image'
+            ? 'La fiche a été lue mais l\'image n\'a pas pu être enregistrée. Vérifie ta connexion puis réessaie.'
+            : e?.code === 'lecture_impossible'
+              ? 'L\'IA n\'a pas pu lire la fiche. Assure-toi que l\'image est nette et bien éclairée.'
+              : 'L\'analyse n\'a pas pu aboutir. Réessaie dans quelques instants.'
+      )
     } finally {
       setScanningFiche(false)
       setScanFicheStatus(null)
@@ -5644,7 +5781,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         </>}
       </aside>
 
-      <div style={{ flex: 1, minWidth: 0, maxWidth: educateurIdOverride ? 'none' : (activeSection === 'accueil' ? '1600px' : '1400px'), margin: '0 auto', padding: isMobile ? '16px 14px' : '1.25rem 2rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '1.25rem', paddingBottom: 80 }}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: educateurIdOverride ? 'none' : (activeSection === 'accueil' ? '1600px' : '1400px'), margin: '0 auto', padding: isMobile ? '16px 14px' : '1.25rem 2rem', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '1.25rem', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
 
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', marginLeft: '-12px' }}>
@@ -5698,6 +5835,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               lang={lang}
               isMobile={isMobile}
               mesSeancesOuvertes={mesSeancesOuvertes}
+              setFicheApercu={setFicheApercu}
+              setFicheApercuEnHaut={setFicheApercuEnHaut}
+              setModalImportFicheEntrainement={setModalImportFicheEntrainement}
             />
           </>
         )}
@@ -8140,8 +8280,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
               {canEdit('entrainements') && (
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setShowPlanificateur(true); setShowAddEntrainement(false) }} style={st.btn(colors.accent.blue)}>📅 {t('ent_planifier_saison', lang)}</button>
-                  <button onClick={() => { setShowAddEntrainement(true); setShowPlanificateur(false) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
+                  {/* Les deux formulaires vivent dans le sous-onglet "Mes séances" :
+                      on y bascule puis on défile jusqu'au formulaire ouvert, sinon
+                      le clic depuis "Prochaine séance" semblait sans effet. */}
+                  <button onClick={() => { setSousOngletEnt('liste'); setShowPlanificateur(true); setShowAddEntrainement(false); setTimeout(() => document.getElementById('ent-form-planificateur')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btn(colors.accent.blue)}>📅 {t('ent_planifier_saison', lang)}</button>
+                  <button onClick={() => { setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false); setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
                 </div>
               )}
             </div>
@@ -8374,7 +8517,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Ajout séance unique ── */}
             {showAddEntrainement && canEdit('entrainements') && (
-              <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem' }}>
+              <div id="ent-form-seance" style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
                 <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ {t('seance_nouvelle', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
@@ -8425,7 +8568,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Planificateur récurrent ── */}
             {showPlanificateur && canEdit('entrainements') && (
-              <div style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem' }}>
+              <div id="ent-form-planificateur" style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: colors.accent.blue }}>📅 {t('ent_planifier_saison', lang)}</p>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('ent_choisis_jours', lang)}</p>
 

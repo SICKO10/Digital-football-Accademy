@@ -31,6 +31,18 @@ const grilleDuMois = (offset) => {
 // Exporté pour réutilisation par SondageSemaine.jsx (vue mois du planning
 // joueur) — même rendu de puces événement que le calendrier éducateur/club,
 // pas une deuxième implémentation qui dériverait de celle-ci avec le temps.
+// Contenu d'une puce en vue semaine (non compacte) : heure sur la 1re ligne
+// (si renseignée — jamais d'heure inventée), intitulé sur la 2e. Le mode
+// compact (vue mois, SondageSemaine) garde son rendu d'une ligne, inchangé.
+function LignesPuce({ heure, libelle }) {
+  return (
+    <>
+      {heure && <div style={{ fontSize: '11px', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', lineHeight: 1.25 }}>{heure}</div>}
+      <div style={{ fontWeight: 600, opacity: heure ? 0.9 : 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{libelle}</div>
+    </>
+  )
+}
+
 export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEntrainement, onClickMatch, onClickEvenement, onClickRdv }) {
   const colors = useColors()
   const items = [
@@ -54,7 +66,7 @@ export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEnt
               cursor: onClickEntrainement ? 'pointer' : 'default',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
             }}>
-            {compact ? (data.description || 'Entraînement') : `${data.heure ? `${data.heure} · ` : ''}${data.description || 'Entraînement'}`}
+            {compact ? (data.description || 'Entraînement') : <LignesPuce heure={data.heure} libelle={data.description || 'Entraînement'} />}
           </div>
         )
         if (type === 'rdv') return (
@@ -65,7 +77,7 @@ export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEnt
               cursor: onClickRdv ? 'pointer' : 'default',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
             }}>
-            {compact ? 'Rdv médical' : `${data.heure_rdv ? `${data.heure_rdv.slice(0, 5)} · ` : ''}Rdv médical${data.blessures?.type_blessure ? ` — ${data.blessures.type_blessure}` : ''}`}
+            {compact ? 'Rdv médical' : <LignesPuce heure={data.heure_rdv ? data.heure_rdv.slice(0, 5) : null} libelle={`Rdv médical${data.blessures?.type_blessure ? ` — ${data.blessures.type_blessure}` : ''}`} />}
           </div>
         )
         if (type === 'evenement') return (
@@ -76,7 +88,7 @@ export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEnt
               cursor: onClickEvenement ? 'pointer' : 'default',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
             }}>
-            {compact ? (data.titre || 'Événement') : `${data.heure ? `${data.heure} · ` : ''}${data.titre || 'Événement'}`}
+            {compact ? (data.titre || 'Événement') : <LignesPuce heure={data.heure} libelle={data.titre || 'Événement'} />}
           </div>
         )
         return (
@@ -86,18 +98,15 @@ export function EvenementsJour({ ents, mts, evts, rdvs = [], compact, onClickEnt
               borderRadius: '6px', padding: compact ? '1px 4px' : '3px 6px', fontSize: compact ? '9px' : '10px', fontWeight: 600,
               cursor: onClickMatch ? 'pointer' : 'default', minWidth: 0,
             }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
-              {compact && (
-                <span title={data.domicile ? 'Domicile' : 'Extérieur'} style={{ flexShrink: 0, fontWeight: 800, color: data.domicile ? '#4ade80' : '#f97316' }}>
-                  {data.domicile ? 'D' : 'E'}
-                </span>
-              )}
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {compact
-                  ? `${data.categorie ? `${data.categorie} · ` : ''}${data.adversaire || 'Match'}`
-                  : `${data.heure ? `${data.heure} · ` : ''}${data.adversaire || 'Match'}`}
+            {!compact && <LignesPuce heure={data.heure} libelle={data.adversaire || 'Match'} />}
+            {compact && <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
+              <span title={data.domicile ? 'Domicile' : 'Extérieur'} style={{ flexShrink: 0, fontWeight: 800, color: data.domicile ? '#4ade80' : '#f97316' }}>
+                {data.domicile ? 'D' : 'E'}
               </span>
-            </div>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {`${data.categorie ? `${data.categorie} · ` : ''}${data.adversaire || 'Match'}`}
+              </span>
+            </div>}
             {!compact && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
                 {data.categorie && (
