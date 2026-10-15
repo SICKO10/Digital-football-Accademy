@@ -52,6 +52,7 @@ import ParrainageWidget from '../components/ParrainageWidget'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
+import { remplacerSchemaParLien, miniatureSchema } from '../lib/schemaUpload'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
@@ -9657,7 +9658,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         </button>
                       ))}
                       {p.schema_png && (
-                        <img src={p.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
+                        <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
                       )}
                     </div>
                     {fiche.mode_diplome === 'BEF' ? (() => {
@@ -10404,7 +10405,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     {/* Image (schéma tactique) ou placeholder terrain */}
                     <div style={{ height: '130px', background: p.schema_png ? colors.background.base : '#0d1a0d', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                       {p.schema_png && (
-                        <img src={p.schema_png} alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={miniatureSchema(p.schema_png, 500)} loading="lazy" alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       )}
 
                       {sourceBadge && (
@@ -10727,7 +10728,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </button>
                   {procedeForm.schema_png && (
                     <>
-                      <img src={procedeForm.schema_png} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
+                      <img src={miniatureSchema(procedeForm.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
                       <button type="button" onClick={() => setProcedeForm(f => ({ ...f, schema_png: '' }))}
                         style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>✕</button>
                     </>
@@ -10756,7 +10757,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 mode="modal"
                 vueParDefaut="demi"
                 initialSchema={procedeForm.schema_data}
-                onValider={(png, schema) => { setProcedeForm(f => ({ ...f, schema_png: png, schema_data: schema })); setShowTactipadBiblio(false) }}
+                onValider={(png, schema) => {
+                  setProcedeForm(f => ({ ...f, schema_png: png, schema_data: schema }))
+                  setShowTactipadBiblio(false)
+                  // PNG envoyé sur Cloudinary en arrière-plan, lien substitué
+                  // seulement si le schéma n'a pas été changé entre-temps.
+                  remplacerSchemaParLien(png, lien => setProcedeForm(f => (f.schema_png === png ? { ...f, schema_png: lien } : f)))
+                }}
                 onFermer={() => setShowTactipadBiblio(false)}
                 lang={lang}
               />
@@ -12265,7 +12272,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                           </button>
                           {p.schema_png && (
-                            <img src={p.schema_png} alt="Schéma tactique" style={{ height: '48px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
+                            <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '48px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
                           )}
                         </div>
                       </div>
@@ -12316,14 +12323,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             vueParDefaut="demi"
             initialSchema={procedesActifs[tactipadModal]?.schema_data}
             onValider={(png, schema) => {
+              const index = tactipadModal
+              // PNG envoyé sur Cloudinary en arrière-plan : le lien remplace la
+              // data URL dans ce procédé seulement si elle n'a pas changé.
+              const avecLien = lien => prev => {
+                if (prev.procedes?.[index]?.schema_png !== png) return prev
+                const procedes = [...prev.procedes]
+                procedes[index] = { ...procedes[index], schema_png: lien }
+                return { ...prev, procedes }
+              }
               if (enEditionApercu) {
                 const newProcedes = [...ficheApercuEdit.procedes]
-                newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
+                newProcedes[index] = { ...newProcedes[index], schema_png: png, schema_data: schema }
                 setFicheApercuEdit({ ...ficheApercuEdit, procedes: newProcedes })
+                remplacerSchemaParLien(png, lien => setFicheApercuEdit(prev => (prev ? avecLien(lien)(prev) : prev)))
               } else {
                 const newProcedes = [...fiche.procedes]
-                newProcedes[tactipadModal] = { ...newProcedes[tactipadModal], schema_png: png, schema_data: schema }
+                newProcedes[index] = { ...newProcedes[index], schema_png: png, schema_data: schema }
                 setFiche({ ...fiche, procedes: newProcedes })
+                remplacerSchemaParLien(png, lien => setFiche(avecLien(lien)))
               }
               setTactipadModal(null)
             }}

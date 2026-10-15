@@ -4,6 +4,7 @@ import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 import Tactipad from './Tactipad'
+import { remplacerSchemaParLien } from '../lib/schemaUpload'
 
 const THEMES = [
   { valeur: 'Offensif', cle: 'biblio_theme_offensif' },
@@ -396,7 +397,12 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
               mode="modal"
               vueParDefaut="demi"
               initialSchema={resultat?.schema_data}
-              onValider={(png, schema) => { setResultat(r => ({ ...r, schema_png: png, schema_data: schema })); setShowTactipad(false) }}
+              onValider={(png, schema) => {
+                setResultat(r => ({ ...r, schema_png: png, schema_data: schema }))
+                setShowTactipad(false)
+                // PNG envoyé sur Cloudinary en arrière-plan (cf. lib/schemaUpload).
+                remplacerSchemaParLien(png, lien => setResultat(r => (r && r.schema_png === png ? { ...r, schema_png: lien } : r)))
+              }}
               onFermer={() => setShowTactipad(false)}
               lang={lang}
             />

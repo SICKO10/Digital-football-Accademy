@@ -97,6 +97,14 @@ test('clubId ignoré pour un usage personnel (avatar) : dossier = soi', async ()
   const res = await appeler({ qui: 'joueur', corps: { usage: 'avatar', clubId: U.club } })
   assert.equal(res.corps.params.folder, `digital-football/${U.joueur}/avatar`)
 })
+test('usage schema (Tactipad) : image seule, dossier personnel, clubId/joueurId ignorés ou refusés', async () => {
+  const res = await appeler({ qui: 'joueur', corps: { usage: 'schema', clubId: U.club } })
+  assert.equal(res.statut, 200)
+  assert.equal(res.corps.params.folder, `digital-football/${U.joueur}/schema`)
+  assert.ok(!res.corps.params.allowed_formats.includes('pdf'))
+  assert.ok(!res.corps.params.allowed_formats.includes('svg'))
+  refuse(await appeler({ qui: 'joueur', corps: { usage: 'schema', joueurId: U.autre } }), 403)
+})
 test('usage inconnu ou piégé : 400', async () => {
   for (const usage of ['raw', 'video', '__proto__', 'constructor', 'toString', '../club']) {
     refuse(await appeler({ qui: 'joueur', corps: { usage } }), 400)

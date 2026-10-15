@@ -27,6 +27,9 @@ export const USAGES = {
   licence: { formats: FORMATS_DOCUMENT, cible: ['soi'] },
   feuille: { formats: FORMATS_DOCUMENT, cible: ['soi'] },
   seance: { formats: FORMATS_DOCUMENT, cible: ['soi'] },
+  // Schémas tactiques (Tactipad) : image seule, dossier personnel — remplace
+  // le stockage du PNG en base (data URL de plusieurs centaines de Ko).
+  schema: { formats: FORMATS_IMAGE, cible: ['soi'] },
   avatar_club: { formats: FORMATS_IMAGE, cible: ['club'], section: 'profil' },
   theme: { formats: FORMATS_IMAGE, cible: ['club'], section: 'profil' },
   principe_photo: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif', educateursProjet: true },
