@@ -1910,7 +1910,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // onglets spécifiques (Mes séances, Bibliothèque, Explorer > Dirigeants),
     // jamais à l'Accueil — chargés à la demande via des useEffect scopés à
     // activeSection plus bas (même pattern que chargerMonMateriel), pas ici.
-    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesSeancesOuvertes(targetId), chargerMesAutresRoles(user.id), chargerNotifications(targetId)])
+    // chargerMesSeancesOuvertes lancé SANS être attendu : ses fiches embarquent
+    // les schémas tactiques en PNG (plusieurs Mo par fiche) — attendre ce
+    // téléchargement retardait tout l'accueil d'environ 15 s (constaté en
+    // production, onglet Réseau). Les listes de fiches affichent un état de
+    // chargement d'ici là (mesSeancesOuvertesChargees).
+    chargerMesSeancesOuvertes(targetId).catch(() => setMesSeancesOuvertesChargees(true))
+    const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesAutresRoles(user.id), chargerNotifications(targetId)])
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
     // localStorage, sinon la première) : charge joueurs/matchs/entraînements
@@ -2004,6 +2010,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       .eq('origine', 'ouvert')
       .order('date_seance', { ascending: false })
     setMesSeancesOuvertes(data || [])
+    setMesSeancesOuvertesChargees(true)
   }
 
   const chargerClubCategories = async (uid) => {
@@ -2365,6 +2372,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Onglet "Mes séances" (séances ouvertes, hors flux club)
   const [mesSeancesOuvertes, setMesSeancesOuvertes] = useState([])
+  const [mesSeancesOuvertesChargees, setMesSeancesOuvertesChargees] = useState(false)
   const [uploadSeanceOuverteForm, setUploadSeanceOuverteForm] = useState({ theme: '', date_seance: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', video_url: '', fichier_url: '', commentaire_perso: '' })
   const [dossiersOuverts, setDossiersOuverts] = useState({})
   // Sous-dossiers "principes de jeu" à l'intérieur d'un dossier Offensif/Défensif
@@ -8542,7 +8550,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {showImportFiche && (
                     <div style={{ marginTop: '10px', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                       {mesSeancesOuvertes.length === 0 ? (
-                        <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                        <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
                       ) : mesSeancesOuvertes.map(s => (
                         <div key={s.id} onClick={() => importerFicheDansEntrainement(s)}
                           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
@@ -9826,7 +9834,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 {t('seance_mes_seances', lang)} ({mesSeancesOuvertes.length})</p>
             {mesSeancesOuvertes.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('seance_aucune_envoyee', lang)}</p>
+              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t(mesSeancesOuvertesChargees ? 'seance_aucune_envoyee' : 'seance_chargement_fiches', lang)}</p>
             ) : (
               (() => {
                 const pastille = (actif, couleur) => ({
@@ -10869,7 +10877,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 </button>
                 <p style={{ margin: '4px 0 2px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('ent_ou_choisir_fiche', lang)}</p>
                 {mesSeancesOuvertes.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('ent_aucune_fiche_archivee', lang)}</p>
+                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
                 ) : mesSeancesOuvertes.map(s => (
                   <div key={s.id} onClick={() => importerFicheDansEntrainementExistant(s)}
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', cursor: 'pointer' }}

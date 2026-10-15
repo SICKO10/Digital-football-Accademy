@@ -61,47 +61,73 @@ Ne remplis les champs marqués "format BEF uniquement" que si le format détect�
 à null sinon, et utilise plutôt but/organisation/consignes/variables). Si une information n'est pas
 visible, mets null pour ce champ. Extrais jusqu'à 4 procédés/exercices maximum.`
 
+// Gemini renvoie régulièrement « high demand » / 503 UNAVAILABLE (ou 429)
+// quand le modèle est saturé côté Google : erreur passagère, la même image
+// passe quelques secondes plus tard. On réessaie donc automatiquement
+// (jusqu'à 3 tentatives, espacées de 3 s puis 6 s) — uniquement tant que les
+// tentatives échouent vite, pour rester loin de la limite de durée d'une
+// Edge Function (une analyse réussie prend déjà jusqu'à ~1 min).
+const TENTATIVES_MAX = 3
+const DELAIS_MS = [3000, 6000]
+const BUDGET_REESSAI_MS = 40000
+
+const estSaturation = (statut: number, message: string) =>
+  statut === 503 || statut === 429 || /high demand|overloaded|unavailable|resource.?exhausted|try again later/i.test(message || '')
+
+const reponse = (corps: unknown, status = 200) =>
+  new Response(JSON.stringify(corps), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
     const { imageBase64, mimeType } = await req.json()
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+    const debut = Date.now()
 
-    const response = await fetch(
-      // Épinglé (pas "-latest", alias que Google permute sans prévenir —
-      // cf. scan-feuille-match/index.ts pour le détail).
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-            ],
-          }],
-          generationConfig: { temperature: 0.4 },
-        }),
+    let data: any = null
+    for (let tentative = 1; tentative <= TENTATIVES_MAX; tentative++) {
+      const response = await fetch(
+        // Épinglé (pas "-latest", alias que Google permute sans prévenir —
+        // cf. scan-feuille-match/index.ts pour le détail).
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
+              ],
+            }],
+            generationConfig: { temperature: 0.4 },
+          }),
+        }
+      )
+      data = await response.json().catch(() => ({}))
+      const message = data?.error?.message || ''
+      const sature = estSaturation(response.status, message) && (!!data?.error || !response.ok)
+      if (!sature) break
+      const reste = tentative < TENTATIVES_MAX && Date.now() - debut < BUDGET_REESSAI_MS
+      if (!reste) {
+        return reponse({ error: message || 'Service IA saturé', code: 'ia_saturee' }, 503)
       }
-    )
+      await new Promise((r) => setTimeout(r, DELAIS_MS[tentative - 1]))
+    }
 
-    const data = await response.json()
-    if (data.error) throw new Error(data.error.message)
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    if (data?.error) return reponse({ error: data.error.message, code: 'ia_erreur' }, 502)
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error(`Gemini n'a pas retourné de JSON valide: ${text.substring(0, 300)}`)
-    const fiche = JSON.parse(jsonMatch[0])
+    if (!jsonMatch) return reponse({ error: `Gemini n'a pas retourné de JSON valide: ${text.substring(0, 300)}`, code: 'lecture_impossible' }, 422)
+    let fiche
+    try { fiche = JSON.parse(jsonMatch[0]) } catch {
+      return reponse({ error: 'Réponse IA illisible (JSON invalide)', code: 'lecture_impossible' }, 422)
+    }
 
-    return new Response(JSON.stringify({ fiche }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return reponse({ fiche })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return reponse({ error: err.message, code: 'erreur_serveur' }, 500)
   }
 })
