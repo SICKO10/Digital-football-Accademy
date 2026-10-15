@@ -2893,20 +2893,74 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // 3 niveaux de visibilité (cf. supabase_bibliotheque_visibilite.sql) : un
   // procédé vit dans EXACTEMENT une rubrique selon sa visibilité, pas de vue
   // "mixte" — même modèle que la bibliothèque vidéo (perso/df).
+  // Bibliothèque allégée : schema_png (schéma tactique stocké en PNG haute
+  // définition, plusieurs centaines de Ko) et schema_data (données d'édition)
+  // ne sont PAS chargés avec la liste — c'est ce qui la rendait si lente.
+  // Les miniatures arrivent ensuite en arrière-plan (chargerMiniaturesBiblio),
+  // et le schéma complet d'un procédé est récupéré à la demande
+  // (procedeComplet) avant toute action qui en a besoin. Les colonnes sont
+  // lues depuis la base (1 ligne, une fois par session) plutôt qu'écrites en
+  // dur : la table a des colonnes absentes des scripts SQL (ex. organisation),
+  // une liste figée en aurait perdu. En cas d'échec : liste complète, comme avant.
+  const colonnesBiblioRef = useRef(null)
+  const requeteBiblioRef = useRef(0)
+  const colonnesBiblioLegeres = async () => {
+    if (colonnesBiblioRef.current) return colonnesBiblioRef.current
+    const { data, error } = await supabase.from('bibliotheque_exercices').select('*').limit(1)
+    if (error || !data?.length) return null
+    colonnesBiblioRef.current = Object.keys(data[0]).filter(k => k !== 'schema_png' && k !== 'schema_data')
+    return colonnesBiblioRef.current
+  }
+
+  const chargerMiniaturesBiblio = async (procedes, requete) => {
+    const ids = procedes.map(p => p.id)
+    for (let i = 0; i < ids.length; i += 24) {
+      const { data, error } = await supabase.from('bibliotheque_exercices').select('id, schema_png').in('id', ids.slice(i, i + 24))
+      if (requete !== requeteBiblioRef.current) return // rubrique changée entre-temps
+      if (error) return
+      const parId = Object.fromEntries((data || []).map(r => [r.id, r.schema_png]))
+      setBiblio(prev => prev.map(p => (p.id in parId && !('schema_data' in p) ? { ...p, schema_png: parId[p.id] } : p)))
+    }
+  }
+
+  // Procédé avec son schéma complet (png + données d'édition) — indispensable
+  // avant copie, modification ou import, sinon le schéma serait perdu.
+  // null si la récupération échoue (l'action est alors annulée, jamais faite
+  // avec un procédé incomplet).
+  const procedeComplet = async (p) => {
+    if (!p || 'schema_data' in p) return p
+    const { data, error } = await supabase.from('bibliotheque_exercices').select('schema_png, schema_data').eq('id', p.id).maybeSingle()
+    if (error || !data) { alert('Impossible de récupérer le schéma de ce procédé. Vérifie ta connexion puis réessaie.'); return null }
+    const complet = { ...p, schema_png: data.schema_png, schema_data: data.schema_data }
+    setBiblio(prev => prev.map(x => (x.id === p.id ? { ...x, schema_png: data.schema_png, schema_data: data.schema_data } : x)))
+    return complet
+  }
+
+  const ouvrirApercuProcede = (p) => {
+    setProcedeActif(p)
+    if (!('schema_data' in p)) procedeComplet(p).then(c => { if (c) setProcedeActif(cur => (cur?.id === c.id ? c : cur)) })
+  }
+
   const chargerBiblio = async (uid, rubrique = 'personal') => {
     setBiblioLoading(true)
+    const requete = ++requeteBiblioRef.current
     if (rubrique === 'club' && !clubAffiliation?.club_id) { setBiblio([]); setBiblioLoading(false); return }
     // Un procédé peut être partagé en club ET/OU en platform en plus de rester
     // dans "Ma bibliothèque" (pas de rubrique exclusive) — "Ma bibliothèque"
     // montre donc tout ce que ce coach a créé, peu importe ses partages.
     // Paginé : la bibliothèque partagée de toute la plateforme dépasse 1000 procédés.
-    const { data } = await fetchToutesLignes(() => {
-      let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? '*' : '*, educateur:educateur_id(prenom, nom)')
+    const colonnes = await colonnesBiblioLegeres()
+    const lire = (base) => fetchToutesLignes(() => {
+      let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? base : `${base}, educateur:educateur_id(prenom, nom)`)
       if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('partage_club', true)
       else if (rubrique === 'platform') query = query.eq('partage_platform', true)
       else query = query.eq('educateur_id', uid)
       return query.order('type').order('nom').order('id')
     })
+    let { data, error } = colonnes ? await lire(colonnes.join(',')) : { data: null, error: true }
+    const allegee = !!colonnes && !error
+    if (!allegee) ({ data } = await lire('*'))
+    if (requete !== requeteBiblioRef.current) return
     let procedes = data || []
     // Diplôme/catégorie de l'auteur (profil_educateur, pas profiles) — affichés
     // sur les cartes des bibliothèques partagées uniquement, un 2e aller-retour
@@ -2922,6 +2976,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
     setBiblio(procedes)
     setBiblioLoading(false)
+    if (allegee && procedes.length) chargerMiniaturesBiblio(procedes, requete)
   }
 
   // Signalé : "Importer un procédé" (depuis un bloc de Création entraînement,
@@ -3014,7 +3069,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Clone un procédé partagé (club/platform) dans sa propre bibliothèque
   // personnelle — la propriété ne se transfère jamais, copier est le seul
   // moyen de se l'approprier pour le modifier ensuite.
-  const copierProcede = async (p) => {
+  const copierProcede = async (procede) => {
+    const p = await procedeComplet(procede)
+    if (!p) return
     const rest = { ...p }
     delete rest.id
     delete rest.created_at
@@ -3028,7 +3085,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     alert('Copié dans ta bibliothèque personnelle.')
   }
 
-  const ouvrirEditionProcede = (procede) => {
+  const ouvrirEditionProcede = async (procedeListe) => {
+    const procede = await procedeComplet(procedeListe)
+    if (!procede) return
     // procede peut venir d'une bibliothèque partagée (club/platform), chargée
     // avec le join `educateur:educateur_id(...)` — ce champ imbriqué n'est pas
     // une colonne de bibliotheque_exercices et ferait échouer l'update/insert
@@ -3079,7 +3138,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Injecte un procédé de la bibliothèque dans un bloc procédé de la fiche en cours de rédaction
   // (n'écrase que les champs vides du bloc cible, en un seul setFiche pour éviter les updates perdus)
-  const importerProcedeDansBloc = (index, p) => {
+  const importerProcedeDansBloc = async (index, procede) => {
+    const p = await procedeComplet(procede)
+    if (!p) return
     setFiche(prev => {
       const current = prev.procedes[index]
       const merged = {
@@ -3120,7 +3181,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     schema_data: p.schema_data || null,
   })
 
-  const demarrerFicheDepuisProcedes = (procedes) => {
+  const demarrerFicheDepuisProcedes = async (procedesListe) => {
+    const procedes = await Promise.all(procedesListe.map(procedeComplet))
+    if (procedes.some(p => !p)) return
     setFiche({ ...ficheVide, theme: procedes[0]?.theme || '', procedes: procedes.map((p, i) => procedeVersBlocFiche(p, i + 1)) })
     setSport('football')
     setFicheFichierUrl(null)
@@ -3132,8 +3195,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setBiblioSelection([])
   }
 
-  const importerProcedeVersNouvelleSeance = (p) => {
-    demarrerFicheDepuisProcedes([p])
+  const importerProcedeVersNouvelleSeance = async (p) => {
+    await demarrerFicheDepuisProcedes([p])
     afficherToast(t('biblio_importe_vers_seance', lang))
   }
 
@@ -3141,9 +3204,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setBiblioSelection(sel => sel.some(x => x.id === p.id) ? sel.filter(x => x.id !== p.id) : [...sel, p])
   }
 
-  const importerSelectionVersNouvelleSeance = () => {
+  const importerSelectionVersNouvelleSeance = async () => {
     if (biblioSelection.length === 0) return
-    demarrerFicheDepuisProcedes(biblioSelection)
+    await demarrerFicheDepuisProcedes(biblioSelection)
     afficherToast(t('biblio_selection_importee', lang))
   }
 
@@ -10399,7 +10462,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                     {/* Actions footer — toujours visibles mais discrètes */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${colors.border.subtle}` }}>
-                      <button onClick={(e) => { e.stopPropagation(); setProcedeActif(p) }}
+                      <button onClick={(e) => { e.stopPropagation(); ouvrirApercuProcede(p) }}
                         style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.disabled, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
                         onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised; e.currentTarget.style.color = colors.text.dim }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.text.disabled }}>
@@ -10735,7 +10798,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <p style={{ fontSize: '11px', color: colors.text.faint }}>{labelThemeProcede(p.theme) || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                      <button onClick={() => setProcedeActif(p)}
+                      <button onClick={() => ouvrirApercuProcede(p)}
                         style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.dim, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {t('biblio_voir', lang)}
                       </button>
