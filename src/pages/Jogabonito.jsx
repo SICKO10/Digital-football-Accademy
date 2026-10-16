@@ -2,6 +2,17 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { estLienVideoAffichable } from '../lib/liensVideo'
 import { supabase } from '../supabase'
+
+// Page ouverte aux visiteurs non connectés : la table profiles ne leur est
+// plus lisible (e-mail, Stripe, bannissement…). Les infos affichées viennent
+// de la vue profiles_public (champs publics, comptes bannis exclus), chargée
+// en 2e requête par id au lieu des jointures profiles(...).
+async function chargerProfilsPublics(ids, colonnes) {
+  const uniques = [...new Set(ids.filter(Boolean))]
+  if (uniques.length === 0) return {}
+  const { data } = await supabase.from('profiles_public').select(`id, ${colonnes}`).in('id', uniques)
+  return Object.fromEntries((data || []).map(p => [p.id, p]))
+}
 import Avatar from '../components/Avatar'
 import { notifierJoueur } from '../lib/notifications'
 import { useLang } from '../hooks/useLang'
@@ -73,7 +84,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       user ? supabase.from('video_favoris').select('id').eq('user_id', user.id).eq('joueur_id', reel.joueur_id) : Promise.resolve({ data: null }),
       supabase.from('reposts').select('id, user_id').eq('joueur_id', reel.joueur_id),
       supabase.from('comments')
-        .select('*, author:profiles!comments_user_id_fkey(prenom, nom, avatar_url)')
+        .select('*')
         .eq('joueur_id', reel.joueur_id)
         .order('created_at', { ascending: false })
         .limit(20),
@@ -83,7 +94,8 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
     if (user) setFavori(favRes.data?.length > 0 || false)
     setRepostCount(rp?.length || 0)
     if (user) setReposted(rp?.some(r => r.user_id === user.id) || false)
-    setComments(cm || [])
+    const auteurs = await chargerProfilsPublics((cm || []).map(c => c.user_id), 'prenom, nom, avatar_url')
+    setComments((cm || []).map(c => ({ ...c, author: auteurs[c.user_id] || null })))
   }
 
   const handleLike = async () => {
@@ -486,14 +498,17 @@ function Jogabonito() {
   }
 
   const chargerReels = async () => {
-    const { data } = await supabase
+    const { data: reelsBruts } = await supabase
       .from('reels')
-      .select('*, profiles(prenom, nom, poste, categorie, club, region, pied, niveau_equipe, buts_total, passes_decisives, matchs_officiel, avatar_url)')
+      .select('*')
       .order('created_at', { ascending: false })
+    const profils = await chargerProfilsPublics((reelsBruts || []).map(r => r.joueur_id),
+      'prenom, nom, poste, categorie, club, region, pied, niveau_equipe, buts_total, passes_decisives, matchs_officiel, avatar_url')
+    const data = (reelsBruts || []).map(r => ({ ...r, profiles: profils[r.joueur_id] || null }))
 
-    if (!data || data.length === 0) {
+    if (data.length === 0) {
       const { data: joueurs } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('*')
         .eq('plan', 'joueur_pro')
         .eq('abonnement_actif', true)

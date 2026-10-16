@@ -71,6 +71,50 @@ const STRATEGIES = [
   },
 ]
 
+// Mise en page adaptative — les propriétés qui changent selon la largeur
+// d'écran vivent ici (et pas en style inline, qui l'emporterait sur les
+// media queries). Mêmes seuils que la page d'accueil (960 / 640 px).
+const CSS = `
+  .cf-nav { display: grid; grid-template-columns: 1fr auto 1fr; padding: calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem; }
+  .cf-nav-liens { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .cf-hero { padding: 72px 24px 48px; }
+  .cf-h1 { font-size: 42px; }
+  .cf-section { padding: 0 24px; }
+  .cf-calc { padding: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .cf-cout { font-size: 56px; }
+  .cf-strats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cf-strat-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .cf-combo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cf-cta { padding: 40px 32px; }
+  .cf-cta-boutons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 960px) {
+    .cf-nav { grid-template-columns: auto 1fr; gap: 1rem; padding-left: 1.25rem; padding-right: 1.25rem; }
+    .cf-nav-liens { justify-content: flex-end; gap: 1.1rem; }
+    .cf-nav-vide { display: none; }
+  }
+
+  @media (max-width: 720px) {
+    .cf-calc { grid-template-columns: 1fr; padding: 20px; gap: 22px; }
+    .cf-strats { grid-template-columns: 1fr; }
+    .cf-strat-detail { grid-template-columns: 1fr; gap: 14px; }
+  }
+
+  @media (max-width: 640px) {
+    .cf-nav { grid-template-columns: 1fr; gap: 0.6rem; padding: calc(0.75rem + env(safe-area-inset-top, 0px)) 16px 0.75rem; }
+    .cf-nav-liens { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; gap: 1.1rem; scrollbar-width: none; white-space: nowrap; }
+    .cf-nav-liens::-webkit-scrollbar { display: none; }
+    .cf-nav-liens > * { font-size: 13px !important; }
+    .cf-hero { padding: 40px 16px 32px; }
+    .cf-h1 { font-size: 30px; }
+    .cf-section { padding: 0 16px; margin-bottom: 40px !important; }
+    .cf-cout { font-size: 44px; }
+    .cf-combo { grid-template-columns: 1fr; gap: 8px; }
+    .cf-cta { padding: 28px 20px; }
+    .cf-cta-boutons > * { flex: 1 1 100%; text-align: center; box-sizing: border-box; }
+  }
+`
+
 function hexToRgb(hex) {
   return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)].join(',')
 }
@@ -87,26 +131,27 @@ export default function CommentFinancer() {
   const parLicencieMois = (palier.an / total / 12).toFixed(2)
 
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
+      <style>{CSS}</style>
 
       {/* NAV */}
-      <nav style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: 'calc(1rem + env(safe-area-inset-top, 0px)) 2rem 1rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
+      <nav className="cf-nav" style={{ alignItems: 'center', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
         <div onClick={() => navigate('/')} style={{ fontSize: 18, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>Digital<span style={{ color: '#4ade80' }}>Football</span></div>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="cf-nav-liens">
           <span onClick={() => navigate('/')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Page d'accueil</span>
           <a href="/#comment" style={{ color: '#888', textDecoration: 'none', fontSize: 14 }}>Comment ça marche</a>
           <span onClick={() => navigate('/offres')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Offres</span>
           <span onClick={() => navigate('/jogabonito')} style={{ color: '#888', fontSize: 14, cursor: 'pointer' }}>Jogabonito</span>
         </div>
-        <div />
+        <div className="cf-nav-vide" />
       </nav>
 
       {/* HERO */}
-      <div style={{ textAlign: 'center', padding: '72px 24px 48px', maxWidth: 720, margin: '0 auto' }}>
+      <div className="cf-hero" style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto' }}>
         <div style={{ display: 'inline-block', padding: '5px 14px', borderRadius: 20, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', color: '#4ade80', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>
           Guide financement
         </div>
-        <h1 style={{ fontSize: 42, fontWeight: 900, lineHeight: 1.15, margin: '0 0 16px' }}>
+        <h1 className="cf-h1" style={{ fontWeight: 900, lineHeight: 1.15, margin: '0 0 16px' }}>
           Comment financer<br /><span style={{ color: '#4ade80' }}>Digital Football ?</span>
         </h1>
         <p style={{ color: '#555', fontSize: 17, lineHeight: 1.7, margin: 0 }}>
@@ -115,13 +160,13 @@ export default function CommentFinancer() {
       </div>
 
       {/* CALCULATEUR */}
-      <div style={{ maxWidth: 900, margin: '0 auto 64px', padding: '0 24px' }}>
+      <div className="cf-section" style={{ maxWidth: 900, margin: '0 auto 64px' }}>
         <div style={{ background: '#111', borderRadius: 20, border: '1px solid #1a1a1a', overflow: 'hidden' }}>
           <div style={{ padding: '24px 28px', borderBottom: '1px solid #1a1a1a' }}>
             <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#333', textTransform: 'uppercase', marginBottom: 6 }}>Calculateur</div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>Combien ça coûte vraiment par joueur ?</div>
           </div>
-          <div style={{ padding: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+          <div className="cf-calc">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
                 <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#333', textTransform: 'uppercase', marginBottom: 12 }}>Votre palier</div>
@@ -156,7 +201,7 @@ export default function CommentFinancer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ background: '#0a0a0a', borderRadius: 14, padding: 22, border: '1px solid #1a1a1a', textAlign: 'center' }}>
                 <div style={{ color: '#333', fontSize: 11, marginBottom: 8 }}>Coût par licencié</div>
-                <div style={{ fontSize: 56, fontWeight: 900, color: '#4ade80', lineHeight: 1, textShadow: '0 0 40px rgba(74,222,128,0.35)' }}>{parLicencieMois}€</div>
+                <div className="cf-cout" style={{ fontWeight: 900, color: '#4ade80', lineHeight: 1, textShadow: '0 0 40px rgba(74,222,128,0.35)' }}>{parLicencieMois}€</div>
                 <div style={{ color: '#444', fontSize: 13, marginTop: 4 }}>par mois</div>
                 <div style={{ color: '#2a2a2a', fontSize: 11, marginTop: 6 }}>soit {parLicencie}€/an/licencié</div>
               </div>
@@ -202,12 +247,12 @@ export default function CommentFinancer() {
       </div>
 
       {/* STRATÉGIES */}
-      <div style={{ maxWidth: 900, margin: '0 auto 64px', padding: '0 24px' }}>
+      <div className="cf-section" style={{ maxWidth: 900, margin: '0 auto 64px' }}>
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <h2 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 10px' }}>6 façons de financer l'abonnement</h2>
           <p style={{ color: '#444', fontSize: 15, margin: 0 }}>Cliquez sur une stratégie pour voir les chiffres calculés selon votre palier</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="cf-strats">
           {STRATEGIES.map(s => {
             const isOpen = activeStrat === s.id
             return (
@@ -227,7 +272,7 @@ export default function CommentFinancer() {
                   <span style={{ color: '#333', fontSize: 18, marginTop: 4 }}>{isOpen ? '▲' : '▼'}</span>
                 </div>
                 {isOpen && (
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1a1a1a', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                  <div className="cf-strat-detail" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1a1a1a' }}>
                     <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{s.desc}</p>
                     <div style={{ background: '#0a0a0a', borderRadius: 12, padding: '14px 16px', border: `1px solid rgba(${hexToRgb(s.color)},0.20)` }}>
                       <div style={{ color: s.color, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Calcul pour votre club</div>
@@ -242,7 +287,7 @@ export default function CommentFinancer() {
       </div>
 
       {/* SECTION SPONSOR */}
-      <div style={{ maxWidth: 900, margin: '0 auto 64px', padding: '0 24px' }}>
+      <div className="cf-section" style={{ maxWidth: 900, margin: '0 auto 64px' }}>
         <div style={{ background: '#111', borderRadius: 20, border: '1px solid #1a1a1a', overflow: 'hidden' }}>
           <div style={{ padding: '28px 28px 24px' }}>
             <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>Sponsoring local</div>
@@ -277,10 +322,10 @@ export default function CommentFinancer() {
       </div>
 
       {/* COMBINAISON GAGNANTE */}
-      <div style={{ maxWidth: 900, margin: '0 auto 64px', padding: '0 24px' }}>
+      <div className="cf-section" style={{ maxWidth: 900, margin: '0 auto 64px' }}>
         <div style={{ background: 'rgba(74,222,128,0.04)', borderRadius: 20, border: '1px solid rgba(74,222,128,0.12)', padding: 28 }}>
           <h3 style={{ fontSize: 20, fontWeight: 900, margin: '0 0 20px' }}>🏆 La combinaison idéale pour la plupart des clubs</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          <div className="cf-combo">
             {[
               { part: '40%', label: '+3€/licencié/an', color: '#4ade80', desc: 'Légère hausse de cotisation' },
               { part: '30%', label: '1 sponsor local',  color: '#f59e0b', desc: 'Partenaire de visibilité' },
@@ -300,13 +345,13 @@ export default function CommentFinancer() {
       </div>
 
       {/* CTA */}
-      <div style={{ maxWidth: 680, margin: '0 auto 80px', padding: '0 24px', textAlign: 'center' }}>
-        <div style={{ background: '#111', borderRadius: 20, border: '1px solid #1a1a1a', padding: '40px 32px' }}>
+      <div className="cf-section" style={{ maxWidth: 680, margin: '0 auto 80px', textAlign: 'center' }}>
+        <div className="cf-cta" style={{ background: '#111', borderRadius: 20, border: '1px solid #1a1a1a' }}>
           <h3 style={{ fontSize: 24, fontWeight: 900, margin: '0 0 12px' }}>Vous avez une question sur le financement ?</h3>
           <p style={{ color: '#555', fontSize: 15, lineHeight: 1.7, margin: '0 0 28px' }}>
             Notre équipe vous accompagne pour définir la stratégie adaptée à votre club — gratuitement et sans engagement.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div className="cf-cta-boutons">
             <a href={`mailto:${CONTACT_EMAIL}`} style={{ padding: '13px 28px', borderRadius: 12, border: 'none', background: '#4ade80', color: '#0a0a0a', fontWeight: 800, fontSize: 14, cursor: 'pointer', textDecoration: 'none' }}>
               Être accompagné →
             </a>
