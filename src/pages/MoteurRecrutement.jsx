@@ -108,7 +108,11 @@ export default function MoteurRecrutement({ userId }) {
 
     let query = supabase
       .from('profil_recrutement')
-      .select('*, profiles!inner(id, prenom, nom, poste, categorie, club, region, niveau_equipe, pied, avatar_url)')
+      // Jointure via profiles_public (lien profil_recrutement_joueur_id_fkey, ajouté
+      // par supabase_profil_recrutement_fk.sql — il manquait, la requête échouait
+      // toujours) : un club/éducateur ne lit plus directement le profil d'un
+      // joueur hors de son effectif. Alias « profiles » conservé pour l'écran.
+      .select('*, profiles:profiles_public!profil_recrutement_joueur_id_fkey!inner(id, prenom, nom, poste, categorie, club, region, niveau_equipe, pied, avatar_url)')
       .eq('visible_recruteurs', true)
       .gt('nb_matchs', 2) // au moins 3 matchs pour apparaître
 
