@@ -785,9 +785,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       setClubsLoading(true)
       Promise.all([
         // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
-        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').order('id')),
+        fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').order('id')),
         fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
-        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout').order('id')),
+        fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout').order('id')),
         fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
       ]).then(([{ data: edu }, { data: clu }, { data: rec }, { data: recrut }]) => {
         setEducateursListe(edu || [])
@@ -1015,7 +1015,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   const chargerDemandesBilanMedical = async (uid) => {
-    const { data } = await supabase.from('demandes_bilan_medical').select('*, recruteur:profiles!demandes_bilan_medical_recruteur_id_fkey(prenom, nom, club)')
+    const { data } = await supabase.from('demandes_bilan_medical').select('*, recruteur:profiles_public!demandes_bilan_medical_recruteur_id_fkey(prenom, nom, club)')
       .eq('joueur_id', uid).order('created_at', { ascending: false })
     setDemandesBilanMedical(data || [])
   }
@@ -1128,7 +1128,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
     if (!ce?.club_id) { setClubIdInventaire(null); setClubAffilieInfo(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     setClubIdInventaire(ce.club_id)
-    supabase.from('profiles').select('club, avatar_url').eq('id', ce.club_id).maybeSingle().then(({ data }) => setClubAffilieInfo(data || null))
+    supabase.from('profiles_public').select('club, avatar_url').eq('id', ce.club_id).maybeSingle().then(({ data }) => setClubAffilieInfo(data || null))
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
@@ -1915,7 +1915,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (joueurIds.length > 0) {
       const { data: reelsData } = await supabase
         .from('reels')
-        .select('*, profiles(prenom, nom, poste, categorie, club, avatar_url)')
+        .select('*, profiles:profiles_public!reels_joueur_id_fkey(prenom, nom, poste, categorie, club, avatar_url)')
         .in('joueur_id', joueurIds)
         .order('created_at', { ascending: false })
       setFanFavoris(reelsData || [])
@@ -4764,7 +4764,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <p style={{ fontSize: '11px', color: colors.accent.green }}>{t('jd_recruteur_badge', lang)}</p>
                 </div>
                 <button onClick={async () => {
-                  const { data } = await supabase.from('profiles').select('*').eq('id', messageActif.otherId).maybeSingle()
+                  const { data } = await supabase.from('profiles_public').select('*').eq('id', messageActif.otherId).maybeSingle()
                   if (data) setRecruteurModal(data)
                 }} style={{ ...st.btn(colors.accent.green), padding: '6px 14px', fontSize: '12px' }}>
                   {t('jm_voir_profil', lang)}

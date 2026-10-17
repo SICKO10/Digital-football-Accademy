@@ -109,7 +109,7 @@ export default function ClubPublic() {
         estClub ? supabase.from('club_categories').select('id, nom, equipe, educateur_id, couleur').eq('club_id', id).order('nom') : noop,
         estClub ? supabase.from('club_recrutements').select('*').eq('club_id', id).eq('actif', true) : noop,
         estClub ? supabase.from('candidatures').select('recrutement_id, statut').eq('joueur_id', user.id) : noop,
-        estClub ? supabase.from('club_posts').select('*, auteur:auteur_id(prenom, nom, avatar_url)').eq('club_id', id).order('created_at', { ascending: false }).limit(20) : noop,
+        estClub ? supabase.from('club_posts').select('*, auteur:profiles_public!club_posts_auteur_id_fkey(prenom, nom, avatar_url)').eq('club_id', id).order('created_at', { ascending: false }).limit(20) : noop,
         estClub ? supabase.from('club_posts_likes').select('post_id').eq('user_id', user.id) : noop,
         // Admin du feed : le club lui-même (pas de requête nécessaire), ou un
         // éducateur affilié accepté (club_educateurs) — pas de colonne
@@ -130,7 +130,7 @@ export default function ClubPublic() {
         supabase.from('avis').select('*').eq('auteur_id', user.id).eq('cible_id', id).single(),
         // Tous les avis reçus (témoignages), avec le nom de l'auteur — même
         // pattern que DashboardClub.jsx (auteur:auteur_id(prenom, nom, plan))
-        supabase.from('avis').select('*, auteur:auteur_id(prenom, nom, plan)').eq('cible_id', id).order('created_at', { ascending: false }),
+        supabase.from('avis').select('*, auteur:profiles_public!avis_auteur_id_fkey(prenom, nom, plan)').eq('cible_id', id).order('created_at', { ascending: false }),
       ])
 
       if (estClub) {
@@ -164,7 +164,7 @@ export default function ClubPublic() {
     const { data, error } = await supabase
       .from('club_posts')
       .insert({ club_id: id, auteur_id: userId, contenu: newPost.trim(), type: postType })
-      .select('*, auteur:auteur_id(prenom, nom, avatar_url)')
+      .select('*, auteur:profiles_public!club_posts_auteur_id_fkey(prenom, nom, avatar_url)')
       .single()
     if (!error && data) {
       setPosts(prev => [data, ...prev])

@@ -98,7 +98,7 @@ export default function HistoriqueSaisons({ joueurId }) {
         if (educateurIds.length > 0) {
           const [{ data: eqData }, { data: eduData }] = await Promise.all([
             supabase.from('equipe_joueurs').select('educateur_id, categorie').eq('joueur_id', joueurId).in('educateur_id', educateurIds),
-            supabase.from('profiles').select('id, prenom, nom').in('id', educateurIds),
+            supabase.from('profiles_public').select('id, prenom, nom').in('id', educateurIds),
           ])
           // Repli (nom du coach) posé en premier, la catégorie l'écrase quand elle existe — libellé le plus parlant en priorité.
           ;(eduData || []).forEach(p => { labels[p.id] = `${p.prenom || ''} ${p.nom || ''}`.trim() || 'Équipe' })

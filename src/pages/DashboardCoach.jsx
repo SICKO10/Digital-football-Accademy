@@ -168,7 +168,7 @@ function DashboardCoachInner() {
   const getDemandes = async () => {
     const { data, error } = await supabase
       .from('demandes')
-      .select('*, profiles!demandes_joueur_id_fkey(id, prenom, nom, email, plan), coach:profiles!demandes_pris_en_charge_par_fkey(prenom, nom)')
+      .select('*, profiles!demandes_joueur_id_fkey(id, prenom, nom, email, plan), coach:profiles_public!demandes_pris_en_charge_par_fkey(prenom, nom)')
       .order('created_at', { ascending: false })
     if (error) console.error('Erreur getDemandes:', error)
     if (!error) setDemandes(data)
@@ -189,7 +189,7 @@ function DashboardCoachInner() {
     // le filtre "Complétées" côté page — pas seulement les séances en attente.
     const { data } = await supabase
       .from('seances_uploadees')
-      .select('*, educateur:educateur_id(prenom, nom), club:club_id(club, prenom, nom), evaluation:evaluations_seance(*), coach:pris_en_charge_par(prenom, nom)')
+      .select('*, educateur:profiles_public!seances_uploadees_educateur_id_fkey(prenom, nom), club:profiles_public!seances_uploadees_club_id_fkey(club, prenom, nom), evaluation:evaluations_seance(*), coach:profiles_public!seances_uploadees_pris_en_charge_par_fkey(prenom, nom)')
       .in('statut', ['transfere_coach', 'analyse'])
       .order('created_at', { ascending: false })
     setSeancesTransferees(data || [])

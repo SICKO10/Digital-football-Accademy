@@ -1914,7 +1914,7 @@ export default function DashboardClub() {
   const chargerCategories = async (uid) => {
     const { data } = await supabase
       .from('club_categories')
-      .select('*, educateur:educateur_id(prenom, nom)')
+      .select('*, educateur:profiles_public!club_categories_educateur_id_fkey(prenom, nom)')
       .eq('club_id', uid)
       .order('nom')
     setCategories(data || [])
@@ -1923,7 +1923,7 @@ export default function DashboardClub() {
   const chargerAvisClub = async (uid) => {
     const { data } = await supabase
       .from('avis')
-      .select('*, auteur:auteur_id(prenom, nom, plan)')
+      .select('*, auteur:profiles_public!avis_auteur_id_fkey(prenom, nom, plan)')
       .eq('cible_id', uid)
       .order('created_at', { ascending: false })
     setAvisRecus(data || [])
@@ -2432,7 +2432,7 @@ export default function DashboardClub() {
   const chargerSeancesRecues = async (uid) => {
     const { data } = await supabase
       .from('seances_uploadees')
-      .select('*, educateur:educateur_id(prenom, nom), evaluation:evaluations_seance(*)')
+      .select('*, educateur:profiles_public!seances_uploadees_educateur_id_fkey(prenom, nom), evaluation:evaluations_seance(*)')
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
     setSeancesRecues(data || [])
@@ -2573,7 +2573,7 @@ export default function DashboardClub() {
     const { data: parents } = await fetchToutesLignes(() => supabase.from('profil_parent').select('*').eq('profil_complet', true).order('id'))
     if (!parents?.length) { setParentsClub([]); return }
     const joueurIds = [...new Set(parents.map(p => p.joueur_id))]
-    const { data: joueurs } = await fetchToutesLignesIn(joueurIds, ids => supabase.from('profiles').select('id, prenom, nom, categorie, niveau_equipe, club').in('id', ids).order('id'))
+    const { data: joueurs } = await fetchToutesLignesIn(joueurIds, ids => supabase.from('profiles_public').select('id, prenom, nom, categorie, niveau_equipe, club').in('id', ids).order('id'))
     const joueurMap = {}
     joueurs?.forEach(j => { joueurMap[j.id] = j })
     setParentsClub(parents.map(p => ({ ...p, joueur: joueurMap[p.joueur_id] })))

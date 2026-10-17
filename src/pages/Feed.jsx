@@ -318,7 +318,7 @@ function Feed() {
 
     setAcces(true)
 
-    const { data } = await supabase.from('profiles').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles_public').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
     await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
     setLoading(false)
@@ -340,7 +340,7 @@ function Feed() {
     // d'une autre — lancées en parallèle plutôt qu'en série.
     const [{ data: likesData }, { data: commentsData }, myLikesRes, myFavorisRes] = await Promise.all([
       supabase.from('likes').select('clip_id').in('clip_id', ids),
-      supabase.from('comments').select('*, author:profiles!comments_user_id_fkey(prenom, nom, plan, avatar_url)').in('joueur_id', ids).order('created_at', { ascending: true }),
+      supabase.from('comments').select('*, author:profiles_public!comments_user_id_fkey(prenom, nom, plan, avatar_url)').in('joueur_id', ids).order('created_at', { ascending: true }),
       u ? supabase.from('likes').select('clip_id').eq('user_id', u.id).in('clip_id', ids) : Promise.resolve({ data: null }),
       u ? supabase.from('video_favoris').select('joueur_id').eq('user_id', u.id).in('joueur_id', ids) : Promise.resolve({ data: null }),
     ])
@@ -357,7 +357,7 @@ function Feed() {
   }
 
   const refresh = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles_public').select('*').eq('plan', 'joueur_pro').eq('abonnement_actif', true).order('created_at', { ascending: false })
     setJoueursPro(data || [])
     await Promise.all([chargerInteractions(user, data || []), chargerCertifs(data || [])])
   }

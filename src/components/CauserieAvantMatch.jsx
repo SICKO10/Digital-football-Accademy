@@ -5,6 +5,7 @@ import TacticalBoard from './TacticalBoard'
 import TactipadViewer from './TactipadViewer'
 import CompositionTerrain, { ModalSelectionJoueur } from './CompositionTerrain'
 import { useColors } from '../lib/theme'
+import EcussonClub from './EcussonClub'
 
 const METEO_OPTIONS = [
   { val: 'soleil', icon: '☀️', label: 'Soleil' },
@@ -376,7 +377,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   )
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [] }) {
+export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [], nomClub, logoClub = null, logoAdversaire = () => null }) {
   const colors = useColors()
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
@@ -430,7 +431,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   useEffect(() => {
     const ids = [...new Set(joueurs.map(j => j.joueur_id).filter(Boolean))]
     if (ids.length === 0) { setAvatarsParJoueurId({}); return }
-    supabase.from('profiles').select('id, avatar_url').in('id', ids).then(({ data }) => {
+    supabase.from('profiles_public').select('id, avatar_url').in('id', ids).then(({ data }) => {
       const map = {}
       ;(data || []).forEach(p => { map[p.id] = p.avatar_url })
       setAvatarsParJoueurId(map)
@@ -679,70 +680,128 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   }
 
   // ─── VUE LISTE ─────────────────────────────────────────────────────────
-  if (vue === 'liste') return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '22px', fontWeight: 800 }}>Causerie avant match</h2>
-          <p style={{ margin: '4px 0 0', color: colors.text.dim, fontSize: '13px' }}>Fiches de préparation visuelles à afficher dans le vestiaire</p>
-        </div>
-        <button onClick={() => { setForm(formVide()); setFicheCourante(null); setVue('form') }} style={btnG}>+ Nouvelle fiche</button>
-      </div>
+  // ─── VUE LISTE ──────────────────────────────────────────────────────────
+  // V3 : même langage que Résultats/Calendrier — prochains matchs puis
+  // matchs passés, pavé date, écussons, étiquettes texte (plus d'emojis),
+  // prochaine fiche mise en avant. Le formulaire et la vue vestiaire ne changent pas.
+  if (vue === 'liste') {
+    const aujourdhuiIso = new Date().toISOString().slice(0, 10)
+    const aVenir = fiches.filter(f => !f.date_match || f.date_match >= aujourdhuiIso).sort((a, b) => (a.date_match || '9999').localeCompare(b.date_match || '9999'))
+    const passees = fiches.filter(f => f.date_match && f.date_match < aujourdhuiIso).sort((a, b) => b.date_match.localeCompare(a.date_match))
+    const prochaineId = aVenir.find(f => f.date_match)?.id
+    const COULEURS_TYPE = { championnat: colors.accent.blue, coupe: colors.accent.amber, amical: colors.accent.orange, tournoi: colors.accent.purpleLight }
+    const etiquette = (texte, couleur) => (
+      <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: couleur, background: couleur + '1a', border: `1px solid ${couleur}40`, whiteSpace: 'nowrap' }}>{texte}</span>
+    )
 
-      {fiches.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', padding: '48px 24px' }}>
-          <p style={{ fontSize: '40px', margin: '0 0 12px' }}>📋</p>
-          <p style={{ color: colors.text.faint, fontSize: '14px', margin: 0 }}>Aucune fiche pour l'instant.<br />Crée ta première préparation de match.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {fiches.map(f => {
-            const meteoIco = METEO_OPTIONS.find(m => m.val === f.meteo)?.icon || ''
-            const typeLabel = TYPE_MATCH.find(t => t.val === f.type_match)?.label || ''
-            return (
-              <div key={f.id} onClick={() => ouvrirFiche(f)} style={{ ...card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <div style={{ width: '44px', height: '44px', background: colors.background.base, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚽</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>
-                    {f.domicile_exterieur === 'domicile' ? '🏠' : '✈️'} vs {f.adversaire}
-                  </p>
-                  <p style={{ margin: '3px 0 0', color: colors.text.dim, fontSize: '12px' }}>
-                    {f.date_match ? new Date(f.date_match + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' }) : '—'}
-                    {' · '}{typeLabel}
-                    {f.temperature != null ? ` · ${meteoIco} ${f.temperature}°C` : f.meteo ? ` · ${meteoIco}` : ''}
-                  </p>
-                </div>
-                {f.notre_classement && f.adversaire_classement && (
-                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '18px' }}>
-                      <span style={{ color: '#4ade80' }}>{f.notre_classement}</span><span style={{ color: colors.text.ghost, fontSize: '12px' }}> vs </span><span style={{ color: '#f87171' }}>{f.adversaire_classement}</span>
-                    </p>
-                    <p style={{ margin: 0, color: colors.text.dim, fontSize: '10px' }}>Classement</p>
-                  </div>
-                )}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <button
-                    onClick={e => { e.stopPropagation(); setMenuOuvert(menuOuvert === f.id ? null : f.id) }}
-                    style={{ background: 'none', border: `1px solid ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '16px', width: '32px', height: '32px', cursor: 'pointer', lineHeight: 1 }}
-                  >⋯</button>
-                  {menuOuvert === f.id && (
-                    <>
-                      <div onClick={e => { e.stopPropagation(); setMenuOuvert(null) }} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                      <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                        <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Modifier</button>
-                        <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Dupliquer</button>
-                        <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#f87171', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Supprimer</button>
-                      </div>
-                    </>
-                  )}
-                </div>
+    const carte = (f) => {
+      const vedette = f.id === prochaineId
+      const date = f.date_match ? new Date(f.date_match + 'T12:00:00') : null
+      const typeLabel = TYPE_MATCH.find(t => t.val === f.type_match)?.label
+      const meteoLabel = METEO_OPTIONS.find(m => m.val === f.meteo)?.label
+      return (
+        <div key={f.id} onClick={() => ouvrirFiche(f)} style={{
+          cursor: 'pointer', display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto', alignItems: 'center', gap: '16px',
+          background: vedette ? colors.background.raised : colors.background.surface,
+          border: `1px solid ${vedette ? colors.accent.blue + '55' : colors.border.subtle}`, borderLeft: `4px solid ${vedette ? colors.accent.blue : colors.border.strong}`,
+          borderRadius: '10px', padding: '14px 16px',
+        }}>
+          {/* Pavé date */}
+          <div style={{ width: '58px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden' }}>
+            {date ? (
+              <>
+                <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: vedette ? colors.black : colors.text.faint, background: vedette ? colors.accent.blue : colors.background.raised }}>{date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                <p style={{ margin: 0, padding: '5px 0 0', fontSize: '22px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{date.getDate()}</p>
+                <p style={{ margin: 0, padding: '2px 0 5px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{date.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+              </>
+            ) : (
+              <p style={{ margin: 0, padding: '12px 4px', fontSize: '10px', fontWeight: 700, color: colors.text.faint, lineHeight: 1.3 }}>Date à définir</p>
+            )}
+          </div>
+
+          {/* Affiche, étiquettes, préparation */}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+              <EcussonClub nom={nomClub || equipeNom || 'Nous'} logo={logoClub} taille={32} />
+              <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.faint }}>vs</span>
+              <EcussonClub nom={f.adversaire} logo={logoAdversaire(f.adversaire)} taille={32} />
+              <span style={{ fontWeight: 800, fontSize: '15px', textTransform: 'uppercase', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{f.adversaire || 'Adversaire'}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+              {typeLabel && etiquette(typeLabel, COULEURS_TYPE[f.type_match] || colors.text.secondary)}
+              {etiquette(f.domicile_exterieur === 'domicile' ? 'Domicile' : 'Extérieur', f.domicile_exterieur === 'domicile' ? colors.accent.green : colors.text.secondary)}
+              {f.heure_match && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.secondary }}>{String(f.heure_match).slice(0, 5)}</span>}
+              {(meteoLabel || f.temperature != null) && (
+                <span style={{ fontSize: '11px', color: colors.text.faint }}>{[meteoLabel, f.temperature != null && f.temperature !== '' ? `${f.temperature}°C` : null].filter(Boolean).join(' · ')}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Classement + menu */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {f.notre_classement && f.adversaire_classement && (
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '18px', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ color: colors.accent.green }}>{f.notre_classement}<sup style={{ fontSize: '9px' }}>e</sup></span>
+                  <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 600 }}> vs </span>
+                  <span style={{ color: colors.accent.red }}>{f.adversaire_classement}<sup style={{ fontSize: '9px' }}>e</sup></span>
+                </p>
+                <p style={{ margin: 0, color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Classement</p>
               </div>
-            )
-          })}
+            )}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={e => { e.stopPropagation(); setMenuOuvert(menuOuvert === f.id ? null : f.id) }}
+                aria-label="Plus d'actions"
+                style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', width: '36px', height: '36px', cursor: 'pointer', lineHeight: 1 }}
+              >⋯</button>
+              {menuOuvert === f.id && (
+                <>
+                  <div onClick={e => { e.stopPropagation(); setMenuOuvert(null) }} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
+                  <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '40px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                    <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Modifier</button>
+                    <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Dupliquer</button>
+                    <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.accent.red, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Supprimer</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  )
+      )
+    }
+
+    const section = (titre, liste) => liste.length > 0 && (
+      <div>
+        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{titre} <span style={{ color: colors.text.faint }}>· {liste.length}</span></p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{liste.map(carte)}</div>
+      </div>
+    )
+
+    return (
+      <div style={{ maxWidth: '1100px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px' }}>Causerie avant match</h2>
+            <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>Fiches de préparation visuelles à afficher dans le vestiaire</p>
+          </div>
+          <button onClick={() => { setForm(formVide()); setFicheCourante(null); setVue('form') }} style={btnG}>+ Nouvelle fiche</button>
+        </div>
+
+        {fiches.length === 0 ? (
+          <div style={{ ...card, textAlign: 'center', padding: '48px 24px' }}>
+            <p style={{ color: colors.text.primary, fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>Aucune fiche pour l'instant</p>
+            <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>Crée ta première préparation de match : objectifs, clés du match, coups de pied arrêtés, message du coach.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {section('Prochains matchs', aVenir)}
+            {section('Matchs passés', passees)}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // ─── VUE FORMULAIRE ────────────────────────────────────────────────────
   if (vue === 'form') return (

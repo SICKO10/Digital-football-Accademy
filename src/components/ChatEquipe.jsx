@@ -184,7 +184,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
     const ids = [...new Set(msgs.map(m => m.auteur_id).filter(Boolean))]
     const msgSondages = msgs.filter(m => m.type === 'sondage')
     const [{ data: profils }, { data: s }] = await Promise.all([
-      ids.length > 0 ? supabase.from('profiles').select('id, prenom, nom').in('id', ids) : Promise.resolve({ data: null }),
+      ids.length > 0 ? supabase.from('profiles_public').select('id, prenom, nom').in('id', ids) : Promise.resolve({ data: null }),
       msgSondages.length > 0 ? supabase.from('sondages').select('*').in('message_id', msgSondages.map(m => m.id)) : Promise.resolve({ data: null }),
     ])
     if (ids.length > 0) {
@@ -201,7 +201,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
       if (s?.length > 0) {
         const { data: r } = await supabase
           .from('sondage_reponses')
-          .select('*, profiles(prenom, nom)')
+          .select('*, profiles:profiles_public!sondage_reponses_joueur_id_fkey(prenom, nom)')
           .in('sondage_id', s.map(sd => sd.id))
         const rMap = {}
         r?.forEach(rep => {
@@ -232,7 +232,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
         })
         setAuteurs(prev => {
           if (!payload.new.auteur_id || prev[payload.new.auteur_id]) return prev
-          supabase.from('profiles').select('id, prenom, nom').eq('id', payload.new.auteur_id).maybeSingle()
+          supabase.from('profiles_public').select('id, prenom, nom').eq('id', payload.new.auteur_id).maybeSingle()
             .then(({ data: p }) => { if (p) setAuteurs(cur => ({ ...cur, [p.id]: p })) })
           return prev
         })

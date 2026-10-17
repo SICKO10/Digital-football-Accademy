@@ -53,6 +53,8 @@ import { t, LANGS, localeOf } from '../lib/translations'
 import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { remplacerSchemaParLien, miniatureSchema } from '../lib/schemaUpload'
+import LigneResultat from '../components/LigneResultat'
+import CarteMatchAVenir from '../components/CarteMatchAVenir'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
@@ -231,6 +233,8 @@ const matchCorrespondFiltreComp = (m, filtre) => filtre === 'toutes' || (m.compe
 
 // ── Icônes SVG menu ────────────────────────────────────────────────────────
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+const IcoMicro     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+const IcoBallon    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/><path d="M12 7V2.5M16 10l4-1.5M14.5 14.5l2.5 4M9.5 14.5L7 18.5M8 10L4 8.5"/></svg>
 const IcoTrophy    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
 const IcoRun       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="2"/><path d="M15.5 8.5L14 13l3 3-2 5"/><path d="M8.5 8.5L10 13l-3 3 2 5"/><path d="M10 13h4"/></svg>
 const IcoDumbbell  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12"/></svg>
@@ -1498,29 +1502,53 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
 
                 {podiumActuel.length === 0 ? (
                   <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {podiumActuel.slice(0, 3).map((item, idx) => (
-                      <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.surface, borderRadius: '6px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
-                        <span style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: idx === 0 ? colors.accent.amber : idx === 1 ? '#9ca3af' : '#cd7f32', color: colors.background.base, fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {idx + 1}
-                        </span>
-                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{item.joueur.prenom} {item.joueur.nom}</span>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ) : (() => {
+                  // V3 : podium (n°1 au centre, mis en avant), photo du profil
+                  // joueur (Avatar : initiales à défaut). Mêmes données qu'avant.
+                  const METAUX = ['#fbbf24', '#cbd5e1', '#d08b4b']
+                  const Etoile = ({ taille = 14 }) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
+                  const top = podiumActuel.slice(0, 3).map((item, idx) => ({ ...item, rang: idx + 1 }))
+                  const ordre = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : top
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ordre.length}, minmax(0, 1fr))`, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', overflow: 'hidden' }}>
+                      {ordre.map((item, i) => {
+                        const premier = item.rang === 1
+                        const taille = premier ? (isMobile ? 58 : 76) : (isMobile ? 44 : 58)
+                        const metal = METAUX[item.rang - 1]
+                        return (
+                          <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', textAlign: 'center', padding: isMobile ? '14px 6px' : '20px 12px', borderLeft: i > 0 ? `1px solid ${colors.border.subtle}` : 'none', background: premier ? colors.background.raised : 'transparent', minWidth: 0 }}>
+                            <div style={{ position: 'relative', marginBottom: '10px' }}>
+                              <Avatar person={item.joueur} size={taille} bg={metal + '22'} border={`${premier ? 3 : 2}px solid ${metal}`} textColor={metal} />
+                              <span style={{ position: 'absolute', top: premier ? '-6px' : '-4px', left: premier ? '-6px' : '-4px', width: premier ? '26px' : '22px', height: premier ? '26px' : '22px', borderRadius: '50%', background: metal, color: colors.black, fontSize: premier ? '13px' : '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${premier ? colors.background.raised : colors.background.surface}` }}>
+                                {item.rang}
+                              </span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: isMobile ? '12px' : (premier ? '15px' : '13px'), fontWeight: 800, color: colors.text.primary, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', maxWidth: '100%' }}>
+                              {item.joueur.prenom} {item.joueur.nom}
+                            </p>
+                            {item.joueur.poste && !isMobile && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.joueur.poste}</p>}
+                            <p style={{ margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '5px', fontSize: isMobile ? '18px' : (premier ? '26px' : '20px'), fontWeight: 800, color: colors.text.primary, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                              {item.count} <Etoile taille={premier ? 18 : 14} />
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
 
                 {podiumPrecedent.length > 0 && (
                   <>
                     <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
                       {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.75 }}>
-                      <span style={{ fontSize: '14px' }}>🥇</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.8 }}>
+                      <Avatar person={podiumPrecedent[0].joueur} size={26} bg="#fbbf2422" border="2px solid #fbbf24" textColor="#fbbf24" />
                       <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.amber }}>{podiumPrecedent[0].count} ⭐</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>
+                        {podiumPrecedent[0].count}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
+                      </span>
                     </div>
                   </>
                 )}
@@ -1716,6 +1744,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Compétition
   const [competitionSubTab, setCompetitionSubTab] = useState('resultats')
+  const [afficherScanCalendrier, setAfficherScanCalendrier] = useState(false) // zone « Scanner un calendrier », ouverte à la demande
   const [filtreCompResultats, setFiltreCompResultats] = useState('toutes') // championnat/coupe/amical, cf. matchs_equipe.competition (déjà un champ à 3 valeurs, modalMatchForm)
   const [ligueUrl, setLigueUrl] = useState('')
   const [savingLigueUrl, setSavingLigueUrl] = useState(false)
@@ -1750,6 +1779,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [matchActif, setMatchActif] = useState(null)
   const [menuResultatOuvert, setMenuResultatOuvert] = useState(null) // id du résultat dont le menu "⋯" (modifier/supprimer) est ouvert
   const [rapportMatchOuvert, setRapportMatchOuvert] = useState(null) // match pour lequel la modale "Rapport de match" est ouverte, ou null
+  // Logos des clubs inscrits sur la plateforme, pour illustrer l'adversaire
+  // dans les résultats : retrouvé par son nom (normalisé), écusson aux
+  // initiales sinon. Chargé une fois, à la première ouverture de Résultats.
+  const [logosClubs, setLogosClubs] = useState(null)
+  const normaliserNomClub = (n) => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
+  const logoAdversaire = (nom) => {
+    if (!logosClubs || !nom) return null
+    const cle = normaliserNomClub(nom)
+    if (logosClubs[cle]) return logosClubs[cle]
+    // « La Fontonne U20 » → club « La Fontonne » : préfixe d'au moins 5 caractères
+    const prefixe = Object.keys(logosClubs).filter(k => k.length >= 5 && cle.startsWith(k)).sort((a, b) => b.length - a.length)[0]
+    return prefixe ? logosClubs[prefixe] : null
+  }
   const [matchIdsAvecRapport, setMatchIdsAvecRapport] = useState(new Set()) // Set des match_id ayant déjà un rapport (rapports_analyse.mode_analyse = 'match')
   const [statsMatch, setStatsMatch] = useState({})
   const [matchANoter, setMatchANoter] = useState(null)
@@ -2074,11 +2116,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const { data } = await q
     const roster = data || []
     const joueurIds = [...new Set(roster.map(j => j.joueur_id).filter(Boolean))]
-    if (joueurIds.length === 0) { setJoueurs(roster); return }
-    const { data: profils } = await supabase.from('profiles').select('id, avatar_url').in('id', joueurIds)
+    // Photo affichée (avatar_url) : celle ajoutée par le coach dans l'effectif
+    // (equipe_joueurs.photo_url) en priorité, sinon celle du compte du joueur
+    // (photo_profil), sinon initiales (Avatar).
+    const avecPhotos = (parId) => roster.map(j => {
+      const photoProfil = j.joueur_id ? parId[j.joueur_id] || null : null
+      return { ...j, photo_profil: photoProfil, avatar_url: j.photo_url || photoProfil }
+    })
+    if (joueurIds.length === 0) { setJoueurs(avecPhotos({})); return }
+    // profiles_public (vue publique, sans email/Stripe) et non profiles : depuis
+    // la restriction de lecture de profiles, un éducateur ne peut plus lire le
+    // profil de ses joueurs — toutes les photos avaient disparu.
+    const { data: profils } = await supabase.from('profiles_public').select('id, avatar_url').in('id', joueurIds)
     const avatarParId = {}
     ;(profils || []).forEach(p => { avatarParId[p.id] = p.avatar_url })
-    setJoueurs(roster.map(j => ({ ...j, avatar_url: j.joueur_id ? avatarParId[j.joueur_id] : null })))
+    setJoueurs(avecPhotos(avatarParId))
   }
 
   const chargerMatchs = async (uid, catId) => {
@@ -2175,7 +2227,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     if (demandeIds.length > 0) {
       // ~25 réponses par demande : dépasse 1000 en une saison.
       const { data: reponses } = await fetchToutesLignesIn(demandeIds, ids => supabase.from('seances_notes_joueurs')
-        .select('*, profiles(prenom, nom, avatar_url)').in('demande_id', ids).order('id'))
+        .select('*, profiles:profiles_public!seances_notes_joueurs_joueur_id_fkey(prenom, nom, avatar_url)').in('demande_id', ids).order('id'))
       setReponsesNote(reponses || [])
     } else {
       setReponsesNote([])
@@ -2601,7 +2653,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle(),
       supabase.from('profil_educateur').select('*').eq('user_id', uid).single(),
       supabase.from('parcours_educateur').select('*').eq('user_id', uid).order('ordre'),
-      supabase.from('notes_educateur').select('*, profiles:auteur_id(prenom, nom, plan)').eq('educateur_id', uid),
+      supabase.from('notes_educateur').select('*, profiles:profiles_public!notes_educateur_auteur_id_fkey(prenom, nom, plan)').eq('educateur_id', uid),
       supabase.from('affiliations').select('*, joueur:equipe_joueur_id(prenom, nom), joueur_profil:joueur_id(prenom, nom, email, avatar_url)').eq('educateur_id', uid).order('created_at', { ascending: false }),
     ])
     if (pe) { setProfilEdu({ ...pe, avatar_url: profilBase?.avatar_url }); setProfilEduEdit({ ...pe, avatar_url: profilBase?.avatar_url }); setLienGroupe(pe.lien_groupe || '') }
@@ -2952,7 +3004,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // Paginé : la bibliothèque partagée de toute la plateforme dépasse 1000 procédés.
     const colonnes = await colonnesBiblioLegeres()
     const lire = (base) => fetchToutesLignes(() => {
-      let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? base : `${base}, educateur:educateur_id(prenom, nom)`)
+      let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? base : `${base}, educateur:profiles_public!bibliotheque_exercices_educateur_id_fkey(prenom, nom)`)
       if (rubrique === 'club') query = query.eq('club_id', clubAffiliation.club_id).eq('partage_club', true)
       else if (rubrique === 'platform') query = query.eq('partage_platform', true)
       else query = query.eq('educateur_id', uid)
@@ -2996,6 +3048,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // cf. init()) — même pattern que ci-dessus, à la demande plutôt qu'au
   // chargement initial du dashboard.
   useEffect(() => { if (activeSection === 'mes_seances' && userId) chargerMesSeances(userId) }, [activeSection, userId])
+  useEffect(() => {
+    if (activeSection !== 'matchs' || !['resultats', 'calendrier', 'causerie'].includes(competitionSubTab) || logosClubs) return
+    fetchToutesLignes(() => supabase.from('profiles_public').select('id, club, avatar_url').eq('plan', 'club').not('avatar_url', 'is', null).order('id'))
+      .then(({ data }) => {
+        const carte = {}
+        ;(data || []).forEach(c => { const k = normaliserNomClub(c.club); if (k && !carte[k]) carte[k] = c.avatar_url })
+        setLogosClubs(carte)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, competitionSubTab])
   useEffect(() => { if (activeSection === 'explorer' && userId) chargerDirigeants(userId) }, [activeSection, userId])
   useEffect(() => { if (activeSection === 'equipe' && userId) chargerEvaluationsJoueurs(userId) }, [activeSection, userId])
   useEffect(() => {
@@ -4335,12 +4397,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // avatar_url est enrichi côté client depuis profiles (cf. chargerJoueurs) —
     // equipe_joueurs n'a pas cette colonne, il ne doit jamais partir dans l'update.
     delete fields.avatar_url
+    delete fields.photo_profil
     // Optimistic : on connaît déjà exactement les nouvelles valeurs, donc la
     // liste locale se met à jour et la modale se ferme tout de suite, sans
     // attendre la réponse Supabase (aucune vérification d'erreur n'existait
     // avant, on en ajoute a minima).
     const avant = joueurs.find(j => j.id === id)
-    setJoueurs(prev => prev.map(j => (j.id === id ? { ...j, ...fields } : j)))
+    setJoueurs(prev => prev.map(j => (j.id === id ? { ...j, ...fields, avatar_url: ('photo_url' in fields ? fields.photo_url : j.photo_url) || j.photo_profil || null } : j)))
     // jours_actifs vit sur affiliations (pas equipe_joueurs) — une seule
     // ligne possible pour ce roster précis (equipe_joueur_id), retrouvée
     // dans l'état affiliations déjà chargé pour cet éducateur.
@@ -4358,9 +4421,33 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setAffiliations(prev => prev.map(a => (a.id === affiliationCourante.id ? { ...a, jours_actifs: joursActifsEdit.length ? joursActifsEdit : null } : a)))
     }
     if (error || resAff.error) {
-      alert('Erreur : ' + (error?.message || resAff.error?.message))
+      const message = error?.message || resAff.error?.message || ''
+      alert(/photo_url/.test(message)
+        ? "La photo n'a pas pu être enregistrée : la colonne photo_url n'existe pas encore dans l'effectif (script supabase_equipe_joueurs_photo.sql à exécuter)."
+        : 'Erreur : ' + message)
       if (avant) setJoueurs(prev => prev.map(j => (j.id === id ? avant : j)))
       setJoueurEnEdition({ id, ...fields })
+    }
+  }
+
+  // Photo d'un joueur ajoutée par le coach (Cloudinary, dossier du coach),
+  // enregistrée avec le reste de la fiche au clic sur Enregistrer.
+  const [envoiPhotoJoueur, setEnvoiPhotoJoueur] = useState(false)
+  const choisirPhotoJoueur = async (fichier) => {
+    if (!fichier) return
+    setEnvoiPhotoJoueur(true)
+    try {
+      const sig = await demanderSignatureImage({ usage: 'avatar' })
+      const formData = ajouterChampsSignes(new FormData(), sig)
+      formData.append('file', fichier)
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`, { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok || !data.secure_url) throw new Error(data?.error?.message || 'envoi impossible')
+      setJoueurEnEdition(p => (p ? { ...p, photo_url: data.secure_url } : p))
+    } catch (e) {
+      alert("La photo n'a pas pu être envoyée : " + e.message)
+    } finally {
+      setEnvoiPhotoJoueur(false)
     }
   }
 
@@ -5511,7 +5598,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setExplorerLoading(true)
     const [{ data: edu }, { data: clu }, { data: recrut }] = await Promise.all([
       // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
-      fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId).order('id')),
+      fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId).order('id')),
       fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
       fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
     ])
@@ -5532,7 +5619,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // lignes faisait disparaître les messages les PLUS RÉCENTS.
     const { data } = await fetchToutesLignes(() => supabase
       .from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, avatar_url), receiver:profiles!messages_receiver_id_fkey(prenom, nom, avatar_url)')
+      .select('*, sender:profiles_public!messages_sender_id_fkey(prenom, nom, avatar_url), receiver:profiles_public!messages_receiver_id_fkey(prenom, nom, avatar_url)')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: true }))
     setExplorerMessages(data || [])
@@ -6279,6 +6366,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
                     <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
                   </div>
+                  {/* Photo du joueur : celle du coach prime sur celle du compte. */}
+                  {(() => {
+                    const photo = ('photo_url' in joueurEnEdition && joueurEnEdition.photo_url !== undefined ? joueurEnEdition.photo_url : null) || joueurEnEdition.photo_profil
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', padding: '12px', border: `1px solid ${colors.border.subtle}`, borderRadius: '10px' }}>
+                        <Avatar person={{ ...joueurEnEdition, avatar_url: photo }} size={64} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <label style={{ ...st.btn(colors.accent.blue), display: 'inline-flex', alignItems: 'center', cursor: envoiPhotoJoueur ? 'wait' : 'pointer', opacity: envoiPhotoJoueur ? 0.6 : 1 }}>
+                              {envoiPhotoJoueur ? 'Envoi…' : joueurEnEdition.photo_url ? 'Changer la photo' : 'Ajouter une photo'}
+                              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={envoiPhotoJoueur} onChange={e => { choisirPhotoJoueur(e.target.files?.[0]); e.target.value = '' }} />
+                            </label>
+                            {joueurEnEdition.photo_url && (
+                              <button type="button" onClick={() => setJoueurEnEdition(p => ({ ...p, photo_url: null }))} style={st.btn(colors.text.dim)}>Retirer</button>
+                            )}
+                          </div>
+                          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>
+                            {joueurEnEdition.photo_url ? 'Photo ajoutée par le coach.' : joueurEnEdition.photo_profil ? 'Photo du compte du joueur. Tu peux la remplacer.' : 'Aucune photo pour le moment.'}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     <div><label style={st.label}>{t('equipe_prenom', lang)}</label><input style={st.input} value={joueurEnEdition.prenom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, prenom: e.target.value }))} /></div>
                     <div><label style={st.label}>{t('equipe_nom', lang)}</label><input style={st.input} value={joueurEnEdition.nom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, nom: e.target.value }))} /></div>
@@ -7329,8 +7439,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* Sous-onglets */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['causerie','📋 '+t('nav_causerie', lang)],['resultats','⚽ '+t('comp_resultats', lang)],['classement','🏅 '+t('comp_classement', lang)],['calendrier','📆 '+t('comp_calendrier', lang)]].map(([k, label]) => (
-                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
+              {/* Icônes au trait à la place des emojis (même style que la navigation). */}
+              {[['causerie', IcoMicro, t('nav_causerie', lang)], ['resultats', IcoBallon, t('comp_resultats', lang)], ['classement', IcoTrophy, t('comp_classement', lang)], ['calendrier', IcoCalendar, t('comp_calendrier', lang)]].map(([k, Icone, label]) => (
+                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}><Icone />{label}</button>
               ))}
             </div>
 
@@ -7340,26 +7451,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               // une donnée partagée avec le club, pas de club_id nécessaire") —
               // accessible que le coach soit affilié à un club ou non, club_id
               // reste optionnel côté CauserieAvantMatch.
-              <Suspense fallback={<SectionLoader />}><CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} /></Suspense>
+              <Suspense fallback={<SectionLoader />}><CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} nomClub={clubAffiliation?.club?.club || profil?.club || ''} logoClub={clubAffiliation?.club?.avatar_url || null} logoAdversaire={logoAdversaire} /></Suspense>
             )}
 
             {/* ── Résultats ── */}
             {competitionSubTab === 'resultats' && (
-              <div style={{ maxWidth: '960px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 1rem' }}>{t('comp_resultats', lang)}</h2>
-
-                {canEdit('competition') && (
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                    {canEdit('stats') && (
-                      <button onClick={() => setShowScanner(true)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        📷 {t('seance_scanner', lang)}
+              <div style={{ maxWidth: '1100px' }}>
+                {/* V3 : en-tête façon feuille de match — titre à gauche, Scanner
+                    et + Match à droite (en dessous sur mobile). Mêmes actions. */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('comp_resultats', lang)}</h2>
+                  {canEdit('competition') && (
+                    <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                      {canEdit('stats') && (
+                        <button onClick={() => setShowScanner(true)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                          {t('seance_scanner', lang)}
+                        </button>
+                      )}
+                      <button onClick={() => setShowAddMatch(true)} style={{ flex: isMobile ? 1 : 'none', padding: '10px 22px', minHeight: '40px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.black, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        + {t('comp_bouton_match', lang)}
                       </button>
-                    )}
-                    <button onClick={() => setShowAddMatch(true)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      + {t('comp_bouton_match', lang)}
-                    </button>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
 
                 {showAddMatch && canEdit('competition') && (
                   <div style={{ ...st.card, border: '1px solid #4ade8030', marginBottom: '1rem' }}>
@@ -7420,15 +7535,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
                   const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
                   return (
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px', marginBottom: '22px' }}>
                       {[
-                        { label: 'V', count: victoires, color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
-                        { label: 'N', count: nuls, color: '#888', bg: 'rgba(136,136,136,0.1)' },
-                        { label: 'D', count: defaites, color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+                        { label: 'Victoires', count: victoires, color: colors.accent.green },
+                        { label: 'Nuls', count: nuls, color: colors.text.secondary, fond: colors.background.raised, cadre: colors.border.strong },
+                        { label: 'Défaites', count: defaites, color: colors.accent.red },
                       ].map(item => (
-                        <div key={item.label} style={{ flex: 1, background: item.bg, border: `1px solid ${item.color}33`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '22px', fontWeight: 800, color: item.color }}>{item.count}</div>
-                          <div style={{ fontSize: '11px', color: item.color, fontWeight: 600, letterSpacing: '1px' }}>{item.label === 'V' ? 'Victoires' : item.label === 'N' ? 'Nuls' : 'Défaites'}</div>
+                        <div key={item.label} style={{ background: item.fond || item.color + '14', border: `1px solid ${item.cadre || item.color + '40'}`, borderRadius: '10px', padding: isMobile ? '12px 8px' : '18px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: isMobile ? '26px' : '34px', fontWeight: 800, color: item.color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{item.count}</div>
+                          <div style={{ fontSize: isMobile ? '12px' : '14px', color: item.color, fontWeight: 600, marginTop: '6px' }}>{item.label}</div>
                         </div>
                       ))}
                     </div>
@@ -7436,50 +7551,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 })()}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                  {grouperMatchsParMois(matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)), true).map(([moisKey, { label, items }]) => (
+                  {(() => {
+                    const joues = matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats))
+                    const dernierMatchId = [...joues].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.heure || '').localeCompare(a.heure || ''))[0]?.id
+                    return grouperMatchsParMois(joues, true).map(([moisKey, { label, items }]) => (
                     <div key={moisKey}>
-                      <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{label}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {items.map(m => {
-                          const nous = Number(m.score_nous)
-                          const eux = Number(m.score_eux)
-                          const isVictoire = nous > eux
-                          const isNul = nous === eux
-                          const borderColor = isVictoire ? '#4ade80' : isNul ? '#555' : '#f87171'
-                          const scoreColor = isVictoire ? '#4ade80' : isNul ? '#888' : '#f87171'
-                          const resultLabel = isVictoire ? 'Victoire' : isNul ? 'Nul' : 'Défaite'
                           return (
-                      <div key={m.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${borderColor}`, borderRadius: '12px', padding: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setMatchActif(matchActif?.id === m.id ? null : m)}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {m.domicile ? 'vs' : '@'} {m.adversaire}
-                            </div>
-                            <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px' }}>
-                              {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
-                              {m.heure ? ` · ${m.heure}` : ''}
-                            </div>
-                            <div style={{ color: colors.text.disabled, fontSize: '12px' }}>
-                              {m.competition ? `${m.competition} · ` : ''}{m.domicile ? '🏠 Domicile' : '✈️ Extérieur'}{m.lieu ? ` · ${m.lieu}` : ''}
-                            </div>
-                          </div>
-
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: '20px', fontWeight: 800, color: scoreColor, letterSpacing: '1px' }}>
-                              {m.score_nous} - {m.score_eux}
-                            </div>
-                            <div style={{ fontSize: '11px', fontWeight: 600, color: scoreColor, marginTop: '2px' }}>
-                              {resultLabel}
-                            </div>
-                            {matchIdsAvecRapport.has(m.id) && (
-                              <div onClick={ev => { ev.stopPropagation(); setRapportMatchOuvert(m) }}
-                                style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#4ade8015', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', cursor: 'pointer' }}>
-                                📄 Rapport
-                              </div>
-                            )}
-                          </div>
-
-                          {canEdit('competition') && (
+                      <div key={m.id}>
+                        <LigneResultat
+                          m={m}
+                          nomClub={clubAffiliation?.club?.club || profil?.club || 'Mon équipe'}
+                          logoClub={clubAffiliation?.club?.avatar_url || null}
+                          logoAdversaire={logoAdversaire(m.adversaire)}
+                          enVedette={m.id === dernierMatchId}
+                          isMobile={isMobile}
+                          locale={localeOf(lang)}
+                          aRapport={matchIdsAvecRapport.has(m.id)}
+                          afficherRapport={canEdit('competition') || matchIdsAvecRapport.has(m.id)}
+                          onOuvrir={() => setMatchActif(matchActif?.id === m.id ? null : m)}
+                          onRapport={() => setRapportMatchOuvert(m)}
+                          menu={canEdit('competition') ? (
                             <div style={{ position: 'relative', flexShrink: 0 }} onClick={ev => ev.stopPropagation()}>
                               <button
                                 onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
@@ -7519,12 +7613,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 </>
                               )}
                             </div>
-                          )}
-                        </div>
+                          ) : null}
+                        />
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
-                          <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
+                          <div style={{ marginTop: '6px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                               {joueurs.map(j => {
@@ -7572,7 +7666,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         })}
                       </div>
                     </div>
-                  ))}
+                  ))
+                  })()}
                   {matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
                 </div>
               </div>
@@ -7597,9 +7692,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Calendrier ── */}
             {competitionSubTab === 'calendrier' && (
-              <div style={{ maxWidth: '960px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-                {/* Upload zone */}
+                {/* V3 : en-tête comme Résultats — Matchs à venir en priorité,
+                    le scan de calendrier s'ouvre à la demande (bouton Scanner). */}
+                {(() => {
+                  const nbAVenir = matchs.filter(m => !matchJoue(m)).length
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div>
+                        <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('comp_matchs_a_venir', lang)}</h2>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>{nbAVenir === 0 ? 'Aucun match programmé' : `${nbAVenir} match${nbAVenir > 1 ? 's' : ''} programmé${nbAVenir > 1 ? 's' : ''}`}</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                        <button onClick={() => setAfficherScanCalendrier(v => !v)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${afficherScanCalendrier ? colors.accent.blue : colors.border.strong}`, background: 'transparent', color: afficherScanCalendrier ? colors.accent.blue : colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                          {t('seance_scanner', lang)}
+                        </button>
+                        {canEdit('competition') && (
+                          <button onClick={ouvrirModalCreerMatch} style={{ flex: isMobile ? 1 : 'none', padding: '10px 22px', minHeight: '40px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.black, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            + {t('comp_bouton_match', lang)}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Zone de scan : à la demande, ou tant qu'un scan est en cours / à publier */}
+                {(afficherScanCalendrier || calendarImages.length > 0 || calendarMatchs.length > 0 || calendarLoading) && (
                 <div style={st.card}>
                   <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{t('comp_scanner_calendrier', lang)}</p>
                   <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_uploade_photos', lang)}</p>
@@ -7647,6 +7768,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     )}
                   </div>
                 </div>
+                )}
 
                 {/* Calendrier extrait */}
                 {calendarMatchs.length > 0 && (
@@ -7692,104 +7814,82 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 )}
 
-                {calendarMatchs.length === 0 && !calendarLoading && (
-                  <div style={{ ...st.card, textAlign: 'center', padding: '2rem', border: `1px dashed ${colors.border.subtle}` }}>
-                    <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('comp_aucun_calendrier', lang)}</p>
-                  </div>
-                )}
-
                 {/* ── Matchs à venir (sans score) — publiés dans matchs_equipe ── */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>{t('comp_matchs_a_venir', lang)}</p>
-                    {canEdit('competition') && (
-                      <button onClick={ouvrirModalCreerMatch} style={st.btnSolid}>+ {t('comp_ajouter_match', lang)}</button>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                    {grouperMatchsParMois(matchs.filter(m => !matchJoue(m)), false).map(([moisKey, { label, items }]) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                  {(() => {
+                    const aVenir = matchs.filter(m => !matchJoue(m))
+                    const prochainId = [...aVenir].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.heure || '').localeCompare(b.heure || ''))[0]?.id
+                    return grouperMatchsParMois(aVenir, false).map(([moisKey, { label, items }]) => (
                       <div key={moisKey}>
-                        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>{label}</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{label}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(m => {
-                            const dispoStats = statsDispoMatch(m.id)
-                            const aDesReponses = dispoStats.present + dispoStats.absent + dispoStats.blesse + dispoStats.malade + dispoStats.convoque > 0
-                            return (
-                            <div key={m.id} style={{ ...st.card, display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: `3px solid ${m.competition === 'Amical' ? '#f97316' : m.domicile ? '#4ade80' : '#60a5fa'}` }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
-                                    {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
-                                    {m.heure ? ` · ${m.heure}` : ''}
-                                    {m.competition ? ` · ${m.competition}` : ''}
-                                    {m.domicile ? ` · ${t('comp_domicile', lang)}` : ` · ${t('comp_exterieur', lang)}`}
-                                  </p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                                  {canEdit('stats') && (
-                                    <button onClick={() => ouvrirModalMatchJoue(m)} style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid #4ade80', background: 'transparent', color: '#4ade80', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
-                                      ✓ {t('comp_marquer_joue', lang)}
-                                    </button>
-                                  )}
-                                  <div className="match-menu-wrapper" style={{ position: 'relative' }}>
-                                    <button
-                                      onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
-                                      style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', fontSize: '18px', padding: '6px 12px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
-                                    >
-                                      ⋮
-                                    </button>
-                                    {openMenuId === m.id && (
-                                      <div style={{ position: 'absolute', right: 0, top: '110%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', zIndex: 100, minWidth: '180px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                                        {[
-                                          { icon: '📋', label: 'Sondage dispo', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) } },
-                                          { icon: '📤', label: 'Convocation', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) } },
-                                          ...(canEdit('competition') ? [{ icon: '✏️', label: t('comp_modifier_match', lang), action: () => ouvrirModalModifierMatch(m) }] : []),
-                                          ...(canEdit('competition') ? [{
-                                            icon: '🗑️', label: 'Supprimer', danger: true, action: async () => {
-                                              if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
-                                              const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
-                                              if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
-                                              const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
-                                              if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
-                                              setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
-                                              supprimerDeplacementLieAuMatch(m)
-                                            },
-                                          }] : []),
-                                        ].map(item => (
-                                          <button key={item.label} onClick={() => { item.action(); setOpenMenuId(null) }}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : '#ccc', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
-                                            onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                          >
-                                            <span>{item.icon}</span> {item.label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
+                            const itemsMenu = [
+                              { label: 'Sondage dispo', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) } },
+                              { label: 'Convocation', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) } },
+                              ...(canEdit('competition') ? [{ label: t('comp_modifier_match', lang), action: () => ouvrirModalModifierMatch(m) }] : []),
+                              ...(canEdit('competition') ? [{
+                                label: 'Supprimer', danger: true, action: async () => {
+                                  if (!confirm(`Supprimer le match ${m.domicile ? 'vs' : '@'} ${m.adversaire} ?`)) return
+                                  const { error: errStats } = await supabase.from('stats_match').delete().eq('match_id', m.id)
+                                  if (errStats) { afficherToast(`Erreur : ${errStats.message}`, 'erreur'); return }
+                                  const { error } = await supabase.from('matchs_equipe').delete().eq('id', m.id)
+                                  if (error) { afficherToast(`Erreur : ${error.message}`, 'erreur'); return }
+                                  setMatchs(prev => prev.filter(m2 => m2.id !== m.id))
+                                  supprimerDeplacementLieAuMatch(m)
+                                },
+                              }] : []),
+                            ]
+                            const menu = (
+                              <div className="match-menu-wrapper" style={{ position: 'relative' }}>
+                                <button onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)} aria-label="Plus d'actions"
+                                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '18px', padding: '6px 12px', minHeight: '36px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>
+                                  ⋮
+                                </button>
+                                {openMenuId === m.id && (
+                                  <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '190px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                                    {itemsMenu.map((item, idx) => (
+                                      <button key={item.label} onClick={() => { item.action(); setOpenMenuId(null) }}
+                                        style={{ display: 'block', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderTop: idx > 0 ? `1px solid ${colors.border.faint}` : 'none', color: item.danger ? colors.accent.red : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = colors.border.default }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                                        {item.label}
+                                      </button>
+                                    ))}
                                   </div>
-                                </div>
+                                )}
                               </div>
-                              {aDesReponses && (
-                                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{ color: '#4ade80' }}>✅ {dispoStats.present}</span>
-                                  <span style={{ color: '#f87171' }}>❌ {dispoStats.absent}</span>
-                                  <span style={{ color: '#f97316' }}>⚠️ {dispoStats.blesse}</span>
-                                  {dispoStats.malade > 0 && <span style={{ color: colors.accent.purple }}>🤒 {dispoStats.malade}</span>}
-                                  {dispoStats.convoque > 0 && <span style={{ color: colors.accent.blue }}>📣 {dispoStats.convoque}</span>}
-                                  <span style={{ color: '#888' }}>⏳ {dispoStats.sans_reponse} en attente</span>
-                                </div>
-                              )}
-                            </div>
+                            )
+                            return (
+                              <CarteMatchAVenir
+                                key={m.id}
+                                m={m}
+                                nomClub={clubAffiliation?.club?.club || profil?.club || 'Mon équipe'}
+                                logoClub={clubAffiliation?.club?.avatar_url || null}
+                                logoAdversaire={logoAdversaire(m.adversaire)}
+                                enVedette={m.id === prochainId}
+                                isMobile={isMobile}
+                                locale={localeOf(lang)}
+                                dispo={statsDispoMatch(m.id)}
+                                actionPrincipale={canEdit('stats') ? (
+                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', minHeight: '36px', borderRadius: '8px', border: `1px solid ${colors.accent.green}60`, background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    {t('comp_marquer_joue', lang)}
+                                  </button>
+                                ) : null}
+                                menu={menu}
+                              />
                             )
                           })}
                         </div>
                       </div>
-                    ))}
-                    {matchs.filter(m => !matchJoue(m)).length === 0 && (
-                      <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
-                    )}
-                  </div>
+                    ))
+                  })()}
+                  {matchs.filter(m => !matchJoue(m)).length === 0 && (
+                    <div style={{ ...st.card, textAlign: 'center', padding: '2rem' }}>
+                      <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

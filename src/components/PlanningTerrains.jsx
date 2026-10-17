@@ -179,7 +179,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
   }
 
   const chargerEducateurs = async () => {
-    const { data } = await supabase.from('club_educateurs').select('educateur_id, educateur:educateur_id(prenom, nom)').eq('club_id', clubId).eq('statut', 'accepte')
+    const { data } = await supabase.from('club_educateurs').select('educateur_id, educateur:profiles_public!club_educateurs_educateur_id_fkey(prenom, nom)').eq('club_id', clubId).eq('statut', 'accepte')
     setEducateurs(data || [])
   }
 

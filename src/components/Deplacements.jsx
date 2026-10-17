@@ -183,7 +183,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
   // Ville du club (siège), pour estimer la distance/durée du trajet vers la
   // destination saisie dans le formulaire manuel — cf. estimerDistanceDestination.
   const chargerClubVille = async () => {
-    const { data } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
+    const { data } = await supabase.from('profiles_public').select('ville').eq('id', clubId).maybeSingle()
     setClubVille(data?.ville || null)
   }
 
@@ -209,7 +209,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
     // Ville du club (siège), pour estimer automatiquement les horaires de départ/retour
     // via Mapbox si la ville du match a été renseignée (cf. lib/mapbox.js) — sinon
     // heure_depart reste null, comme avant.
-    const { data: clubProfile } = await supabase.from('profiles').select('ville').eq('id', clubId).maybeSingle()
+    const { data: clubProfile } = await supabase.from('profiles_public').select('ville').eq('id', clubId).maybeSingle()
     const payload = await Promise.all(aCreer.map(async m => {
       // Résolu par club_categorie_id (pas educateur_id seul) : un même coach
       // peut gérer plusieurs équipes, educateur_id seul serait ambigu.

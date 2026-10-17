@@ -248,7 +248,7 @@ export default function GestionCloturesSaison({ educateurId, equipeActiveId, lan
       { data: notesData },
     ] = await Promise.all([
       joueurIds.length > 0
-        ? supabase.from('profiles').select('id, prenom, nom, avatar_url, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets').in('id', joueurIds)
+        ? supabase.from('profiles_public').select('id, prenom, nom, avatar_url, matchs_officiel, buts_total, passes_decisives, minutes_jouees, cleansheets').in('id', joueurIds)
         : Promise.resolve({ data: [] }),
       // Historiques de la saison — restreints aux joueurs de l'équipe active
       // (historique_saisons n'a pas de club_categorie_id propre).

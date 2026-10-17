@@ -334,7 +334,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
     // comptes pro/fan de la plateforme. Même chemin que PrepPhysiqueJoueur/GestionCloturesSaison.
     const { data } = await supabase
       .from('affiliations')
-      .select('equipe_joueur_id, profiles!affiliations_joueur_id_fkey(id, nom, prenom)')
+      .select('equipe_joueur_id, profiles:profiles_public!affiliations_joueur_id_fkey(id, nom, prenom)')
       .eq('educateur_id', educateurId)
       .eq('statut', 'accepte')
     let afData = data || []
@@ -357,7 +357,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   // cet éducateur, réutilisés à la fois par le classement (dans un programme)
   // et par l'onglet autonome "Tests physiques".
   const loadTests = async () => {
-    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles!joueur_id(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
+    const { data } = await supabase.from('tests_physiques').select('*, joueur:profiles_public!fk_tests_physiques_joueur(id, nom, prenom)').eq('educateur_id', educateurId).order('date_test', { ascending: false })
     const filtres = equipeActiveId
       ? (data || []).filter(tt => tt.club_categorie_id === equipeActiveId || (tt.club_categorie_id == null && equipeUnique))
       : (data || [])

@@ -36,7 +36,7 @@ export default function Bibliotheque({ coachId }) {
 
   const charger = async () => {
     setLoading(true)
-    const { data } = await supabase.from('bibliotheque_exercices').select('*, educateur:educateur_id(prenom, nom)').eq('partage_platform', true).order('type').order('nom')
+    const { data } = await supabase.from('bibliotheque_exercices').select('*, educateur:profiles_public!bibliotheque_exercices_educateur_id_fkey(prenom, nom)').eq('partage_platform', true).order('type').order('nom')
     setItems(data || [])
     setLoading(false)
   }
