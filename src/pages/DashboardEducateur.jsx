@@ -259,9 +259,18 @@ const IcoCalendar    = () => <svg width="16" height="16" viewBox="0 0 24 24" fil
 const IcoUser        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoPin         = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+const IcoCrayon      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+const IcoCorbeille   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+const IcoEtoileTrait = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
+const IcoChevronBas  = ({ ouvert }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: ouvert ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
 const IcoLink        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></svg>
 const IcoCadenas     = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
 const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+const IcoCible       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+const IcoCoupe       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3"/></svg>
+const IcoHorloge     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+const IcoPresence    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
 const IcoStar        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoLogOut      = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 const IcoChevronLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -3057,7 +3066,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, competitionSubTab])
   useEffect(() => { if (activeSection === 'explorer' && userId) chargerDirigeants(userId) }, [activeSection, userId])
-  useEffect(() => { if (activeSection === 'equipe' && userId) chargerEvaluationsJoueurs(userId) }, [activeSection, userId])
+  useEffect(() => { if (['equipe', 'notes'].includes(activeSection) && userId) chargerEvaluationsJoueurs(userId) }, [activeSection, userId])
   useEffect(() => {
     if (activeSection !== 'stats' || !userId || matchs.length === 0) return
     chargerNotationsMatch(userId, matchs.map(m => m.id))
@@ -6686,7 +6695,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['tableau',`📋 ${t('stats_tab_tableau', lang)}`],['classement',`🏆 ${t('stats_tab_classement', lang)}`],['graphiques',`📈 ${t('stats_tab_graphiques', lang)}`],['presence',`🏃 ${t('stats_tab_presences', lang)}`],['mois',`⭐ ${t('stats_tab_mois', lang)}`],['notes',`📝 ${t('stats_tab_notes', lang)}`]].map(([k, label]) => (
+              {[['tableau',t('stats_tab_tableau', lang)],['classement',t('stats_tab_classement', lang)],['graphiques',t('stats_tab_graphiques', lang)],['presence',t('stats_tab_presences', lang)],['mois',t('stats_tab_mois', lang)],['notes',t('stats_tab_notes', lang)]].map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -6697,6 +6706,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
             ) : (
               <>
+                {/* ─ Bilan de l'équipe (vue d'ensemble, avant le détail par joueur) ─ */}
+                {statsSubTab === 'tableau' && (() => {
+                  const notesEquipeMatch = notationsMatch.filter(n => n.est_note_equipe)
+                  const noteEquipe = notesEquipeMatch.length
+                    ? { moyenne: (notesEquipeMatch.reduce((s, n) => s + Number(n.note), 0) / notesEquipeMatch.length).toFixed(1), nb: notesEquipeMatch.length }
+                    : null
+                  return (
+                  <div>
+                    <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Bilan de l'équipe</p>
+                    <Suspense fallback={<SectionLoader />}><StatsEquipe matchs={matchs} noteEquipe={noteEquipe} /></Suspense>
+                  </div>
+                  )
+                })()}
+
                 {/* ─ Tableau ─ */}
                 {statsSubTab === 'tableau' && (() => {
                   // Compétitions réellement présentes dans les matchs (competition est un
@@ -6717,41 +6740,65 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   // Postes détaillés (cf. select "Poste" du profil joueur,
                   // ligne ~3556) regroupés dans leur ligne correspondante.
                   const LIGNES_POSTE = [
-                    { label: 'Gardiens', postes: ['Gardien'] },
-                    { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'] },
-                    { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'] },
-                    { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'] },
+                    { label: 'Gardiens', postes: ['Gardien'], couleur: colors.accent.amber },
+                    { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.blue },
+                    { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'], couleur: colors.accent.purpleLight },
+                    { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'], couleur: colors.accent.green },
                   ]
                   const ligneDuPoste = (poste) => LIGNES_POSTE.findIndex(l => l.postes.includes(poste))
                   const joueursTries = [...joueurs].sort((a, b) => {
                     const la = ligneDuPoste(a.poste), lb = ligneDuPoste(b.poste)
                     return (la === -1 ? LIGNES_POSTE.length : la) - (lb === -1 ? LIGNES_POSTE.length : lb)
                   })
+                  const nbParLigne = (idx) => joueurs.filter(j => ligneDuPoste(j.poste) === idx).length
+                  const nbMatchsJoues = matchsTableauFiltres.filter(m => m.score_nous !== null && m.score_nous !== '').length
+                  // Cartons dessinés en CSS (pas d'emoji) : petit rectangle coloré.
+                  const carton = (c) => <span style={{ display: 'inline-block', width: '9px', height: '12px', borderRadius: '2px', background: c, verticalAlign: 'middle' }} />
+                  const COLONNES = [
+                    { k: 'joueur', l: t('equipe_col_joueur', lang), align: 'left' },
+                    { k: 'mj', l: 'MJ', titre: 'Matchs joués' },
+                    { k: 'min', l: 'Min', titre: 'Minutes jouées' },
+                    { k: 'buts', l: t('comp_buts', lang) },
+                    { k: 'pd', l: 'PD', titre: 'Passes décisives' },
+                    { k: 'cs', l: 'CS', titre: 'Clean sheets' },
+                    { k: 'cj', l: carton(colors.accent.amber), titre: 'Cartons jaunes' },
+                    { k: 'cr', l: carton(colors.accent.red), titre: 'Cartons rouges' },
+                    { k: 'presence', l: t('stats_col_presence', lang), align: 'left' },
+                    { k: 'note', l: 'Note', titre: 'Note moyenne de match' },
+                  ]
+                  const tdBase = { padding: '10px 12px', textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${colors.border.subtle}`, whiteSpace: 'nowrap' }
+                  const chiffre = (val, couleur, gras) => (
+                    <td style={{ ...tdBase, color: val > 0 ? couleur : colors.text.ghost, fontWeight: val > 0 && gras ? 700 : 500 }}>{val > 0 ? val : '–'}</td>
+                  )
+                  const premiereCol = { position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface }
                   return (
-                  <div style={{ ...st.card, overflow: 'auto' }}>
-                    {competitionsDispo.length > 1 && (
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                        {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => (
-                          <button
-                            key={f.key}
-                            onClick={() => setFiltreCompTableau(f.key)}
-                            style={{
-                              padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px',
-                              background: filtreCompTableau === f.key ? colors.accent.green : colors.background.raised,
-                              color: filtreCompTableau === f.key ? colors.black : colors.text.dim,
-                              fontWeight: filtreCompTableau === f.key ? 700 : 400,
-                            }}
-                          >
-                            {f.label}
-                          </button>
-                        ))}
+                  <div style={{ ...st.card, padding: 0, overflow: 'hidden', marginTop: '22px' }}>
+                    <style>{`.stats-ligne-joueur:hover td { background: ${colors.background.raised} !important; }`}</style>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: isMobile ? '14px' : '16px 18px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Statistiques individuelles</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} · {nbMatchsJoues} match{nbMatchsJoues > 1 ? 's' : ''} joué{nbMatchsJoues > 1 ? 's' : ''}</p>
                       </div>
-                    )}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      {competitionsDispo.length > 1 && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
+                            const actif = filtreCompTableau === f.key
+                            return (
+                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
+                                style={{ padding: '6px 14px', borderRadius: '16px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
+                                {f.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px', minWidth: '760px' }}>
                       <thead>
-                        <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                          {[t('equipe_col_joueur', lang), t('equipe_poste', lang), 'MJ', 'Min', t('comp_buts', lang), 'Passes D.', 'CS', '🟨', '🟥', t('stats_col_presence', lang), 'Note'].map(h => (
-                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                        <tr>
+                          {COLONNES.map((c, idx) => (
+                            <th key={c.k} title={c.titre} style={{ padding: '10px 12px', textAlign: c.align || 'center', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}`, ...(idx === 0 ? { ...premiereCol, background: colors.background.raised, zIndex: 2 } : {}) }}>{c.l}</th>
                           ))}
                         </tr>
                       </thead>
@@ -6762,62 +6809,67 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           const note = noteMoyenne(j.id)
                           const ligne = ligneDuPoste(j.poste)
                           const nouvelleLigne = i === 0 || ligneDuPoste(joueursTries[i - 1].poste) !== ligne
+                          const groupe = ligne === -1 ? { label: 'Autres', couleur: colors.text.faint } : LIGNES_POSTE[ligne]
+                          const couleurTx = tx ? (tx.taux >= 80 ? colors.accent.green : tx.taux >= 50 ? colors.accent.amber : colors.accent.red) : null
+                          const couleurNote = note ? (note.moyenne >= 7 ? colors.accent.green : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red) : null
                           return (
                             <Fragment key={j.id}>
-                              {nouvelleLigne && ligne !== -1 && (
+                              {nouvelleLigne && (
                                 <tr>
-                                  <td colSpan={11} style={{ padding: i === 0 ? '2px 12px 6px' : '16px 12px 6px', color: colors.text.disabled, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                    {LIGNES_POSTE[ligne].label}
+                                  <td colSpan={COLONNES.length} style={{ padding: '14px 14px 8px', borderBottom: `1px solid ${colors.border.subtle}`, background: colors.background.surface }}>
+                                    <span style={{ position: 'sticky', left: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.couleur }} />
+                                      <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{groupe.label}</span>
+                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>{ligne === -1 ? joueurs.length - LIGNES_POSTE.reduce((acc, _, k) => acc + nbParLigne(k), 0) : nbParLigne(ligne)}</span>
+                                    </span>
                                   </td>
                                 </tr>
                               )}
-                              <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                              <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
-                              <td style={{ padding: '10px 12px', color: s.matchs > 0 ? colors.text.primary : colors.border.strong }}>{s.matchs}</td>
-                              <td style={{ padding: '10px 12px', color: s.minutes > 0 ? colors.text.primary : colors.border.strong }}>{s.minutes}'</td>
-                              <td style={{ padding: '10px 12px', color: s.buts > 0 ? colors.accent.green : colors.border.strong, fontWeight: s.buts > 0 ? 700 : 400 }}>{s.buts}</td>
-                              <td style={{ padding: '10px 12px', color: s.passes_dec > 0 ? colors.accent.blue : colors.border.strong, fontWeight: s.passes_dec > 0 ? 700 : 400 }}>{s.passes_dec}</td>
-                              <td style={{ padding: '10px 12px', color: s.clean_sheets > 0 ? colors.accent.green : colors.border.strong }}>{s.clean_sheets}</td>
-                              <td style={{ padding: '10px 12px', color: s.cartons_j > 0 ? '#f59e0b' : colors.border.strong }}>{s.cartons_j}</td>
-                              <td style={{ padding: '10px 12px', color: s.cartons_r > 0 ? '#f87171' : colors.border.strong }}>{s.cartons_r}</td>
-                              <td style={{ padding: '10px 12px' }}>
-                                {tx !== null
-                                  ? <span style={{ color: tx.taux >= 80 ? colors.accent.green : tx.taux >= 50 ? '#f59e0b' : '#f87171', fontWeight: 700 }}>{tx.taux}%</span>
-                                  : <span style={{ color: colors.border.strong }}>—</span>}
-                              </td>
-                              <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {note ? (
-                                  <div>
-                                    <span style={{ fontWeight: 700, fontSize: '14px', color: note.moyenne >= 7 ? colors.accent.green : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red }}>
-                                      {note.moyenne}<span style={{ color: colors.text.ghost, fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>/10</span>
-                                    </span>
-                                    <div style={{ color: colors.text.ghost, fontSize: '10px' }}>{note.nb} match{note.nb > 1 ? 's' : ''}</div>
+                              <tr className="stats-ligne-joueur">
+                                <td style={{ ...tdBase, ...premiereCol, textAlign: 'left', boxShadow: `inset 3px 0 0 ${groupe.couleur}` }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '170px' }}>
+                                    <Avatar person={j} size={32} bg={groupe.couleur + '22'} border={`1px solid ${groupe.couleur}55`} textColor={groupe.couleur} />
+                                    <div style={{ minWidth: 0 }}>
+                                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{j.prenom} {j.nom}</p>
+                                      <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                    </div>
                                   </div>
-                                ) : (
-                                  <span style={{ color: colors.border.strong }}>—</span>
-                                )}
-                              </td>
-                            </tr>
+                                </td>
+                                {chiffre(s.matchs, colors.text.primary)}
+                                <td style={{ ...tdBase, color: s.minutes > 0 ? colors.text.secondary : colors.text.ghost }}>{s.minutes > 0 ? `${s.minutes}'` : '–'}</td>
+                                {chiffre(s.buts, colors.accent.green, true)}
+                                {chiffre(s.passes_dec, colors.accent.blue, true)}
+                                {chiffre(s.clean_sheets, colors.accent.purpleLight, true)}
+                                {chiffre(s.cartons_j, colors.accent.amber, true)}
+                                {chiffre(s.cartons_r, colors.accent.red, true)}
+                                <td style={{ ...tdBase, textAlign: 'left' }}>
+                                  {tx !== null ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <div style={{ width: '56px', height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
+                                        <div style={{ width: `${tx.taux}%`, height: '100%', background: couleurTx }} />
+                                      </div>
+                                      <span style={{ color: couleurTx, fontWeight: 700, fontSize: '12px', minWidth: '34px' }}>{tx.taux}%</span>
+                                    </div>
+                                  ) : <span style={{ color: colors.text.ghost }}>–</span>}
+                                </td>
+                                <td style={tdBase}>
+                                  {note ? (
+                                    <span title={`${note.nb} match${note.nb > 1 ? 's' : ''} noté${note.nb > 1 ? 's' : ''}`}
+                                      style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px', padding: '3px 9px', borderRadius: '8px', background: couleurNote + '1a', border: `1px solid ${couleurNote}40`, color: couleurNote, fontWeight: 800, fontSize: '13px' }}>
+                                      {note.moyenne}<span style={{ fontSize: '10px', fontWeight: 600, color: colors.text.faint }}>/10</span>
+                                    </span>
+                                  ) : <span style={{ color: colors.text.ghost }}>–</span>}
+                                </td>
+                              </tr>
                             </Fragment>
                           )
                         })}
                       </tbody>
                     </table>
-                  </div>
-                  )
-                })()}
-
-                {/* ─ Stats équipe ─ */}
-                {statsSubTab === 'tableau' && (() => {
-                  const notesEquipeMatch = notationsMatch.filter(n => n.est_note_equipe)
-                  const noteEquipe = notesEquipeMatch.length
-                    ? { moyenne: (notesEquipeMatch.reduce((s, n) => s + Number(n.note), 0) / notesEquipeMatch.length).toFixed(1), nb: notesEquipeMatch.length }
-                    : null
-                  return (
-                  <div style={{ ...st.card, marginTop: '16px' }}>
-                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>Bilan de l'équipe</p>
-                    <Suspense fallback={<SectionLoader />}><StatsEquipe matchs={matchs} noteEquipe={noteEquipe} /></Suspense>
+                    </div>
+                    <p style={{ margin: 0, padding: '10px 18px', fontSize: '11px', color: colors.text.faint, borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                      <span>MJ matchs joués</span><span>PD passes décisives</span><span>CS clean sheets</span><span>Note : moyenne des notes de match</span>
+                    </p>
                   </div>
                   )
                 })()}
@@ -6836,93 +6888,117 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const matchIdsFiltresClassement = new Set(matchsFiltres.map(m => m.id))
                   const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id, matchsFiltres), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id, matchIdsFiltresClassement) }))
                   const TRIS = [
-                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unit: 'but' },
-                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unit: 'passe' },
-                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unit: 'V' },
-                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unit: "'" },
-                    { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unit: '%' },
-                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.moyenne ?? 0, color: colors.accent.amber, unit: '/10' },
+                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unite: v => v > 1 ? 'buts' : 'but', Icone: IcoBallon },
+                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unite: v => v > 1 ? 'passes' : 'passe', Icone: IcoCible },
+                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unite: v => v > 1 ? 'victoires' : 'victoire', Icone: IcoCoupe },
+                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unite: () => 'min', Icone: IcoHorloge },
+                    { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unite: () => '%', Icone: IcoPresence },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.moyenne ?? 0, color: colors.accent.amber, unite: () => '/10', Icone: IcoStar },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
+                  const formater = (val) => typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val
+                  // Médailles en couleur (or / argent / bronze) plutôt qu'en emoji.
+                  const COULEURS_RANG = [colors.accent.amber, colors.text.secondary, colors.accent.orange]
+                  const podium = sorted.slice(0, 3)
+                  const { Icone: IconeTri } = triActif
                   return (
-                    <div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <style>{`.classement-ligne:hover td { background: ${colors.background.raised}; }`}</style>
                       {/* Filtre compétition */}
                       {competitionsDispo.length > 1 && (
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => (
-                            <button
-                              key={f.key}
-                              onClick={() => setFiltreCompTableau(f.key)}
-                              style={{
-                                padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px',
-                                background: filtreCompTableau === f.key ? colors.accent.green : colors.background.raised,
-                                color: filtreCompTableau === f.key ? colors.black : colors.text.dim,
-                                fontWeight: filtreCompTableau === f.key ? 700 : 400,
-                              }}
-                            >
-                              {f.label}
-                            </button>
-                          ))}
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
+                            const actif = filtreCompTableau === f.key
+                            return (
+                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
+                                style={{ padding: '7px 16px', borderRadius: '18px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
+                                {f.label}
+                              </button>
+                            )
+                          })}
                         </div>
                       )}
+
                       {/* Sélecteur de critère */}
-                      <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px', marginBottom: '1.5rem' }}>
-                        {TRIS.map(t => (
-                          <button key={t.key} onClick={() => setStatsTri(t.key)} style={{ flexShrink: 0, background: statsTri === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${statsTri === t.key ? t.color + '60' : colors.border.faint}`, color: statsTri === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t.label}</button>
-                        ))}
+                      <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+                        {TRIS.map(tr => {
+                          const actif = triActif.key === tr.key
+                          const { Icone } = tr
+                          return (
+                            <button key={tr.key} onClick={() => setStatsTri(tr.key)}
+                              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px', background: actif ? tr.color + '1f' : colors.background.surface, border: `1px solid ${actif ? tr.color + '70' : colors.border.default}`, color: actif ? tr.color : colors.text.secondary, padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              <span style={{ display: 'inline-flex', color: actif ? tr.color : colors.text.faint }}><Icone /></span>{tr.label}
+                            </button>
+                          )
+                        })}
                       </div>
-                      {/* Podium top 3 */}
-                      {sorted.length >= 3 && (
-                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', marginBottom: '2rem' }}>
-                          {[0, 1, 2].map(rank => {
-                            const j = sorted[rank]
-                            if (!j) return null
-                            const heights = [130, 100, 80]
-                            const medals = ['🥇','🥈','🥉']
+
+                      {/* Top 3 */}
+                      {podium.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : Math.max(podium.length, 3)}, minmax(0,1fr))`, gap: isMobile ? '8px' : '12px' }}>
+                          {podium.map((j, rang) => {
                             const val = triActif.get(j)
+                            const couleurRang = COULEURS_RANG[rang]
+                            const premier = rang === 0
                             return (
-                              <div key={j.id} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{medals[rank]}</div>
-                                <Avatar person={j} size={44} bg={triActif.color + '20'} border={`2px solid ${triActif.color}40`} textColor={triActif.color} style={{ marginBottom: '6px' }} />
-                                <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: 700 }}>{j.prenom}</p>
-                                <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint }}>{j.nom}</p>
-                                <div style={{ background: triActif.color + '20', border: `1px solid ${triActif.color}40`, borderRadius: '8px', width: '70px', height: `${heights[rank]}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                                  <span style={{ color: triActif.color, fontWeight: 800, fontSize: '18px' }}>{typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}</span>
-                                  <span style={{ color: triActif.color + 'aa', fontSize: '9px' }}>{triActif.unit}</span>
+                              <div key={j.id} style={{ position: 'relative', borderRadius: '14px', padding: isMobile ? '12px 8px' : '18px 20px', background: premier ? triActif.color + '14' : colors.background.surface, border: `1px solid ${premier ? triActif.color + '55' : colors.border.subtle}`, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '6px' : '16px', textAlign: isMobile ? 'center' : 'left', minWidth: 0 }}>
+                                <span style={{ position: 'absolute', top: isMobile ? '8px' : '12px', left: isMobile ? '8px' : '12px', width: isMobile ? '22px' : '26px', height: isMobile ? '22px' : '26px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '11px' : '13px', fontWeight: 800, color: colors.black, background: couleurRang }}>{rang + 1}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0, paddingTop: isMobile ? '6px' : 0 }}>
+                                  <Avatar person={j} size={isMobile ? 48 : 64} bg={triActif.color + '20'} border={`2px solid ${couleurRang}`} textColor={triActif.color} />
+                                  <div style={{ minWidth: 0, maxWidth: '100%', textAlign: 'center' }}>
+                                    <p style={{ margin: 0, fontWeight: 800, fontSize: isMobile ? '12px' : '15px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: isMobile ? '11px' : '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || 'Poste non renseigné'}</p>
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                                  <p style={{ margin: 0, fontSize: isMobile ? '22px' : '34px', fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formater(val)}</p>
+                                  <p style={{ margin: '4px 0 0', fontSize: isMobile ? '11px' : '13px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
                                 </div>
                               </div>
                             )
                           })}
                         </div>
                       )}
-                      {/* Liste complète */}
-                      <div style={{ ...st.card, overflow: 'auto' }}>
-                        <table className="tableau-classement" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+
+                      {/* Classement complet */}
+                      <div style={{ ...st.card, margin: 0, padding: 0, overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
                           <colgroup>
-                            <col className="col-rang" />
-                            <col className="col-joueur" />
-                            <col className="col-poste" />
-                            <col className="col-stat" />
+                            <col style={{ width: isMobile ? '36px' : '64px' }} />
+                            <col />
+                            {!isMobile && <col style={{ width: '30%' }} />}
+                            <col style={{ width: isMobile ? '70px' : '140px' }} />
                           </colgroup>
                           <thead>
-                            <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', width: '40px' }}>#</th>
-                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_col_joueur', lang)}</th>
-                              <th style={{ padding: '8px 12px', color: colors.text.disabled, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left' }}>{t('equipe_poste', lang)}</th>
-                              <th style={{ padding: '8px 12px', color: triActif.color, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{triActif.label}</th>
+                            <tr>
+                              {['#', t('equipe_col_joueur', lang), ...(isMobile ? [] : [t('equipe_poste', lang)])].map((h, idx) => (
+                                <th key={idx} style={{ padding: '12px', color: colors.text.faint, fontWeight: 700, fontSize: '11px', letterSpacing: '0.6px', textTransform: 'uppercase', textAlign: idx === 0 ? 'center' : 'left', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
+                              ))}
+                              <th style={{ padding: '12px 16px', color: triActif.color, fontWeight: 700, fontSize: '11px', letterSpacing: '0.6px', textTransform: 'uppercase', textAlign: 'right', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconeTri />{isMobile ? '' : triActif.label}</span>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {sorted.map((j, i) => {
                               const val = triActif.get(j)
+                              const nul = !Number(val)
                               return (
-                                <tr key={j.id} style={{ borderBottom: `1px solid ${colors.border.subtle}`, background: i === 0 ? triActif.color + '08' : 'transparent' }}>
-                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: i < 3 ? triActif.color : colors.text.disabled, fontSize: i === 0 ? '15px' : '13px' }}>{i + 1}</td>
-                                  <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                                  <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}</td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color, fontSize: '15px' }}>
-                                    {typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val}{triActif.unit === '%' ? '%' : ''}
+                                <tr key={j.id} className="classement-ligne">
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: i < 3 ? COULEURS_RANG[i] : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>{i + 1}</td>
+                                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                      <Avatar person={j} size={30} />
+                                      <div style={{ minWidth: 0 }}>
+                                        <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                        {isMobile && <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  {!isMobile && <td style={{ padding: '10px 12px', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</td>}
+                                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 800, fontSize: '15px', fontVariantNumeric: 'tabular-nums', color: nul ? colors.text.ghost : triActif.color, borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                    {formater(val)}{triActif.key === 'presence' ? '%' : triActif.key === 'minutes' && !nul ? "'" : ''}
                                   </td>
                                 </tr>
                               )
@@ -8453,7 +8529,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {/* Les deux formulaires vivent dans le sous-onglet "Mes séances" :
                       on y bascule puis on défile jusqu'au formulaire ouvert, sinon
                       le clic depuis "Prochaine séance" semblait sans effet. */}
-                  <button onClick={() => { setSousOngletEnt('liste'); setShowPlanificateur(true); setShowAddEntrainement(false); setTimeout(() => document.getElementById('ent-form-planificateur')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btn(colors.accent.blue)}>📅 {t('ent_planifier_saison', lang)}</button>
+                  <button onClick={() => { setSousOngletEnt('liste'); setShowPlanificateur(true); setShowAddEntrainement(false); setTimeout(() => document.getElementById('ent-form-planificateur')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={{ ...st.btn(colors.accent.blue), display: 'inline-flex', alignItems: 'center', gap: '8px' }}><IcoCalendar /> {t('ent_planifier_saison', lang)}</button>
                   <button onClick={() => { setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false); setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
                 </div>
               )}
@@ -8462,8 +8538,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Sous-onglets ── */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
               {[
-                { id: 'prochaine', label: `📋 ${t('ent_sous_onglet_prochaine', lang)}` },
-                { id: 'liste', label: `📁 ${t('ent_sous_onglet_liste', lang)}` },
+                { id: 'prochaine', label: t('ent_sous_onglet_prochaine', lang) },
+                { id: 'liste', label: t('ent_sous_onglet_liste', lang) },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setSousOngletEnt(tab.id)}
                   style={{ background: sousOngletEnt === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${sousOngletEnt === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: sousOngletEnt === tab.id ? colors.accent.blue : colors.text.faint, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -8544,82 +8620,124 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 }
               }
 
+              // V2 : en-tête façon feuille de match (pavé date), synthèse unique
+              // (taux de réponse + barre segmentée par statut) à la place des 6
+              // tuiles + barre séparée, réponses regroupées par statut (« En
+              // attente » en premier : c'est la liste à relancer).
+              const dateSeance = new Date(prochaineSeance.date + 'T12:00:00')
+              const midi = new Date(); midi.setHours(12, 0, 0, 0)
+              const joursAvant = Math.round((dateSeance - midi) / 86400000)
+              const echeance = joursAvant <= 0 ? "Aujourd'hui" : joursAvant === 1 ? 'Demain' : `Dans ${joursAvant} jours`
+              const nbRepondu = total - stats.sans_reponse
+              const tauxReponse = total > 0 ? Math.round(nbRepondu / total * 100) : 0
+              const STATUTS_ORDRE = [
+                { key: 'sans_reponse', label: t('ent_en_attente', lang), color: colors.text.faint },
+                { key: 'present', label: t('ent_stat_presents', lang), color: colors.accent.green },
+                { key: 'convoque', label: t('ent_stat_convoques', lang), color: colors.accent.blue },
+                { key: 'absent', label: t('ent_stat_absents', lang), color: colors.accent.red },
+                { key: 'blesse', label: t('ent_stat_blesses', lang), color: colors.accent.orange },
+                { key: 'malade', label: t('ent_stat_malades', lang), color: colors.accent.purple },
+              ]
+              const SEGMENTS_BARRE = STATUTS_ORDRE.slice(1).concat(STATUTS_ORDRE[0])
+              const groupesReponses = STATUTS_ORDRE
+                .map(g => ({ ...g, joueurs: reponses.filter(j => (j.statut || 'sans_reponse') === g.key).sort((a, b) => (a.nom || '').localeCompare(b.nom || '')) }))
+                .filter(g => g.joueurs.length)
+              const eyebrowEnt = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+              const btnFiche = { display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+
               return (
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* En-tête séance */}
-                  <div style={{ ...st.card, marginBottom: '16px', background: 'linear-gradient(135deg, #0d1a0d, #111)', border: '1px solid #4ade8020' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                      <div>
-                        <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{t('ent_sous_onglet_prochaine', lang)}</p>
-                        <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
-                        <p style={{ fontSize: '13px', color: colors.text.faint }}>
-                          {new Date(prochaineSeance.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
-                          {prochaineSeance.heure ? ` · ${prochaineSeance.heure}` : ''}
+                  <div style={{ ...st.card, margin: 0, borderLeft: `4px solid ${colors.accent.green}` }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr)' : 'auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '14px' : '20px' }}>
+                      <div style={{ width: isMobile ? '58px' : '68px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden' }}>
+                        <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.black, background: colors.accent.green }}>
+                          {dateSeance.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}
                         </p>
+                        <p style={{ margin: 0, padding: '5px 0 0', fontSize: isMobile ? '22px' : '26px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{dateSeance.getDate()}</p>
+                        <p style={{ margin: 0, padding: '2px 0 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateSeance.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
+                        {prochaineSeance.heure && <p style={{ margin: 0, padding: '3px 0', fontSize: '11px', fontWeight: 800, borderTop: `1px solid ${colors.border.default}`, fontVariantNumeric: 'tabular-nums' }}>{prochaineSeance.heure.slice(0, 5)}</p>}
                       </div>
-                      <span style={{ background: clos ? colors.accent.red + alpha.subtle : colors.accent.green + alpha.subtle, border: `1px solid ${clos ? colors.accent.red + alpha.medium : colors.accent.green + alpha.medium}`, color: clos ? colors.accent.red : colors.accent.green, padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
-                        {clos ? `🔒 ${t('ent_sondage_clos', lang)}` : `🟢 ${t('ent_sondage_ouvert', lang)}`}
-                      </span>
-                    </div>
-                    {prochaineSeance.fiche_id ? (
-                      <button
-                        onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
-                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        📄 Voir la fiche
-                      </button>
-                    ) : canEdit('entrainements') && (
-                      <button
-                        onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)}
-                        style={{ marginTop: '14px', background: 'transparent', border: '1px solid #4ade8040', color: colors.accent.green, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        🔗 Attacher une fiche
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Stats réponses */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginBottom: '20px' }}>
-                    {[
-                      { key: 'present', label: t('ent_stat_presents', lang), emoji: '✅', color: colors.accent.green },
-                      { key: 'absent', label: t('ent_stat_absents', lang), emoji: '❌', color: colors.accent.red },
-                      { key: 'blesse', label: t('ent_stat_blesses', lang), emoji: '🤕', color: colors.accent.orange },
-                      { key: 'malade', label: t('ent_stat_malades', lang), emoji: '🤒', color: colors.accent.purple },
-                      { key: 'convoque', label: t('ent_stat_convoques', lang), emoji: '🏆', color: colors.accent.blue },
-                      { key: 'sans_reponse', label: t('ent_stat_sans_reponse', lang), emoji: '⏳', color: colors.text.faint },
-                    ].map(s => (
-                      <div key={s.key} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '22px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{stats[s.key] || 0}</p>
-                        <p style={{ fontSize: '9px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>{s.label}</p>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={eyebrowEnt}>{t('ent_sous_onglet_prochaine', lang)}</p>
+                        <h2 style={{ margin: '4px 0 8px', fontSize: isMobile ? '18px' : '21px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: colors.accent.green, background: colors.accent.green + '1a', border: `1px solid ${colors.accent.green}40` }}>{echeance}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: clos ? colors.accent.red : colors.text.secondary, background: clos ? colors.accent.red + '1a' : colors.background.raised, border: `1px solid ${clos ? colors.accent.red + '40' : colors.border.default}` }}>
+                            {clos ? <IcoCadenas /> : <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colors.accent.green }} />}
+                            {clos ? t('ent_sondage_clos', lang) : t('ent_sondage_ouvert', lang)}
+                          </span>
+                          {prochaineSeance.lieu && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: colors.text.faint }}><IcoPin />{prochaineSeance.lieu}</span>}
+                        </div>
                       </div>
-                    ))}
+                      <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+                        {prochaineSeance.fiche_id ? (
+                          <button onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} style={btnFiche}>
+                            <IcoFileText /> Voir la fiche
+                          </button>
+                        ) : canEdit('entrainements') && (
+                          <button onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)} style={btnFiche}>
+                            <IcoLink /> Attacher une fiche
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Barre de progression */}
-                  <div style={{ ...st.card, marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('ent_taux_reponse', lang)}</p>
-                      <p style={{ fontSize: '12px', fontWeight: 700 }}>{total - stats.sans_reponse}/{total} {t('equipe_joueurs', lang)}</p>
-                    </div>
-                    <div style={{ background: colors.background.raised, borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${total > 0 ? ((total - stats.sans_reponse) / total * 100) : 0}%`, height: '100%', background: colors.accent.green, borderRadius: '6px', transition: 'width 0.3s' }} />
-                    </div>
-                  </div>
-
-                  {/* Réponses individuelles */}
-                  <div style={{ ...st.card, marginBottom: '16px' }}>
-                    <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>{t('ent_reponses_individuelles', lang)}</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {reponses.map(j => {
-                        const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
-                        return (
-                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px' }}>
-                            <Avatar person={j} size={32} />
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontWeight: 600, fontSize: '13px' }}>{j.prenom} {j.nom}</p>
-                              <p style={{ fontSize: '10px', color: colors.text.faint }}>{j.poste}</p>
+                  {/* Synthèse des réponses */}
+                  <div style={{ ...st.card, margin: 0 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto minmax(0,1fr)', gap: isMobile ? '14px' : '28px', alignItems: 'center' }}>
+                      <div>
+                        <p style={eyebrowEnt}>{t('ent_taux_reponse', lang)}</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '32px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: tauxReponse >= 80 ? colors.accent.green : tauxReponse >= 50 ? colors.accent.amber : colors.text.primary }}>
+                          {tauxReponse}<span style={{ fontSize: '15px', color: colors.text.faint, marginLeft: '2px' }}>%</span>
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{nbRepondu}/{total} {t('equipe_joueurs', lang)}</p>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', height: '10px', borderRadius: '6px', overflow: 'hidden', background: colors.background.base, gap: '2px' }}>
+                          {SEGMENTS_BARRE.map(g => stats[g.key] > 0 && (
+                            <div key={g.key} title={`${stats[g.key]} ${g.label}`} style={{ width: `${(stats[g.key] / total) * 100}%`, background: g.key === 'sans_reponse' ? colors.border.strong : g.color, transition: 'width 0.3s' }} />
+                          ))}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, minmax(0,1fr))' : 'repeat(6, minmax(0,1fr))', gap: '8px', marginTop: '14px' }}>
+                          {SEGMENTS_BARRE.map(g => (
+                            <div key={g.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: stats[g.key] ? 1 : 0.45 }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
+                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: g.key === 'sans_reponse' ? colors.border.strong : g.color, flexShrink: 0 }} />{g.label}
+                              </span>
+                              <span style={{ fontSize: '18px', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: stats[g.key] ? (g.key === 'sans_reponse' ? colors.text.primary : g.color) : colors.text.faint }}>{stats[g.key] || 0}</span>
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || colors.border.faint}`, padding: '3px 10px', borderRadius: '20px' }}>
-                              {cfg ? `${cfg.emoji} ${cfg.label}` : `⏳ ${t('ent_en_attente', lang)}`}
-                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Réponses individuelles, regroupées par statut */}
+                  <div style={{ ...st.card, margin: 0 }}>
+                    <p style={{ ...eyebrowEnt, marginBottom: '16px' }}>{t('ent_reponses_individuelles', lang)}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                      {groupesReponses.map(g => {
+                        const c = g.key === 'sans_reponse' ? colors.border.strong : g.color
+                        return (
+                          <div key={g.key}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c }} />
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: g.key === 'sans_reponse' ? colors.text.secondary : g.color }}>{g.label}</span>
+                              <span style={{ fontSize: '11px', color: colors.text.faint }}>{g.joueurs.length}</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(230px, 1fr))', gap: '8px' }}>
+                              {g.joueurs.map(j => (
+                                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: colors.background.surfaceAlt || colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${c}`, borderRadius: '10px', minWidth: 0, opacity: g.key === 'sans_reponse' ? 0.85 : 1 }}>
+                                  <Avatar person={j} size={32} />
+                                  <div style={{ minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                    <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )
                       })}
@@ -8628,49 +8746,54 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   {/* Paramètres clôture */}
                   {canEdit('entrainements') && (
-                    <div style={{ ...st.card, marginBottom: '16px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>⏱️ {t('ent_cloture_auto_titre', lang)}</p>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                        {[
-                          { val: null, label: t('ent_pas_de_cloture', lang) },
-                          { val: 1, label: `1h ${t('ent_avant', lang)}` },
-                          { val: 5, label: `5h ${t('ent_avant', lang)}` },
-                          { val: 24, label: `24h ${t('ent_avant', lang)}` },
-                        ].map(opt => (
-                          <button key={String(opt.val)} onClick={() => sauvegarderDelaiCloture(opt.val)}
-                            style={{ background: delaiCloture === opt.val ? colors.accent.blue + alpha.soft : 'transparent', border: `1px solid ${delaiCloture === opt.val ? '#60a5fa50' : colors.border.default}`, color: delaiCloture === opt.val ? colors.accent.blue : colors.text.faint, padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            {opt.label}
+                    <div style={{ ...st.card, margin: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+                        <div style={{ minWidth: 0, flex: '1 1 320px' }}>
+                          <p style={eyebrowEnt}>{t('ent_cloture_auto_titre', lang)}</p>
+                          <div style={{ display: 'inline-flex', flexWrap: 'wrap', padding: '3px', marginTop: '12px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+                            {[
+                              { val: null, label: t('ent_pas_de_cloture', lang) },
+                              { val: 1, label: `1h ${t('ent_avant', lang)}` },
+                              { val: 5, label: `5h ${t('ent_avant', lang)}` },
+                              { val: 24, label: `24h ${t('ent_avant', lang)}` },
+                            ].map(opt => {
+                              const actif = delaiCloture === opt.val
+                              return (
+                                <button key={String(opt.val)} onClick={() => sauvegarderDelaiCloture(opt.val)}
+                                  style={{ background: actif ? colors.background.raised : 'transparent', border: 'none', color: actif ? colors.text.primary : colors.text.faint, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                  {opt.label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '10px 0 0' }}>
+                            {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
+                            {delaiCloture && heureCloture && (
+                              <> — clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
+                            )}
+                          </p>
+                        </div>
+                        {!clos ? (
+                          <button onClick={cloturerSondage} disabled={savingCloture}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, color: colors.accent.red, padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
+                            <IcoCadenas /> {t('ent_cloturer_maintenant', lang)}
                           </button>
-                        ))}
-                      </div>
-                      <p style={{ fontSize: '11px', color: colors.text.disabled, marginBottom: '14px' }}>
-                        {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
-                        {delaiCloture && heureCloture && (
-                          <> — clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
+                        ) : (
+                          <button onClick={rouvrirSondage}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            {t('ent_rouvrir_sondage', lang)}
+                          </button>
                         )}
-                      </p>
+                      </div>
                       {delaiCloture && !prochaineSeance.heure && (
-                        <div style={{ background: colors.accent.orange + alpha.subtle, border: '1px solid #f9731640', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <p style={{ fontSize: '11px', color: colors.accent.orange, margin: 0, flex: 1, minWidth: '200px' }}>
-                            ⚠️ Cette séance n'a pas d'heure renseignée : la clôture auto ne peut pas se déclencher tant qu'elle est absente.
+                        <div style={{ background: colors.accent.orange + alpha.subtle, border: `1px solid ${colors.accent.orange}40`, borderRadius: '10px', padding: '10px 14px', marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '12px', color: colors.accent.orange, margin: 0, flex: 1, minWidth: '200px' }}>
+                            Cette séance n'a pas d'heure renseignée : la clôture auto ne peut pas se déclencher tant qu'elle est absente.
                           </p>
                           <input type="time" style={{ ...st.input, width: 'auto' }} disabled={savingHeureSeance}
                             onChange={e => e.target.value && sauvegarderHeureSeance(e.target.value)} />
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        {!clos ? (
-                          <button onClick={cloturerSondage} disabled={savingCloture}
-                            style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444430', color: colors.accent.red, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
-                            🔒 {t('ent_cloturer_maintenant', lang)}
-                          </button>
-                        ) : (
-                          <button onClick={rouvrirSondage}
-                            style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            🔓 {t('ent_rouvrir_sondage', lang)}
-                          </button>
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -8808,26 +8931,62 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             )}
 
             {/* ── Liste des séances (groupées par mois) ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {grouperParMois(entrainements).map(([moisKey, { label, items }]) => {
+            {/* V3 : mois en 3 groupes — ce mois-ci (ouvert par défaut), mois à
+                venir (chronologique), mois passés (du plus récent) — au lieu
+                d'un tri du plus lointain au plus proche. Taux de présence du
+                mois (séances passées) dans l'en-tête. */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              {(() => {
+                const maintenant = new Date()
+                const moisCourantCle = `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}`
+                const groupes = grouperParMois(entrainements)
+                const sections = [
+                  ['Ce mois-ci', groupes.filter(([k]) => k === moisCourantCle), 'asc'],
+                  ['Mois à venir', groupes.filter(([k]) => k > moisCourantCle).sort((a, b) => a[0].localeCompare(b[0])), 'asc'],
+                  ['Mois passés', groupes.filter(([k]) => k < moisCourantCle), 'desc'],
+                ]
+                const statutSeance = (e, j) => {
+                  const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id)
+                  if (p && (p.statut || p.present)) return p.statut || (p.present ? 'present' : 'absent')
+                  return j.joueur_id ? (dispoJoueurs[e.id]?.[j.joueur_id] || null) : null
+                }
+                const tauxMois = (items) => {
+                  let presents = 0, saisis = 0
+                  items.filter(e => new Date(e.date + 'T12:00:00') <= maintenant).forEach(e => joueurs.forEach(j => {
+                    const st2 = statutSeance(e, j)
+                    if (!st2) return
+                    saisis++
+                    if (st2 === 'present' || st2 === 'convoque') presents++
+                  }))
+                  return saisis ? Math.round((presents / saisis) * 100) : null
+                }
+                return sections.filter(([, g]) => g.length).map(([titreSection, g, ordre]) => (
+                  <div key={titreSection}>
+                    <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{titreSection}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {g.map(([moisKey, { label, items }]) => {
                 const moisOuvert = moisOuverts.has(moisKey)
+                const taux = tauxMois(items)
                 return (
-                  <div key={moisKey} style={{ marginBottom: '8px' }}>
+                  <div key={moisKey}>
                     <div
                       onClick={() => setMoisOuverts(prev => { const next = new Set(prev); next.has(moisKey) ? next.delete(moisKey) : next.add(moisKey); return next })}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '16px' }}>📅</span>
-                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 16px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flexWrap: 'wrap' }}>
+                        <span style={{ color: colors.accent.blue, display: 'inline-flex' }}><IcoCalendar /></span>
+                        <span style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
                         <span style={{ background: colors.background.raised, color: colors.text.muted, fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>
                           {items.length} {items.length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
                         </span>
+                        {taux != null && (
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: taux >= 80 ? colors.accent.green : taux >= 60 ? colors.accent.amber : colors.accent.red }}>Présence {taux}%</span>
+                        )}
                       </div>
-                      <span style={{ color: colors.accent.green, fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: moisOuvert ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                      <span style={{ color: colors.text.faint, display: 'inline-flex' }}><IcoChevronBas ouvert={moisOuvert} /></span>
                     </div>
                     {moisOuvert && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: `1px solid ${colors.border.subtle}`, borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
-                        {[...items].sort((a, b) => new Date(b.date) - new Date(a.date)).map(e => {
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: `1px solid ${colors.border.subtle}`, borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
+                        {[...items].sort((a, b) => ordre === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
                 const getStatutJoueur = (j) => {
                   const p = (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id)
@@ -8839,92 +8998,142 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const nbBlesses   = joueurs.filter(j => getStatutJoueur(j) === 'blesse').length
                 const nbMalades   = joueurs.filter(j => getStatutJoueur(j) === 'malade').length
                 const nbConvoques = joueurs.filter(j => getStatutJoueur(j) === 'convoque').length
+                const nbAbsents   = joueurs.filter(j => getStatutJoueur(j) === 'absent').length
                 const total = joueurs.length
                 const dateObj = new Date(e.date + 'T12:00:00')
                 const estFuture = dateObj > new Date()
                 return (
-                  <div key={e.id} style={{ ...st.card, borderLeft: `3px solid ${estFuture ? colors.accent.blue + alpha.medium : colors.accent.green + alpha.light}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                          {e.heure && <span style={{ fontSize: '12px', color: colors.text.faint }}>{e.heure}</span>}
-                          {e.description && <span style={{ fontSize: '12px', color: colors.text.faint }}>{e.description}</span>}
-                          {e.lieu && <span style={{ fontSize: '12px', color: colors.text.faint }}>📍 {e.lieu}</span>}
-                          {e.fiche_id && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1px' }}>
-                              <span
-                                onClick={ev => { ev.stopPropagation(); const s = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
-                                style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '1px 8px', borderRadius: '10px 0 0 10px', cursor: 'pointer' }}>
-                                📄 {t('ent_voir_fiche', lang)}
-                              </span>
-                              <span
-                                onClick={async ev => {
-                                  ev.stopPropagation()
-                                  if (!confirm('Détacher cette fiche de la séance ?')) return
-                                  // Optimiste : la fiche reste dans "Mes séances sauvegardées",
-                                  // seul le lien avec cet entraînement est retiré.
-                                  setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: null } : x)))
-                                  const { error } = await supabase.from('entrainements').update({ fiche_id: null }).eq('id', e.id)
-                                  if (error) {
-                                    setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: e.fiche_id } : x)))
-                                    alert('Erreur : ' + error.message)
-                                  }
-                                }}
-                                title="Détacher cette fiche"
-                                style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '1px 6px', borderRadius: '0 10px 10px 0', cursor: 'pointer', lineHeight: 1.5 }}>
-                                ×
-                              </span>
-                            </span>
-                          )}
+                  <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${estFuture ? colors.accent.blue : colors.accent.green}`, borderRadius: '10px', padding: isMobile ? '12px' : '12px 16px' }}>
+                    {/* V3 : pavé date, titre, heure/lieu, fiche, présences en barre
+                        segmentée + légende, actions en icônes au trait. Mêmes actions. */}
+                    {(() => {
+                      const titre = e.description || mesSeancesOuvertes.find(s2 => s2.id === e.fiche_id)?.theme || 'Entraînement'
+                      const joursRestants = Math.round((dateObj - new Date(new Date().toDateString())) / 86400000)
+                      const taux = total > 0 ? nbPresents / total : 0
+                      const nbConvoquesSeuls = nbConvoques
+                      const nbPresentsSeuls = nbPresents - nbConvoques
+                      const segments = [
+                        [nbPresentsSeuls, colors.accent.green, 'présent', 'présents'],
+                        [nbConvoquesSeuls, colors.accent.blue, 'convoqué', 'convoqués'],
+                        [nbAbsents, colors.accent.red, 'absent', 'absents'],
+                        [nbBlesses, colors.accent.orange, 'blessé', 'blessés'],
+                        [nbMalades, colors.accent.purple, 'malade', 'malades'],
+                      ]
+                      const sansReponse = Math.max(0, total - segments.reduce((x, [n]) => x + n, 0))
+                      const btnIcone = (couleur) => ({ background: 'transparent', border: `1px solid ${colors.border.default}`, color: couleur, width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 })
+                      const actions = (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }} onClick={ev => ev.stopPropagation()}>
                           {!estFuture && total > 0 && (
-                            <>
-                              <span style={{ fontSize: '11px', color: colors.accent.green, background: '#4ade8010', padding: '1px 7px', borderRadius: '10px' }}>✅ {nbPresents}</span>
-                              {nbConvoques > 0 && <span style={{ fontSize: '11px', color: colors.accent.blue, background: '#60a5fa10', padding: '1px 7px', borderRadius: '10px' }}>🏆 {nbConvoques}</span>}
-                              {nbBlesses > 0 && <span style={{ fontSize: '11px', color: colors.accent.orange, background: '#f9731610', padding: '1px 7px', borderRadius: '10px' }}>🤕 {nbBlesses}</span>}
-                              {nbMalades > 0 && <span style={{ fontSize: '11px', color: colors.accent.purple, background: '#a855f710', padding: '1px 7px', borderRadius: '10px' }}>🤒 {nbMalades}</span>}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {!estFuture && total > 0 && (
-                          <span style={{ background: nbPresents >= total * 0.8 ? colors.accent.green + alpha.subtle : '#f59e0b15', border: `1px solid ${nbPresents >= total * 0.8 ? colors.accent.green + alpha.light : '#f59e0b30'}`, color: nbPresents >= total * 0.8 ? colors.accent.green : '#f59e0b', fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
-                            {nbPresents}/{total}
-                          </span>
-                        )}
-                        {canEdit('entrainements') && (
-                          demandesNote[e.id] ? (
-                            <span onClick={ev => { ev.stopPropagation(); if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
-                              title={demandesNote[e.id].statut === 'ouverte' ? 'Note demandée — clique pour fermer' : 'Note fermée'}
-                              style={{ background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.subtle : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.green + alpha.light : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.green : colors.text.disabled, padding: '4px 9px', borderRadius: '20px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                              {demandesNote[e.id].statut === 'ouverte' ? '⭐ En attente' : '✅ Ressenti fermé'}
+                            <span style={{ background: (taux >= 0.8 ? colors.accent.green : colors.accent.amber) + '1a', border: `1px solid ${(taux >= 0.8 ? colors.accent.green : colors.accent.amber)}40`, color: taux >= 0.8 ? colors.accent.green : colors.accent.amber, fontSize: '12px', fontWeight: 800, padding: '5px 10px', borderRadius: '8px', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                              {nbPresents}/{total}
                             </span>
-                          ) : (
-                            <button onClick={ev => { ev.stopPropagation(); demanderNoteSeance(e) }} disabled={demandeNoteEnCours === e.id}
-                              title="Demander le ressenti aux joueurs sur cette séance"
-                              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                              {demandeNoteEnCours === e.id ? '…' : '⭐'}
+                          )}
+                          {canEdit('entrainements') && (
+                            demandesNote[e.id] ? (
+                              <span onClick={() => { if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
+                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti demandé — clique pour fermer' : 'Ressenti fermé'}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '1a' : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '55' : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber : colors.text.disabled, padding: '5px 9px', borderRadius: '8px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'Ressenti en cours' : 'Ressenti fermé'}
+                              </span>
+                            ) : (
+                              <button onClick={() => demanderNoteSeance(e)} disabled={demandeNoteEnCours === e.id}
+                                title="Demander le ressenti aux joueurs sur cette séance" aria-label="Demander le ressenti"
+                                style={btnIcone(colors.accent.amber)}>
+                                {demandeNoteEnCours === e.id ? '…' : <IcoEtoileTrait />}
+                              </button>
+                            )
+                          )}
+                          {canEdit('entrainements') && !e.fiche_id && (
+                            <button onClick={() => setModalImportFicheEntrainement(e.id)} title={t('ent_importer_fiche', lang)} aria-label={t('ent_importer_fiche', lang)} style={btnIcone(colors.accent.green)}>
+                              <IcoLink />
                             </button>
-                          )
-                        )}
-                        {canEdit('entrainements') && !e.fiche_id && (
-                          <button onClick={ev => { ev.stopPropagation(); setModalImportFicheEntrainement(e.id) }}
-                            title={t('ent_importer_fiche', lang)}
-                            style={{ background: '#1a2e1a', border: '1px solid #4ade80', borderRadius: '6px', color: colors.accent.green, width: '28px', height: '28px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            +
+                          )}
+                          {canEdit('entrainements') && (
+                            <button onClick={() => setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' })} title="Modifier la séance" aria-label="Modifier la séance" style={btnIcone(colors.accent.blue)}>
+                              <IcoCrayon />
+                            </button>
+                          )}
+                          {canEdit('entrainements') && (
+                            <button onClick={() => supprimerEntrainement(e.id)} title="Supprimer la séance" aria-label="Supprimer la séance" style={btnIcone(colors.text.faint)}>
+                              <IcoCorbeille />
+                            </button>
+                          )}
+                          <button onClick={() => setEntrainementActif(ouvert ? null : e.id)} title={ouvert ? 'Replier' : 'Saisir les présences'} aria-label={ouvert ? 'Replier' : 'Saisir les présences'} style={{ ...btnIcone(colors.text.secondary), border: 'none' }}>
+                            <IcoChevronBas ouvert={ouvert} />
                           </button>
-                        )}
-                        {canEdit('entrainements') && (
-                          <button onClick={ev => { ev.stopPropagation(); setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' }) }}
-                            style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.accent.blue, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Modifier la séance">✏️</button>
-                        )}
-                        {canEdit('entrainements') && (
-                          <button onClick={() => supprimerEntrainement(e.id)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.disabled, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} title="Supprimer la séance">🗑️</button>
-                        )}
-                        <span style={{ color: colors.text.disabled, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>{ouvert ? '▲' : '▼'}</span>
-                      </div>
-                    </div>
+                        </div>
+                      )
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr)' : 'auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '12px' : '16px' }}>
+                          {/* Pavé date */}
+                          <div onClick={() => setEntrainementActif(ouvert ? null : e.id)} style={{ width: '54px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', alignSelf: 'start' }}>
+                            <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: estFuture ? colors.black : colors.text.faint, background: estFuture ? colors.accent.blue : colors.background.raised }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
+                            <p style={{ margin: 0, padding: '4px 0 0', fontSize: '20px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{dateObj.getDate()}</p>
+                            <p style={{ margin: 0, padding: '2px 0 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateObj.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
+                          </div>
+
+                          {/* Titre, infos, présences */}
+                          <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{titre}</p>
+                              {estFuture && (
+                                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '6px', color: colors.accent.blue, background: colors.accent.blue + '1a', border: `1px solid ${colors.accent.blue}40` }}>
+                                  {joursRestants <= 0 ? "Aujourd'hui" : joursRestants === 1 ? 'Demain' : `Dans ${joursRestants} j`}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flexWrap: 'wrap', fontSize: '12px', color: colors.text.faint }}>
+                              {e.heure && <span style={{ fontWeight: 700, color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{String(e.heure).slice(0, 5)}</span>}
+                              {e.lieu && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IcoPin /> {e.lieu}</span>}
+                              {e.fiche_id && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center' }} onClick={ev => ev.stopPropagation()}>
+                                  <span
+                                    onClick={() => { const s2 = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s2) { setFicheApercu(s2); setFicheApercuEnHaut(true) } }}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '2px 8px', borderRadius: '6px 0 0 6px', cursor: 'pointer' }}>
+                                    <IcoFileText /> {t('ent_voir_fiche', lang)}
+                                  </span>
+                                  <span
+                                    onClick={async () => {
+                                      if (!confirm('Détacher cette fiche de la séance ?')) return
+                                      // Optimiste : la fiche reste dans "Mes séances sauvegardées",
+                                      // seul le lien avec cet entraînement est retiré.
+                                      setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: null } : x)))
+                                      const { error } = await supabase.from('entrainements').update({ fiche_id: null }).eq('id', e.id)
+                                      if (error) {
+                                        setEntrainements(prev => prev.map(x => (x.id === e.id ? { ...x, fiche_id: e.fiche_id } : x)))
+                                        alert('Erreur : ' + error.message)
+                                      }
+                                    }}
+                                    title="Détacher cette fiche"
+                                    style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '2px 7px', borderRadius: '0 6px 6px 0', cursor: 'pointer', lineHeight: 1.5 }}>
+                                    ×
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                            {!estFuture && total > 0 && (
+                              <div style={{ marginTop: '8px', maxWidth: '460px' }}>
+                                <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', background: colors.background.base }}>
+                                  {segments.map(([n, c], i) => n > 0 && <div key={i} style={{ width: `${(n / total) * 100}%`, background: c }} />)}
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '5px', fontSize: '11px', color: colors.text.faint }}>
+                                  {segments.filter(([n]) => n > 0).map(([n, c, un, plusieurs]) => (
+                                    <span key={un} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: c }} />
+                                      <strong style={{ color: colors.text.secondary }}>{n}</strong> {n > 1 ? plusieurs : un}
+                                    </span>
+                                  ))}
+                                  {sansReponse > 0 && <span><strong style={{ color: colors.text.secondary }}>{sansReponse}</strong> sans réponse</span>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions (desktop à droite, mobile en dessous) */}
+                          {isMobile ? <div style={{ gridColumn: '1 / -1' }}>{actions}</div> : actions}
+                        </div>
+                      )
+                    })()}
 
                     {ouvert && (
                       <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
@@ -9000,6 +9209,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 )
               })}
+                    </div>
+                  </div>
+                ))
+              })()}
               {entrainements.length === 0 && (
                 <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
                   <p style={{ color: colors.text.faint, margin: '0 0 8px' }}>{t('ent_aucune_seance', lang)}</p>
@@ -9058,20 +9271,78 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {joueurs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('eval_ajoute_joueurs', lang)}</p></div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {joueurs.map(j => (
-                  <div key={j.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Avatar person={j} size={40} bg="#1a2e1a" border="none" textColor={colors.accent.green} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || '—'}</p>
+              (() => {
+                // V3 : regroupement par ligne, même règle que Mon équipe
+                // (LIGNES_POSTE du tableau Stats) — postes non reconnus en
+                // « Autres ». Cartes en grille avec photo, numéro et dernière
+                // note de la fiche d'évaluation (/20).
+                const LIGNES = [
+                  { label: 'Gardiens', postes: ['Gardien'], couleur: colors.accent.amber },
+                  { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.blue },
+                  { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'], couleur: colors.accent.purpleLight },
+                  { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'], couleur: colors.accent.green },
+                ]
+                const groupes = [...LIGNES.map(l => ({ ...l, joueurs: [] })), { label: 'Autres', couleur: colors.text.faint, joueurs: [] }]
+                joueurs.forEach(j => {
+                  const idx = LIGNES.findIndex(l => l.postes.includes(j.poste))
+                  groupes[idx === -1 ? LIGNES.length : idx].joueurs.push(j)
+                })
+                groupes.forEach(g => g.joueurs.sort((a, b) => (a.nom || '').localeCompare(b.nom || '')))
+                const nbEvalues = joueurs.filter(j => derniereEvaluation(j.id)).length
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', color: colors.text.faint }}><strong style={{ color: colors.text.primary }}>{nbEvalues}</strong> / {joueurs.length} joueurs évalués</span>
+                      <div style={{ flex: '0 1 220px', height: '5px', borderRadius: '3px', background: colors.background.raised, overflow: 'hidden' }}>
+                        <div style={{ width: `${joueurs.length ? (nbEvalues / joueurs.length) * 100 : 0}%`, height: '100%', background: colors.accent.green }} />
+                      </div>
                     </div>
-                    <button onClick={() => setEvalJoueurOuverte(j)} style={st.btnSolid}>
-                      Fiche d'évaluation
-                    </button>
+                    {groupes.filter(g => g.joueurs.length).map(g => (
+                      <div key={g.label}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: g.couleur }} />
+                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{g.label}</p>
+                          <span style={{ fontSize: '11px', color: colors.text.faint }}>{g.joueurs.length}</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+                          {g.joueurs.map(j => {
+                            const ev = derniereEvaluation(j.id)
+                            const note = ev ? Number(ev.note_globale_saison) : null
+                            const couleurNote = note == null ? colors.text.faint : note >= 14 ? colors.accent.green : note >= 10 ? colors.accent.amber : colors.accent.red
+                            return (
+                              <button key={j.id} onClick={() => setEvalJoueurOuverte(j)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${g.couleur}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}
+                                onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised }}
+                                onMouseLeave={e => { e.currentTarget.style.background = colors.background.surface }}>
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                  <Avatar person={j} size={48} bg={g.couleur + '22'} border={`2px solid ${g.couleur}55`} textColor={g.couleur} />
+                                  {j.numero_maillot != null && j.numero_maillot !== '' && (
+                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>{j.numero_maillot}</span>
+                                  )}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  {note != null ? (
+                                    <>
+                                      <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: couleurNote, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{note}<span style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 600 }}>/20</span></p>
+                                      <p style={{ margin: '3px 0 0', fontSize: '10px', color: colors.text.faint }}>{new Date(ev.updated_at).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
+                                    </>
+                                  ) : (
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.blue, border: `1px solid ${colors.accent.blue}55`, borderRadius: '6px', padding: '4px 8px', whiteSpace: 'nowrap' }}>À évaluer</span>
+                                  )}
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )
+              })()
             )}
             {evalJoueurOuverte && (
               <Suspense fallback={<SectionLoader />}>
@@ -11064,7 +11335,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         )}
 
         {activeSection === 'analyse_video' && (
-          <Suspense fallback={<SectionLoader />}><AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} clubNom={profilEdu?.club} lang={lang} /></Suspense>
+          <Suspense fallback={<SectionLoader />}><AnalyseVideo userId={userId} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} clubNom={profilEdu?.club} lang={lang} joueurs={joueurs} /></Suspense>
         )}
 
         {activeSection === 'prep_physique' && (

@@ -654,12 +654,12 @@ export const T = {
   stats_tab_notes:          { fr: 'Ressenti joueurs',  en: 'Player feedback', pt: 'Feedback jogadores', es: 'Feedback jugadores', it: 'Feedback giocatori', de: 'Spieler-Feedback' },
 
   // ── Stats joueurs — filtres classement ───────────────────────────────────────
-  stats_filtre_buteurs:     { fr: '⚽ Buteurs',     en: '⚽ Scorers',     pt: '⚽ Goleadores',  es: '⚽ Goleadores',  it: '⚽ Goleador',    de: '⚽ Torschützen' },
-  stats_filtre_passeurs:    { fr: '🎯 Passeurs',    en: '🎯 Assisters',   pt: '🎯 Assistentes', es: '🎯 Asistentes',  it: '🎯 Assistman',   de: '🎯 Vorlagengeber'},
-  stats_filtre_victoires:   { fr: '🏆 Victoires',   en: '🏆 Wins',        pt: '🏆 Vitórias',    es: '🏆 Victorias',   it: '🏆 Vittorie',    de: '🏆 Siege'       },
-  stats_filtre_temps:       { fr: '📅 Temps de jeu',en: '📅 Playing time',pt: '📅 Tempo de jogo',es: '📅 Tiempo de juego',it: '📅 Tempo di gioco',de: '📅 Spielzeit'},
-  stats_filtre_presence:    { fr: '🏃 Présence',    en: '🏃 Attendance',  pt: '🏃 Presença',    es: '🏃 Asistencia',  it: '🏃 Presenza',    de: '🏃 Anwesenheit' },
-  stats_filtre_note_edu:    { fr: '⭐ Note éducateur', en: '⭐ Coach rating', pt: '⭐ Nota do educador', es: '⭐ Nota del entrenador', it: '⭐ Voto educatore', de: '⭐ Trainerbewertung' },
+  stats_filtre_buteurs:     { fr: 'Buteurs',     en: 'Scorers',     pt: 'Goleadores',  es: 'Goleadores',  it: 'Goleador',    de: 'Torschützen' },
+  stats_filtre_passeurs:    { fr: 'Passeurs',    en: 'Assisters',   pt: 'Assistentes', es: 'Asistentes',  it: 'Assistman',   de: 'Vorlagengeber'},
+  stats_filtre_victoires:   { fr: 'Victoires',   en: 'Wins',        pt: 'Vitórias',    es: 'Victorias',   it: 'Vittorie',    de: 'Siege'       },
+  stats_filtre_temps:       { fr: 'Temps de jeu',en: 'Playing time',pt: 'Tempo de jogo',es: 'Tiempo de juego',it: 'Tempo di gioco',de: 'Spielzeit'},
+  stats_filtre_presence:    { fr: 'Présence',    en: 'Attendance',  pt: 'Presença',    es: 'Asistencia',  it: 'Presenza',    de: 'Anwesenheit' },
+  stats_filtre_note_edu:    { fr: 'Note éducateur', en: 'Coach rating', pt: 'Nota do educador', es: 'Nota del entrenador', it: 'Voto educatore', de: 'Trainerbewertung' },
   stats_col_presence:       { fr: 'Présence',       en: 'Attendance',     pt: 'Presença',       es: 'Presencia',      it: 'Presenza',       de: 'Anwesenheit'    },
 
   // ── Entraînements ──────────────────────────────────────────────────────────────
