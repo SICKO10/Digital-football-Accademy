@@ -278,6 +278,12 @@ const IcoChevronRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fi
 const IcoX            = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
+const IcoCle = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
+const IcoMail = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>
+const IcoImport = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+const IcoDownload = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+const IcoBulle = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 01-9 8.4 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 1121 11.5z"/></svg>
+const IcoProfil = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IcoCamera = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
 const IcoOeil = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 const IcoChrono = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14 15"/><line x1="10" y1="2" x2="14" y2="2"/></svg>
@@ -4323,23 +4329,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     <div style={{ marginTop: 10, borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 8 }}
          onClick={e => e.stopPropagation()}>
       {j.joueur_id ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, color: colors.accent.green, background: colors.accent.green + alpha.subtle,
-                         padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
-            ✅ Compte lié
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: colors.accent.green, background: colors.accent.green + alpha.subtle,
+                         padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: colors.accent.green }} /> Compte lié
           </span>
+          {j.numero_licence && <span style={{ fontSize: 11, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>Licencié</span>}
           {canEdit('effectif') && (
             <button onClick={() => reinitialiserAccesJoueur(j)}
-              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '2px 8px', fontSize: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
               title="Envoyer un email de réinitialisation de mot de passe">
-              🔑
+              <IcoCle /> Accès
             </button>
           )}
         </div>
       ) : inviteStatus[j.id] === 'sent' || (j.email && !j.joueur_id) ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#facc15' }}>
-            ✉️ Invitation envoyée · {j.email}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: colors.accent.amber, minWidth: 0 }}>
+            <IcoMail /> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Invitation envoyée · {j.email}</span>
           </div>
           {canEdit('effectif') && (
             <div style={{ display: 'flex', gap: 6 }}>
@@ -4347,7 +4354,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 onClick={() => inviterJoueur(j)}
                 disabled={invitingId === j.id}
                 style={{ fontSize: 11, background: '#facc1510', border: '1px solid #facc1430', color: '#facc14', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
-                {invitingId === j.id ? '...' : '🔁 Renvoyer'}
+                {invitingId === j.id ? '...' : 'Renvoyer'}
               </button>
               <button
                 onClick={async () => {
@@ -4356,7 +4363,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   await chargerJoueurs(userId, equipeActive?.id)
                 }}
                 style={{ fontSize: 11, background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
-                ✕ Corriger
+                Corriger l'email
               </button>
             </div>
           )}
@@ -4387,7 +4394,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               whiteSpace: 'nowrap', transition: 'all 0.2s'
             }}
           >
-            {invitingId === j.id ? '⏳' : '📧 Inviter'}
+            {invitingId === j.id ? '...' : 'Inviter'}
           </button>
         </div>
       ) : (
@@ -6069,123 +6076,175 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
             )}
 
-            {/* Titre seul sur sa ligne */}
-            <div style={{ marginBottom: '16px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary, margin: 0 }}>{t('equipe_titre', lang)}</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>{joueurs.length} {t('equipe_joueurs', lang)} {t('equipe_dans_effectif', lang)}</p>
-            </div>
-
-            {/* Tabs sur leur propre ligne — Postes/Liste changent la vue, Template
-                déclenche le téléchargement sans devenir une vue persistante. */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {[
-                { key: 'poste', label: t('equipe_vue_postes', lang), action: () => setVueEquipe('poste') },
-                { key: 'liste', label: t('equipe_vue_liste', lang), action: () => setVueEquipe('liste') },
-                { key: 'template', label: t('equipe_template', lang), action: telechargerTemplate },
-              ].map(tab => (
-                <button key={tab.key} onClick={tab.action}
-                  style={{
-                    padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                    background: vueEquipe === tab.key ? '#4ade80' : '#1a1a1a',
-                    color: vueEquipe === tab.key ? '#0a0a0a' : '#888',
-                    border: vueEquipe === tab.key ? 'none' : '1px solid #2a2a2a',
-                  }}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {canEdit('effectif') && (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <button onClick={() => setShowAddJoueur(true)} style={{ flex: 2, padding: '12px', borderRadius: '10px', border: 'none', background: '#4ade80', color: '#0a0a0a', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-                  + {t('equipe_ajouter', lang)}
-                </button>
-                <button onClick={() => importRef.current?.click()} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
-                  📥 {t('equipe_importer_excel_csv', lang)}
-                </button>
-                <input ref={importRef} type="file" accept=".xlsx,.xls,.csv,.numbers" style={{ display: 'none' }} onChange={handleImportFile} />
-              </div>
-            )}
-
-            {permissions?.effectif === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                👁 {t('equipe_mode_lecture', lang)}
-              </div>
-            )}
-
-            {/* ── Calendrier de la semaine ── */}
             {(() => {
+              // V2 : en-tête avec actions, synthèse de l'effectif (lignes,
+              // comptes liés, licenciés), semaine en cartes, groupe compact.
+              const LIGNES_EFF = [
+                { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
+                { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+                { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+              ]
+              const nbLies = joueurs.filter(j => j.joueur_id).length
+              const nbLicencies = joueurs.filter(j => j.numero_licence).length
+              const eyebrowEq = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
               const aujourdHui = new Date().toISOString().split('T')[0]
-              const dans7jours = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              const dans7jours = new Date(new Date().getTime() + 7 * 86400000).toISOString().split('T')[0]
               const events = [
                 ...entrainements.filter(e => e.date >= aujourdHui && e.date <= dans7jours).map(e => ({ type: 'entrainement', id: e.id, date: e.date, heure: e.heure, sondage_clos: e.sondage_clos, titre: e.description || t('ent_seance_generique', lang) })),
-                ...matchs.filter(m => m.date >= aujourdHui && m.date <= dans7jours).map(m => ({ type: 'match', id: m.id, date: m.date, titre: m.adversaire ? `⚽ ${t('ent_vs', lang)} ${m.adversaire}` : t('ent_match_generique', lang) })),
+                ...matchs.filter(m => m.date >= aujourdHui && m.date <= dans7jours).map(m => ({ type: 'match', id: m.id, date: m.date, heure: m.heure, titre: m.adversaire ? `${t('ent_vs', lang)} ${m.adversaire}` : t('ent_match_generique', lang) })),
               ].sort((a, b) => new Date(a.date) - new Date(b.date))
-
-              if (events.length === 0) return null
               return (
-                <div style={{ ...st.card, marginBottom: '16px' }}>
-                  <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '16px' }}>📅 {t('ent_cette_semaine', lang)}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {events.map((ev, i) => {
-                      const date = new Date(ev.date + 'T12:00:00')
-                      const isToday = date.toDateString() === new Date().toDateString()
-                      const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
-                      const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'short' })
-                      return (
-                        <div key={i}
-                          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#1a1a1a', borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default' }}
-                          onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
-                          <span style={{ fontSize: '22px' }}>{ev.type === 'match' ? '⚽' : '🏃'}</span>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{ev.titre}</div>
-                            <div style={{ color: '#666', fontSize: '12px' }}>{labelJour}{ev.heure ? ` · ${ev.heure}` : ''}</div>
-                          </div>
-                          {ev.type === 'entrainement' && !ev.sondage_clos && (
-                            <span style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(74,222,128,0.1)', border: '1px solid #4ade8040', color: '#4ade80', fontSize: '11px', fontWeight: 600 }}>
-                              {t('ent_sondage_ouvert', lang)}
-                            </span>
-                          )}
-                        </div>
-                      )
-                    })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '22px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+                    <div>
+                      <h1 style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary, margin: 0 }}>{t('equipe_titre', lang)}</h1>
+                      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} {t('equipe_joueurs', lang)} {t('equipe_dans_effectif', lang)}{equipeActive ? ` · ${labelCategorie(equipeActive.nom)} ${equipeActive.equipe || ''}` : ''}</p>
+                    </div>
+                    {canEdit('effectif') && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button onClick={telechargerTemplate} title="Télécharger le modèle Excel" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <IcoDownload /> {t('equipe_template', lang)}
+                        </button>
+                        <button onClick={() => importRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <IcoImport /> {t('equipe_importer_excel_csv', lang)}
+                        </button>
+                        <button onClick={() => setShowAddJoueur(true)} style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          + {t('equipe_ajouter', lang)}
+                        </button>
+                        <input ref={importRef} type="file" accept=".xlsx,.xls,.csv,.numbers" style={{ display: 'none' }} onChange={handleImportFile} />
+                      </div>
+                    )}
                   </div>
+
+                  {permissions?.effectif === 'lecture' && (
+                    <div style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>
+                      {t('equipe_mode_lecture', lang)}
+                    </div>
+                  )}
+
+                  {/* Synthèse de l'effectif */}
+                  {joueurs.length > 0 && (
+                    <div style={{ ...st.card, margin: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: isMobile ? '16px' : '28px', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ ...eyebrowEq, marginBottom: '10px' }}>Répartition par ligne</p>
+                        <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', gap: '2px', background: colors.background.base }}>
+                          {LIGNES_EFF.map(l => {
+                            const nb = joueurs.filter(j => l.match(j.poste)).length
+                            return nb > 0 && <div key={l.label} style={{ width: `${(nb / joueurs.length) * 100}%`, background: l.color }} />
+                          })}
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '10px' }}>
+                          {LIGNES_EFF.map(l => (
+                            <span key={l.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.faint }}>
+                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: l.color }} />
+                              <strong style={{ color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{joueurs.filter(j => l.match(j.poste)).length}</strong> {l.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        {[
+                          { label: 'Comptes liés', val: nbLies, couleur: colors.accent.green },
+                          { label: 'Licenciés', val: nbLicencies, couleur: colors.accent.blue },
+                        ].map(k => (
+                          <div key={k.label}>
+                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{k.label}</p>
+                            <p style={{ margin: '4px 0 6px', fontSize: '22px', fontWeight: 800, lineHeight: 1, color: k.couleur, fontVariantNumeric: 'tabular-nums' }}>{k.val}<span style={{ fontSize: '13px', color: colors.text.faint, fontWeight: 600 }}> / {joueurs.length}</span></p>
+                            <div style={{ height: '4px', borderRadius: '2px', background: colors.background.base, overflow: 'hidden' }}>
+                              <div style={{ width: `${(k.val / joueurs.length) * 100}%`, height: '100%', background: k.couleur }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cette semaine + groupe */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile || events.length === 0 ? '1fr' : 'minmax(0,2fr) minmax(0,1fr)', gap: '12px', alignItems: 'stretch' }}>
+                    {events.length > 0 && (
+                      <div style={{ ...st.card, margin: 0 }}>
+                        <p style={{ ...eyebrowEq, marginBottom: '12px' }}>{t('ent_cette_semaine', lang)}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                          {events.map((ev, i) => {
+                            const date = new Date(ev.date + 'T12:00:00')
+                            const isToday = date.toDateString() === new Date().toDateString()
+                            const isTomorrow = date.toDateString() === new Date(new Date().getTime() + 86400000).toDateString()
+                            const labelJour = isToday ? t('aff_aujourdhui', lang) : isTomorrow ? t('aff_demain', lang) : date.toLocaleDateString(localeOf(lang), { weekday: 'long' })
+                            const couleurEv = ev.type === 'match' ? colors.accent.amber : colors.accent.blue
+                            return (
+                              <div key={i}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${couleurEv}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default', minWidth: 0 }}
+                                onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
+                                <div style={{ width: '42px', textAlign: 'center', flexShrink: 0 }}>
+                                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: isToday ? couleurEv : colors.text.faint }}>{date.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
+                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1.1 }}>{date.getDate()}</p>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: couleurEv }}>{ev.type === 'match' ? 'Match' : 'Entraînement'}</p>
+                                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
+                                  <p style={{ margin: '1px 0 0', color: colors.text.faint, fontSize: '11px', textTransform: 'capitalize' }}>{labelJour}{ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}</p>
+                                </div>
+                                {ev.type === 'entrainement' && !ev.sondage_clos && (
+                                  <span title={t('ent_sondage_ouvert', lang)} style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Groupe équipe (WhatsApp/Discord/Slack) */}
+                    <div style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1f', color: colors.accent.green, flexShrink: 0 }}><IcoBulle /></span>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={eyebrowEq}>{t('equipe_groupe', lang)}</p>
+                          {!profilEdu?.lien_groupe && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('equipe_colle_lien_groupe', lang)}</p>}
+                        </div>
+                      </div>
+                      {profilEdu?.lien_groupe ? (
+                        <>
+                          <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
+                            style={{ padding: '10px', borderRadius: '10px', border: `1px solid ${colors.accent.green}40`, background: colors.accent.green + '10', color: colors.accent.green, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}>
+                            {t('equipe_ouvrir_groupe', lang)} →
+                          </a>
+                          <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
+                            style={{ alignSelf: 'flex-start', fontSize: 11, color: colors.text.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Inter, sans-serif' }}>
+                            {t('equipe_modifier_lien', lang)}
+                          </button>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input placeholder="https://chat.whatsapp.com/..." value={lienGroupe} onChange={e => setLienGroupe(e.target.value)}
+                            style={{ flex: 1, minWidth: 0, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                          <button onClick={async () => {
+                            await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
+                            await chargerProfilEdu(userId)
+                          }}
+                            style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            {t('btn_sauvegarder', lang)}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vue : Postes / Liste */}
+                  {joueurs.length > 0 && (
+                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+                      {[{ key: 'poste', label: t('equipe_vue_postes', lang) }, { key: 'liste', label: t('equipe_vue_liste', lang) }].map(tab => (
+                        <button key={tab.key} onClick={() => setVueEquipe(tab.key)}
+                          style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: vueEquipe === tab.key ? 700 : 500, fontFamily: 'Inter, sans-serif', background: vueEquipe === tab.key ? colors.background.raised : 'transparent', color: vueEquipe === tab.key ? colors.text.primary : colors.text.faint }}>
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })()}
-
-            {/* ── Groupe équipe (WhatsApp/Discord/Slack) ── */}
-            {profilEdu?.lien_groupe ? (
-              <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: 16, marginBottom: 12 }}>
-                <p style={{ margin: '0 0 8px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('equipe_groupe', lang)}</p>
-                <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
-                  style={{ width: '100%', padding: '13px', borderRadius: '10px', border: '1px solid #4ade8040', background: 'rgba(74,222,128,0.06)', color: '#4ade80', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', boxSizing: 'border-box' }}>
-                  💬 {t('equipe_ouvrir_groupe', lang)} →
-                </a>
-                <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
-                  style={{ marginTop: 8, fontSize: 11, color: colors.text.faint, background: 'none', border: 'none', cursor: 'pointer' }}>
-                  {t('equipe_modifier_lien', lang)}
-                </button>
-              </div>
-            ) : (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: 16, marginBottom: 12 }}>
-                <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700 }}>💬 {t('equipe_groupe', lang)}</p>
-                <p style={{ margin: '0 0 12px', fontSize: 12, color: colors.text.faint }}>{t('equipe_colle_lien_groupe', lang)}</p>
-                <input
-                  placeholder="https://chat.whatsapp.com/..."
-                  value={lienGroupe}
-                  onChange={e => setLienGroupe(e.target.value)}
-                  style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
-                />
-                <button onClick={async () => {
-                  await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
-                  await chargerProfilEdu(userId)
-                }}
-                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {t('btn_sauvegarder', lang)}
-                </button>
-              </div>
-            )}
 
             {/* ── Modal profil joueur ── */}
             {joueurProfil && (() => {
@@ -6452,7 +6511,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {importError && (
               <div style={{ background: '#f8717115', border: '1px solid #f8717140', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', color: '#f87171', fontSize: '13px' }}>
-                ⚠️ {importError}
+                {importError}
               </div>
             )}
 
@@ -6541,17 +6600,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             )}
 
             {joueurs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '4rem' }}>
-                <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</p>
-                <p style={{ color: colors.text.faint }}>{t('equipe_aucun_joueur_effectif', lang)}</p>
+              <div style={{ ...st.card, textAlign: 'center', padding: '3rem 1.5rem' }}>
+                <p style={{ margin: 0, color: colors.text.secondary, fontWeight: 600 }}>{t('equipe_aucun_joueur_effectif', lang)}</p>
+                {canEdit('effectif') && <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Ajoute tes joueurs un par un ou importe un fichier Excel.</p>}
               </div>
             ) : vueEquipe === 'liste' ? (
-              <div style={{ ...st.card, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <div style={{ ...st.card, padding: 0, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '640px' }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                      {['#', t('equipe_col_joueur', lang), t('equipe_poste', lang), t('equipe_col_age', lang), t('equipe_col_licence', lang), ''].map(h => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                    <tr>
+                      {['#', t('equipe_col_joueur', lang), t('equipe_col_age', lang), 'Statut', ''].map((h, i) => (
+                        <th key={i} style={{ padding: '11px 14px', textAlign: i === 0 ? 'center' : 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -6563,35 +6622,40 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       })
                       .map((j) => {
                         const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-                        const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
+                        const posColor = j.poste?.toLowerCase().includes('gardien') ? colors.accent.amber : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
+                        const td = { padding: '9px 14px', borderBottom: `1px solid ${colors.border.subtle}` }
                         return (
-                          <tr key={j.id} style={{ borderBottom: '1px solid #0f0f0f' }}>
-                            <td style={{ padding: '10px 12px', color: colors.text.faint, fontWeight: 700, width: '36px' }}>{j.numero_maillot || '—'}</td>
-                            <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                            <td style={{ padding: '10px 12px' }}><span style={{ color: posColor, fontSize: '12px' }}>{j.poste || '—'}</span></td>
-                            <td style={{ padding: '10px 12px', color: colors.text.faint, fontSize: '12px' }}>{age ? `${age} ans` : '—'}</td>
-                            <td style={{ padding: '10px 12px' }}>{j.numero_licence ? <span style={{ color: colors.accent.blue, fontSize: '11px', fontWeight: 700 }}>🪪</span> : <span style={{ color: colors.border.strong, fontSize: '11px' }}>—</span>}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <tr key={j.id} className="effectif-ligne">
+                            <td style={{ ...td, textAlign: 'center', color: colors.text.faint, fontWeight: 800, width: '44px', fontVariantNumeric: 'tabular-nums' }}>{j.numero_maillot || '–'}</td>
+                            <td style={{ ...td, boxShadow: `inset 3px 0 0 ${posColor}` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setJoueurProfil(j)}>
+                                <Avatar person={j} size={30} bg={posColor + '22'} border="none" textColor={posColor} />
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ ...td, color: colors.text.secondary, fontSize: '12px' }}>{age ? `${age} ans` : '–'}</td>
+                            <td style={td}>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                 {j.joueur_id ? (
-                                  <span title="Compte lié" style={{ color: colors.accent.green, fontSize: 12 }}>✅</span>
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.green, background: colors.accent.green + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Compte lié</span>
                                 ) : j.email ? (
-                                  <span title={`Invitation envoyée · ${j.email}`} style={{ color: '#facc15', fontSize: 12 }}>✉️</span>
+                                  <span title={j.email} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: colors.accent.amber, background: colors.accent.amber + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}><IcoMail />Invité</span>
                                 ) : (
-                                  <button
-                                    onClick={e => { e.stopPropagation(); setJoueurProfil(j) }}
-                                    title="Inviter ce joueur"
-                                    style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: 4,
-                                             color: colors.text.muted, fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
-                                  >
-                                    +
-                                  </button>
+                                  <span style={{ fontSize: '11px', color: colors.text.faint }}>Sans compte</span>
                                 )}
-                                <button onClick={() => setJoueurProfil(j)} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'Inter,sans-serif' }}>👤 {t('equipe_profil', lang)}</button>
+                                {j.numero_licence && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Licencié</span>}
+                              </div>
+                            </td>
+                            <td style={{ ...td, textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setJoueurProfil(j)} title={t('equipe_profil', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', cursor: 'pointer' }}><IcoProfil /></button>
                                 {canEdit('effectif') && (
                                   <>
-                                    <button onClick={() => setJoueurEnEdition({ ...j })} style={{ background: '#ffffff08', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
-                                    <button onClick={() => supprimerJoueur(j.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                    <button onClick={() => setJoueurEnEdition({ ...j })} title={t('btn_modifier', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', cursor: 'pointer' }}><IcoCrayon /></button>
+                                    <button onClick={() => supprimerJoueur(j.id)} title="Retirer de l'équipe" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.accent.red}40`, color: colors.accent.red, borderRadius: '8px', cursor: 'pointer' }}><IcoCorbeille /></button>
                                   </>
                                 )}
                               </div>
@@ -6601,74 +6665,71 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       })}
                   </tbody>
                 </table>
+                <style>{`.effectif-ligne:hover td { background: ${colors.background.raised}; }`}</style>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {[
-                  { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                  { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                  { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
-                  { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
-                  { label: '❓ Sans poste', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
+                  { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                  { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+                  { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  { label: 'Sans poste', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                 ].map(groupe => {
-                  const groupJoueurs = joueurs.filter(j => groupe.match(j.poste))
+                  const groupJoueurs = joueurs.filter(j => groupe.match(j.poste)).sort((a, b) => (Number(a.numero_maillot) || 99) - (Number(b.numero_maillot) || 99))
                   if (!groupJoueurs.length) return null
                   return (
                     <div key={groupe.label}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: groupe.color }}>{groupe.label}</h2>
-                        <span style={{ fontSize: '12px', color: colors.text.disabled, background: colors.background.raised, padding: '2px 8px', borderRadius: '20px' }}>{groupJoueurs.length} joueur{groupJoueurs.length > 1 ? 's' : ''}</span>
-                        <div style={{ flex: 1, height: '1px', background: groupe.color + '20' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.color }} />
+                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{groupe.label}</p>
+                        <span style={{ fontSize: '11px', color: colors.text.faint }}>{groupJoueurs.length}</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px' }}>
                         {groupJoueurs.map(j => {
                           const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
                           const cat = j.club_categorie_id ? clubCategories.find(c => c.id === j.club_categorie_id) : null
+                          // Catégorie affichée seulement si elle diffère de l'équipe active
+                          // (sinon même étiquette répétée sur chaque carte).
+                          const autreCat = cat && cat.id !== equipeActive?.id
                           return (
-                            <div key={j.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px' }}>
+                            <div key={j.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${groupe.color}`, borderRadius: '12px', padding: '12px 14px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ position: 'relative', flexShrink: 0 }}>
-                                  <Avatar person={j} size={44} bg={groupe.color + '20'} border="none" textColor={groupe.color} />
-                                  {j.joueur_id && (
-                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#4ade80', border: `2px solid ${colors.background.surface}` }} />
+                                <button onClick={() => setJoueurProfil(j)} title={t('equipe_profil', lang)} style={{ position: 'relative', flexShrink: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                                  <Avatar person={j} size={46} bg={groupe.color + '22'} border={`2px solid ${groupe.color}55`} textColor={groupe.color} />
+                                  {j.numero_maillot != null && j.numero_maillot !== '' && (
+                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontSize: '10px', fontWeight: 800, color: colors.text.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>{j.numero_maillot}</span>
                                   )}
+                                </button>
+                                <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setJoueurProfil(j)}>
+                                  <p style={{ margin: 0, fontWeight: 700, color: colors.text.primary, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
                                 </div>
-
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '15px' }}>{j.prenom} {j.nom}</div>
-                                  <div style={{ color: colors.text.faint, fontSize: '12px' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</div>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                                  {j.numero_licence && <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#1a2e4a', color: colors.accent.blue, fontSize: '11px', fontWeight: 700 }}>🪪</span>}
-                                  {cat && (
-                                    <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#1a3a1a', color: '#4ade80', fontSize: '11px', fontWeight: 700 }}>
-                                      {cat.nom}-{cat.equipe}
-                                    </span>
+                                {autreCat && (
+                                  <span style={{ padding: '3px 8px', borderRadius: '6px', background: colors.accent.green + '1a', color: colors.accent.green, fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>{cat.nom}-{cat.equipe}</span>
+                                )}
+                                <div className="joueur-menu-wrapper" style={{ position: 'relative', flexShrink: 0 }}>
+                                  <button onClick={() => setOpenMenuJoueurId(openMenuJoueurId === j.id ? null : j.id)} title="Actions"
+                                    style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '14px', lineHeight: 1, width: '30px', height: '30px', cursor: 'pointer' }}>
+                                    ···
+                                  </button>
+                                  {openMenuJoueurId === j.id && (
+                                    <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '190px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                                      {[
+                                        { Icone: IcoProfil, label: t('equipe_profil', lang), action: () => setJoueurProfil(j) },
+                                        ...(canEdit('effectif') ? [{ Icone: IcoCrayon, label: t('btn_modifier', lang), action: () => setJoueurEnEdition({ ...j }) }] : []),
+                                        ...(canEdit('effectif') ? [{ Icone: IcoCorbeille, label: 'Retirer de l\'équipe', action: () => supprimerJoueur(j.id), danger: true }] : []),
+                                      ].map(item => (
+                                        <button key={item.label} onClick={() => { item.action(); setOpenMenuJoueurId(null) }}
+                                          style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '9px 12px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                          onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
+                                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                          <item.Icone /> {item.label}
+                                        </button>
+                                      ))}
+                                    </div>
                                   )}
-                                  <div className="joueur-menu-wrapper" style={{ position: 'relative' }}>
-                                    <button onClick={() => setOpenMenuJoueurId(openMenuJoueurId === j.id ? null : j.id)}
-                                      style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', padding: '5px 9px', cursor: 'pointer' }}>
-                                      ···
-                                    </button>
-                                    {openMenuJoueurId === j.id && (
-                                      <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '180px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                                        {[
-                                          { icon: '👤', label: t('equipe_profil', lang), action: () => setJoueurProfil(j) },
-                                          ...(canEdit('effectif') ? [{ icon: '✏️', label: t('btn_modifier', lang), action: () => setJoueurEnEdition({ ...j }) }] : []),
-                                          ...(canEdit('effectif') ? [{ icon: '🗑️', label: 'Retirer de l\'équipe', action: () => supprimerJoueur(j.id), danger: true }] : []),
-                                        ].map(item => (
-                                          <button key={item.label} onClick={() => { item.action(); setOpenMenuJoueurId(null) }}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '9px 12px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
-                                            onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                          >
-                                            {item.icon} {item.label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
                                 </div>
                               </div>
 
