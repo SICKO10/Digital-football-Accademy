@@ -2015,7 +2015,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data, error } = await supabase
       .from('club_educateurs')
-      .select('*, club:club_id(club, prenom, nom, avatar_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
+      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -2707,12 +2707,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setSendingCodeClub(true)
     setCodeClubError(null)
     setCodeClubSuccess(false)
-    const { data: clubProfile } = await supabase
-      .from('profiles')
-      .select('id, club, prenom, nom')
-      .ilike('code_club', codeClubInput.trim())
-      .eq('plan', 'club')
-      .maybeSingle()
+    // club_par_code (SECURITY DEFINER) : code_club n'est pas lisible
+    // directement depuis la restriction de lecture de profiles.
+    const { data: clubsTrouves } = await supabase.rpc('club_par_code', { p_code: codeClubInput.trim() })
+    const clubProfile = clubsTrouves?.[0] || null
     if (!clubProfile) {
       setCodeClubError('Code invalide — vérifie auprès du club.')
       setSendingCodeClub(false)
@@ -5599,7 +5597,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const [{ data: edu }, { data: clu }, { data: recrut }] = await Promise.all([
       // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
       fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').neq('id', userId).order('id')),
-      fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
+      fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
       fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
     ])
     setEducateursExplorer(edu || [])

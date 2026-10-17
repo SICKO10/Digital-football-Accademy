@@ -1,15 +1,35 @@
+/* global process */
 import { Resend } from 'resend'
+import { verifierJetonSupabase, authentifier, clientServiceSupabase } from './_securite.js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Notification des coachs analyseurs (nouvelle demande d'analyse, séance
+// transférée par un club). Les destinataires sont TOUJOURS calculés ici
+// (table admins_coach) : la liste n'est plus fournie par le navigateur — qui
+// ne peut plus lire l'email des autres comptes — et l'endpoint ne peut donc
+// pas servir à écrire à une adresse arbitraire. Appelant authentifié.
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  const utilisateur = await authentifier(req, res, verifierJetonSupabase)
+  if (!utilisateur) return
 
-  const { type, coachEmails, joueurNom, clubNom, theme } = req.body
+  const { type, joueurNom, clubNom, theme } = req.body || {}
 
-  if (!coachEmails || coachEmails.length === 0) {
-    return res.status(400).json({ error: 'Aucun email coach fourni' })
+  let coachEmails = []
+  try {
+    const db = clientServiceSupabase()
+    const { data: admins, error: e1 } = await db.from('admins_coach').select('user_id')
+    if (e1) throw e1
+    const ids = (admins || []).map(a => a.user_id).filter(Boolean)
+    if (ids.length) {
+      const { data: profils, error: e2 } = await db.from('profiles').select('email').in('id', ids)
+      if (e2) throw e2
+      coachEmails = (profils || []).map(p => p.email).filter(Boolean)
+    }
+  } catch {
+    return res.status(500).json({ error: 'Destinataires introuvables' })
   }
+  if (coachEmails.length === 0) return res.status(200).json({ success: true, envoyes: 0 })
 
   try {
     const subject = type === 'demande'

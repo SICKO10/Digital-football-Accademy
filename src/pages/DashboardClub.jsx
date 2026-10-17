@@ -2504,12 +2504,9 @@ export default function DashboardClub() {
   const rechercherUtilisateurs = async (query) => {
     setSearchStaff(query)
     if (query.length < 2) { setResultatsStaff([]); return }
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, prenom, nom, email, plan')
-      .neq('id', clubId)
-      .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%,email.ilike.%${query}%`)
-      .limit(8)
+    // rechercher_utilisateurs_staff : nom/prénom, ou email EXACT — l'email
+    // des autres comptes n'est ni lisible ni renvoyé (policy profiles).
+    const { data } = await supabase.rpc('rechercher_utilisateurs_staff', { p_recherche: query })
     setResultatsStaff(data || [])
   }
 
@@ -2982,8 +2979,8 @@ export default function DashboardClub() {
     setSearchEducateur(query)
     if (query.length < 2) { setResultatsEducateurs([]); return }
     const { data } = await supabase
-      .from('profiles')
-      .select('id, prenom, nom, email, club, avatar_url')
+      .from('profiles_public')
+      .select('id, prenom, nom, club, avatar_url')
       .eq('plan', 'educateur')
       .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%,club.ilike.%${query}%`)
       .limit(8)
@@ -3264,15 +3261,15 @@ export default function DashboardClub() {
     }
   }
 
+  // Destinataires calculés côté serveur (admins_coach), cf. /api/send-coach-email.
   const notifierCoachs = async (payload) => {
-    const { data: coachs } = await supabase.from('profiles').select('email').eq('plan', 'coach')
-    const coachEmails = coachs?.map(c => c.email).filter(Boolean) || []
-    if (coachEmails.length === 0) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
     await fetch('/api/send-coach-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ coachEmails, ...payload }),
-    })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(payload),
+    }).catch(e => console.error('Erreur notification coach:', e))
   }
 
   const transfererAuCoach = async (seanceId) => {
@@ -5878,7 +5875,7 @@ export default function DashboardClub() {
                       <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
                         <div>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{u.prenom} {u.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{u.email}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{u.plan || ''}</p>
                         </div>
                         <button
                           onClick={() => ajouterStaff(u.id)}

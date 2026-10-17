@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { alpha } from '../../tokens'
-import { fetchToutesLignes, fetchToutesLignesIn } from '../../lib/supabasePagination'
+import { fetchToutesLignes } from '../../lib/supabasePagination'
 
 const CIBLES = [
   { val: 'tous', label: 'Tout le monde' },
@@ -61,28 +61,6 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
     setLoading(false)
   }
 
-  // Éducateurs affiliés (club_educateurs) et joueurs affiliés à ces éducateurs
-  // (affiliations) — profiles n'a pas de colonne role, ce sont ces deux tables
-  // qui portent le rattachement au club.
-  const recupererDestinataires = async (cible) => {
-    const { data: educRows } = await supabase.from('club_educateurs').select('educateur_id').eq('club_id', clubId).eq('statut', 'accepte')
-    const educateurIds = [...new Set((educRows || []).map(r => r.educateur_id).filter(Boolean))]
-
-    let ids = []
-    if (cible === 'tous' || cible === 'educateurs') ids.push(...educateurIds)
-    if ((cible === 'tous' || cible === 'joueurs') && educateurIds.length > 0) {
-      const { data: affRows } = await fetchToutesLignes(() => supabase.from('affiliations').select('id, joueur_id').in('educateur_id', educateurIds).eq('statut', 'accepte').order('id'))
-      ids.push(...(affRows || []).map(r => r.joueur_id).filter(Boolean))
-    }
-    ids = [...new Set(ids)]
-    if (ids.length === 0) return []
-
-    // Paginé : au-delà de 1000 joueurs affiliés, les suivants ne recevaient
-    // pas l'email (cf. lib/supabasePagination).
-    const { data: profils } = await fetchToutesLignesIn(ids, paquet => supabase.from('profiles').select('id, email, prenom, nom').in('id', paquet).order('id'))
-    return (profils || []).filter(p => p.email).map(p => ({ email: p.email, nom: `${p.prenom || ''} ${p.nom || ''}`.trim() }))
-  }
-
   const envoyer = async () => {
     if (!form.titre.trim() || !form.contenu.trim()) return
     setEnvoi(true)
@@ -97,12 +75,11 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
       }).select().single()
       if (error) throw error
 
-      const destinataires = await recupererDestinataires(form.cible)
-      if (destinataires.length > 0) {
-        await supabase.functions.invoke('send-newsletter', {
-          body: { annonce_id: annonce.id, club_id: clubId, titre: annonce.titre, contenu: annonce.contenu, destinataires },
-        })
-      }
+      // Destinataires calculés par la fonction à partir du groupe ciblé
+      // (le navigateur ne peut plus lire l'email des autres comptes).
+      await supabase.functions.invoke('send-newsletter', {
+        body: { annonce_id: annonce.id, club_id: clubId, titre: annonce.titre, contenu: annonce.contenu, cible: form.cible },
+      })
 
       setForm({ titre: '', contenu: '', cible: 'tous' })
       await chargerAnnonces()

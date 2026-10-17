@@ -15,7 +15,6 @@ import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { jourKeyDeDate } from '../lib/jours'
 import { chargerMesRoles } from '../lib/multiRole'
 import NotificationBanner from '../components/NotificationBanner'
-import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { ModalNotation, BadgeNote } from '../components/Notation'
 import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
@@ -786,7 +785,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       Promise.all([
         // Annuaire de toute la plateforme : paginé (lib/supabasePagination).
         fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, niveau_equipe, avatar_url, description').eq('plan', 'educateur').order('id')),
-        fetchToutesLignes(() => supabase.from('profiles').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
+        fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, avatar_url, description, bio, verified').eq('plan', 'club').order('id')),
         fetchToutesLignes(() => supabase.from('profiles_public').select('id, prenom, nom, club, region, type_recruteur, avatar_url, description').eq('plan', 'scout').order('id')),
         fetchToutesLignes(() => supabase.from('club_recrutements').select('club_id, categorie, poste, niveau').eq('actif', true).order('club_id').order('categorie').order('poste')),
       ]).then(([{ data: edu }, { data: clu }, { data: rec }, { data: recrut }]) => {
@@ -857,7 +856,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // interdit cette valeur (cf. lib/coachAdmin.js) — les comptes coach analyseur
     // sont identifiés par email. Avec le filtre par plan, cette liste était donc
     // toujours vide et le joueur ne pouvait jamais démarrer de conversation.
-    const { data: coachData } = await supabase.from('profiles').select('*').in('email', COACH_ADMIN_EMAILS)
+    // Coachs analyseurs = table admins_coach, via get_coach_contacts (profils
+    // publics) : l'email des autres comptes n'est plus lisible (policy profiles).
+    const { data: coachData } = await supabase.rpc('get_coach_contacts')
     setProfil(data)
     setStats({
       club: data?.club || '', niveau_equipe: data?.niveau_equipe || '', categorie: data?.categorie || '',
@@ -1634,10 +1635,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const chargerConversations = async (uid) => {
     const { data } = await fetchToutesLignes(() => supabase
       .from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(prenom, nom, plan, email), receiver:profiles!messages_receiver_id_fkey(prenom, nom, plan, email)')
+      .select('*, sender:profiles_public!messages_sender_id_fkey(prenom, nom, plan, avatar_url), receiver:profiles_public!messages_receiver_id_fkey(prenom, nom, plan, avatar_url)')
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .order('created_at', { ascending: false }))
     if (!data) return
+    const { data: coachsAdmin } = await supabase.rpc('get_coach_contacts')
+    const idsCoachs = new Set((coachsAdmin || []).map(c => c.id))
     setMessages(data)
     const map = {}
     data.forEach(msg => {
@@ -1647,18 +1650,17 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       map[otherId].msgs.push(msg)
     })
     const allConvs = Object.values(map)
-    // Les comptes coach analyseur ne sont PAS identifiables via profiles.plan : la
-    // contrainte CHECK en base interdit la valeur 'coach' (cf. lib/coachAdmin.js),
-    // donc other?.plan === 'coach' n'est jamais vrai et leurs messages tombaient
-    // par défaut dans "Recruteurs". Seul l'email (liste blanche) les identifie de
-    // façon fiable — même source que App.jsx pour le routing post-connexion.
-    const isCoachAnalyseur = (email) => COACH_ADMIN_EMAILS.includes(email)
-    setConversations(allConvs.filter(c => !isCoachAnalyseur(c.other?.email)))
-    setConvCoach(allConvs.filter(c => isCoachAnalyseur(c.other?.email)))
+    // Les comptes coach analyseur ne sont PAS identifiables via profiles.plan
+    // (la contrainte CHECK interdit 'coach', cf. lib/coachAdmin.js) : on les
+    // reconnaît par leur id, d'après admins_coach (get_coach_contacts) — l'email
+    // des autres comptes n'est plus lisible depuis la policy profiles.
+    const isCoachAnalyseur = (id) => idsCoachs.has(id)
+    setConversations(allConvs.filter(c => !isCoachAnalyseur(c.otherId)))
+    setConvCoach(allConvs.filter(c => isCoachAnalyseur(c.otherId)))
     // Compter messages coach non lus (reçus après la dernière visite de l'onglet)
     const lastRead = localStorage.getItem(`coach_read_${uid}`) || '1970-01-01'
     const nonLus = data.filter(msg =>
-      isCoachAnalyseur(msg.sender?.email) &&
+      isCoachAnalyseur(msg.sender_id) &&
       msg.receiver_id === uid &&
       new Date(msg.created_at) > new Date(lastRead)
     )

@@ -189,7 +189,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
   }
 
   const chargerHeuresClub = async () => {
-    const { data } = await supabase.from('profiles').select('planning_heure_ouverture, planning_heure_fermeture').eq('id', clubId).maybeSingle()
+    const { data } = await supabase.from('profiles_public').select('planning_heure_ouverture, planning_heure_fermeture').eq('id', clubId).maybeSingle()
     if (data) setHeuresClub({ ouverture: (data.planning_heure_ouverture || '08:00').slice(0, 5), fermeture: (data.planning_heure_fermeture || '22:00').slice(0, 5) })
   }
 

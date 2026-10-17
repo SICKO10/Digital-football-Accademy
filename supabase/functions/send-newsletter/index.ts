@@ -21,11 +21,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Non authentifié' }), { status: 401, headers: corsHeaders })
     }
 
-    const { annonce_id, club_id, titre, contenu, destinataires } = await req.json()
+    // cible ('tous' | 'educateurs' | 'joueurs') : destinataires calculés ici
+    // (le navigateur ne peut plus lire l'email des autres comptes). L'ancienne
+    // forme (liste destinataires fournie) reste acceptée, filtrée comme avant.
+    const { annonce_id, club_id, titre, contenu, destinataires, cible } = await req.json()
+    const CIBLES = ['tous', 'educateurs', 'joueurs']
 
-    if (!club_id || !titre || !contenu || !Array.isArray(destinataires)) {
+    if (!club_id || !titre || !contenu || (!CIBLES.includes(cible) && !Array.isArray(destinataires))) {
       return new Response(
-        JSON.stringify({ error: 'Champs manquants : club_id, titre, contenu, destinataires requis' }),
+        JSON.stringify({ error: 'Champs manquants : club_id, titre, contenu, cible requis' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -63,21 +67,42 @@ serve(async (req) => {
     }
     const educRows = await toutesLignes(() => supabase.from('club_educateurs').select('educateur_id').eq('club_id', club_id).eq('statut', 'accepte').order('educateur_id'))
     const educateurIds = [...new Set(educRows.map((r: any) => r.educateur_id).filter(Boolean))]
-    const membresIds = new Set<string>(educateurIds as string[])
+    const joueursIds = new Set<string>()
     for (let i = 0; i < educateurIds.length; i += 150) {
       const paquet = educateurIds.slice(i, i + 150)
       const affRows = await toutesLignes(() => supabase.from('affiliations').select('id, joueur_id').in('educateur_id', paquet).eq('statut', 'accepte').order('id'))
-      affRows.forEach((r: any) => { if (r.joueur_id) membresIds.add(r.joueur_id) })
+      affRows.forEach((r: any) => { if (r.joueur_id) joueursIds.add(r.joueur_id) })
     }
-    const idsMembres = [...membresIds]
-    const emailsAutorises = new Set<string>()
-    for (let i = 0; i < idsMembres.length; i += 150) {
-      const paquet = idsMembres.slice(i, i + 150)
-      const profils = await toutesLignes(() => supabase.from('profiles').select('id, email').in('id', paquet).order('id'))
-      profils.forEach((p: any) => { if (p.email) emailsAutorises.add(p.email.toLowerCase()) })
+    const lireProfils = async (ids: string[]) => {
+      const lignes: any[] = []
+      for (let i = 0; i < ids.length; i += 150) {
+        const paquet = ids.slice(i, i + 150)
+        lignes.push(...await toutesLignes(() => supabase.from('profiles').select('id, email, prenom, nom').in('id', paquet).order('id')))
+      }
+      return lignes
     }
-    const destinatairesValides = destinataires.filter((d: { email?: string }) => d?.email && emailsAutorises.has(d.email.toLowerCase()))
-    const ignores = destinataires.length - destinatairesValides.length
+
+    let destinatairesValides: { email: string; nom?: string }[]
+    let ignores = 0
+    if (CIBLES.includes(cible)) {
+      const ids = new Set<string>()
+      if (cible !== 'joueurs') (educateurIds as string[]).forEach(id => ids.add(id))
+      if (cible !== 'educateurs') joueursIds.forEach(id => ids.add(id))
+      const vus = new Set<string>()
+      destinatairesValides = []
+      for (const p of await lireProfils([...ids])) {
+        const cle = (p.email || '').toLowerCase()
+        if (!cle || vus.has(cle)) continue
+        vus.add(cle)
+        destinatairesValides.push({ email: p.email, nom: `${p.prenom || ''} ${p.nom || ''}`.trim() })
+      }
+    } else {
+      // Ancienne forme : liste fournie, filtrée sur les membres réels du club.
+      const emailsAutorises = new Set<string>()
+      for (const p of await lireProfils([...(educateurIds as string[]), ...joueursIds])) { if (p.email) emailsAutorises.add(p.email.toLowerCase()) }
+      destinatairesValides = destinataires.filter((d: { email?: string }) => d?.email && emailsAutorises.has(d.email.toLowerCase()))
+      ignores = destinataires.length - destinatairesValides.length
+    }
 
     const { data: clubProfile } = await supabase.from('profiles').select('club').eq('id', club_id).maybeSingle()
     const club = clubProfile?.club || 'Ton club'

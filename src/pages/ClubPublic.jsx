@@ -90,7 +90,7 @@ export default function ClubPublic() {
       // rendaient cette page lente à charger.
       const [{ data: { user } }, { data: edu }] = await Promise.all([
         supabase.auth.getUser(),
-        supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+        supabase.from('profiles_public').select('*').eq('id', id).maybeSingle(),
       ])
       if (!user) { navigate('/login'); return }
       setUserId(user.id)
