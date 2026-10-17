@@ -6,9 +6,13 @@ import { saisonActuelle } from '../lib/saison'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 
-// Bandeau "Nos partenaires" — cf. supabase_sponsors_bandeau.sql. Ne jamais
-// select('*') ici : la table sponsors porte aussi des données de contrat
-// (montant, paiements, documents) réservées au staff du club.
+// Bandeau "Nos partenaires" — lu via la RPC sponsors_bandeau (cf.
+// supabase_sponsors_phase1_fonctions_rpc.sql), jamais directement dans la
+// table : sponsors porte aussi des données de contrat (contacts, montant,
+// paiements, documents, token du portail) réservées au club et à son staff.
+// La RPC ne renvoie que les 6 champs publics, et seulement aux membres du
+// club (club, staff, éducateur/dirigeant/joueur/parent affiliés) ; pour un
+// non-membre elle renvoie une liste vide, comme un club sans sponsor.
 //
 // Couleurs 100% tokens (colors.*, cf. src/lib/theme.js) — s'adapte tout seul
 // au thème clair/sombre courant, pas de isDark en dur : un simple joueur qui
@@ -32,10 +36,9 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
 
   useEffect(() => {
     if (!clubId) return
-    supabase.from('sponsors')
-      .select('id, entreprise, logo_url, banniere_url, lien_url, ordre_bandeau')
-      .eq('club_id', clubId).eq('saison', saisonActuelle()).eq('afficher_bandeau', true)
-      .order('ordre_bandeau', { ascending: true })
+    // Même filtre et même tri qu'avant (club, saison courante, affichés en
+    // bandeau, ordre_bandeau croissant), appliqués côté serveur.
+    supabase.rpc('sponsors_bandeau', { p_club_id: clubId, p_saison: saisonActuelle() })
       .then(({ data }) => { setSponsors(data || []); setCurrent(0) })
   }, [clubId])
 
