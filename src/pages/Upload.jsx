@@ -1,6 +1,6 @@
 import { demanderSignatureUpload, ajouterChampsSignes } from '../lib/signatureUpload'
 import { validerLienVideo, cleErreurLien } from '../lib/liensVideo'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
 import { useLang } from '../hooks/useLang'
@@ -39,6 +39,13 @@ export default function Upload() {
   const [couleurMaillot, setCouleurMaillot] = useState('')
   const [tempsJeu, setTempsJeu] = useState('')
   const [posteMatch, setPosteMatch] = useState('')
+  // Verrou synchrone, commun aux deux parcours (lien et fichier) — `uploading`
+  // (state React) ne suffit pas seul : setUploading(true) planifie une mise
+  // à jour, elle ne bloque pas une seconde invocation lancée avant le
+  // prochain rendu (deux clics rapides, Entrée maintenue). Un useRef est un
+  // objet mutable stable entre les rendus, lu/écrit de façon synchrone —
+  // aucune fenêtre de course possible.
+  const soumissionEnCoursRef = useRef(false)
 
   useEffect(() => { checkAuth() }, [])
 
@@ -53,27 +60,59 @@ export default function Upload() {
     setProfil(profil)
   }
 
-  async function decrementerAnalyse() {
-    const nouvellValeur = Math.max(0, (profil.analyses_restantes || 0) - 1)
-    await supabase.from('profiles').update({
-      analyses_restantes: nouvellValeur
-    }).eq('id', user.id)
-    setProfil(prev => ({ ...prev, analyses_restantes: nouvellValeur }))
+  // Le vrai décrément se fait côté serveur, atomiquement, par le trigger
+  // trg_decrementer_credit_demande (cf. supabase_fix_messages_demandes_rls.sql)
+  // au moment de l'INSERT dans demandes — jamais ici. Cette fonction ne fait
+  // que relire la valeur réelle après coup pour que l'affichage reflète ce
+  // que le serveur a effectivement décidé, plutôt que de recalculer une
+  // valeur côté client qui pourrait diverger (double décrément, course entre
+  // deux onglets, etc.).
+  async function rechargerAnalysesRestantes() {
+    const { data } = await supabase.from('profiles').select('analyses_restantes').eq('id', user.id).maybeSingle()
+    if (data) setProfil(prev => ({ ...prev, analyses_restantes: data.analyses_restantes }))
+  }
+
+  // Le trigger lève une exception portant ce message exact quand le crédit
+  // est épuisé (0 ou NULL) — on la reconnaît pour afficher le message
+  // traduit existant plutôt que le texte brut de l'erreur Postgres.
+  const estErreurCreditEpuise = (message) => !!message && message.includes('Aucune analyse restante')
+
+  // Opérations secondaires, volontairement séparées de la création de la
+  // demande : une fois l'INSERT confirmé, la demande existe et le crédit a
+  // été consommé — rien de ce qui suit (notifier les coachs, rafraîchir
+  // l'affichage du quota) ne doit pouvoir transformer ce succès en échec
+  // affiché à l'utilisateur. Chaque appel est individuellement catché pour
+  // qu'un échec de l'un n'empêche pas l'autre, et aucune des deux erreurs
+  // ne remonte à l'appelant.
+  async function executerOperationsSecondaires(joueurNom) {
+    try {
+      await notifierCoachs({ type: 'demande', joueurNom })
+    } catch (e) {
+      console.error('Erreur notification coachs (sans impact sur la demande déjà créée):', e)
+    }
+    try {
+      await rechargerAnalysesRestantes()
+    } catch (e) {
+      console.error('Erreur rafraîchissement du quota (sans impact sur la demande déjà créée):', e)
+    }
   }
 
   async function handleSubmitLien() {
     if (!lien.trim() || !user) return
-    const lienValide = validerLienVideo(lien)
-    if (!lienValide.ok) { setErreur(t(cleErreurLien(lienValide.raison), lang)); return }
-
-    if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
-      setErreur(t('upload_quota_utilise_ce_mois', lang))
-      return
-    }
-
-    setUploading(true)
-    setErreur('')
+    if (soumissionEnCoursRef.current) return
+    soumissionEnCoursRef.current = true
     try {
+      const lienValide = validerLienVideo(lien)
+      if (!lienValide.ok) { setErreur(t(cleErreurLien(lienValide.raison), lang)); return }
+
+      if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
+        setErreur(t('upload_quota_utilise_ce_mois', lang))
+        return
+      }
+
+      setUploading(true)
+      setErreur('')
+
       const { error: e1 } = await supabase.from('profiles').update({
         clip_url: lienValide.url,
       }).eq('id', user.id)
@@ -94,22 +133,34 @@ export default function Upload() {
         video_url: lien.trim(),
         statut: 'en_attente',
       })
-      if (e2) throw e2
+      if (e2) {
+        setErreur(estErreurCreditEpuise(e2.message) ? t('upload_quota_utilise_ce_mois', lang) : (e2.message || t('upload_erreur_envoi', lang)))
+        return
+      }
 
-      await notifierCoachs({ type: 'demande', joueurNom: `${profil.prenom} ${profil.nom}` })
-      await decrementerAnalyse()
+      // La demande existe désormais en base, le crédit a été consommé par
+      // le trigger : succès acquis, indépendamment de ce qui suit.
+      // executerOperationsSecondaires n'est pas attendue : le finally
+      // ci-dessous libère uploading/le verrou immédiatement après ce lancer,
+      // sans attendre la notification ni le rafraîchissement du quota.
       setSuccess(true)
+      executerOperationsSecondaires(`${profil.prenom} ${profil.nom}`)
     } catch (e) {
       setErreur(e.message || t('upload_erreur_envoi', lang))
+    } finally {
+      setUploading(false)
+      soumissionEnCoursRef.current = false
     }
-    setUploading(false)
   }
 
   async function handleUploadFichier() {
     if (!file || !user) return
+    if (soumissionEnCoursRef.current) return
+    soumissionEnCoursRef.current = true
 
     if (!profil.analyses_restantes || profil.analyses_restantes <= 0) {
       setErreur(t('upload_quota_utilise_ce_mois', lang))
+      soumissionEnCoursRef.current = false
       return
     }
 
@@ -135,53 +186,76 @@ export default function Upload() {
       }
 
       xhr.onload = async () => {
-        if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText)
-          const videoUrl = data.secure_url
+        // Corps enveloppé dans un try/catch (point 6 de la demande de
+        // validation) : xhr.onload est une fonction async dont la promesse
+        // n'est jamais attendue ni catchée par l'appelant — sans ce
+        // try/catch, une exception ici (e1, JSON.parse, etc.) devenait un
+        // rejet de promesse non géré : ni message d'erreur, ni
+        // setUploading(false), l'interface restait bloquée sur la barre de
+        // progression indéfiniment.
+        try {
+          if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText)
+            const videoUrl = data.secure_url
 
-          const { error: e1 } = await supabase.from('profiles').update({
-            clip_url: videoUrl,
-          }).eq('id', user.id)
-          if (e1) throw e1
+            const { error: e1 } = await supabase.from('profiles').update({
+              clip_url: videoUrl,
+            }).eq('id', user.id)
+            if (e1) throw e1
 
-          const descriptionComplete = [
-            numeroMaillot ? `🎽 Maillot n°${numeroMaillot}${couleurMaillot ? ` (${couleurMaillot})` : ''}` : '',
-            posteMatch ? `⚽ Poste joué : ${posteMatch}` : '',
-            description.trim() ? `📝 ${description.trim()}` : '',
-          ].filter(Boolean).join('\n')
+            const descriptionComplete = [
+              numeroMaillot ? `🎽 Maillot n°${numeroMaillot}${couleurMaillot ? ` (${couleurMaillot})` : ''}` : '',
+              posteMatch ? `⚽ Poste joué : ${posteMatch}` : '',
+              description.trim() ? `📝 ${description.trim()}` : '',
+            ].filter(Boolean).join('\n')
 
-          const { error: e2 } = await supabase.from('demandes').insert({
-            joueur_id: user.id,
-            titre: `Analyse vidéo — ${profil.prenom} ${profil.nom}`,
-            poste: profil.poste || '',
-            description: descriptionComplete,
-            video_url: videoUrl,
-            statut: 'en_attente',
-          })
-          if (e2) throw e2
+            const { error: e2 } = await supabase.from('demandes').insert({
+              joueur_id: user.id,
+              titre: `Analyse vidéo — ${profil.prenom} ${profil.nom}`,
+              poste: profil.poste || '',
+              description: descriptionComplete,
+              video_url: videoUrl,
+              statut: 'en_attente',
+            })
+            if (e2) {
+              setErreur(estErreurCreditEpuise(e2.message) ? t('upload_quota_utilise_ce_mois', lang) : (e2.message || t('upload_upload_echoue', lang)))
+              return
+            }
 
-          await notifierCoachs({ type: 'demande', joueurNom: `${profil.prenom} ${profil.nom}` })
-          await decrementerAnalyse()
-          setProgress(100)
-          setSuccess(true)
-        } else {
-          const errData = JSON.parse(xhr.responseText)
-          setErreur(errData?.error?.message || t('upload_upload_echoue', lang))
+            // La demande existe désormais en base, le crédit a été
+            // consommé par le trigger : succès acquis, indépendamment de ce
+            // qui suit.
+            setProgress(100)
+            setSuccess(true)
+            executerOperationsSecondaires(`${profil.prenom} ${profil.nom}`)
+          } else {
+            const errData = JSON.parse(xhr.responseText)
+            setErreur(errData?.error?.message || t('upload_upload_echoue', lang))
+          }
+        } catch (e) {
+          setErreur(e.message || t('upload_upload_echoue', lang))
+        } finally {
+          setUploading(false)
+          soumissionEnCoursRef.current = false
         }
-        setUploading(false)
       }
 
       xhr.onerror = () => {
         setErreur(t('upload_erreur_reseau', lang))
         setUploading(false)
+        soumissionEnCoursRef.current = false
       }
 
       xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
       xhr.send(formData)
 
     } catch (e) {
+      // Échec avant même l'envoi XHR (ex. demanderSignatureUpload) — xhr.onload
+      // ne se déclenchera jamais dans ce cas, donc le verrou doit être libéré
+      // ici, pas seulement dans xhr.onload/xhr.onerror.
       setErreur(e.message || t('invite_erreur_inconnue', lang))
       setUploading(false)
+      soumissionEnCoursRef.current = false
     }
   }
 
