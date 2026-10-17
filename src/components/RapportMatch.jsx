@@ -102,8 +102,8 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
   }, [match.id])
 
   // ── Composition (terrain) — même mécanisme que CauserieAvantMatch.jsx :
-  // ModalSelectionJoueur ne propose que les joueurs à compte lié (joueur_id),
-  // c'est une contrainte du composant partagé, pas spécifique à ce rapport.
+  // Les joueurs sans compte lié reçoivent un identifiant « effectif:<id de la
+  // ligne equipe_joueurs> » (cf. joueursDispo plus bas) pour pouvoir être placés.
   const dejaUtilisesCompo = (exclureId) => {
     const t = titulaires.filter(Boolean).map(j => j.joueur_id)
     const r = remplacants.map(j => j.joueur_id)
@@ -226,7 +226,7 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
 
             {compoModal && (
               <ModalSelectionJoueur
-                joueursDispo={joueurs.filter(j => j.joueur_id)}
+                joueursDispo={joueurs.map(j => (j.joueur_id ? j : { ...j, joueur_id: `effectif:${j.id}` }))}
                 dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? titulaires[compoModal.slotIndex]?.joueur_id : undefined)}
                 multiSelect={compoModal.type === 'remplacant'}
                 onConfirmer={confirmerSelectionCompo}

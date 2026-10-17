@@ -1280,7 +1280,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
       {compoModal && (
         <ModalSelectionJoueur
-          joueursDispo={joueurs.filter(j => j.joueur_id)}
+          joueursDispo={joueurs.map(j => (j.joueur_id ? j : { ...j, joueur_id: `effectif:${j.id}` }))}
           dejaUtilises={dejaUtilisesCompo(compoModal.type === 'titulaire' ? f.titulaires?.[compoModal.slotIndex]?.joueur_id : undefined)}
           multiSelect={compoModal.type === 'remplacant'}
           capitaineActuel={compoModal.type === 'titulaire' ? !!f.titulaires?.[compoModal.slotIndex]?.capitaine : false}

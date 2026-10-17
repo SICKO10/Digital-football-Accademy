@@ -319,6 +319,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
                   <AvatarJoueur joueur={j} fontSize="clamp(11px, 1.8vw, 14px)" />
                 </div>
                 <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px', flex: 1 }}>{j.prenom} {j.nom}</span>
+                {String(j.joueur_id).startsWith('effectif:') && !indisponible && <span style={{ color: '#777', fontSize: '11px' }}>sans compte</span>}
                 {indisponible && <span style={{ color: '#555', fontSize: '11px' }}>déjà placé</span>}
                 {!multiSelect && choisi?.joueur_id === j.joueur_id && <span style={{ color: '#4ade80' }}>✓</span>}
               </div>
