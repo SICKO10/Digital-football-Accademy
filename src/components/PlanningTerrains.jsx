@@ -687,13 +687,16 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
         border: `1px solid ${enConflit ? '#ef4444' : (c.libere || estMien ? accentColor + '40' : st.border)}`,
         borderLeft: `3px solid ${enConflit ? '#ef4444' : couleurBord}`,
         borderRadius: '10px', padding: '10px 12px', marginBottom: '8px',
+        minWidth: 0, overflow: 'hidden', overflowWrap: 'anywhere',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+        {/* Horaire puis zone en dessous : côte à côte, l'étiquette de zone
+            débordait de la carte dans les colonnes étroites (7 jours). */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: c.libere ? accentColor : st.text, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             {c.heure_debut?.slice(0, 5)}<span style={{ color: st.textFaint, fontWeight: 600 }}> – {c.heure_fin?.slice(0, 5)}</span>
           </p>
           {zone !== 'plein' && (
-            <span style={{ fontSize: '9px', fontWeight: 700, color: couleurZone(zone, accentColor), background: couleurZone(zone, accentColor) + '18', border: `1px solid ${couleurZone(zone, accentColor)}40`, borderRadius: '10px', padding: '1px 7px', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '9px', fontWeight: 700, color: couleurZone(zone, accentColor), background: couleurZone(zone, accentColor) + '18', border: `1px solid ${couleurZone(zone, accentColor)}40`, borderRadius: '10px', padding: '1px 7px', whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {ZONES.find(z => z.val === zone)?.label || zone}
             </span>
           )}
@@ -742,8 +745,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
             onClick={() => { if (c.libere || window.confirm('Libérer ce créneau ?')) libererCreneauDate(cBase, dateStr, !c.libere) }}
             disabled={liberating[cle]}
             style={c.libere
-              ? { marginTop: '8px', width: '100%', background: st.bgRaised, color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-              : { marginTop: '10px', width: '100%', background: 'transparent', color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              ? { marginTop: '8px', width: '100%', background: st.bgRaised, color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'normal', lineHeight: 1.25 }
+              : { marginTop: '10px', width: '100%', background: 'transparent', color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'normal', lineHeight: 1.25 }}>
             {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
         )}
@@ -1083,7 +1086,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
               {loadingPlanning ? (
                 <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement du planning...</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(7, 1fr)', gap: isMobile ? '12px' : '8px', width: '100%' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(7, minmax(0, 1fr))', gap: isMobile ? '12px' : '8px', width: '100%' }}>
                   {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
                     const matchsJour = matchsDuJour(j.dateStr)
