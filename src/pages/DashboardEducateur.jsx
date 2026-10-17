@@ -278,6 +278,23 @@ const IcoChevronRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fi
 const IcoX            = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 
 // ── Icônes SVG bibliothèque (tailles/couleurs paramétrables) ────────────────
+const IcoCamera = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+const IcoOeil = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+const IcoChrono = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14 15"/><line x1="10" y1="2" x2="14" y2="2"/></svg>
+const IcoGroupe = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+// Terrain stylisé pour les procédés sans schéma (au lieu d'un bloc vide).
+const TerrainMiniature = ({ couleur }) => (
+  <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%', display: 'block' }}>
+    <rect width="200" height="110" fill="#14301c" />
+    <g fill="none" stroke={couleur} strokeOpacity="0.35" strokeWidth="1.2">
+      <rect x="8" y="8" width="184" height="94" rx="2" />
+      <line x1="100" y1="8" x2="100" y2="102" />
+      <circle cx="100" cy="55" r="15" />
+      <rect x="8" y="33" width="24" height="44" />
+      <rect x="168" y="33" width="24" height="44" />
+    </g>
+  </svg>
+)
 const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -429,26 +446,6 @@ function parseRows(raw) {
       return j
     })
     .filter(j => j.prenom)
-}
-
-// ── Bar chart horizontal SVG ──────────────────────────────────────────────────
-function BarChart({ data, color = colors.accent.green, unit = '', max: forceMax }) {
-  const colors2 = useColors()
-  if (!data.length) return null
-  const max = forceMax ?? Math.max(...data.map(d => d.value), 1)
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-      {data.map((d, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '110px', fontSize: '12px', color: colors2.text.secondary, textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.label}>{d.label}</div>
-          <div style={{ flex: 1, background: colors2.background.raised, borderRadius: '4px', height: '22px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${max > 0 ? (d.value / max) * 100 : 0}%`, background: color + '99', borderRadius: '4px', transition: 'width 0.4s ease', minWidth: d.value > 0 ? '4px' : '0' }} />
-          </div>
-          <div style={{ width: '40px', fontSize: '12px', fontWeight: 700, color, textAlign: 'right', flexShrink: 0 }}>{d.value}{unit}</div>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 // ── Radial progress skill (anneau rempli pour une compétence /5) ─────────────
@@ -1718,6 +1715,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [moisPointsSeanceSelectionne, setMoisPointsSeanceSelectionne] = useState(null) // clé 'YYYY-MM' choisie dans l'historique (onglet Mois) — null = mois en cours
   const [biblioVideoTab, setBiblioVideoTab] = useState('perso') // 'perso' | 'club' | 'df'
   const [statsTri, setStatsTri] = useState('buts') // pour classement
+  const [ressentiOuverts, setRessentiOuverts] = useState({}) // Stats > Ressenti joueurs : séances dépliées (la plus récente l'est par défaut)
+  const [graphDeplies, setGraphDeplies] = useState({}) // Stats > Graphiques : cartes dépliées (« Voir tous »)
 
   // Équipe
   const [joueurs, setJoueurs] = useState([])
@@ -7012,28 +7011,98 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                 {/* ─ Graphiques ─ */}
                 {statsSubTab === 'graphiques' && (() => {
-                  const withStats = joueurs.map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, ...statsGlobalesJoueur(j.id) }))
-                  return (
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '20px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box' }}>
-                      {[
-                        { title: t('stats_graph_buteurs', lang), key: 'buts', color: colors.accent.green },
-                        { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.blue },
-                        { title: t('stats_graph_minutes', lang), key: 'minutes', color: colors.accent.purpleLight, unit: "'" },
-                        { title: t('stats_graph_matchs', lang), key: 'matchs', color: '#f59e0b' },
-                        { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: colors.accent.amber },
-                        { title: t('stats_graph_cartons_r', lang), key: 'cartons_r', color: '#f87171' },
-                      ].map(({ title, key, color, unit = '' }) => {
-                        const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
-                        return (
-                          <div key={key} style={st.card}>
-                            <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>{title}</p>
-                            {data.length === 0
-                              ? <p style={{ color: colors.border.strong, fontSize: '13px' }}>{t('msg_aucune_donnee', lang)}</p>
-                              : <BarChart data={data.map(d => ({ label: d.label, value: d[key] }))} color={color} unit={unit} />
-                            }
+                  // V2 : graphiques rangés par thème (attaque / temps de jeu /
+                  // discipline), même filtre compétition que Tableau et Classement,
+                  // top 8 par carte avec « Voir tous » pour éviter les listes de 20
+                  // lignes. Titres traduits partagés avec DashboardClub : emoji retiré
+                  // à l'affichage plutôt que dans translations.js.
+                  const sansEmoji = (txt) => txt.replace(/^[^\p{L}\p{N}]+/u, '')
+                  const competitionsDispo = [...new Set(matchs.map(m => m.competition).filter(Boolean))]
+                  const matchsFiltres = filtreCompTableau === 'all' ? matchs : matchs.filter(m => m.competition === filtreCompTableau)
+                  const withStats = joueurs.map(j => ({ j, label: `${j.prenom} ${j.nom?.[0] || ''}.`, ...statsGlobalesJoueur(j.id, matchsFiltres) }))
+                  const carton = (c) => <span style={{ display: 'inline-block', width: '11px', height: '15px', borderRadius: '2px', background: c }} />
+                  const SECTIONS = [
+                    { titre: 'Attaque', graphiques: [
+                      { title: t('stats_graph_buteurs', lang), key: 'buts', color: colors.accent.green, icone: <IcoBallon /> },
+                      { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.blue, icone: <IcoCible /> },
+                    ] },
+                    { titre: 'Temps de jeu', graphiques: [
+                      { title: t('stats_graph_minutes', lang), key: 'minutes', color: colors.accent.purpleLight, unit: "'", icone: <IcoHorloge />, moyenne: true },
+                      { title: t('stats_graph_matchs', lang), key: 'matchs', color: colors.accent.amber, icone: <IcoCalendar />, moyenne: true },
+                    ] },
+                    { titre: 'Discipline', graphiques: [
+                      { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: colors.accent.amber, icone: carton(colors.accent.amber), vide: 'Aucun carton jaune' },
+                      { title: t('stats_graph_cartons_r', lang), key: 'cartons_r', color: colors.accent.red, icone: carton(colors.accent.red), vide: 'Aucun carton rouge' },
+                    ] },
+                  ]
+                  const LIMITE = 8
+                  const carteGraphique = ({ title, key, color, unit = '', icone, moyenne, vide }) => {
+                    const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
+                    const totalVal = data.reduce((acc, d) => acc + d[key], 0)
+                    const max = data[0]?.[key] || 1
+                    const deplie = !!graphDeplies[key]
+                    const visibles = deplie ? data : data.slice(0, LIMITE)
+                    const resume = data.length === 0 ? null
+                      : moyenne ? `Moyenne ${Math.round(totalVal / data.length)}${unit} · ${data.length} joueurs`
+                      : `Total ${totalVal} · ${data.length} joueur${data.length > 1 ? 's' : ''}`
+                    return (
+                      <div key={key} style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: color + '1f', color, flexShrink: 0 }}>{icone}</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{sansEmoji(title)}</p>
+                            {resume && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{resume}</p>}
                           </div>
-                        )
-                      })}
+                        </div>
+                        {data.length === 0 ? (
+                          <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '13px', textAlign: 'center' }}>{vide || t('msg_aucune_donnee', lang)}</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {visibles.map((d, i) => (
+                              <div key={d.j.id} style={{ display: 'grid', gridTemplateColumns: `18px 26px ${isMobile ? '84px' : '110px'} minmax(0,1fr) 48px`, alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: i === 0 ? color : colors.text.faint, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                                <Avatar person={d.j} size={26} />
+                                <span title={`${d.j.prenom} ${d.j.nom}`} style={{ fontSize: '13px', fontWeight: i === 0 ? 700 : 500, color: i === 0 ? colors.text.primary : colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
+                                <div style={{ height: '8px', borderRadius: '4px', background: colors.background.base, overflow: 'hidden' }}>
+                                  <div style={{ width: `${(d[key] / max) * 100}%`, minWidth: '6px', height: '100%', borderRadius: '4px', background: color, opacity: i === 0 ? 1 : 0.7, transition: 'width 0.4s ease' }} />
+                                </div>
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: i === 0 ? color : colors.text.primary, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{d[key]}{unit}</span>
+                              </div>
+                            ))}
+                            {data.length > LIMITE && (
+                              <button onClick={() => setGraphDeplies(prev => ({ ...prev, [key]: !prev[key] }))}
+                                style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '2px', background: 'transparent', border: 'none', padding: '4px 0', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                {deplie ? 'Réduire' : `Voir les ${data.length} joueurs`}<IcoChevronBas ouvert={deplie} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                      {competitionsDispo.length > 1 && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
+                            const actif = filtreCompTableau === f.key
+                            return (
+                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
+                                style={{ padding: '7px 16px', borderRadius: '18px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
+                                {f.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {SECTIONS.map(sec => (
+                        <div key={sec.titre}>
+                          <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{sec.titre}</p>
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0,1fr))', gap: '16px', alignItems: 'start' }}>
+                            {sec.graphiques.map(carteGraphique)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )
                 })()}
@@ -7074,147 +7143,171 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       ...s, taux: Math.round((s.presents+s.convoque)/s.total*100)
                     }))
                   }
+                  // V2 : synthèse unique (taux global + barre segmentée par statut),
+                  // joueurs par poste en cartes compactes (statuts en pastilles, pas
+                  // d'emoji), classement en lignes avec photo, top 10 + « Voir tous ».
+                  const STATUTS_PRES = [
+                    { key: 'presents', label: t('stats_statut_present', lang), color: colors.accent.green },
+                    { key: 'convoque', label: t('stats_statut_convoqu', lang), color: colors.accent.blue },
+                    { key: 'absents', label: t('stats_statut_absent', lang), color: colors.accent.red },
+                    { key: 'blesses', label: t('stats_statut_blesse', lang), color: colors.accent.orange },
+                    { key: 'malade', label: t('stats_statut_malade', lang), color: colors.accent.purple },
+                  ]
+                  const totauxPres = { presents: totalPresents, convoque: totalConvoques, absents: totalAbsents, blesses: totalBlesses, malade: totalMalades }
+                  const totPres = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades
+                  // Convoqués comptés comme présents (même règle que tauxPresence).
+                  const tauxGlobal = totPres ? Math.round((totalPresents + totalConvoques) / totPres * 100) : 0
+                  const couleurTaux = (tx) => tx >= 80 ? colors.accent.green : tx >= 50 ? colors.accent.amber : colors.accent.red
+                  const GROUPES_PRES = [
+                    { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
+                    { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                    { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
+                    { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                    { label: 'Autres', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
+                  ]
+                  const eyebrowPres = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+                  const classementPres = joueurs.map(j => ({ j, tx: tauxPresence(j.id) })).filter(d => d.tx).sort((a, b) => b.tx.taux - a.tx.taux)
+                  const presDeplie = !!graphDeplies.classement_presence
                   return (
-                    <div>
-                      {/* ── % par catégorie en haut ── */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', width: '100%', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box', marginBottom: '1.5rem' }}>
-                        {(() => {
-                          const tot = totalPresents + totalConvoques + totalAbsents + totalBlesses + totalMalades || 1
-                          // Convoqués comptent comme présents (comme dans tauxPresence et
-                          // presenceParMois) — donc "Absents" est calculé directement sur
-                          // totalAbsents, pas en complément de la présence (100 - X), sinon
-                          // les convoqués (et blessés/malades) se retrouveraient à tort
-                          // inclus dans le taux d'absence.
-                          const tauxPresenceGlobal = Math.round((totalPresents + totalConvoques) / tot * 100)
-                          const tauxAbsentsGlobal = Math.round(totalAbsents / tot * 100)
-                          return [
-                            { label: `✅ ${t('stats_pres_presence', lang)}`, val: tauxPresenceGlobal, color: colors.accent.green, count: totalPresents + totalConvoques },
-                            { label: `❌ ${t('stats_pres_absents', lang)}`,  val: tauxAbsentsGlobal,  color: colors.accent.red, note: t('stats_pres_dont', lang), count: totalAbsents },
-                            { label: `🤕 ${t('stats_pres_blesses', lang)}`,  val: Math.round(totalBlesses / tot * 100),  color: colors.accent.orange, count: totalBlesses },
-                            { label: `🤒 ${t('stats_pres_malades', lang)}`,  val: Math.round(totalMalades / tot * 100),  color: colors.accent.purple, count: totalMalades },
-                            { label: `🏆 ${t('stats_pres_convoques', lang)}`,val: Math.round(totalConvoques / tot * 100), color: colors.accent.blue, count: totalConvoques },
-                          ]
-                        })().map(c => (
-                          <div key={c.label} style={{ background: colors.background.surface, border: `1px solid ${c.color}20`, borderRadius: '12px', padding: '10px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '90px' }}>
-                            <span style={{ fontSize: '22px', fontWeight: 800, color: c.color }}>
-                              {c.val}%
-                              {/* Compteur brut affiché même si l'arrondi tombe à 0% (ex: 1 ou 2
-                                  cas sur des centaines de séances × joueurs) — sinon un vrai
-                                  blessé/malade "Auto" devient invisible à tort. */}
-                              {c.count > 0 && <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}> ({c.count})</span>}
-                            </span>
-                            <span style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px', textAlign: 'center' }}>{c.label}</span>
-                            {c.note && (
-                              <span style={{ fontSize: '9px', color: colors.text.disabled, marginTop: '2px', textAlign: 'center' }}>{c.note}</span>
-                            )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                      {/* Synthèse */}
+                      <div style={{ ...st.card, margin: 0 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto minmax(0,1fr)', gap: isMobile ? '14px' : '32px', alignItems: 'center' }}>
+                          <div>
+                            <p style={eyebrowPres}>{t('stats_pres_presence', lang)}</p>
+                            <p style={{ margin: '6px 0 0', fontSize: '36px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: totPres ? couleurTaux(tauxGlobal) : colors.text.faint }}>
+                              {tauxGlobal}<span style={{ fontSize: '16px', color: colors.text.faint, marginLeft: '2px' }}>%</span>
+                            </p>
+                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{totalPresents + totalConvoques} présences sur {totPres} réponses</p>
                           </div>
-                        ))}
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: 'flex', height: '10px', borderRadius: '6px', overflow: 'hidden', background: colors.background.base, gap: totPres ? '2px' : 0 }}>
+                              {STATUTS_PRES.map(sp => totauxPres[sp.key] > 0 && <div key={sp.key} style={{ width: `${(totauxPres[sp.key] / totPres) * 100}%`, background: sp.color }} />)}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, minmax(0,1fr))' : 'repeat(5, minmax(0,1fr))', gap: '10px', marginTop: '14px' }}>
+                              {STATUTS_PRES.map(sp => (
+                                <div key={sp.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: totauxPres[sp.key] ? 1 : 0.45 }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
+                                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sp.color, flexShrink: 0 }} />{sp.label}
+                                  </span>
+                                  {/* Compteur brut affiché même si l'arrondi tombe à 0 % (1 ou 2 cas
+                                      sur des centaines de réponses), sinon le statut paraît absent. */}
+                                  <span style={{ fontSize: '17px', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: totauxPres[sp.key] ? sp.color : colors.text.faint }}>
+                                    {totPres ? Math.round(totauxPres[sp.key] / totPres * 100) : 0}%
+                                    <span style={{ fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginLeft: '4px' }}>{totauxPres[sp.key]}</span>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* ── Cards joueurs par poste ── */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                        {[
-                          { label: `🧤 ${t('stats_pres_gardiens', lang)}`, color: '#f59e0b', match: p => p?.toLowerCase().includes('gardien') },
-                          { label: `🛡️ ${t('stats_pres_defenseurs', lang)}`, color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
-                          { label: `⚙️ ${t('stats_pres_milieux', lang)}`, color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
-                          { label: `⚡ ${t('stats_pres_attaquants', lang)}`, color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
-                          { label: '❓ Autres', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
-                        ].map(groupe => {
-                          const gJoueurs = joueurs.filter(j => groupe.match(j.poste))
-                          if (!gJoueurs.length) return null
-                          return (
-                            <div key={groupe.label}>
-                              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: groupe.color }}>{groupe.label}</p>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
-                                {gJoueurs.map(j => {
-                                  const tx = tauxPresence(j.id)
-                                  return (
-                                    <div key={j.id} style={st.card}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <DonutMulti
-                                          presents={tx?.presents || 0}
-                                          absents={tx?.absents || 0}
-                                          blesses={tx?.blesses || 0}
-                                          malade={tx?.malade || 0}
-                                          convoque={tx?.convoque || 0}
-                                          size={72}
-                                        />
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                          <p style={{ margin: '2px 0 8px', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
-                                          {tx ? (
-                                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '3px' }}>
-                                              {[
-                                                { emoji: '✅', label: t('stats_statut_present', lang), val: tx.presents, color: colors.accent.green },
-                                                { emoji: '🏆', label: t('stats_statut_convoqu', lang), val: tx.convoque, color: colors.accent.blue },
-                                                { emoji: '❌', label: t('stats_statut_absent', lang), val: tx.absents, color: colors.accent.red },
-                                                { emoji: '🤕', label: t('stats_statut_blesse', lang), val: tx.blesses, color: colors.accent.orange },
-                                                { emoji: '🤒', label: t('stats_statut_malade', lang), val: tx.malade, color: colors.accent.purple },
-                                              ].filter(s => s.val > 0).map(s => (
-                                                <span key={s.label} style={{ fontSize: '11px', color: s.color }}>
-                                                  {s.emoji} {s.val} {s.label}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          ) : (
-                                            <span style={{ fontSize: '11px', color: colors.border.strong }}>Aucune présence saisie</span>
-                                          )}
-                                        </div>
-                                        {tx && (
-                                          <button
-                                            onClick={() => setJoueurMoisDetail(joueurMoisDetail === j.id ? null : j.id)}
-                                            style={{ background: joueurMoisDetail === j.id ? '#1a2e1a' : colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '11px', padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-                                          >
-                                            📅 {joueurMoisDetail === j.id ? '▲' : '▼'}
-                                          </button>
+                      {/* Joueurs par poste */}
+                      {GROUPES_PRES.map(groupe => {
+                        const gJoueurs = joueurs.filter(j => groupe.match(j.poste))
+                        if (!gJoueurs.length) return null
+                        return (
+                          <div key={groupe.label}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.color }} />
+                              <p style={eyebrowPres}>{groupe.label}</p>
+                              <span style={{ fontSize: '11px', color: colors.text.faint }}>{gJoueurs.length}</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px', alignItems: 'start' }}>
+                              {gJoueurs.map(j => {
+                                const tx = tauxPresence(j.id)
+                                const ouvert = joueurMoisDetail === j.id
+                                return (
+                                  <div key={j.id} style={{ ...st.card, margin: 0, padding: '14px 16px', borderLeft: `3px solid ${groupe.color}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                      <DonutMulti presents={tx?.presents || 0} absents={tx?.absents || 0} blesses={tx?.blesses || 0} malade={tx?.malade || 0} convoque={tx?.convoque || 0} size={60} />
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
+                                        {tx ? (
+                                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginTop: '8px' }}>
+                                            {STATUTS_PRES.filter(sp => tx[sp.key] > 0).map(sp => (
+                                              <span key={sp.key} title={sp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: colors.text.secondary }}>
+                                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sp.color }} />
+                                                <strong style={{ color: sp.color, fontVariantNumeric: 'tabular-nums' }}>{tx[sp.key]}</strong>{sp.label}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Aucune présence saisie</p>
                                         )}
                                       </div>
-                                      {/* Détail par mois */}
-                                      {joueurMoisDetail === j.id && (() => {
-                                        const moisData = presenceParMois(j.id)
-                                        if (!moisData.length) return null
-                                        return (
-                                          <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            <p style={{ margin: '0 0 6px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Présence par mois</p>
-                                            {moisData.map(m => {
-                                              const color = m.taux >= 80 ? colors.accent.green : m.taux >= 50 ? '#f59e0b' : colors.accent.red
-                                              return (
-                                                <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                  <span style={{ fontSize: '11px', color: colors.text.faint, minWidth: '110px', textTransform: 'capitalize' }}>{m.label}</span>
-                                                  <div style={{ flex: 1, height: '6px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
-                                                    <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.4s' }} />
-                                                  </div>
-                                                  <span style={{ fontSize: '12px', fontWeight: 700, color, minWidth: '36px', textAlign: 'right' }}>{m.taux}%</span>
-                                                  <span style={{ fontSize: '10px', color: colors.text.disabled }}>{m.presents+m.convoque}/{m.total}</span>
-                                                </div>
-                                              )
-                                            })}
-                                          </div>
-                                        )
-                                      })()}
                                     </div>
-                                  )
-                                })}
-                              </div>
+                                    {tx && (
+                                      <button onClick={() => setJoueurMoisDetail(ouvert ? null : j.id)}
+                                        style={{ marginTop: '12px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: ouvert ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.faint, fontSize: '12px', fontWeight: 600, padding: '6px 10px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                        Détail par mois <IcoChevronBas ouvert={ouvert} />
+                                      </button>
+                                    )}
+                                    {ouvert && (() => {
+                                      const moisData = presenceParMois(j.id)
+                                      if (!moisData.length) return null
+                                      return (
+                                        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          {moisData.map(m => {
+                                            const color = couleurTaux(m.taux)
+                                            return (
+                                              <div key={m.key} style={{ display: 'grid', gridTemplateColumns: '96px minmax(0,1fr) 38px 36px', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
+                                                <div style={{ height: '6px', background: colors.background.base, borderRadius: '3px', overflow: 'hidden' }}>
+                                                  <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px' }} />
+                                                </div>
+                                                <span style={{ fontSize: '12px', fontWeight: 700, color, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{m.taux}%</span>
+                                                <span style={{ fontSize: '10px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>{m.presents + m.convoque}/{m.total}</span>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      )
+                                    })()}
+                                  </div>
+                                )
+                              })}
                             </div>
-                          )
-                        })}
-                      </div>
+                          </div>
+                        )
+                      })}
 
-                      {/* ── Bar chart classement présence ── */}
-                      <div style={st.card}>
-                        <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>🏃 Classement par taux de présence</p>
-                        <BarChart
-                          data={[...joueurs]
-                            .map(j => ({ label: `${j.prenom} ${j.nom?.[0] || ""}.`, value: tauxPresence(j.id)?.taux ?? 0 }))
-                            .filter(d => d.value > 0)
-                            .sort((a, b) => b.value - a.value)}
-                          color={colors.accent.green}
-                          unit="%"
-                          max={100}
-                        />
-                        {joueurs.every(j => !tauxPresence(j.id)) && (
-                          <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
+                      {/* Classement par taux de présence */}
+                      <div style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1f', color: colors.accent.green, flexShrink: 0 }}><IcoPresence /></span>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Classement par taux de présence</p>
+                            {classementPres.length > 0 && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{classementPres.filter(d => d.tx.taux >= 80).length} joueur{classementPres.filter(d => d.tx.taux >= 80).length > 1 ? 's' : ''} à 80 % ou plus</p>}
+                          </div>
+                        </div>
+                        {classementPres.length === 0 ? (
+                          <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '13px', textAlign: 'center' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {(presDeplie ? classementPres : classementPres.slice(0, 10)).map(({ j, tx }, i) => {
+                              const color = couleurTaux(tx.taux)
+                              return (
+                                <div key={j.id} style={{ display: 'grid', gridTemplateColumns: `20px 26px ${isMobile ? '90px' : '160px'} minmax(0,1fr) 46px`, alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                                  <Avatar person={j} size={26} />
+                                  <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? `${j.prenom} ${j.nom?.[0] || ''}.` : `${j.prenom} ${j.nom}`}</span>
+                                  <div style={{ height: '8px', borderRadius: '4px', background: colors.background.base, overflow: 'hidden' }}>
+                                    <div style={{ width: `${tx.taux}%`, height: '100%', borderRadius: '4px', background: color }} />
+                                  </div>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{tx.taux}%</span>
+                                </div>
+                              )
+                            })}
+                            {classementPres.length > 10 && (
+                              <button onClick={() => setGraphDeplies(prev => ({ ...prev, classement_presence: !prev.classement_presence }))}
+                                style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', padding: '4px 0', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                {presDeplie ? 'Réduire' : `Voir les ${classementPres.length} joueurs`}<IcoChevronBas ouvert={presDeplie} />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -7396,99 +7489,142 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const demandesTriees = Object.values(demandesNote).sort((a, b) => (b.date_seance || '').localeCompare(a.date_seance || ''))
               if (demandesTriees.length === 0) {
                 return (
-                  <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>
-                    Aucune demande de ressenti envoyée.<br />
-                    <span style={{ fontSize: '12px' }}>Clique sur ⭐ depuis une séance, dans l'onglet Entraînements.</span>
+                  <div style={{ ...st.card, textAlign: 'center', padding: '40px 20px' }}>
+                    <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>Aucune demande de ressenti envoyée</p>
+                    <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Demande le ressenti depuis une séance, dans l'onglet Entraînements.</p>
                   </div>
                 )
               }
-              const GRID_RESSENTI = '180px 1fr 80px 80px 120px'
               // Pas de colonne "humeur" en base (seances_notes_joueurs n'a que
               // charge_travail/notion_plaisir/mots_cles) — dérivée du plaisir,
               // nuancée à la baisse quand la séance était à la fois dure et peu
               // appréciée (charge haute + plaisir moyen/bas), plutôt qu'une
               // simple redite du chiffre déjà affiché dans la colonne Plaisir.
+              const NIVEAUX_RESSENTI = [
+                { label: 'Très bien', color: colors.accent.green },
+                { label: 'Bien', color: colors.accent.amber },
+                { label: 'Moyen', color: colors.accent.orange },
+                { label: 'Difficile', color: colors.accent.red },
+              ]
               const ressenti = (r) => {
                 const score = r.notion_plaisir - (r.charge_travail >= 4 && r.notion_plaisir <= 3 ? 1 : 0)
-                if (score >= 4) return { label: 'Très bien', color: colors.accent.green }
-                if (score >= 3) return { label: 'Bien', color: colors.accent.amber }
-                if (score >= 2) return { label: 'Moyen', color: colors.accent.amber }
-                return { label: 'Difficile', color: colors.accent.red }
+                return NIVEAUX_RESSENTI[score >= 4 ? 0 : score >= 3 ? 1 : score >= 2 ? 2 : 3]
               }
-              return demandesTriees.map(d => {
-                const reponses = reponsesNote.filter(r => r.demande_id === d.id)
-                const moy = (cle) => reponses.length ? (reponses.reduce((s, r) => s + r[cle], 0) / reponses.length).toFixed(1) : null
-                return (
-                  <div key={d.id} style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${colors.border.subtle}`, overflow: 'hidden', marginBottom: '12px' }}>
-                    <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${colors.border.subtle}`, flexWrap: 'wrap', gap: '10px' }}>
-                      <div>
-                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{d.titre}</span>
-                        <span style={{ color: colors.text.disabled, fontSize: '12px', marginLeft: '10px' }}>{new Date(`${d.date_seance}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        {reponses.length > 0 && (
-                          <>
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ color: colors.accent.amber, fontSize: '18px', fontWeight: 900, lineHeight: 1 }}>{moy('charge_travail')}</div>
-                              <div style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Charge</div>
+              const couleurCharge = (v) => v >= 4 ? colors.accent.red : v >= 3 ? colors.accent.amber : colors.accent.green
+              const couleurPlaisir = (v) => v >= 4 ? colors.accent.green : v >= 3 ? colors.accent.amber : colors.accent.red
+              const jauge = (val, color) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    {[1, 2, 3, 4, 5].map(n => <span key={n} style={{ width: '9px', height: '6px', borderRadius: '2px', background: n <= val ? color : colors.background.base }} />)}
+                  </div>
+                  <span style={{ color, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{val}</span>
+                </div>
+              )
+              const GRID_RESSENTI = 'minmax(170px, 1.1fr) minmax(0, 1.6fr) 110px 110px 104px'
+              const ouvertParDefaut = demandesTriees[0].id
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {demandesTriees.map(d => {
+                    const reponses = reponsesNote.filter(r => r.demande_id === d.id)
+                    const moy = (cle) => reponses.length ? (reponses.reduce((acc, r) => acc + r[cle], 0) / reponses.length) : null
+                    const mCharge = moy('charge_travail'), mPlaisir = moy('notion_plaisir')
+                    const ouvert = ressentiOuverts[d.id] ?? d.id === ouvertParDefaut
+                    const dateD = new Date(`${d.date_seance}T12:00:00`)
+                    const repartition = NIVEAUX_RESSENTI.map(n => ({ ...n, nb: reponses.filter(r => ressenti(r).label === n.label).length }))
+                    const ouverte = d.statut === 'ouverte'
+                    return (
+                      <div key={d.id} style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${colors.border.subtle}`, overflow: 'hidden' }}>
+                        <button onClick={() => setRessentiOuverts(prev => ({ ...prev, [d.id]: !ouvert }))}
+                          style={{ width: '100%', display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr) auto' : 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: isMobile ? '12px' : '20px', padding: isMobile ? '12px 14px' : '14px 18px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <div style={{ width: '52px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                            <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: ouverte ? colors.black : colors.text.faint, background: ouverte ? colors.accent.green : colors.background.raised }}>{dateD.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                            <p style={{ margin: 0, padding: '4px 0 0', fontSize: '20px', fontWeight: 800, lineHeight: 1 }}>{dateD.getDate()}</p>
+                            <p style={{ margin: 0, padding: '1px 0 4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateD.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.titre}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '6px', color: ouverte ? colors.accent.green : colors.text.faint, background: ouverte ? colors.accent.green + '1a' : colors.background.raised, border: `1px solid ${ouverte ? colors.accent.green + '40' : colors.border.default}` }}>{ouverte ? 'En cours' : 'Fermée'}</span>
+                              <span style={{ fontSize: '12px', color: colors.text.faint }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}{joueurs.length ? ` / ${joueurs.length}` : ''}</span>
                             </div>
-                            <div style={{ width: '1px', height: '28px', background: colors.border.subtle }} />
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ color: colors.accent.green, fontSize: '18px', fontWeight: 900, lineHeight: 1 }}>{moy('notion_plaisir')}</div>
-                              <div style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Plaisir</div>
+                            {reponses.length > 0 && (
+                              <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', gap: '2px', marginTop: '8px', maxWidth: '260px' }}>
+                                {repartition.map(n => n.nb > 0 && <div key={n.label} title={`${n.nb} ${n.label}`} style={{ width: `${(n.nb / reponses.length) * 100}%`, background: n.color }} />)}
+                              </div>
+                            )}
+                          </div>
+                          {!isMobile && reponses.length > 0 && (
+                            <div style={{ display: 'flex', gap: '18px' }}>
+                              {[['Charge', mCharge, couleurCharge], ['Plaisir', mPlaisir, couleurPlaisir]].map(([lab, val, coul]) => (
+                                <div key={lab} style={{ textAlign: 'center' }}>
+                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1, color: coul(val), fontVariantNumeric: 'tabular-nums' }}>{val.toFixed(1)}<span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 600 }}>/5</span></p>
+                                  <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>{lab}</p>
+                                </div>
+                              ))}
                             </div>
-                            <div style={{ width: '1px', height: '28px', background: colors.border.subtle }} />
-                          </>
-                        )}
-                        <div>
-                          <span style={{ padding: '3px 10px', borderRadius: '20px', background: d.statut === 'ouverte' ? colors.accent.green + '1a' : colors.background.raised, color: d.statut === 'ouverte' ? colors.accent.green : colors.text.disabled, fontSize: '11px', fontWeight: 700, border: `1px solid ${d.statut === 'ouverte' ? colors.accent.green + '40' : colors.border.default}` }}>
-                            {d.statut === 'ouverte' ? 'En cours' : 'Fermée'}
-                          </span>
-                          <div style={{ color: colors.text.disabled, fontSize: '10px', marginTop: '3px', textAlign: 'right' }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}</div>
-                        </div>
-                      </div>
-                    </div>
+                          )}
+                          <span style={{ color: colors.text.faint, display: 'inline-flex' }}><IcoChevronBas ouvert={ouvert} /></span>
+                        </button>
 
-                    {reponses.length > 0 && (
-                      <>
-                        <div style={{ padding: '8px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                          {['Joueur', 'Thème', 'Charge', 'Plaisir', 'Ressenti'].map(h => (
-                            <span key={h} style={{ color: colors.text.disabled, fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{h}</span>
-                          ))}
-                        </div>
-                        {reponses.map(r => {
-                          const chargeColor = r.charge_travail >= 4 ? colors.accent.red : r.charge_travail >= 3 ? colors.accent.amber : colors.accent.green
-                          const plaisirColor = r.notion_plaisir >= 4 ? colors.accent.green : r.notion_plaisir >= 3 ? colors.accent.amber : colors.accent.red
-                          const res = ressenti(r)
-                          return (
-                            <div key={r.joueur_id} style={{ padding: '12px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, alignItems: 'center', gap: '12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
-                              {r.mots_cles
-                                ? <span style={{ color: colors.text.faint, fontSize: '11px', fontStyle: 'italic', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{r.mots_cles}</span>
-                                : <span />}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ flex: 1, height: '4px', background: colors.background.raised, borderRadius: '2px', overflow: 'hidden' }}>
-                                  <div style={{ width: `${(r.charge_travail / 5) * 100}%`, height: '100%', background: chargeColor, borderRadius: '2px' }} />
-                                </div>
-                                <span style={{ color: chargeColor, fontSize: '12px', fontWeight: 700, minWidth: '14px' }}>{r.charge_travail}</span>
+                        {ouvert && (
+                          reponses.length === 0 ? (
+                            <p style={{ margin: 0, padding: '16px 18px', borderTop: `1px solid ${colors.border.subtle}`, fontSize: '13px', color: colors.text.faint }}>Aucune réponse pour l'instant.</p>
+                          ) : isMobile ? (
+                            <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
+                              <div style={{ display: 'flex', gap: '18px', padding: '12px 14px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                <span style={{ fontSize: '12px', color: colors.text.faint }}>Charge moy. <strong style={{ color: couleurCharge(mCharge) }}>{mCharge.toFixed(1)}</strong></span>
+                                <span style={{ fontSize: '12px', color: colors.text.faint }}>Plaisir moy. <strong style={{ color: couleurPlaisir(mPlaisir) }}>{mPlaisir.toFixed(1)}</strong></span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ flex: 1, height: '4px', background: colors.background.raised, borderRadius: '2px', overflow: 'hidden' }}>
-                                  <div style={{ width: `${(r.notion_plaisir / 5) * 100}%`, height: '100%', background: plaisirColor, borderRadius: '2px' }} />
-                                </div>
-                                <span style={{ color: plaisirColor, fontSize: '12px', fontWeight: 700, minWidth: '14px' }}>{r.notion_plaisir}</span>
+                              {reponses.map(r => {
+                                const res = ressenti(r)
+                                return (
+                                  <div key={r.joueur_id} style={{ padding: '12px 14px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                      <Avatar person={r.profiles || {}} size={30} />
+                                      <span style={{ flex: 1, minWidth: 0, fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                                      <span style={{ padding: '3px 8px', borderRadius: '6px', background: res.color + '1a', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}40` }}>{res.label}</span>
+                                    </div>
+                                    {r.mots_cles && r.mots_cles.replace(/[\s./]/g, '') && <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary, fontStyle: 'italic' }}>« {r.mots_cles} »</p>}
+                                    <div style={{ display: 'flex', gap: '18px' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>Charge {jauge(r.charge_travail, couleurCharge(r.charge_travail))}</span>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>Plaisir {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}</span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
+                              <div style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '14px', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                {['Joueur', 'Thème retenu', 'Charge', 'Plaisir', 'Ressenti'].map(h => (
+                                  <span key={h} style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{h}</span>
+                                ))}
                               </div>
-                              <span style={{ padding: '3px 10px', borderRadius: '6px', background: res.color + '15', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}30`, textAlign: 'center' }}>
-                                {res.label}
-                              </span>
+                              {reponses.map(r => {
+                                const res = ressenti(r)
+                                const motsUtiles = r.mots_cles && r.mots_cles.replace(/[\s./]/g, '')
+                                return (
+                                  <div key={r.joueur_id} className="ressenti-ligne" style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, alignItems: 'center', gap: '14px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                      <Avatar person={r.profiles || {}} size={30} />
+                                      <span style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                                    </div>
+                                    <span title={r.mots_cles || ''} style={{ color: motsUtiles ? colors.text.secondary : colors.text.ghost, fontSize: '12px', fontStyle: motsUtiles ? 'italic' : 'normal', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{motsUtiles ? r.mots_cles : '–'}</span>
+                                    {jauge(r.charge_travail, couleurCharge(r.charge_travail))}
+                                    {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}
+                                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: res.color + '1a', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}40`, textAlign: 'center' }}>{res.label}</span>
+                                  </div>
+                                )
+                              })}
                             </div>
                           )
-                        })}
-                      </>
-                    )}
-                  </div>
-                )
-              })
+                        )}
+                      </div>
+                    )
+                  })}
+                  <style>{`.ressenti-ligne:hover { background: ${colors.background.raised}; }`}</style>
+                </div>
+              )
             })()}
           </>
         )}
@@ -8423,48 +8559,75 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             if (!lotsMaterielParId[cle]) { lotsMaterielParId[cle] = { cle, items: [], ref: d }; lotsMateriel.push(lotsMaterielParId[cle]) }
             lotsMaterielParId[cle].items.push(d)
           })
+          // V2 : bandeau d'état (prêt à récupérer / remis), tailles en grille
+          // de tuiles avec compteur de progression, matériel confié en cartes.
+          const champsAvecTaille = champsEquipementEduc.filter(c => !c.taille_unique)
+          const nbTaillesOk = champsAvecTaille.filter(c => mesTaillesEduc.find(t => t.champ_id === c.id)?.valeur).length
+          const eyebrowMat = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+          const bandeau = (couleur, titre, texte, action) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', background: couleur + '12', border: `1px solid ${couleur}40`, borderLeft: `4px solid ${couleur}`, borderRadius: '12px', padding: '14px 18px' }}>
+              <span style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: couleur + '22', color: couleur, flexShrink: 0 }}><IcoBox /></span>
+              <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: couleur }}>{titre}</p>
+                {texte && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{texte}</p>}
+              </div>
+              {action}
+            </div>
+          )
           return (
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Mon matériel</h1>
-            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Mon matériel</h1>
+              <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
+            </div>
             {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
-              <p style={{ color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
+              <div style={{ ...st.card, margin: 0, textAlign: 'center', padding: '32px 20px' }}>
+                <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
+              </div>
             ) : (
               <>
-              {equipementPretEduc && (
-                <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>Ton équipement est prêt !</p>
-                  <p style={{ margin: '0 0 12px', fontSize: '13px', color: colors.text.faint }}>
-                    {equipementPretEduc.jours || 'Passe le récupérer auprès du club'}
-                    {equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}
-                    {equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}
-                  </p>
-                  <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
-                </div>
+              {equipementPretEduc && bandeau(colors.accent.amber, 'Ton équipement est prêt',
+                `${equipementPretEduc.jours || 'Passe le récupérer auprès du club'}${equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}${equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}`,
+                <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>J'ai récupéré</button>
               )}
 
-              {equipementCommandeEduc?.statut === 'recupere' && equipementCommandeEduc?.recupere_le && (
-                <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: colors.accent.green }}>Équipement remis le {new Date(equipementCommandeEduc.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommandeEduc.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              )}
+              {equipementCommandeEduc?.statut === 'recupere' && equipementCommandeEduc?.recupere_le && bandeau(colors.accent.green, 'Équipement remis',
+                `Le ${new Date(equipementCommandeEduc.recupere_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} à ${new Date(equipementCommandeEduc.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`)}
 
               {champsEquipementEduc.length > 0 && (
-                <div style={{ ...st.card, marginBottom: '20px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>Mon équipement — {packAttribueEduc?.icone} {packAttribueEduc?.nom}</p>
-                  <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ ...st.card, margin: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                    <div>
+                      <p style={eyebrowMat}>Mes tailles{packAttribueEduc?.nom ? ` · ${packAttribueEduc.nom}` : ''}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
+                    </div>
+                    {champsAvecTaille.length > 0 && (
+                      <div style={{ minWidth: '150px' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, textAlign: 'right' }}>
+                          <strong style={{ color: nbTaillesOk === champsAvecTaille.length ? colors.accent.green : colors.text.primary }}>{nbTaillesOk}</strong> / {champsAvecTaille.length} renseignées
+                        </p>
+                        <div style={{ height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden', marginTop: '6px' }}>
+                          <div style={{ width: `${(nbTaillesOk / champsAvecTaille.length) * 100}%`, height: '100%', background: colors.accent.green }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px' }}>
                     {champsEquipementEduc.map(c => {
                       const valeur = mesTaillesEduc.find(t => t.champ_id === c.id)?.valeur || ''
+                      const ok = c.taille_unique || !!valeur
                       return (
-                        <div key={c.id}>
-                          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
+                        <div key={c.id} style={{ background: colors.background.base, border: `1px solid ${ok ? colors.accent.green + '40' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</span>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: ok ? colors.accent.green : colors.border.strong, flexShrink: 0 }} />
+                          </div>
                           {c.taille_unique ? (
-                            <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
+                            <p style={{ margin: 0, padding: '8px 0', fontSize: '13px', color: colors.text.faint }}>Taille unique</p>
                           ) : (
                             <select value={valeur} onChange={e => sauvegarderMaTailleEduc(c.id, e.target.value)}
-                              style={{ width: '100%', maxWidth: '240px', background: colors.background.raised, border: `1px solid ${valeur ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: valeur ? colors.accent.green : colors.text.dim, fontSize: '13px', fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
-                              <option value="">Choisir une taille</option>
+                              style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 10px', color: valeur ? colors.text.primary : colors.text.faint, fontSize: '14px', fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
+                              <option value="">Choisir…</option>
                               {c.options.map(o => <option key={o} value={o}>{o}</option>)}
                             </select>
                           )}
@@ -8474,36 +8637,47 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 </div>
               )}
-              </>
-            )}
-            {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? null : lotsMateriel.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun matériel confié pour l'instant.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {lotsMateriel.map(lot => {
-                  const d = lot.ref
-                  const conf = STATUT_MATERIEL[d.statut] || STATUT_MATERIEL.distribue
-                  return (
-                    <div key={lot.cle} style={st.card}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: conf.color, display: 'inline-block', flexShrink: 0, marginTop: '4px' }} />
-                          <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.equipe_nom || 'Matériel'}</p>
-                            <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.text.faint }}>Saison {d.saison} · <span style={{ color: conf.color, fontWeight: 600 }}>{conf.label}</span> — {conf.desc}</p>
+
+              <div>
+                <p style={{ ...eyebrowMat, marginBottom: '10px' }}>Matériel confié</p>
+                {lotsMateriel.length === 0 ? (
+                  <div style={{ ...st.card, margin: 0, textAlign: 'center', padding: '24px 20px' }}>
+                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucun matériel confié pour l'instant.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: '10px' }}>
+                    {lotsMateriel.map(lot => {
+                      const d = lot.ref
+                      const conf = STATUT_MATERIEL[d.statut] || STATUT_MATERIEL.distribue
+                      return (
+                        <div key={lot.cle} style={{ ...st.card, margin: 0, borderLeft: `3px solid ${conf.color}`, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.equipe_nom || 'Matériel'}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>Saison {d.saison}</p>
+                            </div>
+                            <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: conf.color, background: conf.color + '1a', border: `1px solid ${conf.color}40`, whiteSpace: 'nowrap' }}>{conf.label}</span>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {lot.items.map(item => (
-                              <p key={item.id} style={{ margin: 0, fontSize: '12px', color: colors.text.dim }}>{item.nom_materiel} × {item.quantite}</p>
+                              <span key={item.id} style={{ fontSize: '12px', color: colors.text.secondary, background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '4px 10px' }}>
+                                {item.nom_materiel} <strong style={{ color: colors.text.primary }}>× {item.quantite}</strong>
+                              </span>
                             ))}
                           </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', color: colors.text.faint }}>{conf.desc}</span>
+                            {d.statut === 'distribue' && (
+                              <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
+                            )}
+                          </div>
                         </div>
-                        {d.statut === 'distribue' && (
-                          <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Remis</button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                )}
               </div>
+              </>
             )}
           </div>
           )
@@ -10639,7 +10813,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <>
                     <button onClick={() => setModalScannerProc(true)}
                       style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                      📸 {t('scanproc_bouton', lang)}
+                      <IcoCamera /> {t('scanproc_bouton', lang)}
                     </button>
                     <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
                       style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
@@ -10657,18 +10831,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 { id: 'jeu', label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu },
                 { id: 'exercice', label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice },
                 { id: 'situation', label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
-              ].map(tab => (
-                <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                  style={{ background: biblioTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${biblioTab === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: biblioTab === tab.id ? colors.accent.blue : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <tab.Icon size={14} color={biblioTab === tab.id ? colors.accent.blue : colors.text.faint} />
-                  {tab.label}
-                </button>
-              ))}
+              ].map(tab => {
+                const nb = tab.id === 'tous' ? biblio.length : biblio.filter(p => p.type === tab.id).length
+                const actif = biblioTab === tab.id
+                return (
+                  <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
+                    style={{ background: actif ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${actif ? colors.accent.blue + alpha.medium : colors.border.default}`, color: actif ? colors.accent.blue : colors.text.secondary, padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px', opacity: nb === 0 && !actif ? 0.55 : 1 }}>
+                    <tab.Icon size={14} color={actif ? colors.accent.blue : colors.text.faint} />
+                    {tab.label}
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: actif ? colors.accent.blue : colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>{nb}</span>
+                  </button>
+                )
+              })}
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
-                style={{ flex: 2, minWidth: '200px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+              <div style={{ flex: 2, minWidth: '200px', position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
+                <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
+                  style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px 10px 38px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
               <select value={biblioFiltreCategorieAge} onChange={e => setBiblioFiltreCategorieAge(e.target.value)}
                 style={{ flex: 1, minWidth: '160px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
                 <option value="">{t('biblio_toutes_categories_age', lang)}</option>
@@ -10680,10 +10862,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <p style={{ textAlign: 'center', color: colors.text.disabled, padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
             ) : (() => {
               const TYPE_CONFIG = {
-                jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.light },
-                exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: colors.accent.blue, bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.light },
-                situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.light },
-                echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
+                jeu: { label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu, color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.light },
+                exercice: { label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice, color: colors.accent.blue, bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.light },
+                situation: { label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation, color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.light },
+                echauffement: { label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement, color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
               }
               const pastille = (actif, couleur) => ({
                 padding: '6px 14px', border: `1px solid ${actif ? couleur : colors.border.default}`, borderRadius: '20px', cursor: 'pointer',
@@ -10715,7 +10897,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 return matchTab && matchSearch && matchPhase && matchTheme && matchCategorieAge
               })
               const barreThemes = avecThemes && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', paddingBottom: '16px', borderBottom: `1px solid ${colors.border.subtle}` }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
                     {['tous', 'offensif', 'defensif'].map(p => (
@@ -10758,23 +10940,27 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 // déduit du rubrique actif (biblioRubrique), qui détermine déjà quelle
                 // requête a chargé `biblio` (partage_platform vs partage_club) — inutile
                 // de dupliquer cette info dans une colonne, cf. bibliotheque_exercices.
-                const sourceBadge = biblioRubrique === 'platform' ? { label: '🎓 Digital Football', couleur: true }
-                  : biblioRubrique === 'club' ? { label: '🏟 Club', couleur: false } : null
-                const ombreBase = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 8px 32px rgba(0,0,0,0.5)`
-                const ombreHover = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 12px 40px rgba(0,0,0,0.7)`
+                const sourceBadge = biblioRubrique === 'platform' ? { label: 'Digital Football', couleur: true }
+                  : biblioRubrique === 'club' ? { label: 'Club', couleur: false } : null
+                const ombreBase = estSelectionne ? `0 0 0 2px ${colors.accent.green}` : 'none'
+                const ombreHover = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 10px 28px rgba(0,0,0,0.35)`
                 return (
                   <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
-                    style={{ background: colors.background.surface, borderRadius: '16px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.faint}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: ombreBase, transition: 'transform 0.15s, box-shadow 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
+                    style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: ombreBase, transition: 'transform 0.15s, box-shadow 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = ombreHover }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ombreBase }}>
 
-                    {/* Bande couleur top par type de procédé */}
-                    <div style={{ height: '3px', background: cfg.color, flexShrink: 0 }} />
-
-                    {/* Image (schéma tactique) ou placeholder terrain */}
-                    <div style={{ height: '130px', background: p.schema_png ? colors.background.base : '#0d1a0d', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                      {p.schema_png && (
+                    {/* Image (schéma tactique) ou terrain stylisé */}
+                    <div style={{ height: '140px', background: colors.background.base, position: 'relative', overflow: 'hidden', flexShrink: 0, borderBottom: `2px solid ${cfg.color}` }}>
+                      {p.schema_png ? (
                         <img src={miniatureSchema(p.schema_png, 500)} loading="lazy" alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <>
+                          <TerrainMiniature couleur="#ffffff" />
+                          <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: cfg.color + '30', border: `1px solid ${cfg.color}70` }}>
+                            <cfg.Icon size={18} color={cfg.color} />
+                          </span>
+                        </>
                       )}
 
                       {sourceBadge && (
@@ -10786,8 +10972,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       )}
 
                       <div style={{ position: 'absolute', bottom: '8px', right: '8px', display: 'flex', gap: '6px' }}>
-                        {p.duree && <span style={{ padding: '2px 8px', borderRadius: '5px', background: '#000000aa', color: '#ccc', fontSize: '11px', backdropFilter: 'blur(4px)' }}>⏱ {p.duree} min</span>}
-                        {p.nb_joueurs && <span style={{ padding: '2px 8px', borderRadius: '5px', background: '#000000aa', color: '#ccc', fontSize: '11px', backdropFilter: 'blur(4px)' }}>👥 {p.nb_joueurs}</span>}
+                        {p.duree && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#000000b3', color: '#e5e7eb', fontSize: '11px', fontWeight: 600, backdropFilter: 'blur(4px)' }}><IcoChrono />{p.duree} min</span>}
+                        {p.nb_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#000000b3', color: '#e5e7eb', fontSize: '11px', fontWeight: 600, backdropFilter: 'blur(4px)', maxWidth: '130px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoGroupe />{p.nb_joueurs}</span>}
                       </div>
 
                       {biblioSelectionMode && (
@@ -10800,8 +10986,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         p.educateur_id === userId ? (
                           canEdit('entrainements') && (
                             <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
-                              <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_modifier', lang)}>✏️</button>
-                              <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: colors.background.overlay, border: 'none', borderRadius: '6px', padding: '4px 6px', color: colors.text.dim, cursor: 'pointer', fontSize: '13px' }} title={t('btn_supprimer', lang)}>🗑️</button>
+                              <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: '#000000b3', border: 'none', borderRadius: '8px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb', cursor: 'pointer', backdropFilter: 'blur(4px)' }} title={t('btn_modifier', lang)}><IcoCrayon /></button>
+                              <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: '#000000b3', border: 'none', borderRadius: '8px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', cursor: 'pointer', backdropFilter: 'blur(4px)' }} title={t('btn_supprimer', lang)}><IcoCorbeille /></button>
                             </div>
                           )
                         ) : (
@@ -10815,8 +11001,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                     {/* Corps */}
                     <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <span style={{ background: cfg.color + '20', color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
-                        {cfg.emoji} {cfg.label}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: cfg.color + '1a', color: cfg.color, fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        <cfg.Icon size={11} color={cfg.color} /> {cfg.label}
                       </span>
 
                       <h4 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '14px', margin: 0, lineHeight: 1.3 }}>{p.nom}</h4>
@@ -10827,16 +11013,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
                       )}
 
-                      {p.theme && <p style={{ color: colors.text.faint, fontSize: '11px', margin: 0 }}>📌 {labelThemeProcede(p.theme)}</p>}
+                      {p.theme && p.theme !== 'Sans thème' && <p style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.text.faint, fontSize: '12px', margin: 0 }}><IcoPin />{labelThemeProcede(p.theme)}</p>}
                     </div>
 
                     {/* Actions footer — toujours visibles mais discrètes */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${colors.border.subtle}` }}>
                       <button onClick={(e) => { e.stopPropagation(); ouvrirApercuProcede(p) }}
-                        style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.disabled, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised; e.currentTarget.style.color = colors.text.dim }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.text.disabled }}>
-                        👁 {t('biblio_voir', lang)}
+                        style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Inter, sans-serif' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised; e.currentTarget.style.color = colors.text.primary }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.text.secondary }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IcoOeil />{t('biblio_voir', lang)}</span>
                       </button>
                       {biblioSelectionMode ? (
                         <button onClick={(e) => { e.stopPropagation(); basculerSelectionBiblio(p) }}
@@ -10869,7 +11055,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               if (!avecDossiers) return (
                 <>
                   {barreThemes}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                     {filtres.map(renderCarteProcede)}
                   </div>
                 </>
@@ -10895,7 +11081,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <p style={{ color: d.color, fontWeight: 800, fontSize: '15px', margin: 0 }}>{d.label}</p>
                         <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{parPhase[d.key].length} {parPhase[d.key].length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                         {parPhase[d.key].map(renderCarteProcede)}
                       </div>
                     </div>
@@ -11348,7 +11534,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {activeSection === 'tactipad' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 {t('nav_tacticboard', lang)}</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_tacticboard', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
             <Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} />
           </div>

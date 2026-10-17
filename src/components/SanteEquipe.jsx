@@ -3,6 +3,12 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha } from '../tokens'
 import { saisonActuelle } from '../lib/saison'
+import { useWindowWidth } from '../hooks/useWindowWidth'
+
+const IcoCorbeille = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+const IcoFermer = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+const IcoTrombone = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+const IcoCalendrier = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 
 const ZONES_CORPS = [
   'Cheville gauche', 'Cheville droite', 'Genou gauche', 'Genou droit',
@@ -23,6 +29,7 @@ const FORM_SUIVI_VIDE = { date_consultation: new Date().toISOString().slice(0, 1
 // de compte lié, cf. supabase_sante_equipe.sql.
 export default function SanteEquipe({ joueurs, educateurId }) {
   const colors = useColors()
+  const isMobile = useWindowWidth() < 768
 
   const STATUT_META = {
     en_cours: { label: 'En cours', color: colors.accent.orange },
@@ -445,7 +452,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
                 </div>
                 {sv.document_path && (
                   <button onClick={() => ouvrirDocument(sv.document_path)} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 }}>
-                    📎 {sv.document_nom || 'Document'}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoTrombone />{sv.document_nom || 'Document'}</span>
                   </button>
                 )}
               </div>
@@ -483,79 +490,96 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     return { total, enCours, dureeMoyenne, zonesTriees, joueursTries }
   }
 
+  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+
   const renderRapport = () => {
     const r = genererRapport()
+    const maxZone = r.zonesTriees[0]?.[1] || 1
     return (
-      <div style={{ ...s.card, border: `1px solid ${colors.border.default}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-          <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px' }}>Rapport santé — Saison {saisonActuelle()}</div>
-          <button onClick={() => setShowRapport(false)} style={{ color: colors.text.faint, background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+      <div style={{ ...s.card, padding: isMobile ? '16px' : '20px 22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <div>
+            <p style={eyebrow}>Rapport santé</p>
+            <p style={{ margin: '4px 0 0', color: colors.text.primary, fontWeight: 800, fontSize: '16px' }}>Saison {saisonActuelle()}</p>
+          </div>
+          <button onClick={() => setShowRapport(false)} title="Fermer" style={{ color: colors.text.faint, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoFermer /></button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: '10px', marginBottom: '20px' }}>
           {[
-            { label: 'Blessures total', val: r.total, color: colors.text.primary },
+            { label: 'Blessures', val: r.total, color: colors.text.primary },
             { label: 'En cours', val: r.enCours, color: colors.accent.orange },
-            { label: 'Durée moy.', val: r.dureeMoyenne != null ? `${r.dureeMoyenne} j` : 'N/A', color: colors.accent.blue },
+            { label: 'Durée moyenne', val: r.dureeMoyenne != null ? r.dureeMoyenne : '–', unite: r.dureeMoyenne != null ? 'j' : '', color: colors.accent.blue, detail: r.dureeMoyenne == null ? 'aucun retour daté' : null },
           ].map(k => (
-            <div key={k.label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
-              <div style={{ color: k.color, fontWeight: 800, fontSize: '22px' }}>{k.val}</div>
-              <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>{k.label}</div>
+            <div key={k.label} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 14px' }}>
+              <p style={{ margin: 0, color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{k.label}</p>
+              <p style={{ margin: '6px 0 0', color: k.color, fontWeight: 800, fontSize: '24px', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{k.val}{k.unite && <span style={{ fontSize: '13px', color: colors.text.faint, marginLeft: '3px' }}>{k.unite}</span>}</p>
+              {k.detail && <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '11px' }}>{k.detail}</p>}
             </div>
           ))}
         </div>
 
-        {r.zonesTriees.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ color: colors.text.faint, fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>ZONES LES PLUS TOUCHÉES</div>
-            {r.zonesTriees.map(([zone, count]) => (
-              <div key={zone} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{zone}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px', width: '100px' }}>
-                    <div style={{ background: colors.accent.orange, height: '6px', borderRadius: '4px', width: `${(count / r.total) * 100}%` }} />
-                  </div>
-                  <span style={{ color: colors.accent.orange, fontSize: '12px', fontWeight: 700, width: '16px' }}>{count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {r.joueursTries.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1fr)', gap: isMobile ? '20px' : '28px' }}>
           <div>
-            <div style={{ color: colors.text.faint, fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>JOUEURS LES PLUS TOUCHÉS</div>
-            {r.joueursTries.map(([nom, count]) => (
-              <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{nom}</span>
-                <span style={{ color: colors.accent.orange, fontWeight: 700, fontSize: '13px' }}>{count} blessure{count > 1 ? 's' : ''}</span>
+            <p style={{ ...eyebrow, marginBottom: '12px' }}>Zones les plus touchées</p>
+            {r.zonesTriees.length === 0 ? <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucune zone renseignée.</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {r.zonesTriees.map(([zone, count]) => (
+                  <div key={zone} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 130px) minmax(0,1fr) 24px', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: colors.text.secondary, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zone}</span>
+                    <div style={{ background: colors.background.base, borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: colors.accent.orange, height: '100%', borderRadius: '4px', width: `${(count / maxZone) * 100}%` }} />
+                    </div>
+                    <span style={{ color: colors.accent.orange, fontSize: '13px', fontWeight: 800, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+          <div>
+            <p style={{ ...eyebrow, marginBottom: '12px' }}>Joueurs les plus touchés</p>
+            {r.joueursTries.length === 0 ? <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucune blessure.</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {r.joueursTries.map(([nom, count]) => (
+                  <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{nom}</span>
+                    <span style={{ color: colors.accent.orange, fontWeight: 700, fontSize: '12px' }}>{count} blessure{count > 1 ? 's' : ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
 
-  const joueursBlessesActifs = new Set(blessures.filter(b => b.statut !== 'gueri').map(b => b.equipe_joueur_id)).size
+  const blessuresActives = blessures.filter(b => b.statut !== 'gueri')
+  const joueursBlessesActifs = new Set(blessuresActives.map(b => b.equipe_joueur_id)).size
   const kpis = [
     { val: joueursBlessesActifs, total: joueurs.length, label: 'Joueurs blessés', color: joueursBlessesActifs > 0 ? colors.accent.orange : colors.accent.green },
     { val: blessures.filter(b => b.statut === 'en_cours').length, label: 'En cours', color: colors.accent.orange },
     { val: blessures.filter(b => b.statut === 'en_soin').length, label: 'En soin', color: colors.accent.amber },
     { val: blessures.filter(b => b.statut === 'gueri').length, label: 'Guéris (saison)', color: colors.accent.green },
   ]
+  // Blessures actives d'abord (par statut), puis guéries ; dans chaque statut,
+  // la plus récente en premier (ordre déjà renvoyé par la requête).
+  const ORDRE_STATUT = ['en_cours', 'en_soin', 'retour_prog', 'gueri']
+  const blessuresAffichees = [...blessuresFiltrees].sort((a, b) => ORDRE_STATUT.indexOf(a.statut) - ORDRE_STATUT.indexOf(b.statut))
+  const formatDate = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 
   return (
-    <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '18px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Chiffres clés */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap: '10px' }}>
         {kpis.map(k => (
-          <div key={k.label} style={s.card}>
-            <div style={{ fontSize: '26px', fontWeight: 900, color: k.color, lineHeight: 1 }}>
-              {k.val}{k.total ? <span style={{ fontSize: '13px', color: colors.text.disabled, fontWeight: 400 }}>/{k.total}</span> : ''}
-            </div>
-            <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px', fontWeight: 600 }}>{k.label}</div>
+          <div key={k.label} style={{ ...s.card, marginBottom: 0, padding: '16px 18px' }}>
+            <p style={{ margin: 0, color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{k.label}</p>
+            <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 800, color: k.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {k.val}{k.total ? <span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 600 }}> / {k.total}</span> : ''}
+            </p>
             {k.total > 0 && (
-              <div style={{ height: '3px', background: colors.background.raised, borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+              <div style={{ height: '4px', background: colors.background.base, borderRadius: '2px', marginTop: '10px', overflow: 'hidden' }}>
                 <div style={{ width: `${(k.val / k.total) * 100}%`, height: '100%', background: k.color, borderRadius: '2px' }} />
               </div>
             )}
@@ -563,14 +587,15 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0 }}>
-            {blessures.filter(b => b.statut !== 'gueri').length} joueur{blessures.filter(b => b.statut !== 'gueri').length !== 1 ? 's' : ''} actuellement hors compétition
-          </p>
-        </div>
+      {/* Barre d'actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>
+          {blessuresActives.length === 0
+            ? 'Tout le groupe est disponible.'
+            : <><strong style={{ color: colors.text.primary }}>{blessuresActives.length}</strong> blessure{blessuresActives.length !== 1 ? 's' : ''} en cours de suivi</>}
+        </p>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={s.btnGhost} onClick={() => setShowRapport(v => !v)}>Rapport saison</button>
+          <button style={{ ...s.btnGhost, background: showRapport ? colors.background.raised : 'transparent', color: showRapport ? colors.text.primary : colors.text.faint }} onClick={() => setShowRapport(v => !v)}>Rapport saison</button>
           <button style={s.btn} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>
         </div>
       </div>
@@ -578,9 +603,9 @@ export default function SanteEquipe({ joueurs, educateurId }) {
       {showRapport && renderRapport()}
 
       {showFormBlessure && (
-        <div style={{ ...s.card, border: `1px solid ${colors.border.default}` }}>
-          <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>NOUVELLE BLESSURE</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ ...s.card, marginBottom: 0, border: `1px solid ${colors.accent.green}40` }}>
+          <p style={{ ...eyebrow, marginBottom: '14px' }}>Nouvelle blessure</p>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={s.label}>Joueur</label>
               <select style={s.input} value={form.equipe_joueur_id} onChange={e => setForm(p => ({ ...p, equipe_joueur_id: e.target.value }))}>
@@ -622,69 +647,103 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        {[['tous', 'Tous'], ...Object.entries(STATUT_META).map(([k, v]) => [k, v.label])].map(([k, label]) => {
+      {/* Filtres par statut */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {[['tous', 'Tous', colors.text.secondary], ...Object.entries(STATUT_META).map(([k, v]) => [k, v.label, v.color])].map(([k, label, couleur]) => {
           const count = k === 'tous' ? blessures.length : blessures.filter(b => b.statut === k).length
           const actif = filtreStatut === k
           return (
             <button key={k} onClick={() => setFiltreStatut(k)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: actif ? colors.text.primary : colors.background.raised,
-                color: actif ? colors.background.base : colors.text.faint,
-                border: `1px solid ${actif ? colors.text.primary : colors.border.default}`,
-                borderRadius: '20px', padding: '5px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+                flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px',
+                background: actif ? couleur + '1f' : 'transparent',
+                color: actif ? (k === 'tous' ? colors.text.primary : couleur) : colors.text.faint,
+                border: `1px solid ${actif ? couleur + '70' : colors.border.default}`,
+                borderRadius: '18px', padding: '6px 13px', fontSize: '12px', cursor: 'pointer', fontWeight: actif ? 700 : 500, fontFamily: 'Inter, sans-serif', opacity: count === 0 && !actif ? 0.55 : 1,
               }}>
+              {k !== 'tous' && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: couleur }} />}
               {label}
-              <span style={{ background: actif ? colors.background.base + '22' : colors.border.default, color: actif ? colors.background.base : colors.text.disabled, borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>{count}</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: actif ? 'inherit' : colors.text.faint }}>{count}</span>
             </button>
           )
         })}
       </div>
 
-      {blessuresFiltrees.length === 0 && (
-        <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>
-          {filtreStatut === 'tous' ? 'Aucune blessure déclarée' : 'Aucune blessure dans cette catégorie'}
+      {blessuresAffichees.length === 0 && (
+        <div style={{ ...s.card, marginBottom: 0, textAlign: 'center', padding: '32px 20px' }}>
+          <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>{filtreStatut === 'tous' ? 'Aucune blessure déclarée' : 'Aucune blessure dans cette catégorie'}</p>
+          {filtreStatut === 'tous' && <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Déclare une blessure pour suivre la rééducation et le retour à la compétition.</p>}
         </div>
       )}
-      {blessuresFiltrees.map(b => {
-        const meta = STATUT_META[b.statut] || STATUT_META.en_cours
-        const joueur = joueurDe(b.equipe_joueur_id)
-        const joursDepuis = Math.floor((new Date() - new Date(`${b.date_debut}T12:00:00`)) / (1000 * 86400))
-        return (
-          <div key={b.id} onClick={() => ouvrirBlessure(b)}
-            style={{ ...s.card, marginBottom: '10px', cursor: 'pointer', borderLeft: `3px solid ${meta.color}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))', gap: '10px' }}>
+        {blessuresAffichees.map(b => {
+          const meta = STATUT_META[b.statut] || STATUT_META.en_cours
+          const grav = GRAVITE_META[b.gravite]
+          const joueur = joueurDe(b.equipe_joueur_id)
+          const joursDepuis = Math.floor((new Date() - new Date(`${b.date_debut}T12:00:00`)) / (1000 * 86400))
+          // Avancement vers le retour estimé (début → date estimée), affiché
+          // seulement si une date de retour est renseignée et la blessure active.
+          const dureePrevue = b.date_retour_estimee ? Math.round((new Date(`${b.date_retour_estimee}T12:00:00`) - new Date(`${b.date_debut}T12:00:00`)) / 86400000) : null
+          const avancement = dureePrevue > 0 && b.statut !== 'gueri' ? Math.min(100, Math.max(0, Math.round(joursDepuis / dureePrevue * 100))) : null
+          const retardRetour = avancement === 100 && joursDepuis > dureePrevue
+          const initiales = `${joueur?.prenom?.[0] || ''}${joueur?.nom?.[0] || ''}`.toUpperCase() || '?'
+          return (
+            <div key={b.id} onClick={() => ouvrirBlessure(b)} className="sante-carte"
+              style={{ ...s.card, marginBottom: 0, padding: '14px 16px', cursor: 'pointer', borderLeft: `3px solid ${meta.color}`, display: 'flex', flexDirection: 'column', gap: '12px', opacity: b.statut === 'gueri' ? 0.75 : 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {joueur?.avatar_url
-                  ? <img src={joueur.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ? <img src={joueur.avatar_url} alt="" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${meta.color}66`, flexShrink: 0 }} />
                   : (() => {
                       const c = couleurAvatar(joueur?.prenom)
-                      const initiales = `${joueur?.prenom?.[0] || ''}${joueur?.nom?.[0] || ''}`.toUpperCase() || '?'
-                      return <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: c + alpha.soft, border: `2px solid ${c}${alpha.light}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c, fontSize: '11px', fontWeight: 800, flexShrink: 0 }}>{initiales}</div>
+                      return <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: c + alpha.soft, border: `2px solid ${meta.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c, fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>{initiales}</div>
                     })()}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</p>
+                  <p style={{ margin: '2px 0 0', color: colors.text.secondary, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ textTransform: 'capitalize' }}>{b.type_blessure}</span>{b.zone_corps ? <span style={{ color: colors.text.faint }}>{` · ${b.zone_corps}`}</span> : ''}
+                  </p>
+                </div>
+                <button onClick={e => supprimerBlessure(b.id, e)} title="Supprimer cette blessure"
+                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
+                  <IcoCorbeille />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: meta.color, background: meta.color + '1a', border: `1px solid ${meta.color}40` }}>{meta.label}</span>
+                {grav && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: colors.text.secondary, background: colors.background.raised, border: `1px solid ${colors.border.default}` }}>
+                  <span style={{ display: 'inline-flex', gap: '2px' }}>{[1, 2, 3].map(n => <span key={n} style={{ width: '4px', height: '8px', borderRadius: '1px', background: n <= grav.niveau ? grav.color : colors.border.strong }} />)}</span>
+                  {grav.label}
+                </span>}
+                <span style={{ fontSize: '12px', color: colors.text.faint, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
+                  {joursDepuis <= 0 ? "Depuis aujourd'hui" : `J+${joursDepuis}`} · {formatDate(b.date_debut)}
+                </span>
+              </div>
+
+              {b.date_retour_estimee && b.statut !== 'gueri' && (
                 <div>
-                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</div>
-                  <div style={{ color: colors.text.secondary, fontSize: '12px' }}>{b.type_blessure}{b.zone_corps ? ` — ${b.zone_corps}` : ''}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', gap: '8px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: retardRetour ? colors.accent.red : colors.text.faint }}>
+                      <IcoCalendrier /> Retour estimé {formatDate(b.date_retour_estimee)}{retardRetour ? ' · dépassé' : ''}
+                    </span>
+                    {avancement != null && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{avancement}%</span>}
+                  </div>
+                  {avancement != null && (
+                    <div style={{ height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
+                      <div style={{ width: `${avancement}%`, height: '100%', borderRadius: '3px', background: retardRetour ? colors.accent.red : colors.accent.blue }} />
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                  <span style={s.pill(meta.color)}>{meta.label}</span>
-                  <button onClick={e => supprimerBlessure(b.id, e)} title="Supprimer cette blessure"
-                    style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '6px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, fontSize: '14px', flexShrink: 0 }}>
-                    ✕
-                  </button>
-                </div>
-                <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '4px' }}>
-                  {joursDepuis === 0 ? "Aujourd'hui" : `Depuis ${joursDepuis} j`}
-                  {b.date_retour_estimee && ` · Retour estimé ${new Date(`${b.date_retour_estimee}T12:00:00`).toLocaleDateString('fr-FR')}`}
-                </div>
-              </div>
+              )}
+              {b.statut === 'gueri' && b.date_retour_effective && (
+                <span style={{ fontSize: '11px', color: colors.accent.green }}>De retour le {formatDate(b.date_retour_effective)}</span>
+              )}
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+      <style>{`.sante-carte:hover { background: ${colors.background.raised} !important; }`}</style>
     </div>
   )
 }

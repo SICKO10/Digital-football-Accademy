@@ -10,6 +10,10 @@ const IcoBus = () => (
   </svg>
 )
 
+const IcoChevron = ({ ouvert }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: ouvert ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+const IcoFermer = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+const IcoPin = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+
 const NATURES = [
   { val: 'match', label: 'Match' },
   { val: 'tournoi', label: 'Tournoi' },
@@ -90,6 +94,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
   const [assignationBusOuverte, setAssignationBusOuverte] = useState(null)
   const [savingAssignation, setSavingAssignation] = useState(null)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [afficherPasses, setAfficherPasses] = useState(false)
   const [semaineOuverte, setSemaineOuverte] = useState({}) // { 'AAAA-MM_semaine-label': true }
   const [alertesLocation, setAlertesLocation] = useState([])
   const [repartitionAutoEnCours, setRepartitionAutoEnCours] = useState(false)
@@ -714,25 +719,50 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
       </div>
 
       {/* ── Parc de véhicules — fusionné depuis l'ancien onglet "Répartition mini-bus" ── */}
-      <div style={{ ...st.card, marginBottom: '1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <span style={{ color: st.textDim, fontSize: '13px', fontWeight: 700, marginRight: '4px', flexShrink: 0 }}>Parc :</span>
-        {vehicules.length === 0 ? (
-          <span style={{ color: st.textDim, fontSize: '13px' }}>Aucun véhicule enregistré</span>
-        ) : (
-          vehicules.map(v => (
-            <span key={v.id}
-              onClick={() => setVehiculeDetail(v)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: st.bgRaised, border: `1px solid ${st.border}`, borderRadius: '20px', padding: '5px 8px 5px 14px', fontSize: '12px', cursor: 'pointer' }}>
-              <IcoBus /> {v.plaque} · {v.capacite} places
-              {!readOnly && (
-                <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '13px', padding: '2px' }}>✕</button>
-              )}
-            </span>
-          ))
+      <div style={{ ...st.card, marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: vehicules.length || showAddVehicule ? '12px' : 0 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: st.textDim }}>Parc de véhicules</p>
+            <p style={{ margin: '3px 0 0', fontSize: '12px', color: st.textFaint }}>
+              {vehicules.length === 0 ? 'Aucun véhicule enregistré' : `${vehicules.length} véhicule${vehicules.length > 1 ? 's' : ''} · ${vehicules.reduce((acc, v) => acc + (Number(v.capacite) || 0), 0)} places au total`}
+            </p>
+          </div>
+          {!readOnly && !showAddVehicule && (
+            <button onClick={() => setShowAddVehicule(true)}
+              style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              + Ajouter un véhicule
+            </button>
+          )}
+        </div>
+        {vehicules.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+            {vehicules.map(v => {
+              // Contrôle technique : rouge si échéance dans moins de 30 jours.
+              const ctProche = v.prochain_ct && new Date(v.prochain_ct) < new Date(new Date().getTime() + 30 * 86400000)
+              const couleurCT = !v.prochain_ct ? st.textGhost : ctProche ? '#ef4444' : '#4ade80'
+              return (
+                <div key={v.id} onClick={() => setVehiculeDetail(v)}
+                  title={v.prochain_ct ? `Prochain CT : ${new Date(v.prochain_ct).toLocaleDateString('fr-FR')}` : 'Contrôle technique non renseigné'}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', minWidth: 0 }}>
+                  <span style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: accentColor + '18', color: accentColor, flexShrink: 0 }}><IcoBus /></span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: st.text, letterSpacing: '0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.plaque}</p>
+                    <p style={{ margin: '1px 0 0', fontSize: '11px', color: st.textFaint, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      {v.capacite} places <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: couleurCT }} /> CT
+                    </p>
+                  </div>
+                  {!readOnly && (
+                    <button onClick={e => { e.stopPropagation(); supprimerVehicule(v.id) }} title="Retirer du parc"
+                      style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', padding: '4px', display: 'flex' }}><IcoFermer /></button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         )}
-        {!readOnly && (showAddVehicule ? (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input style={{ ...st.input, maxWidth: '160px' }} placeholder="Plaque (ex: AB-123-CD)" value={newVehicule.plaque} onChange={e => setNewVehicule(v => ({ ...v, plaque: e.target.value }))} />
+        {!readOnly && showAddVehicule && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginTop: vehicules.length ? '12px' : 0 }}>
+            <input style={{ ...st.input, maxWidth: '180px' }} placeholder="Plaque (ex: AB-123-CD)" value={newVehicule.plaque} onChange={e => setNewVehicule(v => ({ ...v, plaque: e.target.value }))} />
             <input style={{ ...st.input, maxWidth: '110px' }} type="number" min="1" placeholder="Capacité" value={newVehicule.capacite} onChange={e => setNewVehicule(v => ({ ...v, capacite: e.target.value }))} />
             <button onClick={ajouterVehicule} disabled={savingVehicule || !newVehicule.plaque.trim() || !newVehicule.capacite}
               style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -742,12 +772,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               Annuler
             </button>
           </div>
-        ) : (
-          <button onClick={() => setShowAddVehicule(true)}
-            style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            + Ajouter un véhicule
-          </button>
-        ))}
+        )}
       </div>
 
       {/* ── Modale détail véhicule (marque/modèle + contrôle technique) ── */}
@@ -757,7 +782,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
           <div style={{ ...st.card, width: '100%', maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ color: st.text, margin: 0, fontSize: '18px' }}>{vehiculeDetail.plaque}</h3>
-              <button onClick={() => { setVehiculeDetail(null); setEditCT(false) }} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => { setVehiculeDetail(null); setEditCT(false) }} style={{ background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', display: 'flex', padding: '4px' }}><IcoFermer /></button>
             </div>
 
             {[
@@ -977,206 +1002,241 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         </div>
       )}
 
-      {(
-        loading ? (
-          <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement...</p>
-        ) : (() => {
-          const parMois = grouperParMois(deplacements)
-          const cles = Object.keys(parMois)
-          if (cles.length === 0) return <p style={{ color: st.textGhost, fontSize: '13px' }}>Aucun déplacement enregistré.</p>
-          return cles.map(cle => {
-            const deps = parMois[cle]
-            const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-            const aVerifier = deps.filter(d => {
-              const cap = capaciteVehicule(d)
-              return !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
-            }).length
-            return (
-              <div key={cle} style={{ marginBottom: '2rem' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
-                  padding: '10px 0', marginBottom: '14px', borderBottom: `1px solid ${accentColor}20`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ color: accentColor, fontWeight: 800, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</span>
-                    <span style={{ padding: '2px 8px', borderRadius: '10px', background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textFaint, fontSize: '11px' }}>
-                      {deps.length} déplacement{deps.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {aVerifier > 0 ? (
-                    <span style={{ padding: '4px 12px', borderRadius: '20px', background: '#f9731615', border: '1px solid #f9731640', color: '#f97316', fontSize: '12px', fontWeight: 700 }}>
-                      {aVerifier} à vérifier
-                    </span>
-                  ) : (
-                    <span style={{ padding: '4px 12px', borderRadius: '20px', background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, fontSize: '12px', fontWeight: 700 }}>
-                      Bus OK
-                    </span>
+      {loading ? (
+        <p style={{ color: st.textGhost, fontSize: '13px' }}>Chargement...</p>
+      ) : deplacements.length === 0 ? (
+        <div style={{ ...st.card, textAlign: 'center', padding: '32px 20px' }}>
+          <p style={{ margin: 0, color: st.textDim, fontSize: '14px', fontWeight: 600 }}>Aucun déplacement enregistré</p>
+          <p style={{ margin: '6px 0 0', color: st.textFaint, fontSize: '12px' }}>Les matchs à l'extérieur créent automatiquement leur déplacement.</p>
+        </div>
+      ) : (() => {
+        // V2 : prochain déplacement mis en avant, un déplacement = une ligne
+        // dépliable (pavé date, destination, départ, bus), déplacements passés
+        // masqués par défaut. Ouverture d'une ligne : semaineOuverte[d.id].
+        const aujourdHui = new Date().toISOString().slice(0, 10)
+        const aVenir = deplacements.filter(d => d.date_depart >= aujourdHui)
+        const passes = deplacements.filter(d => d.date_depart < aujourdHui)
+        const prochain = [...aVenir].sort((a, b) => a.date_depart.localeCompare(b.date_depart))[0] || null
+        const visibles = afficherPasses ? deplacements : aVenir
+        const parMois = grouperParMois(visibles)
+        const libelleNature = (n) => NATURES.find(x => x.val === n)?.label || 'Autre'
+        const statutBus = (d) => {
+          const cap = capaciteVehicule(d)
+          if (!d.vehicule) return { texte: 'Aucun bus', couleur: st.textDim, alerte: true }
+          if (cap == null) return { texte: `${d.vehicule} · hors parc`, couleur: '#f59e0b', alerte: true }
+          if (d.nb_personnes != null && cap < d.nb_personnes) return { texte: `${d.nb_personnes}/${cap} places`, couleur: '#f59e0b', alerte: true }
+          return { texte: `${d.vehicule}${d.nb_personnes != null ? ` · ${d.nb_personnes}/${cap}` : ''}`, couleur: accentColor, alerte: false }
+        }
+        const duree = (min) => `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`
+        const paveDate = (iso, couleur, grand) => {
+          const dt = new Date(iso + 'T12:00:00')
+          return (
+            <div style={{ width: grand ? '62px' : '50px', textAlign: 'center', border: `1px solid ${st.border}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+              <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: couleur ? '#000' : st.textFaint, background: couleur || st.bgRaised }}>{dt.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+              <p style={{ margin: 0, padding: '4px 0 0', fontSize: grand ? '24px' : '19px', fontWeight: 800, lineHeight: 1, color: st.text }}>{dt.getDate()}</p>
+              <p style={{ margin: 0, padding: '1px 0 4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: st.textFaint }}>{dt.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+            </div>
+          )
+        }
+        const etiquette = (texte, couleur) => (
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '6px', color: couleur, background: couleur + '1a', border: `1px solid ${couleur}40`, whiteSpace: 'nowrap' }}>{texte}</span>
+        )
+        const meta = (d) => [
+          d.heure_depart ? `Départ ${d.heure_depart.slice(0, 5)}` : null,
+          d.heure_retour_estimee ? `retour ${d.heure_retour_estimee.slice(0, 5)}` : null,
+          d.distance_km != null ? `${d.distance_km} km${d.duree_trajet_min != null ? ` (${duree(d.duree_trajet_min)})` : ''}` : null,
+        ].filter(Boolean).join(' · ')
+
+        const detailDeplacement = (d) => {
+          const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
+          const editRetour = retourEdits[d.id] || { km_apres: d.km_apres ?? '', gasoil_apres: d.gasoil_apres ?? '' }
+          const retourComplet = d.km_apres != null && d.gasoil_apres
+          const info = (label, val) => (
+            <div>
+              <p style={st.label}>{label}</p>
+              <p style={{ margin: 0, fontSize: '13px', color: val ? st.text : st.textGhost }}>{val || '—'}</p>
+            </div>
+          )
+          return (
+            <div style={{ padding: '14px 16px 16px', borderTop: `1px solid ${st.bgRaised}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+                {info('Responsable', d.educateur_responsable)}
+                {info('Conducteur', d.conducteur)}
+                {info('Personnes', d.nb_personnes != null ? `${d.nb_personnes}` : null)}
+                {info('Km avant', d.km_avant != null ? `${d.km_avant} km` : null)}
+                {info('Gasoil avant', d.gasoil_avant)}
+                <div>
+                  <p style={st.label}>Km après (retour)</p>
+                  <input type="number" value={editRetour.km_apres} placeholder="—" disabled={!retourEditable}
+                    onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
+                    style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
+                </div>
+                <div>
+                  <p style={st.label}>Gasoil après (retour)</p>
+                  <input type="text" value={editRetour.gasoil_apres} placeholder="ex: 2/4" disabled={!retourEditable}
+                    onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
+                    style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
+                </div>
+              </div>
+
+              {(retourEditable || !readOnly) && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                  {retourEditable && (
+                    <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
+                      style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
+                    </button>
+                  )}
+                  {!readOnly && (
+                    <>
+                      <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
+                        style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
+                      </button>
+                      <button onClick={() => ouvrirEditionDeplacement(d)}
+                        style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        Modifier
+                      </button>
+                      <button onClick={() => supprimerDeplacement(d)}
+                        style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        Supprimer
+                      </button>
+                    </>
                   )}
                 </div>
-                {Object.entries(grouperParSemaine(deps)).map(([semaineLabel, depsSemaine]) => {
-                  const semaineKey = `${cle}_${semaineLabel}`
-                  const ouvert = semaineOuverte[semaineKey]
-                  return (
-                    <div key={semaineLabel} style={{ marginTop: '10px' }}>
-                      <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [semaineKey]: !ouvert }))}
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 14px', background: ouvert ? st.bgRaised : st.bg,
-                          border: `1px solid ${st.bgRaised}`, borderRadius: '8px', color: st.textDim, cursor: 'pointer',
-                          fontWeight: 600, fontSize: '13px', fontFamily: 'Inter, sans-serif', textAlign: 'left',
-                        }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div>Semaine du {semaineLabel} · {depsSemaine.length} déplacement{depsSemaine.length > 1 ? 's' : ''}</div>
-                          <div style={{ color: st.textFaint, fontSize: '11px', fontWeight: 400, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {depsSemaine[0].lieu_destination}{depsSemaine[0].equipe ? ` · ${depsSemaine[0].equipe}` : ''}
-                            {depsSemaine.length > 1 ? ` +${depsSemaine.length - 1}` : ''}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                          {depsSemaine[0].vehicule && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: st.textFaint, fontSize: '11px' }}>
-                              <IcoBus /> {depsSemaine[0].vehicule}
+              )}
+
+              {assignationBusOuverte === d.id && (
+                <div style={{ marginTop: '12px', padding: '14px', background: st.bg, borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
+                  {vehicules.length === 0 ? (
+                    <p style={{ color: st.textGhost, fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en ci-dessus.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {vehicules.map(v => {
+                        const coche = plaquesActuelles.includes(v.plaque)
+                        const dejaUtilise = deplacements.some(autre =>
+                          autre.id !== d.id && autre.date_depart === d.date_depart &&
+                          (autre.vehicule || '').split('+').map(p => p.trim()).includes(v.plaque)
+                        )
+                        return (
+                          <label key={v.plaque} style={{
+                            display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
+                            cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
+                            background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : st.bgRaised,
+                            border: coche ? `1px solid ${accentColor}50` : `1px solid ${st.border}`,
+                            opacity: dejaUtilise && !coche ? 0.4 : 1,
+                          }}>
+                            <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
+                              onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
+                              style={{ accentColor, width: '15px', height: '15px' }} />
+                            <span style={{ fontSize: '12px', color: coche ? accentColor : st.textDim, fontWeight: coche ? 600 : 400 }}>
+                              {v.plaque} ({v.capacite} pl.)
                             </span>
-                          )}
-                          <span style={{ color: st.textFaint }}>{ouvert ? '▲' : '▼'}</span>
-                        </div>
+                            {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: st.textFaint, marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        }
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            {/* Prochain déplacement */}
+            {prochain && (() => {
+              const sb = statutBus(prochain)
+              const ouvert = !!semaineOuverte[`prochain_${prochain.id}`]
+              return (
+                <div style={{ ...st.card, padding: 0, overflow: 'hidden', borderLeft: `4px solid ${accentColor}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 18px', flexWrap: 'wrap' }}>
+                    {paveDate(prochain.date_depart, accentColor, true)}
+                    <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: st.textDim }}>Prochain déplacement</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: 800, color: st.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochain.lieu_destination}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        {etiquette(libelleNature(prochain.nature), st.textDim)}
+                        {prochain.equipe && <span style={{ fontSize: '12px', color: st.textDim, fontWeight: 600 }}>{prochain.equipe}</span>}
+                        {prochain.ville_destination && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: st.textFaint }}><IcoPin />{prochain.ville_destination}</span>}
+                      </div>
+                      {meta(prochain) && <p style={{ margin: '6px 0 0', fontSize: '12px', color: st.textFaint }}>{meta(prochain)}</p>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '6px 10px', borderRadius: '8px', color: sb.couleur, background: sb.couleur + '15', border: `1px solid ${sb.couleur}40` }}><IcoBus />{sb.texte}</span>
+                      <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [`prochain_${prochain.id}`]: !ouvert }))} title="Détails"
+                        style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '8px', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <IcoChevron ouvert={ouvert} />
                       </button>
-                      {ouvert && (
-                        <div style={{ paddingTop: '10px' }}>
-                          {depsSemaine.map(d => {
-                  const cap = capaciteVehicule(d)
-                  const insuffisant = !d.vehicule || cap == null || (d.nb_personnes != null && cap < d.nb_personnes)
-                  const plaquesActuelles = (d.vehicule || '').split('+').map(p => p.trim()).filter(Boolean)
-                  const editRetour = retourEdits[d.id] || { km_apres: d.km_apres ?? '', gasoil_apres: d.gasoil_apres ?? '' }
-                  const retourComplet = d.km_apres != null && d.gasoil_apres
-                  return (
-                    <div key={d.id} style={{ ...st.card, marginBottom: '10px', border: insuffisant ? '1px solid #f59e0b40' : `1px solid ${st.bgRaised}` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-                        <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
-                            {d.lieu_destination}
-                            {d.equipe && <span style={{ marginLeft: '8px', fontSize: '11px', color: st.textFaint, fontWeight: 600 }}>· {d.equipe}</span>}
-                          </p>
-                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textFaint }}>
-                            {new Date(d.date_depart + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
-                            {d.nb_personnes != null ? ` · ${d.nb_personnes} pers.` : ''}
-                            {d.distance_km != null ? ` · ${d.distance_km} km` : ''}
-                            {d.duree_trajet_min != null ? ` (${Math.floor(d.duree_trajet_min / 60)}h${String(d.duree_trajet_min % 60).padStart(2, '0')})` : ''}
-                          </p>
-                        </div>
-                        <span style={{
-                          fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
-                          background: !d.vehicule ? '#6b728020' : insuffisant ? '#f59e0b15' : accentColor + '15',
-                          color: !d.vehicule ? st.textDim : insuffisant ? '#f59e0b' : accentColor,
-                        }}>
-                          {!d.vehicule
-                            ? 'Aucun véhicule assigné'
-                            : cap == null
-                              ? `${d.vehicule} (hors parc actuel)`
-                              : insuffisant
-                                ? `Capacité insuffisante (${d.nb_personnes}p / ${cap} places)`
-                                : `${d.vehicule} · ${d.nb_personnes ?? '?'}/${cap} places`}
-                        </span>
-                      </div>
+                    </div>
+                  </div>
+                  {ouvert && detailDeplacement(prochain)}
+                </div>
+              )
+            })()}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${st.bgRaised}` }}>
-                        <div>
-                          <p style={st.label}>Km avant</p>
-                          <p style={{ margin: 0, fontSize: '13px', color: d.km_avant != null ? st.text : st.textGhost }}>{d.km_avant != null ? `${d.km_avant} km` : '—'}</p>
-                        </div>
-                        <div>
-                          <p style={st.label}>Gasoil avant</p>
-                          <p style={{ margin: 0, fontSize: '13px', color: d.gasoil_avant ? st.text : st.textGhost }}>{d.gasoil_avant || '—'}</p>
-                        </div>
-                        <div>
-                          <p style={st.label}>Km après (retour)</p>
-                          <input type="number" value={editRetour.km_apres} placeholder="—" disabled={!retourEditable}
-                            onChange={e => setRetourField(d.id, 'km_apres', e.target.value)}
-                            style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
-                        </div>
-                        <div>
-                          <p style={st.label}>Gasoil après (retour)</p>
-                          <input type="text" value={editRetour.gasoil_apres} placeholder="ex: 2/4" disabled={!retourEditable}
-                            onChange={e => setRetourField(d.id, 'gasoil_apres', e.target.value)}
-                            style={{ ...st.input, padding: '6px 8px', fontSize: '13px' }} />
-                        </div>
-                      </div>
-
-                      {(retourEditable || !readOnly) && (
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                          {retourEditable && (
-                            <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-                              style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                              {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
-                            </button>
-                          )}
-                          {!readOnly && (
-                            <>
-                              <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
-                                style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
-                              </button>
-                              <button onClick={() => ouvrirEditionDeplacement(d)}
-                                style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                Modifier
-                              </button>
-                              <button onClick={() => supprimerDeplacement(d)}
-                                style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                Supprimer
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {assignationBusOuverte === d.id && (
-                        <div style={{ marginTop: '12px', padding: '14px', background: st.bg, borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
-                          {vehicules.length === 0 ? (
-                            <p style={{ color: st.textGhost, fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en dans l'outil Répartition mini-bus.</p>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              {vehicules.map(v => {
-                                const coche = plaquesActuelles.includes(v.plaque)
-                                const dejaUtilise = deplacements.some(autre =>
-                                  autre.id !== d.id && autre.date_depart === d.date_depart &&
-                                  (autre.vehicule || '').split('+').map(p => p.trim()).includes(v.plaque)
-                                )
-                                return (
-                                  <label key={v.plaque} style={{
-                                    display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
-                                    cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
-                                    background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : st.bgRaised,
-                                    border: coche ? `1px solid ${accentColor}50` : `1px solid ${st.border}`,
-                                    opacity: dejaUtilise && !coche ? 0.4 : 1,
-                                  }}>
-                                    <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
-                                      onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
-                                      style={{ accentColor, width: '15px', height: '15px' }} />
-                                    <span style={{ fontSize: '12px', color: coche ? accentColor : st.textDim, fontWeight: coche ? 600 : 400 }}>
-                                      {v.plaque} ({v.capacite} pl.)
-                                    </span>
-                                    {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: st.textFaint, marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
-                                  </label>
-                                )
-                              })}
+            {/* Liste par mois */}
+            {Object.keys(parMois).length === 0 && (
+              <p style={{ margin: 0, color: st.textFaint, fontSize: '13px' }}>Aucun déplacement à venir.</p>
+            )}
+            {Object.keys(parMois).map(cle => {
+              const deps = parMois[cle]
+              const label = new Date(cle + '-01T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+              const aVerifier = deps.filter(d => statutBus(d).alerte).length
+              return (
+                <div key={cle}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${st.bgRaised}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: st.text }}>{label}</span>
+                      <span style={{ fontSize: '12px', color: st.textFaint }}>{deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
+                    </div>
+                    {aVerifier > 0
+                      ? etiquette(`${aVerifier} à vérifier`, '#f97316')
+                      : etiquette('Bus OK', accentColor)}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {deps.map(d => {
+                      const ouvert = !!semaineOuverte[d.id]
+                      const sb = statutBus(d)
+                      const passe = d.date_depart < aujourdHui
+                      return (
+                        <div key={d.id} style={{ background: st.card.background, border: `1px solid ${sb.alerte && !passe ? '#f59e0b40' : st.bgRaised}`, borderRadius: '12px', overflow: 'hidden', opacity: passe ? 0.7 : 1 }}>
+                          <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [d.id]: !ouvert }))}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+                            {paveDate(d.date_depart)}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: st.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.lieu_destination}</span>
+                                {etiquette(libelleNature(d.nature), st.textDim)}
+                              </div>
+                              <p style={{ margin: '3px 0 0', fontSize: '12px', color: st.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {[d.equipe, meta(d)].filter(Boolean).join(' · ') || '—'}
+                              </p>
                             </div>
-                          )}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, padding: '4px 9px', borderRadius: '8px', color: sb.couleur, background: sb.couleur + '15', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoBus />{sb.texte}</span>
+                            <span style={{ color: st.textFaint, display: 'flex', flexShrink: 0 }}><IcoChevron ouvert={ouvert} /></span>
+                          </button>
+                          {ouvert && detailDeplacement(d)}
                         </div>
-                      )}
-                    </div>
-                          )
-                        })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })
-        })()
-      )}
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
+            {passes.length > 0 && (
+              <button onClick={() => setAfficherPasses(v => !v)}
+                style={{ alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {afficherPasses ? 'Masquer les déplacements passés' : `Afficher les ${passes.length} déplacement${passes.length > 1 ? 's' : ''} passé${passes.length > 1 ? 's' : ''}`}
+                <IcoChevron ouvert={afficherPasses} />
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
     </div>
   )

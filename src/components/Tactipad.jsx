@@ -5,6 +5,26 @@ import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
 
+const sv = (d, taille = 15) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+const IcoAnnuler = () => sv(<><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></>)
+const IcoRetablir = () => sv(<><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></>)
+const IcoCorbeille = () => sv(<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></>)
+const IcoGomme = () => sv(<><path d="M20 20H9L4 15a2 2 0 010-2.8l9.2-9.2a2 2 0 012.8 0l4.2 4.2a2 2 0 010 2.8L12 18"/><line x1="7" y1="10" x2="14" y2="17"/></>)
+const IcoTelecharger = () => sv(<><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>)
+const IcoCopier = () => sv(<><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></>)
+const IcoLecture = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+const IcoStopCarre = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+const IcoPremier = () => sv(<><polyline points="18 18 12 12 18 6"/><line x1="7" y1="6" x2="7" y2="18"/></>)
+const IcoPrec = () => sv(<polyline points="15 18 9 12 15 6"/>)
+const IcoSuiv = () => sv(<polyline points="9 18 15 12 9 6"/>)
+const IcoDernier = () => sv(<><polyline points="6 18 12 12 6 6"/><line x1="17" y1="6" x2="17" y2="18"/></>)
+const IcoFleche = () => sv(<><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></>)
+const IcoFilm = () => sv(<><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="2" y1="12" x2="22" y2="12"/></>)
+const IcoDisquette = () => sv(<><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>)
+const IcoLien = () => sv(<><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></>, 13)
+const IcoJoueurs = () => sv(<><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></>, 13)
+const IcoSchema = () => sv(<><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="12" r="3"/></>, 18)
+
 const COULEURS = [
   { val: '#4ade80', label: 'Vert' },
   { val: '#ffffff', label: 'Blanc' },
@@ -1640,7 +1660,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const btnStyle = (active) => ({
     width: '38px', height: '38px', borderRadius: '8px', border: active ? '1px solid #4ade80' : `1px solid ${colors.border.default}`,
     background: active ? '#4ade8020' : colors.background.surface, color: active ? '#4ade80' : colors.text.secondary, fontSize: '16px',
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'Inter, sans-serif',
   })
 
   // Empêche de glisser un joueur/joker/objet hors du terrain — Konva n'a
@@ -1677,7 +1697,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           ))}
         </div>
         <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
-          {[['vert', `🟢 ${t('tac_vert', lang)}`], ['blanc', `⬜ ${t('tac_blanc', lang)}`]].map(([v, label]) => (
+          {[['vert', t('tac_vert', lang)], ['blanc', t('tac_blanc', lang)]].map(([v, label]) => (
             <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
@@ -1686,7 +1706,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           defaultValue=""
           style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
         >
-          <option value="">📋 {t('tac_dispositif', lang)} ({t(EQUIPES_CONFIG[equipeActive].label, lang)})...</option>
+          <option value="">{t('tac_dispositif', lang)} ({t(EQUIPES_CONFIG[equipeActive].label, lang)})...</option>
           <optgroup label="4 défenseurs">
             <option value="4-3-3">4-3-3</option>
             <option value="4-4-2">4-4-2</option>
@@ -2167,40 +2187,42 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 <button key={c.val} onClick={() => updateElement({ ...selectedElement, color: c.val })} title={c.label}
                   style={{ width: '26px', height: '26px', borderRadius: '50%', background: c.val, border: selectedElement.color === c.val ? '2px solid #4ade80' : '1px solid #444', cursor: 'pointer' }} />
               ))}
-              <button onClick={supprimerSelection} style={{ marginLeft: 'auto', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                🗑 Supprimer
+              <button onClick={supprimerSelection} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                <IcoCorbeille /> Supprimer
               </button>
             </div>
           )}
 
           {/* Actions */}
-          <div ref={el => (tourRefs.current.actions = el)} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-            <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}>↩ {t('tac_undo', lang)}</button>
-            <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}>↪ {t('tac_redo', lang)}</button>
-            <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}>🗑 {t('btn_supprimer', lang)}</button>
+          <div ref={el => (tourRefs.current.actions = el)} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '12px', padding: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px' }}>
+            <button onClick={undo} disabled={!history.length} title="Ctrl+Z" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: history.length ? 1 : 0.4 }}><IcoAnnuler /> {t('tac_undo', lang)}</button>
+            <button onClick={redo} disabled={!future.length} title="Ctrl+Y" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: future.length ? 1 : 0.4 }}><IcoRetablir /> {t('tac_redo', lang)}</button>
+            <button onClick={supprimerSelection} disabled={!selectedId} title="Suppr" style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', opacity: selectedId ? 1 : 0.4 }}><IcoCorbeille /> {t('btn_supprimer', lang)}</button>
             {selectedIds.size > 0 && (
               <button
                 onClick={() => { applyElements(elements.filter(el => !selectedIds.has(el.id))); setSelectedIds(new Set()) }}
                 title="Suppr"
-                style={{ background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '0 14px', height: '38px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                🗑 Supprimer {selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440', borderRadius: '8px', padding: '0 14px', height: '38px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                <IcoCorbeille /> Supprimer {selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''}
               </button>
             )}
             {/* Raccourci lecture — le même bouton existe plus bas dans "Séquences",
                 mais sur mobile cette section peut demander de scroller pour l'atteindre. */}
             {sequences.length > 1 && (
               !playing ? (
-                <button onClick={lire} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#4ade80', fontWeight: 700 }}>▶ Lire</button>
+                <button onClick={lire} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#4ade80', fontWeight: 700 }}><IcoLecture /> Lire</button>
               ) : (
-                <button onClick={stopLecture} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#ef4444', fontWeight: 700 }}>⏹ Stop</button>
+                <button onClick={stopLecture} style={{ ...btnStyle(false), width: 'auto', padding: '0 14px', color: '#ef4444', fontWeight: 700 }}><IcoStopCarre /> Stop</button>
               )
             )}
-            <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>🧹 {t('tac_tout_effacer', lang)}</button>
-            <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}>⬇️ {t('tac_export_png', lang)}</button>
+            <span style={{ flex: 1 }} />
+            <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}><IcoTelecharger /> {t('tac_export_png', lang)}</button>
+            <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}><IcoGomme /> {t('tac_tout_effacer', lang)}</button>
           </div>
 
           {/* Séquences */}
-          <div ref={el => (tourRefs.current.sequences = el)} style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div ref={el => (tourRefs.current.sequences = el)} style={{ marginTop: '10px', padding: '12px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Animation · {sequences.length} étape{sequences.length > 1 ? 's' : ''}</p>
 
             {/* Ligne 1 : étapes + boutons navigation */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
@@ -2211,11 +2233,11 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 </button>
               ))}
               <button onClick={ajouterEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px' }}>{t('tac_ajouter_etape', lang)}</button>
-              <button onClick={dupliquerEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa' }}>📋 {t('tac_dupliquer', lang)}</button>
+              <button onClick={dupliquerEtape} disabled={playing} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa' }}><IcoCopier /> {t('tac_dupliquer', lang)}</button>
               {sequences.length > 1 && (
                 <button onClick={() => supprimerEtape(etapeActive)} disabled={playing}
                   style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}>
-                  🗑 {t('tac_etape', lang)}
+                  <IcoCorbeille /> {t('tac_etape', lang)}
                 </button>
               )}
             </div>
@@ -2223,26 +2245,26 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             {/* Ligne 2 : lecture + prev/next + vitesse + durée + flèches */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={() => { stopLecture(); allerEtape(0) }} disabled={playing || etapeActive === 0}
-                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}>⏮</button>
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}><IcoPremier /></button>
               <button onClick={() => allerEtape(etapeActive - 1)} disabled={playing || etapeActive === 0}
-                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}>◀</button>
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive === 0 ? 0.3 : 1 }}><IcoPrec /></button>
 
               {!playing ? (
                 <button onClick={lire} disabled={sequences.length < 2}
                   style={{ ...btnStyle(false), width: 'auto', padding: '0 16px', color: '#4ade80', opacity: sequences.length < 2 ? 0.4 : 1, fontWeight: 700 }}>
-                  ▶ Lire
+                  <IcoLecture /> Lire
                 </button>
               ) : (
                 <button onClick={stopLecture}
                   style={{ ...btnStyle(false), width: 'auto', padding: '0 16px', color: '#ef4444', fontWeight: 700 }}>
-                  ⏹ Stop
+                  <IcoStopCarre /> Stop
                 </button>
               )}
 
               <button onClick={() => allerEtape(etapeActive + 1)} disabled={playing || etapeActive >= sequences.length - 1}
-                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}>▶</button>
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}><IcoSuiv /></button>
               <button onClick={() => { stopLecture(); allerEtape(sequences.length - 1) }} disabled={playing || etapeActive >= sequences.length - 1}
-                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}>⏭</button>
+                style={{ ...btnStyle(false), width: 'auto', padding: '0 10px', opacity: etapeActive >= sequences.length - 1 ? 0.3 : 1 }}><IcoDernier /></button>
 
               {/* Vitesse */}
               <div style={{ display: 'flex', gap: 3, background: colors.background.sunken, borderRadius: 8, padding: 3 }}>
@@ -2267,36 +2289,36 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               {/* Toggle flèches de déplacement */}
               <button onClick={() => setShowMovementArrows(v => !v)}
                 style={{ ...btnStyle(showMovementArrows), width: 'auto', padding: '0 12px', fontSize: 11 }}>
-                {showMovementArrows ? '↗ Flèches ON' : '↗ Flèches OFF'}
+                <IcoFleche /> Flèches {showMovementArrows ? 'affichées' : 'masquées'}
               </button>
 
               <button onClick={exportGIF} disabled={sequences.length < 2 || playing}
                 style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#a78bfa', opacity: sequences.length < 2 ? 0.4 : 1 }}>
-                🎞️ Export GIF
+                <IcoFilm /> Export GIF
               </button>
             </div>
           </div>
 
           {isModal ? (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-              <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>✅ Valider le schéma</button>
-              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
+              <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>Valider le schéma</button>
+              <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>Fermer sans enregistrer</button>
             </div>
           ) : lectureSeule ? (
             <p style={{ margin: '14px 0 0', fontSize: '12px', color: colors.text.faint }}>Consultation : les schémas de l'éducateur sont en lecture seule.</p>
           ) : (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px' }}>
               <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
                 style={{ flex: 1, minWidth: '160px', background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 12px', color: colors.text.primary, fontSize: '13px' }} />
               {dossiers.length > 0 && (
                 <select value={dossierSauvegarde} onChange={e => setDossierSauvegarde(e.target.value)}
                   style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', padding: '8px 10px', cursor: 'pointer' }}>
-                  <option value="">📁 Sans dossier</option>
-                  {dossiers.map(d => <option key={d.id} value={d.id}>🗂 {d.nom}</option>)}
+                  <option value="">Sans dossier</option>
+                  {dossiers.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                 </select>
               )}
-              <button onClick={sauvegarderSchema} disabled={savingSchema || tableMissing} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: tableMissing ? 0.4 : 1 }}>
-                {savingSchema ? '...' : currentSchemaId ? '💾 Mettre à jour' : '💾 Sauvegarder'}
+              <button onClick={sauvegarderSchema} disabled={savingSchema || tableMissing} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: tableMissing ? 0.4 : 1 }}>
+                <IcoDisquette />{savingSchema ? '...' : currentSchemaId ? 'Mettre à jour' : 'Sauvegarder'}
               </button>
               {currentSchemaId && (
                 <button onClick={() => { setCurrentSchemaId(null); setNomSchema(''); setDossierSauvegarde('') }} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', cursor: 'pointer' }}>Nouveau</button>
@@ -2329,7 +2351,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             ))}
             {jokers.length > 0 && (
               <div>
-                <div style={{ color: '#e5e7eb', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>⭐ JOKERS</div>
+                <div style={{ color: '#e5e7eb', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>JOKERS</div>
                 {jokers.map(j => (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.55)', border: '1px dashed #000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#000', flexShrink: 0 }}>
@@ -2364,25 +2386,28 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         const schemasAffiches = dossierActif === null ? schemas : schemas.filter(s => s.dossier_id === dossierActif)
         return (
           <div style={{ marginTop: '2rem' }}>
-            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 {lectureSeule ? 'Schémas de l\'éducateur' : 'Mes schémas'} {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
+              <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{lectureSeule ? 'Schémas de l\'éducateur' : 'Mes schémas'}</p>
+              {schemas.length > 0 && <span style={{ fontSize: '12px', color: colors.text.faint }}>{schemas.length}</span>}
+            </div>
 
-            {(dossiers.length > 0 || showAddDossier) && (
+            {(dossiers.length > 0 || showAddDossier || !lectureSeule) && (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
                 <button onClick={() => setDossierActif(null)}
-                  style={{ background: dossierActif === null ? '#4ade8020' : colors.background.surface, border: `1px solid ${dossierActif === null ? '#4ade80' : colors.border.default}`, color: dossierActif === null ? '#4ade80' : colors.text.faint, borderRadius: '20px', padding: '5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                  Tous ({schemas.length})
+                  style={{ background: dossierActif === null ? '#4ade801f' : 'transparent', border: `1px solid ${dossierActif === null ? '#4ade8070' : colors.border.default}`, color: dossierActif === null ? '#4ade80' : colors.text.faint, borderRadius: '18px', padding: '6px 13px', fontSize: '12px', fontWeight: dossierActif === null ? 700 : 500, cursor: 'pointer' }}>
+                  Tous <span style={{ fontWeight: 700, marginLeft: '3px' }}>{schemas.length}</span>
                 </button>
                 {dossiers.map(d => {
                   const count = schemas.filter(s => s.dossier_id === d.id).length
                   const actif = dossierActif === d.id
                   return (
-                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <div key={d.id} style={{ display: 'inline-flex', alignItems: 'center', background: actif ? `${d.couleur}1f` : 'transparent', border: `1px solid ${actif ? d.couleur + '70' : colors.border.default}`, borderRadius: '18px' }}>
                       <button onClick={() => setDossierActif(d.id)}
-                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, color: actif ? d.couleur : colors.text.faint, borderRadius: '20px 0 0 20px', padding: '5px 4px 5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                        🗂 {d.nom} ({count})
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: actif ? d.couleur : colors.text.faint, padding: lectureSeule ? '6px 13px' : '6px 4px 6px 12px', fontSize: '12px', fontWeight: actif ? 700 : 500, cursor: 'pointer' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: d.couleur }} />{d.nom} <span style={{ fontWeight: 700 }}>{count}</span>
                       </button>
                       {!lectureSeule && <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
-                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, borderLeft: 'none', color: colors.text.faint, borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>}
+                        style={{ background: 'none', border: 'none', color: colors.text.faint, padding: '6px 10px 6px 4px', fontSize: '13px', lineHeight: 1, cursor: 'pointer' }}>×</button>}
                     </div>
                   )
                 })}
@@ -2390,44 +2415,58 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <input autoFocus value={newDossierNom} onChange={e => setNewDossierNom(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && ajouterDossier()}
-                      placeholder="Nom du dossier" style={{ background: colors.background.sunken, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '5px 10px', fontSize: '11px', width: '130px' }} />
-                    <button onClick={ajouterDossier} style={{ background: '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>OK</button>
-                    <button onClick={() => { setShowAddDossier(false); setNewDossierNom('') }} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer' }}>✕</button>
+                      placeholder="Nom du dossier" style={{ background: colors.background.sunken, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '12px', width: '140px' }} />
+                    <button onClick={ajouterDossier} style={{ background: '#4ade80', border: 'none', borderRadius: '8px', color: '#000', fontWeight: 700, fontSize: '12px', padding: '6px 10px', cursor: 'pointer' }}>OK</button>
+                    <button onClick={() => { setShowAddDossier(false); setNewDossierNom('') }} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>Annuler</button>
                   </div>
                 ) : (
-                  <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '20px', color: colors.text.faint, fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>+ Dossier</button>
+                  <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '18px', color: colors.text.faint, fontSize: '12px', fontWeight: 600, padding: '6px 13px', cursor: 'pointer' }}>+ {dossiers.length ? 'Dossier' : 'Créer un dossier'}</button>
                 )}
               </div>
-            )}
-            {dossiers.length === 0 && !showAddDossier && !lectureSeule && (
-              <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '20px', color: colors.text.faint, fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', marginBottom: '14px' }}>+ Créer un dossier</button>
             )}
 
             {loadingSchemas ? (
               <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Chargement...</p>
             ) : schemasAffiches.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{schemas.length === 0 ? 'Aucun schéma sauvegardé pour l\'instant.' : 'Aucun schéma dans ce dossier.'}</p>
+              <div style={{ background: colors.background.surface, border: `1px dashed ${colors.border.default}`, borderRadius: '12px', padding: '28px 20px', textAlign: 'center' }}>
+                <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>{schemas.length === 0 ? 'Aucun schéma sauvegardé pour l\'instant.' : 'Aucun schéma dans ce dossier.'}</p>
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '10px' }}>
                 {schemasAffiches.map(s => {
                   const dossier = dossiers.find(d => d.id === s.dossier_id)
+                  const nbEtapes = s.schema?.sequences?.length || 1
+                  const nbJoueurs = (s.schema?.elements || []).filter(el => el.type === 'joueur').length
+                  const enCours = currentSchemaId === s.id
+                  const btnPetit = (couleur, actif) => ({ display: 'inline-flex', alignItems: 'center', gap: '5px', background: actif ? couleur + '1f' : 'transparent', border: `1px solid ${actif ? couleur + '70' : colors.border.default}`, color: actif ? couleur : colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' })
                   return (
-                    <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {dossier && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: dossier.couleur, flexShrink: 0 }} />}
-                          {s.nom || 'Sans titre'}
-                        </p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}{dossier ? ` · 🗂 ${dossier.nom}` : ''}{s.partage ? ' · 🔗 partagé' : ''}{s.visible_joueurs ? ` · 👥 visible aux joueurs (${categories.find(c => c.id === s.categorie_id)?.nom || 'toutes catégories'})` : ''}</p>
+                    <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${enCours ? '#60a5fa70' : colors.border.subtle}`, borderLeft: `3px solid ${dossier?.couleur || colors.border.strong}`, borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <span style={{ width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#4ade801a', color: '#4ade80', flexShrink: 0 }}><IcoSchema /></span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{s.nom || 'Sans titre'}</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>
+                            {new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {` · ${nbEtapes} étape${nbEtapes > 1 ? 's' : ''}`}
+                            {nbJoueurs > 0 ? ` · ${nbJoueurs} joueur${nbJoueurs > 1 ? 's' : ''}` : ''}
+                          </p>
+                          {(dossier || s.partage || s.visible_joueurs) && (
+                            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '6px' }}>
+                              {dossier && <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: dossier.couleur, background: dossier.couleur + '1a' }}>{dossier.nom}</span>}
+                              {s.visible_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: '#4ade80', background: '#4ade801a' }}><IcoJoueurs />{categories.find(c => c.id === s.categorie_id)?.nom || 'Toutes catégories'}</span>}
+                              {s.partage && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: '#a78bfa', background: '#a78bfa1a' }}><IcoLien />Partagé</span>}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button onClick={() => chargerSchema(s)} style={{ ...btnPetit('#60a5fa', true) }}>{enCours ? 'Ouvert' : 'Ouvrir'}</button>
                         {!lectureSeule && <>
-                        <button onClick={() => toggleVisibleJoueurs(s)} style={{ background: s.visible_joueurs ? '#4ade8020' : '#4ade8015', border: `1px solid ${s.visible_joueurs ? '#4ade80' : '#4ade8040'}`, color: '#4ade80', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                          {s.visible_joueurs ? '👥 Visible aux joueurs' : '👥 Rendre visible aux joueurs'}
+                        <button onClick={() => toggleVisibleJoueurs(s)} title={s.visible_joueurs ? 'Visible par les joueurs — cliquer pour masquer' : 'Rendre visible aux joueurs'} style={btnPetit('#4ade80', s.visible_joueurs)}>
+                          <IcoJoueurs />{s.visible_joueurs ? 'Visible' : 'Masqué'}
                         </button>
-                        <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
-                        <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
+                        <button onClick={() => partagerSchema(s.id)} style={btnPetit('#a78bfa', false)}><IcoLien />Partager</button>
+                        <button onClick={() => supprimerSchema(s.id)} title="Supprimer" style={{ ...btnPetit('#ef4444', false), marginLeft: 'auto', color: '#ef4444', borderColor: '#ef444440' }}><IcoCorbeille /></button>
                         </>}
                       </div>
                     </div>

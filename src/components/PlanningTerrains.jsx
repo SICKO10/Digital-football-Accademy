@@ -7,6 +7,12 @@ import { makeUseSt } from '../lib/theme'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { ZONES, couleurZone } from '../lib/terrainZones'
 
+const IcoCrayon = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+const IcoCorbeille = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+const IcoAlerte = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+const IcoChevronG = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+const IcoChevronD = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+
 const JOURS = [
   { val: 'lundi', label: 'Lundi' },
   { val: 'mardi', label: 'Mardi' },
@@ -673,16 +679,18 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
     const zone = c.zone || 'plein'
     const enConflit = !c.libere && liste.some(autre => autre.id !== c.id && !autre.libere && (autre.zone || 'plein') === zone && seChevauchent(c, autre))
     const couleurBord = zone !== 'plein' ? couleurZone(zone, accentColor) : (c.libere ? accentColor : st.border)
+    // Créneau de l'éducateur connecté : mis en avant (fond teinté + étiquette).
+    const estMien = mode === 'educateur' && !c.libere && (c.estRemplacement ? c.exception?.educateur_id === userId : cBase.educateur_id === userId)
     return (
       <div key={c.id} style={{
-        background: c.libere ? accentColor + '10' : st.bg,
-        border: `1px solid ${enConflit ? '#ef4444' : (c.libere ? accentColor + '40' : st.border)}`,
+        background: c.libere ? accentColor + '10' : estMien ? accentColor + '0d' : st.bg,
+        border: `1px solid ${enConflit ? '#ef4444' : (c.libere || estMien ? accentColor + '40' : st.border)}`,
         borderLeft: `3px solid ${enConflit ? '#ef4444' : couleurBord}`,
         borderRadius: '10px', padding: '10px 12px', marginBottom: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: c.libere ? accentColor : st.text }}>
-            {c.heure_debut?.slice(0, 5)} – {c.heure_fin?.slice(0, 5)}
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: c.libere ? accentColor : st.text, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+            {c.heure_debut?.slice(0, 5)}<span style={{ color: st.textFaint, fontWeight: 600 }}> – {c.heure_fin?.slice(0, 5)}</span>
           </p>
           {zone !== 'plein' && (
             <span style={{ fontSize: '9px', fontWeight: 700, color: couleurZone(zone, accentColor), background: couleurZone(zone, accentColor) + '18', border: `1px solid ${couleurZone(zone, accentColor)}40`, borderRadius: '10px', padding: '1px 7px', whiteSpace: 'nowrap' }}>
@@ -691,7 +699,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
           )}
         </div>
         {enConflit && (
-          <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>⚠️ Même zone qu'un autre créneau à cet horaire</p>
+          <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><IcoAlerte /> Même zone qu'un autre créneau à cet horaire</p>
         )}
         {c.libere ? (
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: accentColor }}>Disponible ce jour — libéré par {c.libere_par || 'un éducateur'}</p>
@@ -702,22 +710,24 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                 Remplacement ce jour
               </span>
             )}
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: st.textDim, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <p style={{ margin: '6px 0 0', fontSize: '13px', fontWeight: 700, color: st.text, display: 'flex', alignItems: 'center', gap: '6px' }}>
               {couleurEquipe(c.equipe, categories) && (
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleurEquipe(c.equipe, categories), flexShrink: 0 }} />
               )}
-              {c.equipe || '—'}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.equipe || '—'}</span>
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>{nomEducateur(c.educateur_id) || '—'}</p>
+            {estMien
+              ? <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '9px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', color: accentColor }}>Mon créneau</span>
+              : nomEducateur(c.educateur_id) && <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint, textTransform: 'capitalize' }}>{nomEducateur(c.educateur_id).toLowerCase()}</p>}
           </>
         )}
 
         {estDirigeant && (
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
             <button onClick={() => setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' })}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${st.border}`, background: st.bgRaised, color: st.textDim, fontSize: '12px', cursor: 'pointer' }}>✏️</button>
+              title="Modifier" style={{ padding: '5px 8px', borderRadius: '6px', border: `1px solid ${st.border}`, background: st.bgRaised, color: st.textDim, cursor: 'pointer', display: 'flex' }}><IcoCrayon /></button>
             <button onClick={() => supprimerCreneau(cBase.id)}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)', background: 'transparent', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>×</button>
+              title="Supprimer" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)', background: 'transparent', color: '#f87171', cursor: 'pointer', display: 'flex' }}><IcoCorbeille /></button>
             {c.exception && (
               <button onClick={() => supprimerException(c.exception.id)} title="Supprimer cette exception — le créneau de base reprend"
                 style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
@@ -733,7 +743,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
             disabled={liberating[cle]}
             style={c.libere
               ? { marginTop: '8px', width: '100%', background: st.bgRaised, color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-              : { marginTop: '8px', width: '100%', background: 'transparent', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', padding: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              : { marginTop: '10px', width: '100%', background: 'transparent', color: st.textDim, border: `1px solid ${st.border}`, borderRadius: '8px', padding: '6px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
           </button>
         )}
@@ -759,7 +769,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
 
   return (
     <div style={{ width: '100%' }}>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🏟️ Planning des terrains</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Planning des terrains</h1>
       <p style={{ color: st.textFaint, fontSize: '13px', marginBottom: '1.5rem' }}>
         {estDirigeant ? "Configure tes terrains et organise l'occupation hebdomadaire." : "Planning de la semaine — libère un créneau si tu n'en as pas besoin."}
       </p>
@@ -781,7 +791,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
             <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>Mes terrains</p>
             <button onClick={() => setShowAddTerrain(v => !v)}
               style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {showAddTerrain ? '✕ Fermer' : '+ Ajouter un terrain'}
+              {showAddTerrain ? 'Fermer' : '+ Ajouter un terrain'}
             </button>
           </div>
           {showAddTerrain && (
@@ -816,7 +826,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                     </button>
                     {edit && (
                       <button onClick={() => sauvegarderTerrain(t.id)}
-                        style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>💾 Enregistrer</button>
+                        style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>Enregistrer</button>
                     )}
                     <button onClick={() => supprimerTerrain(t.id)}
                       style={{ marginLeft: 'auto', background: 'none', border: 'none', color: st.textFaint, cursor: 'pointer', fontSize: '14px' }}>✕</button>
@@ -839,13 +849,16 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
           ) : (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {terrains.map(t => (
-                    <button key={t.id} onClick={() => setTerrainActif(t.id)}
-                      style={{ background: terrainActif === t.id ? accentColor + '15' : 'transparent', border: `1px solid ${terrainActif === t.id ? accentColor + '40' : st.border}`, color: terrainActif === t.id ? accentColor : st.textDim, padding: '7px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      {t.nom}{!t.actif ? ' (inactif)' : ''}
-                    </button>
-                  ))}
+                <div style={{ display: 'flex', gap: '2px', padding: '3px', borderRadius: '12px', background: st.bg, border: `1px solid ${st.border}`, overflowX: 'auto', scrollbarWidth: 'none', maxWidth: '100%' }}>
+                  {terrains.map(t => {
+                    const actif = terrainActif === t.id
+                    return (
+                      <button key={t.id} onClick={() => setTerrainActif(t.id)}
+                        style={{ flexShrink: 0, background: actif ? accentColor + '1f' : 'transparent', border: 'none', color: actif ? accentColor : st.textDim, padding: '8px 14px', borderRadius: '9px', fontSize: '12px', fontWeight: actif ? 800 : 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', opacity: t.actif ? 1 : 0.6 }}>
+                        {t.nom}{!t.actif ? ' (inactif)' : ''}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 {estDirigeant && (
@@ -860,7 +873,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                     </button>
                     <button onClick={() => setShowImport(v => !v)}
                       style={{ background: showImport ? accentColor + '15' : 'transparent', border: `1px solid ${showImport ? accentColor + '40' : st.borderStrong}`, color: showImport ? accentColor : st.textDim, padding: '9px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      {showImport ? '✕ Fermer' : 'Importer'}
+                      {showImport ? 'Fermer' : 'Importer'}
                     </button>
                   </div>
                 )}
@@ -878,7 +891,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                     {importing ? libelleStatutGroq(iaStatus) : 'Choisir un fichier'}
                   </label>
 
-                  {importError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>❌ {importError}</p>}
+                  {importError && <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '12px' }}>{importError}</p>}
 
                   {importLignes.length > 0 && (
                     <div style={{ marginTop: '16px' }}>
@@ -1006,19 +1019,23 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
 
               {/* ── Navigation semaine — les libérations/remplacements affichés sont
                   ceux de la semaine visible uniquement (exceptions datées). ── */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                <button onClick={() => setSemaineOffset(o => o - 1)} style={navBtnStyle}>‹</button>
-                <span style={{ color: st.text, fontWeight: 700, fontSize: '14px', minWidth: '150px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px', borderRadius: '10px', border: `1px solid ${st.border}`, background: st.bg }}>
+                <button onClick={() => setSemaineOffset(o => o - 1)} title="Semaine précédente" style={{ ...navBtnStyle, border: 'none' }}><IcoChevronG /></button>
+                <span style={{ color: st.text, fontWeight: 700, fontSize: '14px', minWidth: '140px', textAlign: 'center' }}>
                   {(() => {
                     const dates = getDatesSemaine(semaineOffset)
                     return `${dates[0].labelCourt} – ${dates[6].labelCourt}`
                   })()}
                 </span>
-                <button onClick={() => setSemaineOffset(o => o + 1)} style={navBtnStyle}>›</button>
-                <button onClick={() => setSemaineOffset(0)}
-                  style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: accentColor + '15', color: accentColor, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  Cette semaine
-                </button>
+                <button onClick={() => setSemaineOffset(o => o + 1)} title="Semaine suivante" style={{ ...navBtnStyle, border: 'none' }}><IcoChevronD /></button>
+                </div>
+                {semaineOffset !== 0 && (
+                  <button onClick={() => setSemaineOffset(0)}
+                    style={{ padding: '7px 12px', borderRadius: '8px', border: `1px solid ${accentColor}40`, background: accentColor + '15', color: accentColor, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Cette semaine
+                  </button>
+                )}
               </div>
 
               {estDirigeant && matchsSansTerrainTous.length > 0 && (
@@ -1026,12 +1043,12 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                   <div onClick={() => setAlertOuvert(v => !v)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '16px' }}>⚠️</span>
+                      <span style={{ color: '#f59e0b', display: 'flex' }}><IcoAlerte /></span>
                       <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: '13px' }}>
                         {matchsSansTerrainTous.length} match{matchsSansTerrainTous.length > 1 ? 's' : ''} sans terrain assigné
                       </span>
                     </div>
-                    <span style={{ color: '#f59e0b', fontSize: '12px' }}>{alertOuvert ? '▲ Réduire' : '▼ Voir'}</span>
+                    <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 600 }}>{alertOuvert ? 'Réduire' : 'Voir'}</span>
                   </div>
 
                   {alertOuvert && (
@@ -1070,10 +1087,13 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                   {getDatesSemaine(semaineOffset).map(j => {
                     const liste = creneauxDuJour(j.val)
                     const matchsJour = matchsDuJour(j.dateStr)
+                    const estAujourdhui = j.dateStr === dateLocaleStr(new Date())
                     return (
-                      <div key={j.val}>
-                        <p style={{ fontSize: '11px', fontWeight: 700, color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px', textAlign: 'center' }}>{j.label.slice(0, 3)}</p>
-                        <p style={{ fontSize: '11px', color: st.textGhost, margin: '0 0 8px', textAlign: 'center' }}>{j.labelCourt}</p>
+                      <div key={j.val} style={{ background: estAujourdhui ? accentColor + '08' : 'transparent', borderRadius: '12px', padding: isMobile ? 0 : '6px 4px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: isMobile ? 'flex-start' : 'center', gap: '6px', margin: '0 0 10px', paddingBottom: '8px', borderBottom: `2px solid ${estAujourdhui ? accentColor : st.bgRaised}` }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: estAujourdhui ? accentColor : st.textDim, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{isMobile ? j.label : j.label.slice(0, 3)}</span>
+                          <span style={{ fontSize: '11px', color: estAujourdhui ? accentColor : st.textFaint }}>{j.labelCourt}</span>
+                        </div>
                         {matchsJour.length > 0 && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
                             {matchsJour.map(m => {
@@ -1089,10 +1109,10 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                                     <span style={{ color: couleur, fontWeight: 700, fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomEquipe || 'Équipe'}</span>
                                   </div>
                                   <p style={{ margin: '2px 0 0', color: st.textDim, fontSize: '9px' }}>
-                                    ⚽ {m.domicile ? 'vs' : '@'} {m.adversaire || 'Match'}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
+                                    <strong style={{ color: couleur, fontWeight: 800 }}>Match</strong> {m.domicile ? 'vs' : '@'} {m.adversaire || ''}{m.heure ? ` · ${m.heure.slice(0, 5)}` : ''}
                                   </p>
                                   {conflits.length > 0 && (
-                                    <p style={{ margin: '4px 0 0', fontSize: '9px', color: '#ef4444', fontWeight: 600 }}>⚠️ Terrain déjà occupé à cet horaire</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '9px', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><IcoAlerte /> Terrain déjà occupé à cet horaire</p>
                                   )}
                                 </div>
                               )
@@ -1100,7 +1120,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
                           </div>
                         )}
                         {liste.length === 0 ? (
-                          matchsJour.length === 0 && <p style={{ fontSize: '11px', color: st.textGhost, textAlign: 'center' }}>—</p>
+                          matchsJour.length === 0 && <p style={{ fontSize: '11px', color: st.textGhost, textAlign: isMobile ? 'left' : 'center', margin: 0, padding: '10px 0', border: isMobile ? 'none' : `1px dashed ${st.border}`, borderRadius: '10px' }}>Libre</p>
                         ) : (
                           liste.map(c => renderCreneauCard(c, j.dateStr, liste))
                         )}

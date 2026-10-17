@@ -727,8 +727,8 @@ export const T = {
   tac_dupliquer:            { fr: 'Dupliquer',       en: 'Duplicate',        pt: 'Duplicar',        es: 'Duplicar',        it: 'Duplica',         de: 'Duplizieren'      },
   tac_undo:                 { fr: 'Undo',            en: 'Undo',             pt: 'Desfazer',        es: 'Deshacer',        it: 'Annulla',         de: 'Rückgängig'       },
   tac_redo:                 { fr: 'Redo',            en: 'Redo',             pt: 'Refazer',         es: 'Rehacer',         it: 'Ripristina',      de: 'Wiederholen'      },
-  tac_football:              { fr: '⚽ Football',     en: '⚽ Football',      pt: '⚽ Futebol',      es: '⚽ Fútbol',       it: '⚽ Calcio',       de: '⚽ Fußball'        },
-  tac_futsal:                { fr: '🏟️ Futsal',       en: '🏟️ Futsal',        pt: '🏟️ Futsal',       es: '🏟️ Futsal',       it: '🏟️ Futsal',       de: '🏟️ Futsal'         },
+  tac_football:              { fr: 'Football',     en: 'Football',      pt: 'Futebol',      es: 'Fútbol',       it: 'Calcio',       de: 'Fußball'        },
+  tac_futsal:                { fr: 'Futsal',       en: 'Futsal',        pt: 'Futsal',       es: 'Futsal',       it: 'Futsal',       de: 'Futsal'         },
 
   // ── Tacticboard — tutoriel interactif (première utilisation + bouton ? discret) ──
   tac_tour_revoir:           { fr: 'Revoir le tutoriel',  en: 'Replay the tutorial',  pt: 'Rever o tutorial',   es: 'Repasar el tutorial',  it: 'Rivedi il tutorial',   de: 'Tutorial erneut ansehen' },
