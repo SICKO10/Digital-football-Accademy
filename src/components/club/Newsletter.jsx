@@ -100,27 +100,26 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
   const cibleLabel = (val) => CIBLES.find(c => c.val === val)?.label || val
 
   return (
-    <div style={{ maxWidth: '1100px' }}>
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ color: accent, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '6px' }}>Communication</div>
-        <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0 }}>Newsletter</h1>
+    <div>
+      <div style={{ marginBottom: '20px' }}>
+        <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 800, margin: 0 }}>Newsletter</h1>
+        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Communications envoyées aux membres affiliés du club, dans l'app et par email.</p>
       </div>
 
       {!readOnly && (
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1.2 1 360px', background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '24px', boxSizing: 'border-box' }}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Nouvelle communication</h3>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1.4 1 360px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', boxSizing: 'border-box' }}>
+            <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Nouvelle communication</p>
 
             <div style={{ marginBottom: '16px' }}>
               <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Envoyer à</div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '2px', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
                 {CIBLES.map(c => (
                   <button key={c.val} onClick={() => setForm(f => ({ ...f, cible: c.val }))}
-                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                      background: form.cible === c.val ? accent + alpha.subtle : 'transparent',
-                      borderColor: form.cible === c.val ? accent : colors.border.strong,
-                      color: form.cible === c.val ? accent : colors.text.faint }}>
-                    {c.label} <span style={{ opacity: 0.6, fontSize: '11px' }}>({compteurs[c.val]})</span>
+                    style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: form.cible === c.val ? 700 : 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Inter, sans-serif',
+                      background: form.cible === c.val ? colors.background.raised : 'transparent',
+                      color: form.cible === c.val ? colors.text.primary : colors.text.faint }}>
+                    {c.label} <span style={{ color: form.cible === c.val ? accent : colors.text.faint, fontSize: '12px', fontWeight: 700 }}>{compteurs[c.val]}</span>
                   </button>
                 ))}
               </div>
@@ -134,7 +133,8 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
               placeholder="Contenu du message..." rows={6}
               style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', marginBottom: '16px', boxSizing: 'border-box' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '12px', color: colors.text.faint }}>Sera envoyée à <strong style={{ color: colors.text.primary }}>{compteurs[form.cible]}</strong> personne{compteurs[form.cible] > 1 ? 's' : ''}, aussi par email.</span>
               <button onClick={envoyer} disabled={!form.titre.trim() || !form.contenu.trim() || envoi}
                 style={{ background: accent, color: colors.background.base, border: 'none', borderRadius: '8px', padding: '12px 24px', fontWeight: 800, fontSize: '14px', cursor: envoi ? 'default' : 'pointer', opacity: envoi ? 0.6 : 1 }}>
                 {envoi ? 'Envoi...' : 'Envoyer'}
@@ -143,8 +143,8 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
           </div>
 
           <div style={{ flex: '0.8 1 240px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
-            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '20px' }}>
-              <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 16px' }}>Statistiques</p>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 16px' }}>Statistiques</p>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary }}>{annonces.length}</div>
@@ -161,19 +161,29 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
               </div>
             </div>
 
-            <div style={{ background: accent + alpha.faint, border: `1px solid ${accent}20`, borderRadius: '14px', padding: '16px' }}>
-              <p style={{ color: accent, fontWeight: 700, fontSize: '13px', margin: '0 0 6px' }}>Conseil</p>
-              <p style={{ color: colors.text.faint, fontSize: '12px', lineHeight: 1.5, margin: 0 }}>
-                Chaque communication est aussi envoyée par email aux destinataires ciblés — vérifiez le groupe choisi avant d'envoyer.
-              </p>
-            </div>
+            {annonces.length > 0 && (() => {
+              // Taux de lecture moyen : lectures / destinataires estimés (compteur
+              // actuel de la cible, faute d'historique du nombre de destinataires).
+              const taux = Math.round(annonces.reduce((acc, a) => acc + Math.min(1, (lusParAnnonce[a.id] || 0) / Math.max(1, compteurs[a.cible] || 1)), 0) / annonces.length * 100)
+              return (
+                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', color: colors.text.faint }}>Taux de lecture moyen</span>
+                    <span style={{ fontSize: '18px', fontWeight: 800, color: colors.text.primary }}>{taux}%</span>
+                  </div>
+                  <div style={{ height: '6px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
+                    <div style={{ width: `${taux}%`, height: '100%', background: accent }} />
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}
 
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Historique des envois</h3>
+          <h3 style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', margin: 0 }}>Historique des envois</h3>
           <span style={{ color: colors.text.faint, fontSize: '13px' }}>{annonces.length} message{annonces.length > 1 ? 's' : ''}</span>
         </div>
         {loading ? (
@@ -181,7 +191,7 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {annonces.map(a => (
-              <div key={a.id} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '16px 20px' }}>
+              <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${accent}`, borderRadius: '12px', padding: '14px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
                   <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{a.titre}</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
@@ -199,17 +209,17 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
                     </span>
                     {!readOnly && (
                       <button onClick={() => supprimer(a.id)}
-                        style={{ background: 'transparent', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}>
-                        Supprimer
+                        title="Supprimer" style={{ background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '2px', display: 'flex' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
                       </button>
                     )}
                   </div>
                 </div>
-                <p style={{ color: colors.text.faint, fontSize: '12px', margin: 0, lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
+                <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0, lineHeight: '1.5', whiteSpace: 'pre-wrap', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{a.contenu}</p>
               </div>
             ))}
             {annonces.length === 0 && (
-              <div style={{ color: colors.text.ghost, fontSize: '13px', textAlign: 'center', padding: '40px' }}>Aucune communication envoyée</div>
+              <div style={{ background: colors.background.surface, border: `1px dashed ${colors.border.default}`, borderRadius: '12px', color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '32px' }}>Aucune communication envoyée pour l'instant.</div>
             )}
           </div>
         )}
