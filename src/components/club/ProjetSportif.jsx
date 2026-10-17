@@ -2,7 +2,6 @@ import { demanderSignatureImage, ajouterChampsSignes } from '../../lib/signature
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { alpha } from '../../tokens'
 import { labelCategorie } from '../../lib/categories'
 import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
 import { saisonActuelle } from '../../lib/saison'
@@ -943,51 +942,61 @@ export default function ProjetSportif({ categories = [], clubId, readOnly = fals
 
   const poles = genre === 'masculin' ? polesMasculins() : polesFeminins()
 
+  // V2 : en-tête, cartes pôle avec les catégories couvertes par une équipe
+  // du club mises en avant et la liste des équipes du pôle.
+  const nbEquipesGenre = categories.filter(c => poles.some(p => p.categories.includes(c.nom))).length
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <p style={{ color: colors.text.faint, fontSize: 13, margin: 0 }}>
-          Organisation, objectifs et principes de jeu par pôle.
-        </p>
-        <div style={{ display: 'flex', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: 3, gap: 3 }}>
-          <button onClick={() => setGenre('masculin')} style={{
-            padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'Inter, sans-serif',
-            background: genre === 'masculin' ? colors.background.raised : 'transparent',
-            color: genre === 'masculin' ? colors.text.primary : colors.text.faint,
-          }}>
-            Masculin
-          </button>
-          <button onClick={() => setGenre('feminin')} style={{
-            padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'Inter, sans-serif',
-            background: genre === 'feminin' ? '#ec489922' : 'transparent',
-            color: genre === 'feminin' ? '#ec4899' : colors.text.faint,
-          }}>
-            Féminin
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: colors.text.primary }}>Projet Sportif</h1>
+          <p style={{ color: colors.text.faint, fontSize: 13, margin: '4px 0 0' }}>
+            Organisation, objectifs et principes de jeu par pôle · {nbEquipesGenre} équipe{nbEquipesGenre > 1 ? 's' : ''}
+          </p>
+        </div>
+        <div style={{ display: 'flex', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: 3, gap: 3 }}>
+          {[['masculin', 'Masculin', colors.text.primary], ['feminin', 'Féminin', '#ec4899']].map(([g, label, c]) => (
+            <button key={g} onClick={() => setGenre(g)} style={{
+              padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif',
+              background: genre === g ? colors.background.raised : 'transparent',
+              color: genre === g ? c : colors.text.faint,
+            }}>
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 14 }}>
         {poles.map(pole => {
           const key = pole.key
-          const nbEquipes = categories.filter(c => pole.categories.includes(c.nom)).length
+          const equipes = categories.filter(c => pole.categories.includes(c.nom)).sort((a, b) => pole.categories.indexOf(a.nom) - pole.categories.indexOf(b.nom) || (a.equipe || '').localeCompare(b.equipe || ''))
+          const couvertes = new Set(equipes.map(c => c.nom))
           return (
-            <div key={key} onClick={() => setPoleActifKey(key)}
-              style={{ background: colors.background.surface, border: `1px solid ${pole.couleur}33`, borderRadius: 16, padding: 22, cursor: 'pointer' }}>
-              <span style={{ width: 12, height: 12, borderRadius: 4, background: pole.couleur, display: 'inline-block', marginBottom: 12 }} />
-              <h3 style={{ color: colors.text.primary, fontSize: 17, fontWeight: 900, margin: '0 0 8px' }}>{pole.label}</h3>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                {pole.categories.map(cat => (
-                  <span key={cat} style={{ background: pole.couleur + alpha.subtle, color: pole.couleur, borderRadius: 4, padding: '2px 7px', fontSize: 10, fontWeight: 700 }}>{cat}</span>
-                ))}
+            <button key={key} onClick={() => setPoleActifKey(key)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderTop: `3px solid ${pole.couleur}`, borderRadius: 14, padding: '18px 20px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', gap: 12, color: colors.text.primary }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = pole.couleur + '66'; e.currentTarget.style.borderTopColor = pole.couleur }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border.subtle; e.currentTarget.style.borderTopColor = pole.couleur }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{pole.label}</h3>
+                <span style={{ fontSize: 12, fontWeight: 700, color: equipes.length ? pole.couleur : colors.text.faint }}>{equipes.length} équipe{equipes.length !== 1 ? 's' : ''}</span>
               </div>
-              <p style={{ color: colors.text.faint, fontSize: 12, margin: 0 }}>
-                {nbEquipes} équipe{nbEquipes !== 1 ? 's' : ''} du club
-              </p>
-              <div style={{ marginTop: 14, color: pole.couleur, fontSize: 12, fontWeight: 700 }}>
-                Accéder →
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {pole.categories.map(cat => {
+                  const ok = couvertes.has(cat)
+                  return <span key={cat} title={ok ? 'Le club a une équipe dans cette catégorie' : 'Aucune équipe du club'} style={{ background: ok ? pole.couleur + '22' : 'transparent', color: ok ? pole.couleur : colors.text.faint, border: `1px solid ${ok ? pole.couleur + '55' : colors.border.default}`, borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 700 }}>{cat}</span>
+                })}
               </div>
-            </div>
+              <div style={{ minHeight: 18 }}>
+                {equipes.length === 0
+                  ? <span style={{ fontSize: 12, color: colors.text.faint }}>Aucune équipe pour l'instant</span>
+                  : <span style={{ fontSize: 12, color: colors.text.secondary }}>{equipes.map(c => `${labelCategorie(c.nom)} ${c.equipe || ''}`.trim()).join(' · ')}</span>}
+              </div>
+              <span style={{ marginTop: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, color: pole.couleur, fontSize: 12, fontWeight: 700 }}>
+                Ouvrir le pôle
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </button>
           )
         })}
       </div>

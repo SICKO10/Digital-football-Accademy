@@ -162,6 +162,7 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
   const [formCreneau, setFormCreneau] = useState(null) // creneauVide() ou creneau existant en édition, ou null si fermé
   const [savingCreneau, setSavingCreneau] = useState(false)
   const [liberating, setLiberating] = useState({}) // { [id]: bool }
+  const [menuCreneau, setMenuCreneau] = useState(null) // clé `${id}_${date}` du créneau dont les actions dirigeant sont dépliées
 
   const [showImport, setShowImport] = useState(false)
   const [importLignes, setImportLignes] = useState([])
@@ -691,7 +692,8 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
       }}>
         {/* Horaire puis zone en dessous : côte à côte, l'étiquette de zone
             débordait de la carte dans les colonnes étroites (7 jours). */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', minWidth: 0, flex: 1 }}>
           <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: c.libere ? accentColor : st.text, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
             {c.heure_debut?.slice(0, 5)}<span style={{ color: st.textFaint, fontWeight: 600 }}> – {c.heure_fin?.slice(0, 5)}</span>
           </p>
@@ -700,6 +702,16 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
               {ZONES.find(z => z.val === zone)?.label || zone}
             </span>
           )}
+        </div>
+        {/* Dirigeant : actions regroupées derrière ··· (dépliées dans la carte,
+            pas en menu flottant — la carte coupe ce qui dépasse) au lieu de
+            crayon + corbeille + « Libérer ce jour » sur chaque créneau. */}
+        {estDirigeant && (
+          <button onClick={() => setMenuCreneau(menuCreneau === cle ? null : cle)} title="Actions"
+            style={{ flexShrink: 0, width: '24px', height: '24px', borderRadius: '6px', border: `1px solid ${menuCreneau === cle ? st.borderStrong : st.border}`, background: menuCreneau === cle ? st.bgRaised : 'transparent', color: st.textDim, cursor: 'pointer', fontSize: '12px', lineHeight: 1, padding: 0 }}>
+            ···
+          </button>
+        )}
         </div>
         {enConflit && (
           <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><IcoAlerte /> Même zone qu'un autre créneau à cet horaire</p>
@@ -725,22 +737,31 @@ export default function PlanningTerrains({ clubId, mode = 'dirigeant', userId, e
           </>
         )}
 
-        {estDirigeant && (
-          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-            <button onClick={() => setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' })}
-              title="Modifier" style={{ padding: '5px 8px', borderRadius: '6px', border: `1px solid ${st.border}`, background: st.bgRaised, color: st.textDim, cursor: 'pointer', display: 'flex' }}><IcoCrayon /></button>
-            <button onClick={() => supprimerCreneau(cBase.id)}
-              title="Supprimer" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)', background: 'transparent', color: '#f87171', cursor: 'pointer', display: 'flex' }}><IcoCorbeille /></button>
-            {c.exception && (
-              <button onClick={() => supprimerException(c.exception.id)} title="Supprimer cette exception — le créneau de base reprend"
-                style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '6px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}>
-                ↩ exception
+        {estDirigeant && menuCreneau === cle && (() => {
+          const action = { display: 'flex', alignItems: 'center', gap: '7px', width: '100%', padding: '6px 8px', borderRadius: '6px', border: 'none', background: 'transparent', color: st.textDim, fontSize: '11px', fontWeight: 600, cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }
+          return (
+            <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: `1px solid ${st.border}`, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <button onClick={() => { setMenuCreneau(null); setFormCreneau({ id: cBase.id, terrain_id: cBase.terrain_id, equipe: cBase.equipe || '', educateur_id: cBase.educateur_id || '', jour: cBase.jour, heure_debut: cBase.heure_debut?.slice(0, 5) || '', heure_fin: cBase.heure_fin?.slice(0, 5) || '', zone: cBase.zone || 'plein' }) }} style={action}>
+                <IcoCrayon /> Modifier
               </button>
-            )}
-          </div>
-        )}
+              {!c.estRemplacement && (
+                <button disabled={liberating[cle]} onClick={() => { if (c.libere || window.confirm('Libérer ce créneau ?')) { setMenuCreneau(null); libererCreneauDate(cBase, dateStr, !c.libere) } }} style={action}>
+                  <IcoChevronD /> {liberating[cle] ? '...' : c.libere ? 'Annuler la libération' : 'Libérer ce jour'}
+                </button>
+              )}
+              {c.exception && (
+                <button onClick={() => { setMenuCreneau(null); supprimerException(c.exception.id) }} title="Le créneau de base reprend" style={action}>
+                  <IcoChevronG /> Annuler l'exception
+                </button>
+              )}
+              <button onClick={() => { setMenuCreneau(null); supprimerCreneau(cBase.id) }} style={{ ...action, color: '#f87171' }}>
+                <IcoCorbeille /> Supprimer le créneau
+              </button>
+            </div>
+          )
+        })()}
 
-        {((mode === 'educateur' && cBase.educateur_id === userId) || estDirigeant) && !c.estRemplacement && (
+        {mode === 'educateur' && cBase.educateur_id === userId && !c.estRemplacement && (
           <button
             onClick={() => { if (c.libere || window.confirm('Libérer ce créneau ?')) libererCreneauDate(cBase, dateStr, !c.libere) }}
             disabled={liberating[cle]}

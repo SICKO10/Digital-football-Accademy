@@ -34,7 +34,7 @@ const dateLocaleStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 // dupliquée ici. Seuls les entraînements (aucune vue "toutes catégories" du
 // club n'existe encore ailleurs) sont chargés par ce composant, une fois,
 // scopés aux éducateurs affiliés (dérivés de `categories`).
-export default function Planning({ matchs = [], evenements = [], projets = [], categories = [] }) {
+export default function Planning({ matchs = [], evenements = [], projets = [], categories = [], accentColor = '#4ade80' }) {
   const colors = useColors()
   const [vue, setVue] = useState('Semaine')
   const [dateRef, setDateRef] = useState(new Date())
@@ -168,26 +168,32 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
     return String(debut.getFullYear())
   }
 
+  // V2 : compteur d'événements sur la période affichée, couleur du club
+  // (accentColor) pour la vue active et le jour courant.
+  const { debut: debutPlage, fin: finPlage } = getPlageDates(dateRef, vue)
+  const nbSurPeriode = evtsFiltres.filter(e => e.date >= dateLocaleStr(debutPlage) && e.date <= dateLocaleStr(finPlage)).length
+  const navBtn = { background: 'transparent', border: 'none', color: colors.text.primary, borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }
+
   return (
-    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1100px' }}>
-      <h2 style={{ color: colors.text.primary, fontSize: isMobile ? '18px' : '22px', fontWeight: 800, marginBottom: '4px' }}>Planning</h2>
-      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: isMobile ? '16px' : '24px' }}>Vue générale de toutes les équipes</p>
+    <div style={{ width: '100%' }}>
+      <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 800, margin: 0 }}>Planning</h1>
+      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 18px' }}>Vue générale de toutes les équipes · {nbSurPeriode} événement{nbSurPeriode > 1 ? 's' : ''} sur la période</p>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch' }}>
           <button onClick={() => setFiltrePole('general')} style={{
-            padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === 'general' ? colors.text.primary : colors.border.faint}`,
+            padding: '7px 14px', borderRadius: '10px', border: `1px solid ${filtrePole === 'general' ? colors.text.primary : colors.border.default}`,
             background: filtrePole === 'general' ? colors.background.raised : 'transparent',
-            color: filtrePole === 'general' ? colors.text.primary : colors.text.disabled,
+            color: filtrePole === 'general' ? colors.text.primary : colors.text.secondary,
             fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
           }}>
             Planning général
           </button>
           {(genrePole === 'masculin' ? polesMasculins() : polesFeminins()).map(pole => (
             <button key={pole.key} onClick={() => setFiltrePole(pole.key)} style={{
-              padding: '7px 14px', borderRadius: '20px', border: `1px solid ${filtrePole === pole.key ? pole.couleur : colors.border.faint}`,
+              padding: '7px 14px', borderRadius: '10px', border: `1px solid ${filtrePole === pole.key ? pole.couleur : colors.border.default}`,
               background: filtrePole === pole.key ? pole.couleur + '22' : 'transparent',
-              color: filtrePole === pole.key ? pole.couleur : colors.text.disabled,
+              color: filtrePole === pole.key ? pole.couleur : colors.text.secondary,
               fontSize: '12px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
             }}>
               {pole.label}
@@ -214,12 +220,12 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
       </div>
 
       <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? '14px' : '20px', flexWrap: 'wrap', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
-        <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '10px', padding: '3px', gap: '2px', overflowX: isMobile ? 'auto' : 'visible' }}>
+        <div style={{ display: 'flex', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '3px', gap: '2px', overflowX: isMobile ? 'auto' : 'visible' }}>
           {VUES.map(v => (
             <button key={v} onClick={() => setVue(v)} style={{
               padding: isMobile ? '7px 12px' : '7px 16px', borderRadius: '8px', border: 'none', flex: isMobile ? 1 : 'none',
-              background: vue === v ? '#4ade80' : 'transparent',
-              color: vue === v ? '#000' : colors.text.faint,
+              background: vue === v ? colors.background.raised : 'transparent',
+              color: vue === v ? colors.text.primary : colors.text.faint,
               fontWeight: vue === v ? 700 : 400,
               fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
             }}>{v}</button>
@@ -227,9 +233,11 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: isMobile ? '8px' : '12px' }}>
-          <button onClick={() => naviguer(-1)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, color: colors.text.primary, borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>‹</button>
-          <span style={{ color: colors.text.primary, fontWeight: 600, fontSize: isMobile ? '13px' : '14px', minWidth: isMobile ? 0 : '240px', textAlign: 'center', flex: isMobile ? 1 : 'none' }}>{labelPeriode()}</span>
-          <button onClick={() => naviguer(1)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, color: colors.text.primary, borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>›</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px', borderRadius: '10px', border: `1px solid ${colors.border.subtle}`, background: colors.background.base, flex: isMobile ? 1 : 'none' }}>
+          <button onClick={() => naviguer(-1)} title="Précédent" style={navBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: isMobile ? '13px' : '14px', minWidth: isMobile ? 0 : '220px', textAlign: 'center', flex: isMobile ? 1 : 'none', textTransform: 'capitalize' }}>{labelPeriode()}</span>
+          <button onClick={() => naviguer(1)} title="Suivant" style={navBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
           {!isMobile && <button onClick={() => setDateRef(new Date())} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '7px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif' }}>Aujourd'hui</button>}
         </div>
         {isMobile && (
@@ -254,8 +262,8 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
       </div>
 
       {vue === 'Jour' && <VueJour dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} />}
-      {vue === 'Semaine' && <VueSemaine dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
-      {vue === 'Mois' && <VueMois dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
+      {vue === 'Semaine' && <VueSemaine dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} accentColor={accentColor} />}
+      {vue === 'Mois' && <VueMois dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} accentColor={accentColor} />}
       {vue === 'Année' && <VueAnnee dateRef={dateRef} evenements={evtsFiltres} onClic={setPopup} isMobile={isMobile} isTablet={isTablet} />}
 
       {popup && (
@@ -263,11 +271,11 @@ export default function Planning({ matchs = [], evenements = [], projets = [], c
           <div onClick={e => e.stopPropagation()} style={{ background: colors.background.sunken, border: `1px solid ${TYPE_COULEURS[popup.type]}44`, borderRadius: '16px', padding: isMobile ? '20px' : '28px', maxWidth: '420px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
               <span style={{ fontSize: '11px', fontWeight: 700, color: TYPE_COULEURS[popup.type], textTransform: 'uppercase', letterSpacing: '1px' }}>{TYPE_LABELS[popup.type]}</span>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', lineHeight: 1, cursor: 'pointer' }}>×</button>
             </div>
             <h3 style={{ color: colors.text.primary, fontSize: '18px', margin: '0 0 8px' }}>{popup.titre}</h3>
             {popup.sousTitre && <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 8px' }}>{popup.sousTitre}</p>}
-            <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 12px' }}>
+            <p style={{ color: accentColor, fontSize: '13px', margin: '0 0 12px', textTransform: 'capitalize' }}>
               {new Date(`${popup.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
               {popup.heure && ` · ${popup.heure}`}
             </p>
@@ -309,7 +317,7 @@ function VueJour({ dateRef, evenements, onClic, isMobile }) {
   )
 }
 
-function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
+function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet, accentColor = '#4ade80' }) {
   const colors = useColors()
   const lundi = new Date(dateRef)
   lundi.setDate(dateRef.getDate() - ((dateRef.getDay() + 6) % 7))
@@ -329,9 +337,9 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
           const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
           const isToday = dateStr === today
           return (
-            <div key={dateStr} style={{ background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px' }}>
+            <div key={dateStr} style={{ background: isToday ? accentColor + '12' : colors.background.base, border: `1px solid ${isToday ? accentColor + '55' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: evts.length ? '8px' : 0 }}>
-                <div style={{ fontSize: '17px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary }}>{jour.getDate()}</div>
+                <div style={{ fontSize: '17px', fontWeight: 800, color: isToday ? accentColor : colors.text.primary }}>{jour.getDate()}</div>
                 <div style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{jour.toLocaleDateString('fr-FR', { weekday: 'long' })}</div>
               </div>
               {evts.map(e => (
@@ -354,7 +362,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isTablet ? '5px' : '8px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: isTablet ? '5px' : '8px' }}>
       {jours.map(jour => {
         const dateStr = dateLocaleStr(jour)
         const evts = evenements.filter(e => e.date === dateStr).sort((a, b) => (a.heure || '').localeCompare(b.heure || ''))
@@ -365,21 +373,19 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
           // par défaut d'un enfant de grid), ce qui pousse les 7 colonnes
           // au-delà de leur 1fr et fait déborder toute la grille de l'écran
           // sur tablette (jamais visible sur desktop, où il y a de la marge).
-          <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8033' : colors.border.subtle}`, borderRadius: '10px', padding: isTablet ? '6px' : '10px', minHeight: isTablet ? '110px' : '160px' }}>
-            <div style={{ fontSize: isTablet ? '9px' : '10px', color: colors.text.faint, textTransform: 'uppercase', marginBottom: '4px' }}>
-              {jour.toLocaleDateString('fr-FR', { weekday: 'short' })}
-            </div>
-            <div style={{ fontSize: isTablet ? '16px' : '20px', fontWeight: 800, color: isToday ? '#4ade80' : colors.text.primary, marginBottom: isTablet ? '6px' : '10px' }}>
-              {jour.getDate()}
+          <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? accentColor + '0f' : colors.background.surface, border: `1px solid ${isToday ? accentColor + '55' : colors.border.subtle}`, borderRadius: '12px', padding: isTablet ? '6px' : '10px', minHeight: isTablet ? '130px' : '200px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', paddingBottom: isTablet ? '6px' : '8px', marginBottom: isTablet ? '6px' : '8px', borderBottom: `2px solid ${isToday ? accentColor : colors.border.subtle}` }}>
+              <span style={{ fontSize: isTablet ? '16px' : '20px', fontWeight: 800, color: isToday ? accentColor : colors.text.primary, lineHeight: 1 }}>{jour.getDate()}</span>
+              <span style={{ fontSize: isTablet ? '9px' : '10px', fontWeight: 700, color: isToday ? accentColor : colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{jour.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</span>
             </div>
             {evts.map(e => (
-              <div key={e.id} onClick={() => onClic(e)} style={{
-                background: `${TYPE_COULEURS[e.type]}18`,
+              <div key={e.id} onClick={() => onClic(e)} title={e.titre} style={{
+                background: `${TYPE_COULEURS[e.type]}14`,
                 borderLeft: `3px solid ${TYPE_COULEURS[e.type]}`,
-                borderRadius: '4px', padding: isTablet ? '3px 4px' : '4px 6px', marginBottom: '4px', cursor: 'pointer',
+                borderRadius: '6px', padding: isTablet ? '4px 5px' : '6px 7px', marginBottom: '5px', cursor: 'pointer',
               }}>
-                <div style={{ color: colors.text.primary, fontSize: isTablet ? '9px' : '10px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {e.heure && <span style={{ color: TYPE_COULEURS[e.type], marginRight: '4px' }}>{e.heure}</span>}
+                {e.heure && <div style={{ color: TYPE_COULEURS[e.type], fontSize: isTablet ? '9px' : '10px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{e.heure}</div>}
+                <div style={{ color: colors.text.primary, fontSize: isTablet ? '10px' : '11px', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflowWrap: 'anywhere' }}>
                   {e.titre}
                 </div>
               </div>
@@ -391,7 +397,7 @@ function VueSemaine({ dateRef, evenements, onClic, isMobile, isTablet }) {
   )
 }
 
-function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
+function VueMois({ dateRef, evenements, onClic, isMobile, isTablet, accentColor = '#4ade80' }) {
   const colors = useColors()
   const annee = dateRef.getFullYear()
   const mois = dateRef.getMonth()
@@ -417,8 +423,8 @@ function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
           // le premier), même esprit que le calendrier joueur déjà réglé.
           if (isMobile) {
             return (
-              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
-                <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: '11px', fontWeight: isToday ? 800 : 400 }}>{jour}</div>
+              <div key={dateStr} onClick={() => evts[0] && onClic(evts[0])} style={{ background: isToday ? accentColor + '12' : colors.background.base, border: `1px solid ${isToday ? accentColor + '55' : colors.border.subtle}`, borderRadius: '6px', padding: '4px', minHeight: '44px', cursor: evts.length ? 'pointer' : 'default', textAlign: 'center' }}>
+                <div style={{ color: isToday ? accentColor : colors.text.secondary, fontSize: '11px', fontWeight: isToday ? 800 : 400 }}>{jour}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {evts.slice(0, 4).map(e => (
                     <span key={e.id} style={{ width: '5px', height: '5px', borderRadius: '50%', background: TYPE_COULEURS[e.type], display: 'inline-block' }} />
@@ -431,8 +437,8 @@ function VueMois({ dateRef, evenements, onClic, isMobile, isTablet }) {
             // minWidth: 0 — même correctif que VueSemaine : un titre d'événement
             // en white-space:nowrap imposerait sinon sa largeur minimale à la
             // cellule et ferait déborder les 7 colonnes de l'écran sur tablette.
-            <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? colors.accent.green + '15' : colors.background.base, border: `1px solid ${isToday ? '#4ade8044' : colors.border.subtle}`, borderRadius: '8px', padding: isTablet ? '5px 3px' : '8px', minHeight: isTablet ? '70px' : '90px' }}>
-              <div style={{ color: isToday ? '#4ade80' : colors.text.secondary, fontSize: isTablet ? '12px' : '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
+            <div key={dateStr} style={{ minWidth: 0, overflow: 'hidden', background: isToday ? accentColor + '12' : colors.background.base, border: `1px solid ${isToday ? accentColor + '55' : colors.border.subtle}`, borderRadius: '8px', padding: isTablet ? '5px 3px' : '8px', minHeight: isTablet ? '70px' : '90px' }}>
+              <div style={{ color: isToday ? accentColor : colors.text.secondary, fontSize: isTablet ? '12px' : '13px', fontWeight: isToday ? 800 : 400, marginBottom: '6px' }}>{jour}</div>
               {evts.slice(0, isTablet ? 2 : 3).map(e => (
                 <div key={e.id} onClick={() => onClic(e)} style={{
                   background: `${TYPE_COULEURS[e.type]}22`,

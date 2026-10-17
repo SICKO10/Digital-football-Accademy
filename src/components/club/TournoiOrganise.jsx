@@ -3,6 +3,7 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 import { saisonActuelle } from '../../lib/saison'
+import PaveDateTournoi from './PaveDateTournoi'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -764,7 +765,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   }
 
   if (vue === 'liste') return (
-    <div style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 1000 }}>
       {!readOnly && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
           <button onClick={ouvrirCreation} style={st.btnSolid}>+ Créer un tournoi</button>
@@ -780,24 +781,26 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {tournois.map(t => (
-            <div key={t.id} style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                  <span style={{ background: STATUT_COULEUR[t.statut] + '20', color: STATUT_COULEUR[t.statut], border: `1px solid ${STATUT_COULEUR[t.statut]}40`, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>{STATUT_LABEL[t.statut]}</span>
-                  {t.categorie_age && <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{t.categorie_age}</span>}
+          {tournois.map(t => {
+            const couleur = STATUT_COULEUR[t.statut] || colors.text.faint
+            return (
+              <div key={t.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
+                <PaveDateTournoi iso={t.date} colors={colors} couleur={t.statut === 'termine' ? null : couleur} />
+                <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => chargerDetail(t)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <span style={{ background: couleur + '1a', color: couleur, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{STATUT_LABEL[t.statut]}</span>
+                    {t.categorie_age && <span style={{ background: colors.background.raised, color: colors.text.secondary, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>{t.categorie_age}</span>}
+                  </div>
+                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
+                  {t.lieu && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.lieu}</div>}
                 </div>
-                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>{t.nom}</div>
-                <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>
-                  {t.date ? new Date(t.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}{t.lieu ? ` · ${t.lieu}` : ''}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                  <button onClick={() => chargerDetail(t)} style={st.btnSecondary}>Gérer</button>
+                  {!readOnly && <button onClick={() => supprimerTournoi(t.id)} title="Supprimer" style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => chargerDetail(t)} style={st.btnSecondary}>Gérer →</button>
-                {!readOnly && <button onClick={() => supprimerTournoi(t.id)} style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

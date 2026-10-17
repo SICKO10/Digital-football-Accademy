@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import TournoiOrganise from './TournoiOrganise'
+import { labelCategorie } from '../../lib/categories'
+import PaveDateTournoi from './PaveDateTournoi'
 
 const STATUT_COULEUR = {
   'Inscrit': '#f59e0b',
@@ -220,7 +222,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   }
   const budgetTotal = selected ? (Number(selected.budget_inscription || 0) + Number(selected.budget_transport || 0) + Number(selected.budget_hebergement || 0)) : 0
   const partJoueur = convocations.length > 0 ? (budgetTotal / convocations.length).toFixed(2) : '0.00'
-  const nomCategorie = (id) => categories?.find(c => c.id === id)?.nom || '—'
+  const nomCategorie = (id) => { const c = categories?.find(x => x.id === id); return c ? `${labelCategorie(c.nom)}${c.equipe ? ` ${c.equipe}` : ''}` : null }
 
   const st = {
     input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
@@ -232,7 +234,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   }
 
   if (sousOnglet === 'organisation') return (
-    <div style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 1000 }}>
       <TitreSection colors={colors} />
       <SousOngletsBar sousOnglet={sousOnglet} setSousOnglet={setSousOnglet} colors={colors} />
       <TournoiOrganise clubId={clubId} userId={userId} readOnly={readOnly} />
@@ -240,7 +242,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   )
 
   if (vue === 'liste') return (
-    <div style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 1000 }}>
       <TitreSection colors={colors} />
       <SousOngletsBar sousOnglet={sousOnglet} setSousOnglet={setSousOnglet} colors={colors} />
       {!readOnly && (
@@ -260,28 +262,41 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {tournois.map(t => {
-          const date = new Date(t.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      {(() => {
+        // À venir (et en cours) d'abord, du plus proche au plus lointain, puis
+        // les tournois passés, du plus récent au plus ancien.
+        const auj = new Date().toISOString().slice(0, 10)
+        const finDe = (t) => (t.date_fin || t.date_debut || '').slice(0, 10)
+        const aVenir = tournois.filter(t => finDe(t) >= auj).sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''))
+        const passes = tournois.filter(t => finDe(t) < auj).sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''))
+        const carteTournoi = (t, passe) => {
           const couleur = STATUT_COULEUR[t.statut] || colors.text.faint
+          const cat = nomCategorie(t.club_categorie_id)
+          const meta = [t.lieu, t.format, t.nb_equipes ? `${t.nb_equipes} équipes` : null].filter(Boolean).join(' · ')
           return (
             <div key={t.id} onClick={() => ouvrirDetail(t)}
-              style={{ ...st.card, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                  <span style={{ background: couleur + '20', color: couleur, border: `1px solid ${couleur}40`, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>{t.statut}</span>
-                  <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{nomCategorie(t.club_categorie_id)}</span>
+              style={{ ...st.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}`, opacity: passe ? 0.8 : 1 }}>
+              <PaveDateTournoi iso={t.date_debut} colors={colors} couleur={passe ? null : couleur} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  <span style={{ background: couleur + '1a', color: couleur, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{t.statut}</span>
+                  {cat && <span style={{ background: colors.background.raised, color: colors.text.secondary, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>{cat}</span>}
                 </div>
-                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>{t.nom}</div>
-                <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>
-                  {date}{t.lieu ? ` · ${t.lieu}` : ''}{t.format ? ` · ${t.format}` : ''}
-                </div>
+                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
+                {meta && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta}</div>}
               </div>
-              <div style={{ color: colors.text.disabled }}><IcoChevronRight /></div>
+              <div style={{ color: colors.text.faint, display: 'flex' }}><IcoChevronRight /></div>
             </div>
           )
-        })}
-      </div>
+        }
+        const titre = (txt, n) => <p style={{ margin: '4px 0 8px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{txt} <span style={{ color: colors.text.faint, fontWeight: 600 }}>· {n}</span></p>
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {aVenir.length > 0 && <div>{titre('À venir et en cours', aVenir.length)}<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{aVenir.map(t => carteTournoi(t, false))}</div></div>}
+            {passes.length > 0 && <div>{titre('Passés', passes.length)}<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{passes.map(t => carteTournoi(t, true))}</div></div>}
+          </div>
+        )
+      })()}
     </div>
   )
 
@@ -372,7 +387,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     const couleur = STATUT_COULEUR[selected.statut] || colors.text.faint
 
     return (
-      <div style={{ maxWidth: 900 }}>
+      <div style={{ maxWidth: 1000 }}>
         <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
 
         <div style={{ ...st.card, margin: '16px 0 20px' }}>
@@ -634,18 +649,18 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
 function TitreSection({ colors }) {
   return (
     <div style={{ marginBottom: '4px' }}>
-      <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>Projet Sportif</div>
-      <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><IcoTrophy /> Tournois</h1>
+      <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 800, margin: 0 }}>Tournois</h1>
+      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Les tournois auxquels le club participe, et ceux qu'il organise.</p>
     </div>
   )
 }
 
 function SousOngletsBar({ sousOnglet, setSousOnglet, colors }) {
   return (
-    <div style={{ display: 'flex', gap: '6px', margin: '16px 0 20px' }}>
+    <div style={{ display: 'inline-flex', gap: '2px', padding: '3px', margin: '16px 0 18px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
       {SOUS_ONGLETS.map(o => (
         <button key={o.key} onClick={() => setSousOnglet(o.key)}
-          style={{ padding: '8px 16px', borderRadius: '20px', border: sousOnglet === o.key ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: sousOnglet === o.key ? colors.accent.green + '15' : 'transparent', color: sousOnglet === o.key ? colors.accent.green : colors.text.faint, fontWeight: sousOnglet === o.key ? 700 : 400, fontSize: '13px', cursor: 'pointer' }}>
+          style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: sousOnglet === o.key ? colors.background.raised : 'transparent', color: sousOnglet === o.key ? colors.text.primary : colors.text.faint, fontWeight: sousOnglet === o.key ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
           {o.label}
         </button>
       ))}

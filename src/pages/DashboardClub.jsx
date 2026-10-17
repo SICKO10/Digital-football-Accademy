@@ -67,6 +67,33 @@ const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
 const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
+const IcoPlus      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoMail      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>
+const IcoChevronD  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+const IcoEclair    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+const IcoCorbeilleClub = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+
+const svgClub = (d, t = 14) => <svg width={t} height={t} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+const IcoCrayonClub = () => svgClub(<><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></>)
+const IcoCleClub = () => svgClub(<><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></>, 15)
+const IcoCopieClub = () => svgClub(<><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></>)
+const IcoDroitsClub = () => svgClub(<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>)
+const IcoSortieClub = () => svgClub(<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>)
+const IcoEtoileClub = () => svgClub(<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>)
+const IcoMicroClub = () => svgClub(<><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0"/><line x1="12" y1="17" x2="12" y2="22"/></>, 12)
+const IcoCibleClub = () => svgClub(<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>, 15)
+const IcoChevronBasClub = ({ ouvert }) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: ouvert ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+
+// Photo ronde ou initiales colorées (même palette que le reste du dashboard club).
+const PhotoPersonne = ({ personne, taille = 32 }) => {
+  const p = personne || {}
+  const c = couleurAvatarPersonne(p.prenom, p.nom)
+  const initiales = `${p.prenom?.[0] || ''}${p.nom?.[0] || ''}`.toUpperCase() || '?'
+  return p.avatar_url
+    ? <img src={p.avatar_url} alt="" style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    : <span style={{ width: taille, height: taille, borderRadius: '50%', background: c.bg, color: c.text, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(taille * 0.36), fontWeight: 800, flexShrink: 0 }}>{initiales}</span>
+}
+
 const IcoCheckAlerte = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 
 const EQUIPES = ['A', 'B', 'C', 'D', 'E']
@@ -467,19 +494,19 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <p style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Alertes & infos</p>
+        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Alertes & infos</p>
         {alertesVisibles.length > 0 && (
-          <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{alertesVisibles.length}</span>
+          <span style={{ background: colors.accent.amber + '22', color: colors.accent.amber, fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px' }}>{alertesVisibles.length}</span>
         )}
       </div>
 
       {alertesVisibles.length === 0 ? (
-        <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucune alerte pour le moment.</p>
+        <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '12px', textAlign: 'center' }}>Rien à signaler pour le moment.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {alertesVisibles.map(a => (
             <div key={a.id} onClick={a.onClick}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: colors.background.raised, border: `1px solid ${a.couleur}30`, borderLeft: `3px solid ${a.couleur}`, borderRadius: '10px', cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${a.couleur}`, borderRadius: '10px', cursor: 'pointer' }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.titre}</p>
                 <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{a.sousTitre}</p>
@@ -498,7 +525,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
           <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{popup.titre}</p>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', lineHeight: 1, cursor: 'pointer' }}>×</button>
             </div>
             {popup.date && (
               <p style={{ color: colors.accent.purpleLight, fontSize: '13px', margin: '0 0 12px' }}>
@@ -567,127 +594,152 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
     .filter(m => m.date >= prochainWeekend.samedi && m.date <= prochainWeekend.dimanche && m.date > aujourdHui)
     .sort((a, b) => a.date.localeCompare(b.date))
 
+  // V2 : chiffres clés avec contexte, demandes d'affiliation en bandeau,
+  // colonne principale (terrains libres, planning, matchs) + colonne latérale
+  // (alertes, actions rapides). Si le week-end ne contient aucun match, on
+  // retombe sur les derniers / prochains matchs pour ne pas laisser de vide.
+  const resultatsAffiches = derniersResultats.length ? derniersResultats : matchsClub
+    .filter(m => m.date < aujourdHui && m.score_nous !== '' && m.score_nous !== null && m.score_nous !== undefined)
+    .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4)
+  const matchsAffiches = prochainsMatchs.length ? prochainsMatchs : matchsClub
+    .filter(m => m.date > aujourdHui).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4)
+  const nbComptesLies = joueursClub.filter(j => j.joueur_id).length
+  const lundi = new Date(); lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7))
+  const dimanche = new Date(lundi); dimanche.setDate(lundi.getDate() + 6)
+  const matchsSemaine = matchsClub.filter(m => m.date >= lundi.toISOString().split('T')[0] && m.date <= dimanche.toISOString().split('T')[0])
+  const equipesSansEducateur = categories.filter(c => !c.educateur_id).length
+
   const ACTIONS = [
-    { emoji: '➕', label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
-    { emoji: '📧', label: t('club_inviter_educateur_titre', lang), categorie: 'sportif', tab: 'educateurs' },
-    ...(recrutementActif(email) ? [{ emoji: '🔍', label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' }] : []),
-    { emoji: '🏢', label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
+    { Icone: IcoPlus, label: t('club_action_ajouter_categorie', lang), categorie: 'sportif', tab: 'categories' },
+    { Icone: IcoMail, label: t('club_inviter_educateur_titre', lang), categorie: 'sportif', tab: 'educateurs' },
+    { Icone: IcoCalendar, label: 'Planning général', categorie: 'sportif', tab: 'planning' },
+    { Icone: IcoTerrain, label: 'Planning des terrains', categorie: 'sportif', tab: 'terrains' },
+    ...(recrutementActif(email) ? [{ Icone: IcoSearch, label: t('club_tab_recrutement', lang), categorie: 'sportif', tab: 'recrutement' }] : []),
+    { Icone: IcoBuilding, label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
   ]
+  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px', minWidth: 0 }
+  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+  const kpi = (Icone, label, valeur, detail, alerte) => (
+    <div key={label} style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: couleurPrincipale + '1f', color: couleurPrincipale }}><Icone /></span>
+        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{label}</span>
+      </div>
+      <p style={{ margin: 0, fontSize: '30px', fontWeight: 800, lineHeight: 1, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{valeur}</p>
+      <p style={{ margin: 0, fontSize: '12px', color: alerte ? colors.accent.amber : colors.text.faint }}>{detail}</p>
+    </div>
+  )
+  const paveDate = (iso) => {
+    const d = new Date(`${iso}T12:00:00`)
+    return (
+      <div style={{ width: '44px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+        <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint, background: colors.background.raised }}>{d.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
+        <p style={{ margin: 0, padding: '3px 0 0', fontSize: '17px', fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</p>
+        <p style={{ margin: 0, padding: '1px 0 3px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{d.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
+      </div>
+    )
+  }
+  const ligneMatch = (m, avecScore) => {
+    const label = catLabel(m)
+    const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
+    const couleur = nous > eux ? colors.accent.green : nous < eux ? colors.accent.red : colors.accent.amber
+    return (
+      <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${avecScore ? couleur : (m.domicile ? couleurPrincipale : colors.accent.blue)}`, borderRadius: '10px', minWidth: 0 }}>
+        {paveDate(m.date)}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || '—'}</p>
+          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {[label, !avecScore && m.heure ? m.heure.slice(0, 5) : null, m.competition].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+        {avecScore ? (
+          <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{m.score_nous} - {m.score_eux}</span>
+        ) : (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? couleurPrincipale + '1a' : colors.accent.blue + '1a', color: m.domicile ? couleurPrincipale : colors.accent.blue }}>
+            {m.domicile ? t('comp_domicile', lang) : t('club_deplacement', lang)}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IcoHome /> {t('club_accueil', lang)}</h1>
-      <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_accueil_sous_titre', lang)}</p>
-
-      <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles cette semaine" />
-
-      {/* Planning club : matchs de toutes les équipes affiliées + événements club
-          (tournois, soirées, réunions...) — volontairement pas les séances
-          d'entraînement, qui restent une vue éducateur. */}
-      <div style={{ background: colors.background.surface, border: `1px solid ${couleurPrincipale}30`, borderRadius: '14px', padding: '1.25rem', marginBottom: '2rem' }}>
-        <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> Planning du club</p>
-        <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m) }))} evenements={evenementsClub.filter(e => e.sur_planning !== false)} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>{t('club_accueil', lang)}</h1>
+        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0', textTransform: 'capitalize' }}>{new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
 
-      {/* Widgets résumé */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '14px', marginBottom: '2rem' }}>
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCarteBadge /> {t('club_licencies', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{totalLicencies}</p>
-          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_toutes_equipes', lang)}</p>
+      {nbEnAttente > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: couleurPrincipale + '12', border: `1px solid ${couleurPrincipale}40`, borderLeft: `4px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '12px 16px' }}>
+          <span style={{ color: couleurPrincipale, display: 'flex' }}><IcoHorloge /></span>
+          <p style={{ margin: 0, flex: 1, fontSize: '13px', fontWeight: 700 }}>{nbEnAttente} demande{nbEnAttente > 1 ? 's' : ''} d'affiliation en attente</p>
+          <button onClick={() => { setActiveCategorie('sportif'); setActiveTab('educateurs') }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Traiter <IcoChevronD /></button>
         </div>
+      )}
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoBallon /> {t('club_equipes_actives', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEquipes}</p>
-          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEquipes > 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)}</p>
-        </div>
-
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoUsers /> {t('club_tab_educateurs', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: couleurPrincipale }}>{nbEducateurs}</p>
-          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}</p>
-        </div>
-
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoHorloge /> {t('club_demandes_affiliation', lang)}</p>
-          <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: nbEnAttente > 0 ? couleurPrincipale : colors.text.primary }}>{nbEnAttente}</p>
-          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0 0' }}>{t('club_en_attente', lang)}</p>
-        </div>
+      {/* Chiffres clés */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap: '12px' }}>
+        {kpi(IcoCarteBadge, 'Joueurs', totalLicencies, `${nbComptesLies} compte${nbComptesLies > 1 ? 's' : ''} lié${nbComptesLies > 1 ? 's' : ''}`)}
+        {kpi(IcoBallon, t('club_equipes_actives', lang), nbEquipes, equipesSansEducateur > 0 ? `${equipesSansEducateur} sans éducateur` : 'toutes encadrées', equipesSansEducateur > 0)}
+        {kpi(IcoUsers, t('club_tab_educateurs', lang), nbEducateurs, nbEnAttente > 0 ? `${nbEnAttente} en attente` : (nbEducateurs > 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)), nbEnAttente > 0)}
+        {kpi(IcoCalendar, 'Matchs cette semaine', matchsSemaine.length, `${matchsSemaine.filter(m => m.domicile).length} à domicile`)}
       </div>
 
-      {/* Actions rapides */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_actions_rapides', lang)}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
-        {ACTIONS.map(a => (
-          <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
-            style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '1.25rem 1rem', cursor: 'pointer', textAlign: 'center', color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: 'Inter, sans-serif' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = couleurPrincipale + '40'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = colors.background.raised}>
-            <span style={{ fontSize: '26px' }}>{a.emoji}</span>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
-          </button>
-        ))}
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.8fr) minmax(0,1fr)', gap: '16px', alignItems: 'start' }}>
+        {/* Colonne principale */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+          <TerrainsLiberesWidget clubId={clubId} accentColor={couleurPrincipale} titre="Terrains disponibles cette semaine" />
 
-      {/* Fil d'activité récente */}
-      <p style={{ fontWeight: 700, fontSize: '15px', margin: '0 0 12px' }}>{t('club_activite_recente', lang)}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
-          {derniersResultats.length === 0 ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_resultat_accueil', lang)}</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {derniersResultats.map(m => {
-                const nous = parseInt(m.score_nous)
-                const eux = parseInt(m.score_eux)
-                const resultat = nous > eux ? 'V' : nous < eux ? 'D' : 'N'
-                const couleur = resultat === 'V' ? colors.accent.green : resultat === 'D' ? colors.accent.red : '#f59e0b'
-                const label = catLabel(m)
-                return (
-                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ background: couleur + '20', color: couleur, fontWeight: 800, fontSize: '11px', padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>{resultat}</span>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire || '—'}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
-                      </div>
-                    </div>
-                    <span style={{ fontWeight: 800, fontSize: '13px', color: couleur, whiteSpace: 'nowrap' }}>{m.score_nous} - {m.score_eux}</span>
-                  </div>
-                )
-              })}
+          {/* Planning club : matchs de toutes les équipes affiliées + événements club
+              (tournois, soirées, réunions...) — volontairement pas les séances
+              d'entraînement, qui restent une vue éducateur. */}
+          <div style={carte}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <p style={eyebrow}>Planning du club</p>
+              <button onClick={() => { setActiveCategorie('sportif'); setActiveTab('planning') }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Tout le planning <IcoChevronD /></button>
             </div>
-          )}
-        </div>
+            <PlanningSemaineWidget matchs={matchsClub.map(m => ({ ...m, categorie: catLabel(m) }))} evenements={evenementsClub.filter(e => e.sur_planning !== false)} accentColor={couleurPrincipale} onClickEvenement={() => { setActiveCategorie('administratif'); setActiveTab('evenements') }} />
+          </div>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> {t('club_prochains_matchs', lang)}</p>
-          {prochainsMatchs.length === 0 ? (
-            <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>{t('club_aucun_match_venir', lang)}</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {prochainsMatchs.map(m => {
-                const label = catLabel(m)
-                return (
-                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.adversaire || '—'}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{label ? `${label} · ` : ''}{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.heure ? ` · ${m.heure}` : ''}</p>
-                    </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? couleurPrincipale + '20' : colors.accent.blue + alpha.soft, color: m.domicile ? couleurPrincipale : colors.accent.blue, border: `1px solid ${m.domicile ? couleurPrincipale + '40' : colors.accent.blue + alpha.medium}` }}>
-                      {m.domicile ? <IcoHome /> : <IcoBus />} {m.domicile ? t('comp_domicile', lang) : t('club_deplacement', lang)}
-                    </span>
-                  </div>
-                )
-              })}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1fr)', gap: '16px' }}>
+            <div style={carte}>
+              <p style={{ ...eyebrow, marginBottom: '4px' }}>{t('club_prochains_matchs', lang)}</p>
+              <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>{prochainsMatchs.length ? 'Ce week-end' : 'Les prochains au calendrier'}</p>
+              {matchsAffiches.length === 0
+                ? <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '12px', textAlign: 'center' }}>{t('club_aucun_match_venir', lang)}</p>
+                : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{matchsAffiches.map(m => ligneMatch(m, false))}</div>}
             </div>
-          )}
+            <div style={carte}>
+              <p style={{ ...eyebrow, marginBottom: '4px' }}>{t('club_derniers_resultats', lang)}</p>
+              <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>{derniersResultats.length ? 'Dernier week-end' : 'Les plus récents'}</p>
+              {resultatsAffiches.length === 0
+                ? <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '12px', textAlign: 'center' }}>{t('club_aucun_resultat_accueil', lang)}</p>
+                : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{resultatsAffiches.map(m => ligneMatch(m, true))}</div>}
+            </div>
+          </div>
         </div>
 
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-          <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} />
+        {/* Colonne latérale */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+          <div style={carte}>
+            <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} />
+          </div>
+          <div style={carte}>
+            <p style={{ ...eyebrow, marginBottom: '10px' }}>{t('club_actions_rapides', lang)}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {ACTIONS.map(a => (
+                <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', background: 'transparent', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}
+                  onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <span style={{ width: '32px', height: '32px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: couleurPrincipale + '1a', color: couleurPrincipale, flexShrink: 0 }}><a.Icone /></span>
+                  <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{a.label}</span>
+                  <span style={{ color: colors.text.faint, display: 'flex' }}><IcoChevronD /></span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1465,7 +1517,7 @@ export default function DashboardClub() {
     // dépasse vite le plafond silencieux de 1000 lignes de PostgREST.
     const [{ data: matchs }, { data: joueurs }] = await Promise.all([
       fetchToutesLignes(() => supabase.from('matchs_equipe').select('*').in('educateur_id', educateurIds).order('date', { ascending: false }).order('id')),
-      fetchToutesLignes(() => supabase.from('equipe_joueurs').select('id, prenom, nom, poste, educateur_id, created_at').in('educateur_id', educateurIds).order('created_at', { ascending: false }).order('id')),
+      fetchToutesLignes(() => supabase.from('equipe_joueurs').select('id, prenom, nom, poste, educateur_id, club_categorie_id, joueur_id, created_at').in('educateur_id', educateurIds).order('created_at', { ascending: false }).order('id')),
     ])
     setMatchsClub(matchs || [])
     setJoueursClub(joueurs || [])
@@ -3637,31 +3689,61 @@ export default function DashboardClub() {
         )}
 
         {/* ── CATÉGORIES ── */}
-        {activeTab === 'categories' && canViewSection('sportif') && (
-          <>
-            {canEditSection('sportif') && (
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px', width: '100%' }}>
-              <button
-                onClick={autoAssignerJoueurs} disabled={autoAssignLoading}
-                style={{ padding: '10px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
-                {autoAssignLoading ? `⏳ ${t('club_assignation_cours', lang)}` : `⚡ ${t('club_auto_assigner', lang)}`}
-              </button>
-              <button
-                onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
-                style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
-                {t('club_ajouter_categorie', lang)}
-              </button>
+        {activeTab === 'categories' && canViewSection('sportif') && (() => {
+          // V2 : en-tête avec chiffres globaux, une carte par catégorie, une
+          // ligne par équipe (éducateur en photo, nombre de joueurs, bilan V/N/D).
+          // Rattachement joueurs/matchs : club_categorie_id en priorité, repli sur
+          // l'éducateur seulement s'il n'encadre qu'une équipe (même règle que
+          // catLabel à l'accueil).
+          const equipeDe = (ligne) => {
+            if (ligne.club_categorie_id) return ligne.club_categorie_id
+            const candidats = categories.filter(c => c.educateur_id === ligne.educateur_id)
+            return candidats.length === 1 ? candidats[0].id : null
+          }
+          const statsEquipe = {}
+          categories.forEach(c => { statsEquipe[c.id] = { joueurs: 0, v: 0, n: 0, d: 0 } })
+          joueursClub.forEach(j => { const id = equipeDe(j); if (statsEquipe[id]) statsEquipe[id].joueurs++ })
+          matchsClub.forEach(m => {
+            const id = equipeDe(m)
+            if (!statsEquipe[id] || m.score_nous === '' || m.score_nous == null || m.score_eux === '' || m.score_eux == null) return
+            const a = parseInt(m.score_nous), b = parseInt(m.score_eux)
+            if (a > b) statsEquipe[id].v++; else if (a < b) statsEquipe[id].d++; else statsEquipe[id].n++
+          })
+          const photoEducateur = (id) => educateursAcceptes.find(e => e.educateur_id === id)?.educateur
+          const nbSansEducateur = categories.filter(c => !c.educateur_id).length
+          return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Catégories & Équipes</h1>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
+                  {categories.length} équipe{categories.length > 1 ? 's' : ''} · {educateursAcceptes.length} éducateur{educateursAcceptes.length > 1 ? 's' : ''} · {joueursClub.length} joueur{joueursClub.length > 1 ? 's' : ''}
+                  {nbSansEducateur > 0 && <span style={{ color: colors.accent.amber }}> · {nbSansEducateur} sans éducateur</span>}
+                </p>
+              </div>
+              {canEditSection('sportif') && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
+                  <button onClick={autoAssignerJoueurs} disabled={autoAssignLoading} title="Rattache automatiquement les joueurs sans équipe à l'équipe A de leur éducateur"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none', justifyContent: 'center' }}>
+                    <IcoEclair /> {autoAssignLoading ? t('club_assignation_cours', lang) : t('club_auto_assigner', lang)}
+                  </button>
+                  <button onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
+                    style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
+                    {t('club_ajouter_categorie', lang)}
+                  </button>
+                </div>
+              )}
             </div>
-            )}
 
             {autoAssignResult && (
-              <div style={{ background: couleurPrincipale + '10', border: `1px solid ${couleurPrincipale}30`, borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', color: couleurPrincipale, fontSize: '13px' }}>
-                ✅ {autoAssignResult.count} {t('club_joueur_assigne_auto', lang)}
+              <div style={{ background: couleurPrincipale + '10', border: `1px solid ${couleurPrincipale}30`, borderRadius: '10px', padding: '10px 16px', color: couleurPrincipale, fontSize: '13px', fontWeight: 600 }}>
+                {autoAssignResult.count} {t('club_joueur_assigne_auto', lang)}
               </div>
             )}
 
             {showAddCategorie && (
-              <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}30`, marginBottom: '1rem' }}>
+              <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}40`, margin: 0 }}>
+                <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Nouvelle équipe</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
                     <label style={st.label}>{t('equipe_categorie', lang)}</label>
@@ -3698,61 +3780,79 @@ export default function DashboardClub() {
             )}
 
             {categories.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>
-                {t('club_aucune_categorie', lang)}
+              <div style={{ ...st.card, margin: 0, textAlign: 'center', padding: '3rem 1.5rem' }}>
+                <p style={{ margin: 0, color: colors.text.secondary, fontWeight: 600 }}>{t('club_aucune_categorie', lang)}</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px', alignItems: 'start' }}>
                 {CATEGORIES_STANDARD.map(nom => {
-                  const cats = categories.filter(c => c.nom === nom)
+                  const cats = categories.filter(c => c.nom === nom).sort((a, b) => (a.equipe || '').localeCompare(b.equipe || ''))
                   if (!cats.length) return null
                   const color = getCategoryColor(nom)
                   const prochaineEquipe = EQUIPES.find(e => !cats.some(c => c.equipe === e))
+                  const totalJoueurs = cats.reduce((acc, c) => acc + (statsEquipe[c.id]?.joueurs || 0), 0)
                   return (
-                    <div key={nom} style={{ ...st.card, borderTop: `3px solid ${color}`, width: '100%', boxSizing: 'border-box' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                        <p style={{ margin: 0, fontWeight: 800, color, fontSize: '15px' }}>{labelCategorie(nom)}</p>
-                        <span style={{ color: colors.text.faint, fontSize: '12px' }}>{cats.length} {t('club_equipe_label', lang)}{cats.length > 1 ? 's' : ''}</span>
+                    <div key={nom} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', borderBottom: `1px solid ${colors.border.subtle}`, background: color + '0d' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color }} />
+                        <p style={{ margin: 0, flex: 1, fontWeight: 800, fontSize: '16px' }}>{labelCategorie(nom)}</p>
+                        <span style={{ fontSize: '12px', color: colors.text.faint }}>{cats.length} équipe{cats.length > 1 ? 's' : ''} · {totalJoueurs} joueur{totalJoueurs > 1 ? 's' : ''}</span>
                       </div>
-                      {cats.map(c => (
-                        <div key={c.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px', marginBottom: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{t('club_equipe_label', lang)} {c.equipe}</p>
-                            {canEditSection('sportif') && (
-                              <button onClick={() => supprimerCategorie(c.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: '14px' }}>✕</button>
-                            )}
-                          </div>
-                          <p style={{ margin: '0 0 10px', fontSize: '11px', color: colors.text.dim }}>
-                            {c.educateur ? `${c.educateur.prenom} ${c.educateur.nom}` : t('club_pas_educateur_assigne', lang)}
-                          </p>
-                          <button onClick={() => { setEffectifModal(c.id); chargerClassements() }}
-                            style={{ width: '100%', padding: '7px', borderRadius: '8px', border: `1px solid ${color}40`, background: `${color}18`, color, fontWeight: 600, fontSize: '11px', cursor: 'pointer' }}>
-                            {t('club_effectif', lang)}
+                      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {cats.map(c => {
+                          const sEq = statsEquipe[c.id] || { joueurs: 0, v: 0, n: 0, d: 0 }
+                          const nbMatchs = sEq.v + sEq.n + sEq.d
+                          const edu = c.educateur ? { ...c.educateur, avatar_url: photoEducateur(c.educateur_id)?.avatar_url } : null
+                          return (
+                            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', minWidth: 0 }}>
+                              <span style={{ width: '34px', height: '34px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: color + '22', color, fontWeight: 800, fontSize: '15px', flexShrink: 0 }}>{c.equipe}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                                  {edu ? <PhotoPersonne personne={edu} taille={20} /> : null}
+                                  <span style={{ fontSize: '13px', fontWeight: 700, color: edu ? colors.text.primary : colors.accent.amber, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textTransform: edu ? 'capitalize' : 'none' }}>
+                                    {edu ? `${edu.prenom || ''} ${edu.nom || ''}`.toLowerCase() : t('club_pas_educateur_assigne', lang)}
+                                  </span>
+                                </div>
+                                <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>
+                                  {sEq.joueurs} joueur{sEq.joueurs > 1 ? 's' : ''}
+                                  {nbMatchs > 0 && <> · <span style={{ color: colors.accent.green, fontWeight: 700 }}>{sEq.v}V</span> <span style={{ color: colors.accent.amber, fontWeight: 700 }}>{sEq.n}N</span> <span style={{ color: colors.accent.red, fontWeight: 700 }}>{sEq.d}D</span></>}
+                                </p>
+                              </div>
+                              <button onClick={() => { setEffectifModal(c.id); chargerClassements() }}
+                                style={{ padding: '6px 12px', borderRadius: '8px', border: `1px solid ${color}50`, background: color + '14', color, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+                                {t('club_effectif', lang)}
+                              </button>
+                              {canEditSection('sportif') && (
+                                <button onClick={() => supprimerCategorie(c.id)} title="Supprimer cette équipe"
+                                  style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '4px', display: 'flex', flexShrink: 0 }}><IcoCorbeilleClub /></button>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {canEditSection('sportif') && prochaineEquipe && (
+                          <button onClick={() => { setNewCategorie({ nom, equipe: prochaineEquipe, educateur_id: '' }); setShowAddCategorie(true) }}
+                            style={{ width: '100%', padding: '8px', borderRadius: '10px', border: `1px dashed ${colors.border.strong}`, background: 'transparent', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            + Équipe {prochaineEquipe}
                           </button>
-                        </div>
-                      ))}
-                      {canEditSection('sportif') && prochaineEquipe && (
-                        <button onClick={() => { setNewCategorie({ nom, equipe: prochaineEquipe, educateur_id: '' }); setShowAddCategorie(true) }}
-                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: `1px dashed ${color}50`, background: 'transparent', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', marginTop: '2px' }}>
-                          + {t('club_equipe_label', lang)}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )
                 })}
               </div>
             )}
-          </>
-        )}
+          </div>
+          )
+        })()}
 
         {/* ── PLANNING (vue générale : matchs, entraînements, événements, projets) ── */}
         {activeTab === 'planning' && canViewSection('sportif') && (
-          <Planning matchs={matchsClub} evenements={evenementsClub} projets={projetsClub} categories={categories} />
+          <Planning matchs={matchsClub} evenements={evenementsClub} projets={projetsClub} categories={categories} accentColor={couleurPrincipale} />
         )}
 
         {/* ── SÉANCES (planification des entraînements pour le compte des éducateurs) ── */}
         {activeTab === 'seances' && canViewSection('seances') && (
-          <PlanificationSeances categories={categories} readOnly={!canEditSection('seances')} />
+          <PlanificationSeances categories={categories} readOnly={!canEditSection('seances')} accentColor={couleurPrincipale} />
         )}
 
         {/* ── PROJET SPORTIF ── */}
@@ -3763,31 +3863,33 @@ export default function DashboardClub() {
                 individuel reste possible depuis le menu ⋯ de chaque éducateur
                 (onglet Éducateurs), cf. modalDroitsEdu. Affiché directement sur cette
                 page (pas dans Profil) pour rester à côté de ce qu'il configure. */}
+            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
+              logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
+            {/* Permissions éducateurs — Projet Sportif / Planification : réglage
+                secondaire, placé sous les pôles (le contenu passe d'abord). */}
             {canEditSection('profil') && (
-              <div style={{ ...st.card, marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>Permissions éducateurs</p>
-                <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>Par défaut, tes éducateurs affiliés sont en lecture seule sur le Projet Sportif et la Planification annuelle. Active pour leur donner le droit d'éditer.</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '16px 20px', marginTop: '22px' }}>
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Droits des éducateurs</p>
+                <p style={{ margin: '4px 0 12px', fontSize: '12px', color: colors.text.faint }}>Par défaut, les éducateurs affiliés consultent sans modifier. Un réglage individuel reste possible depuis Éducateurs (menu ···).</p>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                   {[
-                    { champ: 'educateurs_editent_projet_sportif', label: 'Éducateurs peuvent éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
-                    { champ: 'educateurs_editent_planification', label: 'Éducateurs peuvent éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
+                    { champ: 'educateurs_editent_projet_sportif', label: 'Éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
+                    { champ: 'educateurs_editent_planification', label: 'Éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
                   ].map(({ champ, label, desc }) => (
                     <div key={champ} onClick={() => sauvegarderTheme({ [champ]: !club?.[champ] })}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
-                      <div>
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 14px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', cursor: 'pointer' }}>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: '13px', fontWeight: 600, color: colors.text.primary }}>{label}</div>
                         <div style={{ fontSize: '11px', color: colors.text.faint, marginTop: '2px' }}>{desc}</div>
                       </div>
-                      <div style={{ width: '40px', height: '22px', background: club?.[champ] ? couleurPrincipale : colors.border.strong, borderRadius: '20px', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-                        <div style={{ position: 'absolute', top: '3px', left: club?.[champ] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                      <div style={{ width: '38px', height: '22px', background: club?.[champ] ? couleurPrincipale : colors.border.strong, borderRadius: '20px', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                        <div style={{ position: 'absolute', top: '3px', left: club?.[champ] ? '19px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
-              logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
           </>
         )}
 
@@ -3804,10 +3906,180 @@ export default function DashboardClub() {
         {/* ── ÉDUCATEURS ── */}
         {activeTab === 'educateurs' && canViewSection('sportif') && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: '20px', alignItems: 'start', width: '100%' }}>
+            {(() => {
+              // V2 : les éducateurs d'abord (photo, équipes encadrées, contact),
+              // demandes en attente en tête, séances reçues repliables ; colonne
+              // latérale : quota compact, code club, invitation.
+              const eyebrowEdu = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+              const carteEdu = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px' }
+              const equipesDe = (id) => categories.filter(c => c.educateur_id === id)
+              const nbEquipesEncadrees = categories.filter(c => c.educateur_id).length
+              return (
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 340px', gap: '20px', alignItems: 'start', width: '100%' }}>
 
-              {/* ── Colonne gauche — quota + séances reçues ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* ── Colonne principale ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', minWidth: 0 }}>
+                <div>
+                  <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Éducateurs</h1>
+                  <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
+                    {educateursAcceptes.length} affilié{educateursAcceptes.length > 1 ? 's' : ''}{club?.educateurs_inclus != null ? ` sur ${club.educateurs_inclus} inclus` : ''} · {nbEquipesEncadrees} équipe{nbEquipesEncadrees > 1 ? 's' : ''} encadrée{nbEquipesEncadrees > 1 ? 's' : ''}
+                  </p>
+                </div>
+
+                {/* En attente */}
+                {educateursEnAttente.length > 0 && (
+                  <div style={{ ...carteEdu, borderLeft: `4px solid ${colors.accent.amber}` }}>
+                    <p style={{ ...eyebrowEdu, color: colors.accent.amber, marginBottom: '12px' }}>{t('club_en_attente_validation', lang)} · {educateursEnAttente.length}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {educateursEnAttente.map(e => (
+                        <div key={e.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                            <PhotoPersonne personne={e.educateur} taille={34} />
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{t('club_methode_label', lang)} {e.methode === 'code' ? t('club_methode_code', lang) : t('club_methode_invite', lang)}</p>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                            <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>{t('club_accepter', lang)}</button>
+                            <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_refuser', lang)}</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Affiliés */}
+                <div>
+                  <p style={{ ...eyebrowEdu, marginBottom: '10px' }}>{t('club_educateurs_affilies_titre', lang)} · {educateursAcceptes.length}</p>
+                  {club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus && (
+                    <p style={{ margin: '0 0 10px', fontSize: '12px', color: colors.accent.amber }}>
+                      Limite d'éducateurs gratuits atteinte — <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Ajouter des éducateurs — ' + (club?.club || ''))}`} style={{ color: colors.accent.amber }}>contacter le support</a> pour en ajouter.
+                    </p>
+                  )}
+                  {educateursAcceptes.length === 0 ? (
+                    <div style={{ ...carteEdu, textAlign: 'center', padding: '28px' }}>
+                      <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+                      {educateursAcceptes.map(e => {
+                        const equipes = equipesDe(e.educateur_id)
+                        return (
+                          <div key={e.id} style={{ ...carteEdu, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <PhotoPersonne personne={e.educateur} taille={44} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{`${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.toLowerCase()}</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.educateur?.telephone || e.educateur?.email || '—'}</p>
+                              </div>
+                              <div className="edu-menu-wrapper" style={{ position: 'relative', flexShrink: 0 }}>
+                                <button onClick={() => setOpenEduMenu(openEduMenu === e.id ? null : e.id)} title="Actions"
+                                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '14px', lineHeight: 1, width: '30px', height: '30px', cursor: 'pointer' }}>
+                                  ···
+                                </button>
+                                {openEduMenu === e.id && (
+                                  <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '200px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                    {[
+                                      { Icone: IcoEtoileClub, label: t('club_noter', lang), action: () => ouvrirNotationEducateur(e) },
+                                      { Icone: IcoCrayonClub, label: 'Modifier', action: () => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' }) },
+                                      { Icone: IcoDroitsClub, label: 'Droits Projet Sportif', action: () => setModalDroitsEdu({ id: e.id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim(), peut_editer_projet_sportif: e.peut_editer_projet_sportif, peut_editer_planification: e.peut_editer_planification }) },
+                                      { Icone: IcoSortieClub, label: t('club_retirer', lang), action: () => retirerEducateur(e.id), danger: true },
+                                    ].map(item => (
+                                      <button key={item.label} onClick={() => { item.action(); setOpenEduMenu(null) }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', color: item.danger ? colors.accent.red : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                        onMouseEnter={ev => ev.currentTarget.style.background = colors.background.base}
+                                        onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
+                                        <item.Icone /> {item.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {equipes.length === 0
+                                ? <span style={{ fontSize: '11px', color: colors.accent.amber, fontWeight: 600 }}>Aucune équipe assignée</span>
+                                : equipes.map(c => {
+                                    const cc = getCategoryColor(c.nom)
+                                    return <span key={c.id} style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: cc, background: cc + '1a' }}>{labelCategorie(c.nom)} {c.equipe}</span>
+                                  })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Séances reçues pour évaluation — regroupées par saison, repliables */}
+                <div style={{ ...carteEdu, padding: 0, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <p style={eyebrowEdu}>{t('club_seances_recues_titre', lang)}</p>
+                    <span style={{ fontSize: '12px', color: colors.text.faint }}>{seancesRecues.length}</span>
+                    {seancesRecues.filter(x => x.statut === 'a_analyser').length > 0 && (
+                      <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', color: couleurPrincipale, background: couleurPrincipale + '1a' }}>{seancesRecues.filter(x => x.statut === 'a_analyser').length} à analyser</span>
+                    )}
+                  </div>
+                  {seancesRecues.length === 0 ? (
+                    <p style={{ color: colors.text.faint, fontSize: '13px', padding: '16px 18px', margin: 0 }}>{t('club_aucune_seance_uploadee', lang)}</p>
+                  ) : (() => {
+                    const parSaison = seancesRecues.reduce((acc, x) => {
+                      const k = x.saison || 'Non définie'
+                      if (!acc[k]) acc[k] = []
+                      acc[k].push(x)
+                      return acc
+                    }, {})
+                    const saisonsTriees = Object.keys(parSaison).sort().reverse()
+                    return saisonsTriees.map(saison => {
+                      const ouverte = saisonsOuvertes[saison] !== false
+                      return (
+                        <div key={saison}>
+                          <button onClick={() => toggleSaison(saison)}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 18px', background: colors.background.raised, border: 'none', borderBottom: `1px solid ${colors.border.subtle}`, cursor: 'pointer', color: colors.text.faint, fontFamily: 'Inter, sans-serif' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>Saison {saison}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                              {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)} <IcoChevronBasClub ouvert={ouverte} />
+                            </span>
+                          </button>
+                          {ouverte && parSaison[saison].map(x => {
+                            const eval_ = Array.isArray(x.evaluation) ? x.evaluation[0] : x.evaluation
+                            return (
+                              <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderBottom: `1px solid ${colors.border.subtle}`, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                                <PhotoPersonne personne={x.educateur} taille={30} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ margin: 0, color: colors.text.primary, fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.theme || t('seance_fallback', lang)}</p>
+                                  <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px', textTransform: 'capitalize' }}>{`${x.educateur?.prenom || ''} ${x.educateur?.nom || ''}`.toLowerCase()}{x.date_seance ? ` · ${new Date(x.date_seance).toLocaleDateString(localeOf(lang))}` : ''}</p>
+                                </div>
+                                {x.statut === 'analyse' && eval_ && (
+                                  <span style={{ padding: '3px 8px', borderRadius: '6px', background: couleurPrincipale + '1a', color: couleurPrincipale, fontSize: '11px', fontWeight: 800, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{Math.round(eval_.note_totale)}/100</span>
+                                )}
+                                {x.statut === 'transfere_coach' && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: colors.accent.blue + '1a', color: colors.accent.blue, fontSize: '11px', fontWeight: 700, flexShrink: 0 }}><IcoMicroClub /> {t('club_chez_coach', lang)}</span>
+                                )}
+                                <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
+                                  <a href={x.video_url} target="_blank" rel="noreferrer" style={{ padding: '5px 10px', borderRadius: '7px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontSize: '11px', fontWeight: 600, textDecoration: 'none' }}>{t('btn_voir', lang)}</a>
+                                  {x.statut === 'a_analyser' && (
+                                    <>
+                                      <button onClick={() => ouvrirGrilleEvaluation(x)} style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('club_analyser', lang)}</button>
+                                      <button onClick={() => transfererAuCoach(x.id)} title="Transférer au coach Digital Football" style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', borderRadius: '7px', border: `1px solid ${colors.accent.blue}40`, background: colors.accent.blue + '14', color: colors.accent.blue, cursor: 'pointer' }}><IcoMicroClub /></button>
+                                    </>
+                                  )}
+                                  <button onClick={() => supprimerSeance(x.id)} title="Supprimer" style={{ display: 'flex', alignItems: 'center', padding: '5px', border: 'none', background: 'transparent', color: colors.text.faint, cursor: 'pointer' }}><IcoCorbeilleClub /></button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              </div>
+
+              {/* ── Colonne latérale — quota, code club, invitation ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
 
             {/* Quota d'équipes — club.palier/quota_equipes restent null tant
                 que le support n'a pas activé un palier pour ce club (cf.
@@ -3817,32 +4089,25 @@ export default function DashboardClub() {
             {club?.quota_equipes != null && (() => {
               const utilise = categories.length
               const restant = club.quota_equipes - utilise
-              const parEducateur = {}
-              categories.forEach(c => { if (c.educateur_id) parEducateur[c.educateur_id] = (parEducateur[c.educateur_id] || 0) + 1 })
+              const couleurQuota = utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green
               return (
-                <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '20px 24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={carteEdu}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
                     <div>
-                      <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: 0 }}>Quota d'équipes</h3>
-                      <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>Offre {STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}</p>
+                      <p style={eyebrowEdu}>Quota d'équipes</p>
+                      <p style={{ color: colors.text.faint, fontSize: '12px', margin: '4px 0 0' }}>Offre {STRIPE_LINKS_CLUB[club.palier]?.label || club.palier}</p>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '24px', fontWeight: 800, color: restant <= 0 ? colors.accent.red : colors.accent.green }}>{utilise}</span>
-                      <span style={{ color: colors.text.faint, fontSize: '18px' }}> / {club.quota_equipes}</span>
-                      <p style={{ color: colors.text.faint, fontSize: '12px', margin: '2px 0 0' }}>
-                        {restant > 0 ? `${restant} place${restant > 1 ? 's' : ''} disponible${restant > 1 ? 's' : ''}` : 'Quota atteint'}
-                      </p>
-                    </div>
+                    <p style={{ margin: 0, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontSize: '22px', fontWeight: 800, color: couleurQuota }}>{utilise}</span>
+                      <span style={{ color: colors.text.faint, fontSize: '14px' }}> / {club.quota_equipes}</span>
+                    </p>
                   </div>
-
-                  <div style={{ background: colors.background.raised, borderRadius: '999px', height: '8px', marginBottom: '16px', overflow: 'hidden' }}>
-                    <div style={{
-                      background: utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green,
-                      borderRadius: '999px', height: '8px',
-                      width: `${Math.min((utilise / club.quota_equipes) * 100, 100)}%`,
-                      transition: 'width 0.5s',
-                    }} />
+                  <div style={{ background: colors.background.base, borderRadius: '999px', height: '6px', overflow: 'hidden' }}>
+                    <div style={{ background: couleurQuota, borderRadius: '999px', height: '100%', width: `${Math.min((utilise / club.quota_equipes) * 100, 100)}%`, transition: 'width 0.5s' }} />
                   </div>
+                  <p style={{ color: restant > 0 ? colors.text.faint : colors.accent.red, fontSize: '12px', margin: '8px 0 0' }}>
+                    {restant > 0 ? `${restant} place${restant > 1 ? 's' : ''} disponible${restant > 1 ? 's' : ''}` : 'Quota atteint'}
+                  </p>
 
                   {restant <= 0 && (() => {
                     // Libre-service : le nombre d'équipes est déjà connu et vérifiable
@@ -3855,8 +4120,8 @@ export default function DashboardClub() {
                       .filter(([, quota]) => quota > club.quota_equipes)
                       .sort((a, b) => a[1] - b[1])
                     return (
-                      <div style={{ marginTop: '12px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '10px 14px' }}>
-                        <p style={{ margin: '0 0 10px', color: colors.accent.red, fontSize: '12px', fontWeight: 600 }}>Quota atteint — choisissez une offre avec plus d'équipes :</p>
+                      <div style={{ marginTop: '12px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ margin: '0 0 10px', color: colors.accent.red, fontSize: '12px', fontWeight: 600 }}>Choisissez une offre avec plus d'équipes :</p>
                         {optionsSuperieures.length === 0 ? (
                           <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Besoin de plus d\'équipes — ' + (club?.club || ''))}`}
                             style={{ color: colors.accent.red, fontSize: '12px', textDecoration: 'underline' }}>
@@ -3868,7 +4133,7 @@ export default function DashboardClub() {
                               const p = STRIPE_LINKS_CLUB[key]
                               if (!p) return null
                               return (
-                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px' }}>
+                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: colors.background.raised, borderRadius: '8px', padding: '8px 10px' }}>
                                   <span style={{ fontSize: '12px', color: colors.text.secondary }}>{p.label}</span>
                                   <div style={{ display: 'flex', gap: '6px' }}>
                                     <a href={stripeUrl(p.mensuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
@@ -3888,147 +4153,51 @@ export default function DashboardClub() {
                       </div>
                     )
                   })()}
-                  {restant > 0 && utilise >= club.quota_equipes * 0.8 && (
-                    <div style={{ marginTop: '12px', background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}40`, borderRadius: '8px', padding: '10px 14px' }}>
-                      <span style={{ color: colors.accent.amber, fontSize: '12px', fontWeight: 600 }}>Plus que {restant} place{restant > 1 ? 's' : ''} disponible{restant > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-
-                  {educateursAcceptes.length > 0 && (
-                    <div style={{ marginTop: '4px', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '14px' }}>
-                      <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Répartition</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
-                        {educateursAcceptes.map(e => {
-                          const nbEquipes = parEducateur[e.educateur_id] || 0
-                          const avatarC = couleurAvatarPersonne(e.educateur?.prenom, e.educateur?.nom)
-                          return (
-                            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.raised, borderRadius: '10px' }}>
-                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: avatarC.bg, color: avatarC.text, fontWeight: 800, fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.educateur?.prenom} {e.educateur?.nom}</div>
-                              </div>
-                              <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )
             })()}
 
-            {/* Séances reçues pour évaluation — regroupées par saison, repliables */}
-            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 20px', borderBottom: `1px solid ${colors.border.faint}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>📋 {t('club_seances_recues_titre', lang)}</span>
-                <span style={{ padding: '2px 8px', borderRadius: '999px', background: colors.background.raised, color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{seancesRecues.length}</span>
-              </div>
-              {seancesRecues.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '13px', padding: '14px 20px', margin: 0 }}>{t('club_aucune_seance_uploadee', lang)}</p>
-              ) : (() => {
-                const parSaison = seancesRecues.reduce((acc, s) => {
-                  const k = s.saison || 'Non définie'
-                  if (!acc[k]) acc[k] = []
-                  acc[k].push(s)
-                  return acc
-                }, {})
-                const saisonsTriees = Object.keys(parSaison).sort().reverse()
-
-                return saisonsTriees.map(saison => {
-                  const ouverte = saisonsOuvertes[saison] !== false
-                  return (
-                    <div key={saison}>
-                      <div
-                        onClick={() => toggleSaison(saison)}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', background: colors.background.raised, cursor: 'pointer' }}>
-                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px' }}>SAISON {saison}</span>
-                        <span style={{ color: colors.text.disabled, fontSize: '11px' }}>
-                          {parSaison[saison].length} {parSaison[saison].length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)} {ouverte ? '▲' : '▼'}
-                        </span>
-                      </div>
-
-                      {ouverte && parSaison[saison].map(s => {
-                        const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
-                        const avatarC = couleurAvatarPersonne(s.educateur?.prenom, s.educateur?.nom)
-                        return (
-                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 20px', borderBottom: `1px solid ${colors.border.faint}` }}>
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarC.bg, color: avatarC.text, fontWeight: 800, fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              {s.educateur?.prenom?.[0]}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <span style={{ color: colors.text.secondary, fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{s.theme || t('seance_fallback', lang)}</span>
-                              <span style={{ color: colors.text.faint, fontSize: '11px' }}>{s.educateur?.prenom} {s.educateur?.nom} · {s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</span>
-                            </div>
-                            {s.statut === 'analyse' && eval_ && (
-                              <span style={{ padding: '2px 8px', borderRadius: '6px', background: couleurPrincipale + alpha.faint, color: couleurPrincipale, fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>✅ {Math.round(eval_.note_totale)}/100</span>
-                            )}
-                            {s.statut === 'transfere_coach' && (
-                              <span style={{ padding: '2px 8px', borderRadius: '6px', background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>🎙️ {t('club_chez_coach', lang)}</span>
-                            )}
-                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                              <a href={s.video_url} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', borderRadius: '7px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '11px', textDecoration: 'none' }}>{t('btn_voir', lang)}</a>
-                              {s.statut === 'a_analyser' && (
-                                <>
-                                  <button onClick={() => ouvrirGrilleEvaluation(s)} style={{ padding: '4px 10px', borderRadius: '7px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>📋 {t('club_analyser', lang)}</button>
-                                  <button onClick={() => transfererAuCoach(s.id)} style={{ padding: '4px 8px', borderRadius: '7px', border: `1px solid ${colors.accent.blue}30`, background: colors.accent.blue + alpha.subtle, color: colors.accent.blue, fontSize: '11px', cursor: 'pointer' }}>🎙️</button>
-                                </>
-                              )}
-                              <button onClick={() => supprimerSeance(s.id)} style={{ width: 24, height: 24, borderRadius: '6px', border: 'none', background: 'transparent', color: colors.text.disabled, cursor: 'pointer', fontSize: '12px' }}>✕</button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })
-              })()}
-            </div>
-
-              </div>
-
-              {/* ── Colonne droite — code club + invitations ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
             {/* Code club */}
-            <div style={{ background: `linear-gradient(135deg, ${colors.accent.amber}10, ${colors.background.sunken})`, border: `1px solid ${colors.accent.amber}20`, borderRadius: '16px', padding: '20px' }}>
-              <p style={{ color: colors.accent.amber, fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>🔑 {t('club_ton_code', lang)}</p>
-              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 14px' }}>{t('club_partage_code_desc', lang)}</p>
+            <div style={{ ...carteEdu, borderLeft: `4px solid ${colors.accent.amber}` }}>
+              <p style={{ ...eyebrowEdu, display: 'flex', alignItems: 'center', gap: '7px', color: colors.accent.amber }}><IcoCleClub /> {t('club_ton_code', lang)}</p>
+              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '6px 0 12px' }}>{t('club_partage_code_desc', lang)}</p>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <div style={{ flex: 1, padding: '12px 16px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.accent.amber}30`, fontFamily: 'monospace', fontSize: '20px', fontWeight: 900, color: colors.accent.amber, textAlign: 'center', letterSpacing: '4px' }}>
+                <div style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.default}`, fontFamily: 'monospace', fontSize: '20px', fontWeight: 900, color: colors.accent.amber, textAlign: 'center', letterSpacing: '4px' }}>
                   {codeClub}
                 </div>
-                <button onClick={copierCode} style={{ padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.accent.amber}30`, background: 'transparent', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                  📋 {t('club_copier', lang)}
+                <button onClick={copierCode} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <IcoCopieClub /> {t('club_copier', lang)}
                 </button>
               </div>
             </div>
 
             {/* Inviter un éducateur — recherche + ajout manuel */}
-            <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '20px' }}>
-              <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>🔍 {t('club_inviter_educateur_titre', lang)}</p>
-              <input
-                style={st.input}
-                placeholder={t('club_rechercher_educateur_placeholder', lang)}
-                value={searchEducateur}
-                onChange={e => rechercherEducateurs(e.target.value)}
-              />
+            <div style={carteEdu}>
+              <p style={{ ...eyebrowEdu, marginBottom: '12px' }}>{t('club_inviter_educateur_titre', lang)}</p>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
+                <input
+                  style={{ ...st.input, paddingLeft: '38px' }}
+                  placeholder={t('club_rechercher_educateur_placeholder', lang)}
+                  value={searchEducateur}
+                  onChange={e => rechercherEducateurs(e.target.value)}
+                />
+              </div>
               {resultatsEducateurs.length > 0 && (
                 <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {resultatsEducateurs.map(e => {
                     const dejaInvite = educateursAffilies.some(a => a.educateur_id === e.id)
                     return (
-                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
-                        <div>
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, borderRadius: '8px', padding: '8px 10px' }}>
+                        <PhotoPersonne personne={e} taille={28} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.prenom} {e.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{e.club || e.email}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.club || e.email}</p>
                         </div>
                         <button
                           onClick={() => inviterEducateur(e.id)}
                           disabled={dejaInvite || invitingId === e.id}
-                          style={{ ...st.btnSolid, opacity: dejaInvite ? 0.4 : 1, fontSize: '12px', padding: '6px 14px' }}>
+                          style={{ ...st.btnSolid, opacity: dejaInvite ? 0.4 : 1, fontSize: '12px', padding: '6px 12px' }}>
                           {dejaInvite ? t('club_deja_invite', lang) : invitingId === e.id ? '...' : t('club_inviter', lang)}
                         </button>
                       </div>
@@ -4037,19 +4206,19 @@ export default function DashboardClub() {
                 </div>
               )}
 
-              <div style={{ height: 1, background: colors.border.faint, margin: '16px 0' }} />
+              <div style={{ height: 1, background: colors.border.subtle, margin: '16px 0' }} />
 
-              <p style={{ color: colors.text.secondary, fontWeight: 600, fontSize: '13px', margin: '0 0 4px' }}>✉️ Ajouter manuellement</p>
+              <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Ajouter manuellement</p>
               <p style={{ color: colors.text.faint, fontSize: '11px', margin: '0 0 12px', lineHeight: 1.5 }}>S'il n'a pas encore de compte, il reçoit une invitation par email pour en créer un.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input style={{ ...st.input, flex: 1 }} placeholder="Prénom" value={ajoutEducateurForm.prenom} onChange={e => setAjoutEducateurForm(f => ({ ...f, prenom: e.target.value }))} />
-                  <input style={{ ...st.input, flex: 1 }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
+                  <input style={{ ...st.input, flex: 1, minWidth: 0 }} placeholder="Prénom" value={ajoutEducateurForm.prenom} onChange={e => setAjoutEducateurForm(f => ({ ...f, prenom: e.target.value }))} />
+                  <input style={{ ...st.input, flex: 1, minWidth: 0 }} placeholder="Nom" value={ajoutEducateurForm.nom} onChange={e => setAjoutEducateurForm(f => ({ ...f, nom: e.target.value }))} />
                 </div>
                 <input style={st.input} type="email" placeholder="Email" value={ajoutEducateurForm.email} onChange={e => setAjoutEducateurForm(f => ({ ...f, email: e.target.value }))} />
                 <button onClick={ajouterEducateurManuel} disabled={invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()}
-                  style={{ padding: '10px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
-                  {invitingEducateur ? '...' : `✉️ ${t('btn_envoyer', lang) || 'Envoyer l\'invitation'}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (invitingEducateur || !ajoutEducateurForm.prenom.trim() || !ajoutEducateurForm.nom.trim() || !ajoutEducateurForm.email.trim()) ? 0.5 : 1 }}>
+                  <IcoMail /> {invitingEducateur ? '...' : 'Envoyer l\'invitation'}
                 </button>
               </div>
               {inviteEducateurMessage && (
@@ -4057,21 +4226,21 @@ export default function DashboardClub() {
               )}
               {invitationsEducateurEnvoyees.length > 0 && (
                 <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invitations envoyées, en attente ({invitationsEducateurEnvoyees.length})</p>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Invitations en attente · {invitationsEducateurEnvoyees.length}</p>
                   {invitationsEducateurEnvoyees.map(inv => {
                     const estExpiree = new Date(inv.expires_at) < new Date()
                     return (
-                      <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.raised, borderRadius: '8px', padding: '8px 12px', gap: '10px' }}>
+                      <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.base, borderRadius: '8px', padding: '8px 10px', gap: '10px' }}>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{inv.prenom} {inv.nom}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{inv.email}</p>
+                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.email}</p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                          <span style={{ fontSize: '11px', color: estExpiree ? colors.accent.red : colors.accent.amber, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {estExpiree ? '⚠️ Expirée' : '⏳ En attente'}
+                          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '6px', color: estExpiree ? colors.accent.red : colors.accent.amber, background: (estExpiree ? colors.accent.red : colors.accent.amber) + '1a', whiteSpace: 'nowrap' }}>
+                            {estExpiree ? 'Expirée' : 'En attente'}
                           </span>
                           <button onClick={() => renvoyerInvitationEducateur(inv)} disabled={renvoyantInvitationId === inv.id}
-                            style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap', opacity: renvoyantInvitationId === inv.id ? 0.5 : 1 }}>
+                            style={{ padding: '5px 10px', borderRadius: '6px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap', opacity: renvoyantInvitationId === inv.id ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
                             {renvoyantInvitationId === inv.id ? '...' : 'Renvoyer'}
                           </button>
                         </div>
@@ -4084,80 +4253,8 @@ export default function DashboardClub() {
 
               </div>
             </div>
-
-            {/* En attente */}
-            {educateursEnAttente.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.amber }}>⏳ {t('club_en_attente_validation', lang)} ({educateursEnAttente.length})</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {educateursEnAttente.map(e => (
-                    <div key={e.id} style={{ ...st.card, borderColor: colors.accent.amber + '30', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '10px' }}>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{e.educateur?.prenom} {e.educateur?.nom}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{t('club_methode_label', lang)} {e.methode === 'code' ? t('club_methode_code', lang) : t('club_methode_invite', lang)}</p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                        <button onClick={() => accepterEducateur(e.id)} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>✅ {t('club_accepter', lang)}</button>
-                        <button onClick={() => retirerEducateur(e.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + alpha.medium, flex: isMobile ? 1 : 'none' }}>{t('club_refuser', lang)}</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Affiliés */}
-            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: couleurPrincipale }}>
-              ✅ {t('club_educateurs_affilies_titre', lang)} ({educateursAcceptes.length}{club?.educateurs_inclus != null ? ` / ${club.educateurs_inclus}` : ''})
-            </p>
-            {club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus && (
-              <p style={{ margin: '-4px 0 10px', fontSize: '12px', color: colors.accent.amber }}>
-                Limite d'éducateurs gratuits atteinte — <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Ajouter des éducateurs — ' + (club?.club || ''))}`} style={{ color: colors.accent.amber }}>contacter le support</a> pour en ajouter.
-              </p>
-            )}
-            {educateursAcceptes.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t('club_aucun_educateur_affilie', lang)}</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {educateursAcceptes.map(e => {
-                  const nbEquipes = categories.filter(c => c.educateur_id === e.educateur_id).length
-                  return (
-                    <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px' }}>
-                      <div style={{ width: 42, height: 42, borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: couleurPrincipale, fontSize: '14px', flexShrink: 0 }}>
-                        {e.educateur?.prenom?.[0]}{e.educateur?.nom?.[0]}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '15px' }}>{e.educateur?.prenom} {e.educateur?.nom}</div>
-                        {nbEquipes > 0 && <div style={{ color: colors.text.faint, fontSize: '12px' }}>{nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}</div>}
-                      </div>
-                      <div className="edu-menu-wrapper" style={{ position: 'relative' }}>
-                        <button onClick={() => setOpenEduMenu(openEduMenu === e.id ? null : e.id)}
-                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '18px', padding: '6px 12px', cursor: 'pointer' }}>
-                          ···
-                        </button>
-                        {openEduMenu === e.id && (
-                          <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '160px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                            {[
-                              { icon: '⭐', label: t('club_noter', lang), action: () => ouvrirNotationEducateur(e) },
-                              { icon: '✏️', label: 'Modifier', action: () => setModalModifEdu({ educateur_id: e.educateur_id, prenom: e.educateur?.prenom || '', nom: e.educateur?.nom || '', telephone: e.educateur?.telephone || '' }) },
-                              { icon: '', label: 'Droits Projet Sportif', action: () => setModalDroitsEdu({ id: e.id, nom: `${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.trim(), peut_editer_projet_sportif: e.peut_editer_projet_sportif, peut_editer_planification: e.peut_editer_planification }) },
-                              { icon: '🚪', label: t('club_retirer', lang), action: () => retirerEducateur(e.id), danger: true },
-                            ].map(item => (
-                              <button key={item.label} onClick={() => { item.action(); setOpenEduMenu(null) }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', color: item.danger ? colors.accent.red : colors.text.secondary, fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
-                                onMouseEnter={ev => ev.currentTarget.style.background = colors.background.base}
-                                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
-                                {item.icon} {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+              )
+            })()}
 
             {/* ── Modale Modifier éducateur ── */}
             {modalModifEdu && (
@@ -4231,12 +4328,12 @@ export default function DashboardClub() {
 
         {activeTab === 'classements' && canViewSection('sportif') && (() => {
           const TRIS = [
-            { key: 'buts', label: t('stats_graph_buteurs', lang), color: colors.accent.green },
-            { key: 'passes', label: t('stats_filtre_passeurs', lang), color: colors.accent.blue },
-            { key: 'matchsJoues', label: t('stats_graph_matchs', lang), color: colors.accent.purpleLight },
-            { key: 'tauxPresence', label: t('stats_filtre_presence', lang), color: '#34d399', unit: '%' },
-            { key: 'pointsSeance', label: t('club_points_seance', lang), color: colors.accent.amber },
-            { key: 'noteGlobale', label: t('club_note_educateur', lang), color: '#f59e0b', unit: '/20' },
+            { key: 'buts', label: t('stats_graph_buteurs', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.green, Icone: IcoBallon, unite: v => v > 1 ? 'buts' : 'but' },
+            { key: 'passes', label: t('stats_filtre_passeurs', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.blue, Icone: IcoCibleClub, unite: v => v > 1 ? 'passes' : 'passe' },
+            { key: 'matchsJoues', label: t('stats_graph_matchs', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.purpleLight, Icone: IcoCalendar, unite: v => v > 1 ? 'matchs' : 'match' },
+            { key: 'tauxPresence', label: t('stats_filtre_presence', lang).replace(/^[^\p{L}]+/u, ''), color: '#34d399', unit: '%', Icone: IcoUsers, unite: () => '%' },
+            { key: 'pointsSeance', label: t('club_points_seance', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.amber, Icone: IcoStar, unite: v => v > 1 ? 'points' : 'point' },
+            { key: 'noteGlobale', label: t('club_note_educateur', lang).replace(/^[^\p{L}]+/u, ''), color: '#f59e0b', unit: '/20', Icone: IcoClipboard, unite: () => '/20' },
           ]
           const catData = categorieActive ? statsParCategorie[categorieActive] : null
           const triActif = TRIS.find(t => t.key === triClassement) || TRIS[0]
@@ -4249,14 +4346,33 @@ export default function DashboardClub() {
             return <p style={{ color: couleurPrincipale, textAlign: 'center', padding: '2rem' }}>{t('club_chargement_classements', lang)}</p>
           }
 
+          // V2 : sélecteur d'équipe, bilan (chiffres clés + stats détaillées
+          // partagées), résultats et classement officiel côte à côte, puis
+          // classement des joueurs (top 3 en cartes + tableau avec photo).
+          const eyebrowSt = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+          const carteSt = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px', minWidth: 0 }
+          const catActive = categories.find(c => c.id === categorieActive)
+          const formaterVal = (val) => val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '–'
+          const COULEURS_RANG = [colors.accent.amber, colors.text.secondary, colors.accent.orange]
           return (
-            <div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                {categories.map(c => (
-                  <button key={c.id} onClick={() => setCategorieActive(c.id)} style={st.tab(categorieActive === c.id)}>
-                    {labelCategorie(c.nom)} — {c.equipe}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Stat équipe</h1>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{catActive ? `${labelCategorie(catActive.nom)} ${catActive.equipe || ''}${catActive.educateur ? ` · ${catActive.educateur.prenom || ''} ${catActive.educateur.nom || ''}` : ''}` : 'Choisis une équipe'}</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
+                {categories.map(c => {
+                  const actif = categorieActive === c.id
+                  const cc = getCategoryColor(c.nom)
+                  return (
+                    <button key={c.id} onClick={() => setCategorieActive(c.id)}
+                      style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '10px', border: `1px solid ${actif ? cc + '80' : colors.border.default}`, background: actif ? cc + '1f' : 'transparent', color: actif ? cc : colors.text.secondary, fontSize: '13px', fontWeight: actif ? 800 : 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: cc }} />
+                      {labelCategorie(c.nom)} {c.equipe}
+                    </button>
+                  )
+                })}
               </div>
 
               {/* ── Résultats & classement officiel ── */}
@@ -4280,129 +4396,175 @@ export default function DashboardClub() {
                   if (eux === 0) cleanSheets++
                 })
                 const tauxV = nbMatchsJoues ? Math.round(victoires / nbMatchsJoues * 100) : 0
-                const tauxN = nbMatchsJoues ? Math.round(nuls / nbMatchsJoues * 100) : 0
-                const tauxD = nbMatchsJoues ? Math.round(defaites / nbMatchsJoues * 100) : 0
                 const tauxCS = nbMatchsJoues ? Math.round(cleanSheets / nbMatchsJoues * 100) : 0
 
                 const joueursCat = catData?.joueurs || []
-                const totalPresencesEffectif = joueursCat.reduce((s, j) => s + j.stats.presenceEffectifTotal, 0)
-                const presentsEffectif = joueursCat.reduce((s, j) => s + j.stats.presenceEffectifPresents, 0)
+                const totalPresencesEffectif = joueursCat.reduce((acc, j) => acc + j.stats.presenceEffectifTotal, 0)
+                const presentsEffectif = joueursCat.reduce((acc, j) => acc + j.stats.presenceEffectifPresents, 0)
                 const tauxPresenceEffectif = totalPresencesEffectif ? Math.round(presentsEffectif / totalPresencesEffectif * 100) : 0
-                const tauxAbsenceEffectif = totalPresencesEffectif ? 100 - tauxPresenceEffectif : 0
+                const kpiSt = (label, valeur, detail, couleur, contenu) => (
+                  <div key={label} style={{ ...carteSt, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{label}</p>
+                    <p style={{ margin: 0, fontSize: '28px', fontWeight: 800, lineHeight: 1, color: couleur || colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{valeur}</p>
+                    {contenu}
+                    {detail && <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>{detail}</p>}
+                  </div>
+                )
 
                 return (
-                  <div style={{ marginBottom: '2rem' }}>
+                  <>
                     {nbMatchsJoues > 0 && (
-                      <div style={{ marginBottom: '1.5rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '10px' }}>
-                          <StatCard label={t('jp_matchs_joues', lang)} valeur={nbMatchsJoues} />
-                          <StatCard label={t('club_taux_victoire', lang)} valeur={`${tauxV}%`} couleur="green" />
-                          <StatCard label={t('club_taux_nul', lang)} valeur={`${tauxN}%`} couleur="orange" />
-                          <StatCard label={t('club_taux_defaite', lang)} valeur={`${tauxD}%`} couleur="red" />
-                          <StatCard label={t('jp_clean_sheets', lang)} valeur={`${tauxCS}%`} couleur="blue" />
-                        </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap: '12px' }}>
+                        {kpiSt(t('jp_matchs_joues', lang), nbMatchsJoues, `${matchsCat.length - nbMatchsJoues} à venir`)}
+                        {kpiSt('Bilan', `${tauxV}%`, null, colors.accent.green, (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', gap: '2px', background: colors.background.base }}>
+                              {[[victoires, colors.accent.green], [nuls, colors.accent.amber], [defaites, colors.accent.red]].map(([v, c], i) => v > 0 && <div key={i} style={{ width: `${(v / nbMatchsJoues) * 100}%`, background: c }} />)}
+                            </div>
+                            <span style={{ fontSize: '12px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}><strong style={{ color: colors.accent.green }}>{victoires}V</strong> · <strong style={{ color: colors.accent.amber }}>{nuls}N</strong> · <strong style={{ color: colors.accent.red }}>{defaites}D</strong></span>
+                          </div>
+                        ))}
+                        {kpiSt(t('jp_clean_sheets', lang), cleanSheets, `${tauxCS}% des matchs`, colors.accent.purpleLight)}
+                        {kpiSt('Présence', totalPresencesEffectif > 0 ? `${tauxPresenceEffectif}%` : '–', totalPresencesEffectif > 0 ? 'aux entraînements' : 'aucune présence saisie', totalPresencesEffectif > 0 ? (tauxPresenceEffectif >= 80 ? colors.accent.green : tauxPresenceEffectif >= 50 ? colors.accent.amber : colors.accent.red) : colors.text.faint)}
                       </div>
                     )}
                     {nbMatchsJoues > 0 && (
-                      <div style={{ marginBottom: '1.5rem' }}>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: couleurPrincipale, marginBottom: '10px' }}>📊 Stats détaillées</p>
+                      <div>
+                        <p style={{ ...eyebrowSt, marginBottom: '12px' }}>Stats détaillées</p>
                         <StatsEquipe matchs={matchsCat} masquerVND />
                       </div>
                     )}
-                    {totalPresencesEffectif > 0 && (
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px', marginBottom: '1.5rem' }}>
-                        <StatCard label={t('club_taux_presence_effectif', lang)} valeur={`${tauxPresenceEffectif}%`} couleur="green" />
-                        <StatCard label={t('club_taux_absence_effectif', lang)} valeur={`${tauxAbsenceEffectif}%`} couleur="red" />
-                      </div>
-                    )}
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: couleurPrincipale, marginBottom: '10px' }}>🏆 {t('club_classement_officiel', lang)}</p>
-                    {ligueUrls[categorieActive] ? (
-                      <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 20px', borderRadius: '10px', border: `1px solid ${couleurPrincipale}40`, background: couleurPrincipale + alpha.faint, color: couleurPrincipale, fontWeight: 600, fontSize: '14px', textDecoration: 'none', marginBottom: '1.5rem' }}>
-                        🏆 {t('club_voir_classement_ligue', lang)}
-                      </a>
-                    ) : (
-                      <p style={{ color: colors.text.disabled, fontSize: '13px', marginBottom: '1.5rem' }}>{t('club_lien_classement_manquant', lang)}</p>
-                    )}
 
-                    {derniersMatchs.length > 0 && (
-                      <>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.blue, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}><IcoTrophy /> {t('club_derniers_resultats', lang)}</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
-                          {derniersMatchs.map(m => {
-                            const aScore = m.score_nous !== '' && m.score_nous !== null
-                            const nous = parseInt(m.score_nous)
-                            const eux = parseInt(m.score_eux)
-                            const v = aScore && nous > eux
-                            const n = aScore && nous === eux
-                            const label = !aScore ? null : v ? 'V' : n ? 'N' : 'D'
-                            const couleur = v ? '#4ade80' : n ? '#888' : '#f87171'
-                            return (
-                              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#111', border: '1px solid #1e1e1e', borderLeft: `3px solid ${label ? couleur : '#2a2a2a'}`, borderRadius: '10px' }}>
-                                {label && (
-                                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${couleur}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', color: couleur, flexShrink: 0 }}>
-                                    {label}
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.6fr) minmax(0,1fr)', gap: '16px', alignItems: 'start' }}>
+                      <div style={carteSt}>
+                        <p style={{ ...eyebrowSt, marginBottom: '12px' }}>{t('club_derniers_resultats', lang)}</p>
+                        {derniersMatchs.length === 0 ? (
+                          <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '12px', textAlign: 'center' }}>Aucun match joué pour l'instant.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {derniersMatchs.map(m => {
+                              const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
+                              const label = nous > eux ? 'V' : nous === eux ? 'N' : 'D'
+                              const couleur = label === 'V' ? colors.accent.green : label === 'N' ? colors.accent.amber : colors.accent.red
+                              return (
+                                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${couleur}`, borderRadius: '10px' }}>
+                                  <span style={{ width: 28, height: 28, borderRadius: '8px', background: couleur + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', color: couleur, flexShrink: 0 }}>{label}</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                                    <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
                                   </div>
-                                )}
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</div>
-                                  <div style={{ color: '#555', fontSize: '12px' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</div>
+                                  <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{m.score_nous} - {m.score_eux}</span>
                                 </div>
-                                {aScore && <div style={{ fontSize: '16px', fontWeight: 800, color: couleur, flexShrink: 0 }}>{m.score_nous} - {m.score_eux}</div>}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div style={carteSt}>
+                        <p style={{ ...eyebrowSt, marginBottom: '12px' }}>{t('club_classement_officiel', lang)}</p>
+                        {ligueUrls[categorieActive] ? (
+                          <a href={ligueUrls[categorieActive]} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', border: `1px solid ${couleurPrincipale}40`, background: couleurPrincipale + '10', color: couleurPrincipale, fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
+                            <IcoTrophy /> <span style={{ flex: 1 }}>{t('club_voir_classement_ligue', lang).replace(/^[^\p{L}]+/u, '')}</span> <IcoChevronD />
+                          </a>
+                        ) : (
+                          <p style={{ margin: 0, color: colors.text.faint, fontSize: '12px' }}>{t('club_lien_classement_manquant', lang)}</p>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )
               })()}
 
               {!catData || catData.joueurs.length === 0 ? (
-                <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: colors.text.faint }}>
-                  {t('club_aucun_joueur_categorie', lang)}<br />
-                  <span style={{ fontSize: '12px', color: colors.text.disabled }}>{t('club_educateur_doit_lier', lang)}</span>
+                <div style={{ ...carteSt, textAlign: 'center', padding: '2.5rem 1.5rem' }}>
+                  <p style={{ margin: 0, color: colors.text.secondary, fontWeight: 600 }}>{t('club_aucun_joueur_categorie', lang)}</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('club_educateur_doit_lier', lang)}</p>
                 </div>
               ) : (
-                <>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                    {TRIS.map(t => (
-                      <button key={t.key} onClick={() => setTriClassement(t.key)}
-                        style={{ background: triClassement === t.key ? t.color + '20' : colors.background.surface, border: `1px solid ${triClassement === t.key ? t.color + '60' : colors.border.faint}`, color: triClassement === t.key ? t.color : colors.text.faint, padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                        {t.label}
-                      </button>
-                    ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <p style={eyebrowSt}>Classement des joueurs</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
+                    {TRIS.map(tr => {
+                      const actif = triClassement === tr.key
+                      const { Icone } = tr
+                      return (
+                        <button key={tr.key} onClick={() => setTriClassement(tr.key)}
+                          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px', background: actif ? tr.color + '1f' : colors.background.surface, border: `1px solid ${actif ? tr.color + '70' : colors.border.default}`, color: actif ? tr.color : colors.text.secondary, padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <span style={{ display: 'inline-flex', color: actif ? tr.color : colors.text.faint }}><Icone /></span>{tr.label}
+                        </button>
+                      )
+                    })}
                   </div>
 
-                  <div style={{ ...st.card, overflow: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  {/* Top 3 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, minmax(0,1fr))`, gap: isMobile ? '8px' : '12px' }}>
+                    {sorted.slice(0, 3).map((j, rang) => {
+                      const val = j.stats[triClassement]
+                      const premier = rang === 0
+                      return (
+                        <div key={j.id} style={{ position: 'relative', borderRadius: '14px', padding: isMobile ? '12px 8px' : '16px 18px', background: premier ? triActif.color + '14' : colors.background.surface, border: `1px solid ${premier ? triActif.color + '55' : colors.border.subtle}`, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '6px' : '14px', textAlign: isMobile ? 'center' : 'left', minWidth: 0 }}>
+                          <span style={{ position: 'absolute', top: '10px', left: '10px', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: colors.black, background: COULEURS_RANG[rang] }}>{rang + 1}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0, paddingTop: isMobile ? '6px' : 0 }}>
+                            <PhotoPersonne personne={j} taille={isMobile ? 44 : 56} />
+                            <div style={{ minWidth: 0, maxWidth: '100%', textAlign: 'center' }}>
+                              <p style={{ margin: 0, fontWeight: 800, fontSize: isMobile ? '12px' : '14px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                            <p style={{ margin: 0, fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formaterVal(val)}</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div style={{ ...carteSt, padding: 0, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
+                      <colgroup>
+                        <col style={{ width: isMobile ? '36px' : '60px' }} />
+                        <col />
+                        {!isMobile && <col style={{ width: '30%' }} />}
+                        <col style={{ width: isMobile ? '70px' : '130px' }} />
+                      </colgroup>
                       <thead>
-                        <tr style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                          <th style={{ padding: '8px 12px', textAlign: 'center', color: colors.text.disabled, fontSize: '11px', width: '40px' }}>#</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_col_joueur', lang)}</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'left', color: colors.text.disabled, fontSize: '11px' }}>{t('equipe_poste', lang)}</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'right', color: triActif.color, fontSize: '11px' }}>{triActif.label}</th>
+                        <tr>
+                          {['#', t('equipe_col_joueur', lang), ...(isMobile ? [] : [t('equipe_poste', lang)])].map((h, i) => (
+                            <th key={i} style={{ padding: '11px 12px', textAlign: i === 0 ? 'center' : 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
+                          ))}
+                          <th style={{ padding: '11px 16px', textAlign: 'right', color: triActif.color, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{isMobile ? '' : triActif.label}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {sorted.map((j, i) => {
                           const val = j.stats[triClassement]
+                          const vide = !Number(val)
                           return (
-                            <tr key={j.id} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontSize: '15px', color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#555' }}>{i + 1}</td>
-                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>{j.prenom} {j.nom}</td>
-                              <td style={{ padding: '10px 12px', color: colors.text.dim }}>{j.poste || '—'}</td>
-                              <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: triActif.color }}>
-                                {val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '—'}{triActif.unit === '%' ? '%' : ''}
+                            <tr key={j.id} className="classement-club-ligne">
+                              <td style={{ padding: '9px 12px', textAlign: 'center', fontWeight: 800, color: i < 3 ? COULEURS_RANG[i] : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                  <PhotoPersonne personne={j} taille={28} />
+                                  <div style={{ minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                    {isMobile && <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}</p>}
+                                  </div>
+                                </div>
+                              </td>
+                              {!isMobile && <td style={{ padding: '9px 12px', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</td>}
+                              <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 800, fontSize: '14px', color: vide ? colors.text.ghost : triActif.color, borderBottom: `1px solid ${colors.border.subtle}`, fontVariantNumeric: 'tabular-nums' }}>
+                                {formaterVal(val)}{triActif.unit === '%' && val != null ? '%' : ''}
                               </td>
                             </tr>
                           )
                         })}
                       </tbody>
                     </table>
+                    <style>{`.classement-club-ligne:hover td { background: ${colors.background.raised}; }`}</style>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )
