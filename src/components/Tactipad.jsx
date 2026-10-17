@@ -456,7 +456,11 @@ export function ObjetNode({ el, isSelected, onSelect = () => {}, onChange = () =
   )
 }
 
-export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, initialSchema, onValider, onFermer, lang = 'fr', equipeActiveId = null, categories = [] }) {
+// lectureSeule (dirigeant délégué) : consultation des schémas sauvegardés de
+// l'éducateur sans aucune écriture — enregistrer, supprimer, partager, rendre
+// visible et gérer les dossiers sont masqués (la base le refuserait de toute
+// façon : seul l'éducateur écrit, cf. supabase_tactipads_lecture_dirigeant.sql).
+export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, initialSchema, onValider, onFermer, lang = 'fr', equipeActiveId = null, categories = [], lectureSeule = false }) {
   const colors = useColors()
   const isModal = mode === 'modal'
 
@@ -2278,6 +2282,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               <button onClick={validerSchema} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>✅ Valider le schéma</button>
               <button onClick={() => onFermer?.()} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '10px 16px', fontSize: '13px', cursor: 'pointer' }}>✕ Fermer sans enregistrer</button>
             </div>
+          ) : lectureSeule ? (
+            <p style={{ margin: '14px 0 0', fontSize: '12px', color: colors.text.faint }}>Consultation : les schémas de l'éducateur sont en lecture seule.</p>
           ) : (
             <div style={{ display: 'flex', gap: '8px', marginTop: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input value={nomSchema} onChange={e => setNomSchema(e.target.value)} placeholder="Nom du schéma"
@@ -2358,7 +2364,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         const schemasAffiches = dossierActif === null ? schemas : schemas.filter(s => s.dossier_id === dossierActif)
         return (
           <div style={{ marginTop: '2rem' }}>
-            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 Mes schémas {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
+            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>📚 {lectureSeule ? 'Schémas de l\'éducateur' : 'Mes schémas'} {schemas.length > 0 ? `(${schemas.length})` : ''}</p>
 
             {(dossiers.length > 0 || showAddDossier) && (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '14px' }}>
@@ -2375,12 +2381,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                         style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, color: actif ? d.couleur : colors.text.faint, borderRadius: '20px 0 0 20px', padding: '5px 4px 5px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
                         🗂 {d.nom} ({count})
                       </button>
-                      <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
-                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, borderLeft: 'none', color: colors.text.faint, borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>
+                      {!lectureSeule && <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
+                        style={{ background: actif ? `${d.couleur}20` : colors.background.surface, border: `1px solid ${actif ? d.couleur : colors.border.default}`, borderLeft: 'none', color: colors.text.faint, borderRadius: '0 20px 20px 0', padding: '5px 10px 5px 4px', fontSize: '11px', cursor: 'pointer' }}>×</button>}
                     </div>
                   )
                 })}
-                {showAddDossier ? (
+                {lectureSeule ? null : showAddDossier ? (
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <input autoFocus value={newDossierNom} onChange={e => setNewDossierNom(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && ajouterDossier()}
@@ -2393,7 +2399,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 )}
               </div>
             )}
-            {dossiers.length === 0 && !showAddDossier && (
+            {dossiers.length === 0 && !showAddDossier && !lectureSeule && (
               <button onClick={() => setShowAddDossier(true)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '20px', color: colors.text.faint, fontSize: '11px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', marginBottom: '14px' }}>+ Créer un dossier</button>
             )}
 
@@ -2416,11 +2422,13 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       </div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button onClick={() => chargerSchema(s)} style={{ background: '#60a5fa15', border: '1px solid #60a5fa40', color: '#60a5fa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Charger</button>
+                        {!lectureSeule && <>
                         <button onClick={() => toggleVisibleJoueurs(s)} style={{ background: s.visible_joueurs ? '#4ade8020' : '#4ade8015', border: `1px solid ${s.visible_joueurs ? '#4ade80' : '#4ade8040'}`, color: '#4ade80', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
                           {s.visible_joueurs ? '👥 Visible aux joueurs' : '👥 Rendre visible aux joueurs'}
                         </button>
                         <button onClick={() => partagerSchema(s.id)} style={{ background: '#a78bfa15', border: '1px solid #a78bfa40', color: '#a78bfa', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>🔗 Partager</button>
                         <button onClick={() => supprimerSchema(s.id)} style={{ background: '#ef444415', border: '1px solid #ef444440', color: '#ef4444', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>Supprimer</button>
+                        </>}
                       </div>
                     </div>
                   )

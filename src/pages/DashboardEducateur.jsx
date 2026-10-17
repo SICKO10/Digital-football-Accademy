@@ -11079,7 +11079,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>🎨 {t('nav_tacticboard', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
-            <Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} />
+            <Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} />
           </div>
         )}
 
