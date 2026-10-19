@@ -58,6 +58,13 @@ export default function NotationMatch({ match, joueurs, educateurId, onClose }) 
   const [onglet, setOnglet] = useState('joueurs')  // 'joueurs' | 'equipe'
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // Visibilité côté joueurs/parents, réglée par match (matchs_equipe) —
+  // notes (et critères) et commentaires séparément. Absentes avant la
+  // migration supabase_notations_visibilite.sql : traitées comme visibles.
+  const [visibilite, setVisibilite] = useState({
+    notes: match.notes_visibles_joueurs !== false,
+    commentaires: match.commentaires_visibles_joueurs !== false,
+  })
 
   useEffect(() => { chargerNotes() }, [match.id])
 
@@ -157,6 +164,34 @@ export default function NotationMatch({ match, joueurs, educateurId, onClose }) 
 
   const nbNotees = joueurs.filter(j => notes[j.id]?.note).length
 
+  // Enregistré immédiatement (indépendant du bouton Sauvegarder) ; retour en
+  // arrière si la base refuse.
+  const basculerVisibilite = async (cle) => {
+    const avant = visibilite
+    const apres = { ...visibilite, [cle]: !visibilite[cle] }
+    setVisibilite(apres)
+    const { error } = await supabase.from('matchs_equipe').update({
+      notes_visibles_joueurs: apres.notes,
+      commentaires_visibles_joueurs: apres.commentaires,
+    }).eq('id', match.id)
+    if (error) { setVisibilite(avant); alert('Erreur : ' + error.message) }
+  }
+  const interrupteur = (cle, label) => {
+    const actif = visibilite[cle]
+    return (
+      <button type="button" onClick={() => basculerVisibilite(cle)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flex: '1 1 220px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.subtle}`, background: colors.background.surface, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>
+        <span>
+          <span style={{ display: 'block', color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{label}</span>
+          <span style={{ display: 'block', color: actif ? colors.accent.green : colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{actif ? 'Visibles par les joueurs' : 'Masqués aux joueurs'}</span>
+        </span>
+        <span style={{ width: '38px', height: '22px', borderRadius: '20px', background: actif ? colors.accent.green : colors.border.strong, position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+          <span style={{ position: 'absolute', top: '3px', left: actif ? '19px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+        </span>
+      </button>
+    )
+  }
+
   return (
     <div style={{ background: colors.background.base, borderRadius: '16px', padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
 
@@ -194,6 +229,12 @@ export default function NotationMatch({ match, joueurs, educateurId, onClose }) 
             <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: colors.text.muted, cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' }}>×</button>
           )}
         </div>
+      </div>
+
+      {/* Visibilité pour les joueurs (tout le match) */}
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '18px' }}>
+        {interrupteur('notes', 'Notes et critères')}
+        {interrupteur('commentaires', 'Commentaires')}
       </div>
 
       {/* Onglets */}

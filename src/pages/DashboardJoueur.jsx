@@ -63,6 +63,14 @@ const CATEGORIES_CLUB_HISTORIQUE = [...CATEGORIES.filter(c => c !== 'Seniors'), 
 // créés après cette date comptent comme "nouveaux" ; tout ce qui existait
 // déjà avant reste silencieux (sinon toute la saison déjà planifiée se
 // ferait passer pour "nouvelle" au premier login de chaque joueur).
+// Ligne renvoyée par la RPC mes_notations_match → même forme qu'avant
+// (embed matchs_equipe) pour ne rien changer aux écrans qui l'affichent.
+const adapterNotation = (r) => ({
+  id: r.id, note: r.note, commentaire: r.commentaire, criteres: r.criteres, created_at: r.created_at,
+  noteVisible: r.note_visible, commentaireVisible: r.commentaire_visible,
+  matchs_equipe: { adversaire: r.adversaire, date: r.date, domicile: r.domicile, competition: r.competition, score_nous: r.score_nous, score_eux: r.score_eux },
+})
+
 const SEUIL_ALERTES_CALENDRIER = '2026-09-25T00:00:00Z'
 
 // Filtre résultats/calendrier par type de compétition — matchs_equipe.competition
@@ -731,15 +739,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   async function chargerMesNotes(equipeJoueurId) {
     if (!equipeJoueurId) { setMesNotes([]); setMoyennePerso(null); return }
-    const { data } = await supabase
-      .from('notations_match')
-      .select('id, note, commentaire, created_at, matchs_equipe(adversaire, date, domicile, score_nous, score_eux)')
-      .eq('joueur_id', equipeJoueurId)
-      .eq('est_note_equipe', false)
-      .order('created_at', { ascending: false })
-    const notes = data || []
+    // Via mes_notations_match (cf. supabase_notations_visibilite.sql) : la note
+    // ou le commentaire arrivent à null quand l'éducateur les a masqués.
+    const { data } = await supabase.rpc('mes_notations_match', { p_equipe_joueur_id: equipeJoueurId })
+    const notes = (data || []).map(adapterNotation)
     setMesNotes(notes)
-    setMoyennePerso(notes.length ? (notes.reduce((s, n) => s + Number(n.note), 0) / notes.length).toFixed(1) : null)
+    const notees = notes.filter(n => n.note != null)
+    setMoyennePerso(notees.length ? (notees.reduce((s, n) => s + Number(n.note), 0) / notees.length).toFixed(1) : null)
   }
 
   // Demandes de note de séance ouvertes chez mon éducateur affilié, moins
@@ -1433,7 +1439,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         supabase.from('profil_educateur').select('ligue_url').eq('user_id', educateurId).single(),
         qEffectif,
         fetchToutesLignes(qMatchsEquipe),
-        supabase.from('notations_match').select('note, commentaire, criteres, created_at, matchs_equipe(adversaire, date, domicile, competition, score_nous, score_eux)').eq('joueur_id', equipeJoueurId).eq('est_note_equipe', false).order('created_at', { ascending: false }),
+        supabase.rpc('mes_notations_match', { p_equipe_joueur_id: equipeJoueurId }).then(r => ({ ...r, data: (r.data || []).map(adapterNotation) })),
       ]),
     ])
 
@@ -3859,12 +3865,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                           <div style={{ color: colors.text.secondary, fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>"{n.commentaire}"</div>
                         )}
                       </div>
+                      {n.note == null ? (
+                        <div style={{ fontSize: '12px', color: colors.text.faint, marginLeft: '16px', flexShrink: 0 }}>Note non communiquée</div>
+                      ) : (
                       <div style={{
                         fontSize: '22px', fontWeight: 700, marginLeft: '16px', flexShrink: 0,
                         color: n.note >= 7 ? colors.accent.green : n.note >= 5 ? colors.accent.amber : colors.accent.red
                       }}>
                         {n.note}/10
                       </div>
+                      )}
                     </div>
                   )
                 })()}
@@ -5451,21 +5461,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                   {(!s.evals || s.evals.length === 0) ? (
                                     <p style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>Aucune évaluation cette saison.</p>
                                   ) : (() => {
-                                    const moy = (s.evals.reduce((sum, n) => sum + Number(n.note), 0) / s.evals.length).toFixed(1)
+                                    // Notes masquées par l'éducateur (note == null) : exclues de la moyenne.
+                                    const evalsNotees = s.evals.filter(n => n.note != null)
+                                    const moy = evalsNotees.length ? (evalsNotees.reduce((sum, n) => sum + Number(n.note), 0) / evalsNotees.length).toFixed(1) : null
                                     const couleurMoy = moy >= 7 ? colors.accent.green : moy >= 5 ? colors.accent.amber : colors.accent.red
                                     const ouvert = evalOuverte?.affiliationId === a.id ? evalOuverte.index : null
                                     return (
                                       <>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px 16px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${couleurMoy}` }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px 16px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${moy == null ? colors.border.default : couleurMoy}` }}>
                                           <span style={{ color: colors.text.faint, fontSize: '13px' }}>Moyenne saison :</span>
-                                          <span style={{ fontSize: '20px', fontWeight: 800, color: couleurMoy }}>{moy}/10</span>
+                                          <span style={{ fontSize: moy == null ? '13px' : '20px', fontWeight: 800, color: moy == null ? colors.text.faint : couleurMoy }}>{moy == null ? 'notes non communiquées' : `${moy}/10`}</span>
                                           <span style={{ color: colors.text.ghost, fontSize: '12px', marginLeft: 'auto' }}>{s.evals.length} match{s.evals.length > 1 ? 's' : ''} évalué{s.evals.length > 1 ? 's' : ''}</span>
                                         </div>
 
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: ouvert !== null ? '16px' : 0 }}>
                                           {s.evals.map((n, i) => {
                                             const note = Number(n.note)
-                                            const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
+                                            const c = n.note == null ? colors.text.faint : note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
                                             const m = n.matchs_equipe
                                             return (
                                               <div key={i}
@@ -5477,8 +5489,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                                                   transform: ouvert === i ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.15s',
                                                 }}>
-                                                <span style={{ color: c, fontWeight: 800, fontSize: '17px', lineHeight: 1 }}>{n.note}</span>
-                                                <span style={{ color: colors.text.ghost, fontSize: '9px' }}>/10</span>
+                                                <span style={{ color: c, fontWeight: 800, fontSize: '17px', lineHeight: 1 }}>{n.note == null ? '–' : n.note}</span>
+                                                <span style={{ color: colors.text.ghost, fontSize: '9px' }}>{n.note == null ? 'masquée' : '/10'}</span>
                                               </div>
                                             )
                                           })}
@@ -5488,7 +5500,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                           const ev = s.evals[ouvert]
                                           const m = ev.matchs_equipe
                                           const note = Number(ev.note)
-                                          const c = note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
+                                          const c = ev.note == null ? colors.text.faint : note >= 7 ? colors.accent.green : note >= 5 ? colors.accent.amber : colors.accent.red
                                           const criteres = ev.criteres || {}
                                           const aCriteres = criteres.technique || criteres.physique || criteres.mental || criteres.tactique
                                           return (
@@ -5505,7 +5517,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                                   </p>
                                                 </div>
                                                 <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                                                  <p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: c }}>{ev.note}<span style={{ fontSize: '13px', color: colors.text.ghost }}>/10</span></p>
+                                                  {ev.note == null
+                                                    ? <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>Note non communiquée</p>
+                                                    : <p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: c }}>{ev.note}<span style={{ fontSize: '13px', color: colors.text.ghost }}>/10</span></p>}
                                                 </div>
                                               </div>
                                               {aCriteres && (
@@ -5534,7 +5548,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                     <div style={{ marginTop: '20px' }}>
                                       <p style={{ margin: '0 0 12px', color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Saisons précédentes</p>
                                       {Object.entries(s.evalsParSaison).sort(([a2], [b2]) => b2.localeCompare(a2)).map(([saison, list]) => {
-                                        const moySaison = (list.reduce((sum, n) => sum + Number(n.note), 0) / list.length).toFixed(1)
+                                        const listeNotee = list.filter(n => n.note != null)
+                                        const moySaison = listeNotee.length ? (listeNotee.reduce((sum, n) => sum + Number(n.note), 0) / listeNotee.length).toFixed(1) : null
                                         const c = moySaison >= 7 ? colors.accent.green : moySaison >= 5 ? colors.accent.amber : colors.accent.red
                                         return (
                                           <div key={saison} style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -5542,7 +5557,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                               <p style={{ margin: 0, color: colors.text.primary, fontWeight: 600, fontSize: '13px' }}>Saison {saison}</p>
                                               <p style={{ margin: 0, color: colors.text.ghost, fontSize: '11px' }}>{list.length} match{list.length > 1 ? 's' : ''} évalué{list.length > 1 ? 's' : ''}</p>
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: c }}>{moySaison}<span style={{ fontSize: '10px', color: colors.text.ghost }}>/10</span></p>
+                                            {moySaison == null
+                                              ? <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>Notes non communiquées</p>
+                                              : <p style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: c }}>{moySaison}<span style={{ fontSize: '10px', color: colors.text.ghost }}>/10</span></p>}
                                           </div>
                                         )
                                       })}

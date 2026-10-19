@@ -1283,6 +1283,7 @@ export default function DashboardClub() {
 
   // Inventaire (onglet Administratif) — Équipement (tailles par personne) + Matériel (stock/distribution)
   const [inventaireVue, setInventaireVue] = useState('equipement')
+  const [groupesEquipementFermes, setGroupesEquipementFermes] = useState(() => new Set()) // Inventaire : catégories repliées
   const [reglagesEquipementOuverts, setReglagesEquipementOuverts] = useState(false) // Inventaire : champs de taille + packs repliés par défaut
   const [joueursInventaire, setJoueursInventaire] = useState([]) // colonnes complètes (categorie, numero_maillot) — joueursClub n'a pas assez de colonnes pour ça
   const [equipementChamps, setEquipementChamps] = useState([])
@@ -6322,7 +6323,9 @@ export default function DashboardClub() {
                               return (
                                 <tr>
                                   <td colSpan={3} style={{ padding: '0' }}>
-                                    <div style={{ padding: '14px 14px 8px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                    <div onClick={() => setGroupesEquipementFermes(prev => { const next = new Set(prev); if (next.has(groupe)) next.delete(groupe); else next.add(groupe); return next })}
+                                      style={{ padding: '14px 14px 8px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: `1px solid ${colors.border.subtle}`, cursor: 'pointer', userSelect: 'none' }}>
+                                      <span style={{ color: colors.text.faint, display: 'flex', transform: groupesEquipementFermes.has(groupe) ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronBasClub ouvert={false} /></span>
                                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: catColor }} />
                                       <span style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase' }}>{groupe === 'Staff' ? groupe : labelCategorie(groupe)}</span>
                                       <span style={{ color: colors.text.faint, fontSize: '11px' }}>{parGroupe[groupe].length}</span>
@@ -6331,7 +6334,7 @@ export default function DashboardClub() {
                                 </tr>
                               )
                             })()}
-                            {parGroupe[groupe].map(p => {
+                            {!groupesEquipementFermes.has(groupe) && parGroupe[groupe].map(p => {
                               const commande = equipementCommandes.find(c => c.destinataire_id === p.id)
                               const packAttribue = equipementAttributions.find(a => a.user_id === p.id)?.pack_id || ''
                               const pack = equipementPacks.find(pk => pk.id === packAttribue)
