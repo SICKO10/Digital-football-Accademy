@@ -300,81 +300,70 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     </div>
   )
 
-  if (vue === 'nouveau') return (
-    <div style={{ maxWidth: 560 }}>
+  if (vue === 'nouveau') {
+    // V2 : formulaire en sections (le tournoi / format / organisation).
+    const section = (titre, contenu) => (
+      <div style={{ ...st.card, padding: '18px 20px' }}>
+        <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{titre}</p>
+        <div style={{ display: 'grid', gap: '12px' }}>{contenu}</div>
+      </div>
+    )
+    const champ = (label, el) => <div style={{ minWidth: 0 }}><label style={st.label}>{label}</label>{el}</div>
+    const grille = (min, enfants) => <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: '12px' }}>{enfants}</div>
+    const invalide = !form.nom || !form.date_debut || !form.club_categorie_id
+    return (
+    <div style={{ maxWidth: 760 }}>
       <button onClick={() => setVue(editingId ? 'detail' : 'liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
-      <h2 style={{ color: colors.text.primary, margin: '16px 0 20px', fontWeight: 900, fontSize: '19px' }}>{editingId ? 'Modifier le tournoi' : 'Nouveau tournoi'}</h2>
+      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '20px' }}>{editingId ? 'Modifier le tournoi' : 'Nouveau tournoi'}</h2>
+      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px' }}>Un tournoi auquel une équipe du club participe. Tu pourras ensuite saisir les matchs, convoquer le groupe et suivre la logistique.</p>
 
       <div style={{ display: 'grid', gap: '14px' }}>
-        <div>
-          <label style={st.label}>Nom du tournoi *</label>
-          <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Tournoi de Cannes U18" style={st.input} />
+        {section('Le tournoi', <>
+          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Tournoi de Cannes U18" style={st.input} />)}
+          {grille(160, <>
+            {champ('Équipe du club *', <select value={form.club_categorie_id} onChange={e => setForm(p => ({ ...p, club_categorie_id: e.target.value }))} style={st.input}>
+              <option value="">Choisir…</option>
+              {(categories || []).map(c => <option key={c.id} value={c.id}>{labelCategorie(c.nom)}{c.equipe ? ` ${c.equipe}` : ''}</option>)}
+            </select>)}
+            {champ('Du *', <input type="date" value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} style={st.input} />)}
+            {champ('Au', <input type="date" value={form.date_fin} onChange={e => setForm(p => ({ ...p, date_fin: e.target.value }))} style={st.input} />)}
+          </>)}
+          {grille(200, <>
+            {champ('Organisateur', <input value={form.organisateur} onChange={e => setForm(p => ({ ...p, organisateur: e.target.value }))} placeholder="AS Cannes" style={st.input} />)}
+            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(p => ({ ...p, lieu: e.target.value }))} placeholder="Cannes" style={st.input} />)}
+          </>)}
+        </>)}
+
+        {section('Format et statut', grille(160, <>
+          {champ('Format', <select value={form.format} onChange={e => setForm(p => ({ ...p, format: e.target.value }))} style={st.input}>
+            {['Poules uniquement', 'Poules + KO', 'Round-robin', 'Élimination directe', 'Système suisse'].map(f => <option key={f}>{f}</option>)}
+          </select>)}
+          {champ('Statut', <select value={form.statut} onChange={e => setForm(p => ({ ...p, statut: e.target.value }))} style={st.input}>
+            {Object.keys(STATUT_COULEUR).map(x => <option key={x}>{x}</option>)}
+          </select>)}
+          {champ('Joueurs max', <input type="number" value={form.nb_joueurs_max} onChange={e => setForm(p => ({ ...p, nb_joueurs_max: e.target.value }))} style={st.input} />)}
+        </>))}
+
+        {section('Organisation', <>
+          {grille(200, <>
+            {champ('Contact', <input value={form.contact_nom} onChange={e => setForm(p => ({ ...p, contact_nom: e.target.value }))} placeholder="Nom de l'organisateur" style={st.input} />)}
+            {champ("Frais d'inscription (€)", <input type="number" min="0" step="0.01" placeholder="0.00" value={form.budget_inscription} onChange={e => setForm(p => ({ ...p, budget_inscription: e.target.value }))} style={st.input} />)}
+          </>)}
+          <p style={{ margin: '-4px 0 0', color: colors.text.faint, fontSize: '11px' }}>Les frais d'inscription sont ajoutés automatiquement au budget du club (dépense, catégorie Tournoi).</p>
+          {champ('Notes', <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Horaires de convocation, infos pratiques…" style={{ ...st.input, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />)}
+        </>)}
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={sauvegarderTournoi} disabled={invalide}
+            style={{ ...st.btnSolid, opacity: invalide ? 0.4 : 1, padding: '12px 22px', fontSize: '14px' }}>
+            {editingId ? 'Enregistrer les modifications' : 'Enregistrer le tournoi'}
+          </button>
+          {invalide && <span style={{ fontSize: '12px', color: colors.text.faint }}>Nom, équipe et date de début sont obligatoires.</span>}
         </div>
-        <div>
-          <label style={st.label}>Catégorie *</label>
-          <select value={form.club_categorie_id} onChange={e => setForm(p => ({ ...p, club_categorie_id: e.target.value }))} style={st.input}>
-            <option value="">— Choisir —</option>
-            {(categories || []).map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
-          </select>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Date début *</label>
-            <input type="date" value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Date fin</label>
-            <input type="date" value={form.date_fin} onChange={e => setForm(p => ({ ...p, date_fin: e.target.value }))} style={st.input} />
-          </div>
-        </div>
-        <div>
-          <label style={st.label}>Organisateur</label>
-          <input value={form.organisateur} onChange={e => setForm(p => ({ ...p, organisateur: e.target.value }))} placeholder="AS Cannes" style={st.input} />
-        </div>
-        <div>
-          <label style={st.label}>Lieu</label>
-          <input value={form.lieu} onChange={e => setForm(p => ({ ...p, lieu: e.target.value }))} placeholder="Cannes" style={st.input} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Format</label>
-            <select value={form.format} onChange={e => setForm(p => ({ ...p, format: e.target.value }))} style={st.input}>
-              {['Poules uniquement', 'Poules + KO', 'Round-robin', 'Élimination directe', 'Système suisse'].map(f => <option key={f}>{f}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={st.label}>Statut</label>
-            <select value={form.statut} onChange={e => setForm(p => ({ ...p, statut: e.target.value }))} style={st.input}>
-              {Object.keys(STATUT_COULEUR).map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Contact</label>
-            <input value={form.contact_nom} onChange={e => setForm(p => ({ ...p, contact_nom: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Nb joueurs max</label>
-            <input type="number" value={form.nb_joueurs_max} onChange={e => setForm(p => ({ ...p, nb_joueurs_max: e.target.value }))} style={st.input} />
-          </div>
-        </div>
-        <div>
-          <label style={st.label}>Prix d'inscription (€)</label>
-          <input type="number" min="0" step="0.01" placeholder="0.00" value={form.budget_inscription} onChange={e => setForm(p => ({ ...p, budget_inscription: e.target.value }))} style={st.input} />
-          <div style={{ color: colors.text.disabled, fontSize: '11px', marginTop: '4px' }}>Ajouté automatiquement dans le budget du club (dépense, catégorie Tournoi)</div>
-        </div>
-        <div>
-          <label style={st.label}>Notes</label>
-          <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...st.input, resize: 'vertical' }} />
-        </div>
-        <button onClick={sauvegarderTournoi} disabled={!form.nom || !form.date_debut || !form.club_categorie_id}
-          style={{ ...st.btnSolid, opacity: (!form.nom || !form.date_debut || !form.club_categorie_id) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
-          {editingId ? 'Enregistrer les modifications' : 'Enregistrer le tournoi'}
-        </button>
       </div>
     </div>
-  )
+    )
+  }
 
   if (vue === 'detail' && selected) {
     const onglets = [

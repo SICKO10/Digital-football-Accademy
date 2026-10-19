@@ -806,106 +806,117 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     </div>
   )
 
-  if (vue === 'creation') return (
-    <div style={{ maxWidth: 560 }}>
+  if (vue === 'creation') {
+    // V2 : formulaire en sections + résumé en direct (poules, matchs, temps
+    // nécessaire vs journée disponible, finances) pour vérifier avant de créer.
+    const tMin = (h) => { const [hh, mm] = (h || '0:0').split(':').map(Number); return (hh || 0) * 60 + (mm || 0) }
+    const nbEq = Math.max(2, Number(form.nb_equipes_prevues) || 2)
+    const parPoule = Math.max(2, Number(form.nb_equipes_poule) || 4)
+    const nbPoules = Math.ceil(nbEq / parPoule)
+    const taillesPoules = Array.from({ length: nbPoules }, (_, i) => Math.floor(nbEq / nbPoules) + (i < nbEq % nbPoules ? 1 : 0))
+    const nbMatchsPoules = taillesPoules.reduce((acc, k) => acc + (k * (k - 1)) / 2, 0)
+    const creneau = (Number(form.duree_match) || 0) + (Number(form.pause_minutes) || 0)
+    const nbCreneaux = Math.ceil(nbMatchsPoules / Math.max(1, Number(form.nb_terrains) || 1))
+    const tempsNecessaire = nbCreneaux * creneau
+    const tempsDispo = Math.max(0, tMin(form.heure_fin) - tMin(form.heure_debut) - (Number(form.pause_midi_duree) || 0))
+    const tientDansJournee = tempsNecessaire <= tempsDispo
+    const fmtDuree = (m) => `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`
+    const recette = Number(form.prix_inscription_equipe || 0) * (Number(form.nb_equipes_payantes) || 0)
+    const cout = Number(form.cout_organisation || 0)
+    const section = (titre, sousTitre, contenu) => (
+      <div style={{ ...st.card, padding: '18px 20px' }}>
+        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{titre}</p>
+        {sousTitre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{sousTitre}</p>}
+        <div style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>{contenu}</div>
+      </div>
+    )
+    const champ = (label, el) => <div style={{ minWidth: 0 }}><label style={st.label}>{label}</label>{el}</div>
+    const ligneResume = (label, valeur, couleur) => (
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '7px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+        <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+        <span style={{ color: couleur || colors.text.primary, fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>{valeur}</span>
+      </div>
+    )
+    return (
+    <div style={{ maxWidth: 1000 }}>
       <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
-      <h2 style={{ color: colors.text.primary, margin: '16px 0 20px', fontWeight: 900, fontSize: '19px' }}>Créer un tournoi</h2>
-      <div style={{ display: 'grid', gap: '14px' }}>
-        <div>
-          <label style={st.label}>Nom du tournoi *</label>
-          <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Tournoi de Noël U15" style={st.input} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Date</label>
-            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={st.input} />
+      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '20px' }}>Créer un tournoi</h2>
+      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px' }}>Renseigne l'essentiel : le planning des matchs sera généré automatiquement une fois les équipes ajoutées.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gap: '14px', gridColumn: 'span 2', minWidth: 0 }}>
+        {section('1 · Le tournoi', null, <>
+          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Tournoi de Noël U15" style={st.input} />)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+            {champ('Date', <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={st.input} />)}
+            {champ("Catégorie d'âge", <input value={form.categorie_age} onChange={e => setForm(f => ({ ...f, categorie_age: e.target.value }))} placeholder="U13, U15…" style={st.input} />)}
+            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Complexe sportif…" style={st.input} />)}
           </div>
-          <div>
-            <label style={st.label}>Catégorie d'âge</label>
-            <input value={form.categorie_age} onChange={e => setForm(f => ({ ...f, categorie_age: e.target.value }))} placeholder="U13, U15…" style={st.input} />
-          </div>
-        </div>
-        <div>
-          <label style={st.label}>Lieu</label>
-          <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Complexe sportif…" style={st.input} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Heure de début</label>
-            <input type="time" value={form.heure_debut} onChange={e => setForm(f => ({ ...f, heure_debut: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Nb terrains</label>
-            <input type="number" min="1" value={form.nb_terrains} onChange={e => setForm(f => ({ ...f, nb_terrains: parseInt(e.target.value) || 1 }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Équipes/poule</label>
-            <select value={form.nb_equipes_poule} onChange={e => setForm(f => ({ ...f, nb_equipes_poule: parseInt(e.target.value) }))} style={st.input}>
+        </>)}
+
+        {section('2 · Format', 'Nombre d\'équipes attendues, poules et terrains disponibles.', <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+            {champ("Nombre d'équipes", <input type="number" min="2" value={form.nb_equipes_prevues} onChange={e => setForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />)}
+            {champ('Équipes par poule', <select value={form.nb_equipes_poule} onChange={e => setForm(f => ({ ...f, nb_equipes_poule: parseInt(e.target.value) }))} style={st.input}>
               {[3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+            </select>)}
+            {champ('Terrains', <input type="number" min="1" value={form.nb_terrains} onChange={e => setForm(f => ({ ...f, nb_terrains: parseInt(e.target.value) || 1 }))} style={st.input} />)}
           </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Durée d'un match (min)</label>
-            <input type="number" min="1" value={form.duree_match} onChange={e => setForm(f => ({ ...f, duree_match: parseInt(e.target.value) || 1 }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Pause entre matchs (min)</label>
-            <input type="number" min="0" value={form.pause_minutes} onChange={e => setForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={st.input} />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Heure de fin</label>
-            <input type="time" value={form.heure_fin} onChange={e => setForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Début pause midi</label>
-            <input type="time" value={form.pause_midi_debut} onChange={e => setForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Durée pause midi</label>
-            <select value={form.pause_midi_duree} onChange={e => setForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
+        </>)}
+
+        {section('3 · Horaires', 'Durée des matchs et de la journée — la pause midi est respectée par le planning.', <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+            {champ('Début', <input type="time" value={form.heure_debut} onChange={e => setForm(f => ({ ...f, heure_debut: e.target.value }))} style={st.input} />)}
+            {champ('Fin', <input type="time" value={form.heure_fin} onChange={e => setForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />)}
+            {champ('Durée d\'un match', <div style={{ position: 'relative' }}><input type="number" min="1" value={form.duree_match} onChange={e => setForm(f => ({ ...f, duree_match: parseInt(e.target.value) || 1 }))} style={{ ...st.input, paddingRight: '40px' }} /><span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint }}>min</span></div>)}
+            {champ('Pause entre matchs', <div style={{ position: 'relative' }}><input type="number" min="0" value={form.pause_minutes} onChange={e => setForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={{ ...st.input, paddingRight: '40px' }} /><span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint }}>min</span></div>)}
+            {champ('Pause midi à', <input type="time" value={form.pause_midi_debut} onChange={e => setForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />)}
+            {champ('Durée pause midi', <select value={form.pause_midi_duree} onChange={e => setForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
               <option value={60}>1h00</option>
               <option value={75}>1h15</option>
               <option value={90}>1h30</option>
               <option value={105}>1h45</option>
               <option value={120}>2h00</option>
-            </select>
+            </select>)}
           </div>
+        </>)}
+
+        {section('4 · Finances', 'Facultatif — recette et coût sont ajoutés automatiquement au budget du club.', <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+            {champ('Inscription / équipe (€)', <input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />)}
+            {champ('Équipes payantes', <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={st.input} />)}
+            {champ("Coût d'organisation (€)", <input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />)}
+          </div>
+          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>L'équipe hôte (ton club) ne paie pas d'inscription. Coût : terrain, arbitrage, récompenses…</p>
+        </>)}
+      </div>
+
+      {/* Résumé en direct */}
+      <div style={{ ...st.card, padding: '18px 20px', position: 'sticky', top: '16px' }}>
+        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Résumé</p>
+        <p style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 800, color: colors.text.primary }}>{form.nom.trim() || 'Nouveau tournoi'}</p>
+        {ligneResume('Poules', `${nbPoules} poule${nbPoules > 1 ? 's' : ''} (${taillesPoules.join(' / ')} équipes)`)}
+        {ligneResume('Matchs de poule', nbMatchsPoules)}
+        {ligneResume('Temps nécessaire', fmtDuree(tempsNecessaire))}
+        {ligneResume('Temps disponible', fmtDuree(tempsDispo), tientDansJournee ? colors.accent.green : colors.accent.red)}
+        <div style={{ margin: '12px 0', padding: '10px 12px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, background: (tientDansJournee ? colors.accent.green : colors.accent.amber) + '14', color: tientDansJournee ? colors.accent.green : colors.accent.amber }}>
+          {tientDansJournee
+            ? 'Les poules tiennent dans la journée, il reste du temps pour les phases finales.'
+            : 'Les poules dépassent la journée : ajoute un terrain, raccourcis les matchs ou élargis les horaires.'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-          <div>
-            <label style={st.label}>Prix d'inscription par équipe (€)</label>
-            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Nombre d'équipes total</label>
-            <input type="number" min="2" value={form.nb_equipes_prevues} onChange={e => setForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />
-          </div>
-          <div>
-            <label style={st.label}>Dont payantes (invitées)</label>
-            <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={st.input} />
-          </div>
-        </div>
-        {Number(form.prix_inscription_equipe) > 0 && (
-          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '-6px' }}>
-            Recette prévisionnelle : {(Number(form.prix_inscription_equipe) * (form.nb_equipes_payantes || 0)).toFixed(2)}€
-            <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (basé sur {form.nb_equipes_payantes || 0} équipe{form.nb_equipes_payantes > 1 ? 's' : ''} payante{form.nb_equipes_payantes > 1 ? 's' : ''} — l'équipe hôte ne paie pas) — ajoutée automatiquement dans le budget du club</span>
-          </div>
-        )}
-        <div>
-          <label style={st.label}>Coût d'organisation (€)</label>
-          <input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />
-          <div style={{ color: colors.text.disabled, fontSize: '11px', marginTop: '4px' }}>Terrain, arbitrage, récompenses… — ajouté automatiquement dans le budget du club (dépense, catégorie Tournoi)</div>
-        </div>
-        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px' }}>
+        {(recette > 0 || cout > 0) && <>
+          {recette > 0 && ligneResume('Recette prévue', `${recette.toFixed(2)} €`, colors.accent.green)}
+          {cout > 0 && ligneResume("Coût d'organisation", `−${cout.toFixed(2)} €`, colors.accent.red)}
+          {recette > 0 && cout > 0 && ligneResume('Solde prévu', `${recette - cout >= 0 ? '+' : ''}${(recette - cout).toFixed(2)} €`, recette - cout >= 0 ? colors.accent.green : colors.accent.red)}
+        </>}
+        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, width: '100%', marginTop: '14px', opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '12px', fontSize: '14px' }}>
           {loading ? 'Création…' : 'Créer le tournoi'}
         </button>
+        {!form.nom.trim() && <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.faint, textAlign: 'center' }}>Le nom du tournoi est obligatoire.</p>}
+      </div>
       </div>
     </div>
-  )
+    )
+  }
 
   if (vue === 'detail' && tournoi) {
     const onglets = [
@@ -919,7 +930,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
-      <div style={{ maxWidth: 900 }}>
+      <div style={{ maxWidth: 1000 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
           <button onClick={() => setTourEtape(0)} title="Revoir le tutoriel"
@@ -927,43 +938,69 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             ?
           </button>
         </div>
-        <div style={{ ...st.card, margin: '16px 0 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <span style={{ background: STATUT_COULEUR[tournoi.statut] + '20', color: STATUT_COULEUR[tournoi.statut], border: `1px solid ${STATUT_COULEUR[tournoi.statut]}40`, borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 700, display: 'inline-block', marginBottom: '8px' }}>{STATUT_LABEL[tournoi.statut]}</span>
-              <h2 style={{ color: colors.text.primary, margin: '0 0 6px', fontSize: '19px', fontWeight: 900 }}>{tournoi.nom}</h2>
-              <div style={{ color: colors.text.faint, fontSize: '13px' }}>
-                {tournoi.date && new Date(tournoi.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {tournoi.lieu && ` · ${tournoi.lieu}`} · {tournoi.duree_match} min · {tournoi.nb_terrains} terrain{tournoi.nb_terrains > 1 ? 's' : ''}
+        {(() => {
+          // Étape suivante : guide l'organisateur dans l'ordre naturel
+          // (équipes → planning → résultats → phases finales).
+          const nbJoues = matchs.filter(m => m.statut === 'termine').length
+          const etape = equipes.length < 2
+            ? { texte: 'Ajoute au moins 2 équipes (ou partage le lien d\'inscription).', action: 'equipes', bouton: 'Ajouter les équipes' }
+            : matchs.length === 0
+              ? { texte: `${equipes.length} équipes prêtes : génère le planning des matchs.`, action: 'equipes', bouton: 'Générer le planning' }
+              : nbJoues < matchs.length
+                ? { texte: `${nbJoues}/${matchs.length} matchs joués : saisis les scores au fil de la journée.`, action: 'resultats', bouton: 'Saisir les scores' }
+                : { texte: 'Tous les matchs sont joués : consulte le classement et le palmarès.', action: 'classement', bouton: 'Voir le classement' }
+          const couleurStatut = STATUT_COULEUR[tournoi.statut] || colors.text.faint
+          const progression = matchs.length ? Math.round(nbJoues / matchs.length * 100) : 0
+          return (
+            <div style={{ ...st.card, margin: '14px 0 16px', padding: '18px 20px', borderLeft: `4px solid ${couleurStatut}` }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <PaveDateTournoi iso={tournoi.date} colors={colors} couleur={tournoi.statut === 'termine' ? null : couleurStatut} />
+                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                  <span style={{ background: couleurStatut + '1a', color: couleurStatut, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{STATUT_LABEL[tournoi.statut]}</span>
+                  <h2 style={{ color: colors.text.primary, margin: '6px 0 4px', fontSize: '20px', fontWeight: 800 }}>{tournoi.nom}</h2>
+                  <div style={{ color: colors.text.faint, fontSize: '13px' }}>
+                    {[tournoi.categorie_age, tournoi.lieu, `${equipes.length} équipe${equipes.length > 1 ? 's' : ''}`, `${tournoi.nb_terrains} terrain${tournoi.nb_terrains > 1 ? 's' : ''}`, `matchs de ${tournoi.duree_match} min`].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+                {matchs.length > 0 && (
+                  <div style={{ minWidth: '140px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: colors.text.faint, marginBottom: '5px' }}><span>Avancement</span><strong style={{ color: colors.text.primary }}>{nbJoues}/{matchs.length}</strong></div>
+                    <div style={{ height: '6px', borderRadius: '3px', background: colors.background.raised, overflow: 'hidden' }}><div style={{ width: `${progression}%`, height: '100%', background: colors.accent.green }} /></div>
+                  </div>
+                )}
               </div>
+              {!readOnly && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '14px', padding: '10px 12px', borderRadius: '10px', background: colors.accent.green + '10', border: `1px solid ${colors.accent.green}30` }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.accent.green }}>Étape suivante</span>
+                  <span style={{ flex: 1, minWidth: '180px', fontSize: '13px', color: colors.text.primary }}>{etape.texte}</span>
+                  <button onClick={() => { setOnglet(etape.action); if (etape.bouton === 'Générer le planning') genererPlanningAuto() }} style={{ ...st.btnSolid, padding: '7px 14px', fontSize: '12px' }}>{etape.bouton}</button>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          )
+        })()}
 
-        {lienPublic && (
-          <div style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-            <div>
-              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '2px' }}>Page publique · suivi en direct pour les parents</div>
-              <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{lienPublic.replace(/^https?:\/\//, '')}</div>
-            </div>
-            <button onClick={copierLien} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> {lienCopie ? 'Copié !' : 'Copier le lien'}</button>
+        {(lienPublic || lienInscription) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+            {[
+              lienPublic && { titre: 'Suivi en direct', desc: 'Pour les parents et le public', url: lienPublic, copie: lienCopie, copier: copierLien },
+              lienInscription && { titre: 'Inscription des équipes', desc: 'À envoyer aux clubs invités', url: lienInscription, copie: lienInscriptionCopie, copier: copierLienInscription },
+            ].filter(Boolean).map(l => (
+              <div key={l.titre} style={{ ...st.card, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{l.titre} <span style={{ fontWeight: 500, color: colors.text.faint, fontSize: '12px' }}>· {l.desc}</span></p>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.accent.green, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.url.replace(/^https?:\/\//, '')}</p>
+                </div>
+                <button onClick={l.copier} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', fontSize: '12px', flexShrink: 0, color: l.copie ? colors.accent.green : colors.text.secondary }}><IcoLink /> {l.copie ? 'Copié' : 'Copier'}</button>
+              </div>
+            ))}
           </div>
         )}
 
-        {lienInscription && (
-          <div style={{ ...st.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-            <div>
-              <div style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '2px' }}>Lien d'inscription · à partager aux équipes</div>
-              <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 600 }}>{lienInscription.replace(/^https?:\/\//, '')}</div>
-            </div>
-            <button onClick={copierLienInscription} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoLink /> {lienInscriptionCopie ? 'Copié !' : "Copier le lien d'inscription"}</button>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '2px', padding: '3px', marginBottom: '18px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, overflowX: 'auto', scrollbarWidth: 'none' }}>
           {onglets.map(o => (
             <button key={o.key} ref={el => (tourRefs.current[o.key] = el)} onClick={() => setOnglet(o.key)}
-              style={{ padding: '8px 16px', borderRadius: '20px', border: onglet === o.key ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: onglet === o.key ? colors.accent.green + '15' : 'transparent', color: onglet === o.key ? colors.accent.green : colors.text.faint, fontWeight: onglet === o.key ? 700 : 400, fontSize: '13px', cursor: 'pointer' }}>
+              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: '8px', border: 'none', background: onglet === o.key ? colors.background.raised : 'transparent', color: onglet === o.key ? colors.text.primary : colors.text.faint, fontWeight: onglet === o.key ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
               {o.label}
             </button>
           ))}
@@ -1000,8 +1037,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               )
             })()}
             {!readOnly && (
-              <div style={{ ...st.card, marginBottom: '16px' }}>
-                <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>Ajouter une équipe</div>
+              <div style={{ ...st.card, marginBottom: '16px', padding: '14px 16px' }}>
+                <div style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '12px' }}>Ajouter une équipe</div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <input style={{ ...st.input, flex: 2, minWidth: '140px' }} placeholder="Nom de l'équipe *" value={nouvelleEquipe.nom}
                     onChange={e => setNouvelleEquipe(p => ({ ...p, nom: e.target.value }))} onKeyDown={e => e.key === 'Enter' && ajouterEquipe()} />
@@ -1021,24 +1058,34 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             )}
 
             {poules.length === 0 ? (
-              <div style={{ color: colors.text.disabled, textAlign: 'center', padding: '30px' }}>Aucune équipe ajoutée</div>
-            ) : poules.map(poule => (
-              <div key={poule} style={{ ...st.card, marginBottom: '12px' }}>
-                <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>Poule {poule} · {equipes.filter(e => e.poule === poule).length} équipes</div>
-                {equipes.filter(e => e.poule === poule).map(eq => (
-                  <div key={eq.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
-                    <div>
-                      <span style={{ color: colors.text.primary, fontWeight: 600 }}>{eq.nom}</span>
-                      {eq.club && <span style={{ color: colors.text.disabled, fontSize: '12px', marginLeft: '10px' }}>{eq.club}</span>}
-                      {eq.est_hote && <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700, marginLeft: '10px' }}>🏠 Hôte</span>}
+              <div style={{ ...st.card, color: colors.text.faint, textAlign: 'center', padding: '30px', fontSize: '13px' }}>Aucune équipe pour l'instant — ajoute-les ci-dessus ou partage le lien d'inscription.</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {poules.map(poule => {
+                  const eqs = equipes.filter(e => e.poule === poule)
+                  return (
+                    <div key={poule} style={{ ...st.card, padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>Poule {poule}</span>
+                        <span style={{ fontSize: '11px', color: colors.text.faint }}>{eqs.length} équipe{eqs.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {eqs.map(eq => (
+                          <div key={eq.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', background: colors.background.base, border: `1px solid ${colors.border.faint}` }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.nom}</p>
+                              {eq.club && <p style={{ margin: '1px 0 0', color: colors.text.faint, fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.club}</p>}
+                            </div>
+                            {eq.est_hote && <span style={{ background: colors.accent.blue + '1a', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>Hôte</span>}
+                            {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} title="Retirer" style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '2px', display: 'flex', flexShrink: 0 }}><IcoX /></button>}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-            ))}
+            )}
 
             {!readOnly && equipes.length >= 2 && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
