@@ -3230,6 +3230,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         nb_joueurs: current.nb_joueurs || p.nb_joueurs || current.nb_joueurs,
         schema_png: current.schema_png || p.schema_png || current.schema_png,
         schema_data: current.schema_data || p.schema_data || current.schema_data,
+        // Gabarit BEF/DEF (fiche.mode_diplome) : ses blocs affichent leurs
+        // propres champs (but_bef, consignes_bef, variantes_bef, surface) et
+        // non but/consignes/variables/organisation — sans ces lignes, un
+        // procédé importé dans une fiche BEF semblait ne rien importer.
+        but_bef: current.but_bef || p.but || p.theme || '',
+        consignes_bef: current.consignes_bef || p.consignes || '',
+        variantes_bef: current.variantes_bef || p.variables || '',
+        surface: current.surface || p.description || '',
       }
       const newProcedes = [...prev.procedes]
       newProcedes[index] = merged
@@ -3254,6 +3262,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     nb_joueurs: p.nb_joueurs || '',
     schema_png: p.schema_png || '',
     schema_data: p.schema_data || null,
+    // Mêmes champs côté gabarit BEF, si la fiche bascule ensuite en mode BEF.
+    but_bef: p.but || p.theme || '',
+    consignes_bef: p.consignes || '',
+    variantes_bef: p.variables || '',
+    surface: p.description || '',
   })
 
   const demarrerFicheDepuisProcedes = async (procedesListe) => {
