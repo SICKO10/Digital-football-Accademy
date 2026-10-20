@@ -2029,7 +2029,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data, error } = await supabase
       .from('club_educateurs')
-      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
+      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, couleur_principale, image_fond_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -7735,7 +7735,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               // une donnée partagée avec le club, pas de club_id nécessaire") —
               // accessible que le coach soit affilié à un club ou non, club_id
               // reste optionnel côté CauserieAvantMatch.
-              <Suspense fallback={<SectionLoader />}><CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} nomClub={clubAffiliation?.club?.club || profil?.club || ''} logoClub={clubAffiliation?.club?.avatar_url || null} logoAdversaire={logoAdversaire} /></Suspense>
+              <Suspense fallback={<SectionLoader />}><CauserieAvantMatch userId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} equipeNom={[profilEdu?.club, profilEdu?.categorie].filter(Boolean).join(' ')} joueurs={joueurs} nomClub={clubAffiliation?.club?.club || profil?.club || ''} logoClub={clubAffiliation?.club?.avatar_url || null} couleurClub={clubAffiliation?.club?.couleur_principale || null} photoClub={clubAffiliation?.club?.image_fond_url || null} logoAdversaire={logoAdversaire} /></Suspense>
             )}
 
             {/* ── Résultats ── */}

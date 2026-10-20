@@ -151,7 +151,36 @@ const PALETTES_PRESENTATION = {
   },
 }
 
-function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
+// Couleur principale du club utilisable comme accent seulement si elle reste
+// lisible sur le fond du thème (un club en noir sur la présentation sombre,
+// ou en blanc sur la claire, disparaîtrait) — sinon le vert historique.
+function couleurLisible(hex, theme) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '')
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 })
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return (theme === 'sombre' ? lum > 0.12 : lum < 0.5) ? `#${m[1]}` : null
+}
+
+// Fond de la zone des slides : photo du club (Thème du club > image de fond)
+// sous un voile du thème — plus léger sur l'intro, plus couvrant sur les
+// slides de contenu pour garder le texte et les schémas lisibles — ou, sans
+// photo, un halo discret de la couleur du club. Posé sur la zone capturée
+// par html2canvas pour qu'il se retrouve aussi dans le PDF.
+function fondPresentation(pal, theme, photo, accent, intro) {
+  const voile = theme === 'sombre' ? '5,5,5' : '248,250,252'
+  const halo = `radial-gradient(circle at 12% 0%, ${accent}2e, transparent 55%)`
+  if (!photo) return { background: `${halo}, ${pal.fond}` }
+  const [haut, bas] = intro ? [0.5, 0.82] : [0.86, 0.93]
+  return {
+    backgroundColor: pal.fond,
+    backgroundImage: `${halo}, linear-gradient(180deg, rgba(${voile},${haut}) 0%, rgba(${voile},${bas}) 100%), url("${photo}")`,
+    backgroundSize: 'cover', backgroundPosition: 'center',
+  }
+}
+
+function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdversaire, couleurClub, photoClub, onFermer }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('causerie_presentation_theme') || 'sombre')
   const pal = PALETTES_PRESENTATION[theme]
   const changerTheme = () => {
@@ -159,8 +188,14 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
     setTheme(suivant)
     localStorage.setItem('causerie_presentation_theme', suivant)
   }
+  const [avecPhoto, setAvecPhoto] = useState(() => localStorage.getItem('causerie_presentation_photo') !== 'non')
+  const basculerPhoto = () => {
+    setAvecPhoto(v => !v)
+    localStorage.setItem('causerie_presentation_photo', avecPhoto ? 'non' : 'oui')
+  }
+  const accentClub = couleurLisible(couleurClub, theme) || '#4ade80'
 
-  const slides = [{ titre: 'NOTRE OBJECTIF', accent: '#4ade80', type: 'intro' }]
+  const slides = [{ titre: 'NOTRE OBJECTIF', accent: accentClub, type: 'intro' }]
   // Juste après l'intro (2e slide) si un classement a été renseigné, puis la
   // composition juste après (3e) — absentes si rien n'a été renseigné/assigné,
   // comme les autres slides conditionnelles de cette présentation.
@@ -168,7 +203,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
     slides.push({ titre: 'ADVERSAIRE', accent: '#f87171', type: 'adversaire' })
   }
   if ((f.titulaires || []).some(Boolean)) {
-    slides.push({ titre: 'COMPOSITION', accent: '#4ade80', type: 'composition' })
+    slides.push({ titre: 'COMPOSITION', accent: accentClub, type: 'composition' })
   }
   const ajouterListe = (titre, accent, icone, valeurs) => {
     const items = (valeurs || []).filter(Boolean)
@@ -289,10 +324,15 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   const maxWidthSchema = (ratio, defaut) => isLandscapeCourt ? `min(90vw, calc((100dvh - 150px) * ${ratio}))` : defaut
 
   return createPortal(
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: pal.fond, zIndex: 9999, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px', flexShrink: 0 }}>
-        <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700 }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: pal.fond, zIndex: 9999, fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, display: 'flex', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px' }}>
         <div style={{ display: 'flex', gap: isLandscapeCourt ? '6px' : '10px' }}>
+          {photoClub && (
+            <button onClick={basculerPhoto} title="Afficher ou masquer la photo du club en fond" aria-pressed={avecPhoto}
+              style={{ background: avecPhoto ? accentClub + '22' : 'none', border: `1px solid ${avecPhoto ? accentClub + '88' : pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Photo club
+            </button>
+          )}
           <button onClick={telechargerPresentation} disabled={exportEnCours} title="Télécharger en PDF (pour présenter sans connexion)"
             style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: exportEnCours ? 'default' : 'pointer', opacity: exportEnCours ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
             {exportEnCours ? '⏳ Génération…' : '⬇ Télécharger'}
@@ -304,11 +344,24 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         </div>
       </div>
 
-      <div ref={contenuRef} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isLandscapeCourt ? '6px 24px' : '20px 60px', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: pal.fond }}>
+      {/* Zone capturée pour le PDF : plein écran (fond photo bord à bord), les
+          barres du haut et du bas flottent par-dessus — d'où les marges
+          haute/basse qui leur laissent la place. L'écusson et l'affiche du
+          match sont dedans pour se retrouver sur chaque page du PDF. */}
+      <div ref={contenuRef} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isLandscapeCourt ? '52px 24px 50px' : '96px 60px 96px', boxSizing: 'border-box', textAlign: 'center', overflowY: 'auto', WebkitOverflowScrolling: 'touch', ...fondPresentation(pal, theme, avecPhoto ? photoClub : null, accentClub, slide.type === 'intro') }}>
+        <div style={{ position: 'absolute', top: isLandscapeCourt ? '12px' : '26px', left: isLandscapeCourt ? '20px' : '40px', display: 'flex', alignItems: 'center', gap: isLandscapeCourt ? '8px' : '12px', maxWidth: '45%' }}>
+          <EcussonClub nom={equipeNom || 'Nous'} logo={logoClub} taille={isLandscapeCourt ? 24 : 36} />
+          <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
+        </div>
         <p style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 32px', color: slide.accent, fontSize: isLandscapeCourt ? '13px' : '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
 
         {slide.type === 'intro' && (
           <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isLandscapeCourt ? '20px' : '40px', margin: isLandscapeCourt ? '0 0 10px' : '0 0 28px' }}>
+              <EcussonClub nom={equipeNom || 'Nous'} logo={logoClub} taille={isLandscapeCourt ? 56 : 120} />
+              <span style={{ color: pal.texteFaint, fontSize: isLandscapeCourt ? '16px' : '26px', fontWeight: 900, letterSpacing: '2px' }}>VS</span>
+              <EcussonClub nom={f.adversaire} logo={logoAdversaire} taille={isLandscapeCourt ? 56 : 120} />
+            </div>
             <h1 style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 24px', color: pal.texteFort, fontSize: isLandscapeCourt ? 'clamp(20px, 4.5vh, 40px)' : 'clamp(32px, 5vw, 64px)', fontWeight: 900 }}>{equipeNom || 'Nous'} <span style={{ color: slide.accent }}>vs</span> {f.adversaire}</h1>
             {f.objectifs ? <p style={{ color: pal.texteDoux, fontSize: isLandscapeCourt ? 'clamp(13px, 2.6vh, 22px)' : 'clamp(18px, 2.4vw, 28px)', lineHeight: 1.5, maxWidth: '900px' }}>{f.objectifs}</p> : <p style={{ color: pal.texteGhost }}>—</p>}
           </>
@@ -345,7 +398,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         {slide.type === 'adversaire' && (
           <div style={{ display: 'flex', gap: isLandscapeCourt ? '28px' : '64px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
-              { nom: equipeNom || 'Nous', rang: f.notre_classement, pts: f.notre_points, color: '#4ade80' },
+              { nom: equipeNom || 'Nous', rang: f.notre_classement, pts: f.notre_points, color: accentClub },
               { nom: f.adversaire, rang: f.adversaire_classement, pts: f.adversaire_points, color: slide.accent },
             ].map((e, i) => (
               <div key={i}>
@@ -362,7 +415,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isLandscapeCourt ? '10px' : '16px', padding: isLandscapeCourt ? '8px 20px' : '24px 40px', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isLandscapeCourt ? '10px' : '16px', padding: isLandscapeCourt ? '8px 20px' : '24px 40px' }}>
         <button onClick={() => setSlideIdx(i => Math.max(i - 1, 0))} disabled={idx === 0} style={{ ...navBtn, opacity: idx === 0 ? 0.3 : 1 }}>‹</button>
         <div style={{ display: 'flex', gap: '6px' }}>
           {slides.map((s, i) => (
@@ -377,7 +430,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, onFermer }) {
   )
 }
 
-export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [], nomClub, logoClub = null, logoAdversaire = () => null }) {
+export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [], nomClub, logoClub = null, couleurClub = null, photoClub = null, logoAdversaire = () => null }) {
   const colors = useColors()
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
@@ -1301,7 +1354,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         }
       `}</style>
 
-      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} tactipadsDispo={tactipadsDispo} onFermer={() => setPresentationOuverte(false)} />}
+      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} tactipadsDispo={tactipadsDispo} logoClub={logoClub} logoAdversaire={logoAdversaire(f.adversaire)} couleurClub={couleurClub} photoClub={photoClub} onFermer={() => setPresentationOuverte(false)} />}
     </div>
   )
 }
