@@ -311,7 +311,7 @@ function AcceptInvite() {
           disabled={loading}
           style={{ width: '100%', background: colors.accent.green, color: colors.background.base, border: 'none', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
         >
-          {loading ? t('invite_creation_compte_cours', lang) : previewB?.role === 'joueur' ? t('invite_rejoindre_equipe', lang) : previewB?.role === 'parent' ? t('invite_acceder_profil', lang) : previewB?.role === 'club' ? t('invite_acceder_espace_club', lang) : t('invite_rejoindre_dirigeant', lang)}
+          {loading ? t('invite_creation_compte_cours', lang) : previewB?.role === 'joueur' ? t('invite_rejoindre_equipe', lang) : previewB?.role === 'parent' ? t('invite_acceder_profil', lang) : previewB?.role === 'club' ? t('invite_acceder_espace_club', lang) : previewB?.role === 'educateur' ? t('invite_rejoindre_educateur', lang) : t('invite_rejoindre_dirigeant', lang)}
         </button>
       </>
     )

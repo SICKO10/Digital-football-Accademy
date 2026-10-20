@@ -1084,6 +1084,7 @@ export const T = {
   invite_6_car_min:            { fr: '6 caractères minimum',     en: 'Minimum 6 characters',   pt: 'Mínimo de 6 caracteres', es: 'Mínimo 6 caracteres',    it: 'Minimo 6 caratteri',    de: 'Mindestens 6 Zeichen' },
   invite_creation_compte_cours: { fr: 'Création du compte...',   en: 'Creating account...',    pt: 'A criar a conta...',    es: 'Creando la cuenta...',   it: "Creazione dell'account...", de: 'Konto wird erstellt...' },
   invite_rejoindre_equipe:     { fr: "Rejoindre l'équipe",       en: 'Join the team',          pt: 'Juntar-me à equipa',    es: 'Unirse al equipo',       it: 'Unisciti alla squadra', de: 'Team beitreten'       },
+  invite_rejoindre_educateur:  { fr: 'Rejoindre en tant qu’éducateur', en: 'Join as a coach', pt: 'Juntar-me como treinador', es: 'Unirse como entrenador', it: 'Unisciti come allenatore', de: 'Als Trainer beitreten' },
   invite_rejoindre_dirigeant:  { fr: 'Rejoindre en tant que dirigeant', en: 'Join as a director', pt: 'Juntar-me como dirigente', es: 'Unirse como directivo', it: 'Unisciti come dirigente', de: 'Als Vorstand beitreten' },
   invite_acceder_profil:       { fr: 'Accéder au profil',        en: 'Access the profile',     pt: 'Aceder ao perfil',      es: 'Acceder al perfil',      it: 'Accedi al profilo',     de: 'Zum Profil'           },
   invite_verification_en_cours: { fr: 'Vérification en cours...', en: 'Verifying...',          pt: 'A verificar...',        es: 'Verificando...',         it: 'Verifica in corso...',  de: 'Wird überprüft...'    },
