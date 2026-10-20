@@ -478,11 +478,18 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
 }
 
 // ── Camembert multi-segment (présence / absence / blessure / maladie / convoc) ─
-function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 }) {
+// person (optionnel) : la photo du joueur (ou ses initiales) prend le centre
+// de l'anneau et le taux passe dans une pastille à cheval sur le bas.
+function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72, person = null }) {
   const colors = useColors()
   const total = (presents || 0) + (absents || 0) + (blesses || 0) + (malade || 0) + (convoque || 0)
   const taux = total ? Math.round(((presents || 0) + (convoque || 0)) / total * 100) : 0
   const color = taux >= 80 ? colors.accent.green : taux >= 50 ? '#f59e0b' : '#f87171'
+  if (!total && person) return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, opacity: 0.6 }}>
+      <Avatar person={person} size={size} bg={colors.background.raised} border={`${size * 0.09}px solid ${colors.background.raised}`} textColor={colors.text.secondary} />
+    </div>
+  )
   if (!total) return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
@@ -502,9 +509,18 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72 })
         width: size, height: size, borderRadius: '50%',
         background: `conic-gradient(#4ade80 0% ${p}%, #60a5fa ${p}% ${pEnd}%, #ef4444 ${pEnd}% ${aEnd}%, #f97316 ${aEnd}% ${bEnd}%, #a855f7 ${bEnd}% 100%)`
       }} />
-      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-        <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
-      </div>
+      {person ? (
+        <>
+          <div style={{ position: 'absolute', inset: `${size * 0.09}px`, borderRadius: '50%', background: colors.background.base, padding: '2px', boxSizing: 'border-box' }}>
+            <Avatar person={person} size={size * 0.82 - 4} bg={colors.background.raised} border="none" textColor={colors.text.secondary} />
+          </div>
+          <span style={{ position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)', padding: '1px 6px', borderRadius: '8px', background: colors.background.base, border: `1px solid ${color}`, fontSize: '10px', fontWeight: 800, color, lineHeight: 1.3, fontFamily: 'Inter,sans-serif', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{taux}%</span>
+        </>
+      ) : (
+        <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+          <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -7295,7 +7311,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 return (
                                   <div key={j.id} style={{ ...st.card, margin: 0, padding: '14px 16px', borderLeft: `3px solid ${groupe.color}` }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                      <DonutMulti presents={tx?.presents || 0} absents={tx?.absents || 0} blesses={tx?.blesses || 0} malade={tx?.malade || 0} convoque={tx?.convoque || 0} size={60} />
+                                      <DonutMulti presents={tx?.presents || 0} absents={tx?.absents || 0} blesses={tx?.blesses || 0} malade={tx?.malade || 0} convoque={tx?.convoque || 0} size={64} person={j} />
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
                                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
