@@ -101,7 +101,7 @@ const getEducateurOnboardingSteps = (email) => [
   {
     id: 2,
     title: "Mon Équipe",
-    message: "Gère ton effectif, ajoute des joueurs, invite-les à rejoindre leur compte avec un code.",
+    message: "Ta première action : enregistre ton effectif à l'aide de l'email de tes joueurs.",
     targetId: "nav-equipe",
     position: "bottom",
   },
@@ -122,8 +122,8 @@ const getEducateurOnboardingSteps = (email) => [
   {
     id: 5,
     title: "Mes séances",
-    message: "Rédige tes fiches de séance, scanne-les si tu les as sur papier, et archive-les pour les réutiliser.",
-    targetId: "nav-mes_seances",
+    message: "Dans Création entraînement, rédige tes fiches de séance, scanne-les si tu les as sur papier, et archive-les pour les réutiliser.",
+    targetId: "nav-entrainements",
     position: "bottom",
   },
   {
@@ -136,15 +136,15 @@ const getEducateurOnboardingSteps = (email) => [
   {
     id: 7,
     title: "Analyse rapport",
-    message: "Envoie et suis les analyses vidéo demandées pour tes joueurs.",
-    targetId: "nav-analyse_video",
+    message: "Dans Rapports & Évaluations, envoie et suis les analyses vidéo demandées pour tes joueurs.",
+    targetId: "nav-suivi",
     position: "bottom",
   },
   {
     id: 8,
     title: "Évaluations",
-    message: "Note chacun de tes joueurs sur des critères clés, saison après saison.",
-    targetId: "nav-notes",
+    message: "Toujours dans Rapports & Évaluations, note chacun de tes joueurs sur des critères clés, saison après saison.",
+    targetId: "nav-suivi",
     position: "bottom",
   },
   ...(recrutementActif(email) ? [{
@@ -157,8 +157,8 @@ const getEducateurOnboardingSteps = (email) => [
   {
     id: 10,
     title: "Déplacements",
-    message: "Organise les trajets pour les matchs à l'extérieur et répartis les joueurs dans les mini-bus.",
-    targetId: "nav-deplacements",
+    message: "Dans Organisation, organise les trajets pour les matchs à l'extérieur et répartis les joueurs dans les mini-bus.",
+    targetId: "nav-organisation",
     position: "bottom",
   },
   {
@@ -170,6 +170,13 @@ const getEducateurOnboardingSteps = (email) => [
   },
   {
     id: 12,
+    title: "Ajoute tes dirigeants",
+    message: "Dans Explorer → Dirigeants, invite tes dirigeants par email et choisis ce qu'ils peuvent voir et modifier.",
+    targetId: "nav-explorer",
+    position: "bottom",
+  },
+  {
+    id: 13,
     title: "C'est parti ! 🚀",
     message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.",
     targetId: null,
