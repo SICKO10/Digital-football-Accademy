@@ -136,12 +136,40 @@ function VisuelApercuImport() {
   )
 }
 
+// Bloc d'invitation en bas de la carte d'un joueur (cf. blocInvitationJoueur
+// dans DashboardEducateur) : champ email + « Inviter », puis les deux statuts.
+function VisuelInvitation() {
+  const colors = useColors()
+  const statut = (couleur, texte) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, color: couleur, background: couleur + '1a', padding: '3px 9px', borderRadius: '6px' }}>
+      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: couleur }} />{texte}
+    </span>
+  )
+  return (
+    <div style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ borderRadius: '12px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, padding: '12px' }}>
+        <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>Lucas Martin</p>
+        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>Milieu central · n° 8</p>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '10px', paddingTop: '8px', borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div style={{ flex: 1, minWidth: 0, padding: '5px 9px', borderRadius: '6px', border: `1px solid ${colors.accent.blue}`, background: colors.background.base, fontSize: '11px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>lucas.martin@gmail.com</div>
+          <Bouton plein couleur={colors.accent.blue} actif>Inviter</Bouton>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {statut(colors.accent.amber, 'Invitation envoyée')}
+        <Fleche />
+        {statut(colors.accent.green, 'Compte lié')}
+      </div>
+    </div>
+  )
+}
+
 export function TutorielEquipe({ onFermer }) {
   const colors = useColors()
   const etapes = [
     {
       titre: 'Ton équipe est créée, ajoute tes joueurs',
-      texte: "Deux façons de remplir ton effectif : les ajouter un par un, ou tous d'un coup à partir d'un fichier Excel ou CSV. Tu peux combiner les deux.",
+      texte: "Deux façons de remplir ton effectif : les ajouter un par un, ou tous d'un coup à partir d'un fichier Excel ou CSV. Tu peux combiner les deux. Ensuite, invite chaque joueur par email.",
       visuel: <VisuelDeuxFacons />,
     },
     {
@@ -174,6 +202,17 @@ export function TutorielEquipe({ onFermer }) {
         'Tu pourras ensuite modifier chaque joueur (photo, poste...) depuis sa fiche.',
       ],
       visuel: <VisuelApercuImport />,
+    },
+    {
+      titre: 'Invite tes joueurs par email',
+      texte: "Une fois tes joueurs ajoutés, invite-les à créer leur compte : c'est ce qui les relie à ton équipe (sondages de présence, ressentis de séance, stats).",
+      points: [
+        'Sur la carte du joueur (ou dans son profil), saisis son email dans le champ « Email du joueur... ».',
+        'Clique sur « Inviter » : il reçoit un email pour créer son compte.',
+        "La carte affiche « Invitation envoyée », puis « Compte lié » dès qu'il a accepté.",
+      ],
+      astuce: "Pas de mail reçu ? Utilise « Renvoyer » sur la carte, ou « Corriger l'email » en cas de faute de frappe.",
+      visuel: <VisuelInvitation />,
     },
   ]
   return <TutorielModal titre="Mon équipe" etapes={etapes} accent={colors.accent.green} onFermer={onFermer} />
