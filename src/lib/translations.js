@@ -653,7 +653,7 @@ export const T = {
   stats_tab_graphiques:     { fr: 'Graphiques',     en: 'Charts',         pt: 'Gráficos',       es: 'Gráficos',       it: 'Grafici',        de: 'Diagramme'      },
   stats_tab_presences:      { fr: 'Présences',      en: 'Attendance',     pt: 'Presenças',      es: 'Presencias',     it: 'Presenze',       de: 'Anwesenheit'    },
   stats_tab_mois:           { fr: 'Pts Séance',     en: 'Session Pts',    pt: 'Pts Sessão',     es: 'Pts Sesión',     it: 'Pts Seduta',     de: 'Einheit-Pkt.'   },
-  stats_tab_notes:          { fr: 'Ressenti joueurs',  en: 'Player feedback', pt: 'Feedback jogadores', es: 'Feedback jugadores', it: 'Feedback giocatori', de: 'Spieler-Feedback' },
+  stats_tab_notes:          { fr: 'Ressenti RPE',  en: 'RPE feedback', pt: 'Feedback RPE', es: 'Feedback RPE', it: 'Feedback RPE', de: 'RPE-Feedback' },
 
   // ── Stats joueurs — filtres classement ───────────────────────────────────────
   stats_filtre_buteurs:     { fr: 'Buteurs',     en: 'Scorers',     pt: 'Goleadores',  es: 'Goleadores',  it: 'Goleador',    de: 'Torschützen' },

@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar'
 import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
 import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, TutorielResultats } from '../components/tutoriels/TutorielsEducateur'
 import { tutorielDejaVu, marquerTutorielVu } from '../lib/tutoriels'
+import { ZONES_RPE, DEFINITION_RPE, zoneRpe, rpeDeReponse } from '../lib/rpe'
 import Tactipad from '../components/Tactipad'
 import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
@@ -7674,16 +7675,47 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ─ Notes de séance (ressenti joueurs) ─ */}
             {statsSubTab === 'notes' && (() => {
               const demandesTriees = Object.values(demandesNote).sort((a, b) => (b.date_seance || '').localeCompare(a.date_seance || ''))
+              // Légende de l'échelle RPE (cf. lib/rpe) — repliable, ouverte
+              // tant que l'éducateur n'a encore aucune demande de ressenti.
+              const legendeRpe = (
+                <details open={demandesTriees.length === 0} style={{ ...st.card, margin: '0 0 12px', padding: '14px 18px' }}>
+                  <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', listStyle: 'none' }}>
+                    <span>
+                      <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Échelle RPE · effort perçu</span>
+                      <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{DEFINITION_RPE}</span>
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.blue, whiteSpace: 'nowrap' }}>Légende</span>
+                  </summary>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: '12px' }}>
+                    {ZONES_RPE.map(z => {
+                      const c = colors.accent[z.couleur]
+                      return (
+                        <div key={z.min} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', background: c + '12', border: `1px solid ${c}33` }}>
+                          <span style={{ minWidth: '42px', padding: '4px 0', textAlign: 'center', borderRadius: '7px', background: c, color: colors.black, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{z.min === z.max ? z.min : `${z.min}-${z.max}`}</span>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: colors.text.primary }}>{z.label}</span>
+                            {z.exemple && <span style={{ display: 'block', fontSize: '11px', color: colors.text.faint }}>{z.exemple}</span>}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p style={{ margin: '10px 0 0', fontSize: '11px', color: colors.text.faint }}>Le plaisir reste noté de 1 à 5. Les réponses données avant le passage au RPE (charge de travail sur 5) sont converties sur 10 et marquées « ≈ ».</p>
+                </details>
+              )
               if (demandesTriees.length === 0) {
                 return (
+                  <>
+                  {legendeRpe}
                   <div style={{ ...st.card, textAlign: 'center', padding: '40px 20px' }}>
                     <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>Aucune demande de ressenti envoyée</p>
-                    <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Demande le ressenti depuis une séance, dans l'onglet Entraînements.</p>
+                    <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Demande le ressenti RPE depuis une séance, dans l'onglet Entraînements.</p>
                   </div>
+                  </>
                 )
               }
               // Pas de colonne "humeur" en base (seances_notes_joueurs n'a que
-              // charge_travail/notion_plaisir/mots_cles) — dérivée du plaisir,
+              // rpe (ou charge_travail avant le RPE)/notion_plaisir/mots_cles) — dérivée du plaisir,
               // nuancée à la baisse quand la séance était à la fois dure et peu
               // appréciée (charge haute + plaisir moyen/bas), plutôt qu'une
               // simple redite du chiffre déjà affiché dans la colonne Plaisir.
@@ -7694,10 +7726,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 { label: 'Difficile', color: colors.accent.red },
               ]
               const ressenti = (r) => {
-                const score = r.notion_plaisir - (r.charge_travail >= 4 && r.notion_plaisir <= 3 ? 1 : 0)
+                const score = r.notion_plaisir - ((rpeDeReponse(r)?.valeur ?? 0) >= 8 && r.notion_plaisir <= 3 ? 1 : 0)
                 return NIVEAUX_RESSENTI[score >= 4 ? 0 : score >= 3 ? 1 : score >= 2 ? 2 : 3]
               }
-              const couleurCharge = (v) => v >= 4 ? colors.accent.red : v >= 3 ? colors.accent.amber : colors.accent.green
+              const couleurRpe = (v) => colors.accent[zoneRpe(v)?.couleur] || colors.text.faint
+              // RPE d'une réponse : jauge sur 10 colorée selon la zone de
+              // l'échelle, « ≈ » si convertie depuis l'ancienne charge sur 5.
+              const jaugeRpe = (r) => {
+                const rp = rpeDeReponse(r)
+                if (!rp) return <span style={{ color: colors.text.ghost, fontSize: '12px' }}>—</span>
+                const c = couleurRpe(rp.valeur)
+                return (
+                  <div title={rp.estime ? 'Converti depuis l’ancienne charge de travail sur 5' : zoneRpe(rp.valeur)?.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      {Array.from({ length: 10 }, (_, k) => <span key={k} style={{ width: '5px', height: '6px', borderRadius: '2px', background: k < rp.valeur ? c : colors.background.base }} />)}
+                    </div>
+                    <span style={{ color: c, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{rp.estime ? '≈' : ''}{rp.valeur}</span>
+                  </div>
+                )
+              }
               const couleurPlaisir = (v) => v >= 4 ? colors.accent.green : v >= 3 ? colors.accent.amber : colors.accent.red
               const jauge = (val, color) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -7711,10 +7758,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const ouvertParDefaut = demandesTriees[0].id
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {legendeRpe}
                   {demandesTriees.map(d => {
                     const reponses = reponsesNote.filter(r => r.demande_id === d.id)
                     const moy = (cle) => reponses.length ? (reponses.reduce((acc, r) => acc + r[cle], 0) / reponses.length) : null
-                    const mCharge = moy('charge_travail'), mPlaisir = moy('notion_plaisir')
+                    const mPlaisir = moy('notion_plaisir')
+                    const rpes = reponses.map(rpeDeReponse).filter(Boolean)
+                    const mRpe = rpes.length ? rpes.reduce((acc, x) => acc + x.valeur, 0) / rpes.length : null
+                    const rpeEstime = rpes.some(x => x.estime)
                     const ouvert = ressentiOuverts[d.id] ?? d.id === ouvertParDefaut
                     const dateD = new Date(`${d.date_seance}T12:00:00`)
                     const repartition = NIVEAUX_RESSENTI.map(n => ({ ...n, nb: reponses.filter(r => ressenti(r).label === n.label).length }))
@@ -7742,9 +7793,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </div>
                           {!isMobile && reponses.length > 0 && (
                             <div style={{ display: 'flex', gap: '18px' }}>
-                              {[['Charge', mCharge, couleurCharge], ['Plaisir', mPlaisir, couleurPlaisir]].map(([lab, val, coul]) => (
+                              {[['RPE', mRpe, couleurRpe, 10, rpeEstime], ['Plaisir', mPlaisir, couleurPlaisir, 5, false]].filter(([, val]) => val != null).map(([lab, val, coul, sur, estime]) => (
                                 <div key={lab} style={{ textAlign: 'center' }}>
-                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1, color: coul(val), fontVariantNumeric: 'tabular-nums' }}>{val.toFixed(1)}<span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 600 }}>/5</span></p>
+                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1, color: coul(val), fontVariantNumeric: 'tabular-nums' }}>{estime ? '≈' : ''}{val.toFixed(1)}<span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 600 }}>/{sur}</span></p>
                                   <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>{lab}</p>
                                 </div>
                               ))}
@@ -7759,7 +7810,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           ) : isMobile ? (
                             <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
                               <div style={{ display: 'flex', gap: '18px', padding: '12px 14px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                <span style={{ fontSize: '12px', color: colors.text.faint }}>Charge moy. <strong style={{ color: couleurCharge(mCharge) }}>{mCharge.toFixed(1)}</strong></span>
+                                {mRpe != null && <span style={{ fontSize: '12px', color: colors.text.faint }}>RPE moy. <strong style={{ color: couleurRpe(mRpe) }}>{rpeEstime ? '≈' : ''}{mRpe.toFixed(1)}/10</strong></span>}
                                 <span style={{ fontSize: '12px', color: colors.text.faint }}>Plaisir moy. <strong style={{ color: couleurPlaisir(mPlaisir) }}>{mPlaisir.toFixed(1)}</strong></span>
                               </div>
                               {reponses.map(r => {
@@ -7773,7 +7824,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                     </div>
                                     {r.mots_cles && r.mots_cles.replace(/[\s./]/g, '') && <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary, fontStyle: 'italic' }}>« {r.mots_cles} »</p>}
                                     <div style={{ display: 'flex', gap: '18px' }}>
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>Charge {jauge(r.charge_travail, couleurCharge(r.charge_travail))}</span>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>RPE {jaugeRpe(r)}</span>
                                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>Plaisir {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}</span>
                                     </div>
                                   </div>
@@ -7783,7 +7834,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           ) : (
                             <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
                               <div style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '14px', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                {['Joueur', 'Thème retenu', 'Charge', 'Plaisir', 'Ressenti'].map(h => (
+                                {['Joueur', 'Thème retenu', 'RPE', 'Plaisir', 'Ressenti'].map(h => (
                                   <span key={h} style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{h}</span>
                                 ))}
                               </div>
@@ -7797,7 +7848,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                       <span style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
                                     </div>
                                     <span title={r.mots_cles || ''} style={{ color: motsUtiles ? colors.text.secondary : colors.text.ghost, fontSize: '12px', fontStyle: motsUtiles ? 'italic' : 'normal', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{motsUtiles ? r.mots_cles : '–'}</span>
-                                    {jauge(r.charge_travail, couleurCharge(r.charge_travail))}
+                                    {jaugeRpe(r)}
                                     {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}
                                     <span style={{ padding: '4px 8px', borderRadius: '6px', background: res.color + '1a', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}40`, textAlign: 'center' }}>{res.label}</span>
                                   </div>
@@ -9400,13 +9451,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           {canEdit('entrainements') && (
                             demandesNote[e.id] ? (
                               <span onClick={() => { if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
-                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti demandé — clique pour fermer' : 'Ressenti fermé'}
+                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti RPE demandé — clique pour fermer' : 'Ressenti RPE fermé'}
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '1a' : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '55' : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber : colors.text.disabled, padding: '5px 9px', borderRadius: '8px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'Ressenti en cours' : 'Ressenti fermé'}
+                                <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'RPE en cours' : 'RPE fermé'}
                               </span>
                             ) : (
                               <button onClick={() => demanderNoteSeance(e)} disabled={demandeNoteEnCours === e.id}
-                                title="Demander le ressenti aux joueurs sur cette séance" aria-label="Demander le ressenti"
+                                title="Demander le ressenti RPE aux joueurs sur cette séance" aria-label="Demander le ressenti RPE"
                                 style={btnIcone(colors.accent.amber)}>
                                 {demandeNoteEnCours === e.id ? '…' : <IcoEtoileTrait />}
                               </button>

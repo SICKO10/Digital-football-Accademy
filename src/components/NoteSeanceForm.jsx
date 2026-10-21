@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { zoneRpe } from '../lib/rpe'
 
 function StarPicker({ value, onChange, label, colors }) {
   return (
@@ -18,27 +19,62 @@ function StarPicker({ value, onChange, label, colors }) {
   )
 }
 
+// Échelle RPE 0 → 10 (cf. lib/rpe) : un bouton par note, coloré selon sa
+// zone, et la description de la zone choisie juste en dessous pour que le
+// joueur sache ce que représente sa note.
+function RpePicker({ value, onChange, colors }) {
+  const zone = zoneRpe(value)
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <div style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700, marginBottom: '2px' }}>RPE · effort perçu</div>
+      <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '10px', lineHeight: 1.4 }}>À quel point la séance t'a semblé difficile ? Fatigue musculaire, souffle et stress mental. Idéalement 30 minutes après la séance.</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, minmax(0, 1fr))', gap: '4px' }}>
+        {Array.from({ length: 11 }, (_, n) => {
+          const c = colors.accent[zoneRpe(n).couleur]
+          const actif = value === n
+          return (
+            <button key={n} type="button" onClick={() => onChange(n)} aria-label={`RPE ${n}`} aria-pressed={actif}
+              style={{ minWidth: 0, height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 800, fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums',
+                border: `1px solid ${actif ? c : c + '55'}`, background: actif ? c : c + '14', color: actif ? colors.black : c }}>
+              {n}
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ marginTop: '8px', minHeight: '32px', fontSize: '12px', lineHeight: 1.4 }}>
+        {zone ? (
+          <span style={{ color: colors.accent[zone.couleur], fontWeight: 700 }}>
+            {value} · {zone.label}{zone.exemple && <span style={{ color: colors.text.faint, fontWeight: 400 }}> ({zone.exemple})</span>}
+          </span>
+        ) : (
+          <span style={{ color: colors.text.disabled }}>0 = repos · 10 = effort maximal</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Formulaire de note de séance (joueur) — une demande = un entraînement,
 // un joueur ne peut répondre qu'une fois (UNIQUE(demande_id, joueur_id) +
 // RLS scopée à son éducateur affilié, cf. supabase_seances_notes.sql).
 export default function NoteSeanceForm({ demande, joueurId, onSubmit }) {
   const colors = useColors()
-  const [charge, setCharge] = useState(0)
+  const [rpe, setRpe] = useState(null)
   const [plaisir, setPlaisir] = useState(0)
   const [mots, setMots] = useState('')
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
 
-  const pret = charge > 0 && plaisir > 0 && mots.trim().length > 0
+  const pret = rpe != null && plaisir > 0 && mots.trim().length > 0
 
   async function soumettre() {
-    if (!charge || !plaisir) { setErreur('Donne une note sur les deux critères.'); return }
+    if (rpe == null || !plaisir) { setErreur('Donne ta note RPE et ta note de plaisir.'); return }
     if (!mots.trim()) { setErreur('Écris quelques mots pour résumer.'); return }
     setEnvoi(true)
     const { error } = await supabase.from('seances_notes_joueurs').insert({
       demande_id: demande.id,
       joueur_id: joueurId,
-      charge_travail: charge,
+      rpe,
       notion_plaisir: plaisir,
       mots_cles: mots.trim(),
     })
@@ -53,7 +89,7 @@ export default function NoteSeanceForm({ demande, joueurId, onSubmit }) {
         {new Date(`${demande.date_seance}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
       </div>
 
-      <StarPicker value={charge} onChange={setCharge} label="Charge de travail" colors={colors} />
+      <RpePicker value={rpe} onChange={v => { setRpe(v); setErreur('') }} colors={colors} />
       <StarPicker value={plaisir} onChange={setPlaisir} label="Notion de plaisir" colors={colors} />
 
       <div style={{ marginBottom: '16px' }}>
