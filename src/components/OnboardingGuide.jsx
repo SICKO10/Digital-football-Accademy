@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from "../lib/tutoriels";
 
 // ─── ÉTAPES DU GUIDE ────────────────────────────────────────────────────────
 // Étapes par défaut (dashboard joueur) — passe une prop `steps` personnalisée
@@ -247,21 +248,32 @@ const styles = {
 // accentColor : couleur du dashboard hôte (chaque Dashboard*.jsx la passe explicitement
 // selon son propre code couleur — Éducateur #60a5fa, Recruteur #f97316, Joueur/Club
 // #4ade80) — teinte l'anneau spotlight, la bulle d'aide et le bouton "Suivant".
-export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentColor = "#4ade80" }) {
+export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentColor = "#4ade80", rejouer = false }) {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightRect, setHighlightRect] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, side: "bottom" });
 
-  // Vérifie si l'utilisateur a déjà vu l'onboarding
+  // Ne s'ouvre seul qu'une fois par compte (cf. lib/tutoriels) ; ensuite
+  // seulement via « Revoir le guide » du ballon d'aide (rejouer).
+  // Id propre à l'espace (userId = clubId côté club) : un éducateur qui passe
+  // en Vue Club doit encore voir le guide du club.
+  const idTuto = `onboarding_${userId || "anon"}`;
+  const versionVus = useTutorielsVus();
   useEffect(() => {
-    const key = userId ? `onboarding_done_${userId}` : "onboarding_done";
-    const done = localStorage.getItem(key);
-    if (!done) {
-      // Petit délai pour laisser le dashboard se rendre
-      setTimeout(() => setVisible(true), 800);
+    let ancienFlag = false;
+    try { ancienFlag = !!localStorage.getItem(userId ? `onboarding_done_${userId}` : "onboarding_done"); } catch { /* navigation privée */ }
+    if (rejouer) {
+      // Le ballon d'aide efface l'ancien flag avant de relancer.
+      const timer = setTimeout(() => setVisible(true), 300);
+      return () => clearTimeout(timer);
     }
-  }, [userId]);
+    if (ancienFlag) { marquerTutorielVu(idTuto, userId); return; }
+    if (tutorielDejaVu(idTuto, userId)) return;
+    // Petit délai pour laisser le dashboard se rendre
+    const timer = setTimeout(() => setVisible(true), 800);
+    return () => clearTimeout(timer);
+  }, [userId, idTuto, rejouer, versionVus]);
 
   // Calcule la position du highlight à chaque changement d'étape. Une étape
   // peut cibler un seul élément (targetId) ou plusieurs à la fois (targetIds,
@@ -323,7 +335,8 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
 
   const handleClose = () => {
     const key = userId ? `onboarding_done_${userId}` : "onboarding_done";
-    localStorage.setItem(key, "true");
+    try { localStorage.setItem(key, "true"); } catch { /* navigation privée */ }
+    marquerTutorielVu(idTuto, userId);
     setVisible(false);
   };
 

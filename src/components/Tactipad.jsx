@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
 import BoutonTutoriel from './tutoriels/BoutonTutoriel'
+import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 
 const sv = (d, taille = 15) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 const IcoAnnuler = () => sv(<><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></>)
@@ -488,9 +489,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // ── Tutoriel interactif (première utilisation) ─────────────────────────────
   // Spotlight qui met en évidence chaque bouton réel de la toolbar (via
   // tourRefs + getBoundingClientRect, pas un simple carrousel d'icônes) — se
-  // déclenche seul au premier montage si jamais vu (localStorage par
-  // utilisateur), et reste accessible ensuite via le bouton « Tutoriel » (« ? » sur téléphone) de la
-  // barre du haut. -1 = fermé.
+  // déclenche seul une seule fois par compte, et reste accessible ensuite via
+  // le bouton « Tutoriel » (« ? » sur téléphone) de la barre du haut. -1 = fermé.
   const TOUR_STEPS = [
     { ref: 'select', titre: t('tac_tour_1_titre', lang), texte: t('tac_tour_1_texte', lang) },
     { ref: 'fleches', titre: t('tac_tour_3_titre', lang), texte: t('tac_tour_3_texte', lang) },
@@ -502,21 +502,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     { ref: 'actions', titre: t('tac_tour_9_titre', lang), texte: t('tac_tour_9_texte', lang) },
     { ref: 'sequences', titre: t('tac_tour_10_titre', lang), texte: t('tac_tour_10_texte', lang) },
   ]
+  // Ne s'ouvre seul qu'une fois par compte (cf. lib/tutoriels), ensuite
+  // seulement via le bouton Tutoriel. tactipad_tour_vu_* = ancien flag local.
   const tourKey = `tactipad_tour_vu_${userId || 'anon'}`
   const [tourEtape, setTourEtape] = useState(-1)
   const [tourRect, setTourRect] = useState(null)
   const tourRefs = useRef({})
-  const fermerTour = () => { setTourEtape(-1); try { localStorage.setItem(tourKey, '1') } catch { /* localStorage indisponible (navigation privée...) — tant pis, le tour réapparaîtra */ } }
+  const fermerTour = () => { setTourEtape(-1); marquerTutorielVu('tacticboard', userId) }
+  const versionTutosVus = useTutorielsVus()
   useEffect(() => {
-    let vu = false
-    try { vu = localStorage.getItem(tourKey) === '1' } catch { /* idem */ }
-    if (vu) return
+    let ancienFlag = false
+    try { ancienFlag = localStorage.getItem(tourKey) === '1' } catch { /* navigation privée */ }
+    if (ancienFlag) { marquerTutorielVu('tacticboard', userId); return }
+    if (tutorielDejaVu('tacticboard', userId)) return
     // Laisse le premier rendu (mesure du terrain, refs des boutons) se
     // stabiliser avant d'afficher le spotlight, sinon la 1ère position est fausse.
     const timer = setTimeout(() => setTourEtape(0), 400)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [versionTutosVus])
   useLayoutEffect(() => {
     if (tourEtape < 0) { setTourRect(null); return }
     const recalc = () => {

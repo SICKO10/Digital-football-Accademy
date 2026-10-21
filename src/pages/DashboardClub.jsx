@@ -3570,7 +3570,7 @@ export default function DashboardClub() {
 
   return (
     <div style={st.page}>
-      <OnboardingGuide key={onboardingKey} userId={clubId} steps={clubOnboardingSteps} accentColor={couleurPrincipale} />
+      <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={clubId} steps={clubOnboardingSteps} accentColor={couleurPrincipale} />
       <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} accentColor={couleurPrincipale} estAccueil={activeTab === 'accueil'} masque={showEvenementForm || showProjetForm} />
 
       <NotificationBanner userId={clubId} cibles={['tous', 'clubs']} />

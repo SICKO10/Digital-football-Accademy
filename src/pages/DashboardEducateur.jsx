@@ -6,7 +6,7 @@ import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
 import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, TutorielResultats } from '../components/tutoriels/TutorielsEducateur'
-import { tutorielDejaVu, marquerTutorielVu } from '../lib/tutoriels'
+import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { ZONES_RPE, DEFINITION_RPE, zoneRpe, rpeDeReponse } from '../lib/rpe'
 import Tactipad from '../components/Tactipad'
@@ -2479,6 +2479,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // plus bas, dérivé au rendu plutôt que posé par un effet). tutoMaj force
   // un nouveau rendu une fois le tutoriel marqué comme vu.
   const [tutoOuvert, setTutoOuvert] = useState(null)
+  useTutorielsVus()
   const [, setTutoMaj] = useState(0)
   const [equipeActiveId, setEquipeActiveId] = useState(() => {
     try { return localStorage.getItem('equipe_active_id') || null } catch { return null }
@@ -5891,7 +5892,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         if (tutoAffiche === 'resultats') return <TutorielResultats onFermer={fermer} />
         return <TutorielCompetition onFermer={fermer} />
       })()}
-      <OnboardingGuide key={onboardingKey} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
+      <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     </Suspense>
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>

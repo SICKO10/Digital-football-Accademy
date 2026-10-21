@@ -3388,7 +3388,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       `}</style>
 
       {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
-      <OnboardingGuide key={onboardingKey} userId={userId} accentColor={colors.accent.green} />
+      <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={userId} accentColor={colors.accent.green} />
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} estAccueil={onglet === 'accueil' || onglet === 'dashboard'} />
 
       {popupEquipementPret}
