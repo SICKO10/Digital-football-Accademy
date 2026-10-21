@@ -160,6 +160,59 @@ input[type="date"] {
   #fiche-print { display: block; }
 }
 
+/* ── Fiche séance officielle BMF (modèle FFF reproduit à l'identique) ───────
+   Cf. FicheBMFContenu.jsx. Une .bmf-page = une page A4 paysage exacte
+   (1500 × 1060 px, ratio 297/210 arrondi par défaut pour qu'une capture ne
+   déborde jamais d'un pixel sur une page PDF suivante). Hauteurs de cases
+   fixes, comme sur le document papier : le texte s'adapte (police réduite),
+   jamais la grille. */
+#fiche-print:has(.bmf-doc), .fiche-render:has(.bmf-doc) {
+  width: 1500px;
+  padding: 0;
+}
+.bmf-doc { width: 1500px; background: #fff; color: #000; font-family: Calibri, Carlito, Arial, sans-serif; }
+.bmf-page { width: 1500px; height: 1060px; padding: 28px 40px 0; box-sizing: border-box; background: #fff; overflow: hidden; page: bmf-paysage; }
+.bmf-page * { box-sizing: border-box; }
+.bmf-entete { display: flex; height: 93px; }
+.bmf-logo { width: 71px; flex-shrink: 0; border: 2px solid #8f8f8f; box-shadow: 1px 1px 2px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; padding: 6px; margin-right: 12px; }
+.bmf-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.bmf-table { display: grid; grid-template-columns: 111px 72px 121px 60px 89px 80px 90px 1fr; grid-template-rows: 1fr 1fr; width: 734px; flex-shrink: 0; border: 2px solid #333; }
+.bmf-cell { display: flex; align-items: center; justify-content: center; border-right: 1px solid #555; font-size: 13px; padding: 0 6px; overflow: hidden; text-align: center; line-height: 1.1; }
+.bmf-table .bmf-cell:nth-child(-n+4) { border-bottom: 1px solid #555; }
+.bmf-cell:last-child, .bmf-cell[style*="/ 9"] { border-right: none; }
+.bmf-cell-gauche { justify-content: flex-start; text-align: left; }
+.bmf-label { background: #f2f2f2; font-weight: 700; font-size: 14px; }
+.bmf-label-petit { font-size: 12px; }
+.bmf-cadre { flex: 1; margin-left: 17px; border: 2px solid #333; padding: 8px 12px; white-space: pre-wrap; overflow: hidden; line-height: 1.3; }
+.bmf-colonnes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 27px; margin-top: 23px; height: 864px; }
+.bmf-col { display: flex; flex-direction: column; border: 2px solid #333; min-height: 0; }
+.bmf-col-head { display: grid; grid-template-columns: 40px 117px 74px 71px 81px minmax(0, 1fr); height: 29px; flex-shrink: 0; border-bottom: 2px solid #333; }
+.bmf-num { background: #1b2f8e; color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.bmf-col-cell { border-right: 1px solid #555; overflow: hidden; display: flex; align-items: center; padding: 0 5px; line-height: 1.05; }
+.bmf-col-cell:last-child { border-right: none; }
+.bmf-col-label { justify-content: center; font-weight: 700; font-size: 12px; }
+.bmf-col-titre { font-weight: 700; }
+.bmf-schema { height: 266px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; overflow: hidden; }
+.bmf-schema img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.bmf-rubrique { flex-shrink: 0; display: flex; flex-direction: column; }
+.bmf-rubrique-fin { flex: 1; min-height: 0; }
+.bmf-bande { height: 20px; flex-shrink: 0; background: #efefef; border-top: 1px solid #8c8c8c; border-bottom: 1px solid #8c8c8c; font-size: 10.5px; color: #333; text-align: center; line-height: 18px; letter-spacing: -0.2px; }
+.bmf-schema + .bmf-rubrique .bmf-bande { border-top-width: 2px; border-top-color: #333; }
+.bmf-texte { padding: 4px 7px; font-size: 12px; line-height: 1.25; white-space: pre-wrap; overflow: hidden; }
+.bmf-rubrique-fin .bmf-texte { flex: 1; min-height: 0; }
+
+/* Impression directe (bouton Imprimer → window.print) : page nommée en A4
+   paysage pour ce seul gabarit, les autres fiches gardent le format par
+   défaut. 1500 px ne tiennent pas dans 287 mm (≈ 1085 px CSS) : zoom pour
+   faire entrer la page entière, une .bmf-page par feuille. */
+@page bmf-paysage { size: A4 landscape; margin: 5mm; }
+@media print {
+  #fiche-print:has(.bmf-doc) { width: auto; }
+  .bmf-page { zoom: 0.71; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bmf-page:last-child { break-after: auto; }
+}
+
+
 /* Aperçu fiche BEF (gabarit large, cf. .bef-doc) sur téléphone en portrait :
    ApercuFicheResponsive le réduit déjà à l'échelle pour qu'il tienne à
    l'écran, mais le texte devient vite minuscule à cette largeur — suggère

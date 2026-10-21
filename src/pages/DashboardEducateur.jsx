@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
+import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
 import Tactipad from '../components/Tactipad'
 import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
@@ -258,6 +259,9 @@ const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fil
 const IcoCalendar    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
 const IcoUser        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IcoFileText    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+// Versions 20px des deux icônes ci-dessus — cartes Planning / Séances (SousOngletsBar).
+const IcoCalendarLg  = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+const IcoFileTextLg  = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 const IcoPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IcoPin         = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
 const IcoCrayon      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
@@ -850,12 +854,18 @@ function FicheBEFContenu({ fiche, categorieLabel, nomEducateur }) {
   )
 }
 
-function FicheSeancePrint({ fiche, categorieLabel, nomEducateur }) {
+// Orientation du PDF selon le gabarit : paysage pour les gabarits fédéraux
+// larges (BEF, BMF), portrait pour le rendu générique (Libre, DEF).
+const orientationFiche = (mode) => (mode === 'BEF' || mode === 'BMF' ? 'landscape' : 'portrait')
+
+function FicheSeancePrint({ fiche, categorieLabel, nomEducateur, logoClub }) {
   return createPortal(
     <div id="fiche-print">
       {fiche.mode_diplome === 'BEF'
         ? <FicheBEFContenu fiche={fiche} categorieLabel={categorieLabel} nomEducateur={nomEducateur} />
-        : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />}
+        : fiche.mode_diplome === 'BMF'
+          ? <FicheBMFContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />
+          : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />}
     </div>,
     document.body
   )
@@ -913,8 +923,40 @@ function ApercuFicheResponsive({ children }) {
 // une seule fois, positionnée juste avant le premier bloc de contenu du groupe
 // dans l'ordre du JSX (les autres blocs, plus loin, ne rendent rien tant que
 // activeSection ne correspond pas à leur propre clé).
+// Variante « cartes » quand les items portent une description (ex. Planning /
+// Séances de Création entraînement) : deux sections distinctes qu'on doit
+// identifier au premier coup d'œil, pas juste deux libellés dans une pastille.
 function SousOngletsBar({ items, activeSection, setActiveSection }) {
   const colors = useColors()
+  if (items.some(it => it.description)) {
+    return (
+      <div role="tablist" style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`, gap: 10, marginBottom: 24 }}>
+        {items.map(it => {
+          const actif = activeSection === it.key
+          return (
+            <button key={it.key} role="tab" aria-selected={actif} onClick={() => setActiveSection(it.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', minWidth: 0, transition: 'all 0.15s',
+                background: actif ? colors.accent.blue + '1a' : colors.background.surface,
+                border: `${actif ? 2 : 1}px solid ${actif ? colors.accent.blue : colors.border.faint}`,
+                boxShadow: actif ? `0 0 0 3px ${colors.accent.blue}1f` : 'none',
+                margin: actif ? 0 : 1,
+              }}>
+              <span style={{
+                width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: actif ? colors.accent.blue : colors.background.raised, color: actif ? colors.black : colors.text.faint,
+              }}>{it.icon}</span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: actif ? colors.text.primary : colors.text.secondary }}>{it.label}</span>
+                <span className="sous-onglet-desc" style={{ display: 'block', fontSize: 12, marginTop: 2, color: actif ? colors.text.secondary : colors.text.faint, lineHeight: 1.35 }}>{it.description}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
   return (
     <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
       {items.map(it => {
@@ -2570,6 +2612,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       but_bef: '', consignes_bef: '', systemes_jeu: '', variantes_bef: '',
       criteres_realisation: '', criteres_reussite: '', dominantes_impacts: '',
       bilan_posture: '', bilan_remediations: '',
+      // Gabarit officiel BMF (modèle FFF, cf. FicheBMFContenu) — surface,
+      // comportements_attendus et criteres_reussite sont partagés avec BEF.
+      objectif: '', sequence: '', gestion_rotations: '',
     }))
   }
   const [fiche, setFiche] = useState(ficheVide)
@@ -3254,6 +3299,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         consignes_bef: current.consignes_bef || p.consignes || '',
         variantes_bef: current.variantes_bef || p.variables || '',
         surface: current.surface || p.description || '',
+        objectif: current.objectif || p.objectif || '',
       }
       const newProcedes = [...prev.procedes]
       newProcedes[index] = merged
@@ -3283,6 +3329,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     consignes_bef: p.consignes || '',
     variantes_bef: p.variables || '',
     surface: p.description || '',
+    objectif: p.objectif || '',
   })
 
   const demarrerFicheDepuisProcedes = async (procedesListe) => {
@@ -3349,7 +3396,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       }
     }
 
-    const pageEls = el.querySelectorAll('.bef-page, .fiche-page')
+    const pageEls = el.querySelectorAll('.bef-page, .bmf-page, .fiche-page')
     if (pageEls.length > 0) {
       for (let i = 0; i < pageEls.length; i++) await capturerEtAjouter(pageEls[i], i === 0)
     } else {
@@ -3369,9 +3416,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     el.style.left = '-9999px'
     el.style.top = '0'
     try {
-      // Paysage pour le gabarit officiel BEF (large, cf. FicheBEFContenu/.bef-doc),
-      // portrait pour le rendu générique (FicheContenu, plus étroit).
-      return await genererPdfDepuisElement(el, fiche.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
+      // Paysage pour les gabarits officiels BEF/BMF (larges, cf. .bef-doc /
+      // .bmf-doc), portrait pour le rendu générique (FicheContenu, plus étroit).
+      return await genererPdfDepuisElement(el, orientationFiche(fiche.mode_diplome))
     } finally {
       el.style.display = prevDisplay
       el.style.position = prevPosition
@@ -3420,7 +3467,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
     let blob
     try {
-      blob = await genererPdfDepuisElement(el, ficheApercu.fiche_seance?.mode_diplome === 'BEF' ? 'landscape' : 'portrait')
+      blob = await genererPdfDepuisElement(el, orientationFiche(ficheApercu.fiche_seance?.mode_diplome))
     } finally {
       if (wrapperEchelle) wrapperEchelle.style.transform = transformAvant || ''
     }
@@ -8775,7 +8822,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {['entrainements', 'mes_seances'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'entrainements', label: t('nav_planning', lang) }, { key: 'mes_seances', label: t('nav_seances', lang) }].filter(it => canView(it.key))}
+            items={[
+              { key: 'entrainements', label: t('nav_planning', lang), description: t('nav_planning_desc', lang), icon: <IcoCalendarLg /> },
+              { key: 'mes_seances', label: t('nav_seances', lang), description: t('nav_seances_desc', lang), icon: <IcoFileTextLg /> },
+            ].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -10157,16 +10207,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
                       <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
 
-                      {fiche.mode_diplome === 'BEF' && (
+                      {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF') && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div>
                             <label style={labelStyle}>Séance N°</label>
                             <input type="text" placeholder="Ex: 1" value={fiche.numero_seance || ''} onChange={e => setFiche(f => ({ ...f, numero_seance: e.target.value }))} style={inputStyle} />
                           </div>
-                          <div>
+                          {fiche.mode_diplome === 'BEF' && <div>
                             <label style={labelStyle}>Heure de début</label>
                             <input type="time" value={fiche.heure_debut || ''} onChange={e => setFiche(f => ({ ...f, heure_debut: e.target.value }))} style={inputStyle} />
-                          </div>
+                          </div>}
                         </div>
                       )}
 
@@ -10335,6 +10385,41 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <textarea value={p.bilan_posture} onChange={e => updateProcede(i, 'bilan_posture', e.target.value)} rows={2} style={befInput} />
                           <label style={befLabel}>Remédiations (aménagement et/ou consignes)</label>
                           <textarea value={p.bilan_remediations} onChange={e => updateProcede(i, 'bilan_remediations', e.target.value)} rows={2} style={befInput} />
+                        </>
+                      )
+                    })() : fiche.mode_diplome === 'BMF' ? (() => {
+                      // Rubriques du modèle FFF BMF, dans l'ordre de la fiche
+                      // papier (cf. FicheBMFContenu). Consignes et Variables
+                      // restent deux champs (partagés avec la bibliothèque) mais
+                      // s'impriment dans la même case « Consignes/Variables ».
+                      const bmfInput = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
+                      const bmfLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', marginTop: '10px', display: 'block' }
+                      return (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={bmfLabel}>Surface</label>
+                              <input value={p.surface || ''} onChange={e => updateProcede(i, 'surface', e.target.value)} placeholder="Ex: 30 × 20 m" style={bmfInput} />
+                            </div>
+                            <div>
+                              <label style={bmfLabel}>Séquence</label>
+                              <input value={p.sequence || ''} onChange={e => updateProcede(i, 'sequence', e.target.value)} placeholder="Ex: 4 × 5 min" style={bmfInput} />
+                            </div>
+                          </div>
+                          <label style={bmfLabel}>Objectif</label>
+                          <textarea value={p.objectif || ''} onChange={e => updateProcede(i, 'objectif', e.target.value)} rows={2} style={bmfInput} />
+                          <label style={bmfLabel}>But(s)</label>
+                          <textarea value={p.but || ''} onChange={e => updateProcede(i, 'but', e.target.value)} rows={2} style={bmfInput} />
+                          <label style={bmfLabel}>Consignes</label>
+                          <textarea value={p.consignes || ''} onChange={e => updateProcede(i, 'consignes', e.target.value)} rows={3} style={bmfInput} />
+                          <label style={bmfLabel}>Variables</label>
+                          <textarea value={p.variables || ''} onChange={e => updateProcede(i, 'variables', e.target.value)} rows={2} style={bmfInput} />
+                          <label style={bmfLabel}>Gestion des rotations</label>
+                          <textarea value={p.gestion_rotations || ''} onChange={e => updateProcede(i, 'gestion_rotations', e.target.value)} rows={2} style={bmfInput} />
+                          <label style={bmfLabel}>Comportements attendus</label>
+                          <textarea value={p.comportements_attendus || ''} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={2} style={bmfInput} />
+                          <label style={bmfLabel}>Critères de réussite</label>
+                          <textarea value={p.criteres_reussite || ''} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} style={bmfInput} />
                         </>
                       )
                     })() : (
@@ -12692,7 +12777,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       </div>
     )}
 
-    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
+    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} logoClub={clubAffiliation?.club?.avatar_url || null} />
 
     {/* Aperçu en grand de la fiche en cours de rédaction — purement lecture
         seule (ne touche jamais à `fiche`/`sport`), contrairement à l'ancien
@@ -12717,7 +12802,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ✕
             </button>
           )}
-          {fiche.mode_diplome === 'BEF' && (
+          {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF') && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               📱 Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
@@ -12726,7 +12811,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <div className="fiche-render" style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 80px #00000060', margin: '0 auto' }}>
               {fiche.mode_diplome === 'BEF'
                 ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
-                : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
+                : fiche.mode_diplome === 'BMF'
+                  ? <FicheBMFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />
+                  : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
             </div>
           </ApercuFicheResponsive>
         </div>
@@ -12797,7 +12884,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ✕
             </button>
           )}
-          {!modeEditionApercu && ficheApercu.fiche_seance?.mode_diplome === 'BEF' && (
+          {!modeEditionApercu && ['BEF', 'BMF'].includes(ficheApercu.fiche_seance?.mode_diplome) && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               📱 Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
@@ -12868,6 +12955,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <input value={ficheApercuEdit.objectif_general} onChange={e => setFicheApercuEdit(f => ({ ...f, objectif_general: e.target.value }))} style={champEditStyle} />
                     </div>
                   </div>
+                  {ficheApercuEdit.mode_diplome === 'BMF' && (
+                    <div className="fiche-row fiche-row-2">
+                      <div className="fiche-champ">
+                        <label>Séance n°</label>
+                        <input value={ficheApercuEdit.numero_seance || ''} onChange={e => setFicheApercuEdit(f => ({ ...f, numero_seance: e.target.value }))} style={champEditStyle} />
+                      </div>
+                      <div className="fiche-champ large">
+                        <label>Phase de jeu</label>
+                        <input value={ficheApercuEdit.phase_jeu || ''} onChange={e => setFicheApercuEdit(f => ({ ...f, phase_jeu: e.target.value }))} style={champEditStyle} />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="procedes-grid">
                   {ficheApercuEdit.procedes.map((p, i) => (
@@ -12911,6 +13010,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <label>Variables / progressions</label>
                           <textarea value={p.variables} onChange={e => updateProcedeApercu(i, 'variables', e.target.value)} rows={2} style={champEditTextareaStyle} />
                         </div>
+                        {ficheApercuEdit.mode_diplome === 'BMF' && [
+                          ['Surface', 'surface', 1], ['Séquence', 'sequence', 1], ['Objectif', 'objectif', 2],
+                          ['Gestion des rotations', 'gestion_rotations', 2], ['Comportements attendus', 'comportements_attendus', 2], ['Critères de réussite', 'criteres_reussite', 2],
+                        ].map(([label, cle, rows]) => (
+                          <div key={cle} className="procede-field" style={{ gridColumn: rows > 1 ? '1 / -1' : undefined }}>
+                            <label>{label}</label>
+                            {rows > 1
+                              ? <textarea value={p[cle] || ''} onChange={e => updateProcedeApercu(i, cle, e.target.value)} rows={rows} style={champEditTextareaStyle} />
+                              : <input value={p[cle] || ''} onChange={e => updateProcedeApercu(i, cle, e.target.value)} style={champEditStyle} />}
+                          </div>
+                        ))}
                         <div className="procede-field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <button type="button" onClick={() => setTactipadModal(i)}
                             style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #a78bfa40', background: '#a78bfa10', color: '#a78bfa', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}>
@@ -12934,6 +13044,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 fiche={ficheApercu.fiche_seance || {}}
                 categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
                 nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()}
+              />
+            ) : ficheApercu.fiche_seance?.mode_diplome === 'BMF' ? (
+              <FicheBMFContenu
+                fiche={{ ...ficheApercu.fiche_seance, categorie_age: ficheApercu.fiche_seance?.categorie_age || ficheApercu.categorie_age }}
+                categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
+                logo={clubAffiliation?.club?.avatar_url || null}
               />
             ) : (
               <FicheContenu
