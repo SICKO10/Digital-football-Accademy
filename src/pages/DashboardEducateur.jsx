@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
+import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, TutorielResultats } from '../components/tutoriels/TutorielsEducateur'
+import { tutorielDejaVu, marquerTutorielVu } from '../lib/tutoriels'
 import Tactipad from '../components/Tactipad'
 import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
@@ -930,6 +932,19 @@ function ApercuFicheResponsive({ children }) {
 // une seule fois, positionnée juste avant le premier bloc de contenu du groupe
 // dans l'ordre du JSX (les autres blocs, plus loin, ne rendent rien tant que
 // activeSection ne correspond pas à leur propre clé).
+// Bouton « Tutoriel » des pages Mon équipe, Séances et Compétition › Calendrier
+// (cf. components/tutoriels) — relance le tutoriel même s'il a déjà été vu.
+function BoutonTutoriel({ onClick, style }) {
+  const colors = useColors()
+  return (
+    <button onClick={onClick} title="Voir le tutoriel"
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px 14px', minHeight: '40px', borderRadius: '10px', border: `1px solid ${colors.accent.blue}66`, background: colors.accent.blue + '14', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0, ...style }}>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" /></svg>
+      Tutoriel
+    </button>
+  )
+}
+
 // Variante « cartes » quand les items portent une description (ex. Planning /
 // Séances de Création entraînement) : deux sections distinctes qu'on doit
 // identifier au premier coup d'œil, pas juste deux libellés dans une pastille.
@@ -2470,6 +2485,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // club_categories qui lui sont assignées, pas juste la première (cf.
   // declarerMaCategorie, appelable plusieurs fois pour ajouter une équipe).
   const mesEquipes = clubCategories.filter(c => c.educateur_id === userId)
+  // Tutoriels guidés : ouverts à la demande (bouton « Tutoriel ») ou
+  // automatiquement à la première visite de la page concernée (cf. tutoAuto
+  // plus bas, dérivé au rendu plutôt que posé par un effet). tutoMaj force
+  // un nouveau rendu une fois le tutoriel marqué comme vu.
+  const [tutoOuvert, setTutoOuvert] = useState(null)
+  const [, setTutoMaj] = useState(0)
   const [equipeActiveId, setEquipeActiveId] = useState(() => {
     try { return localStorage.getItem('equipe_active_id') || null } catch { return null }
   })
@@ -5860,6 +5881,27 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       </div>
     )}
     <Suspense fallback={null}>
+      {(() => {
+        // Mon équipe : « à la suite de la sélection de son équipe » — jamais
+        // par-dessus la fenêtre obligatoire « Quelle catégorie et équipe
+        // gères-tu ? », seulement une fois une équipe active (ou sans club).
+        const equipePrete = clubCategoriesChargees && !ajouterEquipeOuvert
+          && (mesEquipes.length > 0 || (!clubAffiliation && clubCategories.length === 0) || (clubAffiliation && clubAffiliation.statut !== 'accepte'))
+        const candidat = activeSection === 'equipe' && equipePrete && canEdit('effectif') ? 'equipe'
+          : activeSection === 'entrainements' ? 'planning'
+          : activeSection === 'mes_seances' ? 'seance'
+          : activeSection === 'matchs' && competitionSubTab === 'calendrier' && canEdit('competition') ? 'competition'
+          : activeSection === 'matchs' && competitionSubTab === 'resultats' && canEdit('competition') ? 'resultats'
+          : null
+        const tutoAffiche = tutoOuvert || (userId && candidat && !tutorielDejaVu(candidat, userId) ? candidat : null)
+        if (!tutoAffiche) return null
+        const fermer = () => { marquerTutorielVu(tutoAffiche, userId); setTutoOuvert(null); setTutoMaj(n => n + 1) }
+        if (tutoAffiche === 'equipe') return <TutorielEquipe onFermer={fermer} />
+        if (tutoAffiche === 'planning') return <TutorielPlanning onFermer={fermer} />
+        if (tutoAffiche === 'seance') return <TutorielSeance onFermer={fermer} />
+        if (tutoAffiche === 'resultats') return <TutorielResultats onFermer={fermer} />
+        return <TutorielCompetition onFermer={fermer} />
+      })()}
       <OnboardingGuide key={onboardingKey} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     </Suspense>
@@ -6186,6 +6228,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                     {canEdit('effectif') && (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <BoutonTutoriel onClick={() => setTutoOuvert('equipe')} />
                         <button onClick={telechargerTemplate} title="Télécharger le modèle Excel" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           <IcoDownload /> {t('equipe_template', lang)}
                         </button>
@@ -7817,6 +7860,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('comp_resultats', lang)}</h2>
                   {canEdit('competition') && (
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                      <BoutonTutoriel onClick={() => setTutoOuvert('resultats')} />
                       {canEdit('stats') && (
                         <button onClick={() => setShowScanner(true)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
@@ -8059,6 +8103,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>{nbAVenir === 0 ? 'Aucun match programmé' : `${nbAVenir} match${nbAVenir > 1 ? 's' : ''} programmé${nbAVenir > 1 ? 's' : ''}`}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                        <BoutonTutoriel onClick={() => setTutoOuvert('competition')} />
                         <button onClick={() => setAfficherScanCalendrier(v => !v)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${afficherScanCalendrier ? colors.accent.blue : colors.border.strong}`, background: 'transparent', color: afficherScanCalendrier ? colors.accent.blue : colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
                           {t('seance_scanner', lang)}
@@ -8845,6 +8890,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('ent_titre', lang)}</h1>
                 <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{entrainements.length} {t('ent_seances_count', lang)} · {t('ent_sous_titre', lang)}</p>
               </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <BoutonTutoriel onClick={() => setTutoOuvert('planning')} />
               {canEdit('entrainements') && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {/* Les deux formulaires vivent dans le sous-onglet "Mes séances" :
@@ -8854,6 +8901,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <button onClick={() => { setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false); setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
                 </div>
               )}
+              </div>
             </div>
 
             {/* ── Sous-onglets ── */}
@@ -9721,6 +9769,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   🏟️ {t('seance_eval_club', lang)}
                 </button>
               )}
+              <BoutonTutoriel onClick={() => setTutoOuvert('seance')} style={{ marginLeft: 'auto', minHeight: 0, padding: '10px 14px' }} />
             </div>
 
             {modalGenerationIA && (
