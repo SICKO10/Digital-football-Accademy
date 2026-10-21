@@ -4,6 +4,7 @@ import GIF from 'gif.js'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
+import BoutonTutoriel from './tutoriels/BoutonTutoriel'
 
 const sv = (d, taille = 15) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 const IcoAnnuler = () => sv(<><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></>)
@@ -488,7 +489,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // Spotlight qui met en évidence chaque bouton réel de la toolbar (via
   // tourRefs + getBoundingClientRect, pas un simple carrousel d'icônes) — se
   // déclenche seul au premier montage si jamais vu (localStorage par
-  // utilisateur), et reste accessible ensuite via le bouton "?" discret de la
+  // utilisateur), et reste accessible ensuite via le bouton « Tutoriel » (« ? » sur téléphone) de la
   // barre du haut. -1 = fermé.
   const TOUR_STEPS = [
     { ref: 'select', titre: t('tac_tour_1_titre', lang), texte: t('tac_tour_1_texte', lang) },
@@ -545,8 +546,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // l'hydratation d'un initialSchema éventuel, sinon rescaleElements retombe
   // sur le ratio 16:10 par défaut au lieu du ratio réellement actif ici.
   const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024)
+  const [telephone, setTelephone] = useState(() => window.innerWidth < 768)
   useEffect(() => {
-    const onResize = () => setMobileOuTablette(window.innerWidth < 1024)
+    const onResize = () => { setMobileOuTablette(window.innerWidth < 1024); setTelephone(window.innerWidth < 768) }
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
     return () => { window.removeEventListener('resize', onResize); window.removeEventListener('orientationchange', onResize) }
@@ -1775,14 +1777,20 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             )
           })}
         </div>
-        <button onClick={() => setTourEtape(0)} title={t('tac_tour_revoir', lang)}
-          style={{
-            marginLeft: 'auto', width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
-            background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint,
-            fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-          ?
-        </button>
+        {/* Même bouton « Tutoriel » que les autres pages sur ordinateur et
+            tablette ; simple « ? » sur téléphone, où la barre est déjà chargée. */}
+        {telephone ? (
+          <button onClick={() => setTourEtape(0)} title={t('tac_tour_revoir', lang)}
+            style={{
+              marginLeft: 'auto', width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+              background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint,
+              fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            ?
+          </button>
+        ) : (
+          <BoutonTutoriel onClick={() => setTourEtape(0)} style={{ marginLeft: 'auto' }} />
+        )}
       </div>
 
       {tableMissing && !isModal && (

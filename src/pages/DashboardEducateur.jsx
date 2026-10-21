@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar'
 import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
 import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, TutorielResultats } from '../components/tutoriels/TutorielsEducateur'
 import { tutorielDejaVu, marquerTutorielVu } from '../lib/tutoriels'
+import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { ZONES_RPE, DEFINITION_RPE, zoneRpe, rpeDeReponse } from '../lib/rpe'
 import Tactipad from '../components/Tactipad'
 import SponsorsBar from '../components/SponsorsBar'
@@ -933,19 +934,6 @@ function ApercuFicheResponsive({ children }) {
 // une seule fois, positionnée juste avant le premier bloc de contenu du groupe
 // dans l'ordre du JSX (les autres blocs, plus loin, ne rendent rien tant que
 // activeSection ne correspond pas à leur propre clé).
-// Bouton « Tutoriel » des pages Mon équipe, Séances et Compétition › Calendrier
-// (cf. components/tutoriels) — relance le tutoriel même s'il a déjà été vu.
-function BoutonTutoriel({ onClick, style }) {
-  const colors = useColors()
-  return (
-    <button onClick={onClick} title="Voir le tutoriel"
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px 14px', minHeight: '40px', borderRadius: '10px', border: `1px solid ${colors.accent.blue}66`, background: colors.accent.blue + '14', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0, ...style }}>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" /></svg>
-      Tutoriel
-    </button>
-  )
-}
-
 // Variante « cartes » quand les items portent une description (ex. Planning /
 // Séances de Création entraînement) : deux sections distinctes qu'on doit
 // identifier au premier coup d'œil, pas juste deux libellés dans une pastille.
