@@ -1,5 +1,6 @@
 import { useColors } from '../../lib/theme'
 import TutorielModal from './TutorielModal'
+import { Bouton, Champ, Carte, Fleche } from './Maquette'
 
 // Tutoriels du dashboard éducateur : Mon équipe (ajout des joueurs), création
 // de séance, calendrier de compétition. Chaque étape est illustrée par une
@@ -7,45 +8,7 @@ import TutorielModal from './TutorielModal'
 // l'app), pas par une capture — elle suit ainsi le thème clair/sombre et ne
 // devient pas fausse au moindre changement de mise en page.
 
-// ── Briques de maquette ─────────────────────────────────────────────────────
-function Bouton({ children, plein, couleur, actif }) {
-  const colors = useColors()
-  const c = couleur || colors.accent.green
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
-      background: plein ? c : 'transparent', color: plein ? colors.black : colors.text.secondary,
-      border: plein ? 'none' : `1px solid ${colors.border.default}`,
-      boxShadow: actif ? `0 0 0 3px ${c}55, 0 0 0 6px ${c}22` : 'none',
-    }}>{children}</span>
-  )
-}
-
-function Champ({ label, valeur, large }) {
-  const colors = useColors()
-  return (
-    <div style={{ gridColumn: large ? '1 / -1' : undefined, minWidth: 0 }}>
-      <p style={{ margin: '0 0 3px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: colors.text.faint }}>{label}</p>
-      <div style={{ padding: '6px 9px', borderRadius: '7px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, fontSize: '12px', color: valeur ? colors.text.primary : colors.text.disabled, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{valeur || '—'}</div>
-    </div>
-  )
-}
-
-function Carte({ titre, texte, couleur, icone }) {
-  const colors = useColors()
-  return (
-    <div style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '12px', background: colors.background.surface, border: `1px solid ${couleur}55` }}>
-      <span style={{ width: '30px', height: '30px', borderRadius: '9px', background: couleur + '22', color: couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>{icone}</span>
-      <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>{titre}</p>
-      <p style={{ margin: '3px 0 0', fontSize: '11px', lineHeight: 1.4, color: colors.text.faint }}>{texte}</p>
-    </div>
-  )
-}
-
-function Fleche() {
-  const colors = useColors()
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={colors.text.faint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-}
+// Briques de maquette partagées avec les tutoriels club : cf. Maquette.jsx
 
 const IcoMain = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
 const IcoTableur = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="3" x2="9" y2="21" /></svg>

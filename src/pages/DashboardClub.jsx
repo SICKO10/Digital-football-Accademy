@@ -18,6 +18,9 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
+import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
+import { TutorielClub, PAGES_TUTORIEL_CLUB } from '../components/tutoriels/TutorielsClub'
+import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
 import { libelleStatutGroq } from '../lib/groqQueue'
@@ -1133,6 +1136,12 @@ export default function DashboardClub() {
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [activeTab, setActiveTab] = useState('accueil')
+  // Tutoriel de la page courante (cf. components/tutoriels/TutorielsClub) :
+  // ouvert par le bouton « Tutoriel » de la barre du haut, ou tout seul à la
+  // première visite de la page (une fois par compte, cf. lib/tutoriels).
+  const [tutoOuvert, setTutoOuvert] = useState(null)
+  const [, setTutoMaj] = useState(0)
+  useTutorielsVus()
   // Le getter n'est plus lu directement (sidebar affiche tous les groupes en
   // permanence) — seul le setter reste, transmis aux enfants (AccueilClub,
   // AlertesClub) pour leurs callbacks de navigation existants.
@@ -3488,7 +3497,7 @@ export default function DashboardClub() {
     const actif = activeTab === item.id
     const { Icon } = item
     return (
-      <button key={item.id}
+      <button key={item.id} id={`nav-${item.id}`}
         onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}
         onMouseEnter={e => { if (!actif) e.currentTarget.style.background = colors.background.raised }}
         onMouseLeave={e => { if (!actif) e.currentTarget.style.background = 'transparent' }}
@@ -3520,13 +3529,36 @@ export default function DashboardClub() {
     </div>
   )
 
+  // Parcours d'onboarding (guide "Cedinho") : une étape par rubrique clé,
+  // ciblant son bouton de nav (id nav-<rubrique>) — les rubriques masquées
+  // par les permissions du staff sont retirées du parcours.
+  const rubriquesVisibles = new Set([...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF].map(item => item.id))
   const clubOnboardingSteps = [
-    { id: 1, title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de l'espace club en 2 minutes.", targetId: null, position: "center" },
-    { id: 2, title: "Accueil", message: "Vue d'ensemble : stats du club, actions rapides et activité récente.", targetId: "cat-accueil", position: "bottom" },
-    ...(sportifVisible ? [{ id: 3, title: "Sportif", message: "Catégories (tes équipes), Classements, Planning des terrains et Éducateurs affiliés — tout le suivi sportif du club.", targetId: "cat-sportif", position: "bottom" }] : []),
-    ...(administratifVisible ? [{ id: 4, title: "Administratif", message: "Sponsors, Déplacements, Répartition mini-bus, Profil du club, Budget et Staff — toute la gestion administrative.", targetId: "cat-administratif", position: "bottom" }] : []),
-    { id: 5, title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
+    { title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer toutes les rubriques de l'espace club, dans l'ordre où les mettre en place.", targetId: null, position: "center" },
+    { rubrique: 'profil', title: "Profil du club", message: "Commence ici : logo, couleurs et infos du club. Ils apparaissent ensuite dans l'espace de tes éducateurs et de tes joueurs." },
+    { rubrique: 'categories', title: "Catégories & Équipes", message: "Crée tes catégories et tes équipes (U11 A, U13 B…) et désigne l'éducateur responsable de chacune." },
+    { rubrique: 'educateurs', title: "Éducateurs", message: "Invite tes éducateurs par email ou partage-leur le code club : ils rejoignent le club depuis leur dashboard." },
+    { rubrique: 'staff', title: "Ajoute ton staff", message: "Directeur sportif, secrétaire, trésorier : invite-les par email et choisis ce que chacun peut voir et modifier." },
+    { rubrique: 'terrains', title: "Planning des terrains", message: "Répartis les créneaux de tes terrains entre les équipes pour les entraînements et les matchs." },
+    { rubrique: 'deplacements', title: "Déplacements", message: "Organise les trajets des matchs à l'extérieur et répartis les joueurs dans les mini-bus." },
+    { rubrique: 'classements', title: "Stat équipe", message: "Choisis une équipe : bilan, derniers résultats, classement officiel et classement des joueurs (buteurs, passeurs, présence)." },
+    { rubrique: 'budget', title: "Budget", message: "Suis les recettes et les dépenses du club au fil de la saison." },
+    { rubrique: 'sponsors', title: "Sponsors", message: "Gère les sponsors et partenaires du club." },
+    { rubrique: 'newsletter', title: "Newsletter", message: "Envoie une communication à tes éducateurs et joueurs affiliés : elle est publiée dans leur espace et envoyée par email." },
+    { rubrique: 'inventaire', title: "Inventaire", message: "Gère l'équipement du club : packs attribués aux joueurs et au staff, tailles, et suivi des remises." },
+    { rubrique: 'planning', title: "Planning", message: "Vue générale de toutes les équipes : matchs, entraînements, événements et projets sur un calendrier jour, semaine, mois ou année." },
+    { rubrique: 'seances', title: "Planifier séance", message: "Planifie des séances d'entraînement pour une équipe à la place de son éducateur : elles apparaissent directement dans son planning." },
+    { rubrique: 'projet_sportif', title: "Projet Sportif", message: "Définis les principes de jeu du club par phase, et choisis si tes éducateurs peuvent les modifier." },
+    { rubrique: 'tournoi', title: "Tournois", message: "Suis les tournois auxquels tes équipes participent, ou organise le tien : planning, résultats et classement." },
+    { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes." },
+    { rubrique: 'evenements', title: "Événements & Projets", message: "Organise tournois, soirées et réunions, et pilote les projets du club : référents, participants, matériel et missions." },
+    { rubrique: 'projet_club_cff4', title: "Projet Club — CFF4", message: "Construis le projet club pas à pas, selon le guide de certification FFF (CFF4)." },
+    { rubrique: 'taches', title: "Tâches & Responsabilités", message: "Note qui fait quoi au club et suis les tâches ponctuelles avec leur statut." },
+    { rubrique: 'organigramme', title: "Organigramme", message: "Présente les membres du club et leur rôle." },
+    { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
   ]
+    .filter(step => !step.rubrique || rubriquesVisibles.has(step.rubrique))
+    .map((step, i) => ({ id: i + 1, position: "bottom", targetId: step.rubrique ? `nav-${step.rubrique}` : null, ...step }))
 
   // Contrôles utilitaires du header (langue/vue educateur-joueur/thème/personnaliser/
   // déconnexion) — un seul bloc JSX réutilisé desktop (header sticky) + mobile
@@ -3570,6 +3602,17 @@ export default function DashboardClub() {
 
   return (
     <div style={st.page}>
+      {(() => {
+        // Ouverture automatique : jamais par-dessus le guide d'accueil (tant
+        // qu'il n'est pas terminé) ni pour une page non autorisée.
+        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(activeTab) ? 'sportif' : activeTab
+        const auto = moi?.id && PAGES_TUTORIEL_CLUB.includes(activeTab) && canViewSection(permission)
+          && tutorielDejaVu(`onboarding_${clubId}`, clubId) && !tutorielDejaVu(`club_${activeTab}`, moi.id)
+        const page = tutoOuvert || (auto ? activeTab : null)
+        if (!page) return null
+        const fermer = () => { marquerTutorielVu(`club_${page}`, moi?.id); setTutoOuvert(null); setTutoMaj(n => n + 1) }
+        return <TutorielClub page={page} accent={couleurPrincipale} onFermer={fermer} />
+      })()}
       <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={clubId} steps={clubOnboardingSteps} accentColor={couleurPrincipale} />
       <FloatingHelper userId={clubId} onReplayOnboarding={replayOnboarding} faq={CLUB_FAQ} accentColor={couleurPrincipale} estAccueil={activeTab === 'accueil'} masque={showEvenementForm || showProjetForm} />
 
@@ -3645,6 +3688,9 @@ export default function DashboardClub() {
               <span style={{ fontWeight: 800, fontSize: isMobile ? '14px' : '15px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {TITRES_SECTION[activeTab]}
               </span>
+              {PAGES_TUTORIEL_CLUB.includes(activeTab) && (
+                <BoutonTutoriel onClick={() => setTutoOuvert(activeTab)} style={isMobile ? { padding: '6px 10px', minHeight: '32px', fontSize: '12px' } : { padding: '6px 12px', minHeight: '34px' }} />
+              )}
             </div>
             {!isMobile ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
