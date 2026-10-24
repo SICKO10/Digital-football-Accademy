@@ -1,6 +1,14 @@
 export const PHASE_LABEL = { huitieme: 'Huitièmes de finale', quart: 'Quarts de finale', demi: 'Demi-finales', troisieme: 'Petite finale', finale: 'Finale', finale_poule: 'Poule finale' }
 export const PHASE_ORDRE = ['huitieme', 'quart', 'demi', 'troisieme', 'finale_poule', 'finale']
 
+// Code couleur des terrains (planning club et page publique) — teintes
+// choisies pour ne pas se confondre avec les badges voisins : poule (bleu),
+// phase finale (violet), « À jouer » (ambre), score (vert). Affichées en
+// pastille pleine avec texte foncé : lisibles en thème clair comme sombre.
+// Au-delà de 8 terrains, la palette reboucle.
+const COULEURS_TERRAIN = ['#f472b6', '#2dd4bf', '#fb923c', '#a3e635', '#818cf8', '#facc15', '#f87171', '#38bdf8']
+export const couleurTerrain = (numero) => COULEURS_TERRAIN[((Number(numero) || 1) - 1) % COULEURS_TERRAIN.length]
+
 // Départage d'un classement — points, puis différence de buts, buts marqués,
 // fair-play (cartons, pénalité la plus faible d'abord) et enfin buts
 // encaissés (le moins en ayant encaissé d'abord). Exporté pour être aussi

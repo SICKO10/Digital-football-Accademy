@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
+import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, calculerPalmares, couleurTerrain, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
 import { saisonActuelle } from '../../lib/saison'
 import PaveDateTournoi from './PaveDateTournoi'
+import { PastilleTerrain, LegendeTerrains } from './PastilleTerrain'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -27,6 +28,17 @@ const VIDE_TOURNOI = {
   qualifies_par_poule: 2, qualifies_meilleurs_troisiemes: 0, cout_organisation: '',
 }
 const VIDE_EQUIPE = { nom: '', club: '', poule: 'A', est_hote: false }
+
+// Pause déjeuner facultative : une durée de 0 signifie « pas de pause » (les
+// matchs s'enchaînent). NULL (tournois créés avant la colonne) garde l'ancien
+// défaut de 1h30 — d'où `?? 90` et non `|| 90`, qui transformerait 0 en 90.
+const DUREE_PAUSE_MIDI_DEFAUT = 90
+const DUREES_PAUSE_MIDI = [60, 75, 90, 105, 120]
+const dureePauseMidi = (t) => {
+  const d = Number(t?.pause_midi_duree ?? DUREE_PAUSE_MIDI_DEFAUT)
+  return Number.isFinite(d) ? Math.max(0, d) : DUREE_PAUSE_MIDI_DEFAUT
+}
+const libelleDuree = (m) => `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`
 
 const genererCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
 
@@ -99,6 +111,7 @@ function genererPlanning(equipes, nbTerrains, dureeMatch, pauseMinutes, heureDeb
   // (ou une équipe) se libère, pour que la pause soit bloquée sur tous les
   // terrains en même temps plutôt que gérée équipe par équipe.
   const eviterPauseMidi = (t) => {
+    if (pauseMidiDuree <= 0) return t // pas de pause déjeuner
     if (t >= midiDebut && t < midiFin) return midiFin
     if (t < midiDebut && t + dureeMatch > midiDebut) return midiFin
     return t
@@ -223,7 +236,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     setReglagesForm({
       heure_debut: t.heure_debut || '09:00', nb_terrains: t.nb_terrains || 2, nb_equipes_poule: t.nb_equipes_poule || 4,
       duree_match: t.duree_match || 15, pause_minutes: t.pause_minutes || 5,
-      heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: t.pause_midi_duree || 90,
+      heure_fin: t.heure_fin || '18:00', pause_midi_debut: t.pause_midi_debut || '12:00', pause_midi_duree: dureePauseMidi(t),
       prix_inscription_equipe: t.prix_inscription_equipe || '', nb_equipes_prevues: t.nb_equipes_prevues || 8, nb_equipes_payantes: t.nb_equipes_payantes ?? Math.max(0, (t.nb_equipes_prevues || 8) - 1),
       qualifies_par_poule: t.qualifies_par_poule || 2, qualifies_meilleurs_troisiemes: t.qualifies_meilleurs_troisiemes || 0, cout_organisation: t.cout_organisation || '',
     })
@@ -360,7 +373,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const { planifies, nonPlanifies } = genererPlanning(
       equipes, tournoi.nb_terrains, tournoi.duree_match, tournoi.pause_minutes,
       tournoi.heure_debut || '09:00', tournoi.heure_fin || null,
-      tournoi.pause_midi_debut || '12:00', tournoi.pause_midi_duree || 90,
+      tournoi.pause_midi_debut || '12:00', dureePauseMidi(tournoi),
     )
     const { data } = await supabase.from('tournois_matchs_organises').insert(
       planifies.map(mt => ({ tournoi_id: tournoi.id, equipe_a_id: mt.equipe_a.id, equipe_b_id: mt.equipe_b.id, terrain: mt.terrain, heure_debut: mt.heure_debut, phase: mt.phase, poule: mt.poule, statut: 'a_jouer' }))
@@ -601,8 +614,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     // genererPlanning, rien ne le décalait ici) — même logique d'évitement,
     // réappliquée à chaque nouveau créneau calculé plus bas.
     const midiDebut = timeToMin(tournoi.pause_midi_debut || '12:00')
-    const midiFin = midiDebut + (tournoi.pause_midi_duree || 90)
+    const dureeMidi = dureePauseMidi(tournoi)
+    const midiFin = midiDebut + dureeMidi
     const eviterPauseMidiFinale = (t) => {
+      if (dureeMidi <= 0) return t // pas de pause déjeuner
       if (t >= midiDebut && t < midiFin) return midiFin
       if (t < midiDebut && t + (tournoi.duree_match || 15) > midiDebut) return midiFin
       return t
@@ -698,8 +713,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const perdant = (m) => (m.score_a > m.score_b ? m.equipe_b_id : m.equipe_a_id)
 
     const midiDebut = timeToMin(tournoi.pause_midi_debut || '12:00')
-    const midiFin = midiDebut + (tournoi.pause_midi_duree || 90)
+    const dureeMidi = dureePauseMidi(tournoi)
+    const midiFin = midiDebut + dureeMidi
     const eviterPauseMidiFinale = (t) => {
+      if (dureeMidi <= 0) return t // pas de pause déjeuner
       if (t >= midiDebut && t < midiFin) return midiFin
       if (t < midiDebut && t + (tournoi.duree_match || 15) > midiDebut) return midiFin
       return t
@@ -823,81 +840,156 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const fmtDuree = (m) => `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`
     const recette = Number(form.prix_inscription_equipe || 0) * (Number(form.nb_equipes_payantes) || 0)
     const cout = Number(form.cout_organisation || 0)
-    const section = (titre, sousTitre, contenu) => (
-      <div style={{ ...st.card, padding: '18px 20px' }}>
-        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{titre}</p>
-        {sousTitre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{sousTitre}</p>}
-        <div style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>{contenu}</div>
+    const pauseActive = Number(form.pause_midi_duree) > 0
+    const ratioTemps = tempsDispo > 0 ? Math.min(1, tempsNecessaire / tempsDispo) : 1
+    // Champs de hauteur uniforme (les <select> natifs étaient plus bas que
+    // les <input> sous Safari) et un peu plus aérés que le style par défaut.
+    const inp = { ...st.input, height: '42px', borderRadius: '10px', fontSize: '14px', padding: '0 12px' }
+    const section = (numero, titre, sousTitre, contenu) => (
+      <div style={{ ...st.card, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <span style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1a', color: colors.accent.green, fontSize: '13px', fontWeight: 800 }}>{numero}</span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>{titre}</p>
+            {sousTitre && <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{sousTitre}</p>}
+          </div>
+        </div>
+        <div style={{ display: 'grid', gap: '14px', marginTop: '16px' }}>{contenu}</div>
       </div>
     )
-    const champ = (label, el) => <div style={{ minWidth: 0 }}><label style={st.label}>{label}</label>{el}</div>
+    const champ = (label, el, aide) => (
+      <div style={{ minWidth: 0 }}>
+        <label style={st.label}>{label}</label>
+        {el}
+        {aide && <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>{aide}</p>}
+      </div>
+    )
+    // Compteur − valeur + (appelé comme fonction : aucun état propre, pas de
+    // remontage du champ à chaque frappe).
+    const compteur = (valeur, min, max, onChange) => {
+      const bouton = (signe, actif, cible) => (
+        <button type="button" onClick={() => actif && onChange(cible)} disabled={!actif} aria-label={signe === '+' ? 'Augmenter' : 'Diminuer'}
+          style={{ width: '42px', height: '40px', border: 'none', background: 'transparent', color: actif ? colors.text.primary : colors.text.disabled, fontSize: '18px', fontWeight: 700, cursor: actif ? 'pointer' : 'default' }}>
+          {signe === '+' ? '+' : '−'}
+        </button>
+      )
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', height: '42px', border: `1px solid ${colors.border.strong}`, borderRadius: '10px', background: colors.background.raised, boxSizing: 'border-box', overflow: 'hidden' }}>
+          {bouton('−', valeur > min, valeur - 1)}
+          <span style={{ flex: 1, textAlign: 'center', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>{valeur}</span>
+          {bouton('+', valeur < max, valeur + 1)}
+        </div>
+      )
+    }
+    const segments = (options, valeur, onChange) => (
+      <div style={{ display: 'flex', gap: '4px', padding: '4px', height: '42px', boxSizing: 'border-box', borderRadius: '10px', background: colors.background.raised, border: `1px solid ${colors.border.strong}` }}>
+        {options.map(o => {
+          const actif = o.valeur === valeur
+          return (
+            <button key={o.valeur} type="button" onClick={() => onChange(o.valeur)}
+              style={{ flex: 1, border: 'none', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, background: actif ? colors.accent.green : 'transparent', color: actif ? colors.black : colors.text.secondary }}>
+              {o.libelle}
+            </button>
+          )
+        })}
+      </div>
+    )
+    const avecUnite = (el, unite) => (
+      <div style={{ position: 'relative' }}>
+        {el}
+        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint, pointerEvents: 'none' }}>{unite}</span>
+      </div>
+    )
     const ligneResume = (label, valeur, couleur) => (
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '7px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '8px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
         <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
         <span style={{ color: couleur || colors.text.primary, fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>{valeur}</span>
       </div>
     )
+    const nbTerrains = Math.max(1, Number(form.nb_terrains) || 1)
     return (
-    <div style={{ maxWidth: 1000 }}>
+    <div style={{ maxWidth: 1080 }}>
       <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
-      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '20px' }}>Créer un tournoi</h2>
-      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px' }}>Renseigne l'essentiel : le planning des matchs sera généré automatiquement une fois les équipes ajoutées.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', alignItems: 'start' }}>
-      <div style={{ display: 'grid', gap: '14px', gridColumn: 'span 2', minWidth: 0 }}>
-        {section('1 · Le tournoi', null, <>
-          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Tournoi de Noël U15" style={st.input} />)}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-            {champ('Date', <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={st.input} />)}
-            {champ("Catégorie d'âge", <input value={form.categorie_age} onChange={e => setForm(f => ({ ...f, categorie_age: e.target.value }))} placeholder="U13, U15…" style={st.input} />)}
-            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Complexe sportif…" style={st.input} />)}
+      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '22px' }}>Créer un tournoi</h2>
+      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 20px' }}>Renseigne l'essentiel : le planning des matchs sera généré automatiquement une fois les équipes ajoutées.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gap: '16px', gridColumn: 'span 2', minWidth: 0 }}>
+        {section(1, 'Le tournoi', null, <>
+          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} placeholder="Tournoi de Noël U15" style={inp} />)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+            {champ('Date', <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp} />)}
+            {champ("Catégorie d'âge", <input value={form.categorie_age} onChange={e => setForm(f => ({ ...f, categorie_age: e.target.value }))} placeholder="U13, U15…" style={inp} />)}
+            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Complexe sportif…" style={inp} />)}
           </div>
         </>)}
 
-        {section('2 · Format', 'Nombre d\'équipes attendues, poules et terrains disponibles.', <>
+        {section(2, 'Format', "Nombre d'équipes attendues, poules et terrains disponibles.", <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
+            {champ("Nombre d'équipes", compteur(nbEq, 2, 64, v => setForm(f => ({ ...f, nb_equipes_prevues: v }))))}
+            {champ('Équipes par poule', segments([3, 4, 5, 6].map(n => ({ valeur: n, libelle: String(n) })), parPoule, v => setForm(f => ({ ...f, nb_equipes_poule: v }))))}
+            {champ('Terrains', compteur(nbTerrains, 1, 12, v => setForm(f => ({ ...f, nb_terrains: v }))))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: colors.text.faint, marginRight: '4px' }}>Couleur de chaque terrain dans le planning :</span>
+            {Array.from({ length: nbTerrains }, (_, i) => <PastilleTerrain key={i} numero={i + 1} taille="petite" />)}
+          </div>
+        </>)}
+
+        {section(3, 'Horaires', 'Durée de la journée et des matchs.', <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-            {champ("Nombre d'équipes", <input type="number" min="2" value={form.nb_equipes_prevues} onChange={e => setForm(f => ({ ...f, nb_equipes_prevues: parseInt(e.target.value) || 2 }))} style={st.input} />)}
-            {champ('Équipes par poule', <select value={form.nb_equipes_poule} onChange={e => setForm(f => ({ ...f, nb_equipes_poule: parseInt(e.target.value) }))} style={st.input}>
-              {[3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>)}
-            {champ('Terrains', <input type="number" min="1" value={form.nb_terrains} onChange={e => setForm(f => ({ ...f, nb_terrains: parseInt(e.target.value) || 1 }))} style={st.input} />)}
+            {champ('Début', <input type="time" value={form.heure_debut} onChange={e => setForm(f => ({ ...f, heure_debut: e.target.value }))} style={inp} />)}
+            {champ('Fin', <input type="time" value={form.heure_fin} onChange={e => setForm(f => ({ ...f, heure_fin: e.target.value }))} style={inp} />)}
+            {champ("Durée d'un match", avecUnite(<input type="number" min="1" value={form.duree_match} onChange={e => setForm(f => ({ ...f, duree_match: parseInt(e.target.value) || 1 }))} style={{ ...inp, paddingRight: '44px' }} />, 'min'))}
+            {champ('Pause entre matchs', avecUnite(<input type="number" min="0" value={form.pause_minutes} onChange={e => setForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={{ ...inp, paddingRight: '44px' }} />, 'min'))}
+          </div>
+
+          {/* Pause déjeuner facultative (durée 0 = pas de pause) */}
+          <div style={{ borderRadius: '12px', border: `1px solid ${pauseActive ? colors.accent.green + '55' : colors.border.default}`, background: pauseActive ? colors.accent.green + '0d' : 'transparent', padding: '14px 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={pauseActive}
+                onChange={e => setForm(f => ({ ...f, pause_midi_duree: e.target.checked ? DUREE_PAUSE_MIDI_DEFAUT : 0 }))}
+                style={{ width: '18px', height: '18px', marginTop: '1px', accentColor: colors.accent.green, cursor: 'pointer', flexShrink: 0 }} />
+              <span>
+                <span style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: colors.text.primary }}>Prévoir une pause déjeuner</span>
+                <span style={{ display: 'block', fontSize: '12px', color: colors.text.faint, marginTop: '2px' }}>
+                  {pauseActive ? 'Aucun match ne sera programmé pendant cette pause, sur tous les terrains.' : 'Pas de pause : les matchs s\'enchaînent sur toute la journée.'}
+                </span>
+              </span>
+            </label>
+            {pauseActive && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginTop: '14px' }}>
+                {champ('Début de la pause', <input type="time" value={form.pause_midi_debut} onChange={e => setForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={inp} />)}
+                <div style={{ gridColumn: 'span 2', minWidth: 0 }}>
+                  {champ('Durée', segments(DUREES_PAUSE_MIDI.map(d => ({ valeur: d, libelle: libelleDuree(d) })), Number(form.pause_midi_duree), v => setForm(f => ({ ...f, pause_midi_duree: v }))))}
+                </div>
+              </div>
+            )}
           </div>
         </>)}
 
-        {section('3 · Horaires', 'Durée des matchs et de la journée — la pause midi est respectée par le planning.', <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-            {champ('Début', <input type="time" value={form.heure_debut} onChange={e => setForm(f => ({ ...f, heure_debut: e.target.value }))} style={st.input} />)}
-            {champ('Fin', <input type="time" value={form.heure_fin} onChange={e => setForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />)}
-            {champ('Durée d\'un match', <div style={{ position: 'relative' }}><input type="number" min="1" value={form.duree_match} onChange={e => setForm(f => ({ ...f, duree_match: parseInt(e.target.value) || 1 }))} style={{ ...st.input, paddingRight: '40px' }} /><span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint }}>min</span></div>)}
-            {champ('Pause entre matchs', <div style={{ position: 'relative' }}><input type="number" min="0" value={form.pause_minutes} onChange={e => setForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={{ ...st.input, paddingRight: '40px' }} /><span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint }}>min</span></div>)}
-            {champ('Pause midi à', <input type="time" value={form.pause_midi_debut} onChange={e => setForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />)}
-            {champ('Durée pause midi', <select value={form.pause_midi_duree} onChange={e => setForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
-              <option value={60}>1h00</option>
-              <option value={75}>1h15</option>
-              <option value={90}>1h30</option>
-              <option value={105}>1h45</option>
-              <option value={120}>2h00</option>
-            </select>)}
-          </div>
-        </>)}
-
-        {section('4 · Finances', 'Facultatif — recette et coût sont ajoutés automatiquement au budget du club.', <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-            {champ('Inscription / équipe (€)', <input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />)}
-            {champ('Équipes payantes', <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={st.input} />)}
-            {champ("Coût d'organisation (€)", <input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />)}
+        {section(4, 'Finances', 'Facultatif — recette et coût sont ajoutés automatiquement au budget du club.', <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+            {champ('Inscription / équipe', avecUnite(<input type="number" min="0" step="0.01" placeholder="0.00" value={form.prix_inscription_equipe} onChange={e => setForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={{ ...inp, paddingRight: '32px' }} />, '€'))}
+            {champ('Équipes payantes', <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={inp} />)}
+            {champ("Coût d'organisation", avecUnite(<input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={{ ...inp, paddingRight: '32px' }} />, '€'))}
           </div>
           <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>L'équipe hôte (ton club) ne paie pas d'inscription. Coût : terrain, arbitrage, récompenses…</p>
         </>)}
       </div>
 
       {/* Résumé en direct */}
-      <div style={{ ...st.card, padding: '18px 20px', position: 'sticky', top: '16px' }}>
-        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Résumé</p>
-        <p style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 800, color: colors.text.primary }}>{form.nom.trim() || 'Nouveau tournoi'}</p>
+      <div style={{ ...st.card, padding: '20px 22px', position: 'sticky', top: '16px', borderTop: `3px solid ${colors.accent.green}` }}>
+        <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint }}>Résumé</p>
+        <p style={{ margin: '0 0 14px', fontSize: '17px', fontWeight: 800, color: colors.text.primary, overflowWrap: 'anywhere' }}>{form.nom.trim() || 'Nouveau tournoi'}</p>
         {ligneResume('Poules', `${nbPoules} poule${nbPoules > 1 ? 's' : ''} (${taillesPoules.join(' / ')} équipes)`)}
         {ligneResume('Matchs de poule', nbMatchsPoules)}
+        {ligneResume('Terrains', nbTerrains)}
+        {ligneResume('Pause déjeuner', pauseActive ? `${form.pause_midi_debut || '12:00'} · ${libelleDuree(Number(form.pause_midi_duree))}` : 'Aucune')}
         {ligneResume('Temps nécessaire', fmtDuree(tempsNecessaire))}
         {ligneResume('Temps disponible', fmtDuree(tempsDispo), tientDansJournee ? colors.accent.green : colors.accent.red)}
+        <div style={{ marginTop: '12px', height: '6px', borderRadius: '6px', background: colors.background.raised, overflow: 'hidden' }} title="Temps nécessaire / temps disponible">
+          <div style={{ width: `${Math.round(ratioTemps * 100)}%`, height: '100%', borderRadius: '6px', background: tientDansJournee ? colors.accent.green : colors.accent.amber, transition: 'width 0.2s' }} />
+        </div>
         <div style={{ margin: '12px 0', padding: '10px 12px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, background: (tientDansJournee ? colors.accent.green : colors.accent.amber) + '14', color: tientDansJournee ? colors.accent.green : colors.accent.amber }}>
           {tientDansJournee
             ? 'Les poules tiennent dans la journée, il reste du temps pour les phases finales.'
@@ -908,7 +1000,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           {cout > 0 && ligneResume("Coût d'organisation", `−${cout.toFixed(2)} €`, colors.accent.red)}
           {recette > 0 && cout > 0 && ligneResume('Solde prévu', `${recette - cout >= 0 ? '+' : ''}${(recette - cout).toFixed(2)} €`, recette - cout >= 0 ? colors.accent.green : colors.accent.red)}
         </>}
-        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, width: '100%', marginTop: '14px', opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '12px', fontSize: '14px' }}>
+        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, width: '100%', marginTop: '14px', opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px', cursor: (!form.nom.trim() || loading) ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Création…' : 'Créer le tournoi'}
         </button>
         {!form.nom.trim() && <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.faint, textAlign: 'center' }}>Le nom du tournoi est obligatoire.</p>}
@@ -1110,14 +1202,17 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             ) : (() => {
               const parHeure = {}
               matchs.forEach(mt => { (parHeure[mt.heure_debut] ||= []).push(mt) })
-              return Object.entries(parHeure).sort(([a], [b]) => a.localeCompare(b)).map(([heure, mts]) => (
+              const numerosTerrains = [...new Set(matchs.map(mt => mt.terrain).filter(Boolean))].sort((a, b) => a - b)
+              return <>
+                <LegendeTerrains numeros={numerosTerrains} colors={colors} />
+                {Object.entries(parHeure).sort(([a], [b]) => a.localeCompare(b)).map(([heure, mts]) => (
                 <div key={heure} style={{ marginBottom: '16px' }}>
                   <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}>{heure?.slice(0, 5)}</div>
                   {mts.sort((a, b) => a.terrain - b.terrain).map(mt => {
                     const ea = getEquipe(mt.equipe_a_id), eb = getEquipe(mt.equipe_b_id)
                     return (
-                      <div key={mt.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '68px' }}>Terrain {mt.terrain}</span>
+                      <div key={mt.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderLeft: `4px solid ${couleurTerrain(mt.terrain)}` }}>
+                        <PastilleTerrain numero={mt.terrain} />
                         {mt.phase === 'poule' ? (
                           <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '56px', textAlign: 'center' }}>Poule {mt.poule}</span>
                         ) : (
@@ -1139,7 +1234,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     )
                   })}
                 </div>
-              ))
+              ))}
+              </>
             })()}
             {!readOnly && matchs.length > 0 && (
               <button onClick={genererPlanningAuto} style={{ ...st.btnGhost, fontSize: '12px', marginTop: '4px' }}><IcoRefresh /> Régénérer</button>
@@ -1387,21 +1483,33 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 <label style={st.label}>Heure de fin</label>
                 <input type="time" value={reglagesForm.heure_fin} onChange={e => setReglagesForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />
               </div>
-              <div>
-                <label style={st.label}>Début pause midi</label>
-                <input type="time" value={reglagesForm.pause_midi_debut} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
-              </div>
-              <div>
-                <label style={st.label}>Durée pause midi</label>
-                <select value={reglagesForm.pause_midi_duree} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
-                  <option value={60}>1h00</option>
-                  <option value={75}>1h15</option>
-                  <option value={90}>1h30</option>
-                  <option value={105}>1h45</option>
-                  <option value={120}>2h00</option>
-                </select>
+              <div style={{ gridColumn: 'span 2', alignSelf: 'end' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', height: '38px' }}>
+                  <input type="checkbox" checked={Number(reglagesForm.pause_midi_duree) > 0}
+                    onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: e.target.checked ? DUREE_PAUSE_MIDI_DEFAUT : 0 }))}
+                    style={{ width: '18px', height: '18px', accentColor: colors.accent.green, cursor: 'pointer' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Pause déjeuner</span>
+                  <span style={{ fontSize: '12px', color: colors.text.faint }}>{Number(reglagesForm.pause_midi_duree) > 0 ? '' : '— aucune, les matchs s\'enchaînent'}</span>
+                </label>
               </div>
             </div>
+            {Number(reglagesForm.pause_midi_duree) > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                <div>
+                  <label style={st.label}>Début pause midi</label>
+                  <input type="time" value={reglagesForm.pause_midi_debut} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
+                </div>
+                <div>
+                  <label style={st.label}>Durée pause midi</label>
+                  <select value={reglagesForm.pause_midi_duree} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: parseInt(e.target.value) }))} style={st.input}>
+                    {/* Durée hors liste (ancien tournoi) conservée telle quelle */}
+                    {[...new Set([...DUREES_PAUSE_MIDI, Number(reglagesForm.pause_midi_duree)])].sort((a, b) => a - b).map(d => (
+                      <option key={d} value={d}>{libelleDuree(d)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
               <div>
                 <label style={st.label}>Prix d'inscription par équipe (€)</label>

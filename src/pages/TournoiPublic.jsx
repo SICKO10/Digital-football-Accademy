@@ -4,6 +4,8 @@ import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
 import SelecteurRosterEquipe from '../components/SelecteurRosterEquipe'
+import { PastilleTerrain, LegendeTerrains } from '../components/club/PastilleTerrain'
+import { couleurTerrain } from '../lib/tournoi'
 
 const VIDE_VOTE_PUBLIC = {
   vote_beau_jeu_equipe_id: '',
@@ -167,14 +169,16 @@ export default function TournoiPublic() {
         {onglet === 'planning' && (
           matchsPoule.length === 0
             ? <div style={{ ...st.card, textAlign: 'center', padding: '40px', color: colors.text.faint }}>Le planning n'a pas encore été publié.</div>
-            : Object.entries(parHeure).sort(([a], [b]) => a.localeCompare(b)).map(([heure, mts]) => (
+            : <>
+              <LegendeTerrains numeros={[...new Set(matchsPoule.map(m => m.terrain).filter(Boolean))].sort((a, b) => a - b)} colors={colors} />
+              {Object.entries(parHeure).sort(([a], [b]) => a.localeCompare(b)).map(([heure, mts]) => (
               <div key={heure} style={{ marginBottom: '14px' }}>
                 <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>{heure?.slice(0, 5)}</div>
                 {mts.sort((a, b) => a.terrain - b.terrain).map(m => {
                   const ea = getEquipe(m.equipe_a_id), eb = getEquipe(m.equipe_b_id)
                   return (
-                    <div key={m.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ color: colors.text.disabled, fontSize: '12px', minWidth: '64px' }}>Terrain {m.terrain}</span>
+                    <div key={m.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderLeft: `4px solid ${couleurTerrain(m.terrain)}` }}>
+                      <PastilleTerrain numero={m.terrain} />
                       <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '52px', textAlign: 'center' }}>Poule {m.poule}</span>
                       <span style={{ fontWeight: 700, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
                       {m.statut === 'termine'
@@ -185,7 +189,8 @@ export default function TournoiPublic() {
                   )
                 })}
               </div>
-            ))
+            ))}
+            </>
         )}
 
         {onglet === 'classement' && (
