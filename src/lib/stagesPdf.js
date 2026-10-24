@@ -1,4 +1,4 @@
-import { formatDate, formatJourCourt } from './stages'
+import { formatDate, formatJourCourt, elementsPlanningEncadrant } from './stages'
 
 // Autorisation parentale pré-remplie (module Stages, étape 3), générée dans
 // le navigateur avec jsPDF (déjà utilisé ailleurs dans le projet), chargé à
@@ -82,6 +82,68 @@ export async function telechargerAutorisationParentale({ stage, enfant, jours, c
   doc.setTextColor(140)
   doc.text(nettoyer(`Référence d'inscription : ${reference || '-'}  ·  Document généré avec Digital Football`), marge, 287)
 
-  const nomFichier = `autorisation-${enfant.prenom}-${enfant.nom}`.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-')
+  const nomFichier = `autorisation-${enfant.prenom}-${enfant.nom}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')
   doc.save(`${nomFichier}.pdf`)
+}
+
+// Planning PDF d'un ou plusieurs encadrants : une page (ou plus) par
+// encadrant, jour par jour, heure par heure. Même contenu que l'onglet
+// Organisation (elementsPlanningEncadrant).
+export async function telechargerPlanningEncadrants({ stage, clubNom, encadrants, taches, creneaux }) {
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const marge = 16
+  const largeur = 210 - marge * 2
+  const basPage = 280
+
+  encadrants.forEach((enc, index) => {
+    if (index > 0) doc.addPage()
+    let y = 18
+    const nouvellePageSiBesoin = (hauteur) => { if (y + hauteur > basPage) { doc.addPage(); y = 18 } }
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(120)
+    doc.text(nettoyer(`${clubNom || 'Club'} · ${stage.nom}`), marge, y); y += 7
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(20)
+    doc.text(nettoyer(`Planning de ${enc.nom}`), marge, y); y += 6
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(70)
+    const identite = [enc.role, enc.telephone].filter(Boolean).join(' · ')
+    if (identite) { doc.text(nettoyer(identite), marge, y); y += 5 }
+    doc.setDrawColor(200); doc.line(marge, y, marge + largeur, y); y += 7
+
+    const elements = elementsPlanningEncadrant(enc, taches, creneaux)
+    if (elements.length === 0) {
+      doc.setFontSize(11); doc.setTextColor(110); doc.text('Rien de prévu pour cet encadrant.', marge, y)
+      return
+    }
+    const parJour = elements.reduce((acc, e) => { const k = e.date || 'tout'; (acc[k] = acc[k] || []).push(e); return acc }, {})
+    for (const [jour, liste] of Object.entries(parJour)) {
+      nouvellePageSiBesoin(16)
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20)
+      const titreJour = jour === 'tout' ? 'Tout le stage' : formatDate(jour)
+      doc.text(nettoyer(titreJour.charAt(0).toUpperCase() + titreJour.slice(1)), marge, y); y += 6
+      for (const e of liste) {
+        const horaire = e.debut ? `${e.debut.slice(0, 5)}${e.fin ? ` - ${e.fin.slice(0, 5)}` : ''}` : 'Sans horaire'
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5)
+        const titre = doc.splitTextToSize(nettoyer(`${e.titre}  (${e.type})`), largeur - 34)
+        const detail = e.detail ? doc.splitTextToSize(nettoyer(e.detail), largeur - 34) : []
+        const hauteur = titre.length * 4.6 + detail.length * 4.2 + 3
+        nouvellePageSiBesoin(hauteur)
+        doc.setDrawColor(e.type === 'Tâche' ? 96 : 34, e.type === 'Tâche' ? 165 : 197, e.type === 'Tâche' ? 250 : 94)
+        doc.setLineWidth(0.8); doc.line(marge, y - 3.6, marge, y - 3.6 + hauteur - 2); doc.setLineWidth(0.2)
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(40); doc.text(horaire, marge + 3, y)
+        doc.setTextColor(20); doc.text(titre, marge + 34, y)
+        if (detail.length) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(100); doc.text(detail, marge + 34, y + titre.length * 4.6) }
+        y += hauteur + 1.5
+      }
+      y += 3
+    }
+  })
+
+  const total = doc.getNumberOfPages()
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p); doc.setFontSize(8); doc.setTextColor(150)
+    doc.text(nettoyer(`${stage.nom} · page ${p}/${total} · Digital Football`), marge, 290)
+  }
+  const nom = encadrants.length === 1 ? `planning-${encadrants[0].nom}` : `plannings-encadrants-${stage.nom}`
+  doc.save(`${nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}.pdf`)
 }

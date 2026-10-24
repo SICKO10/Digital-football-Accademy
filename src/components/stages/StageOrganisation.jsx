@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { joursDuStage, formatJourCourt, formatDate, heure } from '../../lib/stages'
+import { joursDuStage, formatJourCourt, formatDate, heure, CATEGORIES_TACHE, STATUTS_TACHE, elementsPlanningEncadrant } from '../../lib/stages'
+import { telechargerPlanningEncadrants } from '../../lib/stagesPdf'
 
 // Onglet « Organisation » (interne, jamais public) : encadrants et leurs
 // responsabilités, matériel à réunir, tâches, et planning individuel de
@@ -9,11 +10,8 @@ import { joursDuStage, formatJourCourt, formatDate, heure } from '../../lib/stag
 
 const STATUTS_MATERIEL = { a_trouver: 'À trouver', demande: 'Demandé', obtenu: 'Obtenu' }
 const SUIVANT_MATERIEL = { a_trouver: 'demande', demande: 'obtenu', obtenu: 'a_trouver' }
-const STATUTS_TACHE = { a_faire: 'À faire', en_cours: 'En cours', fait: 'Fait' }
 const SUIVANT_TACHE = { a_faire: 'en_cours', en_cours: 'fait', fait: 'a_faire' }
-const CATEGORIES = { general: 'Général', transport: 'Transport', surveillance: 'Surveillance', animation: 'Animation', logistique: 'Logistique', cuisine: 'Repas' }
 
-const normaliser = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 
 export default function StageOrganisation({ st, colors, accent, stage }) {
   const [encadrants, setEncadrants] = useState([])
@@ -22,6 +20,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
   const [creneaux, setCreneaux] = useState([])
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState('')
+  const [clubNom, setClubNom] = useState('')
 
   useEffect(() => {
     let annule = false
@@ -30,15 +29,17 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
       supabase.from('stages_materiel').select('*').eq('stage_id', stage.id).order('created_at'),
       supabase.from('stages_taches').select('*').eq('stage_id', stage.id).order('date').order('heure_debut'),
       supabase.from('stages_planning').select('id, date, heure_debut, heure_fin, activite, lieu, responsable, groupe').eq('stage_id', stage.id).order('date').order('heure_debut'),
-    ]).then(([e, m, t, p]) => {
+      supabase.from('profiles_public').select('club').eq('id', stage.club_id).maybeSingle(),
+    ]).then(([e, m, t, p, c]) => {
       if (annule) return
       const err = e.error || m.error || t.error || p.error
       if (err) setErreur('Chargement impossible : ' + err.message)
       setEncadrants(e.data || []); setMateriel(m.data || []); setTaches(t.data || []); setCreneaux(p.data || [])
+      setClubNom(c.data?.club || '')
       setChargement(false)
     })
     return () => { annule = true }
-  }, [stage.id])
+  }, [stage.id, stage.club_id])
 
   if (chargement) return <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
   const commun = { st, colors, accent, stage, encadrants, setErreur }
@@ -49,7 +50,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
       <Encadrants {...commun} setEncadrants={setEncadrants} setTaches={setTaches} />
       <Materiel {...commun} materiel={materiel} setMateriel={setMateriel} />
       <Taches {...commun} taches={taches} setTaches={setTaches} />
-      <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} />
+      <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} clubNom={clubNom} />
     </div>
   )
 }
@@ -241,7 +242,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
             <div style={{ flex: 1, minWidth: '180px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>{t.tache}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim, textTransform: 'none' }}>
-                {[CATEGORIES[t.categorie] || t.categorie, t.date && formatJourCourt(t.date), t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, attribution(t)].filter(Boolean).join(' · ')}
+                {[CATEGORIES_TACHE[t.categorie] || t.categorie, t.date && formatJourCourt(t.date), t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, attribution(t)].filter(Boolean).join(' · ')}
               </div>
             </div>
             <button onClick={() => setEdition({ ...t, date: t.date || '', heure_debut: heure(t.heure_debut), heure_fin: heure(t.heure_fin), encadrant_ids: t.encadrant_ids || [], tous_encadrants: !!t.tous_encadrants, notes: t.notes || '' })} style={petit(st)}>Modifier</button>
@@ -255,7 +256,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
           <div>
             <label style={st.label}>Catégorie</label>
             <select value={edition.categorie} onChange={e => setEdition(p => ({ ...p, categorie: e.target.value }))} style={st.input}>
-              {Object.entries(CATEGORIES).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              {Object.entries(CATEGORIES_TACHE).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           </div>
           <div>
@@ -297,22 +298,18 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
   )
 }
 
-function PlanningEncadrant({ st, colors, accent, encadrants, taches, creneaux }) {
+function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, creneaux, clubNom, setErreur }) {
   const [choisi, setChoisi] = useState('')
   const encadrant = encadrants.find(e => e.id === choisi) || encadrants[0]
   if (encadrants.length === 0) {
     return <Bloc st={st} colors={colors} titre="Planning de chaque encadrant" aide="Ajoute des encadrants pour voir leur planning individuel." />
   }
 
-  // Créneaux du programme dont l'encadrant est indiqué responsable (nom
-  // complet ou prénom présent dans le champ « Responsable »).
-  const cles = [normaliser(encadrant.nom), normaliser(encadrant.nom.split(' ')[0])].filter(k => k.length >= 2)
-  const sesCreneaux = creneaux.filter(c => cles.some(k => normaliser(c.responsable).includes(k)))
-  const sesTaches = taches.filter(t => t.tous_encadrants || (t.encadrant_ids || []).includes(encadrant.id))
-  const elements = [
-    ...sesCreneaux.map(c => ({ cle: `c${c.id}`, date: c.date, debut: c.heure_debut, fin: c.heure_fin, titre: c.activite, detail: [c.groupe, c.lieu].filter(Boolean).join(' · '), type: 'Programme' })),
-    ...sesTaches.map(t => ({ cle: `t${t.id}`, date: t.date, debut: t.heure_debut, fin: t.heure_fin, titre: t.tache, detail: [CATEGORIES[t.categorie], STATUTS_TACHE[t.statut], t.tous_encadrants ? 'tous les encadrants' : (t.encadrant_ids || []).length > 1 ? `avec ${(t.encadrant_ids || []).length - 1} autre(s)` : null].filter(Boolean).join(' · '), type: 'Tâche' })),
-  ].sort((a, b) => `${a.date || '0'}${a.debut || ''}`.localeCompare(`${b.date || '0'}${b.debut || ''}`))
+  const elements = elementsPlanningEncadrant(encadrant, taches, creneaux)
+  const exporter = async (liste) => {
+    try { await telechargerPlanningEncadrants({ stage, clubNom, encadrants: liste, taches, creneaux }) }
+    catch (e) { setErreur('Export PDF impossible : ' + e.message) }
+  }
   const parJour = elements.reduce((acc, e) => { const k = e.date || 'tout'; (acc[k] = acc[k] || []).push(e); return acc }, {})
 
   return (
@@ -324,6 +321,10 @@ function PlanningEncadrant({ st, colors, accent, encadrants, taches, creneaux })
             background: encadrant.id === e.id ? accent + '18' : 'transparent', border: `1px solid ${encadrant.id === e.id ? accent + '60' : colors.border.default}`, color: encadrant.id === e.id ? accent : colors.text.dim,
           }}>{e.nom}</button>
         ))}
+      </div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        <button onClick={() => exporter([encadrant])} style={st.bouton}>PDF de {encadrant.nom}</button>
+        <button onClick={() => exporter(encadrants)} style={st.boutonDiscret}>PDF de tous les encadrants</button>
       </div>
       <p style={{ margin: '0 0 10px', fontSize: '13px', color: colors.text.secondary }}><strong>{encadrant.nom}</strong>{encadrant.role ? ` · ${encadrant.role}` : ''}{encadrant.telephone ? ` · ${encadrant.telephone}` : ''}</p>
       {elements.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Rien de prévu pour cet encadrant pour l'instant.</p> : (

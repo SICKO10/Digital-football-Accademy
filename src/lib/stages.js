@@ -43,3 +43,30 @@ export const montantEstime = (offre, formule, nbJours) => {
   const base = offre.type === 'journee' ? Number(offre.prix) * nbJours : Number(offre.prix)
   return base + (formule ? Number(formule.prix_jour) * nbJours : 0)
 }
+
+// ── Organisation : tâches et planning individuel des encadrants ─────
+export const CATEGORIES_TACHE = { general: 'Général', transport: 'Transport', surveillance: 'Surveillance', animation: 'Animation', logistique: 'Logistique', cuisine: 'Repas' }
+export const STATUTS_TACHE = { a_faire: 'À faire', en_cours: 'En cours', fait: 'Fait' }
+
+const normaliser = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+
+export const nomsEncadrantsTache = (t, encadrants) => t.tous_encadrants
+  ? 'Tous les encadrants'
+  : (t.encadrant_ids || []).map(id => encadrants.find(e => e.id === id)?.nom).filter(Boolean).join(', ')
+
+// Planning d'un encadrant : ses tâches (attribuées nommément ou à tous) et
+// les créneaux du programme dont il est indiqué responsable (nom complet ou
+// prénom présent dans le champ « Responsable »). Trié par jour puis heure ;
+// date absente = « tout le stage » (en tête).
+export function elementsPlanningEncadrant(encadrant, taches, creneaux) {
+  const cles = [normaliser(encadrant.nom), normaliser(encadrant.nom.split(' ')[0])].filter(k => k.length >= 2)
+  const sesCreneaux = creneaux.filter(c => cles.some(k => normaliser(c.responsable).includes(k)))
+  const sesTaches = taches.filter(t => t.tous_encadrants || (t.encadrant_ids || []).includes(encadrant.id))
+  return [
+    ...sesCreneaux.map(c => ({ cle: `c${c.id}`, date: c.date, debut: c.heure_debut, fin: c.heure_fin, titre: c.activite, detail: [c.groupe, c.lieu].filter(Boolean).join(' · '), type: 'Programme' })),
+    ...sesTaches.map(t => ({
+      cle: `t${t.id}`, date: t.date, debut: t.heure_debut, fin: t.heure_fin, titre: t.tache, type: 'Tâche',
+      detail: [CATEGORIES_TACHE[t.categorie], t.tous_encadrants ? 'tous les encadrants' : (t.encadrant_ids || []).length > 1 ? `avec ${(t.encadrant_ids || []).length - 1} autre(s)` : null, t.notes].filter(Boolean).join(' · '),
+    })),
+  ].sort((a, b) => `${a.date || '0'}${a.debut || ''}`.localeCompare(`${b.date || '0'}${b.debut || ''}`))
+}

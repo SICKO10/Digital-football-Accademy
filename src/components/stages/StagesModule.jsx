@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { formatDate, formatPeriode, heure, joursDuStage } from '../../lib/stages'
+import { formatDate, formatPeriode, heure, joursDuStage, CATEGORIES_TACHE, STATUTS_TACHE, nomsEncadrantsTache } from '../../lib/stages'
 import StageOffres from './StageOffres'
 import StageInscriptions from './StageInscriptions'
 import StageOrganisation from './StageOrganisation'
@@ -295,19 +295,28 @@ const CRENEAU_VIDE = { date: '', heure_debut: '', heure_fin: '', activite: '', l
 
 function PlanningStage({ st, colors, stage }) {
   const [creneaux, setCreneaux] = useState([])
+  const [taches, setTaches] = useState([])
+  const [encadrants, setEncadrants] = useState([])
   const [chargement, setChargement] = useState(true)
   const [edition, setEdition] = useState(null) // null | créneau en cours d'édition (id absent = nouveau)
   const [erreur, setErreur] = useState('')
 
+  // Les tâches de l'onglet Organisation s'affichent aussi ici, dans chaque
+  // journée (lecture seule : elles se modifient dans Organisation).
   useEffect(() => {
     let annule = false
-    supabase.from('stages_planning').select('*').eq('stage_id', stage.id).order('date').order('heure_debut')
-      .then(({ data, error }) => {
-        if (annule) return
-        if (error) setErreur('Impossible de charger le planning : ' + error.message)
-        setCreneaux(data || [])
-        setChargement(false)
-      })
+    Promise.all([
+      supabase.from('stages_planning').select('*').eq('stage_id', stage.id).order('date').order('heure_debut'),
+      supabase.from('stages_taches').select('*').eq('stage_id', stage.id).order('date').order('heure_debut'),
+      supabase.from('stages_encadrants').select('id, nom').eq('stage_id', stage.id),
+    ]).then(([p, t, e]) => {
+      if (annule) return
+      if (p.error) setErreur('Impossible de charger le planning : ' + p.error.message)
+      setCreneaux(p.data || [])
+      setTaches(t.data || [])
+      setEncadrants(e.data || [])
+      setChargement(false)
+    })
     return () => { annule = true }
   }, [stage.id])
 
@@ -338,13 +347,31 @@ function PlanningStage({ st, colors, stage }) {
     setCreneaux(prev => prev.filter(x => x.id !== id))
   }
 
-  const parJour = creneaux.reduce((acc, c) => { (acc[c.date] = acc[c.date] || []).push(c); return acc }, {})
+  // Journées : créneaux du programme + tâches datées, triés par heure
+  // (tâches sans horaire en tête). Tâches sans date : bloc « Tout le stage ».
+  const parJour = {}
+  for (const c of creneaux) (parJour[c.date] = parJour[c.date] || []).push({ ...c, _type: 'creneau' })
+  for (const t of taches.filter(x => x.date)) (parJour[t.date] = parJour[t.date] || []).push({ ...t, _type: 'tache' })
+  for (const jour of Object.keys(parJour)) parJour[jour].sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
+  const joursTries = Object.keys(parJour).sort()
+  const tachesToutLeStage = taches.filter(x => !x.date)
+  const carteTache = (t) => (
+    <div key={`t${t.id}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: '4px dashed #60a5fa' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '86px' }}>{t.heure_debut ? `${heure(t.heure_debut)}${t.heure_fin ? ` – ${heure(t.heure_fin)}` : ''}` : 'Sans horaire'}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>
+          {t.tache} <span style={{ marginLeft: '4px', fontSize: '10px', fontWeight: 700, color: '#60a5fa', border: '1px solid #60a5fa60', borderRadius: '6px', padding: '1px 6px' }}>TÂCHE</span>
+        </div>
+        <div style={{ fontSize: '12px', color: colors.text.dim }}>{[CATEGORIES_TACHE[t.categorie], STATUTS_TACHE[t.statut], nomsEncadrantsTache(t, encadrants) || 'Non attribuée'].filter(Boolean).join(' · ')}</div>
+      </div>
+    </div>
+  )
   const champ = (cle) => ({ value: edition?.[cle] ?? '', onChange: e => setEdition(prev => ({ ...prev, [cle]: e.target.value })), style: st.input })
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px', flexWrap: 'wrap' }}>
-        <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Le plan B et les notes restent internes : ils n'apparaissent jamais sur la page publique.</p>
+        <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Le plan B et les notes restent internes : ils n'apparaissent jamais sur la page publique. Les tâches (en pointillés bleus) se gèrent dans l'onglet Organisation.</p>
         {!edition && <button onClick={() => { setErreur(''); setEdition({ ...CRENEAU_VIDE, date: stage.date_debut }) }} style={st.boutonPlein}>+ Ajouter un créneau</button>}
       </div>
 
@@ -385,15 +412,21 @@ function PlanningStage({ st, colors, stage }) {
       {!edition && erreur && <p style={st.erreur}>{erreur}</p>}
       {chargement ? (
         <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
-      ) : creneaux.length === 0 ? (
+      ) : creneaux.length === 0 && taches.length === 0 ? (
         <div style={{ ...st.carte, textAlign: 'center', padding: '2.5rem', color: colors.text.faint, fontSize: '13px' }}>Aucun créneau. Ajoute le premier pour construire le programme du stage.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {Object.entries(parJour).map(([jour, liste]) => (
+          {tachesToutLeStage.length > 0 && (
+            <div style={st.carte}>
+              <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>Tout le stage</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{tachesToutLeStage.map(carteTache)}</div>
+            </div>
+          )}
+          {joursTries.map(jour => [jour, parJour[jour]]).map(([jour, liste]) => (
             <div key={jour} style={st.carte}>
               <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '14px', color: colors.text.primary, textTransform: 'capitalize' }}>{formatDate(jour)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {liste.map(c => (
+                {liste.map(c => c._type === 'tache' ? carteTache(c) : (
                   <div key={c.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: `4px solid ${c.couleur}` }}>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '86px' }}>{heure(c.heure_debut)} – {heure(c.heure_fin)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
