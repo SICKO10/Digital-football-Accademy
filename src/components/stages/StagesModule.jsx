@@ -300,6 +300,7 @@ function PlanningStage({ st, colors, stage }) {
   const [chargement, setChargement] = useState(true)
   const [edition, setEdition] = useState(null) // null | créneau en cours d'édition (id absent = nouveau)
   const [erreur, setErreur] = useState('')
+  const [dupli, setDupli] = useState(null) // { source, cibles, creneaux, taches, remplacer, enCours, erreur }
 
   // Les tâches de l'onglet Organisation s'affichent aussi ici, dans chaque
   // journée (lecture seule : elles se modifient dans Organisation).
@@ -354,6 +355,79 @@ function PlanningStage({ st, colors, stage }) {
   for (const t of taches.filter(x => x.date)) (parJour[t.date] = parJour[t.date] || []).push({ ...t, _type: 'tache' })
   for (const jour of Object.keys(parJour)) parJour[jour].sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
   const joursTries = Object.keys(parJour).sort()
+  const joursStage = joursDuStage(stage)
+
+  // Duplication d'une journée (créneaux et/ou tâches) vers d'autres jours,
+  // en ajoutant ou en remplaçant leur contenu. Les tâches copiées repartent
+  // « à faire ». Toutes les écritures passent par les règles d'accès.
+  const dupliquerJournee = async () => {
+    const d = dupli
+    if (d.cibles.length === 0) return setDupli(x => ({ ...x, erreur: 'Choisis au moins un jour de destination.' }))
+    if (!d.creneaux && !d.taches) return setDupli(x => ({ ...x, erreur: 'Choisis ce qu\'il faut copier.' }))
+    const sourcesC = d.creneaux ? creneaux.filter(c => c.date === d.source) : []
+    const sourcesT = d.taches ? taches.filter(t => t.date === d.source) : []
+    if (sourcesC.length + sourcesT.length === 0) return setDupli(x => ({ ...x, erreur: 'Cette journée est vide.' }))
+    if (d.remplacer && !window.confirm(`Remplacer le contenu de ${d.cibles.length} jour(s) ? Les ${d.creneaux && d.taches ? 'créneaux et tâches' : d.creneaux ? 'créneaux' : 'tâches'} déjà présents sur ces jours seront supprimés.`)) return
+    setDupli(x => ({ ...x, enCours: true, erreur: '' }))
+    try {
+      if (d.remplacer) {
+        if (d.creneaux) { const { error } = await supabase.from('stages_planning').delete().eq('stage_id', stage.id).in('date', d.cibles); if (error) throw error }
+        if (d.taches) { const { error } = await supabase.from('stages_taches').delete().eq('stage_id', stage.id).in('date', d.cibles); if (error) throw error }
+      }
+      let nouveauxC = [], nouveauxT = []
+      if (sourcesC.length) {
+        const lignes = d.cibles.flatMap(date => sourcesC.map(c => ({
+          stage_id: stage.id, date, heure_debut: c.heure_debut, heure_fin: c.heure_fin, activite: c.activite, lieu: c.lieu,
+          responsable: c.responsable, groupe: c.groupe, plan_b: c.plan_b, notes: c.notes, couleur: c.couleur,
+        })))
+        const { data, error } = await supabase.from('stages_planning').insert(lignes).select()
+        if (error) throw error
+        nouveauxC = data || []
+      }
+      if (sourcesT.length) {
+        const lignes = d.cibles.flatMap(date => sourcesT.map(t => ({
+          stage_id: stage.id, date, tache: t.tache, categorie: t.categorie, heure_debut: t.heure_debut, heure_fin: t.heure_fin,
+          statut: 'a_faire', notes: t.notes, encadrant_ids: t.encadrant_ids || [], tous_encadrants: !!t.tous_encadrants,
+        })))
+        const { data, error } = await supabase.from('stages_taches').insert(lignes).select()
+        if (error) throw error
+        nouveauxT = data || []
+      }
+      const trier = (a, b) => `${a.date}${a.heure_debut || ''}`.localeCompare(`${b.date}${b.heure_debut || ''}`)
+      if (d.creneaux) setCreneaux(prev => [...(d.remplacer ? prev.filter(c => !d.cibles.includes(c.date)) : prev), ...nouveauxC].sort(trier))
+      if (d.taches) setTaches(prev => [...(d.remplacer ? prev.filter(t => !d.cibles.includes(t.date)) : prev), ...nouveauxT].sort(trier))
+      setDupli(null)
+    } catch (e) {
+      setDupli(x => ({ ...x, enCours: false, erreur: 'Duplication impossible : ' + e.message }))
+    }
+  }
+  const panneauDuplication = (jour) => {
+    const autres = joursStage.filter(j => j !== jour)
+    const coche = (j) => setDupli(x => ({ ...x, cibles: x.cibles.includes(j) ? x.cibles.filter(y => y !== j) : [...x.cibles, j] }))
+    const pastille = (actif) => ({
+      padding: '6px 11px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize',
+      background: actif ? '#60a5fa22' : 'transparent', border: `1px solid ${actif ? '#60a5fa' : colors.border.default}`, color: actif ? '#60a5fa' : colors.text.dim,
+    })
+    return (
+      <div style={{ margin: '0 0 12px', padding: '12px', borderRadius: '10px', border: `1px dashed ${colors.border.default}`, background: colors.background.base }}>
+        <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Copier cette journée vers…</p>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => setDupli(x => ({ ...x, cibles: x.cibles.length === autres.length ? [] : autres }))} style={pastille(dupli.cibles.length === autres.length && autres.length > 0)}>Tous les autres jours</button>
+          {autres.map(j => <button key={j} type="button" onClick={() => coche(j)} style={pastille(dupli.cibles.includes(j))}>{formatDate(j, { weekday: 'short', day: 'numeric', month: 'short' })}</button>)}
+        </div>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '10px', fontSize: '13px', color: colors.text.dim }}>
+          <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={dupli.creneaux} onChange={e => setDupli(x => ({ ...x, creneaux: e.target.checked }))} /> Créneaux du programme</label>
+          <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={dupli.taches} onChange={e => setDupli(x => ({ ...x, taches: e.target.checked }))} /> Tâches</label>
+          <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={dupli.remplacer} onChange={e => setDupli(x => ({ ...x, remplacer: e.target.checked }))} /> Remplacer le contenu existant de ces jours</label>
+        </div>
+        {dupli.erreur && <p style={st.erreur}>{dupli.erreur}</p>}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+          <button onClick={dupliquerJournee} disabled={dupli.enCours} style={{ ...st.boutonPlein, padding: '8px 16px', opacity: dupli.enCours ? 0.6 : 1 }}>{dupli.enCours ? 'Copie…' : `Copier${dupli.cibles.length ? ` vers ${dupli.cibles.length} jour(s)` : ''}`}</button>
+          <button onClick={() => setDupli(null)} style={st.boutonDiscret}>Annuler</button>
+        </div>
+      </div>
+    )
+  }
   const tachesToutLeStage = taches.filter(x => !x.date)
   const carteTache = (t) => (
     <div key={`t${t.id}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: '4px dashed #60a5fa' }}>
@@ -424,7 +498,13 @@ function PlanningStage({ st, colors, stage }) {
           )}
           {joursTries.map(jour => [jour, parJour[jour]]).map(([jour, liste]) => (
             <div key={jour} style={st.carte}>
-              <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '14px', color: colors.text.primary, textTransform: 'capitalize' }}>{formatDate(jour)}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '0 0 10px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, textTransform: 'capitalize' }}>{formatDate(jour)}</p>
+                {joursStage.length > 1 && dupli?.source !== jour && (
+                  <button onClick={() => setDupli({ source: jour, cibles: [], creneaux: true, taches: true, remplacer: false, enCours: false, erreur: '' })} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>Dupliquer cette journée</button>
+                )}
+              </div>
+              {dupli?.source === jour && panneauDuplication(jour)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {liste.map(c => c._type === 'tache' ? carteTache(c) : (
                   <div key={c.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: `4px solid ${c.couleur}` }}>
