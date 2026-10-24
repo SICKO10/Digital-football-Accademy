@@ -46,7 +46,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {erreur && <p style={st.erreur}>{erreur}</p>}
-      <Encadrants {...commun} setEncadrants={setEncadrants} />
+      <Encadrants {...commun} setEncadrants={setEncadrants} setTaches={setTaches} />
       <Materiel {...commun} materiel={materiel} setMateriel={setMateriel} />
       <Taches {...commun} taches={taches} setTaches={setTaches} />
       <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} />
@@ -69,7 +69,7 @@ function Bloc({ st, colors, titre, aide, droite, children }) {
 
 const petit = (st, extra = {}) => ({ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', ...extra })
 
-function Encadrants({ st, colors, stage, encadrants, setEncadrants, setErreur }) {
+function Encadrants({ st, colors, stage, encadrants, setEncadrants, setTaches, setErreur }) {
   const [edition, setEdition] = useState(null)
 
   const enregistrer = async () => {
@@ -88,6 +88,8 @@ function Encadrants({ st, colors, stage, encadrants, setEncadrants, setErreur })
     const { error } = await supabase.from('stages_encadrants').delete().eq('id', e.id)
     if (error) return setErreur(error.message)
     setEncadrants(prev => prev.filter(x => x.id !== e.id))
+    // Même effet que le trigger côté base : il disparaît des tâches.
+    setTaches(prev => prev.map(t => ({ ...t, encadrant_ids: (t.encadrant_ids || []).filter(id => id !== e.id) })))
   }
 
   return (
@@ -193,14 +195,17 @@ function Materiel({ st, colors, accent, stage, encadrants, materiel, setMateriel
 function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setErreur }) {
   const [edition, setEdition] = useState(null)
   const jours = joursDuStage(stage)
-  const nomEncadrant = (id) => encadrants.find(e => e.id === id)?.nom
+  const attribution = (t) => t.tous_encadrants ? 'Tous les encadrants'
+    : (t.encadrant_ids || []).map(id => encadrants.find(e => e.id === id)?.nom).filter(Boolean).join(', ') || 'Non attribuée'
+  const basculerEncadrant = (id) => setEdition(p => ({ ...p, encadrant_ids: p.encadrant_ids.includes(id) ? p.encadrant_ids.filter(x => x !== id) : [...p.encadrant_ids, id] }))
 
   const enregistrer = async () => {
     if (!edition.tache.trim()) return setErreur('Décris la tâche.')
     const valeurs = {
       tache: edition.tache.trim(), categorie: edition.categorie, date: edition.date || null,
       heure_debut: edition.heure_debut || null, heure_fin: edition.heure_fin || null,
-      encadrant_id: edition.encadrant_id || null, notes: edition.notes.trim() || null,
+      encadrant_id: null, notes: edition.notes.trim() || null,
+      tous_encadrants: edition.tous_encadrants, encadrant_ids: edition.tous_encadrants ? [] : edition.encadrant_ids,
     }
     const { data, error } = edition.id
       ? await supabase.from('stages_taches').update(valeurs).eq('id', edition.id).select().single()
@@ -236,10 +241,10 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
             <div style={{ flex: 1, minWidth: '180px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>{t.tache}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim, textTransform: 'none' }}>
-                {[CATEGORIES[t.categorie] || t.categorie, t.date && formatJourCourt(t.date), t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, nomEncadrant(t.encadrant_id) || 'Non attribuée'].filter(Boolean).join(' · ')}
+                {[CATEGORIES[t.categorie] || t.categorie, t.date && formatJourCourt(t.date), t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, attribution(t)].filter(Boolean).join(' · ')}
               </div>
             </div>
-            <button onClick={() => setEdition({ ...t, date: t.date || '', heure_debut: heure(t.heure_debut), heure_fin: heure(t.heure_fin), encadrant_id: t.encadrant_id || '', notes: t.notes || '' })} style={petit(st)}>Modifier</button>
+            <button onClick={() => setEdition({ ...t, date: t.date || '', heure_debut: heure(t.heure_debut), heure_fin: heure(t.heure_fin), encadrant_ids: t.encadrant_ids || [], tous_encadrants: !!t.tous_encadrants, notes: t.notes || '' })} style={petit(st)}>Modifier</button>
             <button onClick={() => supprimer(t)} style={petit(st, { color: '#f87171' })}>Supprimer</button>
           </div>
         ))}
@@ -262,12 +267,24 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
           </div>
           <div><label style={st.label}>Début</label><input type="time" value={edition.heure_debut} onChange={e => setEdition(p => ({ ...p, heure_debut: e.target.value }))} style={st.input} /></div>
           <div><label style={st.label}>Fin</label><input type="time" value={edition.heure_fin} onChange={e => setEdition(p => ({ ...p, heure_fin: e.target.value }))} style={st.input} /></div>
-          <div>
-            <label style={st.label}>Encadrant</label>
-            <select value={edition.encadrant_id} onChange={e => setEdition(p => ({ ...p, encadrant_id: e.target.value }))} style={st.input}>
-              <option value="">Non attribuée</option>
-              {encadrants.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}
-            </select>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={st.label}>Encadrants</label>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setEdition(p => ({ ...p, tous_encadrants: !p.tous_encadrants }))} style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                background: edition.tous_encadrants ? accent + '20' : 'transparent', border: `1px solid ${edition.tous_encadrants ? accent : colors.border.default}`, color: edition.tous_encadrants ? accent : colors.text.dim,
+              }}>Tous les encadrants</button>
+              {!edition.tous_encadrants && encadrants.map(e => {
+                const actif = edition.encadrant_ids.includes(e.id)
+                return (
+                  <button key={e.id} type="button" onClick={() => basculerEncadrant(e.id)} style={{
+                    padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: actif ? accent + '20' : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`, color: actif ? accent : colors.text.dim,
+                  }}>{e.nom}</button>
+                )
+              })}
+            </div>
+            {encadrants.length === 0 && <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.faint }}>Ajoute d'abord des encadrants pour leur attribuer la tâche.</p>}
           </div>
           <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Notes</label><input value={edition.notes} onChange={e => setEdition(p => ({ ...p, notes: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px' }}>
@@ -275,7 +292,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
             <button onClick={() => setEdition(null)} style={st.boutonDiscret}>Annuler</button>
           </div>
         </div>
-      ) : <button onClick={() => setEdition({ tache: '', categorie: 'general', date: '', heure_debut: '', heure_fin: '', encadrant_id: '', notes: '' })} style={{ ...st.bouton, marginTop: '12px' }}>+ Ajouter une tâche</button>}
+      ) : <button onClick={() => setEdition({ tache: '', categorie: 'general', date: '', heure_debut: '', heure_fin: '', encadrant_ids: [], tous_encadrants: false, notes: '' })} style={{ ...st.bouton, marginTop: '12px' }}>+ Ajouter une tâche</button>}
     </Bloc>
   )
 }
@@ -291,10 +308,10 @@ function PlanningEncadrant({ st, colors, accent, encadrants, taches, creneaux })
   // complet ou prénom présent dans le champ « Responsable »).
   const cles = [normaliser(encadrant.nom), normaliser(encadrant.nom.split(' ')[0])].filter(k => k.length >= 2)
   const sesCreneaux = creneaux.filter(c => cles.some(k => normaliser(c.responsable).includes(k)))
-  const sesTaches = taches.filter(t => t.encadrant_id === encadrant.id)
+  const sesTaches = taches.filter(t => t.tous_encadrants || (t.encadrant_ids || []).includes(encadrant.id))
   const elements = [
     ...sesCreneaux.map(c => ({ cle: `c${c.id}`, date: c.date, debut: c.heure_debut, fin: c.heure_fin, titre: c.activite, detail: [c.groupe, c.lieu].filter(Boolean).join(' · '), type: 'Programme' })),
-    ...sesTaches.map(t => ({ cle: `t${t.id}`, date: t.date, debut: t.heure_debut, fin: t.heure_fin, titre: t.tache, detail: [CATEGORIES[t.categorie], STATUTS_TACHE[t.statut]].filter(Boolean).join(' · '), type: 'Tâche' })),
+    ...sesTaches.map(t => ({ cle: `t${t.id}`, date: t.date, debut: t.heure_debut, fin: t.heure_fin, titre: t.tache, detail: [CATEGORIES[t.categorie], STATUTS_TACHE[t.statut], t.tous_encadrants ? 'tous les encadrants' : (t.encadrant_ids || []).length > 1 ? `avec ${(t.encadrant_ids || []).length - 1} autre(s)` : null].filter(Boolean).join(' · '), type: 'Tâche' })),
   ].sort((a, b) => `${a.date || '0'}${a.debut || ''}`.localeCompare(`${b.date || '0'}${b.debut || ''}`))
   const parJour = elements.reduce((acc, e) => { const k = e.date || 'tout'; (acc[k] = acc[k] || []).push(e); return acc }, {})
 

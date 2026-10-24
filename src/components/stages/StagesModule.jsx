@@ -86,7 +86,8 @@ export default function StagesModule({ clubId, accentColor }) {
       <DetailStage st={st} colors={colors} accent={accent} stage={stageOuvert}
         onRetour={() => setVue('liste')}
         onMisAJour={(maj) => setStages(prev => prev.map(s => s.id === maj.id ? maj : s))}
-        onSupprime={(id) => { setStages(prev => prev.filter(s => s.id !== id)); setVue('liste') }} />
+        onSupprime={(id) => { setStages(prev => prev.filter(s => s.id !== id)); setVue('liste') }}
+        onDuplique={(nouveau) => { setStages(prev => [nouveau, ...prev]); setVue(nouveau.id) }} />
     )
   }
 
@@ -181,7 +182,7 @@ function FormulaireStage({ st, colors, titre, initial, onAnnuler, onEnregistrer 
   )
 }
 
-function DetailStage({ st, colors, accent, stage, onRetour, onMisAJour, onSupprime }) {
+function DetailStage({ st, colors, accent, stage, onRetour, onMisAJour, onSupprime, onDuplique }) {
   const [onglet, setOnglet] = useState('apercu')
   const ONGLETS = [
     { id: 'apercu', label: 'Vue d\'ensemble' }, { id: 'inscriptions', label: 'Inscriptions' },
@@ -216,7 +217,7 @@ function DetailStage({ st, colors, accent, stage, onRetour, onMisAJour, onSuppri
       {onglet === 'actualites' && <StageActualites st={st} colors={colors} accent={accent} stage={stage} />}
       {onglet === 'sponsors' && <StageSponsors st={st} colors={colors} stage={stage} />}
       {onglet === 'offres' && <StageOffres st={st} colors={colors} accent={accent} stage={stage} onMisAJour={onMisAJour} />}
-      {onglet === 'parametres' && <ParametresStage st={st} colors={colors} stage={stage} onMisAJour={onMisAJour} onSupprime={onSupprime} />}
+      {onglet === 'parametres' && <ParametresStage key={stage.id} st={st} colors={colors} stage={stage} onMisAJour={onMisAJour} onSupprime={onSupprime} onDuplique={onDuplique} />}
     </div>
   )
 }
@@ -416,9 +417,25 @@ function PlanningStage({ st, colors, stage }) {
   )
 }
 
-function ParametresStage({ st, colors, stage, onMisAJour, onSupprime }) {
+function ParametresStage({ st, colors, stage, onMisAJour, onSupprime, onDuplique }) {
   const [erreur, setErreur] = useState('')
   const [enregistre, setEnregistre] = useState(false)
+  const [copie, setCopie] = useState({ nom: `${stage.nom} (copie)`, date_debut: '', sponsors: false })
+  const [copieEnCours, setCopieEnCours] = useState(false)
+  const [erreurCopie, setErreurCopie] = useState('')
+
+  const dupliquer = async () => {
+    if (!copie.nom.trim() || !copie.date_debut) return setErreurCopie('Indique le nom et la date de début de la copie.')
+    setCopieEnCours(true); setErreurCopie('')
+    const { data: nouvelId, error } = await supabase.rpc('dupliquer_stage', {
+      p_stage_id: stage.id, p_nom: copie.nom.trim(), p_date_debut: copie.date_debut, p_copier_sponsors: copie.sponsors,
+    })
+    if (error) { setCopieEnCours(false); return setErreurCopie('Duplication impossible : ' + error.message) }
+    const { data: nouveau, error: e2 } = await supabase.from('stages').select('*').eq('id', nouvelId).single()
+    setCopieEnCours(false)
+    if (e2) return setErreurCopie('Copie créée, mais impossible de l\'ouvrir : recharge la page.')
+    onDuplique(nouveau)
+  }
 
   const supprimer = async () => {
     if (!window.confirm(`Supprimer définitivement le stage « ${stage.nom} » et tout son planning ?`)) return
@@ -439,6 +456,19 @@ function ParametresStage({ st, colors, stage, onMisAJour, onSupprime }) {
           return null
         }} />
       {enregistre && <p style={{ color: '#4ade80', fontSize: '13px', margin: '10px 0 0' }}>Modifications enregistrées.</p>}
+      <div style={{ ...st.carte, marginTop: '14px' }}>
+        <span style={st.label}>Dupliquer ce stage</span>
+        <p style={{ margin: '6px 0 12px', fontSize: '12px', color: colors.text.faint }}>Recopie les offres, repas, jours, planning, encadrants, matériel (remis « à trouver ») et tâches (remises « à faire »), en décalant toutes les dates. Les inscriptions et les actualités ne sont pas recopiées. La copie démarre en brouillon, avec un nouveau lien public.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
+          <div><label style={st.label}>Nom de la copie</label><input value={copie.nom} onChange={e => setCopie(c => ({ ...c, nom: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Nouvelle date de début</label><input type="date" value={copie.date_debut} onChange={e => setCopie(c => ({ ...c, date_debut: e.target.value }))} style={st.input} /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text.dim, cursor: 'pointer' }}>
+            <input type="checkbox" checked={copie.sponsors} onChange={e => setCopie(c => ({ ...c, sponsors: e.target.checked }))} /> Recopier les sponsors
+          </label>
+        </div>
+        <button onClick={dupliquer} disabled={copieEnCours} style={{ ...st.bouton, marginTop: '12px', opacity: copieEnCours ? 0.6 : 1 }}>{copieEnCours ? 'Duplication…' : 'Dupliquer le stage'}</button>
+        {erreurCopie && <p style={st.erreur}>{erreurCopie}</p>}
+      </div>
       <div style={{ ...st.carte, marginTop: '14px', borderColor: '#f8717140' }}>
         <span style={st.label}>Zone sensible</span>
         <p style={{ margin: '6px 0 10px', fontSize: '12px', color: colors.text.faint }}>La suppression efface le stage et tout son planning. Elle est définitive.</p>
