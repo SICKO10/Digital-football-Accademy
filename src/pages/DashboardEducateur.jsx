@@ -22,6 +22,7 @@ import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principes
 // DashboardEducateur (1,06 Mo, le plus gros de l'app) alors que la plupart ne sont
 // jamais ouvertes dans une session donnée (une seule section/modale à la fois).
 const AnalyseVideo = lazy(() => import('../components/AnalyseVideo'))
+const StagesModule = lazy(() => import('../components/stages/StagesModule'))
 const RapportMatch = lazy(() => import('../components/RapportMatch'))
 const GestionPrepPhysique = lazy(() => import('../components/prepphysique/GestionPrepPhysique'))
 const SanteEquipe = lazy(() => import('../components/SanteEquipe'))
@@ -5653,6 +5654,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante'] },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
+      // Stages du club : éducateur affilié accepté uniquement (droit appliqué
+      // en base par peut_gerer_stages) ; jamais pour un dirigeant délégué,
+      // qui agit sous son propre compte et n'a pas ce droit.
+      ...(clubAffilieAccepte && !permissions ? [{ key: 'stages', label: 'Stages', icon: <IcoCalendar /> }] : []),
     ] },
     { titre: 'ENTRAÎNEMENT', items: [
       { key: 'entrainements', label: 'Création entraînement', icon: <IcoRun />, subKeys: ['entrainements', 'mes_seances'] },
@@ -11022,6 +11027,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               })()
             )}
           </div>
+        )}
+
+        {activeSection === 'stages' && clubAffilieAccepte && !permissions && clubAffiliation?.club_id && (
+          <Suspense fallback={<SectionLoader />}>
+            <StagesModule clubId={clubAffiliation.club_id} accentColor={colors.accent.blue} />
+          </Suspense>
         )}
 
         {activeSection === 'bibliotheque' && (

@@ -22,7 +22,7 @@ export const demanderSignatureUpload = (kind = 'video') => demanderSignature('/a
 
 // /api/upload-image — usage : 'certifications' | 'avatar' | 'licence' |
 // 'feuille' | 'seance' (fichiers de l'utilisateur) ; 'avatar_club' | 'theme'
-// | 'principe_photo' | 'terrain_fond' | 'terrain_galerie' (avec clubId,
+// | 'principe_photo' | 'terrain_fond' | 'terrain_galerie' | 'stage' (avec clubId,
 // droits vérifiés côté serveur) ; joueurId : pièces d'un enfant (parent
 // accepté uniquement).
 export const demanderSignatureImage = ({ usage, clubId, joueurId } = {}) =>

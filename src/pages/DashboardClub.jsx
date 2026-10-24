@@ -38,6 +38,7 @@ import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import TournoiClub from '../components/club/TournoiClub'
 import PlanificationSeances from '../components/club/PlanificationSeances'
 import NotificationBanner from '../components/NotificationBanner'
+import StagesModule from '../components/stages/StagesModule'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
@@ -289,6 +290,7 @@ const PERMISSION_SECTIONS = [
   { id: 'sponsors', label: 'Sponsors' },
   { id: 'profil', label: 'Profil club' },
   { id: 'evenements', label: 'Événements & Projets' },
+  { id: 'stages', label: 'Stages' },
   { id: 'organigramme', label: 'Organigramme' },
   { id: 'staff', label: 'Staff' },
   { id: 'inventaire', label: 'Inventaire' },
@@ -1442,6 +1444,7 @@ export default function DashboardClub() {
     const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(recrutementActif(club?.email) ? ['recrutement'] : []), 'educateurs'] : []
     if (canViewSection('seances')) idsSportif.push('seances')
     if (canViewSection('terrains')) idsSportif.push('terrains')
+    if (canViewSection('stages')) idsSportif.push('stages')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
@@ -3473,6 +3476,7 @@ export default function DashboardClub() {
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
     ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
+    ...(canViewSection('stages') ? [{ id: 'stages', label: 'Stages', Icon: IcoCalendar }] : []),
   ]
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
@@ -6722,6 +6726,10 @@ export default function DashboardClub() {
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('newsletter')}
           />
+        )}
+
+        {activeTab === 'stages' && canViewSection('stages') && clubId && (
+          <StagesModule clubId={clubId} accentColor={couleurPrincipale} />
         )}
 
         {activeTab === 'taches' && canViewSection('taches') && (

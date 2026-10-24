@@ -192,3 +192,21 @@ test('erreur de lecture des droits : 500 sans signature', async () => {
 test('configuration Cloudinary absente : 500 sans signature', async () => {
   refuse(await appeler({ qui: 'joueur', lireConfig: () => null }), 500)
 })
+
+// ── Module Stages : usage « stage » ─────────────────────────────────
+test('usage stage : club, staff autorisé et éducateur accepté peuvent ; un tiers non', async () => {
+  const { peutAgirPourClub } = await import('../api/upload-image.js')
+  const CLUB = 'club-1'
+  const donnees = {
+    profil: async (id) => (id === CLUB ? { plan: 'club' } : { plan: 'joueur_starter' }),
+    staffClub: async (u) => (u === 'staff-secretaire' ? { role: 'secretaire' } : u === 'staff-marketing' ? { role: 'marketing' } : null),
+    permissionRole: async () => null,
+    affiliationEducateur: async (u) => (u === 'edu-accepte' ? { peut_editer_projet_sportif: null } : null),
+  }
+  const peut = (userId) => peutAgirPourClub({ donnees, userId, clubId: CLUB, usage: 'stage' })
+  assert.equal(await peut(CLUB), true)
+  assert.equal(await peut('staff-secretaire'), true)   // stages par défaut : president, directeur_sportif, secretaire
+  assert.equal(await peut('staff-marketing'), false)
+  assert.equal(await peut('edu-accepte'), true)
+  assert.equal(await peut('inconnu'), false)
+})

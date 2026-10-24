@@ -22,6 +22,10 @@ export const PERMISSION_DEFAULTS = {
   newsletter: [],
   taches: [],
   projet_club_cff4: [],
+  // Module Stages : géré par le club, son staff et ses éducateurs affiliés
+  // (choix produit du 2026-10-24) — même liste reprise côté base dans
+  // peut_gerer_stages() (supabase_stages_etape1.sql), à garder synchronisée.
+  stages: ['president', 'directeur_sportif', 'secretaire'],
 }
 
 // Même règle que canEditSection (DashboardClub.jsx) : le président a toujours
