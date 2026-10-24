@@ -25,6 +25,7 @@ export default function StageActualites({ st, colors, accent, stage }) {
   const [fichiers, setFichiers] = useState([])
   const [envoi, setEnvoi] = useState(false)
   const [filtre, setFiltre] = useState('tous')
+  const [cleSelecteur, setCleSelecteur] = useState(0) // remet le sélecteur de fichiers à zéro après publication
 
   useEffect(() => {
     let annule = false
@@ -56,7 +57,7 @@ export default function StageActualites({ st, colors, accent, stage }) {
       const { data, error } = await supabase.from('stages_posts').insert(lignes).select()
       if (error) throw error
       setPosts(prev => [...data, ...prev])
-      setTitre(''); setContenu(''); setFichiers([])
+      setTitre(''); setContenu(''); setFichiers([]); setCleSelecteur(k => k + 1)
     } catch (e) {
       setErreur('Publication impossible : ' + e.message)
     }
@@ -83,7 +84,7 @@ export default function StageActualites({ st, colors, accent, stage }) {
         <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '15px', color: colors.text.primary }}>Publier sur la page du stage</p>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
           {Object.entries(TYPES).map(([id, t]) => (
-            <button key={id} onClick={() => { setType(id); setFichiers([]); setErreur('') }} style={{
+            <button key={id} onClick={() => { setType(id); setErreur('') }} style={{
               padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
               background: type === id ? accent + '18' : 'transparent', border: `1px solid ${type === id ? accent + '60' : colors.border.default}`, color: type === id ? accent : colors.text.dim,
             }}>{t.label}</button>
@@ -95,7 +96,7 @@ export default function StageActualites({ st, colors, accent, stage }) {
           {type !== 'photo' && <div><label style={st.label}>{type === 'objet_perdu' ? 'Où et quand (facultatif)' : 'Message'}</label><textarea rows={type === 'actualite' ? 4 : 2} value={contenu} onChange={e => setContenu(e.target.value)} style={{ ...st.input, resize: 'vertical' }} maxLength={2000} /></div>}
           <div>
             <label style={st.label}>{type === 'photo' ? 'Photos' : 'Photo (facultatif)'}</label>
-            <input type="file" accept="image/*" multiple={type === 'photo'} onChange={e => setFichiers(Array.from(e.target.files || []))} style={{ fontSize: '13px', color: colors.text.dim }} />
+            <input key={cleSelecteur} type="file" accept="image/*" multiple onChange={e => setFichiers(Array.from(e.target.files || []))} style={{ fontSize: '13px', color: colors.text.dim }} />
             {fichiers.length > 1 && <span style={{ fontSize: '12px', color: colors.text.faint, marginLeft: '8px' }}>{fichiers.length} photos</span>}
           </div>
         </div>
