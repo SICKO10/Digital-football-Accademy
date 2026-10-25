@@ -28,6 +28,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
   const [ouverte, setOuverte] = useState(null)
   const [paiement, setPaiement] = useState(null) // { id, mode, montant, date }
   const [clubNom, setClubNom] = useState('')
+  const [clubLogo, setClubLogo] = useState('')
 
   useEffect(() => {
     let annule = false
@@ -35,7 +36,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
       supabase.from('stages_inscriptions').select('*').eq('stage_id', stage.id).order('created_at', { ascending: false }),
       supabase.from('stages_offres').select('id, nom').eq('stage_id', stage.id),
       supabase.from('stages_formules_repas').select('id, nom').eq('stage_id', stage.id),
-      supabase.from('profiles_public').select('club').eq('id', stage.club_id).maybeSingle(),
+      supabase.from('profiles_public').select('club, avatar_url').eq('id', stage.club_id).maybeSingle(),
     ]).then(([i, o, f, c]) => {
       if (annule) return
       const err = i.error || o.error || f.error
@@ -44,6 +45,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
       setOffres(Object.fromEntries((o.data || []).map(x => [x.id, x.nom])))
       setFormules(Object.fromEntries((f.data || []).map(x => [x.id, x.nom])))
       setClubNom(c.data?.club || '')
+      setClubLogo(c.data?.avatar_url || '')
       setChargement(false)
     })
     return () => { annule = true }
@@ -182,7 +184,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
                     <button onClick={() => setOuverte(ouverte === i.id ? null : i.id)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>{ouverte === i.id ? 'Masquer la fiche' : 'Voir la fiche'}</button>
                     <button onClick={() => telechargerAutorisationParentale({
-                      stage: { nom: stage.nom, lieu: stage.lieu, date_debut: stage.date_debut, date_fin: stage.date_fin, club_nom: clubNom },
+                      stage: { nom: stage.nom, lieu: stage.lieu, date_debut: stage.date_debut, date_fin: stage.date_fin, club_nom: clubNom, club_logo: clubLogo },
                       enfant: i, jours: i.jours, contact: i, sante: i, reference: i.reference,
                     })} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>Autorisation (PDF)</button>
                     {i.statut_paiement !== 'annule' && i.statut_paiement !== 'paye' && (

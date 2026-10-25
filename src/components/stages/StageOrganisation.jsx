@@ -22,6 +22,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState('')
   const [clubNom, setClubNom] = useState('')
+  const [clubLogo, setClubLogo] = useState('')
 
   useEffect(() => {
     let annule = false
@@ -30,13 +31,14 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
       supabase.from('stages_materiel').select('*').eq('stage_id', stage.id).order('created_at'),
       supabase.from('stages_taches').select('*').eq('stage_id', stage.id).order('date').order('heure_debut'),
       supabase.from('stages_planning').select('id, date, heure_debut, heure_fin, activite, lieu, responsable, groupe').eq('stage_id', stage.id).order('date').order('heure_debut'),
-      supabase.from('profiles_public').select('club').eq('id', stage.club_id).maybeSingle(),
+      supabase.from('profiles_public').select('club, avatar_url').eq('id', stage.club_id).maybeSingle(),
     ]).then(([e, m, t, p, c]) => {
       if (annule) return
       const err = e.error || m.error || t.error || p.error
       if (err) setErreur('Chargement impossible : ' + err.message)
       setEncadrants(e.data || []); setMateriel(m.data || []); setTaches(t.data || []); setCreneaux(p.data || [])
       setClubNom(c.data?.club || '')
+      setClubLogo(c.data?.avatar_url || '')
       setChargement(false)
     })
     return () => { annule = true }
@@ -51,7 +53,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
       <Encadrants {...commun} setEncadrants={setEncadrants} setTaches={setTaches} />
       <Materiel {...commun} materiel={materiel} setMateriel={setMateriel} />
       <Taches {...commun} taches={taches} setTaches={setTaches} creneaux={creneaux} setCreneaux={setCreneaux} />
-      <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} clubNom={clubNom} />
+      <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} clubNom={clubNom} clubLogo={clubLogo} />
     </div>
   )
 }
@@ -314,7 +316,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
   )
 }
 
-function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, creneaux, clubNom, setErreur }) {
+function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, creneaux, clubNom, clubLogo, setErreur }) {
   const [choisi, setChoisi] = useState('')
   const encadrant = encadrants.find(e => e.id === choisi) || encadrants[0]
   if (encadrants.length === 0) {
@@ -323,7 +325,7 @@ function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, cren
 
   const elements = elementsPlanningEncadrant(encadrant, taches, creneaux, joursDuStage(stage))
   const exporter = async (liste) => {
-    try { await telechargerPlanningEncadrants({ stage, clubNom, encadrants: liste, taches, creneaux }) }
+    try { await telechargerPlanningEncadrants({ stage, clubNom, clubLogo, encadrants: liste, taches, creneaux }) }
     catch (e) { setErreur('Export PDF impossible : ' + e.message) }
   }
   const parJour = elements.reduce((acc, e) => { const k = e.date || 'tout'; (acc[k] = acc[k] || []).push(e); return acc }, {})

@@ -150,7 +150,7 @@ export default function StageInscription() {
           <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent }}>Autorisation parentale</p>
           <p style={{ margin: '0 0 12px', fontSize: 14, color: '#bbb' }}>Document pré-rempli à imprimer, signer et remettre au club le premier jour.</p>
           <button onClick={() => telechargerAutorisationParentale({
-            stage: { nom: stage.nom, lieu: stage.lieu, date_debut: stage.date_debut, date_fin: stage.date_fin, club_nom: stage.club_nom },
+            stage: { nom: stage.nom, lieu: stage.lieu, date_debut: stage.date_debut, date_fin: stage.date_fin, club_nom: stage.club_nom, club_logo: stage.club_avatar },
             enfant: confirmation.joueur, jours: confirmation.jours, contact: confirmation.contact,
             sante: confirmation.joueur, reference: confirmation.reference,
           })} style={st.boutonDiscret}>Télécharger l'autorisation (PDF)</button>

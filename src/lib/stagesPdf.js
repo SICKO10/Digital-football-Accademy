@@ -8,18 +8,51 @@ import { formatDate, formatJourCourt, elementsPlanningEncadrant, joursDuStage } 
 
 const nettoyer = (s) => String(s ?? '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-')
 
+// Logo du club (photo de profil du club) converti en PNG via un canvas, ce qui
+// accepte tous les formats d'image du navigateur. En cas d'échec (pas de logo,
+// image inaccessible, délai dépassé), le PDF est généré sans logo.
+async function chargerLogo(url) {
+  if (!url) return null
+  try {
+    const img = await new Promise((ok, ko) => {
+      const i = new Image()
+      i.crossOrigin = 'anonymous'
+      const minuteur = setTimeout(() => ko(new Error('délai')), 6000)
+      i.onload = () => { clearTimeout(minuteur); ok(i) }
+      i.onerror = () => { clearTimeout(minuteur); ko(new Error('image')) }
+      i.src = url
+    })
+    const echelle = Math.min(1, 400 / Math.max(img.naturalWidth, img.naturalHeight))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(img.naturalWidth * echelle)
+    canvas.height = Math.round(img.naturalHeight * echelle)
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+    return { data: canvas.toDataURL('image/png'), ratio: canvas.width / canvas.height }
+  } catch {
+    return null
+  }
+}
+
+// Place le logo en haut à droite, dans un carré de « taille » mm, sans le déformer.
+const dessinerLogo = (doc, logo, { droite, haut, taille }) => {
+  if (!logo) return
+  const l = logo.ratio >= 1 ? taille : taille * logo.ratio
+  const h = logo.ratio >= 1 ? taille / logo.ratio : taille
+  doc.addImage(logo.data, 'PNG', droite - l, haut + (taille - h) / 2, l, h)
+}
+
 export async function telechargerAutorisationParentale({ stage, enfant, jours, contact, sante, reference }) {
-  const { jsPDF } = await import('jspdf')
+  const [{ jsPDF }, logo] = await Promise.all([import('jspdf'), chargerLogo(stage.club_logo)])
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const marge = 18
   const largeur = 210 - marge * 2
   let y = 20
 
-  const texte = (t, { taille = 10.5, gras = false, couleur = 20, espace = 1.5 } = {}) => {
+  const texte = (t, { taille = 10.5, gras = false, couleur = 20, espace = 1.5, retrait = 0 } = {}) => {
     doc.setFont('helvetica', gras ? 'bold' : 'normal')
     doc.setFontSize(taille)
     doc.setTextColor(couleur)
-    const lignes = doc.splitTextToSize(nettoyer(t), largeur)
+    const lignes = doc.splitTextToSize(nettoyer(t), largeur - retrait)
     doc.text(lignes, marge, y)
     y += lignes.length * taille * 0.42 + espace
   }
@@ -46,9 +79,13 @@ export async function telechargerAutorisationParentale({ stage, enfant, jours, c
     : `du ${formatDate(stage.date_debut, { day: 'numeric', month: 'long' })} au ${formatDate(stage.date_fin, { day: 'numeric', month: 'long', year: 'numeric' })}`
   const naissance = enfant.date_naissance ? formatDate(enfant.date_naissance, { day: 'numeric', month: 'long', year: 'numeric' }) : '____________________'
 
-  texte(stage.club_nom || 'Club', { taille: 10, couleur: 110, espace: 3 })
-  texte('AUTORISATION PARENTALE', { taille: 17, gras: true, espace: 1 })
-  texte(`Stage « ${stage.nom} » - ${periode}${stage.lieu ? ` - ${stage.lieu}` : ''}`, { taille: 11, couleur: 60, espace: 6 })
+  // En-tête : le texte laisse la place au logo, en haut à droite.
+  const retrait = logo ? 30 : 0
+  dessinerLogo(doc, logo, { droite: marge + largeur, haut: 10, taille: 26 })
+  texte(stage.club_nom || 'Club', { taille: 10, couleur: 110, espace: 3, retrait })
+  texte('AUTORISATION PARENTALE', { taille: 17, gras: true, espace: 1, retrait })
+  texte(`Stage « ${stage.nom} » - ${periode}${stage.lieu ? ` - ${stage.lieu}` : ''}`, { taille: 11, couleur: 60, espace: 6, retrait })
+  if (logo) y = Math.max(y, 40)
 
   ligneSaisie('Je soussigné(e), nom et prénom du responsable légal : ')
   texte(`responsable légal de l'enfant ${enfant.prenom} ${enfant.nom}, né(e) le ${naissance},`, { espace: 1 })
@@ -89,8 +126,8 @@ export async function telechargerAutorisationParentale({ stage, enfant, jours, c
 // Planning PDF d'un ou plusieurs encadrants : une page (ou plus) par
 // encadrant, jour par jour, heure par heure. Même contenu que l'onglet
 // Organisation (elementsPlanningEncadrant).
-export async function telechargerPlanningEncadrants({ stage, clubNom, encadrants, taches, creneaux }) {
-  const { jsPDF } = await import('jspdf')
+export async function telechargerPlanningEncadrants({ stage, clubNom, clubLogo, encadrants, taches, creneaux }) {
+  const [{ jsPDF }, logo] = await Promise.all([import('jspdf'), chargerLogo(clubLogo)])
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const marge = 16
   const largeur = 210 - marge * 2
@@ -101,13 +138,16 @@ export async function telechargerPlanningEncadrants({ stage, clubNom, encadrants
     let y = 18
     const nouvellePageSiBesoin = (hauteur) => { if (y + hauteur > basPage) { doc.addPage(); y = 18 } }
 
+    dessinerLogo(doc, logo, { droite: marge + largeur, haut: 9, taille: 20 })
+    const largeurEntete = largeur - (logo ? 24 : 0)
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(120)
-    doc.text(nettoyer(`${clubNom || 'Club'} · ${stage.nom}`), marge, y); y += 7
+    doc.text(doc.splitTextToSize(nettoyer(`${clubNom || 'Club'} · ${stage.nom}`), largeurEntete)[0], marge, y); y += 7
     doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(20)
-    doc.text(nettoyer(`Planning de ${enc.nom}`), marge, y); y += 6
+    doc.text(doc.splitTextToSize(nettoyer(`Planning de ${enc.nom}`), largeurEntete)[0], marge, y); y += 6
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(70)
     const identite = [enc.role, enc.telephone].filter(Boolean).join(' · ')
     if (identite) { doc.text(nettoyer(identite), marge, y); y += 5 }
+    if (logo) y = Math.max(y, 31)
     doc.setDrawColor(200); doc.line(marge, y, marge + largeur, y); y += 7
 
     const elements = elementsPlanningEncadrant(enc, taches, creneaux, stage.date_debut ? joursDuStage(stage) : [])
