@@ -8,7 +8,7 @@ import StageInscriptions from './StageInscriptions'
 import StageOrganisation from './StageOrganisation'
 import StageActualites from './StageActualites'
 import StageSponsors from './StageSponsors'
-import DuplicationJournee from './DuplicationJournee'
+import DuplicationJournee, { BoutonDoublons } from './DuplicationJournee'
 
 // Module Stages — étape 1 : création d'un stage, planning journalier, lien
 // public (+ QR code). Monté dans le dashboard club et dans le dashboard
@@ -388,6 +388,7 @@ function PlanningStage({ st, colors, stage }) {
         {!edition && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {joursTries.length > 0 && joursStage.length > 1 && !dupliSource && <button onClick={() => ouvrirDuplication(joursTries[0])} style={st.bouton}>Dupliquer une journée</button>}
+            <BoutonDoublons st={st} stage={stage} creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches} onMessage={setMessageDupli} />
             <button onClick={() => { setErreur(''); setEdition({ ...CRENEAU_VIDE, date: stage.date_debut }) }} style={st.boutonPlein}>+ Ajouter un créneau</button>
           </div>
         )}
@@ -434,7 +435,7 @@ function PlanningStage({ st, colors, stage }) {
         <div style={{ ...st.carte, textAlign: 'center', padding: '2.5rem', color: colors.text.faint, fontSize: '13px' }}>Aucun créneau. Ajoute le premier pour construire le programme du stage.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {messageDupli && <p style={{ margin: 0, fontSize: '13px', color: '#4ade80' }}>{messageDupli}</p>}
+          {messageDupli && <p style={{ margin: 0, fontSize: '13px', color: messageDupli.startsWith('Suppression impossible') ? '#f87171' : '#4ade80' }}>{messageDupli}</p>}
           {dupliSource && (
             <div id="panneau-dupli-planning">
               <DuplicationJournee key={dupliSource} st={st} colors={colors} stage={stage} jours={joursStage} sourceInitiale={dupliSource}

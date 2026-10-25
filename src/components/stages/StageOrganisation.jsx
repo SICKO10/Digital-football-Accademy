@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { joursDuStage, formatJourCourt, formatDate, heure, CATEGORIES_TACHE, STATUTS_TACHE, elementsPlanningEncadrant } from '../../lib/stages'
 import { telechargerPlanningEncadrants } from '../../lib/stagesPdf'
-import DuplicationJournee from './DuplicationJournee'
+import DuplicationJournee, { BoutonDoublons } from './DuplicationJournee'
 
 // Onglet « Organisation » (interne, jamais public) : encadrants et leurs
 // responsabilités, matériel à réunir, tâches, et planning individuel de
@@ -238,13 +238,14 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
   return (
     <Bloc st={st} colors={colors} titre="Tâches" aide="Transport, surveillance, repas, logistique… Attribue chaque tâche à un encadrant ; clique sur le statut pour le faire avancer."
       droite={taches.length > 0 && <span style={{ fontSize: '13px', color: colors.text.dim }}>{faites}/{taches.length} faites</span>}>
-      {jours.length > 1 && !dupliSource && (
+      {!dupliSource && (
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
-          <button onClick={() => { setMessageDupli(''); setDupliSource(taches.find(t => t.date)?.date || jours[0]) }} style={st.bouton}>Dupliquer une journée</button>
+          {jours.length > 1 && <button onClick={() => { setMessageDupli(''); setDupliSource(taches.find(t => t.date)?.date || jours[0]) }} style={st.bouton}>Dupliquer une journée</button>}
+          <BoutonDoublons st={st} stage={stage} creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches} onMessage={setMessageDupli} />
           <span style={{ fontSize: '12px', color: colors.text.faint }}>Recopie les tâches (et si besoin les créneaux du programme) d'un jour vers les autres.</span>
         </div>
       )}
-      {messageDupli && <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#4ade80' }}>{messageDupli}</p>}
+      {messageDupli && <p style={{ margin: '0 0 10px', fontSize: '13px', color: messageDupli.startsWith('Suppression impossible') ? '#f87171' : '#4ade80' }}>{messageDupli}</p>}
       {dupliSource && (
         <DuplicationJournee st={st} colors={colors} stage={stage} jours={jours} sourceInitiale={dupliSource}
           creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches}

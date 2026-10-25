@@ -88,3 +88,57 @@ export default function DuplicationJournee({ st, colors, stage, jours, sourceIni
     </div>
   )
 }
+
+// « Supprimer les doublons » : sur un même jour, deux créneaux (même horaire,
+// activité, lieu, groupe et responsable) ou deux tâches (même intitulé,
+// horaire et catégorie) identiques sont des doublons, typiquement après une
+// duplication lancée deux fois. On garde un seul exemplaire — pour les
+// tâches, celle dont l'avancement est le plus grand — et on supprime le reste.
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+const RANG_STATUT = { fait: 2, en_cours: 1, a_faire: 0 }
+
+const enTrop = (liste, cle, meilleur = () => 0) => {
+  const gardes = new Map()
+  const aSupprimer = []
+  for (const x of liste) {
+    const k = cle(x)
+    const g = gardes.get(k)
+    if (!g) { gardes.set(k, x); continue }
+    if (meilleur(x) > meilleur(g)) { aSupprimer.push(g.id); gardes.set(k, x) } else aSupprimer.push(x.id)
+  }
+  return aSupprimer
+}
+
+const doublonsStage = (creneaux, taches) => ({
+  creneaux: enTrop(creneaux, c => [c.date, c.heure_debut, c.heure_fin, norm(c.activite), norm(c.lieu), norm(c.groupe), norm(c.responsable)].join('|')),
+  taches: enTrop(taches, t => [t.date || 'tous', t.heure_debut, t.heure_fin, norm(t.tache), t.categorie].join('|'), t => RANG_STATUT[t.statut] || 0),
+})
+
+export function BoutonDoublons({ st, stage, creneaux, taches, setCreneaux, setTaches, onMessage }) {
+  const [enCours, setEnCours] = useState(false)
+  const { creneaux: idsC, taches: idsT } = doublonsStage(creneaux, taches)
+  const total = idsC.length + idsT.length
+  if (total === 0) return null
+
+  const supprimer = async () => {
+    const detail = [idsC.length && `${idsC.length} créneau(x)`, idsT.length && `${idsT.length} tâche(s)`].filter(Boolean).join(' et ')
+    if (!window.confirm(`Supprimer ${detail} en double ? Un exemplaire de chaque est conservé.`)) return
+    setEnCours(true)
+    try {
+      if (idsC.length) { const { error } = await supabase.from('stages_planning').delete().eq('stage_id', stage.id).in('id', idsC); if (error) throw error }
+      if (idsT.length) { const { error } = await supabase.from('stages_taches').delete().eq('stage_id', stage.id).in('id', idsT); if (error) throw error }
+      setCreneaux(prev => prev.filter(c => !idsC.includes(c.id)))
+      setTaches(prev => prev.filter(t => !idsT.includes(t.id)))
+      onMessage(`${total} doublon(s) supprimé(s).`)
+    } catch (e) {
+      onMessage('Suppression impossible : ' + e.message)
+    }
+    setEnCours(false)
+  }
+
+  return (
+    <button onClick={supprimer} disabled={enCours} style={{ ...st.bouton, color: '#f87171', borderColor: '#f8717166', opacity: enCours ? 0.6 : 1 }}>
+      {enCours ? 'Suppression…' : `Supprimer les doublons (${total})`}
+    </button>
+  )
+}
