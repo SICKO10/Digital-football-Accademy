@@ -405,7 +405,12 @@ function PlanningStage({ st, colors, stage }) {
       setDupli(x => ({ ...x, enCours: false, erreur: 'Duplication impossible : ' + e.message }))
     }
   }
-  const panneauDuplication = (jour) => {
+  const ouvrirDuplication = (jour) => {
+    setDupli({ source: jour, cibles: [], creneaux: true, taches: true, remplacer: false, enCours: false, erreur: '' })
+    setTimeout(() => document.getElementById('panneau-dupli-journee')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+  }
+  const panneauDuplication = () => {
+    const jour = dupli.source
     const autres = joursStage.filter(j => j !== jour)
     const coche = (j) => setDupli(x => ({ ...x, cibles: x.cibles.includes(j) ? x.cibles.filter(y => y !== j) : [...x.cibles, j] }))
     const pastille = (actif) => ({
@@ -413,8 +418,15 @@ function PlanningStage({ st, colors, stage }) {
       background: actif ? '#60a5fa22' : 'transparent', border: `1px solid ${actif ? '#60a5fa' : colors.border.default}`, color: actif ? '#60a5fa' : colors.text.dim,
     })
     return (
-      <div style={{ margin: '0 0 12px', padding: '12px', borderRadius: '10px', border: `1px dashed ${colors.border.default}`, background: colors.background.base }}>
-        <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Copier cette journée vers…</p>
+      <div id="panneau-dupli-journee" style={{ ...st.carte, margin: '0 0 14px', border: '1px solid #60a5fa66' }}>
+        <p style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Dupliquer une journée</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+          <span style={{ fontSize: '13px', color: colors.text.dim }}>Journée à copier :</span>
+          <select value={jour} onChange={e => setDupli(x => ({ ...x, source: e.target.value, cibles: x.cibles.filter(c => c !== e.target.value) }))} style={{ ...st.input, width: 'auto', textTransform: 'capitalize' }}>
+            {joursStage.map(j => <option key={j} value={j}>{formatDate(j, { weekday: 'long', day: 'numeric', month: 'long' })}</option>)}
+          </select>
+        </div>
+        <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Vers les jours :</p>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button type="button" onClick={() => setDupli(x => ({ ...x, cibles: x.cibles.length === autres.length ? [] : autres }))} style={pastille(dupli.cibles.length === autres.length && autres.length > 0)}>Tous les autres jours</button>
           {autres.map(j => <button key={j} type="button" onClick={() => coche(j)} style={pastille(dupli.cibles.includes(j))}>{formatDate(j, { weekday: 'short', day: 'numeric', month: 'short' })}</button>)}
@@ -449,7 +461,12 @@ function PlanningStage({ st, colors, stage }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px', flexWrap: 'wrap' }}>
         <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Le plan B et les notes restent internes : ils n'apparaissent jamais sur la page publique. Les tâches (en pointillés bleus) se gèrent dans l'onglet Organisation ; une tâche sans date apparaît chaque jour. Pour recopier une journée, utilise « Dupliquer cette journée » en haut de chaque jour.</p>
-        {!edition && <button onClick={() => { setErreur(''); setEdition({ ...CRENEAU_VIDE, date: stage.date_debut }) }} style={st.boutonPlein}>+ Ajouter un créneau</button>}
+        {!edition && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {joursTries.length > 0 && joursStage.length > 1 && !dupli && <button onClick={() => ouvrirDuplication(joursTries[0])} style={st.bouton}>Dupliquer une journée</button>}
+            <button onClick={() => { setErreur(''); setEdition({ ...CRENEAU_VIDE, date: stage.date_debut }) }} style={st.boutonPlein}>+ Ajouter un créneau</button>
+          </div>
+        )}
       </div>
 
       {edition && (
@@ -493,15 +510,15 @@ function PlanningStage({ st, colors, stage }) {
         <div style={{ ...st.carte, textAlign: 'center', padding: '2.5rem', color: colors.text.faint, fontSize: '13px' }}>Aucun créneau. Ajoute le premier pour construire le programme du stage.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {dupli && panneauDuplication()}
           {joursTries.map(jour => [jour, parJour[jour]]).map(([jour, liste]) => (
             <div key={jour} style={st.carte}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '0 0 10px' }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, textTransform: 'capitalize' }}>{formatDate(jour)}</p>
-                {joursStage.length > 1 && dupli?.source !== jour && (
-                  <button onClick={() => setDupli({ source: jour, cibles: [], creneaux: true, taches: true, remplacer: false, enCours: false, erreur: '' })} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>Dupliquer cette journée</button>
+                {joursStage.length > 1 && (
+                  <button onClick={() => ouvrirDuplication(jour)} style={{ ...st.bouton, padding: '5px 12px', fontSize: '12px' }}>Dupliquer cette journée</button>
                 )}
               </div>
-              {dupli?.source === jour && panneauDuplication(jour)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {liste.map(c => c._type === 'tache' ? carteTache(c, jour) : (
                   <div key={c.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: `4px solid ${c.couleur}` }}>
