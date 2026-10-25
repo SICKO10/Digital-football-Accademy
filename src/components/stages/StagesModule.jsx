@@ -348,14 +348,17 @@ function PlanningStage({ st, colors, stage }) {
     setCreneaux(prev => prev.filter(x => x.id !== id))
   }
 
-  // Journées : créneaux du programme + tâches datées, triés par heure
-  // (tâches sans horaire en tête). Tâches sans date : bloc « Tout le stage ».
+  // Journées : créneaux du programme + tâches datées + tâches « tous les
+  // jours » (sans date, répétées dans chaque jour du stage), triés par heure
+  // (tâches sans horaire en tête).
+  const joursStage = joursDuStage(stage)
+  const tachesTousLesJours = taches.filter(x => !x.date)
   const parJour = {}
   for (const c of creneaux) (parJour[c.date] = parJour[c.date] || []).push({ ...c, _type: 'creneau' })
   for (const t of taches.filter(x => x.date)) (parJour[t.date] = parJour[t.date] || []).push({ ...t, _type: 'tache' })
+  if (tachesTousLesJours.length) for (const j of joursStage) (parJour[j] = parJour[j] || []).push(...tachesTousLesJours.map(t => ({ ...t, _type: 'tache', _chaqueJour: true })))
   for (const jour of Object.keys(parJour)) parJour[jour].sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
   const joursTries = Object.keys(parJour).sort()
-  const joursStage = joursDuStage(stage)
 
   // Duplication d'une journée (créneaux et/ou tâches) vers d'autres jours,
   // en ajoutant ou en remplaçant leur contenu. Les tâches copiées repartent
@@ -365,6 +368,7 @@ function PlanningStage({ st, colors, stage }) {
     if (d.cibles.length === 0) return setDupli(x => ({ ...x, erreur: 'Choisis au moins un jour de destination.' }))
     if (!d.creneaux && !d.taches) return setDupli(x => ({ ...x, erreur: 'Choisis ce qu\'il faut copier.' }))
     const sourcesC = d.creneaux ? creneaux.filter(c => c.date === d.source) : []
+    // Les tâches « tous les jours » ne sont pas copiées : elles figurent déjà partout.
     const sourcesT = d.taches ? taches.filter(t => t.date === d.source) : []
     if (sourcesC.length + sourcesT.length === 0) return setDupli(x => ({ ...x, erreur: 'Cette journée est vide.' }))
     if (d.remplacer && !window.confirm(`Remplacer le contenu de ${d.cibles.length} jour(s) ? Les ${d.creneaux && d.taches ? 'créneaux et tâches' : d.creneaux ? 'créneaux' : 'tâches'} déjà présents sur ces jours seront supprimés.`)) return
@@ -428,15 +432,14 @@ function PlanningStage({ st, colors, stage }) {
       </div>
     )
   }
-  const tachesToutLeStage = taches.filter(x => !x.date)
-  const carteTache = (t) => (
-    <div key={`t${t.id}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: '4px dashed #60a5fa' }}>
+  const carteTache = (t, jour = '') => (
+    <div key={`t${t.id}-${jour}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: '4px dashed #60a5fa' }}>
       <div style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '86px' }}>{t.heure_debut ? `${heure(t.heure_debut)}${t.heure_fin ? ` – ${heure(t.heure_fin)}` : ''}` : 'Sans horaire'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>
           {t.tache} <span style={{ marginLeft: '4px', fontSize: '10px', fontWeight: 700, color: '#60a5fa', border: '1px solid #60a5fa60', borderRadius: '6px', padding: '1px 6px' }}>TÂCHE</span>
         </div>
-        <div style={{ fontSize: '12px', color: colors.text.dim }}>{[CATEGORIES_TACHE[t.categorie], STATUTS_TACHE[t.statut], nomsEncadrantsTache(t, encadrants) || 'Non attribuée'].filter(Boolean).join(' · ')}</div>
+        <div style={{ fontSize: '12px', color: colors.text.dim }}>{[CATEGORIES_TACHE[t.categorie], t._chaqueJour ? 'chaque jour' : null, STATUTS_TACHE[t.statut], nomsEncadrantsTache(t, encadrants) || 'Non attribuée'].filter(Boolean).join(' · ')}</div>
       </div>
     </div>
   )
@@ -445,7 +448,7 @@ function PlanningStage({ st, colors, stage }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px', flexWrap: 'wrap' }}>
-        <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Le plan B et les notes restent internes : ils n'apparaissent jamais sur la page publique. Les tâches (en pointillés bleus) se gèrent dans l'onglet Organisation.</p>
+        <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Le plan B et les notes restent internes : ils n'apparaissent jamais sur la page publique. Les tâches (en pointillés bleus) se gèrent dans l'onglet Organisation ; une tâche sans date apparaît chaque jour. Pour recopier une journée, utilise « Dupliquer cette journée » en haut de chaque jour.</p>
         {!edition && <button onClick={() => { setErreur(''); setEdition({ ...CRENEAU_VIDE, date: stage.date_debut }) }} style={st.boutonPlein}>+ Ajouter un créneau</button>}
       </div>
 
@@ -490,12 +493,6 @@ function PlanningStage({ st, colors, stage }) {
         <div style={{ ...st.carte, textAlign: 'center', padding: '2.5rem', color: colors.text.faint, fontSize: '13px' }}>Aucun créneau. Ajoute le premier pour construire le programme du stage.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {tachesToutLeStage.length > 0 && (
-            <div style={st.carte}>
-              <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '14px', color: colors.text.primary }}>Tout le stage</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{tachesToutLeStage.map(carteTache)}</div>
-            </div>
-          )}
           {joursTries.map(jour => [jour, parJour[jour]]).map(([jour, liste]) => (
             <div key={jour} style={st.carte}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '0 0 10px' }}>
@@ -506,7 +503,7 @@ function PlanningStage({ st, colors, stage }) {
               </div>
               {dupli?.source === jour && panneauDuplication(jour)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {liste.map(c => c._type === 'tache' ? carteTache(c) : (
+                {liste.map(c => c._type === 'tache' ? carteTache(c, jour) : (
                   <div key={c.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', borderLeft: `4px solid ${c.couleur}` }}>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '86px' }}>{heure(c.heure_debut)} – {heure(c.heure_fin)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>

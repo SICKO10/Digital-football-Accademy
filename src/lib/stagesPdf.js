@@ -1,4 +1,4 @@
-import { formatDate, formatJourCourt, elementsPlanningEncadrant } from './stages'
+import { formatDate, formatJourCourt, elementsPlanningEncadrant, joursDuStage } from './stages'
 
 // Autorisation parentale pré-remplie (module Stages, étape 3), générée dans
 // le navigateur avec jsPDF (déjà utilisé ailleurs dans le projet), chargé à
@@ -110,7 +110,7 @@ export async function telechargerPlanningEncadrants({ stage, clubNom, encadrants
     if (identite) { doc.text(nettoyer(identite), marge, y); y += 5 }
     doc.setDrawColor(200); doc.line(marge, y, marge + largeur, y); y += 7
 
-    const elements = elementsPlanningEncadrant(enc, taches, creneaux)
+    const elements = elementsPlanningEncadrant(enc, taches, creneaux, stage.date_debut ? joursDuStage(stage) : [])
     if (elements.length === 0) {
       doc.setFontSize(11); doc.setTextColor(110); doc.text('Rien de prévu pour cet encadrant.', marge, y)
       return

@@ -242,7 +242,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
             <div style={{ flex: 1, minWidth: '180px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>{t.tache}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim, textTransform: 'none' }}>
-                {[CATEGORIES_TACHE[t.categorie] || t.categorie, t.date && formatJourCourt(t.date), t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, attribution(t)].filter(Boolean).join(' · ')}
+                {[CATEGORIES_TACHE[t.categorie] || t.categorie, t.date ? formatJourCourt(t.date) : 'Tous les jours', t.heure_debut && `${heure(t.heure_debut)}${t.heure_fin ? `–${heure(t.heure_fin)}` : ''}`, attribution(t)].filter(Boolean).join(' · ')}
               </div>
             </div>
             <button onClick={() => setEdition({ ...t, date: t.date || '', heure_debut: heure(t.heure_debut), heure_fin: heure(t.heure_fin), encadrant_ids: t.encadrant_ids || [], tous_encadrants: !!t.tous_encadrants, notes: t.notes || '' })} style={petit(st)}>Modifier</button>
@@ -262,7 +262,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
           <div>
             <label style={st.label}>Jour</label>
             <select value={edition.date} onChange={e => setEdition(p => ({ ...p, date: e.target.value }))} style={st.input}>
-              <option value="">Tout le stage</option>
+              <option value="">Tous les jours du stage</option>
               {jours.map(j => <option key={j} value={j}>{formatJourCourt(j)}</option>)}
             </select>
           </div>
@@ -305,7 +305,7 @@ function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, cren
     return <Bloc st={st} colors={colors} titre="Planning de chaque encadrant" aide="Ajoute des encadrants pour voir leur planning individuel." />
   }
 
-  const elements = elementsPlanningEncadrant(encadrant, taches, creneaux)
+  const elements = elementsPlanningEncadrant(encadrant, taches, creneaux, joursDuStage(stage))
   const exporter = async (liste) => {
     try { await telechargerPlanningEncadrants({ stage, clubNom, encadrants: liste, taches, creneaux }) }
     catch (e) { setErreur('Export PDF impossible : ' + e.message) }
