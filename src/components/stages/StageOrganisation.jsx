@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { joursDuStage, formatJourCourt, formatDate, heure, CATEGORIES_TACHE, STATUTS_TACHE, elementsPlanningEncadrant } from '../../lib/stages'
 import { telechargerPlanningEncadrants } from '../../lib/stagesPdf'
+import DuplicationJournee from './DuplicationJournee'
 
 // Onglet « Organisation » (interne, jamais public) : encadrants et leurs
 // responsabilités, matériel à réunir, tâches, et planning individuel de
@@ -49,7 +50,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
       {erreur && <p style={st.erreur}>{erreur}</p>}
       <Encadrants {...commun} setEncadrants={setEncadrants} setTaches={setTaches} />
       <Materiel {...commun} materiel={materiel} setMateriel={setMateriel} />
-      <Taches {...commun} taches={taches} setTaches={setTaches} />
+      <Taches {...commun} taches={taches} setTaches={setTaches} creneaux={creneaux} setCreneaux={setCreneaux} />
       <PlanningEncadrant {...commun} taches={taches} creneaux={creneaux} clubNom={clubNom} />
     </div>
   )
@@ -193,8 +194,10 @@ function Materiel({ st, colors, accent, stage, encadrants, materiel, setMateriel
   )
 }
 
-function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setErreur }) {
+function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, creneaux, setCreneaux, setErreur }) {
   const [edition, setEdition] = useState(null)
+  const [dupliSource, setDupliSource] = useState(null)
+  const [messageDupli, setMessageDupli] = useState('')
   const jours = joursDuStage(stage)
   const attribution = (t) => t.tous_encadrants ? 'Tous les encadrants'
     : (t.encadrant_ids || []).map(id => encadrants.find(e => e.id === id)?.nom).filter(Boolean).join(', ') || 'Non attribuée'
@@ -235,6 +238,18 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, setE
   return (
     <Bloc st={st} colors={colors} titre="Tâches" aide="Transport, surveillance, repas, logistique… Attribue chaque tâche à un encadrant ; clique sur le statut pour le faire avancer."
       droite={taches.length > 0 && <span style={{ fontSize: '13px', color: colors.text.dim }}>{faites}/{taches.length} faites</span>}>
+      {jours.length > 1 && !dupliSource && (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
+          <button onClick={() => { setMessageDupli(''); setDupliSource(taches.find(t => t.date)?.date || jours[0]) }} style={st.bouton}>Dupliquer une journée</button>
+          <span style={{ fontSize: '12px', color: colors.text.faint }}>Recopie les tâches (et si besoin les créneaux du programme) d'un jour vers les autres.</span>
+        </div>
+      )}
+      {messageDupli && <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#4ade80' }}>{messageDupli}</p>}
+      {dupliSource && (
+        <DuplicationJournee st={st} colors={colors} stage={stage} jours={jours} sourceInitiale={dupliSource}
+          creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches}
+          onFermer={(msg) => { setDupliSource(null); setMessageDupli(msg) }} />
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {taches.map(t => (
           <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '10px', padding: '9px 12px', flexWrap: 'wrap' }}>
