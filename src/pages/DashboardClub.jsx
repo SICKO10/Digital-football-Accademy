@@ -38,6 +38,7 @@ import ProjetClubCFF4 from '../components/ProjetClubCFF4'
 import TournoiClub from '../components/club/TournoiClub'
 import PlanificationSeances from '../components/club/PlanificationSeances'
 import NotificationBanner from '../components/NotificationBanner'
+import StagesModule from '../components/stages/StagesModule'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
@@ -289,6 +290,7 @@ const PERMISSION_SECTIONS = [
   { id: 'sponsors', label: 'Sponsors' },
   { id: 'profil', label: 'Profil club' },
   { id: 'evenements', label: 'Événements & Projets' },
+  { id: 'stages', label: 'Stages' },
   { id: 'organigramme', label: 'Organigramme' },
   { id: 'staff', label: 'Staff' },
   { id: 'inventaire', label: 'Inventaire' },
@@ -1442,6 +1444,7 @@ export default function DashboardClub() {
     const idsSportif = canViewSection('sportif') ? ['categories', 'planning', 'projet_sportif', 'tournoi', 'classements', ...(recrutementActif(club?.email) ? ['recrutement'] : []), 'educateurs'] : []
     if (canViewSection('seances')) idsSportif.push('seances')
     if (canViewSection('terrains')) idsSportif.push('terrains')
+    if (canViewSection('stages')) idsSportif.push('stages')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
@@ -1459,6 +1462,25 @@ export default function DashboardClub() {
       chargerLigueUrl(categorieActive)
     }
   }, [activeTab, categorieActive])
+
+  // Chargement à la demande (retirés du Promise.all initial de init(), qui
+  // bloquait l'affichage de tout le dashboard derrière ces deux requêtes —
+  // cf. audit perf 2026-10-27, supabase_perf_dashboard_club_index.sql) :
+  // projetsClub n'est affiché que dans les onglets Planning et Événements,
+  // seancesRecues seulement dans l'onglet Éducateurs. Même pattern que
+  // chargerClassements ci-dessus (déclenché par l'onglet, pas rechargé une
+  // fois déjà en mémoire).
+  useEffect(() => {
+    if ((activeTab === 'planning' || activeTab === 'evenements') && clubId && projetsClub.length === 0) {
+      chargerProjets(clubId)
+    }
+  }, [activeTab, clubId])
+
+  useEffect(() => {
+    if (activeTab === 'educateurs' && clubId && seancesRecues.length === 0) {
+      chargerSeancesRecues(clubId)
+    }
+  }, [activeTab, clubId])
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -1513,7 +1535,12 @@ export default function DashboardClub() {
       setCodeClub(clubProfile.code_club || '')
     }
 
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerSeancesRecues(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerProjets(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId)])
+    // chargerProjets et chargerSeancesRecues retirés d'ici : chargées à la
+    // demande selon l'onglet ouvert (cf. les deux useEffect juste après la
+    // déclaration de activeTab plus haut) — elles ne bloquaient auparavant
+    // l'affichage de tout le dashboard que pour des onglets pas forcément
+    // ouverts (audit perf 2026-10-27).
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId)])
     setLoading(false)
   }
 
@@ -2493,11 +2520,17 @@ export default function DashboardClub() {
   }
 
   const chargerSeancesRecues = async (uid) => {
+    // Colonnes explicites plutôt que '*' : fiche_seance (JSON complet de la
+    // séance, potentiellement volumineux) n'est lu nulle part dans cet écran
+    // — seule la liste (theme/date/statut/saison/video_url + nom éducateur +
+    // note d'évaluation) est affichée. .limit() en filet de sécurité, pas un
+    // vrai plafond métier (cf. audit perf 2026-10-27).
     const { data } = await supabase
       .from('seances_uploadees')
-      .select('*, educateur:profiles_public!seances_uploadees_educateur_id_fkey(prenom, nom), evaluation:evaluations_seance(*)')
+      .select('id, theme, date_seance, statut, saison, video_url, created_at, educateur_id, club_id, educateur:profiles_public!seances_uploadees_educateur_id_fkey(prenom, nom), evaluation:evaluations_seance(*)')
       .eq('club_id', uid)
       .order('created_at', { ascending: false })
+      .limit(200)
     setSeancesRecues(data || [])
   }
 
@@ -3473,6 +3506,7 @@ export default function DashboardClub() {
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
     ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
+    ...(canViewSection('stages') ? [{ id: 'stages', label: 'Stages', Icon: IcoCalendar }] : []),
   ]
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
@@ -6722,6 +6756,10 @@ export default function DashboardClub() {
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('newsletter')}
           />
+        )}
+
+        {activeTab === 'stages' && canViewSection('stages') && clubId && (
+          <StagesModule clubId={clubId} accentColor={couleurPrincipale} />
         )}
 
         {activeTab === 'taches' && canViewSection('taches') && (
