@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
-import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE } from '../lib/tournoi'
+import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE, loguerVueTournoi } from '../lib/tournoi'
 import SelecteurRosterEquipe from '../components/SelecteurRosterEquipe'
+import SponsorsTournoiBandeau from '../components/club/SponsorsTournoiBandeau'
 import { PastilleTerrain, LegendeTerrains } from '../components/club/PastilleTerrain'
 import { couleurTerrain } from '../lib/tournoi'
 
@@ -52,6 +53,7 @@ export default function TournoiPublic() {
   const [submittingVote, setSubmittingVote] = useState(false)
   const [voteSoumis, setVoteSoumis] = useState(false)
   const [erreurVote, setErreurVote] = useState(null)
+  const [sponsors, setSponsors] = useState([])
 
   const reveler = async () => {
     setChargementVotes(true)
@@ -104,6 +106,18 @@ export default function TournoiPublic() {
     const interval = setInterval(charger, 30000)
     return () => clearInterval(interval)
   }, [charger])
+
+  // Sponsors + vue, une seule fois par chargement de page (pas à chaque
+  // rafraîchissement du polling ci-dessus — tournoi.id reste stable entre
+  // deux appels de charger() pour le même tournoi). Colonnes explicites :
+  // montant n'est jamais lu publiquement, cf. supabase_tournois_sponsors.sql.
+  useEffect(() => {
+    if (!tournoi?.id) return
+    loguerVueTournoi(code)
+    supabase.from('tournois_sponsors').select('id, nom, lien_url, message, logo_url')
+      .eq('tournoi_id', tournoi.id).eq('actif', true)
+      .then(({ data }) => setSponsors(data || []))
+  }, [tournoi?.id, code])
 
   const getEquipe = (id) => equipes.find(e => e.id === id)
   const poules = [...new Set(equipes.map(e => e.poule))].sort()
@@ -410,6 +424,8 @@ export default function TournoiPublic() {
             </div>
           )
         })()}
+
+        <SponsorsTournoiBandeau sponsors={sponsors} code={code} />
 
         <div style={{ textAlign: 'center', marginTop: '32px', color: colors.text.ghost, fontSize: '12px' }}>
           Propulsé par <span style={{ color: colors.accent.green, fontWeight: 700 }}>Digital Football</span>

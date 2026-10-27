@@ -1,3 +1,16 @@
+import { supabase } from '../supabase'
+
+// Stats sponsors (cf. supabase_tournois_sponsors.sql) — même mécanisme que
+// les stages (src/lib/stagesPublic.js) : une vue à l'ouverture d'une page
+// publique (suivi en direct ET inscription, même compteur), un clic par
+// sponsor cliqué. Fire-and-forget, jamais bloquant pour la page.
+export function loguerVueTournoi(code) {
+  supabase.rpc('loguer_vue_tournoi', { p_code: code }).then(() => {})
+}
+export function loguerClicSponsorTournoi(code, sponsorId) {
+  supabase.rpc('loguer_clic_sponsor_tournoi', { p_code: code, p_sponsor_id: sponsorId }).then(() => {})
+}
+
 export const PHASE_LABEL = { huitieme: 'Huitièmes de finale', quart: 'Quarts de finale', demi: 'Demi-finales', troisieme: 'Petite finale', finale: 'Finale', finale_poule: 'Poule finale' }
 export const PHASE_ORDRE = ['huitieme', 'quart', 'demi', 'troisieme', 'finale_poule', 'finale']
 

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
+import { loguerVueTournoi } from '../lib/tournoi'
+import SponsorsTournoiBandeau from '../components/club/SponsorsTournoiBandeau'
 
 const genererCode = () => Math.random().toString(36).substring(2, 10).toUpperCase()
 
@@ -26,6 +28,7 @@ export default function TournoiInscription() {
   const [infos, setInfos] = useState({ nom_club: '', categorie: '', email_referent: '', nom_referent: '', telephone_referent: '', message: '' })
   const [joueurs, setJoueurs] = useState([{ ...VIDE_JOUEUR }])
   const [paiement, setPaiement] = useState('cheque')
+  const [sponsors, setSponsors] = useState([])
 
   const charger = useCallback(async () => {
     const { data } = await supabase.from('tournois_organises').select('*').eq('code_public', code?.toUpperCase()).maybeSingle()
@@ -36,6 +39,16 @@ export default function TournoiInscription() {
   }, [code])
 
   useEffect(() => { charger() }, [charger])
+
+  // Même mécanisme que la page de suivi (TournoiPublic.jsx) : une vue par
+  // chargement, sponsors en colonnes explicites (montant jamais exposé).
+  useEffect(() => {
+    if (!tournoi?.id) return
+    loguerVueTournoi(code)
+    supabase.from('tournois_sponsors').select('id, nom, lien_url, message, logo_url')
+      .eq('tournoi_id', tournoi.id).eq('actif', true)
+      .then(({ data }) => setSponsors(data || []))
+  }, [tournoi?.id, code])
 
   function ajouterJoueur() { setJoueurs(p => [...p, { ...VIDE_JOUEUR }]) }
   function supprimerJoueur(idx) { setJoueurs(p => p.filter((_, i) => i !== idx)) }
@@ -278,6 +291,8 @@ export default function TournoiInscription() {
             </a>
           </div>
         )}
+
+        <SponsorsTournoiBandeau sponsors={sponsors} code={code} />
 
         <div style={{ textAlign: 'center', marginTop: '32px', color: colors.text.ghost, fontSize: '12px' }}>
           Propulsé par <span style={{ color: colors.accent.green, fontWeight: 700 }}>Digital Football</span>

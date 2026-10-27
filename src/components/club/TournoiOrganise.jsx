@@ -5,6 +5,7 @@ import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, cal
 import { saisonActuelle } from '../../lib/saison'
 import PaveDateTournoi from './PaveDateTournoi'
 import { PastilleTerrain, LegendeTerrains } from './PastilleTerrain'
+import TournoiSponsors from './TournoiSponsors'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -1059,6 +1060,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       { key: 'buteurs', label: `Buteurs (${buteurs.length})` },
       { key: 'inscriptions', label: `Inscriptions (${inscriptions.length})` },
       { key: 'palmares', label: 'Palmarès' },
+      { key: 'sponsors', label: 'Sponsors' },
       ...(!readOnly ? [{ key: 'reglages', label: 'Réglages' }] : []),
     ]
     return (
@@ -1430,6 +1432,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         )}
 
         {onglet === 'palmares' && <PalmaresVotes tournoiId={tournoi.id} equipes={equipes} />}
+        {onglet === 'sponsors' && <TournoiSponsors tournoi={tournoi} st={st} colors={colors} />}
 
         {onglet === 'reglages' && !readOnly && (
           <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: '16px' }}>
