@@ -1507,6 +1507,11 @@ export default function DashboardClub() {
     }
 
     setClubId(resolvedClubId)
+    // Log de connexion (audience sponsors, cf. supabase_stats_sponsors_phase1.sql)
+    // — même pattern que DashboardEducateur/DashboardJoueur. user_id = le
+    // club (resolvedClubId), pas l'identité du staff qui ouvre la page : on
+    // compte une visite du dashboard club, peu importe qui l'a ouverte.
+    supabase.from('connexions_log').insert({ user_id: resolvedClubId, role: 'club' }).then(() => {})
     setClub(clubProfile)
     setMoi({ id: user.id, prenom: profile.prenom || '', nom: profile.nom || '' })
     setMonRole(role)

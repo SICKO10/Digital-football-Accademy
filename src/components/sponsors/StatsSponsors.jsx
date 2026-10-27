@@ -26,8 +26,10 @@ const stClaire = {
 const useSt = makeUseSt(stSombre, stClaire)
 
 const PERIODES = [
+  { val: 'jour', label: '24 dernières heures' },
   { val: 'semaine', label: '7 derniers jours' },
   { val: 'mois', label: '30 derniers jours' },
+  { val: 'trimestre', label: '3 derniers mois' },
   { val: 'annee', label: '12 derniers mois' },
 ]
 
@@ -52,9 +54,33 @@ const moisEntre = (depuisMoisAgo) => {
   return mois
 }
 
+// Heures entre minuit (vue "jour") — 24 barres, une par heure écoulée.
+const heuresEntre = () => {
+  const heures = []
+  for (let i = 23; i >= 0; i--) {
+    const d = new Date()
+    d.setMinutes(0, 0, 0)
+    d.setHours(d.getHours() - i)
+    heures.push({ key: d.toISOString().slice(0, 13), label: `${d.getHours()}h` })
+  }
+  return heures
+}
+
+// Semaines entre (vue "trimestre") — ~13 barres, une par semaine écoulée.
+const semainesEntre = (depuisSemainesAgo) => {
+  const semaines = []
+  for (let i = depuisSemainesAgo; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i * 7)
+    semaines.push({ key: d.toISOString().split('T')[0], label: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) })
+  }
+  return semaines
+}
+
 export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80' }) {
   const st = useSt()
   const [clics, setClics] = useState(null) // null = pas encore chargé
+  const [audience, setAudience] = useState(null) // null = pas encore chargé
   const [periodeGraph, setPeriodeGraph] = useState('mois')
 
   useEffect(() => {
@@ -68,9 +94,17 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
         if (error?.code === '42P01') { setClics('table_manquante'); return }
         setClics(data || [])
       })
+    // Impressions (connexions au dashboard club/éducateur/joueur du club),
+    // agrégées en base — cf. sponsors_audience_stats, supabase_stats_sponsors_phase1.sql.
+    // '42883' = fonction pas encore créée, même garde-fou que la table de clics.
+    supabase.rpc('sponsors_audience_stats', { p_club_id: clubId, p_depuis: debutISO(12, 'mois') })
+      .then(({ data, error }) => {
+        if (error?.code === '42883') { setAudience('fonction_manquante'); return }
+        setAudience(data || [])
+      })
   }, [clubId])
 
-  if (clics === null) return <p style={{ color: st.textFaint, fontSize: 13 }}>Chargement…</p>
+  if (clics === null || audience === null) return <p style={{ color: st.textFaint, fontSize: 13 }}>Chargement…</p>
   if (clics === 'table_manquante') {
     return (
       <div style={{ ...st.card, borderColor: '#f59e0b40' }}>
@@ -81,9 +115,14 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
   }
 
   const nomSponsor = (id) => sponsors.find(s => s.id === id)?.entreprise || 'Sponsor supprimé'
+  const audienceOk = Array.isArray(audience)
 
+  const depuisJourDate = new Date()
+  depuisJourDate.setHours(depuisJourDate.getHours() - 24)
+  const depuisJour = depuisJourDate.toISOString()
   const depuisSemaine = debutISO(7, 'jours')
   const depuisMois = debutISO(30, 'jours')
+  const depuisTrimestre = debutISO(3, 'mois')
   const depuisAnnee = debutISO(12, 'mois')
 
   // ── Tableau : par sponsor, 3 fenêtres glissantes simultanées ──
@@ -101,6 +140,14 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
   const totalMois = lignes.reduce((s, l) => s + l.mois, 0)
   const totalAnnee = lignes.reduce((s, l) => s + l.annee, 0)
 
+  // Impressions = somme des connexions (club + éducateurs + joueurs du club),
+  // tous rôles confondus — le CTR rapporte les clics sponsor à cette audience.
+  const impressions = (depuis) => audienceOk ? audience.filter(a => a.jour >= depuis.split('T')[0]).reduce((s, a) => s + Number(a.nb), 0) : null
+  const impressionsSemaine = impressions(depuisSemaine)
+  const impressionsMois = impressions(depuisMois)
+  const impressionsAnnee = impressions(depuisAnnee)
+  const ctr = (clics, imp) => (imp && imp > 0) ? `${((clics / imp) * 100).toFixed(1)}%` : '—'
+
   // ── Graphique : série selon la période choisie ──
   let serie
   if (periodeGraph === 'annee') {
@@ -109,6 +156,24 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
     clics.filter(c => c.created_at >= depuisAnnee).forEach(c => {
       const d = new Date(c.created_at)
       const key = `${d.getFullYear()}-${d.getMonth()}`
+      if (key in parBucket) parBucket[key]++
+    })
+    serie = buckets.map(b => ({ key: b.key, label: b.label, count: parBucket[b.key] }))
+  } else if (periodeGraph === 'trimestre') {
+    const buckets = semainesEntre(12)
+    const parBucket = Object.fromEntries(buckets.map(b => [b.key, 0]))
+    clics.filter(c => c.created_at >= depuisTrimestre).forEach(c => {
+      // Rattache chaque clic à la barre-semaine la plus proche sans dépasser
+      const jour = c.created_at.split('T')[0]
+      const cle = [...buckets].reverse().find(b => b.key <= jour)?.key
+      if (cle) parBucket[cle]++
+    })
+    serie = buckets.map(b => ({ key: b.key, label: b.label, count: parBucket[b.key] }))
+  } else if (periodeGraph === 'jour') {
+    const buckets = heuresEntre()
+    const parBucket = Object.fromEntries(buckets.map(b => [b.key, 0]))
+    clics.filter(c => c.created_at >= depuisJour).forEach(c => {
+      const key = c.created_at.slice(0, 13)
       if (key in parBucket) parBucket[key]++
     })
     serie = buckets.map(b => ({ key: b.key, label: b.label, count: parBucket[b.key] }))
@@ -131,16 +196,28 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* ── Cartes résumé ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+      {audience === 'fonction_manquante' && (
+        <div style={{ ...st.card, borderColor: '#f59e0b40' }}>
+          <p style={{ margin: 0, color: '#f59e0b', fontSize: 13, fontWeight: 700 }}>⚠️ Impressions/CTR pas encore disponibles</p>
+          <p style={{ margin: '6px 0 0', color: st.textFaint, fontSize: 12 }}>Migration supabase_stats_sponsors_phase1.sql à exécuter — les clics restent affichés ci-dessous.</p>
+        </div>
+      )}
+
+      {/* ── Cartes résumé : clics, impressions (audience du club), CTR ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
         {[
-          { label: '7 derniers jours', val: totalSemaine },
-          { label: '30 derniers jours', val: totalMois },
-          { label: '12 derniers mois', val: totalAnnee },
+          { label: '7 derniers jours', clics: totalSemaine, imp: impressionsSemaine },
+          { label: '30 derniers jours', clics: totalMois, imp: impressionsMois },
+          { label: '12 derniers mois', clics: totalAnnee, imp: impressionsAnnee },
         ].map(c => (
           <div key={c.label} style={{ ...st.card, borderTop: `3px solid ${accentColor}` }}>
-            <p style={{ margin: 0, fontSize: 26, fontWeight: 900, color: accentColor, fontFamily: 'monospace' }}>{c.val}</p>
-            <p style={{ margin: '4px 0 0', fontSize: 11, color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{c.label}</p>
+            <p style={{ margin: 0, fontSize: 26, fontWeight: 900, color: accentColor, fontFamily: 'monospace' }}>{c.clics}</p>
+            <p style={{ margin: '4px 0 0', fontSize: 11, color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Clics · {c.label}</p>
+            {audienceOk && (
+              <p style={{ margin: '10px 0 0', fontSize: 11, color: st.textDim }}>
+                {c.imp} impression{c.imp === 1 ? '' : 's'} · CTR <strong>{ctr(c.clics, c.imp)}</strong>
+              </p>
+            )}
           </div>
         ))}
       </div>
