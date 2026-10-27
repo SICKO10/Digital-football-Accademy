@@ -35,11 +35,19 @@ export const USAGES = {
   principe_photo: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif', educateursProjet: true },
   terrain_fond: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif', educateursProjet: true },
   terrain_galerie: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif', educateursProjet: true },
+  // Module Stages (photos, objets oubliés, logos sponsors) : même règle que
+  // peut_gerer_stages() côté base — club, staff autorisé sur « stages »,
+  // éducateur affilié accepté.
+  stage: { formats: FORMATS_IMAGE, cible: ['club'], section: 'stages', educateursAcceptes: true },
 }
 
 // Droit d'agir pour un club : règle partagée (api/_droits.js).
-export const peutAgirPourClub = ({ donnees, userId, clubId, usage }) =>
-  peutEditerPourClub({ donnees, userId, clubId, section: USAGES[usage].section, educateursProjet: !!USAGES[usage].educateursProjet })
+export const peutAgirPourClub = async ({ donnees, userId, clubId, usage }) => {
+  const regle = USAGES[usage]
+  if (await peutEditerPourClub({ donnees, userId, clubId, section: regle.section, educateursProjet: !!regle.educateursProjet })) return true
+  if (regle.educateursAcceptes) return !!(await donnees.affiliationEducateur(userId, clubId))
+  return false
+}
 
 export function creerHandler({ verifierJeton, lireConfig, donnees, maintenant = () => Date.now() }) {
   return async function handler(req, res) {

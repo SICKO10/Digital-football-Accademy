@@ -36,6 +36,8 @@ const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
 const CGU = lazy(() => import('./pages/CGU'))
 const CGV = lazy(() => import('./pages/CGV'))
 const CommentFinancer = lazy(() => import('./pages/CommentFinancer'))
+const StagePublic = lazy(() => import('./pages/StagePublic'))
+const StageInscription = lazy(() => import('./pages/StageInscription'))
 const PolitiqueConfidentialite = lazy(() => import('./pages/PolitiqueConfidentialite'))
 const ClubPublic = lazy(() => import('./pages/ClubPublic'))
 const PartenairePublic = lazy(() => import('./pages/PartenairePublic'))
@@ -141,6 +143,8 @@ function App() {
         <Route path="/tournoi/:code/inscription" element={<TournoiInscription />} />
         <Route path="/tournoi/:code/voter/:inscriptionCode" element={<TournoiVote />} />
         <Route path="/lier-tournoi/:code/:prenom/:nom" element={<LierTournoi />} />
+        <Route path="/stage/:lien" element={<StagePublic />} />
+        <Route path="/stage/:lien/inscription" element={<StageInscription />} />
       </Routes>
       </Suspense>
       <InstallAppBanner />

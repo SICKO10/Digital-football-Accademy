@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, Fragment } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { calculerClassement, meilleursDuRang, retrouverInscriptionParEquipe, calculerPalmares, couleurTerrain, PHASE_LABEL, PHASE_ORDRE } from '../../lib/tournoi'
@@ -176,6 +176,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
   const [matchs, setMatchs] = useState([])
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState(VIDE_TOURNOI)
+  const [duplication, setDuplication] = useState(null) // { source, nom, date, erreur, enCours }
   const [nouvelleEquipe, setNouvelleEquipe] = useState(VIDE_EQUIPE)
   const [scoreEdit, setScoreEdit] = useState({})
   const [lienCopie, setLienCopie] = useState(false)
@@ -335,6 +336,27 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }
     setLoading(false)
     if (!error && data) { await chargerTournois(); await chargerDetail(data) }
+  }
+
+  // Duplique les réglages d'un tournoi (format, terrains, horaires, règlement,
+  // tarifs…) sous un nouveau nom / une nouvelle date, avec un nouveau code
+  // public. Jamais les équipes, matchs, résultats, buteurs ni votes.
+  async function dupliquerTournoi() {
+    const { source, nom, date } = duplication
+    if (!nom.trim()) return setDuplication(d => ({ ...d, erreur: 'Indique un nom.' }))
+    setDuplication(d => ({ ...d, enCours: true, erreur: '' }))
+    const { data: original, error: e1 } = await supabase.from('tournois_organises').select('*').eq('id', source.id).single()
+    if (e1) return setDuplication(d => ({ ...d, enCours: false, erreur: e1.message }))
+    const { id: _id, created_at: _cree, code_public: _code, statut: _statut, ...reglages } = original
+    const { data, error } = await supabase.from('tournois_organises').insert({
+      ...reglages, nom: nom.trim(), date: date || null, statut: 'preparation',
+      code_public: genererCode(), club_id: clubId, educateur_id: userId || null,
+    }).select().single()
+    if (error) return setDuplication(d => ({ ...d, enCours: false, erreur: error.message }))
+    if (Number(data.prix_inscription_equipe) > 0) await syncBudgetRecette(data.id, data.nom, data.prix_inscription_equipe, data.nb_equipes_payantes, data.date)
+    if (Number(data.cout_organisation) > 0) await syncBudgetCout(data.id, data.nom, data.cout_organisation, data.date)
+    setDuplication(null)
+    await chargerTournois()
   }
 
   async function supprimerTournoi(id) {
@@ -801,7 +823,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           {tournois.map(t => {
             const couleur = STATUT_COULEUR[t.statut] || colors.text.faint
             return (
-              <div key={t.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
+              <Fragment key={t.id}>
+              <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
                 <PaveDateTournoi iso={t.date} colors={colors} couleur={t.statut === 'termine' ? null : couleur} />
                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => chargerDetail(t)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
@@ -813,9 +836,26 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                   <button onClick={() => chargerDetail(t)} style={st.btnSecondary}>Gérer</button>
+                  {!readOnly && <button onClick={() => setDuplication(d => d?.source.id === t.id ? null : { source: t, nom: `${t.nom} (copie)`, date: '', erreur: '', enCours: false })} style={st.btnSecondary}>Dupliquer</button>}
                   {!readOnly && <button onClick={() => supprimerTournoi(t.id)} title="Supprimer" style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
                 </div>
               </div>
+              {duplication?.source.id === t.id && (
+                <div style={{ ...st.card, marginTop: '-4px', display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', padding: '12px 16px' }}>
+                  <div style={{ flex: '1 1 200px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginBottom: '4px' }}>Nom du nouveau tournoi</label>
+                    <input value={duplication.nom} onChange={e => setDuplication(d => ({ ...d, nom: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
+                  </div>
+                  <div style={{ flex: '0 1 170px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginBottom: '4px' }}>Date</label>
+                    <input type="date" value={duplication.date} onChange={e => setDuplication(d => ({ ...d, date: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
+                  </div>
+                  <button onClick={dupliquerTournoi} disabled={duplication.enCours} style={{ ...st.btnSecondary, opacity: duplication.enCours ? 0.6 : 1 }}>{duplication.enCours ? 'Duplication…' : 'Créer la copie'}</button>
+                  <button onClick={() => setDuplication(null)} style={st.btnSecondary}>Annuler</button>
+                  <p style={{ flexBasis: '100%', margin: 0, fontSize: '12px', color: duplication.erreur ? colors.accent.red : colors.text.faint }}>{duplication.erreur || 'Les réglages sont recopiés (format, terrains, horaires, règlement, tarifs). Les équipes, matchs et résultats ne le sont pas.'}</p>
+                </div>
+              )}
+              </Fragment>
             )
           })}
         </div>

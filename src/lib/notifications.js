@@ -10,35 +10,16 @@ export async function notifierJoueur({ type, userId, titre, contenu, lien }) {
     lien: lien || '/dashboard',
   })
 
-  // 2. Vérifier les préférences email (par défaut activé si pas de ligne)
-  const { data: prefs } = await supabase
-    .from('notification_preferences')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  const colonnePref = `email_${type}`
-  const emailActive = !prefs || prefs[colonnePref] !== false
-
-  if (!emailActive) return
-
-  // 3. Récupérer l'email du joueur
-  const { data: profil } = await supabase.from('profiles').select('email, prenom').eq('id', userId).single()
-  if (!profil?.email) return
-
-  // 4. Envoyer l'email via l'API
+  // 2. E-mail : le serveur retrouve lui-même l'adresse du destinataire et
+  // vérifie ses préférences (api/send-player-email.js) — le navigateur ne
+  // transmet que son identifiant, avec la session de l'expéditeur.
   try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
     await fetch('/api/send-player-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type,
-        to: profil.email,
-        prenom: profil.prenom,
-        titre,
-        contenu: contenu?.texte,
-        lien: lien || '/dashboard',
-      }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ type, userId, contenu: contenu?.texte, lien: lien || '/dashboard' }),
     })
   } catch (e) {
     console.error('Erreur notification email joueur:', e)
