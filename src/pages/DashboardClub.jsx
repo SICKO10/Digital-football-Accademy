@@ -956,20 +956,20 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
           Le Président voit et modifie tout, ce n'est pas configurable. Pour les autres rôles : « Voir » affiche l'onglet, « Modifier » autorise les actions d'écriture (ajout/suppression) dans cet onglet.
         </p>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflow: 'auto', maxHeight: '46vh', border: `1px solid ${colors.border.subtle}`, borderRadius: '10px' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '640px' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rôle</th>
+                <th style={{ position: 'sticky', top: 0, left: 0, zIndex: 3, background: colors.background.base, textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: `1px 0 0 ${colors.border.subtle}` }}>Rôle</th>
                 {PERMISSION_SECTIONS.map(s => (
-                  <th key={s.id} style={{ textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
+                  <th key={s.id} style={{ position: 'sticky', top: 0, zIndex: 2, background: colors.background.base, textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rolesConfigurables.map(role => (
                 <tr key={role.val} style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
-                  <td style={{ padding: '10px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>{role.label}</td>
+                  <td style={{ position: 'sticky', left: 0, zIndex: 1, background: colors.background.base, padding: '10px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', boxShadow: `1px 0 0 ${colors.border.subtle}` }}>{role.label}</td>
                   {PERMISSION_SECTIONS.map(section => {
                     const cell = matrice[role.val][section.id]
                     return (
