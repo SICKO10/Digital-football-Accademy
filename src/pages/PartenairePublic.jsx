@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { colors, alpha } from '../tokens'
+import BoutonRetourApp from '../components/BoutonRetourApp'
 
 const STATUTS_LABEL = { a_faire: 'À faire', fait: 'Fait' }
 
 // Portail partenaire — accès par lien privé (token uuid dans l'URL), sans
-// compte ni mot de passe : cf. supabase_portail_partenaire.sql. Les deux RPC
-// SECURITY DEFINER ne renvoient/modifient que la ligne correspondant au
-// token fourni, jamais la table sponsors entière.
+// compte ni mot de passe. sponsor_portail (cf. supabase_sponsors_phase4_portail.sql)
+// ne renvoie que les champs affichés ici (jamais notes, contacts ni token),
+// avec le nom, l'avatar et la couleur du club : pas de lecture anonyme de
+// profiles. demander_renouvellement_sponsor (supabase_portail_partenaire.sql)
+// ne modifie que la ligne du token fourni.
 export default function PartenairePublic() {
   const { token } = useParams()
   const [sponsor, setSponsor] = useState(undefined) // undefined = chargement, null = introuvable
@@ -17,13 +20,12 @@ export default function PartenairePublic() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc('get_sponsor_by_token', { p_token: token })
+      const { data, error } = await supabase.rpc('sponsor_portail', { p_token: token })
       const s = Array.isArray(data) ? data[0] : data
       if (error || !s) { setSponsor(null); return }
       setSponsor(s)
       setDemandeEnvoyee(!!s.demande_renouvellement)
-      const { data: c } = await supabase.from('profiles').select('club, avatar_url, couleur_principale').eq('id', s.club_id).maybeSingle()
-      setClub(c || null)
+      setClub({ club: s.club_nom, avatar_url: s.club_avatar_url, couleur_principale: s.club_couleur })
     })()
   }, [token])
 
@@ -33,10 +35,10 @@ export default function PartenairePublic() {
   }
 
   if (sponsor === undefined) {
-    return <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint }}>Chargement...</div>
+    return <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint }}><BoutonRetourApp />Chargement...</div>
   }
   if (sponsor === null) {
-    return <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint, fontSize: '14px' }}>Lien invalide ou expiré.</div>
+    return <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint, fontSize: '14px' }}><BoutonRetourApp />Lien invalide ou expiré.</div>
   }
 
   const accent = club?.couleur_principale || colors.accent.green
@@ -51,6 +53,7 @@ export default function PartenairePublic() {
 
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
+      <BoutonRetourApp />
       <div style={{ background: accent, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         {club?.avatar_url && <img src={club.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />}
         <div>
