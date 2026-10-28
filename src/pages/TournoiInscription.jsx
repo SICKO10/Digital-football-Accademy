@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { loguerVueTournoi } from '../lib/tournoi'
 import SponsorsTournoiBandeau from '../components/club/SponsorsTournoiBandeau'
+import BoutonRetourApp from '../components/BoutonRetourApp'
 
 const genererCode = () => Math.random().toString(36).substring(2, 10).toUpperCase()
 
@@ -107,18 +108,21 @@ export default function TournoiInscription() {
 
   if (loading) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <BoutonRetourApp />
       <div style={{ color: colors.accent.green, fontSize: '16px' }}>Chargement…</div>
     </div>
   )
 
   if (erreur && !tournoi) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
+      <BoutonRetourApp />
       <p style={{ color: colors.text.faint }}>{erreur}</p>
     </div>
   )
 
   return (
     <div style={st.page}>
+      <BoutonRetourApp />
       <div style={st.header}>
         <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>Digital Football · Inscription tournoi</div>
         <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900 }}>{tournoi.nom}</h1>

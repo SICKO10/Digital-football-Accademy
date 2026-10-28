@@ -5,6 +5,7 @@ import { colors } from '../tokens'
 import { calculerClassement, calculerPalmares, PHASE_LABEL, PHASE_ORDRE, loguerVueTournoi } from '../lib/tournoi'
 import SelecteurRosterEquipe from '../components/SelecteurRosterEquipe'
 import SponsorsTournoiBandeau from '../components/club/SponsorsTournoiBandeau'
+import BoutonRetourApp from '../components/BoutonRetourApp'
 import { PastilleTerrain, LegendeTerrains } from '../components/club/PastilleTerrain'
 import { couleurTerrain } from '../lib/tournoi'
 
@@ -140,12 +141,14 @@ export default function TournoiPublic() {
 
   if (loading) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <BoutonRetourApp />
       <div style={{ color: colors.accent.green, fontSize: '16px' }}>Chargement…</div>
     </div>
   )
 
   if (notFound) return (
     <div style={{ ...st.page, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+      <BoutonRetourApp />
       <p style={{ color: colors.text.faint }}>Tournoi introuvable — vérifie le code.</p>
       <button onClick={() => navigate('/')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Retour à l'accueil</button>
     </div>
@@ -157,6 +160,7 @@ export default function TournoiPublic() {
 
   return (
     <div style={st.page}>
+      <BoutonRetourApp />
       <div style={st.header}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
           <div>

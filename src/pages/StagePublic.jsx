@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useStagePublic, loguerVueStage, loguerClicSponsorStage } from '../lib/stagesPublic'
 import EcranEtatStage from '../components/stages/EcranEtatStage'
+import BoutonRetourApp from '../components/BoutonRetourApp'
 import { formatDate, formatJourCourt, heure, euros, detailOffre } from '../lib/stages'
 
 // Page publique d'un stage (parents, joueurs) — accessible sans compte.
@@ -166,6 +167,7 @@ export default function StagePublic() {
   return (
     <div className="sp" style={{ '--accent': accent }}>
       <style>{CSS}</style>
+      <BoutonRetourApp />
 
       <header className="sp-hero" style={{ backgroundImage: couverture ? `url(${couverture})` : `radial-gradient(120% 120% at 20% 0%, ${accent}55, #070707 70%)` }}>
         <div className="sp-hero-inner">
