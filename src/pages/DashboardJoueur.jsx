@@ -835,9 +835,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   // Rediriger vers 'accueil' si joueur affilié et onglet non reconnu
   useEffect(() => {
-    // TEMPORAIRE — même interrupteur d'aperçu que plus bas, à retirer avec lui.
-    const apercuAffilie = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('apercu') === 'affilie'
-    const estAffilie = (profil?.plan === 'fan' || apercuAffilie) && mesAffiliations.length > 0
+    const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
     if (estAffilie && onglet === 'dashboard') {
       setOnglet('accueil')
     }
@@ -2148,13 +2146,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // doit quand même voir son historique et pouvoir rejoindre une nouvelle équipe depuis
   // cet écran — si on exigeait une affiliation active ici, il retomberait sur le dashboard
   // "fan" classique et cet historique/CTA (plus bas) ne serait jamais atteignable.
-  // TEMPORAIRE — aperçu seulement, A RETIRER avant toute mise en ligne.
-  // Permet d'ouvrir /dashboard-joueur?apercu=affilie pour voir l'écran affilié
-  // avec de vraies données, et décider s'il faut l'ouvrir aux plans
-  // joueur_starter / joueur_pro. Sans ce paramètre, rien ne change.
-  // Cf. PLAN.md, section « Le plan fan est mort ».
-  const apercuAffilie = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('apercu') === 'affilie'
-  const estAffilie = (profil?.plan === 'fan' || apercuAffilie) && mesAffiliations.length > 0
+  const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
 
   const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
   const popupEquipementPret = notifEquipementPret && (

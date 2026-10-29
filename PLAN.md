@@ -27,12 +27,16 @@ Vérifié dans le code, pas supposé :
 2. L'écran « FAN » (DashboardJoueur.jsx ligne 3256, `if (profil?.plan === 'fan')`) est mort pour la même raison.
 3. Un vrai joueur affilié à un club a le plan `joueur_starter` ou `joueur_pro` : il tombe sur l'écran `dashboard` (blocs 4 et 5), **quelle que soit son affiliation**. C'est exactement le cas du compte de test de Kevin.
 
-**⚠️ Interrupteur temporaire en place (2026-10-29)** : ouvrir `/dashboard-joueur?apercu=affilie` force l'écran affilié pour un compte qui a une affiliation acceptée, quel que soit son plan. Il sert uniquement à montrer l'écran à Kevin pour qu'il décide. **À RETIRER avant le bloc 8 et avant toute mise en ligne** (deux endroits dans DashboardJoueur.jsx, chercher `apercuAffilie`).
+**Interrupteur d'aperçu : retiré le 2026-10-29**, après que Kevin a vu l'écran. Plus aucune trace dans le code (vérifié).
+
+**DÉCISION DE KEVIN (2026-10-29)** : l'écran affilié reste **de côté**, il n'est pas ouvert aux plans `joueur_starter` / `joueur_pro`. Seul son encart « offre Pro » a été repris et installé sur l'écran `dashboard`, celui que voient réellement les joueurs. Les blocs 2 et 3 restent donc dans le code sans être atteints, sans effet sur le reste. Ne pas les retravailler sans nouvelle décision.
 
 **À décider par Kevin** (rien ne doit être fait sans son arbitrage) :
-- (a) faire basculer les joueurs affiliés vers l'écran `accueil` en élargissant `estAffilie` aux plans `joueur_starter`/`joueur_pro` : cela changerait l'écran d'accueil de tous ses joueurs affiliés actuels ;
-- (b) considérer l'écran `accueil` comme mort et le retirer, en reportant ce qu'il a de mieux sur l'écran `dashboard` ;
-- (c) ne rien changer pour l'instant et publier ce qui est fait.
+- ~~(a) élargir `estAffilie` aux plans joueur~~ — **écarté**.
+- **(b) retenu, en version douce** : ce que l'écran `accueil` avait de mieux (l'encart Pro) a été reporté sur l'écran `dashboard`. L'écran lui-même n'est pas supprimé du code, il dort.
+- ~~(c)~~ — sans objet.
+
+**Abonnements Stripe** : Kevin confirme le 2026-10-29 qu'ils sont bons et à jour. Le point soulevé sur `joueur_starter` + `abonnement_actif` est clos de son côté, ne plus le relancer.
 
 ## Décisions de cadrage (prises le 2026-10-29)
 - Nettoyage des couleurs en dur : uniquement dans le socle et les deux écrans d'accueil. Les autres onglets gardent leurs hex pour l'instant.
