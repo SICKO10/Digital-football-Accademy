@@ -53,6 +53,7 @@ import ListeAlertes from '../components/joueur/ListeAlertes'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
 import TuileChiffre from '../components/joueur/TuileChiffre'
+import SectionRepliable from '../components/joueur/SectionRepliable'
 import BandeSemaine from '../components/joueur/BandeSemaine'
 import JaugeSaison from '../components/joueur/JaugeSaison'
 import ApercuPro from '../components/joueur/ApercuPro'
@@ -430,6 +431,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [nouveauClub, setNouveauClub] = useState({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' })
   const [savingParcours, setSavingParcours] = useState(false)
   const [editingParcoursId, setEditingParcoursId] = useState(null)
+  const [sectionsProfil, setSectionsProfil] = useState({ parcours: false, reglages: false })
   const [clubSuggestions, setClubSuggestions] = useState([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -1764,7 +1766,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     setNouveauClub({ club: p.club || '', saison: p.saison || '', categorie: p.categorie || '', poste: p.poste || '', logo_url: p.logo_url || '', niveau_championnat: p.niveau_championnat || '', matchs_joues: p.matchs_joues || '', buts: p.buts || '', passes_decisives: p.passes_decisives || '', cleansheets: p.cleansheets || '' })
     setClubSuggestions([])
     setShowSuggestions(false)
-    setTimeout(() => document.getElementById('parcours-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    // Section repliée par défaut : on l'ouvre avant de viser le formulaire.
+    setSectionsProfil(s => ({ ...s, parcours: true }))
+    setTimeout(() => document.getElementById('parcours-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
   }
 
   const supprimerClub = async (id) => {
@@ -2651,7 +2655,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
               clubId={clubIdInventaire}
               categorie={profil?.categorie}
-              accentColor={colors.accent.blue}
+              isMobile={isMobile}
+              lang={lang}
+              onNaviguer={setOnglet}
             />
           )}
           {onglet === 'stats' && (
@@ -3204,10 +3210,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           )}
           {onglet === 'sante' && (
-            <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>{t('nav_sante', lang)}</h1>
-              <SanteJoueur userId={userId} />
-            </div>
+            <SanteJoueur userId={userId} estAffilie isMobile={isMobile} lang={lang} onNaviguer={setOnglet} />
           )}
 
           {onglet === 'nutrition' && <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
@@ -4258,14 +4261,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jp_titre', lang)}</h1>
-
-            <div style={{ marginBottom: '16px' }}>
-              <ParrainageWidget userId={userId} accentColor={colors.accent.green} />
+          <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, flexWrap: 'wrap', marginBottom: spacing['2xl'] }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', margin: 0 }}>{t('jp_titre', lang)}</h1>
+              {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
+                  automatiquement depuis stats_match_joueur via "Mes Statistiques"
+                  (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
+              <button onClick={() => setOnglet('mes_stats')} title="Tes stats sont calculées automatiquement depuis tes fiches match"
+                style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '9px 16px', color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Voir mes statistiques →
+              </button>
             </div>
 
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
+            <Carte isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+              <TitreSection>{t('jp_identite', lang)}</TitreSection>
               <p style={labelStyle}>{t('jp_photo', lang)}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
                 <Avatar person={profil} size={80} border="2px solid #4ade8050" />
@@ -4277,11 +4286,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <p style={{ fontSize: '11px', color: colors.text.disabled, marginTop: '8px' }}>JPG, PNG, WEBP · Max 5 MB</p>
                 </div>
               </div>
-            </div>
-
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_infos_club', lang)}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ height: '1px', background: colors.border.faint, margin: `${spacing['2xl']} 0` }} />
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <div><label style={labelStyle}>{t('jp_club_actuel', lang)}</label><input value={stats.club} onChange={e => setStats({ ...stats, club: e.target.value })} placeholder="AS Saint-Etienne" style={inputStyle} /></div>
                 <div>
                   <label style={labelStyle}>{t('jp_niveau_equipe', lang)}</label>
@@ -4311,25 +4317,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </select>
                 </div>
               </div>
-            </div>
-
-            {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
-                automatiquement depuis stats_match_joueur via "Mes Statistiques"
-                (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
-            <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
-              <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '6px' }}>Mes Statistiques</div>
-              <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '12px' }}>
-                Tes stats sont calculées automatiquement depuis tes fiches match
-              </div>
-              <button onClick={() => setOnglet('mes_stats')}
-                style={{ background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px 18px', color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Voir mes statistiques →
-              </button>
-            </div>
+            </Carte>
 
             {caracteristiquesParPoste[getPosteFamille(profil?.poste)] && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-                <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_style_jeu', lang)}</p>
+              <Carte isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+                <TitreSection>{t('jp_style_jeu', lang)}</TitreSection>
 
                 <div style={{ marginBottom: '24px' }}>
                   <label style={labelStyle}>{t('jp_mon_style', lang)}</label>
@@ -4399,310 +4391,314 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     })}
                   </div>
                 </div>
-              </div>
-            )}
-
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_parcours', lang)}</p>
-
-              {parcours.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  {parcours.map((p, i) => (
-                    <div key={p.id} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.green, marginTop: '4px', flexShrink: 0 }} />
-                        {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: colors.border.faint, marginTop: '2px' }} />}
-                      </div>
-                      <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {p.logo_url
-                            ? <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
-                            : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getClubColor(p.club || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: colors.text.primary, flexShrink: 0 }}>{getClubInitials(p.club || '?')}</div>
-                          }
-                          <div>
-                            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
-                            <p style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '4px' }}>
-                              {[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(' · ')}
-                            </p>
-                            {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
-                              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: colors.accent.green, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconBall size={11} />{p.matchs_joues} matchs</span>}
-                                {p.buts > 0 && <span style={{ fontSize: '11px', color: colors.accent.orange, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconTarget size={11} />{p.buts} buts</span>}
-                                {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: colors.accent.blue, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPass size={11} />{p.passes_decisives} passes</span>}
-                                {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: colors.accent.purple, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconGlove size={11} />{p.cleansheets} CS</span>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                          <button onClick={() => modifierClub(p)} title="Modifier" style={{ background: 'transparent', border: 'none', color: '#4ade8080', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
-                          <button onClick={() => supprimerClub(p.id)} title="Supprimer" style={{ background: 'transparent', border: 'none', color: '#ef444480', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div id="parcours-form" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ position: 'relative' }}>
-                  <label style={labelStyle}>{t('profil_club_label', lang)}</label>
-                  <div style={{ position: 'relative' }}>
-                    {nouveauClub.club.trim() && (
-                      nouveauClub.logo_url
-                        ? <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
-                        : <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: getClubColor(nouveauClub.club), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: colors.text.primary, zIndex: 1 }}>{getClubInitials(nouveauClub.club)}</div>
-                    )}
-                    <input
-                      value={nouveauClub.club}
-                      onChange={e => {
-                        const val = e.target.value
-                        setNouveauClub(prev => ({ ...prev, club: val, logo_url: '' }))
-                        searchClubs(val)
-                      }}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                      onFocus={() => clubSuggestions.length > 0 && setShowSuggestions(true)}
-                      placeholder="AS Saint-Etienne"
-                      style={{ ...inputStyle, paddingLeft: nouveauClub.club.trim() ? '36px' : '14px' }}
-                    />
-                    {loadingSuggestions && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: colors.text.faint }}>…</span>
-                    )}
-                  </div>
-                  {showSuggestions && clubSuggestions.length > 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, overflow: 'hidden', marginTop: '4px' }}>
-                      {clubSuggestions.map(team => (
-                        <div
-                          key={team.idTeam}
-                          onMouseDown={() => selectClubSuggestion(team)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.faint}` }}
-                          onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          {team.strTeamBadge && <img src={team.strTeamBadge} alt="" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}
-                          <div>
-                            <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>{team.strTeam}</p>
-                            {team.strCountry && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{team.strCountry}</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label style={labelStyle}>{t('profil_saison', lang)}</label>
-                  <input value={nouveauClub.saison} onChange={e => setNouveauClub({ ...nouveauClub, saison: e.target.value })} placeholder="2023-2024" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>{t('equipe_categorie', lang)}</label>
-                  <select value={nouveauClub.categorie} onChange={e => setNouveauClub({ ...nouveauClub, categorie: e.target.value })} style={inputStyle}>
-                    <option value="">{t('equipe_choisir', lang)}</option>
-                    {CATEGORIES_CLUB_HISTORIQUE.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>{t('equipe_poste', lang)}</label>
-                  <select value={nouveauClub.poste} onChange={e => setNouveauClub({ ...nouveauClub, poste: e.target.value })} style={inputStyle}>
-                    <option value="">{t('equipe_choisir', lang)}</option>
-                    <option>Gardien</option>
-                    <option>Defenseur</option>
-                    <option>Milieu</option>
-                    <option>Attaquant</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>{t('jp_niveau_champ', lang)}</label>
-                  <select value={nouveauClub.niveau_championnat} onChange={e => setNouveauClub({ ...nouveauClub, niveau_championnat: e.target.value })} style={inputStyle}>
-                    <option value="">{t('equipe_choisir', lang)}</option>
-                    {['Ligue 1','Ligue 2','National 1','National 2','National 3','R1','R2','R3','D1','D2','Futsal'].map(n => <option key={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>{t('jp_matchs_joues', lang)}</label>
-                  <input type="number" min="0" value={nouveauClub.matchs_joues} onChange={e => setNouveauClub({ ...nouveauClub, matchs_joues: e.target.value })} placeholder="0" style={inputStyle} />
-                </div>
-                {nouveauClub.poste === 'Gardien' ? (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>{t('jp_clean_sheets', lang)}</label>
-                    <input type="number" min="0" value={nouveauClub.cleansheets} onChange={e => setNouveauClub({ ...nouveauClub, cleansheets: e.target.value })} placeholder="0" style={inputStyle} />
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <label style={labelStyle}>{t('comp_buts', lang)}</label>
-                      <input type="number" min="0" value={nouveauClub.buts} onChange={e => setNouveauClub({ ...nouveauClub, buts: e.target.value })} placeholder="0" style={inputStyle} />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>{t('jp_passes_dec', lang)}</label>
-                      <input type="number" min="0" value={nouveauClub.passes_decisives} onChange={e => setNouveauClub({ ...nouveauClub, passes_decisives: e.target.value })} placeholder="0" style={inputStyle} />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
-                  style={{ ...st.btnSolid(), transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
-                  {savingParcours ? (editingParcoursId ? t('jp_modif_cours', lang) : t('jp_ajout_cours', lang)) : (editingParcoursId ? t('jp_modifier_parcours', lang) : t('jp_ajouter_club', lang))}
-                </button>
-                {editingParcoursId && (
-                  <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
-                    style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {t('btn_annuler', lang)}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>{t('jp_historique_saisons', lang)}</p>
-              <HistoriqueSaisons joueurId={userId} />
-            </div>
-
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '6px' }}>{t('jp_notif_prefs', lang)}</p>
-              <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jp_notif_desc', lang)}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {[
-                  { key: 'email_analyse', label: t('jp_notif_analyse', lang) },
-                  { key: 'email_like', label: t('jp_notif_like', lang) },
-                  { key: 'email_commentaire', label: t('jp_notif_commentaire', lang) },
-                  { key: 'email_message', label: t('jp_notif_message', lang) },
-                ].map(pref => (
-                  <div key={pref.key} onClick={() => sauvegarderNotifPrefs({ ...notifPrefs, [pref.key]: !notifPrefs[pref.key] })}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '14px' }}>{pref.label}</span>
-                    <div style={{ width: '40px', height: '22px', background: notifPrefs[pref.key] ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                      <div style={{ position: 'absolute', top: '3px', left: notifPrefs[pref.key] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {savingPrefs && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
-            </div>
-
-            {/* ── VISIBILITÉ RECRUTEURS ── */}
-            {/* Fonctionnalité pas encore lancée publiquement — masquée sauf sur le
-                compte de test (Rayan Attia) pour continuer à la préparer. */}
-            {profil?.id === '147846d3-71e6-4c35-a84e-21084a9ea20a' && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>Visibilité recruteurs</p>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={labelStyle}>Mon statut</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                  {['Non disponible', "À l'écoute", 'Recherche active'].map(s => (
-                    <div key={s} onClick={() => sauvegarderRecrutementProfil({ statut_recrutement: s })}
-                      style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
-                        background: recrutementProfil.statut_recrutement === s ? colors.accent.green + alpha.soft : colors.background.raised,
-                        border: recrutementProfil.statut_recrutement === s ? `1px solid ${colors.accent.green}` : `1px solid ${colors.border.strong}`,
-                        color: recrutementProfil.statut_recrutement === s ? colors.accent.green : colors.text.secondary,
-                        fontWeight: recrutementProfil.statut_recrutement === s ? 700 : 400,
-                      }}>
-                      {s}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div onClick={() => sauvegarderRecrutementProfil({ visible_recruteurs: !recrutementProfil.visible_recruteurs })}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
-                <span style={{ fontSize: '14px' }}>Rendre mon profil visible aux recruteurs et clubs</span>
-                <div style={{ width: '40px', height: '22px', background: recrutementProfil.visible_recruteurs ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                  <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.visible_recruteurs ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
-                </div>
-              </div>
-              {savingRecrutement && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
-
-              {/* Partage du bilan médical — réglage distinct de la visibilité du
-                  profil : même si le profil est visible, l'historique médical
-                  reste privé tant que ce toggle-ci n'est pas activé séparément. */}
-              <div onClick={() => sauvegarderRecrutementProfil({ partage_bilan_medical: !recrutementProfil.partage_bilan_medical })}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginTop: '10px' }}>
-                <div>
-                  <span style={{ fontSize: '14px' }}>Partager un résumé de mon bilan médical</span>
-                  <p style={{ fontSize: '11px', color: colors.text.faint, margin: '3px 0 0' }}>Nombre de blessures et jours d'indisponibilité cette saison — jamais le détail sans ton accord explicite ci-dessous.</p>
-                </div>
-                <div style={{ width: '40px', height: '22px', background: recrutementProfil.partage_bilan_medical ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                  <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.partage_bilan_medical ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
-                </div>
-              </div>
-
-              {demandesBilanMedical.length > 0 && (
-                <div style={{ marginTop: '16px' }}>
-                  <p style={{ fontSize: '12px', color: colors.text.faint, fontWeight: 700, marginBottom: '8px' }}>Demandes de détail médical</p>
-                  {demandesBilanMedical.map(d => (
-                    <div key={d.id} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '12px 14px', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 600 }}>
-                        {d.recruteur?.prenom} {d.recruteur?.nom}{d.recruteur?.club ? ` — ${d.recruteur.club}` : ''}
-                      </div>
-                      {d.message && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0' }}>« {d.message} »</p>}
-                      {d.statut === 'en_attente' ? (
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                          <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, true)}
-                            style={{ flex: 1, background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px', color: colors.black, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            Accepter
-                          </button>
-                          <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, false)}
-                            style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            Refuser
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: d.statut === 'acceptee' ? colors.accent.green : colors.text.disabled }}>
-                          {d.statut === 'acceptee' ? 'Accepté' : 'Refusé'}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </Carte>
             )}
 
             <button className="dj-btn-green" onClick={handleSaveStats} disabled={savingStats}
               style={{ ...st.btnSolid(statsSaved ? '#22c55e' : colors.accent.green), width: '100%', transition: 'background 0.2s', letterSpacing: '-0.2px' }}>
               {savingStats ? t('jp_sauvegarde_cours', lang) : statsSaved ? t('jp_profil_sauvegarde', lang) : t('profil_sauvegarder_profil', lang)}
             </button>
+            <p style={{ fontSize: '12px', color: colors.text.faint, textAlign: 'center', margin: `${spacing.md} 0 ${spacing['2xl']}` }}>{t('jp_enregistrer_note', lang)}</p>
 
-            {/* ── ACCÈS PARENTS ── */}
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', marginTop: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <span style={{ display: 'flex', color: colors.icon.muted }}><IconUsers /></span>
-                <div>
-                  <p style={{ ...labelStyle, margin: 0 }}>Accès parents</p>
-                  <p style={{ color: colors.text.ghost, fontSize: '12px', margin: '2px 0 0' }}>Invite jusqu'à 2 parents — accès lecture seule à ton profil</p>
-                </div>
-              </div>
-
-              {parentsInvites.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '8px' }}>
-                  <div>
-                    <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>{p.email_invite}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: p.statut === 'accepte' ? colors.accent.green : p.statut === 'refuse' ? colors.accent.red : colors.accent.amber }}>
-                      {p.statut === 'accepte' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconCheck size={12} />Compte créé</span> : p.statut === 'refuse' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClose size={12} />Refusé</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClock size={12} />Invitation en attente</span>}
-                    </p>
+            <SectionRepliable titre={t('jp_parcours', lang)} resume={t('jp_parcours_resume', lang)} ouvert={sectionsProfil.parcours} onToggle={() => setSectionsProfil(s => ({ ...s, parcours: !s.parcours }))} isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+                {parcours.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    {parcours.map((p, i) => (
+                      <div key={p.id} style={{ display: 'flex', gap: '14px', position: 'relative' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: colors.accent.green, marginTop: '4px', flexShrink: 0 }} />
+                          {i < parcours.length - 1 && <div style={{ width: '1px', flex: 1, background: colors.border.faint, marginTop: '2px' }} />}
+                        </div>
+                        <div style={{ flex: 1, paddingBottom: i < parcours.length - 1 ? '20px' : 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {p.logo_url
+                              ? <img src={p.logo_url} alt={p.club} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} />
+                              : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: getClubColor(p.club || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, color: colors.text.primary, flexShrink: 0 }}>{getClubInitials(p.club || '?')}</div>
+                            }
+                            <div>
+                              <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{p.club}</p>
+                              <p style={{ fontSize: '11px', color: colors.text.faint, marginBottom: '4px' }}>
+                                {[p.saison, p.niveau_championnat, p.categorie, p.poste].filter(Boolean).join(' · ')}
+                              </p>
+                              {(p.matchs_joues > 0 || p.buts > 0 || p.passes_decisives > 0 || p.cleansheets > 0) && (
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                  {p.matchs_joues > 0 && <span style={{ fontSize: '11px', color: colors.accent.green, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconBall size={11} />{p.matchs_joues} matchs</span>}
+                                  {p.buts > 0 && <span style={{ fontSize: '11px', color: colors.accent.orange, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconTarget size={11} />{p.buts} buts</span>}
+                                  {p.passes_decisives > 0 && <span style={{ fontSize: '11px', color: colors.accent.blue, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPass size={11} />{p.passes_decisives} passes</span>}
+                                  {p.cleansheets > 0 && <span style={{ fontSize: '11px', color: colors.accent.purple, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconGlove size={11} />{p.cleansheets} CS</span>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                            <button onClick={() => modifierClub(p)} title="Modifier" style={{ background: 'transparent', border: 'none', color: '#4ade8080', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={() => supprimerClub(p.id)} title="Supprimer" style={{ background: 'transparent', border: 'none', color: '#ef444480', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <button onClick={() => supprimerInvitationParent(p.email_invite)} aria-label="Retirer cette invitation" style={{ background: 'none', border: 'none', color: colors.text.ghost, cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}><IconClose size={16} /></button>
-                </div>
-              ))}
+                )}
 
-              {parentsInvites.length < 2 ? (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                  <input type="email" placeholder="Email du parent" value={emailParentInput} onChange={e => setEmailParentInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterParent()}
-                    style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
-                  <button onClick={inviterParent} disabled={invitantParent || !emailParentInput.trim()}
-                    style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: invitantParent ? 0.6 : 1 }}>
-                    {invitantParent ? '...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconMail size={13} />Inviter</span>}
-                  </button>
+                <div id="parcours-form" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <label style={labelStyle}>{t('profil_club_label', lang)}</label>
+                    <div style={{ position: 'relative' }}>
+                      {nouveauClub.club.trim() && (
+                        nouveauClub.logo_url
+                          ? <img src={nouveauClub.logo_url} alt="" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', objectFit: 'contain', zIndex: 1 }} />
+                          : <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: getClubColor(nouveauClub.club), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 800, color: colors.text.primary, zIndex: 1 }}>{getClubInitials(nouveauClub.club)}</div>
+                      )}
+                      <input
+                        value={nouveauClub.club}
+                        onChange={e => {
+                          const val = e.target.value
+                          setNouveauClub(prev => ({ ...prev, club: val, logo_url: '' }))
+                          searchClubs(val)
+                        }}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        onFocus={() => clubSuggestions.length > 0 && setShowSuggestions(true)}
+                        placeholder="AS Saint-Etienne"
+                        style={{ ...inputStyle, paddingLeft: nouveauClub.club.trim() ? '36px' : '14px' }}
+                      />
+                      {loadingSuggestions && (
+                        <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: colors.text.faint }}>…</span>
+                      )}
+                    </div>
+                    {showSuggestions && clubSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, overflow: 'hidden', marginTop: '4px' }}>
+                        {clubSuggestions.map(team => (
+                          <div
+                            key={team.idTeam}
+                            onMouseDown={() => selectClubSuggestion(team)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: `1px solid ${colors.border.faint}` }}
+                            onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {team.strTeamBadge && <img src={team.strTeamBadge} alt="" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}
+                            <div>
+                              <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>{team.strTeam}</p>
+                              {team.strCountry && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{team.strCountry}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('profil_saison', lang)}</label>
+                    <input value={nouveauClub.saison} onChange={e => setNouveauClub({ ...nouveauClub, saison: e.target.value })} placeholder="2023-2024" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('equipe_categorie', lang)}</label>
+                    <select value={nouveauClub.categorie} onChange={e => setNouveauClub({ ...nouveauClub, categorie: e.target.value })} style={inputStyle}>
+                      <option value="">{t('equipe_choisir', lang)}</option>
+                      {CATEGORIES_CLUB_HISTORIQUE.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('equipe_poste', lang)}</label>
+                    <select value={nouveauClub.poste} onChange={e => setNouveauClub({ ...nouveauClub, poste: e.target.value })} style={inputStyle}>
+                      <option value="">{t('equipe_choisir', lang)}</option>
+                      <option>Gardien</option>
+                      <option>Defenseur</option>
+                      <option>Milieu</option>
+                      <option>Attaquant</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('jp_niveau_champ', lang)}</label>
+                    <select value={nouveauClub.niveau_championnat} onChange={e => setNouveauClub({ ...nouveauClub, niveau_championnat: e.target.value })} style={inputStyle}>
+                      <option value="">{t('equipe_choisir', lang)}</option>
+                      {['Ligue 1','Ligue 2','National 1','National 2','National 3','R1','R2','R3','D1','D2','Futsal'].map(n => <option key={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('jp_matchs_joues', lang)}</label>
+                    <input type="number" min="0" value={nouveauClub.matchs_joues} onChange={e => setNouveauClub({ ...nouveauClub, matchs_joues: e.target.value })} placeholder="0" style={inputStyle} />
+                  </div>
+                  {nouveauClub.poste === 'Gardien' ? (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={labelStyle}>{t('jp_clean_sheets', lang)}</label>
+                      <input type="number" min="0" value={nouveauClub.cleansheets} onChange={e => setNouveauClub({ ...nouveauClub, cleansheets: e.target.value })} placeholder="0" style={inputStyle} />
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={labelStyle}>{t('comp_buts', lang)}</label>
+                        <input type="number" min="0" value={nouveauClub.buts} onChange={e => setNouveauClub({ ...nouveauClub, buts: e.target.value })} placeholder="0" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>{t('jp_passes_dec', lang)}</label>
+                        <input type="number" min="0" value={nouveauClub.passes_decisives} onChange={e => setNouveauClub({ ...nouveauClub, passes_decisives: e.target.value })} placeholder="0" style={inputStyle} />
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button className="dj-btn-green" onClick={ajouterClub} disabled={savingParcours || !nouveauClub.club.trim()}
+                    style={{ ...st.btnSolid(), transition: 'background 0.15s', opacity: (savingParcours || !nouveauClub.club.trim()) ? 0.5 : 1 }}>
+                    {savingParcours ? (editingParcoursId ? t('jp_modif_cours', lang) : t('jp_ajout_cours', lang)) : (editingParcoursId ? t('jp_modifier_parcours', lang) : t('jp_ajouter_club', lang))}
+                  </button>
+                  {editingParcoursId && (
+                    <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
+                      style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      {t('btn_annuler', lang)}
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ marginTop: spacing['3xl'] }}>
+                  <TitreSection>{t('jp_historique_saisons', lang)}</TitreSection>
+                  <HistoriqueSaisons joueurId={userId} />
+                </div>
+            </SectionRepliable>
+
+            <SectionRepliable titre={t('jp_reglages', lang)} resume={t('jp_reglages_resume', lang)} ouvert={sectionsProfil.reglages} onToggle={() => setSectionsProfil(s => ({ ...s, reglages: !s.reglages }))} isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+                <div>
+                <TitreSection>{t('jp_notif_prefs', lang)}</TitreSection>
+                <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '20px' }}>{t('jp_notif_desc', lang)}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {[
+                    { key: 'email_analyse', label: t('jp_notif_analyse', lang) },
+                    { key: 'email_like', label: t('jp_notif_like', lang) },
+                    { key: 'email_commentaire', label: t('jp_notif_commentaire', lang) },
+                    { key: 'email_message', label: t('jp_notif_message', lang) },
+                  ].map(pref => (
+                    <div key={pref.key} onClick={() => sauvegarderNotifPrefs({ ...notifPrefs, [pref.key]: !notifPrefs[pref.key] })}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '14px' }}>{pref.label}</span>
+                      <div style={{ width: '40px', height: '22px', background: notifPrefs[pref.key] ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                        <div style={{ position: 'absolute', top: '3px', left: notifPrefs[pref.key] ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {savingPrefs && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
+                </div>
+
+              {/* ── VISIBILITÉ RECRUTEURS ── */}
+              {/* Fonctionnalité pas encore lancée publiquement — masquée sauf sur le
+                  compte de test (Rayan Attia) pour continuer à la préparer. */}
+              {profil?.id === '147846d3-71e6-4c35-a84e-21084a9ea20a' && (
+                <div style={{ marginTop: spacing['3xl'] }}>
+                <TitreSection>Visibilité recruteurs</TitreSection>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={labelStyle}>Mon statut</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                    {['Non disponible', "À l'écoute", 'Recherche active'].map(s => (
+                      <div key={s} onClick={() => sauvegarderRecrutementProfil({ statut_recrutement: s })}
+                        style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer',
+                          background: recrutementProfil.statut_recrutement === s ? colors.accent.green + alpha.soft : colors.background.raised,
+                          border: recrutementProfil.statut_recrutement === s ? `1px solid ${colors.accent.green}` : `1px solid ${colors.border.strong}`,
+                          color: recrutementProfil.statut_recrutement === s ? colors.accent.green : colors.text.secondary,
+                          fontWeight: recrutementProfil.statut_recrutement === s ? 700 : 400,
+                        }}>
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div onClick={() => sauvegarderRecrutementProfil({ visible_recruteurs: !recrutementProfil.visible_recruteurs })}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '14px' }}>Rendre mon profil visible aux recruteurs et clubs</span>
+                  <div style={{ width: '40px', height: '22px', background: recrutementProfil.visible_recruteurs ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.visible_recruteurs ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                  </div>
+                </div>
+                {savingRecrutement && <p style={{ fontSize: '12px', color: colors.accent.green, marginTop: '10px' }}>{t('jp_enregistrement', lang)}</p>}
+
+                {/* Partage du bilan médical — réglage distinct de la visibilité du
+                    profil : même si le profil est visible, l'historique médical
+                    reste privé tant que ce toggle-ci n'est pas activé séparément. */}
+                <div onClick={() => sauvegarderRecrutementProfil({ partage_bilan_medical: !recrutementProfil.partage_bilan_medical })}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', marginTop: '10px' }}>
+                  <div>
+                    <span style={{ fontSize: '14px' }}>Partager un résumé de mon bilan médical</span>
+                    <p style={{ fontSize: '11px', color: colors.text.faint, margin: '3px 0 0' }}>Nombre de blessures et jours d'indisponibilité cette saison — jamais le détail sans ton accord explicite ci-dessous.</p>
+                  </div>
+                  <div style={{ width: '40px', height: '22px', background: recrutementProfil.partage_bilan_medical ? colors.accent.green : colors.border.strong, borderRadius: '20px', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: '3px', left: recrutementProfil.partage_bilan_medical ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: colors.text.primary, transition: 'left 0.2s' }} />
+                  </div>
+                </div>
+
+                {demandesBilanMedical.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <p style={{ fontSize: '12px', color: colors.text.faint, fontWeight: 700, marginBottom: '8px' }}>Demandes de détail médical</p>
+                    {demandesBilanMedical.map(d => (
+                      <div key={d.id} style={{ background: colors.background.surfaceAlt, borderRadius: '10px', padding: '12px 14px', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 600 }}>
+                          {d.recruteur?.prenom} {d.recruteur?.nom}{d.recruteur?.club ? ` — ${d.recruteur.club}` : ''}
+                        </div>
+                        {d.message && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '4px 0' }}>« {d.message} »</p>}
+                        {d.statut === 'en_attente' ? (
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, true)}
+                              style={{ flex: 1, background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px', color: colors.black, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              Accepter
+                            </button>
+                            <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, false)}
+                              style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              Refuser
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: d.statut === 'acceptee' ? colors.accent.green : colors.text.disabled }}>
+                            {d.statut === 'acceptee' ? 'Accepté' : 'Refusé'}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               )}
+
+                <div style={{ marginTop: spacing['3xl'] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                  <span style={{ display: 'flex', color: colors.icon.muted }}><IconUsers /></span>
+                  <div>
+                    <p style={{ ...labelStyle, margin: 0 }}>Accès parents</p>
+                    <p style={{ color: colors.text.ghost, fontSize: '12px', margin: '2px 0 0' }}>Invite jusqu'à 2 parents — accès lecture seule à ton profil</p>
+                  </div>
+                </div>
+
+                {parentsInvites.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '8px' }}>
+                    <div>
+                      <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>{p.email_invite}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: p.statut === 'accepte' ? colors.accent.green : p.statut === 'refuse' ? colors.accent.red : colors.accent.amber }}>
+                        {p.statut === 'accepte' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconCheck size={12} />Compte créé</span> : p.statut === 'refuse' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClose size={12} />Refusé</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClock size={12} />Invitation en attente</span>}
+                      </p>
+                    </div>
+                    <button onClick={() => supprimerInvitationParent(p.email_invite)} aria-label="Retirer cette invitation" style={{ background: 'none', border: 'none', color: colors.text.ghost, cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}><IconClose size={16} /></button>
+                  </div>
+                ))}
+
+                {parentsInvites.length < 2 ? (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <input type="email" placeholder="Email du parent" value={emailParentInput} onChange={e => setEmailParentInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterParent()}
+                      style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                    <button onClick={inviterParent} disabled={invitantParent || !emailParentInput.trim()}
+                      style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: invitantParent ? 0.6 : 1 }}>
+                      {invitantParent ? '...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconMail size={13} />Inviter</span>}
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
+                )}
+              </div>
+            </SectionRepliable>
+
+            <div style={{ marginBottom: '16px' }}>
+              <ParrainageWidget userId={userId} accentColor={colors.accent.green} />
             </div>
           </div>
         )}
@@ -4738,10 +4734,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── ÉQUIPEMENT ── */}
         {onglet === 'sante' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('nav_sante', lang)}</h1>
-            <SanteJoueur userId={userId} />
-          </div>
+          <SanteJoueur userId={userId} estAffilie={affilieAccepte} isMobile={isMobile} lang={lang} onNaviguer={setOnglet} />
         )}
 
         {onglet === 'nutrition' && (
@@ -5296,7 +5289,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
             clubId={clubIdInventaire}
             categorie={profil?.categorie}
-            accentColor={colors.accent.blue}
+            isMobile={isMobile}
+            lang={lang}
+            onNaviguer={setOnglet}
           />
         )}
 

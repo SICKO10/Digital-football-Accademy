@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha } from '../tokens'
+import { alpha, fontSize, radius, spacing } from '../tokens'
 import { saisonActuelle } from '../lib/saison'
-import { IconPaperclip } from './icones'
+import { localeOf } from '../lib/translations'
+import { IconPaperclip, IconHealth } from './icones'
+import Carte from './joueur/Carte'
+import TitreSection from './joueur/TitreSection'
+import TuileChiffre from './joueur/TuileChiffre'
+import EmptyState from './EmptyState'
 
 const STATUT_META_KEYS = {
   en_cours: 'En cours',
@@ -78,8 +83,9 @@ function CorpsHumain({ blessures = [], onZoneClick, selectedZone }) {
   )
 }
 
-export default function SanteJoueur({ userId }) {
+export default function SanteJoueur({ userId, estAffilie = true, isMobile = false, lang = 'fr', onNaviguer }) {
   const colors = useColors()
+  const locale = localeOf(lang)
   const [blessures, setBlessures] = useState([])
   const [suivisParBlessure, setSuivisParBlessure] = useState({})
   const [etapesParBlessure, setEtapesParBlessure] = useState({})
@@ -215,35 +221,59 @@ export default function SanteJoueur({ userId }) {
   }
 
   const s = {
-    card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px 20px', marginBottom: '12px' },
-    pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: '20px', padding: '3px 12px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }),
-    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
-    label: { color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', fontWeight: 700 },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' },
-    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
+    pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: radius.pill, padding: `3px ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700, whiteSpace: 'nowrap' }),
+    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: radius.base, padding: `${spacing.base} ${spacing['3xl']}`, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: radius.base, padding: `${spacing.md} ${spacing['2xl']}`, fontWeight: 600, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif' },
+    label: { color: colors.text.faint, fontSize: fontSize.base, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.xs, display: 'block', fontWeight: 700 },
+    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' },
+    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
+    sousTitre: { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.base },
+    lienDiscret: { background: 'transparent', border: 'none', fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 },
   }
+  const cadre = { padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto' }
+  const dateCourte = (d, opts) => new Date(`${d}T12:00:00`).toLocaleDateString(locale, opts)
 
-  if (loading) return <div style={{ color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '32px 0' }}>Chargement…</div>
+  if (loading) return <div style={{ ...cadre, color: colors.text.faint, fontSize: fontSize.lg, textAlign: 'center' }}>Chargement…</div>
 
   const enCours = blessures.filter(b => b.statut !== 'gueri')
+  const gueries = blessures.length - enCours.length
+  const peutDeclarer = estAffilie && !showFormBlessure
 
   return (
-    <div>
+    <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing['2xl'], flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0, flex: '1 1 260px' }}>
+          <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Santé</h1>
+          <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
+            Déclare une gêne ou une blessure : ton éducateur la voit tout de suite et suit ton retour avec toi.
+          </p>
+        </div>
+        {peutDeclarer && blessures.length > 0 && <button style={s.btnGhost} onClick={() => setShowFormBlessure(true)}>Déclarer une blessure</button>}
+      </div>
+
       {enCours.length > 0 && (
-        <div style={{ ...s.card, borderLeft: `3px solid ${STATUT_META[enCours[0].statut]?.color}`, marginBottom: '20px' }}>
-          <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>
+        <Carte isMobile={isMobile} accent={STATUT_META[enCours[0].statut]?.color}>
+          <TitreSection couleur={STATUT_META[enCours[0].statut]?.color}>Ton état actuel</TitreSection>
+          <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: fontSize['3xl'], marginBottom: spacing.xs }}>
             Tu es actuellement {STATUT_META[enCours[0].statut]?.label?.toLowerCase()}
           </div>
-          <div style={{ color: colors.text.faint, fontSize: '13px' }}>
+          <div style={{ color: colors.text.faint, fontSize: fontSize.lg }}>
             {enCours[0].type_blessure}{enCours[0].zone_corps && ` — ${enCours[0].zone_corps}`}
-            {enCours[0].date_retour_estimee && ` · Retour estimé le ${new Date(`${enCours[0].date_retour_estimee}T12:00:00`).toLocaleDateString('fr-FR')}`}
+            {enCours[0].date_retour_estimee && ` · Retour estimé le ${dateCourte(enCours[0].date_retour_estimee)}`}
           </div>
+        </Carte>
+      )}
+
+      {blessures.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: isMobile ? spacing.base : spacing.lg }}>
+          <TuileChiffre isMobile={isMobile} valeur={blessures.length} libelle="Déclarées" />
+          <TuileChiffre isMobile={isMobile} valeur={enCours.length} libelle="En cours" couleur={enCours.length > 0 ? colors.accent.orange : undefined} />
+          <TuileChiffre isMobile={isMobile} valeur={gueries} libelle="Guéries" couleur={gueries > 0 ? colors.accent.green : undefined} />
         </div>
       )}
 
       {blessures.length > 0 && (
-        <div style={{ ...s.card, display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['3xl'], alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ width: '110px', flexShrink: 0 }}>
             <CorpsHumain blessures={blessures} onZoneClick={(zoneId) => {
               const b = enCours.find(bl => bl.zone_corps === zoneId)
@@ -251,33 +281,29 @@ export default function SanteJoueur({ userId }) {
             }} />
           </div>
           <div style={{ flex: 1, minWidth: '160px' }}>
-            <div style={s.label}>Vue d'ensemble</div>
+            <TitreSection style={{ marginBottom: spacing.md }}>Vue d'ensemble</TitreSection>
             {enCours.length > 0
-              ? <div style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.5 }}>Clique sur une zone en orange pour voir le détail de la blessure.</div>
-              : <div style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700 }}>Aucune zone touchée actuellement</div>}
+              ? <div style={{ color: colors.text.secondary, fontSize: fontSize.lg, lineHeight: 1.5 }}>Touche une zone en orange pour voir le détail de la blessure.</div>
+              : <div style={{ color: colors.accent.green, fontSize: fontSize.lg, fontWeight: 700 }}>Aucune zone touchée actuellement</div>}
           </div>
-        </div>
+        </Carte>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-        {!showFormBlessure && <button style={s.btnGhost} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>}
-      </div>
-
       {showFormBlessure && (
-        <div style={{ ...s.card, border: `1px solid ${colors.border.default}` }}>
-          <div style={{ color: colors.accent.orange, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>DÉCLARER UNE BLESSURE</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <Carte isMobile={isMobile}>
+          <TitreSection couleur={colors.accent.orange}>Déclarer une blessure</TitreSection>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '110px 1fr', gap: spacing['2xl'] }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing.sm }}>
               <CorpsHumain blessures={blessures} selectedZone={form.zone_corps} onZoneClick={zoneId => setForm(p => ({ ...p, zone_corps: zoneId }))} />
-              <div style={{ color: colors.text.faint, fontSize: '10px', textAlign: 'center' }}>Clique pour choisir la zone</div>
+              <div style={{ color: colors.text.faint, fontSize: fontSize.sm, textAlign: 'center' }}>Touche pour choisir la zone</div>
             </div>
             <div>
-              <div style={{ marginBottom: '10px' }}>
+              <div style={{ marginBottom: spacing.base }}>
                 <label style={s.label}>Type de blessure</label>
                 <input style={s.input} placeholder="ex : Entorse, Contracture, Douleur..."
                   value={form.type_blessure} onChange={e => setForm(p => ({ ...p, type_blessure: e.target.value }))} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: spacing.base, marginBottom: spacing.base }}>
                 <div>
                   <label style={s.label}>Zone du corps</label>
                   <select style={s.input} value={form.zone_corps} onChange={e => setForm(p => ({ ...p, zone_corps: e.target.value }))}>
@@ -294,58 +320,69 @@ export default function SanteJoueur({ userId }) {
                   </select>
                 </div>
               </div>
-              <div style={{ marginBottom: '10px' }}>
+              <div style={{ marginBottom: spacing.base }}>
                 <label style={s.label}>Date d'apparition</label>
                 <input type="date" style={s.input} value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} />
               </div>
-              <div style={{ marginBottom: '14px' }}>
+              <div style={{ marginBottom: spacing.xl }}>
                 <label style={s.label}>Description (optionnel)</label>
                 <textarea style={s.textarea} placeholder="Décris comment c'est arrivé, dans quelles circonstances..."
                   value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: spacing.md }}>
                 <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={declarerBlessureJoueur}>Enregistrer</button>
                 <button style={s.btnGhost} onClick={() => { setShowFormBlessure(false); setForm(FORM_VIDE) }}>Annuler</button>
               </div>
             </div>
           </div>
-        </div>
+        </Carte>
       )}
 
-      {blessures.length === 0 ? (
-        <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Aucune blessure enregistrée</div>
-      ) : blessures.map(b => {
+      {blessures.length === 0 && !showFormBlessure && (
+        <EmptyState
+          icon={<IconHealth />}
+          title={estAffilie ? 'Aucune blessure déclarée' : 'Ton suivi santé se débloque avec ton équipe'}
+          subtitle={estAffilie
+            ? "Une gêne au genou, une douleur après un match : dis-le ici. Ton éducateur est prévenu, fixe la date de reprise et peut te proposer un programme de rééducation. Tes rendez-vous médicaux se retrouvent aussi ici."
+            : "Une fois dans une équipe, tu pourras déclarer une blessure ici, suivre ta rééducation et noter tes rendez-vous médicaux."}
+          cta={estAffilie
+            ? { label: 'Déclarer une blessure', onClick: () => setShowFormBlessure(true) }
+            : (onNaviguer ? { label: 'Rejoindre mon équipe', onClick: () => onNaviguer('equipe') } : undefined)}
+        />
+      )}
+
+      {blessures.map(b => {
         const meta = STATUT_META[b.statut] || STATUT_META.en_cours
         const estOuverte = ouverte === b.id
         const suivis = suivisParBlessure[b.id] || []
         const etapes = etapesParBlessure[b.id] || []
         const progression = etapes.length > 0 ? Math.round((etapes.filter(e => e.statut === 'validee').length / etapes.length) * 100) : 0
         return (
-          <div key={b.id} style={s.card}>
-            <div onClick={() => ouvrirBlessure(b)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{b.type_blessure}{b.zone_corps && ` — ${b.zone_corps}`}</div>
-                <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px' }}>
-                  Depuis le {new Date(`${b.date_debut}T12:00:00`).toLocaleDateString('fr-FR')} · Gravité {GRAVITE_LABELS[b.gravite] || b.gravite}
+          <Carte key={b.id} isMobile={isMobile}>
+            <div onClick={() => ouvrirBlessure(b)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl }}>{b.type_blessure}{b.zone_corps && ` — ${b.zone_corps}`}</div>
+                <div style={{ color: colors.text.faint, fontSize: fontSize.md, marginTop: '2px' }}>
+                  Depuis le {dateCourte(b.date_debut)} · Gravité {GRAVITE_LABELS[b.gravite] || b.gravite}
                 </div>
               </div>
               <span style={s.pill(meta.color)}>{meta.label}</span>
             </div>
 
             {estOuverte && (
-              <div style={{ borderTop: `1px solid ${colors.border.subtle}`, marginTop: '14px', paddingTop: '14px' }}>
+              <div style={{ borderTop: `1px solid ${colors.border.subtle}`, marginTop: spacing.xl, paddingTop: spacing.xl }}>
                 {b.notes && (
-                  <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '0 0 14px', lineHeight: 1.5 }}>{b.notes}</p>
+                  <p style={{ color: colors.text.secondary, fontSize: fontSize.lg, margin: `0 0 ${spacing.xl}`, lineHeight: 1.5 }}>{b.notes}</p>
                 )}
 
                 {/* Date de reprise — "Inconnue" laisse date_retour_estimee à
                     null (déjà le comportement par défaut), sinon une date
                     précise ; sauvegardée via joueur_maj_date_retour (RPC),
                     seule colonne que le joueur a le droit de modifier. */}
-                <div style={{ marginBottom: '16px' }}>
+                <div style={{ marginBottom: spacing['2xl'] }}>
                   <label style={s.label}>Date de reprise</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.text.secondary, fontSize: '13px', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.base, flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, color: colors.text.secondary, fontSize: fontSize.lg, cursor: 'pointer' }}>
                       <input type="checkbox" checked={dateRetourEdit[b.id]?.inconnue ?? true}
                         onChange={e => setDateRetourEdit(prev => ({ ...prev, [b.id]: { ...prev[b.id], inconnue: e.target.checked } }))} />
                       Inconnue pour l'instant
@@ -354,49 +391,49 @@ export default function SanteJoueur({ userId }) {
                       <input type="date" style={{ ...s.input, width: 'auto' }} value={dateRetourEdit[b.id]?.date || ''}
                         onChange={e => setDateRetourEdit(prev => ({ ...prev, [b.id]: { ...prev[b.id], date: e.target.value } }))} />
                     )}
-                    <button style={{ ...s.btnGhost, padding: '7px 14px' }} onClick={() => sauvegarderDateRetour(b.id)}>Enregistrer</button>
+                    <button style={s.btnGhost} onClick={() => sauvegarderDateRetour(b.id)}>Enregistrer</button>
                   </div>
                 </div>
 
-                <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Suivi médical</div>
+                <div style={s.sousTitre}>Suivi médical</div>
 
                 {suivis.filter(sv => sv.statut === 'prevu').length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
+                  <div style={{ marginBottom: spacing.lg, display: 'flex', flexDirection: 'column', gap: spacing.md }}>
                     {suivis.filter(sv => sv.statut === 'prevu').map(sv => (
-                      <div key={sv.id} style={{ ...s.card, background: colors.background.raised, marginBottom: '8px', padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <Carte key={sv.id} isMobile style={{ background: colors.background.raised, borderRadius: radius.xl }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
                           <div>
-                            <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>
-                              Rdv le {new Date(`${sv.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                            <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>
+                              Rdv le {dateCourte(sv.date_consultation, { day: 'numeric', month: 'long' })}
                               {sv.heure_rdv && ` à ${sv.heure_rdv.slice(0, 5)}`}
                             </span>
-                            {sv.specialiste && <span style={{ color: colors.accent.blue, fontSize: '12px', marginLeft: '8px' }}>{sv.specialiste}</span>}
+                            {sv.specialiste && <span style={{ color: colors.accent.blue, fontSize: fontSize.md, marginLeft: spacing.md }}>{sv.specialiste}</span>}
                           </div>
                           <span style={s.pill(colors.accent.blue)}>Prévu</span>
                         </div>
                         {compteRenduOuvert === sv.id ? (
-                          <div style={{ marginTop: '10px' }}>
+                          <div style={{ marginTop: spacing.base }}>
                             <textarea style={s.textarea} placeholder="Ce que le médecin/kiné a dit, exercices donnés..."
                               value={compteRenduTexte} onChange={e => setCompteRenduTexte(e.target.value)} />
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <div style={{ display: 'flex', gap: spacing.md, marginTop: spacing.md }}>
                               <button style={{ ...s.btn, opacity: envoiRdvEnCours ? 0.6 : 1 }} disabled={envoiRdvEnCours} onClick={() => soumettreCompteRendu(sv.id, b.id)}>Valider</button>
                               <button style={s.btnGhost} onClick={() => { setCompteRenduOuvert(null); setCompteRenduTexte('') }}>Annuler</button>
                             </div>
                           </div>
                         ) : (
                           <button onClick={() => { setCompteRenduOuvert(sv.id); setCompteRenduTexte('') }}
-                            style={{ background: 'transparent', border: 'none', color: colors.accent.green, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0, marginTop: '8px' }}>
+                            style={{ ...s.lienDiscret, color: colors.accent.green, marginTop: spacing.md }}>
                             + Ajouter le compte-rendu après le rdv
                           </button>
                         )}
-                      </div>
+                      </Carte>
                     ))}
                   </div>
                 )}
 
                 {formRdvOuvert === b.id ? (
-                  <div style={{ ...s.card, border: `1px solid ${colors.border.default}`, marginBottom: '12px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <Carte isMobile style={{ border: `1px solid ${colors.border.default}`, marginBottom: spacing.lg }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: spacing.base, marginBottom: spacing.base }}>
                       <div>
                         <label style={s.label}>Date</label>
                         <input type="date" style={s.input} value={formRdv.date_consultation} onChange={e => setFormRdv(p => ({ ...p, date_consultation: e.target.value }))} />
@@ -406,71 +443,71 @@ export default function SanteJoueur({ userId }) {
                         <input type="time" style={s.input} value={formRdv.heure_rdv} onChange={e => setFormRdv(p => ({ ...p, heure_rdv: e.target.value }))} />
                       </div>
                     </div>
-                    <div style={{ marginBottom: '10px' }}>
+                    <div style={{ marginBottom: spacing.base }}>
                       <label style={s.label}>Spécialiste (optionnel)</label>
                       <input style={s.input} placeholder="ex : Kiné, Médecin du sport..." value={formRdv.specialiste} onChange={e => setFormRdv(p => ({ ...p, specialiste: e.target.value }))} />
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: spacing.md }}>
                       <button style={{ ...s.btn, opacity: envoiRdvEnCours ? 0.6 : 1 }} disabled={envoiRdvEnCours} onClick={() => programmerRdv(b.id)}>Programmer</button>
                       <button style={s.btnGhost} onClick={() => { setFormRdvOuvert(null); setFormRdv(RDV_VIDE) }}>Annuler</button>
                     </div>
-                  </div>
+                  </Carte>
                 ) : (
                   <button onClick={() => { setFormRdvOuvert(b.id); setFormRdv(RDV_VIDE) }}
-                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
+                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: radius.base, padding: `${spacing.md} ${spacing.xl}`, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: spacing.lg }}>
                     + Programmer un rendez-vous
                   </button>
                 )}
 
                 {suivis.filter(sv => sv.statut === 'effectue').length === 0 && suivis.filter(sv => sv.statut === 'prevu').length === 0 && (
-                  <div style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucun suivi médical enregistré</div>
+                  <div style={{ color: colors.text.faint, fontSize: fontSize.lg }}>Aucun suivi médical enregistré</div>
                 )}
                 {suivis.filter(sv => sv.statut === 'effectue').map(sv => (
-                  <div key={sv.id} style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '10px', marginTop: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
+                  <div key={sv.id} style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: spacing.base, marginTop: spacing.base }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: spacing.sm }}>
                       <div>
-                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>
-                          {new Date(`${sv.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>
+                          {dateCourte(sv.date_consultation, { day: 'numeric', month: 'long', year: 'numeric' })}
                         </span>
-                        {sv.specialiste && <span style={{ color: colors.accent.green, fontSize: '12px', marginLeft: '8px' }}>{sv.specialiste}</span>}
+                        {sv.specialiste && <span style={{ color: colors.accent.green, fontSize: fontSize.md, marginLeft: spacing.md }}>{sv.specialiste}</span>}
                       </div>
                       {sv.document_path && (
-                        <button onClick={() => ouvrirDocument(sv.document_path)} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 }}>
+                        <button onClick={() => ouvrirDocument(sv.document_path)} style={{ ...s.lienDiscret, color: colors.accent.blue }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPaperclip size={12} />{sv.document_nom || 'Document'}</span>
                         </button>
                       )}
                     </div>
-                    {sv.compte_rendu && <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '6px', lineHeight: 1.5 }}>{sv.compte_rendu}</p>}
+                    {sv.compte_rendu && <p style={{ color: colors.text.secondary, fontSize: fontSize.lg, marginTop: spacing.sm, lineHeight: 1.5 }}>{sv.compte_rendu}</p>}
                   </div>
                 ))}
 
                 {etapes.length > 0 && (
-                  <div style={{ borderTop: `1px solid ${colors.border.subtle}`, marginTop: '16px', paddingTop: '14px' }}>
-                    <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Ton programme de rééducation</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ color: colors.text.secondary, fontSize: '12px' }}>Progression</span>
-                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '12px' }}>{progression}%</span>
+                  <div style={{ borderTop: `1px solid ${colors.border.subtle}`, marginTop: spacing['2xl'], paddingTop: spacing.xl }}>
+                    <div style={s.sousTitre}>Ton programme de rééducation</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                      <span style={{ color: colors.text.secondary, fontSize: fontSize.md }}>Progression</span>
+                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: fontSize.md }}>{progression}%</span>
                     </div>
-                    <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px', marginBottom: '14px' }}>
-                      <div style={{ background: colors.accent.green, width: `${progression}%`, height: '6px', borderRadius: '4px' }} />
+                    <div style={{ background: colors.background.raised, borderRadius: radius.md, height: '6px', marginBottom: spacing.xl }}>
+                      <div style={{ background: colors.accent.green, width: `${progression}%`, height: '6px', borderRadius: radius.md }} />
                     </div>
                     {etapes.map((etape, idx) => {
                       const stMeta = STATUT_ETAPE_META[etape.statut] || STATUT_ETAPE_META.a_faire
                       return (
-                        <div key={etape.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
+                        <div key={etape.id} style={{ display: 'flex', gap: spacing.base, alignItems: 'flex-start', marginBottom: spacing.base }}>
                           <div style={{
-                            width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
+                            width: '24px', height: '24px', borderRadius: radius.circle, flexShrink: 0,
                             background: etape.statut === 'validee' ? colors.accent.green : colors.background.raised,
                             color: etape.statut === 'validee' ? colors.black : colors.text.faint,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: fontSize.base,
                           }}>{idx + 1}</div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-                              <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{etape.titre}</span>
-                              <span style={{ color: stMeta.color, fontSize: '11px', fontWeight: 600 }}>{stMeta.label}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.md, flexWrap: 'wrap' }}>
+                              <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>{etape.titre}</span>
+                              <span style={{ color: stMeta.color, fontSize: fontSize.base, fontWeight: 600 }}>{stMeta.label}</span>
                             </div>
-                            {etape.duree_estimee && <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{etape.duree_estimee}</div>}
-                            {etape.description && <p style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '4px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
+                            {etape.duree_estimee && <div style={{ color: colors.text.faint, fontSize: fontSize.base, marginTop: '2px' }}>{etape.duree_estimee}</div>}
+                            {etape.description && <p style={{ color: colors.text.secondary, fontSize: fontSize.md, marginTop: spacing.xs, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
                           </div>
                         </div>
                       )
@@ -479,7 +516,7 @@ export default function SanteJoueur({ userId }) {
                 )}
               </div>
             )}
-          </div>
+          </Carte>
         )
       })}
     </div>

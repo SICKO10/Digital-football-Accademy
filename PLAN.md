@@ -151,7 +151,7 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
 - [IDÉE] Un vrai classement interne est possible sans site extérieur : les résultats de toutes les équipes d'une même catégorie sont déjà en base (`matchs_equipe`). Ce serait un bloc à part entière, avec une décision de périmètre (quelles équipes, quelle catégorie). À reproposer seulement si Kevin le demande.
 
 ### Bloc 4 : Mon profil désencombré
-- Statut : **étape 1 faite** (inventaire, 2026-10-29) · réorganisation à faire en session neuve
+- Statut : **fait, en attente de ta validation** (inventaire et réorganisation faits le 2026-10-29, test visuel à faire par Kevin)
 - Objectif : la page profil est surchargée. La réorganiser en sections claires sans rien retirer de fonctionnel.
 - Résultat testable : je trouve une information précise en moins de cinq secondes.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -186,6 +186,29 @@ Relevé par script, pas à l'œil. Huit cartes empilées, sans aucune hiérarchi
 
 **Total à préserver** : 16 champs contrôlés, 1 upload, 3 sélections par pastilles, 6 bascules, 11 actions (`handleAvatarUpload`, `handleSaveStats`, `ajouterClub`, `modifierClub`, `supprimerClub`, `inviterParent`, `supprimerInvitationParent`, `sauvegarderNotifPrefs`, `sauvegarderRecrutementProfil`, `repondreDemandeBilanMedical`, `setOnglet`).
 
+**Journal du bloc 4, étape 2 (réorganisation)** — 2026-10-29, Sonnet 5.5, session neuve.
+
+Page profil de `DashboardJoueur.jsx` refaite sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'accueil et la compétition. Sauvegarde du fichier d'avant : `~/Sauvegardes-DigitalFootball/DashboardJoueur.2026-10-29.bloc4.jsx`.
+
+Nouvel ordre : en-tête (titre + bouton « Voir mes statistiques ») → **Identité** (photo + 6 champs) → **Style de jeu** → **un seul bouton Enregistrer** → **Parcours footballistique** (replié : parcours + historique des saisons) → **Réglages** (replié : notifications, visibilité recruteurs, accès parents) → parrainage.
+
+**Écarts avec la découpe prévue**
+- Le bouton Enregistrer n'est pas dans la carte Identité mais juste après Style de jeu : `handleSaveStats` enregistre les deux d'un coup (champs du profil, style de jeu, points forts, à améliorer). Une note sous le bouton le dit.
+- La bannière verte « Mes Statistiques » est devenue un bouton secondaire dans l'en-tête, comme le classement de la compétition. La phrase explicative est conservée en infobulle.
+- Le widget de parrainage, absent de l'inventaire (ni champ ni action), est conservé et descendu en bas de page.
+- Pas de section « compte et abonnement » : rien à y mettre, comme noté à l'étape 1.
+- « Modifier » un club du parcours ouvre maintenant la section repliée avant de viser le formulaire.
+- Grilles à 2 colonnes passées à 1 colonne sur téléphone (identité et formulaire du parcours).
+
+**Fichiers** : `src/pages/DashboardJoueur.jsx`, `src/components/joueur/SectionRepliable.jsx` (nouveau), `src/lib/translations.js` (5 clés ajoutées, 6 langues).
+
+**Vérifications** : relevé par script avant/après sur 52 repères (actions, champs, bascules, pastilles, upload, condition de masquage du compte test) : 0 écart ; 11 `input`, 6 `select`, 10 `button` avant et après. `npm run build` vert. `eslint` : 10 alertes avant, 10 après, aucune nouvelle. Une erreur attrapée en route : l'état des sections était posé dans le mauvais composant, ce que le build ne détecte pas et qu'eslint a signalé ; corrigé. Rendu replié et déplié du nouveau composant vérifié par un test de rendu.
+**Non vérifié** : le parcours réel dans le navigateur (connexion requise). À tester par Kevin.
+
+**Reste à finir**
+- Les sections « Visibilité recruteurs » et « Accès parents » sont encore en français écrit en dur, comme avant.
+- Les boutons modifier et supprimer de la liste du parcours gardent leurs couleurs d'origine (`#4ade8080`, `#ef444480`) : hors périmètre.
+
 ### Le vrai défaut, et la découpe à appliquer
 Le reproche « surchargé » ne vient pas du nombre de champs mais de deux choses : **aucune section**, et le **bouton Enregistrer séparé de ses champs par 390 lignes**, après un autre formulaire qui a ses propres boutons. C'est la première chose à corriger, avant tout regroupement.
 
@@ -200,7 +223,7 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
 **Règle de vérification pour la session d'exécution** : relancer le relevé par script après la réorganisation et comparer au tableau ci-dessus. Les 16 champs contrôlés, les 6 bascules et les 11 actions doivent tous être encore là. Puis modifier une information, enregistrer, recharger.
 
 ### Bloc 5 : Santé et Préparation tactique
-- Statut : à faire
+- Statut : **fait, en attente de ta validation** (2026-10-29, test visuel à faire par Kevin)
 - Objectif : ces deux pages paraissent vides ou brouillonnes. Leur donner une structure et un état vide digne.
 - Résultat testable : même sans données, les deux pages expliquent à quoi elles servent au lieu d'être blanches.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -210,6 +233,32 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - Un véritable état vide, avec une icône, une phrase et une action possible, au lieu d'un écran blanc.
   - Appliquer le socle aux blocs existants.
 - Ce que je teste : les deux pages avec mon compte, qui n'a probablement pas de données partout.
+
+**Journal du bloc 5** — 2026-10-29, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait**
+- **Santé** (`SanteJoueur.jsx`) : en-tête avec une phrase d'explication, carte « Ton état actuel » accentuée (seule carte accentuée de l'écran, orange comme le code de statut santé), trois `TuileChiffre` (déclarées, en cours, guéries), silhouette dans une `Carte`, chaque blessure dans une `Carte`. Cadre 980 px comme l'accueil. Toute la logique (déclaration, date de reprise, rendez-vous, compte-rendu, rééducation, ouverture de document) est reprise telle quelle : seul l'affichage change.
+- **Préparation tactique** (`PreparationTactiqueJoueur.jsx`) : même cadre et même en-tête, onglets conservés, `TitreSection` pour les sous-phases, galeries sur `Carte`. Sur téléphone, le terrain passe au-dessus de sa légende (avant : deux colonnes qui poussaient la légende hors de l'écran) et le schéma Tactipad s'adapte à la largeur de l'écran.
+- **États vides, chacun avec son action** :
+  - Santé sans blessure : explication de ce que la page permet + bouton « Déclarer une blessure ». Sans équipe : explication + bouton « Rejoindre mon équipe ».
+  - Tactique sans club : « Rejoindre mon équipe ». Club mais **catégorie non renseignée** : « Compléter mon profil » (avant, la page affichait « ton club n'a pas encore personnalisé cette page », ce qui était faux : c'est la catégorie qui manquait). Phase sans zones : explication. Aucun schéma partagé : message différent selon que le joueur a un éducateur ou non.
+- Zéro couleur en dur et zéro `fr-FR` dans les deux fichiers (comptés). Les dates suivent la langue de l'application.
+
+**Écarts et décisions**
+- **Changement de comportement à connaître** : le bouton « Déclarer une blessure » n'apparaît plus pour un joueur sans équipe (avant il s'affichait puis répondait « Tu n'es affilié à aucun éducateur » par une alerte). La déclaration exige déjà une affiliation en base, rien d'autre n'a changé.
+- La branche `estAffilie` (morte) appelle les mêmes composants : j'y ai seulement retiré le titre en double. Rien d'autre.
+- `accentColor` n'est plus passé à la préparation tactique : la page n'a plus de couleur propre.
+- Le gris vide qui servait d'aperçu aux schémas partagés (un faux aperçu) est remplacé par une icône. Un vrai aperçu miniature serait possible mais coûteux (canevas Konva par carte).
+
+**Vérifications**
+- `npm run build` vert. `npx eslint` : Santé 0 alerte ; Tactique les 6 mêmes alertes react-hooks qu'avant (comparées au commit, effets de chargement non touchés).
+- Rendu serveur de la Tactique dans trois cas (sans club, club sans catégorie, club + catégorie sans zones) : les trois états vides s'affichent avec le bon texte.
+- **Non vérifié par moi** : les états vides de Santé (ils n'apparaissent qu'après le chargement en base) et l'aspect visuel réel, faute de navigateur. À voir sur ton compte.
+
+**Reste à finir**
+- Les textes de la page Santé et de la Tactique sont écrits en français dans le code, sans passer par `translations.js` (déjà le cas avant). À traiter si l'app doit être multilingue pour le joueur.
+- [IDÉE] Aperçu miniature des schémas partagés, pour reconnaître un schéma avant de l'ouvrir.
+- Bloc 4 toujours en attente de ta validation visuelle.
 
 ### Bloc 6 : Mon équipement
 - Statut : à faire

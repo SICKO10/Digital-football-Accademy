@@ -538,6 +538,11 @@ export const T = {
 
   // ── Dashboard joueur — Mon profil ────────────────────────────────────────────────
   jp_titre:                 { fr: 'Mon profil',               en: 'My profile',            pt: 'O meu perfil',          es: 'Mi perfil',             it: 'Il mio profilo',        de: 'Mein Profil'           },
+  jp_identite:              { fr: 'Identité',                 en: 'Identity',              pt: 'Identidade',            es: 'Identidad',             it: 'Identità',              de: 'Identität'             },
+  jp_enregistrer_note:      { fr: "Enregistre ton identité et ton style de jeu", en: 'Saves your identity and playing style', pt: 'Guarda a tua identidade e o teu estilo de jogo', es: 'Guarda tu identidad y tu estilo de juego', it: 'Salva la tua identità e il tuo stile di gioco', de: 'Speichert deine Identität und deinen Spielstil' },
+  jp_parcours_resume:       { fr: 'Tes clubs et tes saisons passées', en: 'Your clubs and past seasons', pt: 'Os teus clubes e épocas passadas', es: 'Tus clubes y temporadas pasadas', it: 'I tuoi club e le stagioni passate', de: 'Deine Vereine und vergangene Saisons' },
+  jp_reglages:              { fr: 'Réglages',                 en: 'Settings',              pt: 'Definições',            es: 'Ajustes',               it: 'Impostazioni',          de: 'Einstellungen'         },
+  jp_reglages_resume:       { fr: 'Notifications et accès parents', en: 'Notifications and parent access', pt: 'Notificações e acesso dos pais', es: 'Notificaciones y acceso de los padres', it: 'Notifiche e accesso dei genitori', de: 'Benachrichtigungen und Zugang für Eltern' },
   jp_photo:                 { fr: 'Photo de profil',          en: 'Profile photo',         pt: 'Foto de perfil',        es: 'Foto de perfil',        it: 'Foto profilo',          de: 'Profilfoto'            },
   jp_choisir_photo:         { fr: 'Choisir une photo',        en: 'Choose a photo',        pt: 'Escolher uma foto',     es: 'Elegir una foto',       it: 'Scegli una foto',       de: 'Foto auswählen'        },
   jp_upload_cours:          { fr: 'Upload en cours...',       en: 'Uploading...',          pt: 'A carregar...',         es: 'Subiendo...',           it: 'Caricamento...',        de: 'Wird hochgeladen...'   },
