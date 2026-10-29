@@ -2509,7 +2509,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     {widgetProchainEnt && (
                       <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                          <span style={{ fontSize: '20px' }}>📋</span>
+                          <span style={{ color: colors.accent.green, display: 'inline-flex' }}><IconClipboard /></span>
                           <div>
                             <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '2px' }}>{t('aff_prochain_entrainement', lang)}</p>
                             <p style={{ fontSize: '12px', color: colors.text.faint }}>{new Date(widgetProchainEnt.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
