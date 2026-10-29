@@ -4,6 +4,16 @@ Date : 2026-10-29 · Brief : BRIEF.md
 Objectif : donner aux deux variantes du dashboard joueur (affilié à un club, et indépendant Pro) un seul langage visuel de niveau app de club pro, lisible en 2 secondes sur téléphone.
 Aucune nouvelle fonctionnalité, aucune requête Supabase touchée, aucun changement de paiement ou d'email.
 
+## Fait capital sur les comptes de test (2026-10-29)
+Le compte de test de Kevin (**Lyam**, Lhyfou26) a le plan **`joueur_starter`** avec un abonnement actif et une affiliation acceptée. Vérifié en interrogeant la base, pas supposé.
+
+Or le code trie ainsi, et c'est le plan qui décide, pas l'affiliation :
+- `estAffilie` = plan **`fan`** + au moins une affiliation acceptée → écran `onglet === 'accueil'` (blocs 2 et 3).
+- `isPro` = plan **`joueur_pro`** + abonnement actif → enrichit l'écran `onglet === 'dashboard'`.
+- Tout autre plan, dont `joueur_starter`, affiche l'écran **`dashboard`** sans les parties Pro.
+
+**Conséquence** : avec ce compte, Kevin ne peut voir ni tester les blocs 2 et 3. Il voit l'écran des blocs 4 et 5. Tout écran refait doit donc fonctionner pour `isPro` vrai **et** faux.
+
 ## Décisions de cadrage (prises le 2026-10-29)
 - Nettoyage des couleurs en dur : uniquement dans le socle et les deux écrans d'accueil. Les autres onglets gardent leurs hex pour l'instant.
 - Barre d'onglets mobile : visible partout dans l'espace joueur, pas seulement sur l'accueil. Un bloc dédié vérifie qu'aucun bouton de bas de page n'est masqué.
@@ -26,7 +36,7 @@ Aucune nouvelle fonctionnalité, aucune requête Supabase touchée, aucun change
 ## Répartition suggérée
 - **Aujourd'hui** (fenêtre 5 h sous 30 %) : bloc 0 puis bloc 1. Le bloc 1 est le plus structurant du chantier, il mérite une fenêtre fraîche.
 - **Jour 2** : blocs 2 et 3 (accueil affilié complet, le public principal).
-- **Jour 3** : blocs 4 et 5 (accueil Pro complet).
+- **Jour 3** : blocs 4 et 5 (accueil Pro complet). **Avancés au 2026-10-29 à la demande de Kevin**, puisque c'est le seul écran que son compte de test affiche.
 - **Jour 4** : blocs 6 et 7 (navigation et upsell).
 - **Jour 5** : bloc 8 (vérification finale, build, commit).
 Rappel : `/clear` et une session neuve par bloc. Deux blocs maximum par fenêtre de 5 h.
@@ -96,7 +106,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Non vérifié par moi : l'affichage réel. Cette session n'a pas d'outil navigateur, je ne peux pas me connecter au compte de test. Le serveur de développement répond HTTP 200 et compile le nouveau module sans erreur, mais c'est Kevin qui valide à l'œil.
 
 ### Bloc 2 : accueil du joueur affilié, haut de page
-- Statut : validé (Kevin le 2026-10-29)
+- Statut : fait, **non validé visuellement** (le compte de test de Kevin n'ouvre pas cet écran, cf. « Fait capital » en haut)
 - Objectif : refaire le haut de l'accueil affilié : en-tête compact, carte « à la une », bande « Ma semaine ».
 - Résultat testable : en ouvrant l'app, je sais en 2 secondes quand est mon prochain rendez-vous et si je suis convoqué.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -127,7 +137,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Non vérifié par moi : l'affichage réel, toujours faute de navigateur dans cette session. Vite sert les deux modules en HTTP 200 sans erreur de compilation.
 
 ### Bloc 3 : accueil du joueur affilié, bas de page
-- Statut : à faire
+- Statut : fait, **non validé visuellement** (le compte de test de Kevin n'ouvre pas cet écran, cf. « Fait capital » en haut)
 - Objectif : finir l'accueil affilié : éducateur, « Ma saison », actualités du club, aperçu Pro.
 - Résultat testable : l'écran d'accueil affilié est entièrement refait, du haut au bas, sans carte grise restante de l'ancien style.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -144,7 +154,23 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel, deux thèmes.
 - Ce que je teste pour valider : je fais défiler l'accueil affilié du haut en bas sur téléphone : tout est au même langage visuel, et l'aperçu Pro donne envie sans bloquer.
 - Reste à finir :
-- Journal :
+  - ~~Raccourci « écrire à ton éducateur »~~ : **abandonné, tranché par Kevin le 2026-10-29.** La variante affiliée n'a aucun onglet de messagerie avec l'éducateur (sa liste de menu ne contient pas `coach`, contrairement à la variante Pro) et cette fonctionnalité n'est pas à créer. La carte éducateur reste en lecture seule. Ne plus le proposer, et ne pas le remettre dans le brief du bloc 4.
+  - **Fusion « à la une » et cartes de sondage** : reportée. Kevin ne constate pas la redondance sur son compte et dit qu'elle ne le gêne pas (2026-10-29). Les boutons de présence restent donc dans leurs cartes.
+  - Les trois arguments de l'aperçu Pro sont des textes vus par les clients : à relire par Kevin.
+  - Deux coches `✓` subsistent devant « réponse envoyée » : symboles typographiques, pas des emojis d'icône. Laissés volontairement.
+- Journal : 2026-10-29, exécuté en Opus 5 (voir le journal du bloc 2 pour la raison).
+  - `JaugeSaison.jsx` créé : barre de présence qui se remplit, phrase qui raconte (« Tu étais là 18 fois sur 23 », série en cours), puis les chiffres en détail (buts, passes décisives, moyenne du coach sur 10) et les minutes par match. Échelle des notes vérifiée dans le code (`{n.note}/10`) plutôt que supposée. Si la saison n'a pas commencé, affiche une phrase d'attente au lieu d'une rangée de zéros. Seules les notes rendues visibles au joueur entrent dans la moyenne.
+  - `ApercuPro.jsx` créé : carte ordinaire (pas accentuée, la seule accentuée reste « à la une »), trois arguments concrets et un seul bouton. Le bouton garde exactement l'appel Stripe d'avant, aucun code de paiement touché.
+  - Carte éducateur refaite sur le socle, avec l'avatar réel de l'éducateur (composant `Avatar`) au lieu de l'initiale dans un rond.
+  - Actualités du club ajoutées : les deux dernières, pastille verte sur les non lues, clic vers l'onglet. `annoncesClub` et `annoncesLuesIds` étaient déjà en mémoire, donc **aucune requête ajoutée**. Champs `titre` et `contenu` vérifiés dans le code existant avant usage.
+  - Mur « Passe au niveau sup » remplacé par `ApercuPro`.
+  - Nettoyage : **zéro couleur en dur dans tout l'accueil affilié** (vérifié par comptage : 0 occurrence de hex sur la plage). `#4ade8050`, `#4ade8010`, `#4ade8025` et `#60a5fa20` passés aux tokens.
+  - Emojis retirés et remplacés par les SVG déjà présents dans le fichier : 📅 (deux fois), ⚽ et 🏃 (vignettes d'événement → `IconTrophy` et `IconDumbbell`), 🏋️ et 📊 (raccourcis → `IconDumbbell` et `IconChart`), 🎬 (navigation Jogabonito → `IconPlay`), ✅ ❌ 🤕 🤒 🏆 (boutons de présence : le libellé et la couleur portent déjà le sens, et le statut dans le calendrier devient une pastille colorée avec infobulle).
+  - **Écart d'ordre assumé** : le brief voulait éducateur, Ma saison, actualités, aperçu Pro à la suite. Les blocs fonctionnels qui n'étaient pas dans la liste du brief (planning, sondages de présence, raccourcis) sont restés entre Ma saison et les actualités, plutôt que de les déplacer et risquer de casser du code qui marche.
+  - Un mot corrigé dans l'aperçu Pro avant livraison : « analysés automatiquement » devenu « analysés en vidéo », l'automatisme n'étant pas vérifié dans le code.
+  - Lint : les 6 composants du socle passent sans problème. Le dashboard garde ses 10 problèmes préexistants, aucun nouveau.
+  - Build : 498 ms, un seul avertissement (le même). Bundle joueur 420,92 → 425,30 kB.
+  - Non vérifié par moi : l'affichage réel, toujours faute de navigateur. Vite sert les trois modules en HTTP 200, zéro erreur de compilation.
 
 ### Bloc 4 : accueil du joueur Pro, haut de page
 - Statut : à faire
