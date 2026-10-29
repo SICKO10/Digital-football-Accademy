@@ -234,7 +234,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 572 ms, un seul avertissement. Bundle joueur 425,92 → 426,23 kB.
 
 ### Bloc 6 : navigation (barre d'onglets abandonnée, menu coulissant conservé)
-- Statut : **barre d'onglets abandonnée par Kevin le 2026-10-29.** Harmonisation des deux menus latéraux : à faire, non commencée.
+- Statut : barre d'onglets abandonnée par Kevin le 2026-10-29. **Harmonisation des deux menus : faite**, en attente de validation.
 - Objectif : une seule barre latérale pour les deux variantes, et une barre d'onglets en bas sur mobile, présente partout dans l'espace joueur.
 - Résultat testable : sur téléphone, je navigue dans tout l'espace joueur avec le pouce, sans ouvrir le menu, et aucun bouton de bas de page n'est caché par la barre.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -251,10 +251,16 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur les deux comptes, téléphone surtout, deux thèmes.
 - Ce que je teste pour valider : sur mon téléphone, je passe par les 5 onglets de la barre sur les deux comptes, puis j'ouvre « Plus » et je vérifie 3 onglets internes avec un bouton en bas : rien n'est caché.
 - Reste à finir :
-  - **C'est désormais tout le bloc 6 restant : harmoniser les deux menus latéraux** (styles, espacements, états actifs), puisque le menu coulissant devient la seule navigation. NON FAIT.
+  - Une cloche 🔔 subsiste dans le menu principal : il n'existe pas d'icône cloche parmi les SVG du fichier, et le brief limite les remplacements à ceux-là. À trancher si Kevin veut en ajouter une.
+  - Différence mineure restante : la position du cadenas dans la ligne de menu (avant le libellé dans une variante, après dans l'autre). Pas touchée, le gain ne valait pas le risque de déplacer du JSX dans la navigation.
   - ~~Harmonisation reportée~~ : Les styles, espacements et états actifs des deux tiroirs n'ont pas été rapprochés. Ce n'est pas bloqué, c'est un choix : la barre d'onglets touchait déjà tous les onglets des deux variantes, et toucher en plus les deux tiroirs dans le même bloc multipliait le risque de casser la navigation. À reprendre dans un bloc dédié.
   - `FloatingHelper` flotte à 28 px du bas avec un niveau d'empilement de 900 : il passe donc au-dessus de la barre et de la bannière. C'était déjà le cas avant ce bloc avec la seule bannière, donc ce n'est pas une régression, mais à regarder sur un vrai téléphone.
-- Journal : 2026-10-29, exécuté en Opus 5. **Barre d'onglets construite, testée sur téléphone par Kevin, puis retirée à sa demande : il préfère le menu coulissant.** Son code reste récupérable dans l'historique Git au commit `b031d2c`, le fichier a été sorti du projet pour ne pas laisser de code mort. Marges basses rendues à leur valeur d'origine.
+- Journal (harmonisation des menus, 2026-10-29) : les deux menus étaient déjà proches ; la comparaison a été faite par différence automatique des deux blocs de code, pas à l'œil. Trois écarts réels corrigés :
+  - **Survol** : le menu affilié ne changeait que le fond au passage de la souris, le menu principal changeait aussi la couleur du texte. Les deux se comportent maintenant pareil.
+  - **Cadenas des rubriques verrouillées** : l'emoji 🔒 remplacé par `IconLock`, le SVG déjà présent dans le fichier, dans les deux menus.
+  - **Titres de section** : le menu principal masquait déjà un titre de section répété, le menu affilié l'affichait à chaque entrée. Les deux dédupliquent maintenant.
+  - Au passage, 10 emojis décoratifs retirés des boutons de changement d'espace (« Vue Club », « Vue Éducateur », « Vue Parent ») dans tout le fichier, pas seulement dans les menus : le remplacement a été fait sur l'ensemble du fichier et touche donc aussi ces boutons ailleurs. 15 lignes modifiées en tout.
+- Journal (barre d'onglets) : 2026-10-29, exécuté en Opus 5. **Barre d'onglets construite, testée sur téléphone par Kevin, puis retirée à sa demande : il préfère le menu coulissant.** Son code reste récupérable dans l'historique Git au commit `b031d2c`, le fichier a été sorti du projet pour ne pas laisser de code mort. Marges basses rendues à leur valeur d'origine.
   - **Information utile conservée de ce bloc** : `SponsorsBar` est en `position: fixed`, `bottom: 0`, `zIndex: 30`, hauteur 56 px sur téléphone, et n'est affichée que sur l'écran d'accueil. Tout futur élément fixé en bas entrera en conflit avec elle.
   - `BarreOnglets.jsx` créé : 56 px plus la zone sûre du bas, cinq boutons, libellé tronqué proprement si besoin, état actif en vert, `aria-current` sur l'onglet courant. Niveau d'empilement 30, c'est-à-dire au-dessus du contenu mais **sous** le voile (40) et le tiroir (50), pour que la barre passe derrière le menu quand il s'ouvre.
   - Destinations, conformes au brief. Affilié : Accueil, Mon équipe, Compétition, Mes stats, Plus. Autre variante : Accueil, Mes stats, Analyses, Explorer, Plus. Les identifiants d'onglet ont été relevés dans les deux listes de navigation du fichier, pas devinés. « Plus » ouvre le tiroir existant, aucune destination n'est retirée.

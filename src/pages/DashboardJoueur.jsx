@@ -2232,7 +2232,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
     return (
       <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; } .af-nav-btn:hover { background: ${colors.background.sunken} !important; color: ${colors.text.secondary} !important; }`}</style>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; } .af-nav-btn:hover { background: ${colors.background.sunken} !important; color: ${colors.text.secondary} !important; color: ${colors.text.secondary} !important; }`}</style>
 
         {popupEquipementPret}
 
@@ -2258,9 +2258,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             )}
           </div>
           <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {secAffilie.map(item => (
+            {secAffilie.map((item, i) => (
               <div key={item.id}>
-                {item.section && (
+                {item.section && item.section !== secAffilie[i - 1]?.section && (
                   <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
                     {item.section}
                   </div>
@@ -2274,7 +2274,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       {item.badge}
                     </span>
                   )}
-                  {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                  {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock /></span>}
                   {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />}
                 </button>
               </div>
@@ -2283,13 +2283,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
             <div style={{ padding: '8px 10px 0' }}>
               {mesRoles.club && (
-                <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
+                <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
               )}
               {mesRoles.educateur && (
-                <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
+                <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Éducateur</button>
               )}
               {mesRoles.parent && (
-                <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
+                <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
               )}
             </div>
           )}
@@ -2860,7 +2860,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                   ✅ {t('profil_affilie', lang)}
                                 </span>
                                 {pe?.diplome && (
-                                  <span style={{ fontSize: '12px', color: colors.accent.green }}>🎓 {pe.diplome}</span>
+                                  <span style={{ fontSize: '12px', color: colors.accent.green }}>{pe.diplome}</span>
                                 )}
                               </div>
                               {pe?.lien_groupe && (
@@ -3536,7 +3536,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
-                {item.locked && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock /></span>}
                 {item.badge > 0 && (
                   <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
                     {item.badge}
@@ -3553,13 +3553,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
           <div style={{ padding: '0 10px 8px' }}>
             {mesRoles.club && (
-              <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
+              <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
             )}
             {mesRoles.educateur && (
-              <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
+              <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Éducateur</button>
             )}
             {mesRoles.parent && (
-              <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
+              <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
             )}
           </div>
         )}
@@ -4554,7 +4554,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 compte de test (Rayan Attia) pour continuer à la préparer. */}
             {profil?.id === '147846d3-71e6-4c35-a84e-21084a9ea20a' && (
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
-              <p style={{ ...labelStyle, marginBottom: '20px' }}>👁️ Visibilité recruteurs</p>
+              <p style={{ ...labelStyle, marginBottom: '20px' }}>Visibilité recruteurs</p>
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={labelStyle}>Mon statut</label>
@@ -5311,7 +5311,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                 ✅ {t('profil_affilie', lang)}
                               </span>
                               {pe?.diplome && (
-                                <span style={{ fontSize: '12px', color: colors.accent.green }}>🎓 {pe.diplome}</span>
+                                <span style={{ fontSize: '12px', color: colors.accent.green }}>{pe.diplome}</span>
                               )}
                             </div>
                           </div>
@@ -5798,7 +5798,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-              {recruteurModal.club && <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>🏟️ Club / Agence</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.club}</p></div>}
+              {recruteurModal.club && <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>Club / Agence</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.club}</p></div>}
               {recruteurModal.region && <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>📍 Région</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{recruteurModal.region}</p></div>}
             </div>
 
