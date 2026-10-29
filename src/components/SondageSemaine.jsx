@@ -329,7 +329,15 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
     <div style={card}>
       {header}
       <LegendePresence />
-      <div ref={grilleRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '4px', minWidth: 0 }}>
+      <div ref={grilleRef} style={{
+        display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', overflowX: 'auto',
+        scrollSnapType: 'x proximity', paddingBottom: '4px', minWidth: 0,
+        backgroundImage: `linear-gradient(to right, ${colors.background.surface}, ${colors.background.surface}), linear-gradient(to right, ${colors.background.surface}, ${colors.background.surface}), linear-gradient(to right, ${colors.accent.green}55, transparent), linear-gradient(to left, ${colors.accent.green}55, transparent)`,
+        backgroundPosition: 'left center, right center, left center, right center',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: '24px 100%, 24px 100%, 16px 100%, 16px 100%',
+        backgroundAttachment: 'local, local, scroll, scroll',
+      }}>
         {jours.map((d, i) => {
           const dStr = dateStr(d)
           const evs = evenementsDuJour(dStr)

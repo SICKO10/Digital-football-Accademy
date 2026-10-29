@@ -2153,20 +2153,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const avantagesPro = [
     'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
     'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
-    'Ton outil de nutrition, pour encore mieux performer',
+    'Ton suivi nutrition, pour finir les matchs aussi fort que tu les commences',
   ]
   const formulesPro = [
     {
       prix: '100 € par an',
       mention: 'deux mois offerts',
-      detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
+      detail: 'Tes trois analyses vidéo, disponibles immédiatement.',
       libelleBouton: 'Prendre l\u2019offre annuelle',
       onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
       misEnAvant: true,
     },
     {
       prix: '10 € par mois',
-      detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
+      detail: 'Une analyse vidéo tous les six mois d\u2019abonnement.',
       libelleBouton: 'Prendre l\u2019offre mensuelle',
       onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
     },
@@ -2342,9 +2342,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           )}
           {isMobile && (
-            <button onClick={() => setSidebarOpen(true)}
-              style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: '0 0 16px 0', display: 'block' }}>
-              ☰
+            <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
+              style={{
+                position: 'sticky', top: 0, zIndex: 35, marginBottom: spacing['2xl'],
+                background: colors.background.surface, border: `1px solid ${colors.border.subtle}`,
+                color: colors.text.primary, borderRadius: '999px', width: '40px', height: '40px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
+              }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
             </button>
           )}
           {onglet === 'accueil' && (
@@ -3693,10 +3700,17 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {!readOnly && <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />}
 
         {isMobile && (
-          <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: 24, cursor: 'pointer', padding: 'calc(20px + env(safe-area-inset-top, 0px)) 16px 0', display: 'block' }}>
-            ☰
-          </button>
+          <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
+              style={{
+                position: 'sticky', top: 'env(safe-area-inset-top, 0px)', zIndex: 35, margin: `calc(12px + env(safe-area-inset-top, 0px)) 0 0 ${spacing['2xl']}`,
+                background: colors.background.surface, border: `1px solid ${colors.border.subtle}`,
+                color: colors.text.primary, borderRadius: '999px', width: '40px', height: '40px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
+              }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
         )}
 
         {/* ── ACCUEIL ── */}
