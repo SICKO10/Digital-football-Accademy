@@ -45,6 +45,7 @@ import ListeAlertes from '../components/joueur/ListeAlertes'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
 import TuileChiffre from '../components/joueur/TuileChiffre'
+import BarreOnglets from '../components/joueur/BarreOnglets'
 import BandeSemaine from '../components/joueur/BandeSemaine'
 import JaugeSaison from '../components/joueur/JaugeSaison'
 import ApercuPro from '../components/joueur/ApercuPro'
@@ -2309,7 +2310,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           </div>
         </aside>
 
-        <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto', paddingBottom: 80 }}>
+        <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto', paddingBottom: isMobile ? `calc(${onglet === 'accueil' ? 128 : 72}px + env(safe-area-inset-bottom, 0px))` : 80 }}>
           {!readOnly && (
             <div style={{ marginBottom: '16px', borderRadius: '10px', overflow: 'hidden' }}>
               <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />
@@ -3247,6 +3248,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
           {onglet === 'recruteurs' && <UpgradeCard titre={t('aff_messagerie_recruteurs_titre', lang)} texte={t('aff_messagerie_recruteurs_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
         </main>
+
+        {/* Barre d'onglets du bas, téléphone seulement — les quatre
+            destinations les plus utilisées de cette variante, plus « Plus »
+            qui ouvre le tiroir où vit tout le reste de la navigation. */}
+        {isMobile && (
+          <BarreOnglets
+            items={[
+              { id: 'accueil', label: t('jnav_accueil', lang), icon: <IconHome /> },
+              { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers /> },
+              { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
+              { id: 'stats', label: t('aff_mes_stats', lang), icon: <IconChart /> },
+            ]}
+            actif={onglet}
+            onChoisir={setOnglet}
+            onPlus={() => setSidebarOpen(true)}
+            decalageBas={onglet === 'accueil' ? 56 : 0}
+          />
+        )}
       </div>
     )
   }
@@ -3667,7 +3686,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: 80 }}>
+      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: isMobile ? `calc(${onglet === 'dashboard' ? 128 : 72}px + env(safe-area-inset-bottom, 0px))` : 80 }}>
 
         {!readOnly && <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />}
 
@@ -5671,6 +5690,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
       </main>
+
+      {/* Barre d'onglets du bas, téléphone seulement — mêmes règles que la
+          variante affiliée, destinations adaptées à cette variante. */}
+      {isMobile && (
+        <BarreOnglets
+          items={[
+            { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
+            { id: 'mes_stats', label: 'Mes stats', icon: <IconChart /> },
+            { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconPlay /> },
+            { id: 'clubs', label: t('jnav_explorer', lang), icon: <IconBuilding /> },
+          ]}
+          actif={onglet}
+          onChoisir={setOnglet}
+          onPlus={() => setSidebarOpen(true)}
+          decalageBas={onglet === 'dashboard' ? 56 : 0}
+        />
+      )}
 
       {/* Rappel d'évaluation — apparaît quand le coach a clôturé une saison
           (historique_saisons.cloturee) et que ce joueur ne l'a pas encore

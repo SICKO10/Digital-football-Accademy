@@ -234,7 +234,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 572 ms, un seul avertissement. Bundle joueur 425,92 → 426,23 kB.
 
 ### Bloc 6 : navigation, barre latérale harmonisée et barre d'onglets mobile
-- Statut : à faire
+- Statut : fait pour la barre d'onglets, **une étape laissée de côté** (voir ci-dessous)
 - Objectif : une seule barre latérale pour les deux variantes, et une barre d'onglets en bas sur mobile, présente partout dans l'espace joueur.
 - Résultat testable : sur téléphone, je navigue dans tout l'espace joueur avec le pouce, sans ouvrir le menu, et aucun bouton de bas de page n'est caché par la barre.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -251,7 +251,16 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur les deux comptes, téléphone surtout, deux thèmes.
 - Ce que je teste pour valider : sur mon téléphone, je passe par les 5 onglets de la barre sur les deux comptes, puis j'ouvre « Plus » et je vérifie 3 onglets internes avec un bouton en bas : rien n'est caché.
 - Reste à finir :
-- Journal :
+  - **Harmonisation des deux barres latérales : NON FAITE.** Les styles, espacements et états actifs des deux tiroirs n'ont pas été rapprochés. Ce n'est pas bloqué, c'est un choix : la barre d'onglets touchait déjà tous les onglets des deux variantes, et toucher en plus les deux tiroirs dans le même bloc multipliait le risque de casser la navigation. À reprendre dans un bloc dédié.
+  - **Question ouverte pour Kevin** : sur l'écran d'accueil en téléphone, la barre d'onglets (56 px) et la bannière sponsor (56 px) occupent ensemble 112 px de hauteur. C'est beaucoup sur un petit écran. Trois issues possibles : garder les deux empilées (état actuel), masquer la bannière sponsor sur téléphone, ou ne pas afficher la barre d'onglets sur l'écran d'accueil. C'est une décision commerciale autant que visuelle.
+  - `FloatingHelper` flotte à 28 px du bas avec un niveau d'empilement de 900 : il passe donc au-dessus de la barre et de la bannière. C'était déjà le cas avant ce bloc avec la seule bannière, donc ce n'est pas une régression, mais à regarder sur un vrai téléphone.
+- Journal : 2026-10-29, exécuté en Opus 5.
+  - `BarreOnglets.jsx` créé : 56 px plus la zone sûre du bas, cinq boutons, libellé tronqué proprement si besoin, état actif en vert, `aria-current` sur l'onglet courant. Niveau d'empilement 30, c'est-à-dire au-dessus du contenu mais **sous** le voile (40) et le tiroir (50), pour que la barre passe derrière le menu quand il s'ouvre.
+  - Destinations, conformes au brief. Affilié : Accueil, Mon équipe, Compétition, Mes stats, Plus. Autre variante : Accueil, Mes stats, Analyses, Explorer, Plus. Les identifiants d'onglet ont été relevés dans les deux listes de navigation du fichier, pas devinés. « Plus » ouvre le tiroir existant, aucune destination n'est retirée.
+  - **Conflit trouvé et réglé** : `SponsorsBar` est déjà en `position: fixed`, `bottom: 0`, `zIndex: 30`, hauteur 56 px sur téléphone, exactement la même place que la nouvelle barre. Elles se seraient superposées. La barre reçoit donc un décalage de 56 px, mais **uniquement sur l'écran d'accueil**, seul endroit où la bannière est affichée (`onglet === 'accueil' || onglet === 'dashboard'`, ligne unique en fin de composant).
+  - Marge basse du contenu ajustée dans les deux variantes, et elle suit le même raisonnement : 72 px sur les onglets ordinaires, 128 px sur l'accueil où la bannière s'ajoute. Sans cela, le dernier bouton d'une page passerait sous la barre.
+  - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 1,03 s, un seul avertissement.
+  - Non vérifié par moi : le rendu sur un vrai téléphone, et notamment que les cinq libellés tiennent sans être coupés en petite largeur. C'est le point le plus fragile de ce bloc.
 
 ### Bloc 7 : upsell Pro, remplacer les murs par des aperçus (optionnel mais recommandé)
 - Statut : à faire
