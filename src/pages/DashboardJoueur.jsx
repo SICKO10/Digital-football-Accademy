@@ -2,7 +2,7 @@ import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } 
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
-import { colors, alpha, spacing } from '../tokens'
+import { colors, alpha, spacing, fontSize } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import EmptyState from '../components/EmptyState'
@@ -42,6 +42,8 @@ import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
 import SondageSemaine from '../components/SondageSemaine'
 import ListeAlertes from '../components/joueur/ListeAlertes'
+import Carte from '../components/joueur/Carte'
+import BandeSemaine from '../components/joueur/BandeSemaine'
 import StatsEquipe from '../components/StatsEquipe'
 
 // Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
@@ -2313,9 +2315,103 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </button>
           )}
           {onglet === 'accueil' && (
-            <div style={{ maxWidth: '640px' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>{t('aff_bonjour', lang)} {profil?.prenom} 👋</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
+            <div style={{ maxWidth: '980px', margin: '0 auto' }}>
+              {/* En-tête compact — l'ancien « Bonjour <prénom> » suivi d'une
+                  ligne de sous-titre occupait une soixantaine de pixels de haut
+                  pour ne rien apprendre au joueur. Avatar, prénom, club et
+                  catégorie tiennent maintenant sur une seule ligne. L'emoji de
+                  salutation est retiré (règle du projet : pas d'emoji
+                  décoratif dans les nouveaux écrans). */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2xl'], marginBottom: spacing['4xl'] }}>
+                <Avatar person={profil} size={56} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h1 style={{ margin: 0, fontSize: fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.4px' }}>{profil?.prenom}</h1>
+                  {edu?.club && (
+                    <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.lg, color: colors.text.faint }}>{edu.club}</p>
+                  )}
+                </div>
+                {edu?.categorie && (
+                  <span style={{ flexShrink: 0, background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green + alpha.light}`, color: colors.accent.green, borderRadius: '999px', padding: `${spacing.xs} ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700 }}>
+                    {edu.categorie}
+                  </span>
+                )}
+              </div>
+
+              {/* À la une — la SEULE carte accentuée de l'écran, celle qui répond
+                  à « qu'est-ce qui m'attend ? » : la convocation si elle existe,
+                  sinon la prochaine séance, sinon le prochain match. Les boutons
+                  de réponse au sondage restent dans leurs cartes plus bas, elles
+                  sont refaites au bloc 3. */}
+              {(() => {
+                const dateLongue = d => new Date(`${d}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })
+                const mc = convocationActive?.matchs_equipe
+                const aLaUne = convocationActive
+                  ? {
+                      couleur: colors.accent.green,
+                      surTitre: 'Tu es convoqué',
+                      titre: `${mc?.domicile ? 'vs' : '@'} ${mc?.adversaire || 'adversaire à confirmer'}`,
+                      detail: [mc?.date ? dateLongue(mc.date) : null, mc?.heure ? `à ${mc.heure}` : null, mc?.lieu].filter(Boolean).join(' · '),
+                      marque: mc?.competition,
+                    }
+                  : widgetProchainEnt
+                  ? {
+                      couleur: colors.accent.green,
+                      surTitre: 'Prochaine séance',
+                      titre: widgetProchainEnt.description || t('aff_entrainement_titre', lang),
+                      detail: [dateLongue(widgetProchainEnt.date), widgetProchainEnt.heure ? `à ${widgetProchainEnt.heure}` : null, widgetProchainEnt.lieu].filter(Boolean).join(' · '),
+                      marque: null,
+                    }
+                  : widgetProchainMatch
+                  ? {
+                      couleur: colors.accent.blue,
+                      surTitre: 'Prochain match',
+                      titre: `${widgetProchainMatch.domicile ? 'vs' : '@'} ${widgetProchainMatch.adversaire || 'adversaire à confirmer'}`,
+                      detail: [dateLongue(widgetProchainMatch.date), widgetProchainMatch.heure ? `à ${widgetProchainMatch.heure}` : null].filter(Boolean).join(' · '),
+                      marque: null,
+                    }
+                  : null
+                if (!aLaUne) return null
+                return (
+                  <Carte accent={aLaUne.couleur} isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing['2xl'] }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: fontSize.base, fontWeight: 700, color: aLaUne.couleur, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          {aLaUne.surTitre}
+                        </p>
+                        <p style={{ margin: `${spacing.md} 0 0`, fontSize: isMobile ? fontSize['4xl'] : fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.4px', color: colors.text.primary }}>
+                          {aLaUne.titre}
+                        </p>
+                        {aLaUne.detail && (
+                          <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary }}>{aLaUne.detail}</p>
+                        )}
+                      </div>
+                      {aLaUne.marque && (
+                        <span style={{ flexShrink: 0, background: aLaUne.couleur, color: colors.black, borderRadius: '999px', padding: `${spacing.xs} ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700 }}>
+                          {aLaUne.marque}
+                        </span>
+                      )}
+                    </div>
+                  </Carte>
+                )
+              })()}
+
+              {/* Ma semaine — lundi à dimanche d'un coup d'œil. `presences` ne
+                  contient que les réponses réellement connues du dashboard (le
+                  prochain entraînement et le prochain match), pas une présence
+                  supposée pour les autres jours. */}
+              <BandeSemaine
+                entrainements={planningEntrainements}
+                matchs={planningMatchs}
+                rdvs={rdvsMedicaux}
+                lundi={lundiCourant}
+                presences={{
+                  ...(widgetProchainEnt && widgetDispoEnt ? { [`entrainement_${widgetProchainEnt.id}`]: widgetDispoEnt } : {}),
+                  ...(widgetProchainMatch && widgetDispoMatch ? { [`match_${widgetProchainMatch.id}`]: widgetDispoMatch } : {}),
+                }}
+                lang={lang}
+                isMobile={isMobile}
+                style={{ marginBottom: spacing['2xl'] }}
+              />
 
               {/* Alertes — panneau partagé avec la variante Pro, cf.
                   src/components/joueur/ListeAlertes.jsx (un seul jeu de styles au

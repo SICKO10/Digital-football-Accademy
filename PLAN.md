@@ -96,7 +96,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Non vérifié par moi : l'affichage réel. Cette session n'a pas d'outil navigateur, je ne peux pas me connecter au compte de test. Le serveur de développement répond HTTP 200 et compile le nouveau module sans erreur, mais c'est Kevin qui valide à l'œil.
 
 ### Bloc 2 : accueil du joueur affilié, haut de page
-- Statut : à faire
+- Statut : validé (Kevin le 2026-10-29)
 - Objectif : refaire le haut de l'accueil affilié : en-tête compact, carte « à la une », bande « Ma semaine ».
 - Résultat testable : en ouvrant l'app, je sais en 2 secondes quand est mon prochain rendez-vous et si je suis convoqué.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -112,7 +112,19 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur le compte affilié, téléphone et ordinateur, deux thèmes.
 - Ce que je teste pour valider : sur téléphone, le haut de l'accueil tient dans un écran, la carte à la une est celle qui attire l'œil, et la bande semaine montre bien ma semaine réelle.
 - Reste à finir :
-- Journal :
+  - **Fusion à faire au bloc 3** : la prochaine séance peut apparaître deux fois, dans la carte « à la une » et dans son ancienne carte de sondage plus bas. Kevin ne l'observe pas sur son compte de test (pas de séance à venir en plus de ce qui est déjà à la une), mais le cas existe pour un joueur qui en a une. Le bloc 3 fusionne les deux en ramenant les boutons de présence dans la carte « à la une ».
+  - Les cartes du bas de l'accueil gardent leurs espacements à 14 px et leurs emojis (📅, 📋, ⚽, 🏃, ✅) : c'est le périmètre du bloc 3.
+- Journal : 2026-10-29, exécuté en Opus 5 au lieu de Sonnet (les commandes `/clear` et `/model sonnet` n'ont pas pris effet trois fois de suite ; décision d'avancer plutôt que de rester bloqué sur la mécanique de l'outil, signalée à Kevin).
+  - `BandeSemaine.jsx` créé : grille lundi à dimanche, pastille verte par séance, bleue par match, orange par rdv médical, jour courant détaché, résumé en une ligne dessous. Construit uniquement sur `planningEntrainements`, `planningMatchs` et `rdvsMedicaux`, déjà chargés : aucune requête ajoutée.
+  - **Limite honnête sur la présence déclarée** : le dashboard ne connaît la réponse du joueur que pour le prochain entraînement et le prochain match (`widgetDispoEnt`, `widgetDispoMatch`). La bande n'affiche donc une présence que pour ces deux événements, au lieu d'en inventer une pour les autres jours. Afficher les 7 jours demanderait une requête sur `disponibilites`, ce que le brief interdit dans ce chantier.
+  - En-tête compact en place : `Avatar` (composant existant) en 56 px, prénom en 20 px/800, club en dessous, catégorie en badge. L'emoji 👋 a disparu du fichier (vérifié : 0 occurrence).
+  - Carte « à la une » : seule carte accentuée de l'écran, priorité convocation, puis prochaine séance, puis prochain match. Rien ne s'affiche si les trois sont absents.
+  - Largeur de contenu passée de 640 px à 980 px centrés.
+  - **Écart au brief, tranché par Kevin le 2026-10-29** : là où le brief demandait un « badge de plan », le badge affiche la **catégorie d'équipe** (U15, U17...). Côté affilié le plan s'appelle `fan` en base et n'a aucun libellé destiné au client. Décision définitive, à appliquer aussi à l'en-tête Pro du bloc 4.
+  - `fontSize` ajouté à l'import des tokens ; `Carte` et `BandeSemaine` importés dans le dashboard.
+  - Lint : `BandeSemaine.jsx` passe sans problème. Le dashboard garde exactement ses 10 problèmes préexistants, aucun nouveau.
+  - Build : 534 ms, un seul avertissement (le même). Bundle joueur 415,53 → 420,92 kB : le nouveau code coûte 5,4 kB, la duplication retirée au bloc 1 en avait rendu 5,5.
+  - Non vérifié par moi : l'affichage réel, toujours faute de navigateur dans cette session. Vite sert les deux modules en HTTP 200 sans erreur de compilation.
 
 ### Bloc 3 : accueil du joueur affilié, bas de page
 - Statut : à faire
