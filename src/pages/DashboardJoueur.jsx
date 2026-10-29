@@ -136,8 +136,8 @@ const IconVideoOff = ({ size = 40 }) => (
     <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
   </svg>
 )
-const IconLock = () => (
-  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+const IconLock = ({ size = 44 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={size <= 20 ? 2 : 1.2}>
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 )
@@ -2274,7 +2274,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       {item.badge}
                     </span>
                   )}
-                  {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock /></span>}
+                  {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock size={13} /></span>}
                   {onglet === item.id && <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />}
                 </button>
               </div>
@@ -3536,7 +3536,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                 <span style={{ flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
-                {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock /></span>}
+                {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock size={13} /></span>}
                 {item.badge > 0 && (
                   <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
                     {item.badge}

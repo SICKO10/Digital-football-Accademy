@@ -251,7 +251,8 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur les deux comptes, téléphone surtout, deux thèmes.
 - Ce que je teste pour valider : sur mon téléphone, je passe par les 5 onglets de la barre sur les deux comptes, puis j'ouvre « Plus » et je vérifie 3 onglets internes avec un bouton en bas : rien n'est caché.
 - Reste à finir :
-  - Une cloche 🔔 subsiste dans le menu principal : il n'existe pas d'icône cloche parmi les SVG du fichier, et le brief limite les remplacements à ceux-là. À trancher si Kevin veut en ajouter une.
+  - ~~Cloche 🔔 du menu principal~~ : **Kevin la garde** (2026-10-29). Ne plus la signaler.
+  - Cadenas des rubriques verrouillées ramené de 44 à 13 px dans les menus à la demande de Kevin ; `IconLock` prend désormais une taille en paramètre, ses trois autres usages restent en 44 px.
   - Différence mineure restante : la position du cadenas dans la ligne de menu (avant le libellé dans une variante, après dans l'autre). Pas touchée, le gain ne valait pas le risque de déplacer du JSX dans la navigation.
   - ~~Harmonisation reportée~~ : Les styles, espacements et états actifs des deux tiroirs n'ont pas été rapprochés. Ce n'est pas bloqué, c'est un choix : la barre d'onglets touchait déjà tous les onglets des deux variantes, et toucher en plus les deux tiroirs dans le même bloc multipliait le risque de casser la navigation. À reprendre dans un bloc dédié.
   - `FloatingHelper` flotte à 28 px du bas avec un niveau d'empilement de 900 : il passe donc au-dessus de la barre et de la bannière. C'était déjà le cas avant ce bloc avec la seule bannière, donc ce n'est pas une régression, mais à regarder sur un vrai téléphone.
