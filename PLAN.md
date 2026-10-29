@@ -155,6 +155,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
 - Ce que je teste pour valider : je fais défiler l'accueil affilié du haut en bas sur téléphone : tout est au même langage visuel, et l'aperçu Pro donne envie sans bloquer.
 - Reste à finir :
   - ~~Raccourci « écrire à ton éducateur »~~ : **abandonné, tranché par Kevin le 2026-10-29.** La variante affiliée n'a aucun onglet de messagerie avec l'éducateur (sa liste de menu ne contient pas `coach`, contrairement à la variante Pro) et cette fonctionnalité n'est pas à créer. La carte éducateur reste en lecture seule. Ne plus le proposer, et ne pas le remettre dans le brief du bloc 4.
+  - **Trois vues de la même semaine sur l'accueil affilié, à arbitrer** : `BandeSemaine`, le bloc « Planning de la semaine » (`PlanningSemaineWidget`) et le bloc « Cette semaine » (`widgetCalendrier`) montrent tous les trois la semaine en cours. Kevin a tranché le 2026-10-29 pour retirer la bande de l'écran `dashboard`, où `SondageSemaine` faisait déjà le travail ; la même question se pose ici mais **n'a pas été tranchée, faute de pouvoir montrer l'écran à Kevin**. Recommandation : garder `BandeSemaine`, retirer « Cette semaine » qui en est le doublon exact, conserver le planning qui va au-delà de la semaine. Ne rien faire sans son avis.
   - **Fusion « à la une » et cartes de sondage** : reportée. Kevin ne constate pas la redondance sur son compte et dit qu'elle ne le gêne pas (2026-10-29). Les boutons de présence restent donc dans leurs cartes.
   - Les trois arguments de l'aperçu Pro sont des textes vus par les clients : à relire par Kevin.
   - Deux coches `✓` subsistent devant « réponse envoyée » : symboles typographiques, pas des emojis d'icône. Laissés volontairement.
@@ -173,7 +174,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Non vérifié par moi : l'affichage réel, toujours faute de navigateur. Vite sert les trois modules en HTTP 200, zéro erreur de compilation.
 
 ### Bloc 4 : accueil du joueur Pro, haut de page
-- Statut : à faire
+- Statut : validé (Kevin le 2026-10-29)
 - Objectif : en-tête identité (carte joueur compacte + 3 chiffres), carte « à la une », bande « Ma semaine ».
 - Résultat testable : le dashboard Pro commence par une identité de joueur qu'on a envie de montrer, au lieu d'un héros encombré.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -191,7 +192,18 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur le compte Pro, deux thèmes.
 - Ce que je teste pour valider : sur le compte Pro, le haut du dashboard montre mon identité et mes 3 chiffres, et la bande semaine est visuellement identique à celle du compte affilié.
 - Reste à finir :
-- Journal :
+  - Il reste 15 couleurs en dur plus bas dans cet écran (convocation, statistiques, évaluations coach) : c'est le périmètre du bloc 5.
+  - `CarteJoueur.jsx` n'a pas reçu de variante compacte, voir le journal.
+- Journal : 2026-10-29, exécuté en Opus 5, avancé avant les blocs 2 et 3 parce que c'est le seul écran que le compte de test de Kevin affiche.
+  - **Correction visible** : le badge du héros affichait `profil?.plan` brut, donc le texte technique « joueur_starter » s'affichait tel quel à l'écran. Il montre maintenant la catégorie d'équipe, conformément à la décision du bloc 2, plus un badge « Pro » distinct quand `isPro` est vrai.
+  - Héros refait sur le socle : fond de carte standard à la place du dégradé et du halo radial, ce qui supprime `#4ade8014` et le dégradé en dur. L'envoi de photo de profil et le badge du club affilié sont conservés intacts.
+  - Badge licence : emoji 🪪 remplacé par `IconCard`, et `#1a2e4a` / `#3b82f640` passés aux tokens.
+  - Les chiffres passent sur `TuileChiffre`. **Deux tuiles et non trois** : la catégorie est maintenant en badge dans l'en-tête, la remettre en tuile aurait affiché la même information deux fois.
+  - Carte « à la une » ajoutée, mais seulement quand il n'y a pas de convocation : la convocation a déjà sa grande carte dédiée dans cette variante, et deux cartes accentuées sur le même écran s'annulent.
+  - `BandeSemaine` ajoutée puis **retirée le jour même à la demande de Kevin** : `SondageSemaine`, juste en dessous, montre déjà la semaine et permet en plus de répondre présent ou absent. Deux vues de la même semaine dont une muette, c'était redondant. La bande reste en service sur l'accueil affilié, qui n'a pas `SondageSemaine`.
+  - Largeur de contenu portée à 980 px centrés, comme l'autre variante.
+  - **Écart au plan assumé** : le plan prévoyait d'ajouter une variante `compact` à `CarteJoueur.jsx` pour en faire l'en-tête. Je ne l'ai pas fait : le héros actuel porte l'envoi de la photo de profil et le logo du club affilié, que `CarteJoueur` n'a pas. Le remplacer aurait supprimé une fonctionnalité réelle pour un gain esthétique. L'idée « carte à collectionner » du brief reste possible, mais demande de déplacer l'envoi de photo ailleurs : décision de Kevin.
+  - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 1,12 s, un seul avertissement. Bundle joueur 425,30 → 426,13 kB.
 
 ### Bloc 5 : accueil du joueur Pro, bas de page et colonne droite
 - Statut : à faire

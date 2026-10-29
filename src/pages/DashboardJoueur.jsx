@@ -44,6 +44,7 @@ import SondageSemaine from '../components/SondageSemaine'
 import ListeAlertes from '../components/joueur/ListeAlertes'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
+import TuileChiffre from '../components/joueur/TuileChiffre'
 import BandeSemaine from '../components/joueur/BandeSemaine'
 import JaugeSaison from '../components/joueur/JaugeSaison'
 import ApercuPro from '../components/joueur/ApercuPro'
@@ -3676,13 +3677,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── ACCUEIL ── */}
         {onglet === 'dashboard' && (
-          <div style={{ padding: isMobile ? '16px' : '24px 40px' }}>
+          <div style={{ padding: isMobile ? '16px' : '24px 40px', maxWidth: '980px', margin: '0 auto' }}>
 
-            {/* HERO CARD — pleine largeur */}
-            <div style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.faint} 0%, ${colors.background.sunken} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: 16, padding: 20, marginBottom: '20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'center', textAlign: isMobile ? 'center' : 'left', gap: isMobile ? '14px' : '24px', flexWrap: 'wrap' }}>
-              <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '420px', height: '420px', background: 'radial-gradient(circle, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
+            {/* En-tête identité — l'ancien héros en dégradé affichait le nom
+                technique du plan en badge (« joueur_starter » tel quel à
+                l'écran). Il montre maintenant la catégorie d'équipe, comme sur
+                l'accueil affilié, et le badge Pro seulement quand il est mérité.
+                L'envoi de photo de profil et le logo du club sont conservés. */}
+            <div style={{ position: 'relative', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius['3xl'], padding: isMobile ? spacing['2xl'] : spacing['3xl'], marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'], display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', textAlign: isMobile ? 'center' : 'left', gap: isMobile ? spacing['2xl'] : spacing['4xl'], flexWrap: 'wrap' }}>
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar person={profil} size={88} border="2.5px solid #4ade80" />
+                <Avatar person={profil} size={88} border={`2.5px solid ${colors.accent.green}`} />
                 <label style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', background: colors.accent.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avatarUploading ? 'wait' : 'pointer', border: `2.5px solid ${colors.background.surface}` }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
@@ -3699,35 +3703,68 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>{profil?.prenom} {profil?.nom}</h1>
-                  <span style={{ background: isPro ? colors.accent.green : '#3b82f6', color: colors.black, fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0, boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
-                    {profil?.plan}
-                  </span>
+                  {profil?.categorie && (
+                    <span style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green + alpha.light}`, color: colors.accent.green, fontSize: fontSize.base, fontWeight: 700, padding: `${spacing.xs} ${spacing.lg}`, borderRadius: '999px', flexShrink: 0 }}>
+                      {profil.categorie}
+                    </span>
+                  )}
+                  {isPro && (
+                    <span style={{ background: colors.accent.green, color: colors.black, fontSize: fontSize.base, fontWeight: 800, padding: `${spacing.xs} ${spacing.lg}`, borderRadius: '999px', letterSpacing: '0.8px', textTransform: 'uppercase', flexShrink: 0 }}>
+                      Pro
+                    </span>
+                  )}
                   {profil?.numero_licence && (
-                    <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px', flexShrink: 0 }}>
-                      🪪 {t('jd_licencie', lang)}
+                    <span style={{ background: colors.accent.blue + alpha.faint, border: `1px solid ${colors.accent.blue + alpha.soft}`, color: colors.accent.blue, fontSize: fontSize.base, fontWeight: 700, padding: `${spacing.xs} ${spacing.lg}`, borderRadius: '999px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: spacing.md }}>
+                      <IconCard /> {t('jd_licencie', lang)}
                     </span>
                   )}
                 </div>
                 <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px' }}>
                   {profil?.poste || '—'}{profil?.club ? ` · ${profil.club}` : ''}{profil?.region ? ` · ${profil.region}` : ''}
                 </p>
-                <div style={{ display: 'flex', justifyContent: isMobile ? 'center' : 'flex-start', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
-                  {[
-                    { val: profil?.analyses_restantes ?? '—', label: t('jd_analyses_stat', lang) },
-                    { val: demandes.length, label: t('jd_demandes_stat', lang) },
-                    { val: profil?.categorie || '—', label: t('equipe_categorie', lang) },
-                  ].map((s, i, arr) => (
-                    <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '32px' }}>
-                      <div>
-                        <p style={{ fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{s.val}</p>
-                        <p style={{ fontSize: isMobile ? '9px' : '10px', color: colors.text.disabled, textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginTop: '4px' }}>{s.label}</p>
-                      </div>
-                      {i < arr.length - 1 && <div style={{ width: '1px', height: '36px', background: colors.border.faint }} />}
-                    </div>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing.lg }}>
+                  <TuileChiffre valeur={profil?.analyses_restantes ?? '—'} libelle={t('jd_analyses_stat', lang)} isMobile={isMobile} />
+                  <TuileChiffre valeur={demandes.length} libelle={t('jd_demandes_stat', lang)} couleur={demandes.length > 0 ? colors.accent.blue : undefined} isMobile={isMobile} />
                 </div>
               </div>
             </div>
+
+            {/* À la une — seulement quand il n'y a pas de convocation : la
+                convocation a déjà sa grande carte dédiée plus bas dans cette
+                variante, et deux cartes mises en avant sur le même écran
+                s'annulent. */}
+            {!convocationActive && (() => {
+              const dateLongue = d => new Date(`${d}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })
+              const aLaUne = widgetProchainEnt
+                ? {
+                    couleur: colors.accent.green,
+                    surTitre: 'Prochaine séance',
+                    titre: widgetProchainEnt.description || t('aff_entrainement_titre', lang),
+                    detail: [dateLongue(widgetProchainEnt.date), widgetProchainEnt.heure ? `à ${widgetProchainEnt.heure}` : null, widgetProchainEnt.lieu].filter(Boolean).join(' · '),
+                  }
+                : widgetProchainMatch
+                ? {
+                    couleur: colors.accent.blue,
+                    surTitre: 'Prochain match',
+                    titre: `${widgetProchainMatch.domicile ? 'vs' : '@'} ${widgetProchainMatch.adversaire || 'adversaire à confirmer'}`,
+                    detail: [dateLongue(widgetProchainMatch.date), widgetProchainMatch.heure ? `à ${widgetProchainMatch.heure}` : null].filter(Boolean).join(' · '),
+                  }
+                : null
+              if (!aLaUne) return null
+              return (
+                <Carte accent={aLaUne.couleur} isMobile={isMobile} style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}>
+                  <p style={{ margin: 0, fontSize: fontSize.base, fontWeight: 700, color: aLaUne.couleur, textTransform: 'uppercase', letterSpacing: '1px' }}>{aLaUne.surTitre}</p>
+                  <p style={{ margin: `${spacing.md} 0 0`, fontSize: isMobile ? fontSize['4xl'] : fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.4px', color: colors.text.primary }}>{aLaUne.titre}</p>
+                  {aLaUne.detail && <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary }}>{aLaUne.detail}</p>}
+                </Carte>
+              )
+            })()}
+
+            {/* Pas de bande « Ma semaine » dans cette variante : SondageSemaine,
+                juste en dessous, montre déjà la semaine ET permet de répondre
+                présent ou absent. Deux vues de la même semaine, dont une muette,
+                c'était redondant (Kevin, 2026-10-29). La bande reste en service
+                sur l'accueil affilié, qui n'a pas SondageSemaine. */}
 
             {/* Alertes équipe — même composant que la variante affiliée.
                 Convocation, équipement et commentaire du coach ne sont pas passés
