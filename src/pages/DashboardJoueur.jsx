@@ -2,7 +2,7 @@ import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } 
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
-import { colors, alpha } from '../tokens'
+import { colors, alpha, spacing } from '../tokens'
 import { useColors } from '../lib/theme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import EmptyState from '../components/EmptyState'
@@ -41,6 +41,7 @@ import CompositionTerrain from '../components/CompositionTerrain'
 import FloatingHelper from '../components/FloatingHelper'
 import ParrainageWidget from '../components/ParrainageWidget'
 import SondageSemaine from '../components/SondageSemaine'
+import ListeAlertes from '../components/joueur/ListeAlertes'
 import StatsEquipe from '../components/StatsEquipe'
 
 // Boutons standardisés — même pattern que st.btn(color)/st.btnSolid déjà utilisé
@@ -189,11 +190,6 @@ const IconUsers = () => (
 const IconTactic = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
-  </svg>
-)
-const IconCheck = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
   </svg>
 )
 const IconTrophy = () => (
@@ -2321,93 +2317,29 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.5px' }}>{t('aff_bonjour', lang)} {profil?.prenom} 👋</h1>
               <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '28px' }}>{t('aff_espace_joueur', lang)}</p>
 
-              {/* ── Alertes — raccourcis vers ce qui vient de changer (convocation,
-                  équipement prêt, dernier commentaire coach) plutôt que de devoir
-                  les trouver en cherchant plus bas sur la page. Chacune peut être
-                  validée (bouton coche) pour disparaître, cf. useAlertesMasquees. ── */}
-              {(() => {
-                const idConvocation = convocationActive ? `convocation_${convocationActive.id}` : null
-                const idEquipement = equipementPret ? `equipement_${equipementPret.id}` : null
-                const idCommentaire = mesNotes[0]?.commentaire ? `commentaire_${mesNotes[0].id}` : null
-                const showConvocation = idConvocation && !alertesMasquees.has(idConvocation)
-                const showEquipement = idEquipement && !alertesMasquees.has(idEquipement)
-                const showCommentaire = idCommentaire && !alertesMasquees.has(idCommentaire)
-                const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
-                return (showConvocation || showEquipement || showCommentaire || rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsSupprimesAlerte.length > 0 || showProchainMatchSemaine || matchsHoraireChange.length > 0) && (
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
-                    {showConvocation && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>Convoqué {convocationActive.matchs_equipe?.domicile ? 'vs' : '@'} {convocationActive.matchs_equipe?.adversaire}</p>
-                        <button onClick={() => masquerAlerte(idConvocation)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    )}
-                    {showEquipement && (
-                      <div onClick={() => setOnglet('profil')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>Ton équipement est prêt</p>
-                        <button onClick={e => { e.stopPropagation(); masquerAlerte(idEquipement) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    )}
-                    {showCommentaire && (
-                      <div style={{ padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, flex: 1 }}>Commentaire du coach — vs {mesNotes[0].matchs_equipe?.adversaire}</p>
-                          <button onClick={() => masquerAlerte(idCommentaire)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, paddingLeft: '18px' }}>{mesNotes[0].commentaire}</p>
-                      </div>
-                    )}
-                    {rdvDuJour.map(r => (
-                      <div key={r.id} onClick={() => setOnglet('sante')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>
-                          Tu as rdv{r.heure_rdv ? ` à ${r.heure_rdv.slice(0, 5)}` : ''} aujourd'hui{r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''} — n'oublie pas de remplir le suivi médical à la suite de ton rdv.
-                        </p>
-                        <button onClick={e => { e.stopPropagation(); masquerAlerte(`rdv_medical_${r.id}`) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    ))}
-                    {entrainementsNouveaux.map(ent => (
-                      <div key={`ent_nouveau_${ent.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Nouvel entraînement le {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{ent.heure ? ` à ${ent.heure}` : ''}
-                        </p>
-                        <button onClick={() => masquerAlerte(`entrainement_nouveau_${ent.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    ))}
-                    {entrainementsSupprimesAlerte.map(es => (
-                      <div key={`ent_supprime_${es.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Séance supprimée — {new Date(`${es.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })}{es.heure ? ` à ${es.heure}` : ''}
-                        </p>
-                        <button onClick={() => masquerAlerte(`entrainement_supprime_${es.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    ))}
-                    {showProchainMatchSemaine && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Match cette semaine — {prochainMatchSemaine.domicile ? 'vs' : '@'} {prochainMatchSemaine.adversaire || 'adversaire à confirmer'} le {new Date(`${prochainMatchSemaine.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{prochainMatchSemaine.heure ? ` à ${prochainMatchSemaine.heure}` : ''}
-                        </p>
-                        <button onClick={() => masquerAlerte(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    )}
-                    {matchsHoraireChange.map(m => (
-                      <div key={`match_horaire_${m.id}_${m.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
-                        <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                          Horaire modifié — match {m.domicile ? 'vs' : '@'} {m.adversaire || ''} du {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {m.heure ? `à ${m.heure}` : 'sans horaire'}
-                        </p>
-                        <button onClick={() => masquerAlerte(`match_horaire_${m.id}_${m.updated_at}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
+              {/* Alertes — panneau partagé avec la variante Pro, cf.
+                  src/components/joueur/ListeAlertes.jsx (un seul jeu de styles au
+                  lieu des deux copies qui étaient maintenues en parallèle). Les
+                  listes arrivent déjà filtrées par les alertes masquées (calcul
+                  juste avant le split estAffilie) ; convocation, équipement et
+                  dernier commentaire du coach n'existent que dans cette variante,
+                  la variante Pro a sa propre carte de convocation. */}
+              <ListeAlertes
+                convocation={convocationActive && !alertesMasquees.has(`convocation_${convocationActive.id}`) ? convocationActive : null}
+                equipement={equipementPret && !alertesMasquees.has(`equipement_${equipementPret.id}`) ? equipementPret : null}
+                commentaire={mesNotes[0]?.commentaire && !alertesMasquees.has(`commentaire_${mesNotes[0].id}`) ? mesNotes[0] : null}
+                rdvDuJour={rdvDuJour}
+                entrainementsNouveaux={entrainementsNouveaux}
+                entrainementsSupprimes={entrainementsSupprimesAlerte}
+                matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
+                matchsHoraireChange={matchsHoraireChange}
+                masquer={masquerAlerte}
+                onOuvrirOnglet={setOnglet}
+                lang={lang}
+                isMobile={isMobile}
+                lundiCourant={lundiCourant}
+                style={{ marginBottom: spacing['2xl'] }}
+              />
 
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '10px', color: colors.accent.green, fontWeight: 800, letterSpacing: '1.5px', marginBottom: '12px' }}>{t('aff_ton_educateur', lang)}</div>
@@ -3648,64 +3580,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             </div>
 
-            {/* ── Alertes équipe — rdv médical du jour, nouveaux créneaux, changements
-                d'horaire. Convocation/équipement ont déjà leur propre traitement dans
-                cette variante (carte convocation ci-dessous, popupEquipementPret) : ce
-                panneau ne couvre que ce qui n'existe pas encore ici, cf. calcul partagé
-                avec la variante "fan affilié" juste avant le split estAffilie. ── */}
-            {(rdvDuJour.length > 0 || entrainementsNouveaux.length > 0 || entrainementsSupprimesAlerte.length > 0 || showProchainMatchSemaine || matchsHoraireChange.length > 0) && (() => {
-              const boutonValiderStyle = { flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }
-              return (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '16px', marginBottom: isMobile ? '16px' : '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
-                  {rdvDuJour.map(r => (
-                    <div key={r.id} onClick={() => setOnglet('sante')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px', cursor: 'pointer' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary, flex: 1 }}>
-                        Tu as rdv{r.heure_rdv ? ` à ${r.heure_rdv.slice(0, 5)}` : ''} aujourd'hui{r.blessures?.type_blessure ? ` (${r.blessures.type_blessure})` : ''} — n'oublie pas de remplir le suivi médical à la suite de ton rdv.
-                      </p>
-                      <button onClick={e => { e.stopPropagation(); masquerAlerte(`rdv_medical_${r.id}`) }} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                    </div>
-                  ))}
-                  {entrainementsNouveaux.map(ent => (
-                    <div key={`ent_nouveau_${ent.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Nouvel entraînement le {new Date(`${ent.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{ent.heure ? ` à ${ent.heure}` : ''}
-                      </p>
-                      <button onClick={() => masquerAlerte(`entrainement_nouveau_${ent.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                    </div>
-                  ))}
-                  {entrainementsSupprimesAlerte.map(es => (
-                    <div key={`ent_supprime_${es.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.red, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Séance supprimée — {new Date(`${es.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })}{es.heure ? ` à ${es.heure}` : ''}
-                      </p>
-                      <button onClick={() => masquerAlerte(`entrainement_supprime_${es.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                    </div>
-                  ))}
-                  {showProchainMatchSemaine && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Match cette semaine — {prochainMatchSemaine.domicile ? 'vs' : '@'} {prochainMatchSemaine.adversaire || 'adversaire à confirmer'} le {new Date(`${prochainMatchSemaine.date}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}{prochainMatchSemaine.heure ? ` à ${prochainMatchSemaine.heure}` : ''}
-                      </p>
-                      <button onClick={() => masquerAlerte(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                    </div>
-                  )}
-                  {matchsHoraireChange.map(m => (
-                    <div key={`match_horaire_${m.id}_${m.updated_at}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, borderRadius: '10px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
-                      <p style={{ margin: 0, fontSize: '13px', flex: 1 }}>
-                        Horaire modifié — match {m.domicile ? 'vs' : '@'} {m.adversaire || ''} du {new Date(`${m.date}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })} désormais {m.heure ? `à ${m.heure}` : 'sans horaire'}
-                      </p>
-                      <button onClick={() => masquerAlerte(`match_horaire_${m.id}_${m.updated_at}`)} title="Valider" style={boutonValiderStyle}><IconCheck /></button>
-                    </div>
-                  ))}
-                </div>
-              )
-            })()}
+            {/* Alertes équipe — même composant que la variante affiliée.
+                Convocation, équipement et commentaire du coach ne sont pas passés
+                ici : ils ont déjà leur propre traitement dans cette variante
+                (grande carte de convocation ci-dessous, popupEquipementPret). */}
+            <ListeAlertes
+              rdvDuJour={rdvDuJour}
+              entrainementsNouveaux={entrainementsNouveaux}
+              entrainementsSupprimes={entrainementsSupprimesAlerte}
+              matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
+              matchsHoraireChange={matchsHoraireChange}
+              masquer={masquerAlerte}
+              onOuvrirOnglet={setOnglet}
+              lang={lang}
+              isMobile={isMobile}
+              lundiCourant={lundiCourant}
+              style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}
+            />
 
             {/* CONVOCATION — publiée par l'éducateur pour un match à venir, disparaît
                 automatiquement le dimanche 20h suivant le match (filtré côté RLS, cf.
