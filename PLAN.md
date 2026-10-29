@@ -206,7 +206,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 1,12 s, un seul avertissement. Bundle joueur 425,30 → 426,13 kB.
 
 ### Bloc 5 : accueil du joueur Pro, bas de page et colonne droite
-- Statut : à faire
+- Statut : fait, en attente de validation de Kevin
 - Objectif : alertes, « Ma saison », cartes d'action de même poids, colonne droite rangée.
 - Résultat testable : le dashboard Pro est entièrement refait, et l'abonnement est rangé dans la colonne droite au lieu d'encombrer le contenu.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -223,7 +223,15 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel, deux thèmes, téléphone et ordinateur.
 - Ce que je teste pour valider : sur ordinateur la colonne droite est propre et l'abonnement s'affiche juste ; sur téléphone elle passe bien dessous sans rien casser.
 - Reste à finir :
-- Journal :
+  - `JaugeSaison` n'est pas branchée sur cet écran, voir le journal. Elle reste en service sur l'accueil affilié.
+  - Les cartes d'action n'ont pas été réécrites : elles étaient déjà homogènes une fois les couleurs en dur retirées.
+- Journal : 2026-10-29, exécuté en Opus 5.
+  - **Zéro couleur en dur sur tout l'écran `dashboard`** (3679 à 4219), mesuré avant et après : 16 littéraux remplacés par les tokens (`#4ade80`, `#4ade8012/18/20/40`, `#60a5fa12`, `#f9731612/18/20/30`, `#ef444425`, `#1f150a`). C'est ce qui permet enfin au thème clair de fonctionner ici.
+  - Légende du cercle de présence : les emojis ✅ 🏆 ❌ 🤕 🤒 sont remplacés par des pastilles de la couleur du statut. `CerclePresence` appelle bien `useColors()`, vérifié.
+  - Dernier emoji de l'écran retiré (🔑 devant « Rejoins ton équipe »).
+  - Colonne de droite passée de 340 à 320 px comme le demandait le brief, et l'écart entre colonnes mis sur l'échelle d'espacements.
+  - **Écart au plan assumé, et c'est le point important** : `JaugeSaison` n'a **pas** été ajoutée ici. Cet écran a déjà le cercle de présence, les tuiles buts/passes/minutes/note et le bloc « Mes évaluations coach » : la jauge aurait raconté une troisième fois la même saison. Kevin venait précisément de faire retirer « Ma semaine » pour cette raison (2026-10-29). Le bloc a donc été recentré sur la finition : couleurs, emojis, largeurs.
+  - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 572 ms, un seul avertissement. Bundle joueur 425,92 → 426,23 kB.
 
 ### Bloc 6 : navigation, barre latérale harmonisée et barre d'onglets mobile
 - Statut : à faire

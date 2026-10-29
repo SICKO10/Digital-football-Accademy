@@ -413,14 +413,17 @@ function CerclePresence({ presents, convoque, absents, blesses, malade, total, s
       <div style={{ fontSize: '11px', color: colors.text.dim, margin: '8px 0 10px' }}>{total} séance{total > 1 ? 's' : ''} au total</div>
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {[
-          { emoji: '✅', label: 'Présent', val: presents, color: colors.accent.green },
-          { emoji: '🏆', label: 'Convoqué', val: convoque, color: colors.accent.blue },
-          { emoji: '❌', label: 'Absent', val: absents, color: colors.accent.red },
-          { emoji: '🤕', label: 'Blessé', val: blesses, color: colors.accent.orange },
-          { emoji: '🤒', label: 'Malade', val: malade, color: colors.accent.purple },
+          { label: 'Présent', val: presents, color: colors.accent.green },
+          { label: 'Convoqué', val: convoque, color: colors.accent.blue },
+          { label: 'Absent', val: absents, color: colors.accent.red },
+          { label: 'Blessé', val: blesses, color: colors.accent.orange },
+          { label: 'Malade', val: malade, color: colors.accent.purple },
         ].filter(s => s.val > 0).map(s => (
           <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-            <span style={{ color: colors.text.faint }}>{s.emoji} {s.label}</span>
+            <span style={{ color: colors.text.faint, display: 'inline-flex', alignItems: 'center', gap: spacing.md }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '999px', background: s.color, flexShrink: 0 }} />
+              {s.label}
+            </span>
             <span style={{ fontWeight: 700, color: s.color }}>{s.val}</span>
           </div>
         ))}
@@ -3790,7 +3793,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {convocationActive && (() => {
               const m = convocationActive.matchs_equipe
               return (
-                <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: '2px solid #4ade80', borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '20px' : '28px', marginBottom: isMobile ? '16px' : '20px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `2px solid ${colors.accent.green}`, borderRadius: isMobile ? '16px' : '20px', padding: isMobile ? '20px' : '28px', marginBottom: isMobile ? '16px' : '20px', position: 'relative', overflow: 'hidden' }}>
                   {m?.competition && (
                     <div style={{ position: 'absolute', top: isMobile ? 12 : 20, right: isMobile ? 12 : 20, background: colors.accent.green, color: colors.black, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
                       {m.competition}
@@ -3958,8 +3961,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             )}
 
-            {/* Grille 2 colonnes desktop (1fr / 340px) — 1 colonne pleine largeur sur mobile */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '20px', alignItems: 'start' }}>
+            {/* Grille 2 colonnes desktop (1fr / 320px) — 1 colonne pleine largeur sur mobile */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: spacing['3xl'], alignItems: 'start' }}>
 
               {/* ── Colonne gauche ── */}
               <div style={{ minWidth: 0 }}>
@@ -3968,7 +3971,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <div style={{ display: 'grid', gridTemplateColumns: isPro ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
                   <button className="dj-action-card" onClick={() => navigate('/jogabonito')}
                     style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#f9731612', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.orange }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: colors.accent.orange + alpha.subtle, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.orange }}>
                       <IconPlay />
                     </div>
                     <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Jogabonito</p>
@@ -3978,7 +3981,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   {isPro && (
                     <button className="dj-action-card" onClick={() => navigate('/feed')}
                       style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#4ade8012', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.green }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: colors.accent.green + alpha.subtle, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.green }}>
                         <IconGlobe />
                       </div>
                       <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Feed</p>
@@ -3988,7 +3991,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
                   <button id="upload-section" className="dj-action-card" onClick={() => navigate(isPro ? '/upload-clip' : '/upload-reel')}
                     style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px 20px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
-                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#60a5fa12', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.blue }}>
+                    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: colors.accent.blue + alpha.subtle, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: colors.accent.blue }}>
                       <IconUpload />
                     </div>
                     <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>Publier</p>
@@ -4017,14 +4020,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   }
                   if (pending) {
                     return (
-                      <div style={{ background: '#1f150a', border: '1px solid #f9731630', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
+                      <div style={{ background: colors.accent.orange + alpha.faint, border: `1px solid ${colors.accent.orange + alpha.light}`, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
                         <p style={{ margin: 0, fontSize: '13px', color: colors.accent.orange, fontWeight: 700 }}>⏳ {t('profil_en_attente_club', lang)}</p>
                       </div>
                     )
                   }
                   return (
                     <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: `1px dashed ${colors.border.default}`, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
-                      🔑 Rejoins ton équipe avec le code fourni par ton éducateur
+                      Rejoins ton équipe avec le code fourni par ton éducateur
                     </button>
                   )
                 })()}
@@ -4053,7 +4056,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
                 {/* MESSAGES PREVIEW */}
                 {conversations.length > 0 && (
-                  <div style={{ background: colors.background.surface, border: '1px solid #4ade8018', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green + alpha.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>{t('jd_messages_rec', lang)}</p>
                       <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
@@ -4076,7 +4079,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 )}
 
                 {convCoach.length > 0 && (
-                  <div style={{ background: colors.background.surface, border: '1px solid #f9731618', borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.orange + alpha.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.orange }}>{t('jd_reponses_coach', lang)}</p>
                       <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
@@ -4087,7 +4090,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         onMouseEnter={() => setHoveredCard(`coachprev-${conv.otherId}`)}
                         onMouseLeave={() => setHoveredCard(null)}
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px', cursor: 'pointer', border: `1px solid ${hoveredCard === `coachprev-${conv.otherId}` ? colors.accent.orange : 'transparent'}`, transform: hoveredCard === `coachprev-${conv.otherId}` ? 'translateY(-1px)' : 'none', transition: 'all 0.15s ease' }}>
-                        <Avatar person={conv.other} size={32} bg="#f9731612" border="1.5px solid #f9731630" textColor={colors.accent.orange} />
+                        <Avatar person={conv.other} size={32} bg={colors.accent.orange + alpha.subtle} border={`1.5px solid ${colors.accent.orange + alpha.light}`} textColor={colors.accent.orange} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '1px' }}>{conv.other?.prenom} {conv.other?.nom}</p>
                           <p style={{ fontSize: '11px', color: colors.accent.orange }}>{t('jnav_coach', lang)}</p>
@@ -4123,7 +4126,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     ) : (
                       <p style={{ fontSize: '12px', color: colors.text.disabled, margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
                     )}
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green + alpha.medium}`, padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       {t('aff_acheter_analyse_cta', lang)}
                     </button>
                   </div>
@@ -4131,7 +4134,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
                 {/* VIDÉO */}
                 {profil?.clip_url ? (
-                  <div style={{ background: colors.background.surface, border: '1px solid #4ade8020', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green + alpha.soft}`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_partagee', lang)}</p>
@@ -4144,13 +4147,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         {t('jvid_voir', lang)}
                       </a>
                       <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? colors.text.disabled : colors.accent.red, border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
                   </div>
                 ) : reelJogabonito ? (
-                  <div style={{ background: colors.background.surface, border: '1px solid #f9731620', borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.orange + alpha.soft}`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>{t('jvid_jogabonito', lang)}</p>
@@ -4163,7 +4166,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         {t('jvid_voir', lang)}
                       </a>
                       <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? colors.text.disabled : colors.accent.red, border: '1px solid #ef444425', padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: '9px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
                         {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
@@ -4205,7 +4208,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       <p style={{ fontSize: '12px', color: colors.text.disabled }}>
                         {t('jd_plan_actif', lang)} <span style={{ color: colors.accent.green, fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
                       </p>
-                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: `1px solid ${colors.accent.red + alpha.soft}`, color: cancelling ? colors.text.disabled : colors.accent.red, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
                         {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
                       </button>
                     </div>
