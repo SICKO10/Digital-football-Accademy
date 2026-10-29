@@ -14,6 +14,26 @@ Or le code trie ainsi, et c'est le plan qui décide, pas l'affiliation :
 
 **Conséquence** : avec ce compte, Kevin ne peut voir ni tester les blocs 2 et 3. Il voit l'écran des blocs 4 et 5. Tout écran refait doit donc fonctionner pour `isPro` vrai **et** faux.
 
+## Le plan `fan` est mort : constat du 2026-10-29
+
+Vérifié dans le code, pas supposé :
+- `src/pages/AcceptInvite.jsx` (lignes 159-161) : « la CHECK constraint sur `profiles.plan` n'autorise que joueur_starter/joueur_pro/educateur/scout/club/dirigeant — **'fan' est rejeté, vérifié directement contre la base** ». **La base refuse donc ce plan.**
+- `src/pages/RegisterChoix.jsx` et `src/pages/Register.jsx` : l'inscription ne propose que `joueur_starter`, `joueur_pro`, `educateur`, `scout`, `club`, `dirigeant`. Aucun parcours ne crée un compte `fan`.
+- `src/pages/coach/constants.js` : la messagerie du coach cible `['joueur_starter', 'joueur_pro']`, pas `fan`.
+- `src/App.jsx` (lignes 77-79) : `fan` y est décrit comme le plan **historique** resté sur les comptes parents et dirigeants délégués, dont l'accès passe par d'autres tables.
+
+**Conséquences, et elles sont lourdes :**
+1. `estAffilie = plan === 'fan' && affiliation acceptée` (DashboardJoueur.jsx lignes 838 et 2149) **ne peut plus devenir vrai pour un compte créé aujourd'hui**. L'écran `onglet === 'accueil'`, refait aux blocs 2 et 3, n'est donc atteignable que par d'anciens comptes `fan` s'il en reste.
+2. L'écran « FAN » (DashboardJoueur.jsx ligne 3256, `if (profil?.plan === 'fan')`) est mort pour la même raison.
+3. Un vrai joueur affilié à un club a le plan `joueur_starter` ou `joueur_pro` : il tombe sur l'écran `dashboard` (blocs 4 et 5), **quelle que soit son affiliation**. C'est exactement le cas du compte de test de Kevin.
+
+**⚠️ Interrupteur temporaire en place (2026-10-29)** : ouvrir `/dashboard-joueur?apercu=affilie` force l'écran affilié pour un compte qui a une affiliation acceptée, quel que soit son plan. Il sert uniquement à montrer l'écran à Kevin pour qu'il décide. **À RETIRER avant le bloc 8 et avant toute mise en ligne** (deux endroits dans DashboardJoueur.jsx, chercher `apercuAffilie`).
+
+**À décider par Kevin** (rien ne doit être fait sans son arbitrage) :
+- (a) faire basculer les joueurs affiliés vers l'écran `accueil` en élargissant `estAffilie` aux plans `joueur_starter`/`joueur_pro` : cela changerait l'écran d'accueil de tous ses joueurs affiliés actuels ;
+- (b) considérer l'écran `accueil` comme mort et le retirer, en reportant ce qu'il a de mieux sur l'écran `dashboard` ;
+- (c) ne rien changer pour l'instant et publier ce qui est fait.
+
 ## Décisions de cadrage (prises le 2026-10-29)
 - Nettoyage des couleurs en dur : uniquement dans le socle et les deux écrans d'accueil. Les autres onglets gardent leurs hex pour l'instant.
 - Barre d'onglets mobile : visible partout dans l'espace joueur, pas seulement sur l'accueil. Un bloc dédié vérifie qu'aucun bouton de bas de page n'est masqué.

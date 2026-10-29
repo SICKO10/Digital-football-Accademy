@@ -835,7 +835,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
   // Rediriger vers 'accueil' si joueur affilié et onglet non reconnu
   useEffect(() => {
-    const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
+    // TEMPORAIRE — même interrupteur d'aperçu que plus bas, à retirer avec lui.
+    const apercuAffilie = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('apercu') === 'affilie'
+    const estAffilie = (profil?.plan === 'fan' || apercuAffilie) && mesAffiliations.length > 0
     if (estAffilie && onglet === 'dashboard') {
       setOnglet('accueil')
     }
@@ -2146,7 +2148,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // doit quand même voir son historique et pouvoir rejoindre une nouvelle équipe depuis
   // cet écran — si on exigeait une affiliation active ici, il retomberait sur le dashboard
   // "fan" classique et cet historique/CTA (plus bas) ne serait jamais atteignable.
-  const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
+  // TEMPORAIRE — aperçu seulement, A RETIRER avant toute mise en ligne.
+  // Permet d'ouvrir /dashboard-joueur?apercu=affilie pour voir l'écran affilié
+  // avec de vraies données, et décider s'il faut l'ouvrir aux plans
+  // joueur_starter / joueur_pro. Sans ce paramètre, rien ne change.
+  // Cf. PLAN.md, section « Le plan fan est mort ».
+  const apercuAffilie = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('apercu') === 'affilie'
+  const estAffilie = (profil?.plan === 'fan' || apercuAffilie) && mesAffiliations.length > 0
 
   const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
   const popupEquipementPret = notifEquipementPret && (
@@ -2604,15 +2612,28 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   garde exactement le lien Stripe d'avant, rien n'est touché côté
                   paiement. */}
               <ApercuPro
-                titre={t('aff_passe_niveau_sup', lang)}
-                accroche={t('aff_analyses_feed_desc', lang)}
+                titre="Passe en Pro"
                 points={[
-                  'Tes matchs analysés en vidéo, avec tes statistiques détaillées',
+                  'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
                   'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
-                  'Ta messagerie directe avec les recruteurs qui te contactent',
+                  'Ton outil de nutrition, pour encore mieux performer',
                 ]}
-                libelleBouton={t('aff_voir_packs', lang)}
-                onCliquer={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')}
+                formules={[
+                  {
+                    prix: '100 € par an',
+                    mention: 'deux mois offerts',
+                    detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
+                    libelleBouton: 'Prendre l\u2019offre annuelle',
+                    onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
+                    misEnAvant: true,
+                  },
+                  {
+                    prix: '10 € par mois',
+                    detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
+                    libelleBouton: 'Prendre l\u2019offre mensuelle',
+                    onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
+                  },
+                ]}
                 isMobile={isMobile}
               />
             </div>
@@ -4184,17 +4205,38 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </div>
                 )}
 
-                {/* UPSELL PRO */}
+                {/* APERÇU PRO — remplace l'ancien encart d'upsell. Le prix annoncé
+                    est mensuel, donc le lien doit être STRIPE_LINKS.starter (joueur
+                    mensuel, 10 €/mois) et non STRIPE_LINKS.pro, qui est l'offre
+                    annuelle à 100 €/an : l'ancien encart annonçait un texte sans prix
+                    mais envoyait vers l'annuel. */}
                 {!isPro && (
-                  <div style={{ background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: '16px', padding: '22px 24px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div>
-                      <p style={{ fontWeight: 800, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.2px' }}>{t('jd_upsell_titre', lang)}</p>
-                      <p style={{ fontSize: '12px', color: colors.text.faint }}>{t('jd_upsell_desc', lang)}</p>
-                    </div>
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ ...st.btnSolid(), whiteSpace: 'nowrap' }}>
-                      {t('jd_plan_pro_cta', lang)}
-                    </button>
-                  </div>
+                  <ApercuPro
+                    titre="Passe en Pro"
+                    points={[
+                      'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
+                      'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
+                      'Ton outil de nutrition, pour encore mieux performer',
+                    ]}
+                    formules={[
+                      {
+                        prix: '100 € par an',
+                        mention: 'deux mois offerts',
+                        detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
+                        libelleBouton: 'Prendre l\u2019offre annuelle',
+                        onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
+                        misEnAvant: true,
+                      },
+                      {
+                        prix: '10 € par mois',
+                        detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
+                        libelleBouton: 'Prendre l\u2019offre mensuelle',
+                        onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
+                      },
+                    ]}
+                    isMobile={isMobile}
+                    style={{ marginBottom: spacing['2xl'] }}
+                  />
                 )}
 
                 {/* ABONNEMENT */}

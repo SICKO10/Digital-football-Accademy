@@ -1,5 +1,5 @@
 import { useColors } from '../../lib/theme'
-import { fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, radius, spacing } from '../../tokens'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 
@@ -11,7 +11,7 @@ import TitreSection from './TitreSection'
 // accentuée de l'écran reste « à la une ». Un seul bouton, et c'est le parent
 // qui décide ce qu'il fait (lien Stripe existant ou changement d'onglet) :
 // rien de ce composant ne touche au paiement.
-export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, points = [], libelleBouton, onCliquer, isMobile = false, style }) {
+export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, points = [], formules = [], libelleBouton, onCliquer, isMobile = false, style }) {
   const colors = useColors()
   return (
     <Carte isMobile={isMobile} style={style}>
@@ -43,7 +43,51 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
         </ul>
       )}
 
-      {libelleBouton && onCliquer && (
+      {/* Deux formules possibles : chacune annonce son prix ET ce qu'elle donne
+          vraiment, pour que le joueur comprenne la différence sans avoir à
+          chercher ailleurs. `misEnAvant` n'en distingue qu'une seule. */}
+      {formules.length > 0 && (
+        <div style={{ marginTop: spacing['3xl'], display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+          {formules.map((f, i) => (
+            <div
+              key={i}
+              style={{
+                border: `1px solid ${f.misEnAvant ? colors.accent.green + alpha.light : colors.border.subtle}`,
+                background: f.misEnAvant ? colors.accent.green + alpha.faint : colors.background.raised,
+                borderRadius: radius.xl,
+                padding: spacing['2xl'],
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: f.misEnAvant ? colors.accent.green : colors.text.primary }}>
+                  {f.prix}
+                </span>
+                {f.mention && (
+                  <span style={{ fontSize: fontSize.base, fontWeight: 700, color: colors.accent.green }}>{f.mention}</span>
+                )}
+              </div>
+              {f.detail && (
+                <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.md, color: colors.text.faint, lineHeight: 1.5 }}>{f.detail}</p>
+              )}
+              <button
+                onClick={f.onCliquer}
+                style={{
+                  marginTop: spacing['2xl'], width: '100%',
+                  background: f.misEnAvant ? colors.accent.green : 'transparent',
+                  color: f.misEnAvant ? colors.black : colors.accent.green,
+                  border: f.misEnAvant ? 'none' : `1px solid ${colors.accent.green + alpha.light}`,
+                  padding: `${spacing.lg} ${spacing['2xl']}`, borderRadius: radius.xl,
+                  fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                {f.libelleBouton}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {formules.length === 0 && libelleBouton && onCliquer && (
         <button
           onClick={onCliquer}
           style={{
