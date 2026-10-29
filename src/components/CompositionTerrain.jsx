@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IconClose, IconCheck } from './icones'
 
 // Formations disponibles — chaque ligne totalise toujours 11 (gardien inclus),
 // dans l'ordre naturel gardien → attaque. C'est aussi l'ordre de stockage du
@@ -207,9 +208,9 @@ export default function CompositionTerrain({
                   <div style={{ position: 'absolute', top: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: 'clamp(13px, 2cqw, 17px)', height: 'clamp(13px, 2cqw, 17px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(7px, 1cqw, 9px)', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
                 )}
                 {modeEdit && (
-                  <button onClick={() => onRetirerRemplacant(i)}
-                    style={{ position: 'absolute', top: '-3px', left: '-3px', width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', fontSize: '9px', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                    ✕
+                  <button onClick={() => onRetirerRemplacant(i)} aria-label="Retirer ce remplaçant"
+                    style={{ position: 'absolute', top: '-3px', left: '-3px', width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', border: '2px solid #0a0a0a', color: '#fff', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                    <IconClose size={9} />
                   </button>
                 )}
               </div>
@@ -321,7 +322,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
                 <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px', flex: 1 }}>{j.prenom} {j.nom}</span>
                 {String(j.joueur_id).startsWith('effectif:') && !indisponible && <span style={{ color: '#777', fontSize: '11px' }}>sans compte</span>}
                 {indisponible && <span style={{ color: '#555', fontSize: '11px' }}>déjà placé</span>}
-                {!multiSelect && choisi?.joueur_id === j.joueur_id && <span style={{ color: '#4ade80' }}>✓</span>}
+                {!multiSelect && choisi?.joueur_id === j.joueur_id && <span style={{ color: '#4ade80', display: 'inline-flex' }}><IconCheck size={13} /></span>}
               </div>
             )
           })}

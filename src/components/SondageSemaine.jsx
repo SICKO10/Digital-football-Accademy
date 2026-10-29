@@ -5,6 +5,7 @@ import { useColors } from '../lib/theme'
 import { sondageEstClos } from '../lib/sondage'
 import { jourKeyDeDate } from '../lib/jours'
 import { EvenementsJour } from './PlanningSemaineWidget'
+import { IconLock } from './icones'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -380,7 +381,7 @@ function EvenementJoueur({ ev, statut, onChoisir, saving }) {
         )}
       </div>
       {clos ? (
-        <p style={{ margin: '5px 0 0', fontSize: '9px', color: colors.text.ghost }}>🔒 Clos</p>
+        <p style={{ margin: '5px 0 0', fontSize: '9px', color: colors.text.ghost, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}><IconLock size={10} />Clos</p>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
           {OPTIONS_SONDAGE.map(opt => {

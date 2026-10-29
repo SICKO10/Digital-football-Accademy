@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useColors } from "../lib/theme";
+import { IconGift, IconCheck, IconCopy } from './icones'
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
 // Bloc "Parraine et gagne" — même convention que FloatingHelper.jsx (props
@@ -37,7 +38,7 @@ export default function ParrainageWidget({ userId, accentColor = "#4ade80" }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${accentColor}12 0%, ${colors.background.surface} 100%)`, border: `1px solid ${accentColor}25`, borderRadius: "16px", padding: "24px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", marginBottom: "20px" }}>
-        <span style={{ fontSize: "32px" }}>🎁</span>
+        <span style={{ display: "flex", color: accentColor }}><IconGift size={30} /></span>
         <div>
           <h3 style={{ color: accentColor, fontWeight: 800, fontSize: "17px", margin: "0 0 6px" }}>Parraine et gagne</h3>
           <p style={{ color: colors.text.faint, fontSize: "13px", margin: 0, lineHeight: 1.6 }}>
@@ -62,7 +63,10 @@ export default function ParrainageWidget({ userId, accentColor = "#4ade80" }) {
           onClick={copier}
           style={{ flexShrink: 0, padding: "11px 18px", borderRadius: "10px", border: "none", background: accentColor, color: "#0a0a0a", fontWeight: 700, fontSize: "13px", cursor: "pointer", whiteSpace: "nowrap" }}
         >
-          {copied ? "✓ Copié" : "📋 Copier"}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+            {copied ? "Copié" : "Copier"}
+          </span>
         </button>
       </div>
 

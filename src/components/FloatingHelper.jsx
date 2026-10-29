@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 import { useColors } from "../lib/theme";
+import { IconBall, IconHelp, IconMessage, IconCheck, IconClock, IconSend, IconMail, IconClose } from './icones'
 
 // ─── FAQ RAPIDE ──────────────────────────────────────────────────────────────
 // FAQ par défaut (dashboard joueur) — passe une prop `faq` personnalisée pour
@@ -451,7 +452,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
       <div style={S.panel(open)}>
         {/* Header */}
         <div style={S.header(accentColor)}>
-          <div style={S.headerAvatar(accentColor)}>⚽</div>
+          <div style={S.headerAvatar(accentColor)}><IconBall size={20} /></div>
           <div>
             <div style={S.headerText}>Cedinho — Ton guide</div>
             <div style={S.headerSub(accentColor)}>Comment puis-je t'aider ?</div>
@@ -461,10 +462,10 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
         {/* Onglets FAQ / Support */}
         <div style={S.tabs}>
           <button style={S.tabBtn(view === "faq", accentColor)} onClick={() => setView("faq")}>
-            ❓ FAQ
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><IconHelp size={14} />FAQ</span>
           </button>
           <button style={S.tabBtn(view === "support", accentColor)} onClick={ouvrirSupport}>
-            💬 Support
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><IconMessage size={14} />Support</span>
           </button>
         </div>
 
@@ -503,7 +504,10 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
                   <p style={{ ...S.faqQ, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selectedTicket.sujet}</p>
                 </div>
                 <span style={S.statutBadge(selectedTicket.statut, accentColor)}>
-                  {selectedTicket.statut === "resolu" ? "✓ Résolu" : "⏳ Ouvert"}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    {selectedTicket.statut === "resolu" ? <IconCheck size={11} /> : <IconClock size={11} />}
+                    {selectedTicket.statut === "resolu" ? "Résolu" : "Ouvert"}
+                  </span>
                 </span>
               </div>
 
@@ -530,8 +534,9 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
                   style={{ ...S.threadSendBtn(accentColor), opacity: sendingThreadMsg || !threadDraft.trim() ? 0.5 : 1 }}
                   onClick={envoyerMessageFil}
                   disabled={sendingThreadMsg || !threadDraft.trim()}
+                  aria-label="Envoyer"
                 >
-                  ➤
+                  <IconSend size={15} />
                 </button>
               </div>
             </>
@@ -556,7 +561,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
                 onClick={envoyerTicket}
                 disabled={sending || !newSujet.trim() || !newMessage.trim()}
               >
-                {sending ? "Envoi..." : "✉️ Envoyer"}
+                {sending ? "Envoi..." : <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><IconMail size={14} />Envoyer</span>}
               </button>
 
               {loadingTickets ? (
@@ -572,7 +577,10 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                             <p style={{ ...S.faqQ, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.sujet}</p>
                             <span style={S.statutBadge(t.statut, accentColor)}>
-                              {t.statut === "resolu" ? "✓ Résolu" : "⏳ Ouvert"}
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                {t.statut === "resolu" ? <IconCheck size={11} /> : <IconClock size={11} />}
+                                {t.statut === "resolu" ? "Résolu" : "Ouvert"}
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -594,7 +602,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
         onClick={() => setOpen((o) => !o)}
         title="Aide"
       >
-        {open ? "✕" : "⚽"}
+        {open ? <IconClose size={22} /> : <IconBall size={24} />}
       </button>
     </>
   );

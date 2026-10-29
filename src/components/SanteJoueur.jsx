@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha } from '../tokens'
 import { saisonActuelle } from '../lib/saison'
+import { IconPaperclip } from './icones'
 
 const STATUT_META_KEYS = {
   en_cours: 'En cours',
@@ -435,7 +436,7 @@ export default function SanteJoueur({ userId }) {
                       </div>
                       {sv.document_path && (
                         <button onClick={() => ouvrirDocument(sv.document_path)} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 }}>
-                          📎 {sv.document_nom || 'Document'}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPaperclip size={12} />{sv.document_nom || 'Document'}</span>
                         </button>
                       )}
                     </div>

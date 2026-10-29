@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { saisonActuelle } from '../lib/saison'
 import { PERIODES, ASPECTS, evaluationVide } from '../constants/evaluation'
+import { IconStar, IconUnlock } from './icones'
 
 function RatingStars({ value, onChange, readOnly, couleur }) {
   const colors = useColors()
@@ -10,8 +11,9 @@ function RatingStars({ value, onChange, readOnly, couleur }) {
     <div style={{ display: 'flex', gap: 3 }}>
       {[1, 2, 3, 4, 5].map(n => (
         <span key={n} onClick={() => !readOnly && onChange(n === value ? null : n)}
-          style={{ fontSize: 18, cursor: readOnly ? 'default' : 'pointer', color: (value || 0) >= n ? couleur : colors.text.ghost }}>
-          ★
+          title={`${n} sur 5`}
+          style={{ display: 'inline-flex', cursor: readOnly ? 'default' : 'pointer', color: (value || 0) >= n ? couleur : colors.text.ghost }}>
+          <IconStar size={18} filled={(value || 0) >= n} />
         </span>
       ))}
     </div>
@@ -172,8 +174,8 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
             {form.verrouillee_joueur && (
               <button onClick={() => basculerFlag('verrouillee_joueur', false)}
                 style={{ flex: '1 1 220px', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 10, padding: 12, cursor: 'pointer' }}>
-                <div style={{ color: colors.text.faint, fontWeight: 700, fontSize: 12 }}>
-                  🔓 Déverrouiller
+                <div style={{ color: colors.text.faint, fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconUnlock size={14} />Déverrouiller
                 </div>
                 <div style={{ color: colors.text.faint, fontSize: 11, marginTop: 2 }}>
                   Le joueur pourra à nouveau compléter cette évaluation (si le pré-remplissage est autorisé)

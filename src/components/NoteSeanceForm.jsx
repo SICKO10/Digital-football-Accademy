@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { zoneRpe } from '../lib/rpe'
+import { IconStar } from './icones'
 
 function StarPicker({ value, onChange, label, colors }) {
   return (
@@ -10,8 +11,9 @@ function StarPicker({ value, onChange, label, colors }) {
       <div style={{ display: 'flex', gap: '8px' }}>
         {[1, 2, 3, 4, 5].map(n => (
           <button key={n} onClick={() => onChange(n)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', opacity: n <= value ? 1 : 0.25, transform: n <= value ? 'scale(1.1)' : 'scale(1)', transition: 'all .1s' }}>
-            ⭐
+            aria-label={`${n} sur 5`}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fbbf24', display: 'flex', padding: 0, opacity: n <= value ? 1 : 0.25, transform: n <= value ? 'scale(1.1)' : 'scale(1)', transition: 'all .1s' }}>
+            <IconStar size={24} filled={n <= value} />
           </button>
         ))}
       </div>

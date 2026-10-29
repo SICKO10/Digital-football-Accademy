@@ -4,47 +4,48 @@ import { useColors } from '../lib/theme'
 import { alpha } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
 import { calculerMoyennes } from '../lib/statsRecrutement'
+import { IconChart, IconTarget, IconPass, IconRun } from '../components/icones'
 
 const STATS_PAR_POSTE = {
   Gardien: [
-    { key: 'arrets', label: 'Arrêts', icon: '🧤' },
-    { key: 'buts_encaisses', label: 'Buts encaissés', icon: '🥅' },
-    { key: 'sorties', label: 'Sorties', icon: '🏃' },
-    { key: 'relances_reussies', label: 'Relances réussies', icon: '🎯' },
-    { key: 'duels_total', label: 'Duels tentés', icon: '⚔️' },
-    { key: 'duels_gagnes', label: 'Duels gagnés', icon: '✅' },
+    { key: 'arrets', label: 'Arrêts' },
+    { key: 'buts_encaisses', label: 'Buts encaissés' },
+    { key: 'sorties', label: 'Sorties' },
+    { key: 'relances_reussies', label: 'Relances réussies' },
+    { key: 'duels_total', label: 'Duels tentés' },
+    { key: 'duels_gagnes', label: 'Duels gagnés' },
   ],
   Défenseur: [
-    { key: 'interceptions', label: 'Interceptions', icon: '✂️' },
-    { key: 'tacles_reussis', label: 'Tacles réussis', icon: '🦵' },
-    { key: 'degagements', label: 'Dégagements', icon: '👊' },
-    { key: 'duels_total', label: 'Duels tentés', icon: '⚔️' },
-    { key: 'duels_gagnes', label: 'Duels gagnés', icon: '✅' },
-    { key: 'passes_tentees', label: 'Passes tentées', icon: '📊' },
-    { key: 'passes_reussies', label: 'Passes réussies', icon: '🎯' },
-    { key: 'fautes_commises', label: 'Fautes', icon: '🟡' },
-    { key: 'km_parcourus', label: 'Km parcourus', icon: '🏃', decimal: true },
+    { key: 'interceptions', label: 'Interceptions' },
+    { key: 'tacles_reussis', label: 'Tacles réussis' },
+    { key: 'degagements', label: 'Dégagements' },
+    { key: 'duels_total', label: 'Duels tentés' },
+    { key: 'duels_gagnes', label: 'Duels gagnés' },
+    { key: 'passes_tentees', label: 'Passes tentées' },
+    { key: 'passes_reussies', label: 'Passes réussies' },
+    { key: 'fautes_commises', label: 'Fautes' },
+    { key: 'km_parcourus', label: 'Km parcourus', decimal: true },
   ],
   Milieu: [
-    { key: 'passes_tentees', label: 'Passes tentées', icon: '📊' },
-    { key: 'passes_reussies', label: 'Passes réussies', icon: '🎯' },
-    { key: 'recuperations', label: 'Récupérations', icon: '💪' },
-    { key: 'duels_total', label: 'Duels tentés', icon: '⚔️' },
-    { key: 'duels_gagnes', label: 'Duels gagnés', icon: '✅' },
-    { key: 'km_parcourus', label: 'Km parcourus', icon: '🏃', decimal: true },
-    { key: 'dribbles_tentes', label: 'Dribbles tentés', icon: '🔄' },
-    { key: 'dribbles_reussis', label: 'Dribbles réussis', icon: '✅' },
-    { key: 'fautes_commises', label: 'Fautes', icon: '🟡' },
+    { key: 'passes_tentees', label: 'Passes tentées' },
+    { key: 'passes_reussies', label: 'Passes réussies' },
+    { key: 'recuperations', label: 'Récupérations' },
+    { key: 'duels_total', label: 'Duels tentés' },
+    { key: 'duels_gagnes', label: 'Duels gagnés' },
+    { key: 'km_parcourus', label: 'Km parcourus', decimal: true },
+    { key: 'dribbles_tentes', label: 'Dribbles tentés' },
+    { key: 'dribbles_reussis', label: 'Dribbles réussis' },
+    { key: 'fautes_commises', label: 'Fautes' },
   ],
   Attaquant: [
-    { key: 'frappes_tentees', label: 'Frappes tentées', icon: '👟' },
-    { key: 'frappes_cadrees', label: 'Frappes cadrées', icon: '🎯' },
-    { key: 'dribbles_tentes', label: 'Dribbles tentés', icon: '🔄' },
-    { key: 'dribbles_reussis', label: 'Dribbles réussis', icon: '✅' },
-    { key: 'hors_jeu', label: 'Hors-jeu', icon: '🚩' },
-    { key: 'km_parcourus', label: 'Km parcourus', icon: '🏃', decimal: true },
-    { key: 'passes_tentees', label: 'Passes tentées', icon: '📊' },
-    { key: 'passes_reussies', label: 'Passes réussies', icon: '🎯' },
+    { key: 'frappes_tentees', label: 'Frappes tentées' },
+    { key: 'frappes_cadrees', label: 'Frappes cadrées' },
+    { key: 'dribbles_tentes', label: 'Dribbles tentés' },
+    { key: 'dribbles_reussis', label: 'Dribbles réussis' },
+    { key: 'hors_jeu', label: 'Hors-jeu' },
+    { key: 'km_parcourus', label: 'Km parcourus', decimal: true },
+    { key: 'passes_tentees', label: 'Passes tentées' },
+    { key: 'passes_reussies', label: 'Passes réussies' },
   ],
 }
 
@@ -184,7 +185,7 @@ export default function MesStats({ userId, joueurPoste }) {
       {vue === 'profil' && (
         matchs.length === 0 ? (
           <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '60px', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📊</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconChart size={44} /></div>
             <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Aucune stat enregistrée</div>
             <div style={{ color: colors.text.faint, fontSize: '14px', marginBottom: '20px' }}>Saisis tes stats après chaque match pour construire ton profil</div>
             <button onClick={() => setVue('saisir')} style={{ background: colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px 24px', color: colors.black, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -247,10 +248,10 @@ export default function MesStats({ userId, joueurPoste }) {
           <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Stats de base</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' }}>
             {[
-              { key: 'buts', label: '⚽ Buts' },
-              { key: 'passes_decisives', label: '🎯 PD' },
-              { key: 'cartons_jaunes', label: '🟡 CJ' },
-              { key: 'cartons_rouges', label: '🔴 CR' },
+              { key: 'buts', label: 'Buts' },
+              { key: 'passes_decisives', label: 'Passes décisives' },
+              { key: 'cartons_jaunes', label: 'Cartons jaunes' },
+              { key: 'cartons_rouges', label: 'Cartons rouges' },
             ].map(({ key, label }) => (
               <div key={key}>
                 <label style={labelStyle}>{label}</label>
@@ -261,9 +262,9 @@ export default function MesStats({ userId, joueurPoste }) {
 
           <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Stats {poste}</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '24px' }}>
-            {statsSpec.map(({ key, label, icon, decimal }) => (
+            {statsSpec.map(({ key, label, decimal }) => (
               <div key={key}>
-                <label style={labelStyle}>{icon} {label}</label>
+                <label style={labelStyle}>{label}</label>
                 <input type="number" min="0" step={decimal ? '0.1' : '1'} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder="0" style={inputStyle} />
               </div>
             ))}
@@ -291,11 +292,11 @@ export default function MesStats({ userId, joueurPoste }) {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', fontSize: '13px', flexWrap: 'wrap' }}>
-                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700 }}>⚽ {m.buts}</span>}
-                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700 }}>🎯 {m.passes_decisives}</span>}
-                {m.km_parcourus && <span style={{ color: colors.text.secondary }}>🏃 {m.km_parcourus}km</span>}
+                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconTarget size={13} />{m.buts}</span>}
+                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPass size={13} />{m.passes_decisives}</span>}
+                {m.km_parcourus && <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconRun size={13} />{m.km_parcourus}km</span>}
                 {m.passes_tentees && m.passes_reussies && (
-                  <span style={{ color: colors.text.secondary }}>📊 {Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
+                  <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconChart size={13} />{Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
                 )}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { IconStar } from './icones'
 
 // Composant étoiles cliquables
 export function Etoiles({ note, onChange, size = 24, readonly = false }) {
@@ -12,8 +13,9 @@ export function Etoiles({ note, onChange, size = 24, readonly = false }) {
           onClick={() => !readonly && onChange && onChange(n)}
           onMouseEnter={() => !readonly && setHover(n)}
           onMouseLeave={() => !readonly && setHover(0)}
-          style={{ fontSize: size, cursor: readonly ? 'default' : 'pointer', opacity: (hover || note) >= n ? 1 : 0.2, transition: 'opacity 0.1s', lineHeight: 1 }}
-        >⭐</span>
+          title={`${n} sur 5`}
+          style={{ display: 'inline-flex', color: '#fbbf24', cursor: readonly ? 'default' : 'pointer', opacity: (hover || note) >= n ? 1 : 0.25, transition: 'opacity 0.1s', lineHeight: 1 }}
+        ><IconStar size={size} filled={(hover || note) >= n} /></span>
       ))}
     </div>
   )
@@ -37,8 +39,8 @@ export function BadgeNote({ cibleId, style = {} }) {
 
   if (!moyenne) return null
   return (
-    <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', ...style }}>
-      ⭐ {moyenne} <span style={{ opacity: 0.6, fontWeight: 400 }}>({count})</span>
+    <span style={{ background: '#fbbf2415', border: '1px solid #fbbf2440', color: '#fbbf24', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px', ...style }}>
+      <IconStar size={11} filled />{moyenne} <span style={{ opacity: 0.6, fontWeight: 400 }}>({count})</span>
     </span>
   )
 }

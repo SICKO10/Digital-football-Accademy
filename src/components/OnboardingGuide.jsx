@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from "../lib/tutoriels";
+import { IconBall } from './icones'
 
 // ─── ÉTAPES DU GUIDE ────────────────────────────────────────────────────────
 // Étapes par défaut (dashboard joueur) — passe une prop `steps` personnalisée
@@ -7,7 +8,7 @@ import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from "../lib/tutor
 const DEFAULT_STEPS = [
   {
     id: 1,
-    title: "Bienvenue sur Digital Football ! ⚽",
+    title: "Bienvenue sur Digital Football",
     message:
       "Je suis Cedinho, ton guide personnel. Je vais te montrer comment tirer le meilleur de la plateforme en moins de 2 minutes.",
     targetId: null, // Pas de highlight, c'est le modal d'accueil
@@ -95,7 +96,7 @@ const DEFAULT_STEPS = [
   },
   {
     id: 12,
-    title: "C'est parti ! 🚀",
+    title: "C'est parti",
     message:
       "Tu es prêt. Si tu as une question, clique sur le ballon en bas à droite — je suis toujours là.",
     targetId: null,
@@ -384,7 +385,7 @@ export default function OnboardingGuide({ userId, steps = DEFAULT_STEPS, accentC
         <div style={styles.overlay} onClick={handleClose}>
           <div style={{ ...styles.card, boxShadow: `0 0 40px ${accentColor}26` }} onClick={(e) => e.stopPropagation()}>
             <div style={styles.avatarWrapper}>
-              <div style={{ ...styles.avatar, background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`, boxShadow: `0 0 20px ${accentColor}66` }}>⚽</div>
+              <div style={{ ...styles.avatar, background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`, boxShadow: `0 0 20px ${accentColor}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a0a' }}><IconBall size={26} /></div>
             </div>
 
             <h2 style={styles.title}>{currentStep.title}</h2>

@@ -49,7 +49,7 @@ Douze blocs courts. Deux par séance au maximum, une session neuve par bloc. Les
 - Ce que je teste : le site s'ouvre normalement.
 
 ### Bloc 1 : chasse aux émoticônes dans tout l'espace joueur
-- Statut : à faire
+- Statut : fait (2026-10-29)
 - Objectif : plus aucune émoticône dans l'espace joueur. C'est le reproche principal de Kevin : « ça fait enfant ».
 - Résultat testable : je parcours toutes les rubriques du menu sans voir un seul emoji.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -62,6 +62,21 @@ Douze blocs courts. Deux par séance au maximum, une session neuve par bloc. Les
   - Cas particulier : les drapeaux du sélecteur de langue. Proposer à Kevin les codes « FR / EN / PT » plutôt que les drapeaux, et attendre sa réponse.
   - Vérifier par comptage qu'il n'en reste aucun, pas à l'œil.
 - Ce que je teste : je passe dans chaque rubrique du menu et je cherche un emoji.
+
+
+**Journal du bloc 1** — 2026-10-29, Opus 5 (au lieu de Sonnet : validé par Kevin pour éviter un aller-retour).
+- Recensement par comptage, pas à l'œil : 121 émoticônes sur 92 lignes dans `DashboardJoueur.jsx`, puis élargi aux 65 fichiers que l'espace joueur charge réellement (parcours des imports, pas une liste à la main).
+- Drapeaux du sélecteur de langue : **gardés**. Kevin a d'abord choisi les codes FR EN PT ES IT DE, puis les a fait remettre après les avoir vus. Seule exception assumée à la règle zéro émoticône dans l'espace joueur. Ne plus reproposer de les retirer.
+- Jeu d'icônes sorti dans `src/components/icones.jsx` : les 22 icônes qui vivaient dans `DashboardJoueur.jsx`, plus 32 nouvelles au même format (viewBox 24, `currentColor`, prop `size`). Les onze autres fichiers s'en servent au lieu de recopier des SVG. Une seule source pour tous les dessins.
+- Émoticônes de statut devenues des icônes colorées par le parent (présence, validation, attente, cartons d'arbitre), comme sur l'accueil.
+- `src/lib/translations.js` : 16 clés nettoyées sur les 6 langues. Vérifié que ces 16 ne servent qu'à l'espace joueur. Les 59 autres lignes à émoticônes du fichier appartiennent aux espaces club et éducateur et ne sont jamais affichées à un joueur.
+- Boutons qui n'avaient qu'un symbole (fermer, menu, envoyer, étoiles de notation) ont reçu un `aria-label` ou un `title` au passage : sans texte ni emoji, ils étaient muets pour un lecteur d'écran.
+
+**Écarts assumés, à traiter ailleurs**
+- `EducationNutrition.jsx` (54 lignes) et `src/lib/nutrition.js` (16) : laissés tels quels. Le **bloc 10** refait ce premier écran entièrement, les nettoyer maintenant serait du travail à refaire.
+- `Tactipad.jsx` (17 lignes affichées) et `TactipadViewer.jsx` (1) : la planche tactique est un outil partagé avec l'espace éducateur et a son propre chantier. Hors périmètre de ce plan.
+- `VeoStatsJoueur.jsx` ligne 61 : l'émoticône est **écrite en base** (`joueur_badges.icone`) et n'est affichée que sur les écrans recruteur. La changer ne corrigerait pas les lignes déjà enregistrées en production. À décider avec le bloc 2, qui retire déjà Veo de la carte joueur.
+- Couleurs en dur rencontrées en chemin (`#f0c030`, `#fbbf24`, `#4ade80`, `#f59e0b`) : pas touchées, c'est le travail des blocs 3 et 11.
 
 ### Bloc 2 : deux règles à faire respecter
 - Statut : à faire
