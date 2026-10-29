@@ -151,7 +151,7 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
 - [IDÉE] Un vrai classement interne est possible sans site extérieur : les résultats de toutes les équipes d'une même catégorie sont déjà en base (`matchs_equipe`). Ce serait un bloc à part entière, avec une décision de périmètre (quelles équipes, quelle catégorie). À reproposer seulement si Kevin le demande.
 
 ### Bloc 4 : Mon profil désencombré
-- Statut : à faire
+- Statut : **étape 1 faite** (inventaire, 2026-10-29) · réorganisation à faire en session neuve
 - Objectif : la page profil est surchargée. La réorganiser en sections claires sans rien retirer de fonctionnel.
 - Résultat testable : je trouve une information précise en moins de cinq secondes.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -163,6 +163,41 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
   - Replier ce qui est rarement utilisé plutôt que de le supprimer.
   - **Aucun champ ne doit disparaître** : vérifier l'inventaire avant et après.
 - Ce que je teste : je modifie une information et je l'enregistre, elle doit être conservée.
+
+
+**Journal du bloc 4** — 2026-10-29, Opus 5, quatrième bloc de la même session (les `/clear` demandés n'ont pas pris effet).
+
+**Arrêt volontaire après l'étape 1.** L'inventaire est fait et consigné ci-dessous. Je n'ai **pas** touché au formulaire : il écrit en base, la consigne est qu'aucun champ ne disparaisse, et il reste 450 lignes à réorganiser. Commencer sans la place pour aller au bout et revérifier l'inventaire, c'est le laisser en morceaux. L'exploration est payée, la session suivante exécute directement.
+
+### Inventaire de la page profil (`DashboardJoueur.jsx`, lignes 4260 à 4709)
+Relevé par script, pas à l'œil. Huit cartes empilées, sans aucune hiérarchie, plus un bouton d'enregistrement égaré.
+
+| # | Ligne | Carte | Contenu |
+|---|---|---|---|
+| 1 | 4268 | Photo de profil | `input type=file` → `handleAvatarUpload` |
+| 2 | 4282 | Informations | `stats.club`, `stats.niveau_equipe`, `stats.categorie`, `stats.region`, `stats.numero_licence`, `stats.pied` · note sur les stats retirées · bouton vers l'onglet `mes_stats` |
+| 3 | 4331 | Style de jeu | `styleDeJeu` (1 choix parmi 8) · `pointsForts` (4 max) · `aAmeliorer` (4 max) |
+| 4 | 4405 | Parcours | liste des clubs (modifier / supprimer) + formulaire : `nouveauClub.club`, `.saison`, `.categorie`, `.poste`, `.niveau_championnat`, `.matchs_joues`, `.cleansheets`, `.buts`, `.passes_decisives` + Ajouter / Annuler |
+| 5 | 4561 | Historique des saisons | composant `<HistoriqueSaisons>` |
+| 6 | 4566 | Notifications | 4 bascules (`email_analyse`, `email_like`, `email_commentaire`, `email_message`) → `sauvegarderNotifPrefs` |
+| 7 | 4592 | Visibilité recruteurs | **masquée**, affichée seulement pour le compte de test Rayan Attia : `statut_recrutement`, bascule `visible_recruteurs`, bascule `partage_bilan_medical`, demandes de détail médical (Accepter / Refuser) |
+| — | 4667 | **Bouton Enregistrer** | `handleSaveStats` — **placé ici**, soit ~390 lignes après les champs qu'il enregistre, et juste après un formulaire de parcours qui a ses propres boutons |
+| 8 | 4673 | Accès parents | liste des invitations (retirer) + `emailParentInput` + Inviter |
+
+**Total à préserver** : 16 champs contrôlés, 1 upload, 3 sélections par pastilles, 6 bascules, 11 actions (`handleAvatarUpload`, `handleSaveStats`, `ajouterClub`, `modifierClub`, `supprimerClub`, `inviterParent`, `supprimerInvitationParent`, `sauvegarderNotifPrefs`, `sauvegarderRecrutementProfil`, `repondreDemandeBilanMedical`, `setOnglet`).
+
+### Le vrai défaut, et la découpe à appliquer
+Le reproche « surchargé » ne vient pas du nombre de champs mais de deux choses : **aucune section**, et le **bouton Enregistrer séparé de ses champs par 390 lignes**, après un autre formulaire qui a ses propres boutons. C'est la première chose à corriger, avant tout regroupement.
+
+Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'accueil et la compétition :
+1. **Identité** — photo (1) + informations (2), puis **le bouton Enregistrer juste en dessous**, dans la même carte que les champs qu'il enregistre.
+2. **Profil sportif** — style de jeu (3), toujours visible.
+3. **Mon parcours** — parcours (4) + historique des saisons (5), **replié** : c'est la moitié de la page pour quelque chose qu'on remplit une fois par saison. Le formulaire d'ajout garde ses boutons propres, qui n'enregistrent que lui.
+4. **Réglages** — notifications (6) + visibilité recruteurs (7, condition de masquage inchangée) + accès parents (8), **replié**.
+
+**Écart à signaler** : le plan prévoyait une section « compte et abonnement ». Il n'y a **rien** à y mettre : cette page ne contient ni email, ni mot de passe, ni abonnement, ni déconnexion (la déconnexion est dans le menu latéral). Je ne l'ai pas inventée. Si Kevin veut y voir son offre et sa date de renouvellement, c'est un ajout à demander, pas un regroupement.
+
+**Règle de vérification pour la session d'exécution** : relancer le relevé par script après la réorganisation et comparer au tableau ci-dessus. Les 16 champs contrôlés, les 6 bascules et les 11 actions doivent tous être encore là. Puis modifier une information, enregistrer, recharger.
 
 ### Bloc 5 : Santé et Préparation tactique
 - Statut : à faire
