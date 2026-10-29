@@ -111,10 +111,14 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
 
     const titresCollectifs = (badges || [])
       .filter(b => TYPES_COLLECTIFS[b.type])
-      .map(b => ({ type: TYPES_COLLECTIFS[b.type], emoji: b.icone, label: b.label }))
+      .map(b => ({ type: TYPES_COLLECTIFS[b.type], label: b.label }))
+    // La colonne `icone` de joueur_badges contient une émoticône, écrite par
+    // d'anciennes insertions : on affiche le libellé seul. Le badge Veo est
+    // écarté, la statistique Veo ne fait plus partie de la carte joueur.
     const distinctions = (badges || [])
-      .filter(b => !TYPES_COLLECTIFS[b.type] && b.type !== 'tournoi_participation')
-      .map(b => `${b.icone ? b.icone + ' ' : ''}${b.label}`)
+      .filter(b => !TYPES_COLLECTIFS[b.type] && b.type !== 'tournoi_participation'
+        && b.type !== 'veo_stats_autodeclarees')
+      .map(b => b.label)
 
     setData({
       profil: profil || {}, buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct,
@@ -205,7 +209,7 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
               const s = TITLE_STYLES[tt.type] || TITLE_STYLES.regional
               return (
                 <span key={i} style={{ padding: '3px 9px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: 'nowrap' }}>
-                  {tt.emoji} {tt.label}
+                  {tt.label}
                 </span>
               )
             })}

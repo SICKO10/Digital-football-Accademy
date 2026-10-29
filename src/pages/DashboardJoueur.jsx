@@ -33,7 +33,6 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import CarteJoueur from '../components/CarteJoueur'
-import VeoStatsJoueur from '../components/VeoStatsJoueur'
 import SponsorsBar from '../components/SponsorsBar'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
@@ -5001,10 +5000,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Carte Joueur</h2>
               <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ta note globale et tes stats de la saison, calculées automatiquement.</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
               <CarteJoueur userId={userId} />
             </div>
-            <VeoStatsJoueur joueurId={userId} />
           </div>
         )}
 

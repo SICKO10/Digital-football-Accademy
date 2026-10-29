@@ -6,6 +6,10 @@ import { t, localeOf } from '../lib/translations'
 import { colors, alpha } from '../tokens'
 import { BadgeNote } from '../components/Notation'
 import { notifierJoueur } from '../lib/notifications'
+import {
+  IconStar, IconCheck, IconCheckCircle, IconClose, IconUsers, IconSearch,
+  IconBall, IconTool, IconLock, IconHeart, IconDocument, IconAlert,
+} from '../components/icones'
 
 // ── Composant étoiles ─────────────────────────────────────────────────────────
 function Etoiles({ note, onChange, size = 28, readonly = false }) {
@@ -17,7 +21,8 @@ function Etoiles({ note, onChange, size = 28, readonly = false }) {
           onClick={() => !readonly && onChange?.(n)}
           onMouseEnter={() => !readonly && setHover(n)}
           onMouseLeave={() => !readonly && setHover(0)}
-          style={{ fontSize: size, cursor: readonly ? 'default' : 'pointer', opacity: (hover || note) >= n ? 1 : 0.15, transition: 'opacity 0.1s', lineHeight: 1 }}>⭐</span>
+          title={`${n} sur 5`}
+          style={{ display: 'inline-flex', color: '#fbbf24', cursor: readonly ? 'default' : 'pointer', opacity: (hover || note) >= n ? 1 : 0.2, transition: 'opacity 0.1s', lineHeight: 1 }}><IconStar size={size} filled={(hover || note) >= n} /></span>
       ))}
     </div>
   )
@@ -29,6 +34,7 @@ export default function ClubPublic() {
   const { lang } = useLang()
 
   const [userId, setUserId] = useState(null)
+  const [monPlan, setMonPlan] = useState(null)
   const [educateur, setEducateur] = useState(null)
   const [joueurs, setJoueurs] = useState([])
   const [matchs, setMatchs] = useState([])
@@ -95,6 +101,11 @@ export default function ClubPublic() {
       if (!user) { navigate('/login'); return }
       setUserId(user.id)
       setEducateur(edu)
+
+      // Le plan du visiteur, pour savoir s'il a le droit de contacter ce
+      // profil (cf. contactAutorise plus bas). Sa propre ligne, donc lisible.
+      const { data: moi } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle()
+      setMonPlan(moi?.plan || null)
 
       // Profil club (plan === 'club') : équipes + recrutement + mes
       // candidatures déjà envoyées, en plus (pas à la place) des requêtes
@@ -220,7 +231,18 @@ export default function ClubPublic() {
     setNoteDone(true)
   }
 
+  const estClub = educateur?.plan === 'club'
+
+  // Un joueur ne contacte pas un éducateur : il passe par son club, ou par le
+  // code d'équipe. Il peut en revanche écrire à un club. La règle porte sur le
+  // plan du visiteur, pas sur l'écran d'où il vient : la fiche est atteignable
+  // par son URL seule, donc masquer le bouton ne suffirait pas.
+  const PLANS_JOUEUR = ['fan', 'joueur_pro', 'joueur_starter', 'starter']
+  const visiteurEstJoueur = PLANS_JOUEUR.includes(monPlan)
+  const contactAutorise = userId !== id && !(visiteurEstJoueur && !estClub)
+
   const ouvrirChat = async () => {
+    if (!contactAutorise) return
     setChatOuvert(true)
     setLoadingChat(true)
     const { data } = await supabase.from('messages').select('*')
@@ -231,6 +253,7 @@ export default function ClubPublic() {
   }
 
   const envoyerMessageChat = async () => {
+    if (!contactAutorise) return
     if (!nouveauMessageChat.trim()) return
     setEnvoyingMessageChat(true)
     await supabase.from('messages').insert({ sender_id: userId, receiver_id: id, content: nouveauMessageChat.trim(), created_at: new Date().toISOString() })
@@ -247,7 +270,6 @@ export default function ClubPublic() {
     setEnvoyingMessageChat(false)
   }
 
-  const estClub = educateur?.plan === 'club'
 
   const postuler = async (recrutementId) => {
     setPostulantId(recrutementId)
@@ -307,7 +329,7 @@ export default function ClubPublic() {
                 </div>
             }
           </div>
-          {userId !== id && (
+          {contactAutorise && (
             <button onClick={ouvrirChat}
               style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Contacter
@@ -318,14 +340,17 @@ export default function ClubPublic() {
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
             <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>{educateur.club || `${educateur.prenom} ${educateur.nom}`}</h1>
-            {educateur.verified && <span style={{ color: colors.accent.green }}>✅</span>}
+            {educateur.verified && <span title="Profil vérifié" style={{ display: 'inline-flex', color: colors.accent.green }}><IconCheckCircle size={15} /></span>}
             <BadgeNote cibleId={id} />
           </div>
           <p style={{ margin: '2px 0', fontSize: 13, color: colors.text.faint }}>{[educateur.niveau_equipe, educateur.region].filter(Boolean).join(' · ')}</p>
           <p style={{ margin: '2px 0', fontSize: 12, color: colors.text.faint }}>{t('clubpub_educateur_label', lang)} <span style={{ color: colors.text.secondary }}>{educateur.prenom} {educateur.nom}</span></p>
           {educateur.disponibilite && (
             <span style={{ display: 'inline-block', marginTop: 8, background: educateur.disponibilite === 'disponible' ? colors.accent.green + alpha.subtle : 'transparent', color: educateur.disponibilite === 'disponible' ? colors.accent.green : colors.text.faint, border: `1px solid ${educateur.disponibilite === 'disponible' ? '#4ade8040' : colors.border.default}`, padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-              {educateur.disponibilite === 'disponible' ? '🟢 Disponible' : educateur.disponibilite === 'open_double' ? '🟡 Open à double mission' : '⚫ En poste'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: educateur.disponibilite === 'disponible' ? colors.accent.green : educateur.disponibilite === 'open_double' ? colors.accent.amber : colors.border.strong }} />
+                {educateur.disponibilite === 'disponible' ? 'Disponible' : educateur.disponibilite === 'open_double' ? 'Open à double mission' : 'En poste'}
+              </span>
             </span>
           )}
         </div>
@@ -419,7 +444,7 @@ export default function ClubPublic() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: `1px solid ${colors.border.faint}` }}>
                     <button onClick={() => handleLike(post.id)}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', color: likedPosts.has(post.id) ? colors.accent.green : colors.text.disabled, fontSize: 14, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
-                      {likedPosts.has(post.id) ? '♥' : '♡'} {post.likes_count || 0}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconHeart size={13} filled={likedPosts.has(post.id)} />{post.likes_count || 0}</span>
                     </button>
                   </div>
                 </div>
@@ -470,7 +495,7 @@ export default function ClubPublic() {
                 <p style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {profilExt.diplome}
                   {profilExt.diplome_verifie && (
-                    <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px' }}>✓ {t('clubpub_diplome_verifie', lang)}</span>
+                    <span style={{ background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8040', color: colors.accent.green, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconCheck size={10} />{t('clubpub_diplome_verifie', lang)}</span>
                   )}
                 </p>
               </div>
@@ -525,7 +550,7 @@ export default function ClubPublic() {
           <div>
             {categoriesClub.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: colors.border.strong }}>
-                <p style={{ fontSize: '32px' }}>👥</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconUsers size={30} /></div>
                 <p style={{ color: colors.text.disabled }}>{t('clubpub_aucun_joueur', lang)}</p>
               </div>
             ) : (
@@ -553,7 +578,7 @@ export default function ClubPublic() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {recrutements.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: colors.border.strong }}>
-                <p style={{ fontSize: '32px' }}>🔍</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconSearch size={30} /></div>
                 <p style={{ color: colors.text.disabled }}>Aucun recrutement en cours.</p>
               </div>
             ) : recrutements.map(r => {
@@ -570,7 +595,7 @@ export default function ClubPublic() {
                       {r.description && <p style={{ margin: '8px 0 0', fontSize: '13px', color: colors.text.secondary }}>{r.description}</p>}
                     </div>
                     {statutCandidature ? (
-                      <span style={{ flexShrink: 0, fontSize: '12px', color: colors.accent.green, fontWeight: 600 }}>✓ Candidature envoyée</span>
+                      <span style={{ flexShrink: 0, fontSize: '12px', color: colors.accent.green, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconCheck size={12} />Candidature envoyée</span>
                     ) : (
                       <button onClick={() => postuler(r.id)} disabled={postulantId === r.id}
                         style={{ flexShrink: 0, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', opacity: postulantId === r.id ? 0.6 : 1 }}>
@@ -588,7 +613,7 @@ export default function ClubPublic() {
           <div>
             {categories.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: colors.border.strong }}>
-                <p style={{ fontSize: '32px' }}>👥</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconUsers size={30} /></div>
                 <p style={{ color: colors.text.disabled }}>{t('clubpub_aucun_joueur', lang)}</p>
               </div>
             ) : categories.map(cat => {
@@ -636,7 +661,7 @@ export default function ClubPublic() {
             )}
             {matchs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: colors.border.strong }}>
-                <p style={{ fontSize: '32px' }}>⚽</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconBall size={30} /></div>
                 <p style={{ color: colors.text.disabled }}>{t('clubpub_aucun_resultat', lang)}</p>
               </div>
             ) : matchs.map(m => {
@@ -700,7 +725,7 @@ export default function ClubPublic() {
           <div>
             {(educateur.services_proposes || []).length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '48px', color: colors.border.strong }}>
-                <p style={{ fontSize: '32px' }}>🛠️</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconTool size={30} /></div>
                 <p style={{ color: colors.text.disabled }}>{t('clubpub_aucun_service', lang)}</p>
               </div>
             ) : (
@@ -733,7 +758,7 @@ export default function ClubPublic() {
                     {validations.map(v => (
                       <div key={v.id} style={{ background: colors.background.surface, borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                         <span style={{ fontWeight: 600 }}>{t('clubpub_saison_label', lang)} {v.saison}</span>
-                        <span style={{ color: colors.text.faint }}>📄 {(v.feuilles_match || []).length} {t('clubpub_feuilles_suffix', lang)}</span>
+                        <span style={{ color: colors.text.faint, display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconDocument size={12} />{(v.feuilles_match || []).length} {t('clubpub_feuilles_suffix', lang)}</span>
                       </div>
                     ))}
                   </div>
@@ -782,7 +807,7 @@ export default function ClubPublic() {
                       </div>
                     ))}
                     {valFeuilles.filter(f => f.trim()).length < 5 && (
-                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#f59e0b' }}>⚠️ {5 - valFeuilles.filter(f => f.trim()).length} {t('clubpub_lien_manquant', lang)}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 5 }}><IconAlert size={12} />{5 - valFeuilles.filter(f => f.trim()).length} {t('clubpub_lien_manquant', lang)}</p>
                     )}
                   </div>
 
@@ -804,7 +829,7 @@ export default function ClubPublic() {
             {/* Section notation */}
             {!estClub && !estValide && !valSuccess ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '40px', color: colors.border.default }}>
-                <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔒</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconLock size={30} /></div>
                 <p style={{ color: colors.text.disabled, fontSize: '14px' }}>{t('clubpub_valide_pour_noter', lang)}</p>
               </div>
             ) : (
@@ -813,7 +838,7 @@ export default function ClubPublic() {
 
                 {noteDone ? (
                   <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                    <p style={{ fontSize: '28px', marginBottom: '8px' }}>✓</p>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.accent.green }}><IconCheckCircle size={28} /></div>
                     <p style={{ fontWeight: 700, color: colors.accent.green }}>{t('clubpub_note_envoyee', lang)}</p>
                     {monAvis && <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}><Etoiles note={noteVal} readonly /></div>}
                   </div>
@@ -847,7 +872,7 @@ export default function ClubPublic() {
                     <div key={av.id} style={{ padding: '12px 0', borderBottom: i < tousAvis.length - 1 ? `1px solid ${colors.border.faint}` : 'none' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: 600, fontSize: '14px' }}>{av.auteur ? `${av.auteur.prenom} ${av.auteur.nom}` : 'Anonyme'}</span>
-                        <span style={{ color: '#f59e0b', fontSize: '13px' }}>{'★'.repeat(av.note)}{'☆'.repeat(5 - av.note)}</span>
+                        <span style={{ color: '#f59e0b', display: 'inline-flex', gap: 1 }}>{[1, 2, 3, 4, 5].map(n => <IconStar key={n} size={12} filled={n <= av.note} />)}</span>
                       </div>
                       {av.commentaire && <p style={{ margin: '6px 0 0', color: colors.text.secondary, fontSize: '13px', lineHeight: 1.5 }}>{av.commentaire}</p>}
                     </div>
@@ -864,7 +889,7 @@ export default function ClubPublic() {
           <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{educateur.club || `${educateur.prenom} ${educateur.nom}`}</p>
-              <button onClick={() => setChatOuvert(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setChatOuvert(false)} aria-label="Fermer" style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}><IconClose size={20} /></button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>

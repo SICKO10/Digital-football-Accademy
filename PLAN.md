@@ -79,7 +79,7 @@ Douze blocs courts. Deux par séance au maximum, une session neuve par bloc. Les
 - Couleurs en dur rencontrées en chemin (`#f0c030`, `#fbbf24`, `#4ade80`, `#f59e0b`) : pas touchées, c'est le travail des blocs 3 et 11.
 
 ### Bloc 2 : deux règles à faire respecter
-- Statut : à faire
+- Statut : fait (2026-10-29)
 - Objectif : retirer la statistique Veo de la carte joueur, et empêcher un joueur de contacter un éducateur depuis Explorer.
 - Résultat testable : la carte joueur n'affiche plus Veo ; depuis Explorer, aucun bouton ne permet d'écrire à un éducateur.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -90,6 +90,30 @@ Douze blocs courts. Deux par séance au maximum, une session neuve par bloc. Les
   - Onglet `clubs` (Explorer) : repérer tout chemin menant à un contact éducateur, le retirer. **Vérifier qu'aucune route ou fonction ne reste atteignable autrement**, et le dire dans le compte rendu.
   - Ne rien supprimer côté base ni côté droits : c'est un retrait d'interface.
 - Ce que je teste : la carte joueur, puis Explorer, en cherchant à joindre un éducateur.
+
+
+**Journal du bloc 2** — 2026-10-29, Opus 5.
+- *Veo retiré de la carte joueur* : le bloc de saisie `<VeoStatsJoueur>` ne s'affiche plus sous la carte, et le badge « Stats Veo » est écarté des distinctions. La carte lisait aussi la colonne `joueur_badges.icone`, qui contient une émoticône écrite par d'anciennes insertions : elle n'affiche plus que le libellé. Rien n'a été touché en base, les lignes existantes restent intactes. Le fichier `VeoStatsJoueur.jsx` n'est plus importé nulle part : code mort, laissé en place, à mettre à la corbeille si Kevin confirme.
+- *Contact éducateur depuis Explorer* : le chemin réel était Explorer → fiche `/clubs/:id` (`ClubPublic.jsx`) → bouton « Contacter » → insertion dans `messages`. La règle est posée dans `ClubPublic.jsx` : un visiteur dont le plan est joueur (`fan`, `starter`, `joueur_starter`, `joueur_pro`) ne peut pas contacter un profil qui n'est pas un club. Posée en trois endroits, pas seulement sur le bouton : `contactAutorise` masque le bouton, et `ouvrirChat` comme `envoyerMessageChat` refusent d'agir. La fiche est atteignable par son URL seule, masquer le bouton n'aurait pas suffi.
+- *Audit des autres chemins* : il n'en reste aucun pour **initier** un contact vers un éducateur. La messagerie du joueur ne liste que des conversations déjà ouvertes, elle n'a pas de sélecteur de destinataire. Le coach analyseur vient de la RPC `get_coach_contacts` (table `admins_coach`), une liste fermée de coachs de la plateforme, pas des éducateurs de clubs. **Un joueur peut en revanche répondre** à un éducateur qui lui a écrit le premier : à décider, le retirer casserait la messagerie coach.
+
+**Angle mort du bloc 1, trouvé pendant le bloc 2**
+Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le joueur ouvre **par URL**, qui ne sont pas importées par `DashboardJoueur.jsx` mais chargées par une route de `App.jsx`.
+- `ClubPublic.jsx` (fiche d'un club ou d'un éducateur, atteinte depuis Explorer) : 21 émoticônes, **nettoyées dans ce bloc** puisque le fichier était déjà ouvert. États vides, étoiles de notation, cœur des j'aime, pastille de disponibilité.
+- Restent à traiter, 105 émoticônes sur des pages qu'un joueur atteint : `Feed.jsx` (35), `Upload.jsx` (15), `Jogabonito.jsx` (14), `Offres.jsx` (8), `UploadClip.jsx` (6), `UploadReel.jsx` (6), `AcceptInvite.jsx` (1). **À faire dans un bloc dédié**, pas en fin de chantier : ce sont des écrans que le joueur voit souvent.
+
+### Bloc 2b : les pages que le joueur ouvre par URL
+- Statut : à faire
+- Objectif : finir la chasse aux émoticônes sur les pages chargées par route, oubliées par le recensement du bloc 1.
+- Résultat testable : j'ouvre le fil d'actualité, l'envoi de vidéo et la page des offres sans voir un seul emoji.
+- Modèle : sonnet · Effort : medium · Coût estimé : moyen
+- Dépend de : bloc 1
+- Étapes :
+  - 105 émoticônes à traiter : `Feed.jsx` (35), `Upload.jsx` (15), `Jogabonito.jsx` (14), `Offres.jsx` (8), `UploadClip.jsx` (6), `UploadReel.jsx` (6), `AcceptInvite.jsx` (1).
+  - Importer depuis `src/components/icones.jsx`, ne **jamais** redessiner un SVG : le jeu partagé compte déjà 57 icônes.
+  - `Offres.jsx` est une page de vente : relire les textes à voix haute après coup, pas seulement remplacer les icônes.
+  - Vérifier par comptage, pas à l'œil.
+- Ce que je teste : le fil d'actualité, l'envoi d'une vidéo, la page des offres.
 
 ### Bloc 3 : page Compétition
 - Statut : à faire
