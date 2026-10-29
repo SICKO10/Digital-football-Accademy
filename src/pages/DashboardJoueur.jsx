@@ -2146,6 +2146,32 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // doit quand même voir son historique et pouvoir rejoindre une nouvelle équipe depuis
   // cet écran — si on exigeait une affiliation active ici, il retomberait sur le dashboard
   // "fan" classique et cet historique/CTA (plus bas) ne serait jamais atteignable.
+  // Offre Pro définie une seule fois et réutilisée partout (encart de l'accueil,
+  // pages réservées) : un prix ou un argument ne doit jamais diverger d'un écran
+  // à l'autre. Attention aux clés Stripe : `starter` est le MENSUEL à 10 €,
+  // `pro` l'ANNUEL à 100 €, cf. src/lib/stripeLinks.js.
+  const avantagesPro = [
+    'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
+    'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
+    'Ton outil de nutrition, pour encore mieux performer',
+  ]
+  const formulesPro = [
+    {
+      prix: '100 € par an',
+      mention: 'deux mois offerts',
+      detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
+      libelleBouton: 'Prendre l\u2019offre annuelle',
+      onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
+      misEnAvant: true,
+    },
+    {
+      prix: '10 € par mois',
+      detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
+      libelleBouton: 'Prendre l\u2019offre mensuelle',
+      onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
+    },
+  ]
+
   const estAffilie = profil?.plan === 'fan' && mesAffiliations.length > 0
 
   const notifEquipementPret = notifications.find(n => n.type === 'equipement_pret' && !n.lu)
@@ -2605,27 +2631,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   paiement. */}
               <ApercuPro
                 titre="Passe en Pro"
-                points={[
-                  'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
-                  'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
-                  'Ton outil de nutrition, pour encore mieux performer',
-                ]}
-                formules={[
-                  {
-                    prix: '100 € par an',
-                    mention: 'deux mois offerts',
-                    detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
-                    libelleBouton: 'Prendre l\u2019offre annuelle',
-                    onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
-                    misEnAvant: true,
-                  },
-                  {
-                    prix: '10 € par mois',
-                    detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
-                    libelleBouton: 'Prendre l\u2019offre mensuelle',
-                    onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
-                  },
-                ]}
+                points={avantagesPro}
+                    formules={formulesPro}
                 isMobile={isMobile}
               />
             </div>
@@ -4205,27 +4212,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 {!isPro && (
                   <ApercuPro
                     titre="Passe en Pro"
-                    points={[
-                      'Tes analyses vidéo, avec ton rapport personnalisé détaillé',
-                      'Ton profil visible par les recruteurs et les clubs qui cherchent ton poste',
-                      'Ton outil de nutrition, pour encore mieux performer',
-                    ]}
-                    formules={[
-                      {
-                        prix: '100 € par an',
-                        mention: 'deux mois offerts',
-                        detail: 'Tes trois analyses vidéo sont disponibles tout de suite.',
-                        libelleBouton: 'Prendre l\u2019offre annuelle',
-                        onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank'),
-                        misEnAvant: true,
-                      },
-                      {
-                        prix: '10 € par mois',
-                        detail: 'Une analyse vidéo tous les six mois, la première au bout de six mois.',
-                        libelleBouton: 'Prendre l\u2019offre mensuelle',
-                        onCliquer: () => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank'),
-                      },
-                    ]}
+                    points={avantagesPro}
+                    formules={formulesPro}
                     isMobile={isMobile}
                     style={{ marginBottom: spacing['2xl'] }}
                   />
@@ -4750,7 +4738,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <NutritionDashboard joueurId={userId} educateurId={mesAffiliations.find(a => a.statut === 'accepte')?.educateur_id} />
               </>
             ) : (
-              <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />
+              <ApercuPro
+                titre="Ton outil de nutrition est dans l'offre Pro"
+                accroche={t('aff_nutrition_desc', lang)}
+                points={avantagesPro}
+                formules={formulesPro}
+                isMobile={isMobile}
+              />
             )}
           </div>
         )}
@@ -4868,16 +4862,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {/* ── MESSAGES ── */}
         {onglet === 'messages' && (profil?.plan === 'starter' || profil?.plan === 'fan' || profil?.plan === 'joueur_starter') && (
           <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '72px 32px', textAlign: 'center' }}>
-              <div style={{ color: colors.icon.muted, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><IconLock /></div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.3px' }}>{t('jm_plan_pro', lang)}</h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '340px', margin: '0 auto 24px', lineHeight: 1.7 }}>
-                {t('jm_plan_pro_desc', lang)}
-              </p>
-              <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={st.btnSolid()}>
-                {t('jd_plan_pro_cta', lang)}
-              </button>
-            </div>
+            <ApercuPro
+              titre={t('jm_plan_pro', lang)}
+              accroche={t('jm_plan_pro_desc', lang)}
+              points={avantagesPro}
+              formules={formulesPro}
+              isMobile={isMobile}
+            />
           </div>
         )}
 

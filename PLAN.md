@@ -295,7 +295,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - Non vérifié par moi : le rendu sur un vrai téléphone, et notamment que les cinq libellés tiennent sans être coupés en petite largeur. C'est le point le plus fragile de ce bloc.
 
 ### Bloc 7 : upsell Pro, remplacer les murs par des aperçus (optionnel mais recommandé)
-- Statut : à faire
+- Statut : fait
 - Objectif : les pages entières `UpgradeCard` deviennent des aperçus désirables avec `ApercuPro`.
 - Résultat testable : sur le compte affilié, les onglets Nutrition, Analyses, Feed et Messagerie recruteurs montrent ce que Pro apporte au lieu d'un mur de blocage.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -310,7 +310,12 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur le compte affilié.
 - Ce que je teste pour valider : j'ouvre Nutrition et Analyses sur le compte affilié : je comprends ce que Pro m'apporte, et le bouton fonctionne vraiment.
 - Reste à finir :
-- Journal :
+  - Quatre `UpgradeCard` subsistent aux lignes 3206 à 3268 : elles sont **dans la branche affiliée, qui n'est plus atteinte**. Inutile de les retravailler tant que cet écran dort.
+- Journal : 2026-10-29, exécuté en Opus 5.
+  - Les deux murs de l'écran réellement utilisé sont remplacés par `ApercuPro` : la page **Nutrition** (qui affichait un `UpgradeCard`) et la page **Messagerie recruteurs** (qui affichait un gros cadenas et un bouton).
+  - **L'offre est désormais définie une seule fois** dans le composant (`avantagesPro` et `formulesPro`) et consommée par les quatre aperçus. Vérifié par comptage : « 100 € par an » n'apparaît plus qu'à un seul endroit du fichier. Un prix ou un argument ne peut plus diverger d'un écran à l'autre.
+  - Le mur Messagerie envoyait vers l'offre annuelle sans afficher de prix : il présente maintenant les deux formules avec leurs prix et leurs conditions réelles.
+  - Lint : 10 problèmes, exactement les préexistants. Build : 628 ms, un seul avertissement.
 
 ### Bloc 8 : vérification finale, nettoyage et mise en ligne
 - Statut : à faire
