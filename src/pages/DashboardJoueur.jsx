@@ -2335,7 +2335,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           </div>
         </aside>
 
-        <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto', paddingBottom: 80 }}>
+        <main style={{ flex: 1, minWidth: 0, padding: isMobile ? '16px 14px' : '32px 36px', paddingTop: isMobile ? 'calc(64px + env(safe-area-inset-top, 0px))' : '32px', overflowY: 'auto', paddingBottom: 80 }}>
           {!readOnly && (
             <div style={{ marginBottom: '16px', borderRadius: '10px', overflow: 'hidden' }}>
               <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />
@@ -2344,7 +2344,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {isMobile && (
             <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
               style={{
-                position: 'sticky', top: 0, zIndex: 35, marginBottom: spacing['2xl'],
+                position: 'fixed', top: `calc(${spacing.lg} + env(safe-area-inset-top, 0px))`, left: spacing.lg, zIndex: 35,
                 background: colors.background.surface, border: `1px solid ${colors.border.subtle}`,
                 color: colors.text.primary, borderRadius: '999px', width: '40px', height: '40px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
@@ -3695,14 +3695,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: 80 }}>
+      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: 80, paddingTop: isMobile ? 'calc(64px + env(safe-area-inset-top, 0px))' : 0 }}>
 
         {!readOnly && <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />}
 
         {isMobile && (
           <button onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu"
               style={{
-                position: 'sticky', top: 'env(safe-area-inset-top, 0px)', zIndex: 35, margin: `calc(12px + env(safe-area-inset-top, 0px)) 0 0 ${spacing['2xl']}`,
+                position: 'fixed', top: `calc(${spacing.lg} + env(safe-area-inset-top, 0px))`, left: spacing.lg, zIndex: 35,
                 background: colors.background.surface, border: `1px solid ${colors.border.subtle}`,
                 color: colors.text.primary, borderRadius: '999px', width: '40px', height: '40px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
