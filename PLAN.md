@@ -233,8 +233,8 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - **Écart au plan assumé, et c'est le point important** : `JaugeSaison` n'a **pas** été ajoutée ici. Cet écran a déjà le cercle de présence, les tuiles buts/passes/minutes/note et le bloc « Mes évaluations coach » : la jauge aurait raconté une troisième fois la même saison. Kevin venait précisément de faire retirer « Ma semaine » pour cette raison (2026-10-29). Le bloc a donc été recentré sur la finition : couleurs, emojis, largeurs.
   - Lint : 10 problèmes, exactement les préexistants, aucun nouveau. Build : 572 ms, un seul avertissement. Bundle joueur 425,92 → 426,23 kB.
 
-### Bloc 6 : navigation, barre latérale harmonisée et barre d'onglets mobile
-- Statut : fait pour la barre d'onglets, **une étape laissée de côté** (voir ci-dessous)
+### Bloc 6 : navigation (barre d'onglets abandonnée, menu coulissant conservé)
+- Statut : **barre d'onglets abandonnée par Kevin le 2026-10-29.** Harmonisation des deux menus latéraux : à faire, non commencée.
 - Objectif : une seule barre latérale pour les deux variantes, et une barre d'onglets en bas sur mobile, présente partout dans l'espace joueur.
 - Résultat testable : sur téléphone, je navigue dans tout l'espace joueur avec le pouce, sans ouvrir le menu, et aucun bouton de bas de page n'est caché par la barre.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -251,10 +251,11 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
   - `npm run build`, test réel sur les deux comptes, téléphone surtout, deux thèmes.
 - Ce que je teste pour valider : sur mon téléphone, je passe par les 5 onglets de la barre sur les deux comptes, puis j'ouvre « Plus » et je vérifie 3 onglets internes avec un bouton en bas : rien n'est caché.
 - Reste à finir :
-  - **Harmonisation des deux barres latérales : NON FAITE.** Les styles, espacements et états actifs des deux tiroirs n'ont pas été rapprochés. Ce n'est pas bloqué, c'est un choix : la barre d'onglets touchait déjà tous les onglets des deux variantes, et toucher en plus les deux tiroirs dans le même bloc multipliait le risque de casser la navigation. À reprendre dans un bloc dédié.
-  - **Question ouverte pour Kevin** : sur l'écran d'accueil en téléphone, la barre d'onglets (56 px) et la bannière sponsor (56 px) occupent ensemble 112 px de hauteur. C'est beaucoup sur un petit écran. Trois issues possibles : garder les deux empilées (état actuel), masquer la bannière sponsor sur téléphone, ou ne pas afficher la barre d'onglets sur l'écran d'accueil. C'est une décision commerciale autant que visuelle.
+  - **C'est désormais tout le bloc 6 restant : harmoniser les deux menus latéraux** (styles, espacements, états actifs), puisque le menu coulissant devient la seule navigation. NON FAIT.
+  - ~~Harmonisation reportée~~ : Les styles, espacements et états actifs des deux tiroirs n'ont pas été rapprochés. Ce n'est pas bloqué, c'est un choix : la barre d'onglets touchait déjà tous les onglets des deux variantes, et toucher en plus les deux tiroirs dans le même bloc multipliait le risque de casser la navigation. À reprendre dans un bloc dédié.
   - `FloatingHelper` flotte à 28 px du bas avec un niveau d'empilement de 900 : il passe donc au-dessus de la barre et de la bannière. C'était déjà le cas avant ce bloc avec la seule bannière, donc ce n'est pas une régression, mais à regarder sur un vrai téléphone.
-- Journal : 2026-10-29, exécuté en Opus 5.
+- Journal : 2026-10-29, exécuté en Opus 5. **Barre d'onglets construite, testée sur téléphone par Kevin, puis retirée à sa demande : il préfère le menu coulissant.** Son code reste récupérable dans l'historique Git au commit `b031d2c`, le fichier a été sorti du projet pour ne pas laisser de code mort. Marges basses rendues à leur valeur d'origine.
+  - **Information utile conservée de ce bloc** : `SponsorsBar` est en `position: fixed`, `bottom: 0`, `zIndex: 30`, hauteur 56 px sur téléphone, et n'est affichée que sur l'écran d'accueil. Tout futur élément fixé en bas entrera en conflit avec elle.
   - `BarreOnglets.jsx` créé : 56 px plus la zone sûre du bas, cinq boutons, libellé tronqué proprement si besoin, état actif en vert, `aria-current` sur l'onglet courant. Niveau d'empilement 30, c'est-à-dire au-dessus du contenu mais **sous** le voile (40) et le tiroir (50), pour que la barre passe derrière le menu quand il s'ouvre.
   - Destinations, conformes au brief. Affilié : Accueil, Mon équipe, Compétition, Mes stats, Plus. Autre variante : Accueil, Mes stats, Analyses, Explorer, Plus. Les identifiants d'onglet ont été relevés dans les deux listes de navigation du fichier, pas devinés. « Plus » ouvre le tiroir existant, aucune destination n'est retirée.
   - **Conflit trouvé et réglé** : `SponsorsBar` est déjà en `position: fixed`, `bottom: 0`, `zIndex: 30`, hauteur 56 px sur téléphone, exactement la même place que la nouvelle barre. Elles se seraient superposées. La barre reçoit donc un décalage de 56 px, mais **uniquement sur l'écran d'accueil**, seul endroit où la bannière est affichée (`onglet === 'accueil' || onglet === 'dashboard'`, ligne unique en fin de composant).
