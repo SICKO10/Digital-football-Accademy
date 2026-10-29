@@ -337,7 +337,7 @@ Puis lire seulement la plage utile avec `sed -n 'X,Yp'`.
 - Reste à finir :
   - **Branche `sponsors-en-attente`** : elle garde le commit `fix(sponsors): droits vérifiés et conversion sans doublon sur les prospects`, qui n'a jamais été déployé et que Kevin a voulu laisser de côté. Il est intact, récupérable avec `git cherry-pick`. Ne pas supprimer cette branche sans son accord.
   - Le correctif du bouton de menu (passage en position fixe) a été poussé **sans que Kevin l'ait vu**, à sa demande de pousser tout de suite. À regarder en priorité en production.
-  - Les blocs 2 et 3 sont en production mais toujours jamais vus : l'écran affilié n'est pas atteignable.
+  - ~~Écran affilié~~ : **Kevin a décidé le 2026-10-29 de ne pas le rouvrir.** Les blocs 2 et 3 sont en production, propres, et dorment définitivement. Ne plus proposer de l'ouvrir aux comptes starter.
 - Journal : 2026-10-29.
   - Vérifications finales : **0 couleur en dur** dans les 7 composants du socle et dans les deux écrans refaits ; **0 emoji** dans ces écrans ; lint à 10 problèmes, exactement les préexistants du bloc 0 ; build en 676 ms avec un seul avertissement, le même qu'au bloc 0. Bundle joueur 421,03 → 426,69 kB.
   - **Découverte au moment de pousser** : le dépôt local contenait un commit antérieur jamais déployé touchant 261 lignes de `GestionSponsors.jsx`, sur les droits d'accès. Signalé à Kevin, qui a demandé de le laisser de côté.
