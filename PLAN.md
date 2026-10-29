@@ -116,7 +116,7 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
 - Ce que je teste : le fil d'actualité, l'envoi d'une vidéo, la page des offres.
 
 ### Bloc 3 : page Compétition
-- Statut : à faire
+- Statut : fait (2026-10-29)
 - Objectif : refaire la page Compétition sur le socle visuel.
 - Résultat testable : la page a la même allure que l'accueil, classement et matchs lisibles sur téléphone.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -128,6 +128,27 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
   - Classement : colonnes figées ou défilement horizontal avec le repère de défilement déjà utilisé sur la semaine.
   - Zéro couleur en dur, vérifié par comptage.
 - Ce que je teste : la page sur téléphone, dans les deux thèmes.
+
+
+**Journal du bloc 3** — 2026-10-29, Opus 5 (session non repartie à neuf, le `/clear` n'avait pas pris effet).
+
+**Écart majeur : il n'y a pas de classement dans cette page.** Le plan prévoyait « colonnes figées ou défilement horizontal » pour un tableau de classement. Ce tableau n'existe pas : la page n'a qu'un lien `lienClassementCompetition` vers le site de la ligue, saisi par l'éducateur dans son profil. Aucune table de classement en base. L'étape est donc sans objet, et je ne l'ai pas inventée.
+
+**Ce que j'ai mis à la place, pour que le bloc serve à quelque chose** : un *Bilan de la saison* en quatre `TuileChiffre` (matchs joués, victoires, nuls, défaites) plus une ligne buts marqués / encaissés. C'est le « chiffres sur TuileChiffre » que le plan demandait, et la page n'avait jusqu'ici aucune vue d'ensemble : juste deux listes mois par mois. Le bilan suit le filtre de compétition, les chiffres correspondent donc toujours à ce qui est listé dessous.
+
+**Reconstruction sur le socle**
+- Cadre identique à l'accueil : 980 px centrés, padding 16 px mobile et 24/40 px desktop.
+- Trois `Carte`, trois `TitreSection`, `EmptyState compact` pour chaque liste vide. Plus un seul fond, bord ou rayon écrit à la main.
+- Une seule carte accentuée, celle des prochains matchs : c'est la seule information sur laquelle le joueur a quelque chose à faire.
+- Le lien vers le classement de la ligue n'a plus sa propre carte : c'est un bouton secondaire dans l'en-tête. Il mène à un site extérieur, il n'a pas à peser autant que le contenu de l'équipe.
+- Lisibilité au pouce : l'en-tête, la navigation par mois et les lignes de match passent à la ligne au lieu de pousser le score hors de l'écran. Bilan en 2 colonnes sur téléphone, 4 sur ordinateur.
+- Corrigé au passage : les dates étaient forcées en `fr-FR`. Elles suivent maintenant `localeOf(lang)` comme le reste de l'application.
+
+**Vérifications** : 0 couleur en dur et 0 émoticône dans la fonction, comptés et non regardés (les six `rgba(...)` et le `#facc15` ont disparu). `npm run build` vert. `npx eslint` sur les sept fichiers du chantier : aucune alerte nouvelle, celles qui restent sont des règles react-hooks d'avant le chantier, dans des zones non touchées (vérifié en comparant au commit `51aa42e`).
+
+**Reste à finir**
+- `renduCompetition` est partagé avec la branche `estAffilie`, qui est morte (plan `fan` refusé en base). Le nouveau rendu y est donc aussi, sans effet visible. Rien à faire, juste à savoir.
+- [IDÉE] Un vrai classement interne est possible sans site extérieur : les résultats de toutes les équipes d'une même catégorie sont déjà en base (`matchs_equipe`). Ce serait un bloc à part entière, avec une décision de périmètre (quelles équipes, quelle catégorie). À reproposer seulement si Kevin le demande.
 
 ### Bloc 4 : Mon profil désencombré
 - Statut : à faire

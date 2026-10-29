@@ -1901,134 +1901,241 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // (plan fan affilié vs dashboard principal) pour ne pas dupliquer le rendu.
   const renduCompetition = () => {
     const hasAffiliation = mesAffiliations.some(a => a.statut === 'accepte')
+    const cadre = { padding: isMobile ? '16px' : '24px 40px', maxWidth: '980px', margin: '0 auto' }
+
     if (!hasAffiliation) {
       return (
-        <div style={{ padding: '24px 20px' }}>
-          <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><IconTrophy />{t('jnav_competition', lang)}</span></h2>
-          <p style={{ color: colors.text.dim, fontSize: '13px' }}>Rejoins une équipe (onglet "{t('jnav_equipe', lang)}") pour voir ses résultats, son calendrier et son classement.</p>
+        <div style={cadre}>
+          <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '48px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing['2xl'], color: colors.icon.muted }}>
+              <IconTrophy size={40} />
+            </div>
+            <p style={{ margin: 0, fontSize: fontSize['3xl'], fontWeight: 800 }}>{t('jnav_competition', lang)}</p>
+            <p style={{ margin: `${spacing.md} auto 0`, maxWidth: '340px', fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.6 }}>
+              Rejoins ton équipe pour suivre ici son calendrier, ses résultats et son bilan de saison.
+            </p>
+            <button onClick={() => setOnglet('equipe')} style={{ ...st.btnSolid(), marginTop: spacing['3xl'] }}>
+              {t('jnav_equipe', lang)}
+            </button>
+          </Carte>
         </div>
       )
     }
-    return (
-      <div style={{ padding: '24px 20px' }}>
-        <h2 style={{ color: colors.text.primary, fontWeight: 800, marginBottom: '16px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><IconTrophy />{t('jnav_competition', lang)}</span></h2>
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          {FILTRES_COMPETITION.map(f => (
-            <button key={f.id} onClick={() => setFiltreCompCompetition(f.id)} style={{
-              padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-              background: filtreCompCompetition === f.id ? colors.accent.green : colors.background.raised,
-              color: filtreCompCompetition === f.id ? colors.black : colors.text.faint,
-              border: `1px solid ${filtreCompCompetition === f.id ? colors.accent.green : colors.border.default}`,
-            }}>{f.label}</button>
-          ))}
+    // Bilan de la saison : calculé sur les matchs joués, filtre de compétition
+    // compris, pour que les chiffres correspondent toujours à ce qui est
+    // affiché juste en dessous.
+    const resultatsFiltres = resultatsCompetition.filter(r => matchCorrespondFiltreComp(r, filtreCompCompetition))
+    const bilan = resultatsFiltres.reduce((acc, r) => {
+      const nous = Number(r.score_nous)
+      const eux = Number(r.score_eux)
+      acc.joues += 1
+      acc.pour += nous
+      acc.contre += eux
+      if (nous > eux) acc.v += 1
+      else if (nous === eux) acc.n += 1
+      else acc.d += 1
+      return acc
+    }, { joues: 0, v: 0, n: 0, d: 0, pour: 0, contre: 0 })
+
+    const stylePastille = (couleur) => ({
+      fontSize: fontSize.base,
+      fontWeight: 700,
+      padding: `${spacing.xs} ${spacing.base}`,
+      borderRadius: radius.base,
+      background: couleur + alpha.subtle,
+      color: couleur,
+      whiteSpace: 'nowrap',
+      flexShrink: 0,
+    })
+
+    const styleBtnMois = {
+      background: 'transparent',
+      border: `1px solid ${colors.border.subtle}`,
+      color: colors.text.faint,
+      width: '28px', height: '28px',
+      borderRadius: radius.md,
+      cursor: 'pointer',
+      fontSize: fontSize.xl,
+      lineHeight: 1,
+      fontFamily: 'Inter, sans-serif',
+    }
+
+    const navMois = (libelle, reculer, avancer) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, flexShrink: 0 }}>
+        <button onClick={reculer} aria-label="Mois précédent" style={styleBtnMois}>‹</button>
+        <span style={{ fontSize: fontSize.md, fontWeight: 700, color: colors.text.secondary, minWidth: '92px', textAlign: 'center', textTransform: 'capitalize' }}>
+          {libelle}
+        </span>
+        <button onClick={avancer} aria-label="Mois suivant" style={styleBtnMois}>›</button>
+      </div>
+    )
+
+    // Une ligne de match : le nom passe à la ligne sur téléphone plutôt que
+    // de pousser le score hors de l'écran.
+    const ligneMatch = (cle, adversaire, domicile, detail, droite) => (
+      <div key={cle} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: spacing.lg, padding: `${spacing.base} 0`,
+        borderBottom: `1px solid ${colors.border.subtle}`,
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 600, color: colors.text.primary, fontSize: fontSize.xl }}>
+            {domicile ? 'vs ' : '@ '}{adversaire}
+          </div>
+          <div style={{ fontSize: fontSize.md, color: colors.text.dim, marginTop: '2px' }}>{detail}</div>
+        </div>
+        {droite}
+      </div>
+    )
+
+    const moisCalendrier = calendrierCompetition.filter(m => {
+      const d = new Date(m.date + 'T12:00:00')
+      return d.getFullYear() === moisCalendrierCompetition.getFullYear()
+        && d.getMonth() === moisCalendrierCompetition.getMonth()
+        && matchCorrespondFiltreComp(m, filtreCompCompetition)
+    })
+    const changerMoisCalendrier = (delta) => setMoisCalendrierCompetition(prev => {
+      const d = new Date(prev); d.setMonth(d.getMonth() + delta); return d
+    })
+
+    const moisEffectif = moisResultatsCompetition || (() => {
+      const base = resultatsCompetition[0] ? new Date(resultatsCompetition[0].date + 'T12:00:00') : new Date()
+      base.setDate(1); base.setHours(0, 0, 0, 0)
+      return base
+    })()
+    const moisResultats = resultatsFiltres.filter(r => {
+      const d = new Date(r.date + 'T12:00:00')
+      return d.getFullYear() === moisEffectif.getFullYear() && d.getMonth() === moisEffectif.getMonth()
+    })
+    const changerMoisResultats = (delta) => setMoisResultatsCompetition(() => {
+      const d = new Date(moisEffectif); d.setMonth(d.getMonth() + delta); return d
+    })
+
+    return (
+      <div style={cadre}>
+        {/* En-tête : le titre, puis le lien vers le classement de la ligue,
+            qui est un site extérieur et n'a donc pas besoin d'une carte. */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing['2xl'], flexWrap: 'wrap', marginBottom: spacing['4xl'] }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.3px' }}>
+              {t('jnav_competition', lang)}
+            </h2>
+            <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.lg, color: colors.text.faint }}>
+              Le calendrier, les résultats et le bilan de ton équipe.
+            </p>
+          </div>
+          {lienClassementCompetition && (
+            <a href={lienClassementCompetition} target="_blank" rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: spacing.sm, flexShrink: 0,
+                background: 'transparent', color: colors.text.secondary,
+                border: `1px solid ${colors.border.default}`,
+                padding: `${spacing.base} ${spacing['2xl']}`, borderRadius: radius.lg,
+                fontWeight: 700, fontSize: fontSize.lg, textDecoration: 'none',
+              }}>
+              <IconLink size={14} />Classement officiel
+            </a>
+          )}
         </div>
 
-        {lienClassementCompetition && (
-          <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', marginBottom: '20px', border: `1px solid ${colors.border.subtle}` }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: colors.accent.green, marginBottom: '10px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconLink size={14} />Classement officiel</span></div>
-            <a href={lienClassementCompetition} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.green, color: colors.background.base, padding: '10px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconTrophy size={14} />Voir le classement ↗</span>
-            </a>
+        {/* Filtres de compétition */}
+        <div style={{ display: 'flex', gap: spacing.sm, marginBottom: spacing['4xl'], flexWrap: 'wrap' }}>
+          {FILTRES_COMPETITION.map(f => {
+            const actif = filtreCompCompetition === f.id
+            return (
+              <button key={f.id} onClick={() => setFiltreCompCompetition(f.id)} style={{
+                padding: `${spacing.sm} ${spacing.xl}`, borderRadius: radius.pill,
+                fontSize: fontSize.md, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                background: actif ? colors.accent.green : colors.background.raised,
+                color: actif ? colors.black : colors.text.faint,
+                border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
+              }}>{f.label}</button>
+            )
+          })}
+        </div>
+
+        {/* Bilan de la saison */}
+        <Carte isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+          <TitreSection>Bilan de la saison</TitreSection>
+          {bilan.joues === 0 ? (
+            <EmptyState compact title="Aucun match joué pour l'instant" />
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: spacing.lg }}>
+                <TuileChiffre valeur={bilan.joues} libelle="Matchs joués" isMobile={isMobile} />
+                <TuileChiffre valeur={bilan.v} libelle="Victoires" couleur={colors.accent.green} isMobile={isMobile} />
+                <TuileChiffre valeur={bilan.n} libelle="Nuls" couleur={colors.accent.amber} isMobile={isMobile} />
+                <TuileChiffre valeur={bilan.d} libelle="Défaites" couleur={colors.accent.red} isMobile={isMobile} />
+              </div>
+              <p style={{ margin: `${spacing['2xl']} 0 0`, fontSize: fontSize.lg, color: colors.text.faint }}>
+                {bilan.pour} but{bilan.pour > 1 ? 's' : ''} marqué{bilan.pour > 1 ? 's' : ''} · {bilan.contre} encaissé{bilan.contre > 1 ? 's' : ''}
+              </p>
+            </>
+          )}
+        </Carte>
+
+        {/* Calendrier — la seule carte accentuée de l'écran : c'est la seule
+            information sur laquelle le joueur a quelque chose à faire. */}
+        <Carte accent={colors.accent.blue} isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, flexWrap: 'wrap', marginBottom: spacing.lg }}>
+            <TitreSection couleur={colors.accent.blue} style={{ margin: 0 }}>Prochains matchs</TitreSection>
+            {navMois(
+              moisCalendrierCompetition.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' }),
+              () => changerMoisCalendrier(-1),
+              () => changerMoisCalendrier(1),
+            )}
           </div>
-        )}
+          {moisCalendrier.length === 0 ? (
+            <EmptyState compact title="Aucun match ce mois-ci" />
+          ) : moisCalendrier.map(m => ligneMatch(
+            m.id,
+            m.adversaire,
+            m.domicile,
+            [
+              new Date(m.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short' }),
+              m.heure,
+              m.competition,
+            ].filter(Boolean).join(' · '),
+            <span style={stylePastille(m.domicile ? colors.accent.green : colors.accent.blue)}>
+              {m.domicile ? 'Domicile' : 'Extérieur'}
+            </span>,
+          ))}
+        </Carte>
 
-        {(() => {
-          const moisMatchs = calendrierCompetition.filter(m => {
-            const d = new Date(m.date + 'T12:00:00')
-            return d.getFullYear() === moisCalendrierCompetition.getFullYear() && d.getMonth() === moisCalendrierCompetition.getMonth() && matchCorrespondFiltreComp(m, filtreCompCompetition)
-          })
-          const changerMois = (delta) => setMoisCalendrierCompetition(prev => {
-            const d = new Date(prev); d.setMonth(d.getMonth() + delta); return d
-          })
-          return (
-            <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', marginBottom: '20px', border: `1px solid ${colors.border.subtle}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCalendar size={14} />Prochains matchs</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
-                    style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '90px', textAlign: 'center', textTransform: 'capitalize' }}>
-                    {moisCalendrierCompetition.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                  </span>
-                  <button onClick={() => changerMois(1)} aria-label="Mois suivant"
-                    style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>›</button>
-                </div>
-              </div>
-              {moisMatchs.length === 0 ? (
-                <EmptyState compact title="Aucun match ce mois-ci" />
-              ) : moisMatchs.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                  <div>
-                    <div style={{ fontWeight: 600, color: colors.text.primary, fontSize: '14px' }}>{m.domicile ? 'vs ' : '@ '}{m.adversaire}</div>
-                    <div style={{ fontSize: '12px', color: colors.text.dim, marginTop: '2px' }}>
-                      {new Date(m.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {m.heure ? ` · ${m.heure}` : ''}
-                      {m.competition ? ` · ${m.competition}` : ''}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: m.domicile ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.15)', color: m.domicile ? colors.accent.green : colors.accent.blue }}>
-                    {m.domicile ? 'Domicile' : 'Extérieur'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )
-        })()}
-
-        {(() => {
-          const moisEffectif = moisResultatsCompetition || (() => {
-            const base = resultatsCompetition[0] ? new Date(resultatsCompetition[0].date + 'T12:00:00') : new Date()
-            base.setDate(1); base.setHours(0, 0, 0, 0)
-            return base
-          })()
-          const moisResultats = resultatsCompetition.filter(r => {
-            const d = new Date(r.date + 'T12:00:00')
-            return d.getFullYear() === moisEffectif.getFullYear() && d.getMonth() === moisEffectif.getMonth() && matchCorrespondFiltreComp(r, filtreCompCompetition)
-          })
-          const changerMois = (delta) => setMoisResultatsCompetition(() => {
-            const d = new Date(moisEffectif); d.setMonth(d.getMonth() + delta); return d
-          })
-          return (
-            <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '16px', border: `1px solid ${colors.border.subtle}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconBall size={14} />Derniers résultats</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button onClick={() => changerMois(-1)} aria-label="Mois précédent"
-                    style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>‹</button>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '90px', textAlign: 'center', textTransform: 'capitalize' }}>
-                    {moisEffectif.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                  </span>
-                  <button onClick={() => changerMois(1)} aria-label="Mois suivant"
-                    style={{ background: 'transparent', border: `1px solid ${colors.border.subtle}`, color: colors.text.faint, width: '26px', height: '26px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>›</button>
-                </div>
-              </div>
-              {moisResultats.length === 0 ? (
-                <EmptyState compact title="Aucun résultat ce mois-ci" />
-              ) : moisResultats.map(r => {
-                const scoreNous = Number(r.score_nous)
-                const scoreEux = Number(r.score_eux)
-                const victoire = scoreNous > scoreEux
-                const nul = scoreNous === scoreEux
-                return (
-                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: colors.text.primary, fontSize: '14px' }}>{r.domicile ? 'vs ' : '@ '}{r.adversaire}</div>
-                      <div style={{ fontSize: '12px', color: colors.text.dim, marginTop: '2px' }}>{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 800, color: colors.text.primary }}>{r.score_nous} - {r.score_eux}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', background: victoire ? 'rgba(74,222,128,0.15)' : nul ? 'rgba(250,204,21,0.15)' : 'rgba(239,68,68,0.15)', color: victoire ? colors.accent.green : nul ? '#facc15' : colors.accent.red }}>
-                        {victoire ? 'V' : nul ? 'N' : 'D'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })()}
+        {/* Résultats */}
+        <Carte isMobile={isMobile}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, flexWrap: 'wrap', marginBottom: spacing.lg }}>
+            <TitreSection style={{ margin: 0 }}>Derniers résultats</TitreSection>
+            {navMois(
+              moisEffectif.toLocaleDateString(localeOf(lang), { month: 'long', year: 'numeric' }),
+              () => changerMoisResultats(-1),
+              () => changerMoisResultats(1),
+            )}
+          </div>
+          {moisResultats.length === 0 ? (
+            <EmptyState compact title="Aucun résultat ce mois-ci" />
+          ) : moisResultats.map(r => {
+            const nous = Number(r.score_nous)
+            const eux = Number(r.score_eux)
+            const couleur = nous > eux ? colors.accent.green : nous === eux ? colors.accent.amber : colors.accent.red
+            return ligneMatch(
+              r.id,
+              r.adversaire,
+              r.domicile,
+              new Date(r.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' }),
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.base, flexShrink: 0 }}>
+                <span style={{ fontSize: fontSize['3xl'], fontWeight: 800, color: colors.text.primary, whiteSpace: 'nowrap' }}>
+                  {r.score_nous} - {r.score_eux}
+                </span>
+                <span style={stylePastille(couleur)}>
+                  {nous > eux ? 'V' : nous === eux ? 'N' : 'D'}
+                </span>
+              </div>,
+            )
+          })}
+        </Carte>
       </div>
     )
   }
