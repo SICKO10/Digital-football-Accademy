@@ -1361,6 +1361,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     setSequences(synced)
     setPlaying(true)
     setSelectedId(null)
+    // « Lire » prévisualise l'animation complète : elle repart toujours de
+    // la première étape, même si l'éducateur est en train d'en consulter une
+    // autre (ex. la dernière, juste construite) — sinon animateStep(etapeActive)
+    // ne jouait que les étapes suivantes, donnant l'impression que les
+    // précédentes avaient été sautées/oubliées (ou, en étant sur la dernière
+    // étape, qu'un clic sur « Lire » ne faisait rien du tout).
+    setEtapeActive(0)
+    setElements(synced[0] || [])
 
     // Capturer au moment du play (évite les stale closures dans rAF)
     const seqs = synced
@@ -1417,7 +1425,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       animRef.current = requestAnimationFrame(frame)
     }
 
-    animateStep(etapeActive)
+    animateStep(0)
   }
 
   const stopLecture = () => {
