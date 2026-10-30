@@ -151,7 +151,7 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
 - [IDÉE] Un vrai classement interne est possible sans site extérieur : les résultats de toutes les équipes d'une même catégorie sont déjà en base (`matchs_equipe`). Ce serait un bloc à part entière, avec une décision de périmètre (quelles équipes, quelle catégorie). À reproposer seulement si Kevin le demande.
 
 ### Bloc 4 : Mon profil désencombré
-- Statut : **fait, en attente de ta validation** (inventaire et réorganisation faits le 2026-10-29, test visuel à faire par Kevin)
+- Statut : **fait et validé par Kevin** (2026-10-30, en production)
 - Objectif : la page profil est surchargée. La réorganiser en sections claires sans rien retirer de fonctionnel.
 - Résultat testable : je trouve une information précise en moins de cinq secondes.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -223,7 +223,7 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
 **Règle de vérification pour la session d'exécution** : relancer le relevé par script après la réorganisation et comparer au tableau ci-dessus. Les 16 champs contrôlés, les 6 bascules et les 11 actions doivent tous être encore là. Puis modifier une information, enregistrer, recharger.
 
 ### Bloc 5 : Santé et Préparation tactique
-- Statut : **fait, en attente de ta validation** (2026-10-29, test visuel à faire par Kevin)
+- Statut : **fait et validé par Kevin** (2026-10-30, en production)
 - Objectif : ces deux pages paraissent vides ou brouillonnes. Leur donner une structure et un état vide digne.
 - Résultat testable : même sans données, les deux pages expliquent à quoi elles servent au lieu d'être blanches.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
