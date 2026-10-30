@@ -26,6 +26,7 @@ const IcoDisquette = () => sv(<><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l
 const IcoLien = () => sv(<><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></>, 13)
 const IcoJoueurs = () => sv(<><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></>, 13)
 const IcoSchema = () => sv(<><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="12" r="3"/></>, 18)
+const IcoCrayon = () => sv(<><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></>, 13)
 
 const COULEURS = [
   { val: '#4ade80', label: 'Vert' },
@@ -1553,6 +1554,15 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     await chargerSchemas()
   }
 
+  const renommerSchema = async (s) => {
+    const nouveauNom = prompt('Renommer le schéma :', s.nom || '')
+    if (nouveauNom === null || !nouveauNom.trim() || nouveauNom.trim() === s.nom) return
+    const { error } = await supabase.from('tactipads').update({ nom: nouveauNom.trim() }).eq('id', s.id)
+    if (error) { alert('Erreur lors du renommage : ' + error.message); return }
+    if (currentSchemaId === s.id) setNomSchema(nouveauNom.trim())
+    await chargerSchemas()
+  }
+
   const partagerSchema = async (id) => {
     const slug = Math.random().toString(36).substring(2, 10)
     const { error } = await supabase.from('tactipads').update({ partage: true, partage_slug: slug }).eq('id', id)
@@ -2474,6 +2484,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <button onClick={() => chargerSchema(s)} style={{ ...btnPetit('#60a5fa', true) }}>{enCours ? 'Ouvert' : 'Ouvrir'}</button>
                         {!lectureSeule && <>
+                        <button onClick={() => renommerSchema(s)} title="Renommer" style={btnPetit(colors.text.secondary, false)}><IcoCrayon />Renommer</button>
                         <button onClick={() => toggleVisibleJoueurs(s)} title={s.visible_joueurs ? 'Visible par les joueurs — cliquer pour masquer' : 'Rendre visible aux joueurs'} style={btnPetit('#4ade80', s.visible_joueurs)}>
                           <IcoJoueurs />{s.visible_joueurs ? 'Visible' : 'Masqué'}
                         </button>
