@@ -6,6 +6,7 @@ import { supabase, signOutSafe } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors, alpha } from '../tokens'
+import { IconBall, IconVideo, IconCheckCircle, IconAlert, IconFolder, IconCheck } from '../components/icones'
 
 // Destinataires (coachs analyseurs = admins_coach) calculés côté serveur par
 // /api/send-coach-email : l'email des autres comptes n'est plus lisible ici,
@@ -305,7 +306,7 @@ export default function Upload() {
   return (
     <div style={s.page}>
       <nav style={s.nav}>
-        <span style={s.logo} onClick={() => navigate('/')}>⚽ Digital Football</span>
+        <span style={s.logo} onClick={() => navigate('/')}><span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: '6px' }}><IconBall size={18} /></span>Digital Football</span>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button onClick={() => navigate('/dashboard')}
             style={{ background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
@@ -320,7 +321,7 @@ export default function Upload() {
 
       <div style={s.container}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-          {t('upload_partage_ta_video', lang)} <span style={{ color: colors.accent.green }}>🎬</span>
+          {t('upload_partage_ta_video', lang)} <span style={{ color: colors.accent.green, display: 'inline-flex', verticalAlign: 'middle' }}><IconVideo size={26} /></span>
         </h1>
         <p style={{ color: colors.text.dim, marginBottom: '1.5rem', fontSize: '14px' }}>
           {t('upload_clip_desc', lang)}
@@ -328,12 +329,12 @@ export default function Upload() {
 
         {/* Quota analyses */}
         <div style={s.quotaBadge(analysesRestantes)}>
-          {peutEnvoyer ? `✅ ${analysesRestantes} ${t('upload_analyses_restantes_suffix', lang)}` : `❌ ${t('upload_plus_analyses', lang)}`}
+          {peutEnvoyer ? `${analysesRestantes} ${t('upload_analyses_restantes_suffix', lang)}` : t('upload_plus_analyses', lang)}
         </div>
 
         {success ? (
           <div style={{ ...s.box, border: '2px solid #4ade80', textAlign: 'center', padding: '3rem' }}>
-            <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</p>
+            <p style={{ marginBottom: '1rem', color: colors.accent.green, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={56} /></p>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_video_envoyee', lang)}</h2>
             <p style={{ color: colors.text.dim, marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_clip_visible_recruteurs', lang)}</p>
             <p style={{ color: colors.accent.green, marginBottom: '0.5rem', fontSize: '14px' }}>{t('upload_demande_creee_coach', lang)}</p>
@@ -355,7 +356,7 @@ export default function Upload() {
           </div>
         ) : !peutEnvoyer ? (
           <div style={{ ...s.box, border: '1px solid #f9731640', textAlign: 'center', padding: '3rem' }}>
-            <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</p>
+            <p style={{ marginBottom: '1rem', color: colors.accent.orange, display: 'flex', justifyContent: 'center' }}><IconAlert size={52} /></p>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('upload_quota_epuise', lang)}</h2>
             <p style={{ color: colors.text.dim, fontSize: '14px', marginBottom: '1.5rem' }}>
               {t('upload_quota_epuise_desc', lang)}<br />{t('upload_reviens_ou_upgrade', lang)}
@@ -392,9 +393,9 @@ export default function Upload() {
                     {t('upload_plateformes_acceptees_title', lang)}
                   </p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {['Veo ✓', 'YouTube ✓', 'Google Drive ✓', 'Hudl ✓'].map(p => (
+                    {['Veo', 'YouTube', 'Google Drive', 'Hudl'].map(p => (
                       <span key={p} style={{ background: colors.background.raised, border: '1px solid #333', color: colors.text.dim, padding: '4px 10px', borderRadius: '20px', fontSize: '12px' }}>
-                        {p}
+                        <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: '4px', color: colors.accent.green }}><IconCheck size={12} /></span>{p}
                       </span>
                     ))}
                   </div>
@@ -414,7 +415,7 @@ export default function Upload() {
                     borderRadius: '12px', padding: '3rem', textAlign: 'center',
                     cursor: 'pointer', background: file ? colors.accent.green + alpha.faint : 'transparent',
                   }}>
-                  <p style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{file ? '🎬' : '📁'}</p>
+                  <p style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>{file ? <IconVideo size={40} /> : <IconFolder size={40} />}</p>
                   <p style={{ fontWeight: 600, marginBottom: '4px' }}>
                     {file ? file.name : t('upload_clique_selectionner', lang)}
                   </p>
@@ -497,7 +498,7 @@ export default function Upload() {
 
             {erreur && (
               <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '1rem', textAlign: 'center' }}>
-                ❌ {erreur}
+                {erreur}
               </p>
             )}
 

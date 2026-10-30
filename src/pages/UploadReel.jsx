@@ -6,6 +6,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors, alpha } from '../tokens'
+import { IconVideo, IconCheckCircle, IconFolder } from '../components/icones'
 
 export default function UploadReel() {
   const navigate = useNavigate()
@@ -130,7 +131,7 @@ export default function UploadReel() {
   if (success) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p style={{ fontSize: '4rem' }}>🎬</p>
+        <p style={{ display: 'flex', justifyContent: 'center', color: colors.accent.green }}><IconVideo size={64} /></p>
         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{t('uploadreel_publie_titre', lang)}</h2>
         <p style={{ color: colors.text.dim, marginBottom: '2rem' }}>{t('uploadreel_publie_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -148,7 +149,7 @@ export default function UploadReel() {
         <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', border: '1px solid #333', color: colors.text.secondary, padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('upload_dashboard_retour', lang)}</button>
       </nav>
       <div style={st.content}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>🎬 {t('uploadreel_titre', lang)}</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IconVideo size={22} /> {t('uploadreel_titre', lang)}</h1>
         <p style={{ color: colors.text.dim, fontSize: '14px', margin: '0 0 1.5rem' }}>{t('uploadreel_desc', lang)}</p>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
@@ -159,7 +160,7 @@ export default function UploadReel() {
         <div style={st.card}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={st.label}>{t('upload_titre_optionnel', lang)}</label>
-            <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex: Hat-trick contre Lyon U17 🔥" style={st.input} />
+            <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex: Hat-trick contre Lyon U17" style={st.input} />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={st.label}>{t('upload_description_optionnel', lang)}</label>
@@ -180,9 +181,9 @@ export default function UploadReel() {
               <div onClick={() => document.getElementById('reel-file').click()}
                 style={{ border: '2px dashed ' + (file ? colors.accent.green : colors.border.strong), borderRadius: '12px', padding: '2rem', textAlign: 'center', cursor: 'pointer', background: file ? colors.accent.green + alpha.faint : 'transparent' }}>
                 {file ? (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>✅</p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
+                  <><p style={{ margin: '0 0 8px', color: colors.accent.green, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
                 ) : (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: colors.text.dim, fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
+                  <><p style={{ margin: '0 0 8px', display: 'flex', justifyContent: 'center', color: colors.text.dim }}><IconFolder size={32} /></p><p style={{ color: colors.text.dim, fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
                 )}
               </div>
               <input id="reel-file" type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} onChange={handleFileChange} />
@@ -197,7 +198,7 @@ export default function UploadReel() {
             </div>
           )}
 
-          {error && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>❌ {error}</p>}
+          {error && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>{error}</p>}
 
           <button onClick={mode === 'lien' ? handleSubmitLien : handleSubmitMp4} disabled={uploading}
             style={{ marginTop: '1.5rem', width: '100%', background: uploading ? colors.border.strong : colors.accent.green, color: uploading ? colors.text.dim : colors.black, border: 'none', borderRadius: '10px', padding: '14px', fontWeight: 700, fontSize: '15px', cursor: uploading ? 'not-allowed' : 'pointer' }}>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
+import { IconCheck, IconTool, IconBall, IconChart, IconBolt } from '../components/icones'
 
 const st = {
   // Fond pleine largeur (alterné par section) + wrapper interne limité en largeur —
@@ -35,7 +36,7 @@ function BadgeRecommande({ color }) {
 }
 
 function Feature({ children }) {
-  return <div style={st.feature}><span style={{ color: colors.accent.green, flexShrink: 0 }}>✓</span> {children}</div>
+  return <div style={st.feature}><span style={{ color: colors.accent.green, flexShrink: 0, display: 'inline-flex', verticalAlign: 'middle' }}><IconCheck size={14} /></span> {children}</div>
 }
 
 // Une seule card à la fois (mensuelle ou annuelle selon `cycle`, piloté par le
@@ -67,7 +68,7 @@ function OffrePro({ titre, color, features, profilId, cycle }) {
           {features.map(f => <Feature key={f}>{f}</Feature>)}
         </div>
         <button onClick={() => navigate(`/register?profil=${profilId}&cycle=${cycle}`)} style={st.cta(isAnnuel ? color : null, isAnnuel)}>
-          {isAnnuel ? 'Commencer — 100€/an' : 'Commencer — 10€/mois'}
+          {isAnnuel ? 'Commencer à 100€/an' : 'Commencer à 10€/mois'}
         </button>
       </div>
     </div>
@@ -173,10 +174,10 @@ function FormulaireClub() {
       {ouvert === 'demarrage' && (
         <>
           <p style={{ fontSize: '13px', color: colors.text.dim, margin: '0 0 4px' }}>
-            Indiquez-nous 3 créneaux dans la semaine où votre équipe est disponible — on vous recontacte pour caler le rendez-vous de démarrage.
+            Indiquez-nous 3 créneaux dans la semaine où votre équipe est disponible, on vous recontacte pour caler le rendez-vous de démarrage.
           </p>
           {[0, 1, 2].map(i => (
-            <input key={i} placeholder={`Disponibilité ${i + 1} — ex. Lundi 14h-16h`} value={dispos[i]}
+            <input key={i} placeholder={`Disponibilité ${i + 1}, ex. Lundi 14h-16h`} value={dispos[i]}
               onChange={e => setDispos(prev => prev.map((d, idx) => idx === i ? e.target.value : d))} style={inputStyle} />
           ))}
         </>
@@ -222,7 +223,7 @@ export default function Offres() {
       <div style={{ textAlign: 'center', padding: '3rem 1.5rem 1rem' }}>
         <div style={st.eyebrow}>TARIFS</div>
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>Une offre pour chaque profil</h1>
-        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur, recruteur ou club — choisis la formule qui te correspond.</p>
+        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur, recruteur ou club, choisis la formule qui te correspond.</p>
         <CycleToggle cycle={cycle} setCycle={setCycle} />
       </div>
 
@@ -269,7 +270,7 @@ export default function Offres() {
                     <Feature>Réseau clubs et agents</Feature>
                     <Feature>Feed & visibilité</Feature>
                   </div>
-                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={st.cta(colors.accent.green, true)}>Commencer — 100€/an</button>
+                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=annuel')} style={st.cta(colors.accent.green, true)}>Commencer à 100€/an</button>
                 </>
               ) : (
                 <>
@@ -285,7 +286,7 @@ export default function Offres() {
                     <Feature>Réseau clubs et agents</Feature>
                     <Feature>Feed & visibilité</Feature>
                   </div>
-                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>Commencer — 10€/mois</button>
+                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>Commencer à 10€/mois</button>
                 </>
               )}
             </div>
@@ -298,7 +299,7 @@ export default function Offres() {
         <div style={st.sectionInner}>
           <div style={st.eyebrow}>ÉDUCATEURS</div>
           <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
-          <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques — tout au même endroit.</p>
+          <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques, tout au même endroit.</p>
           <OffrePro titre="Éducateur" color={colors.accent.blue} profilId="educateur" cycle={cycle} features={[
             'Gestion de l\'effectif',
             'Suivi des présences',
@@ -339,7 +340,7 @@ export default function Offres() {
             Gérez votre club.<br /><span style={{ color: colors.accent.green }}>Développez vos joueurs.</span>
           </h2>
           <p style={{ color: colors.text.dim, fontSize: '17px', lineHeight: 1.7, marginBottom: '40px' }}>
-            Connectez tous les acteurs de votre club — éducateurs, joueurs, dirigeants, parents — dans un écosystème unique.
+            Connectez tous les acteurs de votre club (éducateurs, joueurs, dirigeants, parents) dans un écosystème unique.
           </p>
           <button onClick={() => document.getElementById('tarifs-club').scrollIntoView({ behavior: 'smooth' })}
             style={{ padding: '16px 40px', borderRadius: '12px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 800, fontSize: '16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -353,20 +354,20 @@ export default function Offres() {
         <div style={st.sectionInner}>
           <h3 style={{ fontSize: 28, fontWeight: 800, marginBottom: '3rem', textAlign: 'center', color: colors.text.primary }}>Tout ce dont votre club a besoin</h3>
           {[
-            { icon: '⚙️', categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
-            { icon: '⚽', categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
-            { icon: '📊', categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur — gratuit pour tous', 'Dashboard dirigeant — accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
-            { icon: '🤖', categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ['Organisation des déplacements par IA', 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
+            { Icon: IconTool, categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
+            { Icon: IconBall, categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
+            { Icon: IconChart, categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur gratuit pour tous', 'Dashboard dirigeant en accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
+            { Icon: IconBolt, categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ['Organisation des déplacements par IA', 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
           ].map(cat => (
             <div key={cat.categorie} style={{ marginBottom: '2.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '22px' }}>{cat.icon}</span>
+                <span style={{ color: cat.color, display: 'inline-flex' }}><cat.Icon size={22} /></span>
                 <h4 style={{ fontSize: '18px', fontWeight: 700, color: cat.color, margin: 0 }}>{cat.categorie}</h4>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
                 {cat.items.map(item => (
                   <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: '10px' }}>
-                    <span style={{ color: cat.color, fontSize: '14px', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    <span style={{ color: cat.color, fontSize: '14px', fontWeight: 700, flexShrink: 0, display: 'inline-flex', marginTop: '3px' }}><IconCheck size={14} /></span>
                     <span style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.5 }}>{item}</span>
                   </div>
                 ))}
@@ -380,7 +381,7 @@ export default function Offres() {
       <section id="tarifs-club" style={st.sectionOuter(colors.background.base)}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <h3 style={{ fontSize: 26, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center', color: colors.text.primary }}>Un tarif selon la taille de votre club</h3>
-          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club — paiement sécurisé, accès immédiat.</p>
+          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club, paiement sécurisé, accès immédiat.</p>
 
           <div style={{ marginBottom: '2.5rem' }}>
             {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
@@ -389,7 +390,7 @@ export default function Offres() {
                 padding: '18px 24px', marginBottom: '10px', borderRadius: '12px',
                 background: colors.background.surface, border: `1px solid ${colors.border.faint}`,
               }}>
-                <span style={{ fontWeight: 800, color: colors.text.primary, fontSize: '15px' }}>🏟️ {p.label}</span>
+                <span style={{ fontWeight: 800, color: colors.text.primary, fontSize: '15px' }}>{p.label}</span>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
                     style={{ padding: '10px 18px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
@@ -405,7 +406,7 @@ export default function Offres() {
           </div>
 
           <div onClick={() => navigate('/comment-financer')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: `${colors.accent.green}0d`, border: `1px solid ${colors.accent.green}30`, borderRadius: 12, padding: '14px 20px', marginBottom: '2rem', cursor: 'pointer' }}>
-            <span style={{ fontSize: 13, color: colors.text.secondary }}>💡 Pas sûr de comment financer l'abonnement pour votre club ?</span>
+            <span style={{ fontSize: 13, color: colors.text.secondary }}>Pas sûr de comment financer l'abonnement pour votre club ?</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: colors.accent.green, whiteSpace: 'nowrap' }}>Voir le guide →</span>
           </div>
 

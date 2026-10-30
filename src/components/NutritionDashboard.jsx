@@ -3,6 +3,11 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { calculerTDEE, calculerMacros, CONSEILS_JOURNEE, MULTIPLICATEUR_JOURNEE, RECETTES } from '../lib/nutrition'
 import EducationNutrition from './EducationNutrition'
+import NutritionAccueil from './joueur/NutritionAccueil'
+import NutritionIntro from './joueur/NutritionIntro'
+import BoutonTutoriel from './tutoriels/BoutonTutoriel'
+import { TutorielNutrition } from './tutoriels/TutorielsJoueur'
+import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 
 const REPAS_LABELS = {
   petit_dejeuner: 'Petit déjeuner',
@@ -202,8 +207,12 @@ function RecetteCard({ recette, onAjouter }) {
 // de poids, journal alimentaire avec recherche d'aliments via l'API
 // publique USDA FoodData Central (gratuite, DEMO_KEY suffisant en dev —
 // VITE_USDA_API_KEY recommandée en prod pour un quota plus large).
-export default function NutritionDashboard({ joueurId, educateurId }) {
+export default function NutritionDashboard({ joueurId, educateurId, isMobile = false }) {
   const colors = useColors()
+  const [introVue, setIntroVue] = useState(false)
+  const [tutoOuvert, setTutoOuvert] = useState(false)
+  const [tutoFerme, setTutoFerme] = useState(false)
+  useTutorielsVus()
   const [onglet, setOnglet] = useState('plan')
   const [profil, setProfil] = useState(null)
   const [profilForm, setProfilForm] = useState(PROFIL_VIDE)
@@ -417,12 +426,28 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
     pillTab: (actif) => ({ background: actif ? colors.text.primary : colors.background.raised, color: actif ? colors.background.base : colors.text.faint, border: `1px solid ${actif ? colors.text.primary : colors.border.default}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }),
   }
 
-  if (loading) return <div style={{ color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '32px 0' }}>Chargement…</div>
+  const cadre = { padding: isMobile ? '16px' : '24px 40px', maxWidth: '980px', margin: '0 auto' }
+  const fermerTuto = () => { marquerTutorielVu('nutrition_joueur', joueurId); setTutoOuvert(false); setTutoFerme(true) }
+  // Le tutoriel s'ouvre seul une fois, à la première arrivée sur le plan
+  // (profil créé), puis seul le bouton « Tutoriel » le relance.
+  const tutoAffiche = tutoOuvert || (!!profil && !tutoFerme && !tutorielDejaVu('nutrition_joueur', joueurId))
+  const modalTuto = tutoAffiche ? <TutorielNutrition onFermer={fermerTuto} /> : null
+
+  if (loading) return <div style={{ ...cadre, color: colors.text.faint, fontSize: '13px', textAlign: 'center' }}>Chargement…</div>
 
   // ── Onglet Profil ────────────────────────────────────────────────────
+  if (!profil && !introVue) {
+    return (
+      <div style={cadre}>
+        <NutritionIntro onCommencer={() => setIntroVue(true)} onTutoriel={() => setTutoOuvert(true)} isMobile={isMobile} />
+        {modalTuto}
+      </div>
+    )
+  }
+
   if (onglet === 'profil' || !profil) {
     return (
-      <div>
+      <div style={cadre}>
         {profil && <button onClick={() => setOnglet('plan')} style={{ ...s.btnGhost, marginBottom: '16px' }}>← Mon plan</button>}
         <div style={s.card}>
           <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>
@@ -491,7 +516,7 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   }
 
   const tdee = calculerTDEE(profil)
-  const macros = calculerMacros(tdee, typeJournee)
+  const macros = calculerMacros(tdee, typeJournee, profil.poids_kg)
   const conseil = CONSEILS_JOURNEE[typeJournee]
 
   const totauxJour = journal.reduce((acc, item) => ({
@@ -502,84 +527,28 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   }), { calories: 0, proteines_g: 0, glucides_g: 0, lipides_g: 0 })
 
   // ── Onglet Plan ──────────────────────────────────────────────────────
+  // Écran refait : cf. joueur/NutritionAccueil.jsx. Ici on ne prépare que les
+  // lignes de la semaine (vraie semaine du calendrier, ou semaine type).
+  const lignesSemaine = (semaineReelle || PROGRAMME_SEMAINE).map((j) => {
+    const musculation = !semaineReelle ? false : (profil.jours_musculation || []).includes(j.key)
+    const type = !semaineReelle ? j.type : (j.match ? 'match' : (j.entrainement || musculation) ? 'entrainement' : 'repos')
+    const estMusculationSeule = semaineReelle && musculation && !j.match && !j.entrainement
+    return {
+      cle: j.jour || j.key,
+      jour: j.jour || j.label,
+      calories: Math.round(tdee * MULTIPLICATEUR_JOURNEE[type]),
+      couleur: estMusculationSeule ? colors.accent.purple : CONSEILS_JOURNEE[type].couleur,
+      libelle: estMusculationSeule ? 'Musculation' : CONSEILS_JOURNEE[type].titre.split(' — ')[0],
+    }
+  })
+
   const renderPlan = () => (
-    <div>
-      {typeJourneeAuto && (
-        <div style={{ background: colors.accent.green + '14', border: `1px solid ${colors.accent.green}33`, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px' }}>
-          <span style={{ color: colors.accent.green, fontWeight: 700 }}>Détection auto</span>
-          <span style={{ color: colors.text.secondary, marginLeft: '8px' }}>
-            {typeJourneeAuto === 'match' ? 'Match détecté aujourd\'hui — programme match activé'
-              : typeJourneeAuto === 'entrainement' ? 'Entraînement détecté aujourd\'hui — programme entraînement activé'
-              : typeJourneeAuto === 'avant_match' ? 'Match demain — charge glucides recommandée'
-              : typeJourneeAuto === 'apres_match' ? 'Match hier — programme récupération activé'
-              : 'Pas de séance détectée — programme repos'}
-          </span>
-          <span style={{ color: colors.text.faint, marginLeft: '8px' }}>(modifiable ci-dessous)</span>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '16px' }}>
-        {TYPE_JOURNEE_OPTIONS.map(t => (
-          <button key={t.value} onClick={() => setTypeJournee(t.value)} style={s.pillTab(typeJournee === t.value)}>{t.label}</button>
-        ))}
-      </div>
-
-      <div style={{ ...s.card, borderLeft: `3px solid ${conseil.couleur}` }}>
-        <div style={{ color: conseil.couleur, fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>{conseil.titre}</div>
-        {conseil.conseils.map((c, i) => (
-          <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ color: conseil.couleur, flexShrink: 0 }}>›</span>
-            <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{c}</span>
-          </div>
-        ))}
-      </div>
-
-      <div style={s.card}>
-        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', marginBottom: '16px' }}>TES BESOINS DU JOUR</div>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ fontSize: '48px', fontWeight: 900, color: colors.accent.green, lineHeight: 1 }}>{tdee}</div>
-          <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>calories</div>
-        </div>
-        {[
-          { label: 'Glucides', key: 'glucides_g', color: colors.accent.amber, pct: macros.glucides_pct },
-          { label: 'Protéines', key: 'proteines_g', color: colors.accent.green, pct: macros.proteines_pct },
-          { label: 'Lipides', key: 'lipides_g', color: colors.accent.orange, pct: macros.lipides_pct },
-        ].map(m => (
-          <div key={m.key} style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{m.label}</span>
-              <span style={{ color: m.color, fontWeight: 700, fontSize: '13px' }}>{macros[m.key]}g <span style={{ color: colors.text.faint, fontWeight: 400 }}>({m.pct}%)</span></span>
-            </div>
-            <div style={{ background: colors.background.raised, borderRadius: '4px', height: '8px' }}>
-              <div style={{ background: m.color, width: `${m.pct}%`, height: '8px', borderRadius: '4px' }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={s.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{semaineReelle ? 'CETTE SEMAINE' : 'PROGRAMME SEMAINE TYPE'}</div>
-          {!semaineReelle && <span style={{ color: colors.text.faint, fontSize: '10px' }}>exemple — affilie-toi pour ta vraie semaine</span>}
-        </div>
-        {(semaineReelle || PROGRAMME_SEMAINE).map((j) => {
-          const musculation = !semaineReelle ? false : (profil.jours_musculation || []).includes(j.key)
-          const type = !semaineReelle ? j.type : (j.match ? 'match' : (j.entrainement || musculation) ? 'entrainement' : 'repos')
-          const estMusculationSeule = semaineReelle && musculation && !j.match && !j.entrainement
-          const cal = Math.round(calculerTDEE(profil) * MULTIPLICATEUR_JOURNEE[type])
-          const c = estMusculationSeule ? colors.accent.purple : CONSEILS_JOURNEE[type].couleur
-          const label = estMusculationSeule ? 'Musculation' : CONSEILS_JOURNEE[type].titre.split(' — ')[0]
-          return (
-            <div key={j.jour || j.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-              <span style={{ color: colors.text.secondary, fontSize: '13px', width: '80px' }}>{j.jour || j.label}</span>
-              <span style={{ color: c, fontSize: '12px', fontWeight: 600 }}>{label}</span>
-              <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{cal} kcal</span>
-            </div>
-          )
-        })}
-      </div>
-
-      <button style={{ ...s.btnGhost, width: '100%', textAlign: 'center' }} onClick={() => setOnglet('profil')}>Modifier mon profil</button>
-    </div>
+    <NutritionAccueil
+      profil={profil} tdee={tdee} macros={macros} typeJournee={typeJournee} typeJourneeAuto={typeJourneeAuto}
+      typesJournee={TYPE_JOURNEE_OPTIONS} conseil={conseil} totauxJour={totauxJour} aNoteAujourdHui={journal.length > 0}
+      lignesSemaine={lignesSemaine} semaineEstExemple={!semaineReelle}
+      onChangerType={setTypeJournee} onNaviguer={setOnglet} isMobile={isMobile}
+    />
   )
 
   // ── Onglet Journal ───────────────────────────────────────────────────
@@ -850,7 +819,15 @@ export default function NutritionDashboard({ joueurId, educateurId }) {
   ]
 
   return (
-    <div>
+    <div style={cadre}>
+      {modalTuto}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? '22px' : '28px', fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Nutrition</h1>
+          <p style={{ margin: '8px 0 0', fontSize: '14px', color: colors.text.secondary }}>Ton plan du jour, calculé pour ton poste et ton objectif.</p>
+        </div>
+        <BoutonTutoriel onClick={() => setTutoOuvert(true)} />
+      </div>
       <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
         {ONGLETS.map(o => <button key={o.id} onClick={() => setOnglet(o.id)} style={s.pillTab(onglet === o.id)}>{o.label}</button>)}
       </div>

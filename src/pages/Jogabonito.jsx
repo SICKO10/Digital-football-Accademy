@@ -18,6 +18,7 @@ import { notifierJoueur } from '../lib/notifications'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors, alpha } from '../tokens'
+import { IconVideo, IconCamera, IconHeart, IconMessage, IconRepeat, IconStar, IconUser, IconVolume, IconVolumeOff, IconTrash, IconBall } from '../components/icones'
 
 const detectType = (url) => {
   if (!url) return null
@@ -217,7 +218,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       )}
       {(type === 'instagram' || type === 'link') && (
         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: colors.background.base }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>{type === 'instagram' ? '📸' : '🎬'}</div>
+          <div style={{ marginBottom: '16px', color: colors.text.dim, display: 'flex' }}>{type === 'instagram' ? <IconCamera size={64} /> : <IconVideo size={64} />}</div>
           {/* Lien externe ouvert seulement s'il vise une plateforme prise en
               charge (données anciennes ou insérées hors appli) — sinon rien
               de cliquable : pas de redirection vers un domaine arbitraire. */}
@@ -277,31 +278,31 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
 
         {/* Like */}
         <button onClick={handleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px', filter: liked ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.1s', transform: liked ? 'scale(1.2)' : 'scale(1)' }}>❤️</div>
+          <div style={{ color: liked ? colors.accent.red : colors.text.primary, transition: 'color 0.2s, transform 0.1s', transform: liked ? 'scale(1.2)' : 'scale(1)', display: 'flex' }}><IconHeart size={28} filled={liked} /></div>
           <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{likeCount}</span>
         </button>
 
         {/* Commentaires */}
         <button onClick={() => user ? setShowComments(true) : setShowLoginPrompt(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px' }}>💬</div>
+          <div style={{ color: colors.text.primary, display: 'flex' }}><IconMessage size={28} /></div>
           <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{comments.length}</span>
         </button>
 
         {/* Republier */}
         <button onClick={handleRepost} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px', filter: reposted ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: reposted ? 'scale(1.15)' : 'scale(1)' }}>🔁</div>
+          <div style={{ color: reposted ? colors.accent.green : colors.text.primary, transition: 'color 0.2s, transform 0.15s', transform: reposted ? 'scale(1.15)' : 'scale(1)', display: 'flex' }}><IconRepeat size={28} /></div>
           <span style={{ color: reposted ? colors.accent.green : colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{repostCount > 0 ? repostCount : t('feed_partager', lang)}</span>
         </button>
 
         {/* Favori */}
         <button onClick={handleFavori} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px', filter: favori ? 'none' : 'grayscale(100%)', transition: 'filter 0.2s, transform 0.15s', transform: favori ? 'scale(1.15)' : 'scale(1)' }}>⭐</div>
+          <div style={{ color: favori ? colors.accent.amber : colors.text.primary, transition: 'color 0.2s, transform 0.15s', transform: favori ? 'scale(1.15)' : 'scale(1)', display: 'flex' }}><IconStar size={28} filled={favori} /></div>
           <span style={{ color: favori ? '#f59e0b' : colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)', transition: 'color 0.2s' }}>{t('jogab_save', lang)}</span>
         </button>
 
         {/* Profil raccourci */}
         <button onClick={() => onOpenProfile(joueur)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <div style={{ fontSize: '28px' }}>👤</div>
+          <div style={{ color: colors.text.primary, display: 'flex' }}><IconUser size={28} /></div>
           <span style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_profil', lang)}</span>
         </button>
 
@@ -309,7 +310,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
         {type === 'mp4' && (
           <button onClick={() => { setMuted(!muted); if (videoRef.current) videoRef.current.muted = !muted }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <div style={{ fontSize: '24px' }}>{muted ? '🔇' : '🔊'}</div>
+            <div style={{ color: colors.text.primary, display: 'flex' }}>{muted ? <IconVolumeOff size={24} /> : <IconVolume size={24} />}</div>
           </button>
         )}
 
@@ -319,7 +320,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
             onClick={() => setShowDeleteConfirm(true)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
           >
-            <div style={{ fontSize: '24px' }}>🗑️</div>
+            <div style={{ color: colors.accent.red, display: 'flex' }}><IconTrash size={24} /></div>
             <span style={{ color: colors.accent.red, fontSize: '12px', fontWeight: 600, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{t('jogab_suppr', lang)}</span>
           </button>
         )}
@@ -338,7 +339,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
           <div onClick={e => e.stopPropagation()}
             style={{ background: colors.background.surface, border: '1px solid #4ade8030', borderRadius: '20px 20px 0 0', padding: '2rem', width: '100%', maxWidth: '480px', textAlign: 'center' }}>
             <div style={{ width: '40px', height: '4px', background: colors.border.strong, borderRadius: '2px', margin: '0 auto 1.5rem' }} />
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚽</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><IconBall size={40} /></div>
             <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700 }}>{t('jogab_rejoins_communaute', lang)}</h3>
             <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: colors.text.muted }}>
               {t('jogab_cree_compte_liker_desc', lang)}
@@ -365,7 +366,7 @@ function ReelCard({ reel, isActive, user, onOpenProfile, onDelete, lang }) {
       {showDeleteConfirm && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ background: colors.background.surface, border: '1px solid #ef444440', borderRadius: '16px', padding: '2rem', maxWidth: '320px', width: '100%', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑️</div>
+            <div style={{ marginBottom: '12px', color: colors.accent.red, display: 'flex', justifyContent: 'center' }}><IconTrash size={44} /></div>
             <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: colors.text.primary }}>{t('jogab_supprimer_ce_reel', lang)}</h3>
             <p style={{ margin: '0 0 1.5rem', fontSize: '14px', color: colors.text.muted }}>{t('jogab_reel_retire_desc', lang)}</p>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -455,7 +456,7 @@ function ProfilModal({ joueur, onClose, lang }) {
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-          {[[`🏆 ${t('feed_stat_club', lang)}`, joueur?.club], [`📍 ${t('profil_region', lang)}`, joueur?.region], [`🦵 ${t('feed_stat_pied', lang)}`, joueur?.pied], [`🏟️ ${t('feed_stat_niveau', lang)}`, joueur?.niveau_equipe]].filter(([, v]) => v).map(([label, val]) => (
+          {[[`${t('feed_stat_club', lang)}`, joueur?.club], [`${t('profil_region', lang)}`, joueur?.region], [`${t('feed_stat_pied', lang)}`, joueur?.pied], [`${t('feed_stat_niveau', lang)}`, joueur?.niveau_equipe]].filter(([, v]) => v).map(([label, val]) => (
             <div key={label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}>
               <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>{label}</p>
               <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p>
@@ -575,7 +576,7 @@ function Jogabonito() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => navigate('/feed')}
             style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', color: colors.text.primary, padding: '6px 14px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
-            📋 Feed
+            Feed
           </button>
           {user ? (
             <button onClick={() => navigate('/dashboard')}
@@ -599,7 +600,7 @@ function Jogabonito() {
       {/* FEED VERTICAL */}
       {reels.length === 0 ? (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: colors.text.faint }}>
-          <p style={{ fontSize: '3rem' }}>🎬</p>
+          <p style={{ display: 'flex', justifyContent: 'center' }}><IconVideo size={48} /></p>
           <p style={{ fontSize: '18px' }}>{t('jogab_aucun_reel_moment', lang)}</p>
           <p style={{ fontSize: '14px', color: colors.text.disabled, marginTop: '8px' }}>{t('jogab_joueurs_publient_desc', lang)}</p>
         </div>

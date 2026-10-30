@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { IconClose, IconCheck } from './icones'
 
 // Formations disponibles — chaque ligne totalise toujours 11 (gardien inclus),
@@ -16,6 +16,23 @@ export const FORMATIONS = {
 }
 
 const MAX_REMPLACANTS = 7
+
+// Position par défaut d'un titulaire (en % du terrain), tant que le coach ne
+// l'a pas glissé manuellement : réplique la répartition qu'affichait l'ancien
+// rendu en flex (colonnes du gardien vers l'attaque, joueurs d'une même ligne
+// espacés régulièrement) — seulement déduite du nombre de lignes/joueurs par
+// ligne, aucune coordonnée en dur par formation à maintenir.
+const POS_X_MIN = 9, POS_X_MAX = 91
+const POS_Y_MIN = 11, POS_Y_MAX = 89
+const positionParDefaut = (li, nLignes, i, n) => ({
+  x: nLignes > 1 ? POS_X_MIN + (li * (POS_X_MAX - POS_X_MIN)) / (nLignes - 1) : 50,
+  y: n > 1 ? POS_Y_MIN + ((i + 0.5) * (POS_Y_MAX - POS_Y_MIN)) / n : 50,
+})
+// Distance (px écran) à partir de laquelle un geste est considéré comme un
+// glisser plutôt qu'un simple clic (qui doit toujours ouvrir la sélection du
+// joueur, comme avant) — évite qu'un tremblement de doigt sur tablette
+// déplace la photo au lieu d'ouvrir la modale.
+const SEUIL_DRAG = 6
 
 // Tailles en clamp(), mais en cqw (container query units) et non en vw : vw
 // suit la largeur du VIEWPORT, pas celle du terrain — sur tablette le
@@ -54,10 +71,40 @@ const nomAvecNumero = (joueur, affichageNom) => {
 
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
-  onChangerFormation, onAssignerTitulaire,
+  onChangerFormation, onAssignerTitulaire, onDeplacerTitulaire,
   onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, maxLargeur = '760px',
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
+  const pitchRef = useRef(null)
+  const dragInfo = useRef(null) // { slotIndex, startX, startY, moved } — pendant le geste, pas de re-render nécessaire
+  const [dragPos, setDragPos] = useState(null) // { slotIndex, x, y } — position live affichée pendant le glisser
+
+  const demarrerPointerSlot = (e, slotIndex) => {
+    if (!modeEdit) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    dragInfo.current = { slotIndex, startX: e.clientX, startY: e.clientY, moved: false }
+  }
+  const bougerPointerSlot = (e, slotIndex) => {
+    if (!modeEdit || dragInfo.current?.slotIndex !== slotIndex) return
+    const dx = e.clientX - dragInfo.current.startX
+    const dy = e.clientY - dragInfo.current.startY
+    if (!dragInfo.current.moved && Math.hypot(dx, dy) < SEUIL_DRAG) return
+    dragInfo.current.moved = true
+    const rect = pitchRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100))
+    const y = Math.min(96, Math.max(4, ((e.clientY - rect.top) / rect.height) * 100))
+    setDragPos({ slotIndex, x, y })
+  }
+  const finirPointerSlot = (e, slotIndex) => {
+    if (!modeEdit || dragInfo.current?.slotIndex !== slotIndex) return
+    const { moved } = dragInfo.current
+    dragInfo.current = null
+    if (moved && dragPos) onDeplacerTitulaire?.(slotIndex, { x: dragPos.x, y: dragPos.y })
+    else if (!moved) onAssignerTitulaire(slotIndex)
+    setDragPos(null)
+  }
+  const annulerPointerSlot = () => { dragInfo.current = null; setDragPos(null) }
 
   // Index de départ de chaque ligne dans le tableau titulaires (ordre naturel
   // gardien → attaque) — calculé une fois, jamais déduit par recherche
@@ -109,7 +156,7 @@ export default function CompositionTerrain({
         </div>
       )}
 
-      <div style={{
+      <div ref={pitchRef} style={{
         position: 'relative', width: '100%', aspectRatio: '1.55',
         borderRadius: '20px', overflow: 'hidden',
         background: 'repeating-linear-gradient(90deg, #1a5c1a 0px, #1a5c1a 40px, #1e6b1e 40px, #1e6b1e 80px)',
@@ -130,68 +177,78 @@ export default function CompositionTerrain({
           <rect x="149.5" y="40" width="3" height="20" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" />
         </svg>
 
-        <div style={{ position: 'absolute', inset: '3%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '2% 5%' }}>
-          {lignesAffichees.map((ligne, li) => (
-            <div key={li} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', alignItems: 'center' }}>
-              {Array.from({ length: ligne.n }).map((_, i) => {
-                const slotIndex = ligne.debut + i
-                const joueur = titulaires[slotIndex] || null
-                return (
-                  <div key={slotIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px, 0.6cqw, 4px)', minWidth: '44px' }}>
-                    {/* Ancre de la taille exacte du cercle (pas de la colonne, plus
-                        large) : les badges/boutons superposés se positionnent par
-                        rapport à elle, sans jamais être coupés par l'overflow:hidden
-                        du cercle (nécessaire, lui, pour rogner la photo). */}
-                    <div style={{ width: TAILLE_TITULAIRE, height: TAILLE_TITULAIRE, position: 'relative' }}>
-                      <div
-                        onClick={() => modeEdit && onAssignerTitulaire(slotIndex)}
-                        style={{
-                          width: '100%', height: '100%', borderRadius: '50%', position: 'relative',
-                          border: `3px solid ${joueur ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}`,
-                          background: 'rgba(0,0,0,0.55)', overflow: 'hidden',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: modeEdit ? 'pointer' : 'default',
-                          boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
-                        }}>
-                        <AvatarJoueur joueur={joueur} fontSize="clamp(11px, 1.8cqw, 18px)" />
+        <div style={{ position: 'absolute', inset: 0 }}>
+          {lignesAffichees.map((ligne, li) =>
+            Array.from({ length: ligne.n }).map((_, i) => {
+              const slotIndex = ligne.debut + i
+              const joueur = titulaires[slotIndex] || null
+              const enDrag = dragPos?.slotIndex === slotIndex
+              const pos = enDrag ? dragPos : (joueur?.pos || positionParDefaut(li, lignesAffichees.length, i, ligne.n))
+              return (
+                <div
+                  key={slotIndex}
+                  onPointerDown={e => demarrerPointerSlot(e, slotIndex)}
+                  onPointerMove={e => bougerPointerSlot(e, slotIndex)}
+                  onPointerUp={e => finirPointerSlot(e, slotIndex)}
+                  onPointerCancel={annulerPointerSlot}
+                  style={{
+                    position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px, 0.6cqw, 4px)', minWidth: '44px',
+                    touchAction: modeEdit ? 'none' : 'auto', cursor: modeEdit ? (enDrag ? 'grabbing' : 'grab') : 'default',
+                    zIndex: enDrag ? 5 : 1, transition: enDrag ? 'none' : 'left 0.15s ease, top 0.15s ease',
+                  }}
+                >
+                  {/* Ancre de la taille exacte du cercle (pas de la colonne, plus
+                      large) : les badges/boutons superposés se positionnent par
+                      rapport à elle, sans jamais être coupés par l'overflow:hidden
+                      du cercle (nécessaire, lui, pour rogner la photo). */}
+                  <div style={{ width: TAILLE_TITULAIRE, height: TAILLE_TITULAIRE, position: 'relative' }}>
+                    <div
+                      style={{
+                        width: '100%', height: '100%', borderRadius: '50%', position: 'relative',
+                        border: `3px solid ${joueur ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}`,
+                        background: 'rgba(0,0,0,0.55)', overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: joueur ? '0 4px 20px rgba(0,0,0,0.7), 0 0 0 2px rgba(74,222,128,0.25)' : 'none',
+                      }}>
+                      <AvatarJoueur joueur={joueur} fontSize="clamp(11px, 1.8cqw, 18px)" />
+                    </div>
+                    {joueur?.numero != null && (
+                      <div style={{
+                        position: 'absolute', top: '-6px', right: '-6px',
+                        background: '#4ade80', color: '#000', borderRadius: '50%',
+                        width: 'clamp(20px, 3.2cqw, 28px)', height: 'clamp(20px, 3.2cqw, 28px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'clamp(10px, 1.6cqw, 14px)', fontWeight: 900,
+                        border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                      }}>
+                        {joueur.numero}
                       </div>
-                      {joueur?.numero != null && (
-                        <div style={{
-                          position: 'absolute', top: '-6px', right: '-6px',
-                          background: '#4ade80', color: '#000', borderRadius: '50%',
-                          width: 'clamp(20px, 3.2cqw, 28px)', height: 'clamp(20px, 3.2cqw, 28px)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(10px, 1.6cqw, 14px)', fontWeight: 900,
-                          border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                        }}>
-                          {joueur.numero}
-                        </div>
-                      )}
-                      {joueur?.capitaine && (
-                        <div style={{
-                          position: 'absolute', top: '-4px', left: '-4px',
-                          background: '#facc15', color: '#000', borderRadius: '50%',
-                          width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900,
-                          border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                        }}>
-                          C
-                        </div>
-                      )}
-                    </div>
-                    <div style={{
-                      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(7px, 1.1cqw, 10px)', fontWeight: 800,
-                      padding: '3px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.6px',
-                      whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>
-                      {nomAvecNumero(joueur, affichageNom)}
-                    </div>
+                    )}
+                    {joueur?.capitaine && (
+                      <div style={{
+                        position: 'absolute', top: '-4px', left: '-4px',
+                        background: '#facc15', color: '#000', borderRadius: '50%',
+                        width: 'clamp(14px, 2.2cqw, 20px)', height: 'clamp(14px, 2.2cqw, 20px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'clamp(7px, 1cqw, 10px)', fontWeight: 900,
+                        border: '2px solid #0a0a0a', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                      }}>
+                        C
+                      </div>
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          ))}
+                  <div style={{
+                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 'clamp(7px, 1.1cqw, 10px)', fontWeight: 800,
+                    padding: '3px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.6px',
+                    whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
+                    {nomAvecNumero(joueur, affichageNom)}
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
 

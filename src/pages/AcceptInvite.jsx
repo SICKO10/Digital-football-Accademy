@@ -258,7 +258,7 @@ function AcceptInvite() {
     return conteneur(
       <>
         <h1 style={{ fontSize: '22px', fontWeight: '700', textAlign: 'center', marginBottom: '8px' }}>
-          {previewB?.role === 'joueur' ? t('invite_rejoins_equipe_titre', lang) : previewB?.role === 'parent' ? t('invite_rejoins_famille_titre', lang) : previewB?.role === 'club' ? t('invite_club_titre', lang) : previewB?.role === 'educateur' ? '🎓 Rejoins le club !' : t('invite_rejoins_staff_titre', lang)}
+          {previewB?.role === 'joueur' ? t('invite_rejoins_equipe_titre', lang) : previewB?.role === 'parent' ? t('invite_rejoins_famille_titre', lang) : previewB?.role === 'club' ? t('invite_club_titre', lang) : previewB?.role === 'educateur' ? 'Rejoins le club !' : t('invite_rejoins_staff_titre', lang)}
         </h1>
         <p style={{ color: colors.text.secondary, fontSize: '13px', textAlign: 'center', marginBottom: '1.5rem' }}>
           {previewB?.role === 'club'

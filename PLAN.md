@@ -103,7 +103,7 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
 - Restent à traiter, 105 émoticônes sur des pages qu'un joueur atteint : `Feed.jsx` (35), `Upload.jsx` (15), `Jogabonito.jsx` (14), `Offres.jsx` (8), `UploadClip.jsx` (6), `UploadReel.jsx` (6), `AcceptInvite.jsx` (1). **À faire dans un bloc dédié**, pas en fin de chantier : ce sont des écrans que le joueur voit souvent.
 
 ### Bloc 2b : les pages que le joueur ouvre par URL
-- Statut : à faire
+- Statut : fait (validation visuelle de Kevin en attente)
 - Objectif : finir la chasse aux émoticônes sur les pages chargées par route, oubliées par le recensement du bloc 1.
 - Résultat testable : j'ouvre le fil d'actualité, l'envoi de vidéo et la page des offres sans voir un seul emoji.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -114,6 +114,16 @@ Le recensement du bloc 1 suivait les imports. Il a donc manqué les pages que le
   - `Offres.jsx` est une page de vente : relire les textes à voix haute après coup, pas seulement remplacer les icônes.
   - Vérifier par comptage, pas à l'œil.
 - Ce que je teste : le fil d'actualité, l'envoi d'une vidéo, la page des offres.
+
+**Journal du bloc 2b** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+- Les 7 pages sont à zéro émoticône, vérifié par comptage : `Feed`, `Jogabonito`, `Offres`, `UploadClip`, `UploadReel`, `AcceptInvite`, et `Upload` (voir exception).
+- 6 icônes ajoutées au jeu partagé `icones.jsx` (corbeille, partager, republier, son, son coupé, dossier), car elles manquaient. `IconMessage` accepte maintenant une taille. Sauvegardes dans `~/Sauvegardes-DigitalFootball/*.2026-10-30.bloc2b.*`.
+- 20 clés de `translations.js` nettoyées dans toutes les langues (boutons Publier, Envoyer, Liker, titres d'invitation...). Un emoji écrit dans la traduction réapparaissait sinon à l'écran.
+- `Offres.jsx` : tirets longs retirés des textes visibles (règle textes clients), icônes de catégories remplacées.
+- Jogabonito : les boutons like, republier et favori passent du gris au coloré (rouge, vert, ambre) au lieu du filtre gris sur un emoji.
+- **Exception volontaire** : `Upload.jsx` garde 6 émoticônes, dans le texte de description envoyé en base (`🎽 Maillot`, `⚽ Poste joué`, `📝`). `pages/coach/helpers.js` relit ces préfixes pour retrouver maillot, temps de jeu et poste : les retirer casserait l'espace coach et les anciennes vidéos. Le joueur ne les voit jamais. À traiter avec un vrai champ en base, hors périmètre.
+- Build `vite build` : passe.
+- Ce que Kevin teste : Feed (onglets, like, partage, favori), Jogabonito (colonne de boutons à droite), envoi d'une vidéo, `/offres`.
 
 ### Bloc 3 : page Compétition
 - Statut : fait (2026-10-29)
@@ -261,7 +271,7 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
 - Bloc 4 toujours en attente de ta validation visuelle.
 
 ### Bloc 6 : Mon équipement
-- Statut : à faire
+- Statut : **fait, en attente de validation visuelle de Kevin** (2026-10-30)
 - Objectif : expliquer à quoi sert l'outil et soigner la page.
 - Résultat testable : en arrivant sur la page, je comprends tout de suite pourquoi donner mes tailles.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -271,8 +281,32 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - Refaire la saisie des tailles sur le socle, champs lisibles au pouce.
 - Ce que je teste : je saisis une taille, je l'enregistre, je recharge, elle est là.
 
+**Journal du bloc 6** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait**
+- Nouveau composant `src/components/joueur/EquipementJoueur.jsx`, appelé par les deux branches du dashboard (elles avaient chacune une copie du même code, supprimées).
+- En haut : titre + phrase d'explication (tailles transmises au club pour recevoir le pack de début de saison au plus vite).
+- Saisie des tailles : un bouton par taille (44 px de haut, un appui suffit) ; au-delà de 10 choix (pointures) une liste déroulante. « Enregistré » s'affiche à côté de l'article, ou « Non enregistré, réessaie » en cas d'échec.
+- Compteur « X / Y tailles indiquées » dans la carte du pack. Carte « Ton équipement est prêt » = seule carte accentuée (ambre, couleur en dur `#1a1200` supprimée).
+- États vides : sans club (bouton « Rejoindre mon équipe ») et club sans pack attribué (explication).
+
+**Écarts et décisions**
+- **Bug corrigé au passage** : avant, une taille dont l'enregistrement échouait s'affichait quand même comme enregistrée (l'erreur était ignorée). Maintenant l'écran n'affiche la taille qu'après confirmation de la base, sinon il le dit.
+- L'icône du pack est un emoji choisi par le club (👕 par défaut, champ libre dans l'espace club). Côté joueur elle est remplacée par une icône maillot, règle zéro emoji. Le champ côté club n'a pas été touché (hors périmètre).
+- Dates et heures suivent la langue de l'application (avant : `fr-FR` en dur).
+- Aucun changement de base, de paiement ni d'email. Même table `equipement_tailles`, mêmes requêtes.
+
+**Vérifications**
+- `npm run build` vert, `eslint` du nouveau fichier sans alerte.
+- Rendu serveur dans 4 cas (sans club, club sans pack, pack avec 1 taille sur 2 renseignée, équipement prêt + remis) : textes, boutons et liste corrects, aucun emoji.
+- **Non vérifié par moi** : l'enregistrement réel en base puis le rechargement, et l'aspect visuel (pas de navigateur). À faire sur ton compte.
+
+**Reste à finir**
+- Textes écrits en français dans le code, hors `translations.js` (comme les blocs précédents).
+- Bloc 6 : validation visuelle de Kevin (enregistrer une taille, recharger, la retrouver).
+
 ### Bloc 7 : Mes analyses et Coach analyseur
-- Statut : à faire
+- Statut : **fait, en attente de validation visuelle de Kevin** (2026-10-30)
 - Objectif : des vignettes d'analyse plus belles, et une page Coach analyseur plus claire.
 - Résultat testable : la liste des analyses donne envie d'ouvrir une vidéo.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -283,8 +317,31 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - Coach analyseur : hiérarchiser l'écran, titre, explication, action principale.
 - Ce que je teste : la liste des analyses et la page Coach analyseur.
 
+**Journal du bloc 7** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait**
+- `src/components/joueur/AnalysesJoueur.jsx` (nouveau) : chaque demande est une `Carte` avec miniature, pastille de statut (« Reçue » vert, « En attente » ambre), titre, poste et date, puis boutons « Voir l'analyse » et « Télécharger mon rapport ». Une demande en attente explique que le coach regarde la vidéo.
+- Miniature : image tirée de la vidéo pour les envois du site (Cloudinary), vignette YouTube pour un lien YouTube, sinon icône vidéo (liens Drive, Veo, etc.).
+- État vide : joueur Pro = carte explicative ; joueur starter = `ApercuPro` (mêmes avantages et mêmes liens Stripe que le reste de l'espace).
+- `src/components/joueur/CoachAnalyseurJoueur.jsx` (nouveau) : titre + explication, puis l'action principale (écrire) en premier, l'historique en dessous (avant, il passait avant le champ de saisie).
+- Les deux écrans remplacent leur ancien bloc dans `DashboardJoueur.jsx` (environ 120 lignes en moins).
+
+**Écarts et décisions**
+- **Bug corrigé au passage** : l'envoi d'un message au coach affichait « Message envoyé » même si la base avait refusé le message. Maintenant : confirmation seulement si l'envoi a réussi, sinon « Le message n'est pas parti ».
+- Couleur du coach : orange remplacé par le vert de l'espace joueur (une seule couleur d'action).
+- Aucun changement de base, de paiement ni d'email.
+
+**Vérifications**
+- `npm run build` vert, `eslint` des deux nouveaux fichiers sans alerte (les erreurs restantes de `DashboardJoueur.jsx` existaient déjà).
+- Rendu serveur dans 5 cas (Pro vide, starter vide, liste avec une reçue et une en attente, coach avec historique et erreur, aucun coach) : textes corrects, adresses des miniatures correctes, aucun emoji.
+- **Non vérifié par moi** : l'aspect visuel (pas de navigateur), le chargement réel des miniatures Cloudinary, l'envoi réel d'un message au coach.
+
+**Reste à finir**
+- Textes écrits en français dans le code, hors `translations.js` (comme les blocs précédents).
+- Bloc 7 : validation visuelle de Kevin (liste des analyses, miniatures, page Coach analyseur, envoi d'un message).
+
 ### Bloc 8 : Saisir un match
-- Statut : à faire
+- Statut : **fait, en attente de validation visuelle de Kevin** (2026-10-30)
 - Objectif : rendre la saisie d'un match agréable, sans émoticônes.
 - Résultat testable : je saisis un match en entier sans hésiter sur un champ.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -295,8 +352,33 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - Vérifier que l'enregistrement fonctionne toujours, c'est un formulaire qui écrit en base.
 - Ce que je teste : je saisis un match complet et je vérifie qu'il apparaît dans mes statistiques.
 
+**Journal du bloc 8** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait** (page « Mes statistiques », onglet « Mes Statistiques » du menu Développement, fichier `src/pages/MesStats.jsx`)
+- Formulaire en trois groupes dans une `Carte` : *Le match* (date, adversaire, niveau, minutes, titulaire ou remplaçant), *Ton match en chiffres* (buts, passes décisives, cartons), *Stats détaillées* selon le poste, annoncées comme facultatives.
+- Champs : étiquettes liées aux champs, hauteur 44 px (tactile), clavier numérique sur téléphone, une colonne sur mobile pour le groupe « Le match ».
+- Bouton « Enregistrer » grisé tant que date et adversaire manquent, avec la phrase qui explique pourquoi. Avant, seul l'adversaire était contrôlé : une date effacée partait en base.
+- Après enregistrement : retour sur le profil avec une confirmation « Match enregistré, ton profil est à jour ».
+- Le reste de la page (titre, onglets, profil radar, historique) est passé sur `Carte`, `TitreSection` et les valeurs de `tokens.js`, cadre 980 px. Retirés : le « + » devant les libellés, les « * », le tiret décoratif dans la liste Niveau.
+
+**Écarts et décisions**
+- Une erreur d'enregistrement s'affichait dans une fenêtre `alert` : elle est maintenant écrite dans le formulaire, en rouge.
+- La logique d'enregistrement est identique à avant (même table `stats_match_joueur`, mêmes champs, même mise à jour de `profil_recrutement`). Aucun changement de base, de paiement ni d'email.
+- Il n'y avait déjà aucune émoticône dans cet écran (icônes SVG uniquement).
+- Sauvegarde du fichier d'avant : `~/Sauvegardes-DigitalFootball/MesStats.2026-10-30.bloc8.jsx`.
+
+**Vérifications**
+- `npm run build` vert. `eslint` : une seule erreur, déjà présente avant (chargement des matchs dans un `useEffect`), non touchée.
+- Rendu serveur du formulaire (attaquant en bureau, gardien en mobile) : bons groupes, bons champs selon le poste, zéro couleur écrite en dur dans le fichier.
+- **Non vérifié par moi** : l'aspect visuel (pas de navigateur) et l'enregistrement réel en base (pas de compte joueur).
+
+**Reste à finir**
+- Bloc 8 : validation de Kevin (saisir un match complet, le retrouver dans Historique, voir le profil se mettre à jour).
+- Textes en français écrits dans le code, hors `translations.js` (comme les blocs précédents).
+- Le menu d'accueil des joueurs affiliés (`onglet === 'stats'`, autre écran) n'est pas touché : hors du périmètre de ce bloc.
+
 ### Bloc 9 : Actualités du club habillées
-- Statut : à faire
+- Statut : **fait, en attente de validation visuelle de Kevin** (2026-10-30)
 - Objectif : donner une vraie tête à la page Actualités, avec un visuel football par défaut.
 - Résultat testable : la page a un en-tête visuel, et les annonces se lisent bien.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -307,8 +389,33 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - État vide soigné : le club de Kevin n'a aucune annonce, c'est donc l'écran qu'il verra en premier.
 - Ce que je teste : la page Actualités, qui sera probablement vide chez moi.
 
+**Journal du bloc 9** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait** (page « Actualités du club », menu de gauche du joueur, fichier `src/components/joueur/ActualitesJoueur.jsx`, branché dans `DashboardJoueur.jsx` à la place de l'ancien bloc)
+- En-tête sur `Carte` (la seule carte accentuée de l'écran) avec un terrain de football dessiné en SVG : aucune image à charger, il prend la couleur du thème, donc lisible en clair et en sombre. Sous le titre : « N annonces à lire », « Tu as tout lu » ou « Rien de nouveau pour le moment ».
+- Chaque annonce sur `Carte` : titre, auteur et date (dans la langue du joueur), texte avec retours à la ligne, pastille « Nouveau » sur les non lues. Une annonce lue passe légèrement en retrait.
+- Cliquer une annonce non lue la marque lue (comportement d'avant, maintenant aussi au clavier).
+- État vide soigné, deux cas : club qui n'a rien publié (cas de Kevin) et joueur sans club, avec le bouton « Rejoindre mon équipe ».
+
+**Écarts et décisions**
+- Pas de photo fournie : le visuel est le motif SVG prévu par le plan. Aucune image externe.
+- Seul l'écran `navItems` (comptes starter et Pro) est refait. La branche `estAffilie` (code mort, décision du 2026-10-29) n'est pas touchée.
+- Chargement et marquage « lu » inchangés (mêmes tables `annonces_club` et `annonces_lues`). Aucun changement de base, de paiement ni d'email.
+- Sauvegarde du fichier d'avant : `~/Sauvegardes-DigitalFootball/DashboardJoueur.2026-10-30.bloc9.jsx`.
+- Le bloc 0 est resté « à faire » dans ce plan mais ses blocs suivants ont été faits sans lui : la dépendance n'a pas bloqué.
+
+**Vérifications**
+- `npm run build` vert, `eslint` propre sur le nouveau fichier, zéro couleur écrite en dur, zéro emoji.
+- Rendu serveur dans trois cas (deux annonces dont une lue, club sans annonce, joueur sans club en mobile) : textes et pastille corrects.
+- **Non vérifié par moi** : l'aspect visuel (pas de navigateur) et le marquage « lu » réel en base (pas de compte joueur).
+
+**Reste à finir**
+- Bloc 9 : validation de Kevin (ouvrir Actualités sur téléphone et ordinateur, thèmes clair et sombre).
+- Textes en français écrits dans le code, hors `translations.js` (comme les blocs précédents).
+- Le bloc « Actualités du club » de l'accueil (deux dernières annonces) n'est pas touché : hors périmètre.
+
 ### Bloc 10 : Nutrition, premier écran adapté au joueur
-- Statut : à faire
+- Statut : **fait, en attente de validation visuelle de Kevin** (2026-10-30)
 - Objectif : un premier écran qui s'adapte au poste et aux objectifs du joueur, plus un tutoriel.
 - Résultat testable : j'arrive sur la nutrition et je comprends quoi faire, sans formation.
 - Modèle : sonnet · Effort : high · Coût estimé : élevé
@@ -321,8 +428,36 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - Tutoriel : quelques étapes expliquant la page, réutilisables via le composant d'aide existant si c'est possible.
 - Ce que je teste : la page nutrition avec mon profil réel.
 
+**Journal du bloc 10** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Fait** (menu de gauche du joueur Pro, page « Nutrition »)
+- **Premier écran** (`joueur/NutritionIntro.jsx`) : avant d'avoir un profil, le joueur ne tombe plus sur un formulaire muet. Il voit ce que la page apporte en trois étapes, puis « Créer mon profil ».
+- **Écran « Mon plan »** (`joueur/NutritionAccueil.jsx`, sur `Carte`, `TitreSection`, `TuileChiffre`) : une seule carte accentuée avec les calories notées aujourd'hui sur l'objectif du jour, une barre, la phrase « il te reste N kcal » et une action unique (« Noter mon premier repas » ou « Ajouter un repas »). Le choix du type de journée est dans cette carte. Dessous : glucides, protéines, lipides, conseils du jour, conseils du poste et de l'objectif, semaine, explication du calcul.
+- **Adapté au joueur, à partir de données déjà en base** : poste, objectif et âge du profil nutrition. Les conseils sont dans `src/lib/nutritionConseils.js`. Pour un joueur de moins de 18 ans qui choisit « perte de poids » ou « prise de masse », une précaution s'affiche (en parler à l'éducateur, aux parents ou à un médecin).
+- **Tutoriel** (`tutoriels/TutorielsJoueur.jsx`, même fenêtre que les tutoriels éducateur et club) : 5 étapes, s'ouvre seul une fois à la première arrivée sur le plan, relançable avec le bouton « Tutoriel » en haut à droite.
+- En-tête et largeur 980 px communs à tous les onglets Nutrition. Les autres onglets (Journal, Recettes, Éducation, Rapport, Poids, Profil) ne sont pas refaits.
+
+**Écarts et décisions**
+- Pas de conseils fournis par Kevin : le contenu est **général et assumé**, sans chiffre nouveau. À remplacer si Kevin a des conseils maison par poste.
+- Seul le Pro voit la page ; le starter garde l'aperçu Pro (inchangé, juste recadré).
+- Aucun changement de base, de paiement ni d'email. Une seule formule modifiée à la demande de Kevin : le plafond de protéines (voir Reste à finir).
+- Sauvegardes : `~/Sauvegardes-DigitalFootball/NutritionDashboard.2026-10-30.bloc10.jsx` et `DashboardJoueur.2026-10-30.bloc10.jsx`.
+- Incident en cours de route : un remplacement dans `DashboardJoueur.jsx` s'est inséré au début du fichier. Détecté par le lint, fichier restauré depuis la sauvegarde puis modification refaite et revérifiée (build vert, même nombre d'erreurs lint qu'avant : 7 erreurs et 3 avertissements déjà présents).
+
+**Vérifications**
+- `npm run build` vert (code de sortie 0), `eslint` : 0 erreur et 0 avertissement sur les 5 fichiers nouveaux ou modifiés de la Nutrition.
+- Rendu serveur de l'écran plan sur trois profils (gardien 25 ans, milieu 15 ans en perte de poids, attaquante 16 ans en prise de masse) et de l'introduction : textes, précautions d'âge et états (rien noté, en cours, dépassé) corrects. Tutoriel : les 5 étapes rendues.
+- Zéro couleur écrite en dur, zéro emoji dans les fichiers nouveaux.
+- **Non vérifié par moi** : l'aspect visuel (pas de navigateur), l'ouverture automatique du tutoriel, l'enregistrement du profil en base (pas de compte joueur).
+
+**Reste à finir**
+- **Protéines corrigées (accord de Kevin, 2026-10-30)** : `calculerMacros` plafonne maintenant les protéines à 2 g par kg (la borne du conseil affiché), les calories retirées vont aux glucides, le total du jour ne change pas. Avant, les formules montaient jusqu'à environ 2,9 g/kg. Vérifié sur 4 poids et 4 types de journée : protéines au plus 2,00 g/kg, pourcentages à 100 %, calories conservées. Sauvegarde : `~/Sauvegardes-DigitalFootball/nutrition.lib.2026-10-30.bloc10.js`. La ligne « g de protéines par kg » n'est pas remise à l'écran.
+- Les onglets Journal, Recettes, Éducation, Rapport, Poids et Profil gardent l'ancien habillage fait à la main. Les recettes ont encore une icône emoji de secours si la photo ne charge pas (`lib/nutrition.js`).
+- Le journal demande les grammes avec une fenêtre du navigateur (`window.prompt`) et les erreurs avec `alert` : à reprendre dans un bloc dédié.
+- Textes en français écrits dans le code, hors `translations.js` (comme les blocs précédents).
+
 ### Bloc 11 : vérification finale et mise en ligne
-- Statut : à faire
+- Statut : **vérifications faites, publication en attente de ton accord** (2026-10-30)
 - Objectif : prouver que tout tient, puis publier avec l'accord de Kevin.
 - Résultat testable : un parcours complet de l'espace joueur sans défaut, puis la production.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -334,3 +469,19 @@ Découpe retenue, sur le socle (`Carte`, `TitreSection`), cadre 980 px comme l'a
   - **Ne pousser qu'avec l'accord explicite de Kevin** : un push déclenche un déploiement en production.
   - Vérifier au passage s'il reste des commits locaux non désirés avant de pousser, comme le correctif sponsors mis de côté le 2026-10-29 sur la branche `sponsors-en-attente`.
 - Ce que je teste : le parcours complet, puis la production.
+
+**Journal du bloc 11** — 2026-10-30, Sonnet 5.5 (le modèle prévu), session neuve.
+
+**Vérifié (par commande, pas à l'œil)**
+- Zéro couleur en dur et zéro emoji dans les 14 fichiers nouveaux ou refaits du chantier (`joueur/*`, `TutorielsJoueur`, `nutritionConseils`, `NutritionDashboard`, `MesStats`, `ActualitesJoueur`, etc.). `DashboardJoueur.jsx` : 0 emoji, 95 lignes de couleurs en dur contre 99 avant le chantier, toutes dans de l'ancien code non retouché (branches affilié et écrans hors périmètre). Aucune régression.
+- `npm run build` vert (0,5 s de compilation). Seul avertissement : chunks de plus de 500 kB, déjà présent. Bundle joueur : 444 kB (101 kB compressé).
+- Lint : les fichiers nouveaux sont à 0 erreur et 0 avertissement. Fichiers modifiés identiques à `HEAD` : `DashboardJoueur.jsx` 7 erreurs et 3 avertissements, `MesStats.jsx` 1 et 1, `Tactipad.jsx` 8 et 4, `NutritionDashboard.jsx` et `nutrition.js` 0 et 0. Aucune erreur nouvelle.
+- Comparaison avec le bloc 0 impossible : le bloc 0 n'a jamais été exécuté, aucune valeur de référence notée. La comparaison porte donc sur `HEAD`.
+- Branche `sponsors-en-attente` : son seul commit propre est le correctif sponsors `66293b0`, absent de `main` comme voulu. Les 15 autres commits sont déjà dans `main` sous d'autres empreintes. Rien à pousser de ce côté.
+
+**Non fait, et pourquoi**
+- Parcours à l'œil téléphone/ordinateur, clair/sombre : je n'ai pas de navigateur. À faire par Kevin, rubrique par rubrique.
+- Bloc 2b fait le 2026-10-30 (voir son journal). Reste seulement les 6 préfixes de description d'`Upload.jsx`, gardés exprès.
+- **Blocs 6 à 10 non commités** et en attente de validation visuelle de Kevin. Rien n'est poussé.
+- Le dossier contient aussi 33 fichiers non suivis (`supabase_*.sql`, etc.) qui ne font pas partie de ce chantier : à ne pas mélanger dans le commit.
+

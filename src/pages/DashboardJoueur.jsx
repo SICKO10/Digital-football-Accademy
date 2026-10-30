@@ -18,6 +18,10 @@ import {
 import Loader from '../components/Loader'
 import Avatar from '../components/Avatar'
 import SanteJoueur from '../components/SanteJoueur'
+import EquipementJoueur from '../components/joueur/EquipementJoueur'
+import ActualitesJoueur from '../components/joueur/ActualitesJoueur'
+import AnalysesJoueur from '../components/joueur/AnalysesJoueur'
+import CoachAnalyseurJoueur from '../components/joueur/CoachAnalyseurJoueur'
 import NutritionDashboard from '../components/NutritionDashboard'
 import { notifierJoueur } from '../lib/notifications'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
@@ -440,6 +444,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [coachSelectionne, setCoachSelectionne] = useState(null)
   const [messageCoach, setMessageCoach] = useState('')
   const [sendingCoach, setSendingCoach] = useState(false)
+  const [coachErreur, setCoachErreur] = useState(false)
   const [coachSent, setCoachSent] = useState(false)
   const [convCoach, setConvCoach] = useState([])
   const [coachUnread, setCoachUnread] = useState(0)
@@ -1076,11 +1081,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   const sauvegarderMaTaille = async (champId, valeur) => {
-    if (readOnly) return
-    await supabase.from('equipement_tailles').upsert(
+    if (readOnly) return { error: null }
+    const { error } = await supabase.from('equipement_tailles').upsert(
       { user_id: userId, club_id: clubIdInventaire, champ_id: champId, valeur, updated_at: new Date().toISOString() },
       { onConflict: 'user_id, champ_id' }
     )
+    if (error) { console.error('sauvegarderMaTaille error:', error); return { error } }
     setMesTailles(prev => {
       const idx = prev.findIndex(t => t.champ_id === champId)
       if (idx === -1) return [...prev, { user_id: userId, club_id: clubIdInventaire, champ_id: champId, valeur }]
@@ -1088,6 +1094,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       next[idx] = { ...next[idx], valeur }
       return next
     })
+    return { error: null }
   }
 
   const marquerEquipementRecupere = async () => {
@@ -1586,8 +1593,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     if (readOnly) return
     if (!messageCoach.trim() || !coachSelectionne || !userId) return
     setSendingCoach(true)
-    await supabase.from('messages').insert({ sender_id: userId, receiver_id: coachSelectionne.id, content: messageCoach.trim(), created_at: new Date().toISOString() })
+    setCoachErreur(false)
+    const { error } = await supabase.from('messages').insert({ sender_id: userId, receiver_id: coachSelectionne.id, content: messageCoach.trim(), created_at: new Date().toISOString() })
     setSendingCoach(false)
+    if (error) { setCoachErreur(true); return }
     setCoachSent(true)
     setMessageCoach('')
     await chargerConversations(userId)
@@ -3216,62 +3225,12 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {onglet === 'nutrition' && <UpgradeCard titre={t('jnav_nutrition', lang)} texte={t('aff_nutrition_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
 
           {onglet === 'equipement' && (
-            <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 20px' }}>Mon équipement</h1>
-
-              {equipementPret && (
-                <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15 }}>Ton équipement est prêt !</p>
-                  <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
-                    {equipementPret.jours || 'Passe le récupérer auprès du club'}
-                    {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
-                    {equipementPret.heure_debut_2 && equipementPret.heure_fin_2 ? ` puis entre ${equipementPret.heure_debut_2} et ${equipementPret.heure_fin_2}` : ''}
-                  </p>
-                  <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
-                </div>
-              )}
-
-              {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
-                <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              )}
-
-              {!packAttribue ? (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-                  <p style={{ color: colors.text.faint, fontSize: 14 }}>Aucun pack ne t'a encore été attribué. Ton club te l'assignera prochainement.</p>
-                </div>
-              ) : (
-                <>
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '18px 22px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '24px' }}>{packAttribue.icone}</span>
-                    <div>
-                      <p style={{ margin: 0, color: colors.accent.green, fontWeight: 700, fontSize: 15 }}>{packAttribue.nom}</p>
-                      <p style={{ margin: 0, color: colors.text.faint, fontSize: 12 }}>{champsEquipement.length} article{champsEquipement.length > 1 ? 's' : ''} à renseigner</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {champsEquipement.map(c => {
-                      const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
-                      return (
-                        <div key={c.id}>
-                          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
-                          {c.taille_unique ? (
-                            <p style={{ margin: 0, fontSize: 13, color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
-                          ) : (
-                            <select value={valeur} onChange={e => sauvegarderMaTaille(c.id, e.target.value)}
-                              style={{ width: '100%', maxWidth: '240px', background: colors.background.raised, border: `1px solid ${valeur ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: valeur ? colors.accent.green : colors.text.dim, fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
-                              <option value="">Choisir une taille</option>
-                              {c.options.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
+            <EquipementJoueur
+              packAttribue={packAttribue} champsEquipement={champsEquipement} mesTailles={mesTailles}
+              equipementPret={equipementPret} equipementCommande={equipementCommande}
+              aUnClub={!!clubIdInventaire} readOnly={readOnly} isMobile={isMobile} lang={lang}
+              onSauvegarderTaille={sauvegarderMaTaille} onRecupere={marquerEquipementRecupere} onNaviguer={setOnglet}
+            />
           )}
           {onglet === 'analyses' && <UpgradeCard titre={t('aff_analyse_video_titre', lang)} texte={t('aff_analyse_video_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
           {onglet === 'feed' && <UpgradeCard titre={t('recrut_feed', lang)} texte={t('aff_feed_desc', lang)} lang={lang} userId={userId} email={profil?.email} />}
@@ -4705,31 +4664,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── ANNONCES DU CLUB ── */}
         {onglet === 'annonces' && (
-          <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Actualités du club</h1>
-            {annoncesClub.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune annonce pour le moment.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {annoncesClub.map(a => {
-                  const lue = annoncesLuesIds.has(a.id)
-                  return (
-                    <div key={a.id} onClick={() => marquerAnnonceLue(a.id)}
-                      style={{ background: colors.background.sunken, border: `1px solid ${lue ? colors.border.faint : colors.accent.green}`, borderRadius: '12px', padding: '18px', cursor: lue ? 'default' : 'pointer' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                        <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '14px', fontWeight: 700 }}>{a.titre}</h3>
-                        {!lue && <span style={{ background: colors.accent.green + '22', color: colors.accent.green, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>Nouveau</span>}
-                      </div>
-                      <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '8px' }}>
-                        {a.auteur_nom} · {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </div>
-                      <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <ActualitesJoueur
+            annonces={annoncesClub} luesIds={annoncesLuesIds} aUnClub={!!clubIdInventaire}
+            isMobile={isMobile} lang={lang} onLue={marquerAnnonceLue} onNaviguer={setOnglet}
+          />
         )}
 
         {/* ── ÉQUIPEMENT ── */}
@@ -4737,133 +4675,37 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <SanteJoueur userId={userId} estAffilie={affilieAccepte} isMobile={isMobile} lang={lang} onNaviguer={setOnglet} />
         )}
 
-        {onglet === 'nutrition' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            {isPro ? (
-              <>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>{t('jnav_nutrition', lang)}</h1>
-                <NutritionDashboard joueurId={userId} educateurId={mesAffiliations.find(a => a.statut === 'accepte')?.educateur_id} />
-              </>
-            ) : (
-              <ApercuPro
-                titre="Ton outil de nutrition est dans l'offre Pro"
-                accroche={t('aff_nutrition_desc', lang)}
-                points={avantagesPro}
-                formules={formulesPro}
-                isMobile={isMobile}
-              />
-            )}
+        {onglet === 'nutrition' && (isPro ? (
+          <NutritionDashboard joueurId={userId} educateurId={mesAffiliations.find(a => a.statut === 'accepte')?.educateur_id} isMobile={isMobile} />
+        ) : (
+          <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px' }}>
+            <ApercuPro
+              titre="Ton outil de nutrition est dans l'offre Pro"
+              accroche={t('aff_nutrition_desc', lang)}
+              points={avantagesPro}
+              formules={formulesPro}
+              isMobile={isMobile}
+            />
           </div>
-        )}
+        ))}
 
 
         {onglet === 'equipement' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '28px' }}>Mon équipement</h1>
-
-            {equipementPret && (
-              <div style={{ background: '#1a1200', border: `2px solid ${colors.accent.amber}`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15 }}>Ton équipement est prêt !</p>
-                <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>
-                  {equipementPret.jours || 'Passe le récupérer auprès du club'}
-                  {equipementPret.heure_debut && equipementPret.heure_fin ? ` · entre ${equipementPret.heure_debut} et ${equipementPret.heure_fin}` : ''}
-                  {equipementPret.heure_debut_2 && equipementPret.heure_fin_2 ? ` puis entre ${equipementPret.heure_debut_2} et ${equipementPret.heure_fin_2}` : ''}
-                </p>
-                <button onClick={marquerEquipementRecupere} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>J'ai récupéré</button>
-              </div>
-            )}
-
-            {equipementCommande?.statut === 'recupere' && equipementCommande?.recupere_le && (
-              <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: colors.accent.green }}>Équipement remis le {new Date(equipementCommande.recupere_le).toLocaleDateString('fr-FR')} à {new Date(equipementCommande.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            )}
-
-            {!packAttribue ? (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-                <p style={{ color: colors.text.faint, fontSize: 14 }}>Aucun pack ne t'a encore été attribué. Ton club te l'assignera prochainement.</p>
-              </div>
-            ) : (
-              <>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '18px 22px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '24px' }}>{packAttribue.icone}</span>
-                  <div>
-                    <p style={{ margin: 0, color: colors.accent.green, fontWeight: 700, fontSize: 15 }}>{packAttribue.nom}</p>
-                    <p style={{ margin: 0, color: colors.text.faint, fontSize: 12 }}>{champsEquipement.length} article{champsEquipement.length > 1 ? 's' : ''} à renseigner</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {champsEquipement.map(c => {
-                    const valeur = mesTailles.find(t => t.champ_id === c.id)?.valeur || ''
-                    return (
-                      <div key={c.id}>
-                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{c.nom}</p>
-                        {c.taille_unique ? (
-                          <p style={{ margin: 0, fontSize: 13, color: colors.text.faint, fontStyle: 'italic' }}>Taille unique</p>
-                        ) : (
-                          <select value={valeur} onChange={e => sauvegarderMaTaille(c.id, e.target.value)}
-                            style={{ width: '100%', maxWidth: '240px', background: colors.background.raised, border: `1px solid ${valeur ? colors.accent.green : colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: valeur ? colors.accent.green : colors.text.dim, fontSize: 13, fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
-                            <option value="">Choisir une taille</option>
-                            {c.options.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+          <EquipementJoueur
+            packAttribue={packAttribue} champsEquipement={champsEquipement} mesTailles={mesTailles}
+            equipementPret={equipementPret} equipementCommande={equipementCommande}
+            aUnClub={!!clubIdInventaire} readOnly={readOnly} isMobile={isMobile} lang={lang}
+            onSauvegarderTaille={sauvegarderMaTaille} onRecupere={marquerEquipementRecupere} onNaviguer={setOnglet}
+          />
         )}
 
         {/* ── ANALYSES ── */}
         {onglet === 'analyses' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>{t('ja_titre', lang)}</h1>
-              {(profil?.analyses_restantes || 0) > 0 && (
-                <button onClick={() => navigate('/upload')} style={st.btnSolid()}>
-                  {t('ja_nouvelle', lang)}
-                </button>
-              )}
-            </div>
-            {demandes.length === 0 ? (
-              <EmptyState compact icon={<IconSearch />} title={t('ja_aucune', lang)} />
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {demandes.map(demande => (
-                  <div key={demande.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.2px' }}>{demande.titre}</h3>
-                      <span style={{ background: demande.statut === 'analyse' ? '#4ade8012' : '#f59e0b12', color: demande.statut === 'analyse' ? colors.accent.green : '#f59e0b', fontSize: '10px', padding: '3px 10px', borderRadius: '20px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
-                        {demande.statut === 'analyse' ? t('ja_recue', lang) : t('etat_en_attente', lang)}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '12px', color: colors.text.disabled, marginBottom: '12px' }}>{demande.poste} · {new Date(demande.created_at).toLocaleDateString('fr-FR')}</p>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {demande.loom_url && (
-                        <a href={demande.loom_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: colors.accent.green, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                          {t('ja_voir', lang)}
-                        </a>
-                      )}
-                      {demande.rapport_pdf_url && (
-                        <a href={demande.rapport_pdf_url} target="_blank" rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030',
-                            color: colors.accent.green, borderRadius: 8, padding: '7px 14px',
-                            fontSize: 12, fontWeight: 700, textDecoration: 'none',
-                            fontFamily: 'Inter, sans-serif',
-                          }}>
-                          {t('ja_telecharger_rapport', lang)}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <AnalysesJoueur
+            demandes={demandes} analysesRestantes={profil?.analyses_restantes} isPro={isPro}
+            avantagesPro={avantagesPro} formulesPro={formulesPro} isMobile={isMobile} lang={lang}
+            onNouvelleAnalyse={() => navigate('/upload')}
+          />
         )}
 
         {/* ── MESSAGES ── */}
@@ -5107,70 +4949,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
         {onglet === 'coach' && (
-          <div style={{ maxWidth: '960px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>{t('jcoach_titre', lang)}</h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint }}>{t('jcoach_desc', lang)}</p>
-            </div>
-            {convCoach.length > 0 && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', marginBottom: '20px', overflow: 'hidden' }}>
-                <div style={{ padding: '14px 20px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                  <p style={{ fontWeight: 700, color: colors.accent.orange, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('jcoach_historique', lang)}</p>
-                </div>
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', maxHeight: '380px', overflowY: 'auto' }}>
-                  {(() => {
-                    const coachIds = coaches.map(c => c.id)
-                    return messages.filter(m => coachIds.includes(m.sender_id) || coachIds.includes(m.receiver_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((m, i) => (
-                      <div key={i} style={msgBubble(m.sender_id === userId)}>
-                        <p style={{ margin: 0 }}>{m.content}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.5 }}>{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {m.sender_id === userId ? t('jcoach_toi', lang) : t('jnav_coach', lang)}</p>
-                      </div>
-                    ))
-                  })()}
-                </div>
-              </div>
-            )}
-            {coaches.length === 0 ? (
-              <EmptyState dashed icon={<IconMic size={40} />} title={t('jcoach_aucun', lang)} />
-            ) : (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px' }}>
-                {coaches.length > 1 && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={labelStyle}>{t('jcoach_coach', lang)}</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                      {coaches.map(c => (
-                        <button key={c.id} onClick={() => setCoachSelectionne(c)}
-                          style={{ background: coachSelectionne?.id === c.id ? colors.accent.orange : 'transparent', color: coachSelectionne?.id === c.id ? colors.black : colors.text.faint, border: `1px solid ${coachSelectionne?.id === c.id ? colors.accent.orange : colors.border.default}`, padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: coachSelectionne?.id === c.id ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
-                          {c.prenom} {c.nom}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <label style={{ ...labelStyle, marginBottom: '10px', display: 'block' }}>
-                  {convCoach.length > 0 ? t('jcoach_nouveau_msg', lang) : `Écrire à ${coachSelectionne?.prenom || 'votre coach analyseur'}`}
-                </label>
-                {coachSent ? (
-                  <div style={{ textAlign: 'center', padding: '36px 0', color: colors.accent.orange }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><IconCheckCircle size={28} /></div>
-                    <p style={{ fontWeight: 700, fontSize: '14px' }}>{t('jcoach_msg_envoye', lang)}</p>
-                  </div>
-                ) : (
-                  <>
-                    <textarea value={messageCoach} onChange={e => setMessageCoach(e.target.value)}
-                      placeholder={`Bonjour ${coachSelectionne?.prenom || ''}, j'aurais une question sur...`}
-                      style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '14px', fontSize: '13px', resize: 'vertical', minHeight: '140px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                    <button onClick={envoyerMessageCoach} disabled={sendingCoach || !messageCoach.trim()}
-                      style={{ ...st.btnSolid(colors.accent.orange), marginTop: '12px', width: '100%', opacity: (sendingCoach || !messageCoach.trim()) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
-                      {sendingCoach ? t('etat_envoi_cours', lang) : t('jcoach_envoyer', lang)}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <CoachAnalyseurJoueur
+            coaches={coaches} coachSelectionne={coachSelectionne} onChoisirCoach={setCoachSelectionne}
+            messages={messages} userId={userId} aHistorique={convCoach.length > 0}
+            brouillon={messageCoach} onBrouillon={setMessageCoach} onEnvoyer={envoyerMessageCoach}
+            envoiEnCours={sendingCoach} envoye={coachSent} erreur={coachErreur}
+            readOnly={readOnly} isMobile={isMobile} lang={lang}
+          />
         )}
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} />}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>

@@ -6,6 +6,7 @@ import { supabase } from '../supabase'
 import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors, alpha } from '../tokens'
+import { IconVideo, IconCheckCircle, IconFolder } from '../components/icones'
 
 export default function UploadClip() {
   const navigate = useNavigate()
@@ -133,7 +134,7 @@ export default function UploadClip() {
   if (success) return (
     <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p style={{ fontSize: '4rem' }}>🎬</p>
+        <p style={{ display: 'flex', justifyContent: 'center', color: colors.accent.green }}><IconVideo size={64} /></p>
         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{t('uploadclip_publie_titre', lang)}</h2>
         <p style={{ color: colors.text.dim, marginBottom: '2rem' }}>{t('uploadclip_publie_desc', lang)}</p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -152,7 +153,7 @@ export default function UploadClip() {
       </nav>
 
       <div style={st.content}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>🎬 {t('uploadclip_titre', lang)}</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}><IconVideo size={22} /> {t('uploadclip_titre', lang)}</h1>
         <p style={{ color: colors.text.dim, fontSize: '14px', margin: '0 0 1.5rem' }}>{t('uploadclip_desc', lang)}</p>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
@@ -163,7 +164,7 @@ export default function UploadClip() {
         <div style={st.card}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={st.label}>{t('upload_titre_optionnel', lang)}</label>
-            <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex: Mon but de la semaine 🔥" style={st.input} />
+            <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Ex: Mon but de la semaine" style={st.input} />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={st.label}>{t('upload_description_optionnel', lang)}</label>
@@ -194,9 +195,9 @@ export default function UploadClip() {
                 onClick={() => document.getElementById('clip-file').click()}
                 style={{ border: '2px dashed ' + (file ? colors.accent.green : colors.border.strong), borderRadius: '12px', padding: '2.5rem', textAlign: 'center', cursor: 'pointer', background: file ? colors.accent.green + alpha.faint : 'transparent' }}>
                 {file ? (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>✅</p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
+                  <><p style={{ margin: '0 0 8px', color: colors.accent.green, display: 'flex', justifyContent: 'center' }}><IconCheckCircle size={32} /></p><p style={{ fontWeight: 600, margin: 0 }}>{file.name}</p><p style={{ fontSize: '13px', color: colors.text.dim, margin: 0 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p></>
                 ) : (
-                  <><p style={{ fontSize: '2rem', margin: '0 0 8px' }}>📁</p><p style={{ color: colors.text.dim, fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
+                  <><p style={{ margin: '0 0 8px', display: 'flex', justifyContent: 'center', color: colors.text.dim }}><IconFolder size={32} /></p><p style={{ color: colors.text.dim, fontSize: '14px', margin: 0 }}>{t('upload_clique_selectionner', lang)}</p></>
                 )}
               </div>
               <input id="clip-file" type="file" accept="video/mp4,video/mov,video/webm" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f && f.size > 500 * 1024 * 1024) { setErreur(t('upload_fichier_trop_volumineux_500', lang)); return } setErreur(''); setFile(f) }} />
@@ -211,7 +212,7 @@ export default function UploadClip() {
             </div>
           )}
 
-          {erreur && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>❌ {erreur}</p>}
+          {erreur && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>{erreur}</p>}
 
           <button
             onClick={mode === 'lien' ? handleSubmitLien : handleUploadFichier}

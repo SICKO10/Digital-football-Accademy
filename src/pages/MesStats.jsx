@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha } from '../tokens'
+import { alpha, fontSize, radius, spacing } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
 import { calculerMoyennes } from '../lib/statsRecrutement'
-import { IconChart, IconTarget, IconPass, IconRun } from '../components/icones'
+import { IconChart, IconTarget, IconPass, IconRun, IconCheck } from '../components/icones'
+import Carte from '../components/joueur/Carte'
+import TitreSection from '../components/joueur/TitreSection'
 
 const STATS_PAR_POSTE = {
   Gardien: [
@@ -103,11 +105,26 @@ function RadarChart({ data, labels, color, gridColor, textColor }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste }) {
+// Une zone de saisie du formulaire : titre de groupe, consigne courte, champs.
+function Groupe({ titre, aide, children }) {
+  const colors = useColors()
+  return (
+    <div>
+      <TitreSection style={{ margin: 0 }}>{titre}</TitreSection>
+      {aide && <p style={{ margin: `${spacing.xs} 0 ${spacing.lg}`, color: colors.text.faint, fontSize: fontSize.lg }}>{aide}</p>}
+      {!aide && <div style={{ height: spacing.lg }} />}
+      {children}
+    </div>
+  )
+}
+
+export default function MesStats({ userId, joueurPoste, isMobile = false }) {
   const colors = useColors()
   const [vue, setVue] = useState('profil') // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
   const [saving, setSaving] = useState(false)
+  const [erreur, setErreur] = useState('')
+  const [enregistre, setEnregistre] = useState(false)
   const poste = getPosteFamille(joueurPoste)
   const statsSpec = STATS_PAR_POSTE[poste] || STATS_PAR_POSTE.Milieu
 
@@ -120,13 +137,16 @@ export default function MesStats({ userId, joueurPoste }) {
 
   useEffect(() => { if (userId) charger() }, [userId])
 
+  const changerVue = (v) => { setVue(v); setErreur(''); setEnregistre(false) }
+
   const sauvegarder = async () => {
     setSaving(true)
+    setErreur('')
     const payload = { ...form, joueur_id: userId, source: 'manuel' }
     Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null })
 
     const { error } = await supabase.from('stats_match_joueur').insert(payload)
-    if (error) { alert(error.message); setSaving(false); return }
+    if (error) { setErreur(error.message); setSaving(false); return }
 
     const { data: allMatchs } = await supabase.from('stats_match_joueur').select('*').eq('joueur_id', userId)
     const moyennes = calculerMoyennes(allMatchs || [])
@@ -135,12 +155,28 @@ export default function MesStats({ userId, joueurPoste }) {
     setSaving(false)
     await charger()
     setVue('profil')
-    setForm(FORM_VIDE)
+    setEnregistre(true)
+    setForm({ ...FORM_VIDE, date: new Date().toISOString().split('T')[0] })
   }
 
   const moy = calculerMoyennes(matchs)
-  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }
-  const labelStyle = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '4px' }
+  const formulaireValide = !!form.adversaire.trim() && !!form.date
+  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
+  const labelStyle = { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: spacing.xs }
+  const grille = (colonnes) => ({ display: 'grid', gridTemplateColumns: `repeat(${colonnes}, minmax(0, 1fr))`, gap: spacing.lg })
+  const pastille = (actif) => ({
+    minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: radius.pill,
+    border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
+    background: actif ? colors.accent.green + alpha.subtle : 'transparent',
+    color: actif ? colors.accent.green : colors.text.faint,
+    fontWeight: actif ? 700 : 500, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+  })
+  const boutonPrincipal = (actif) => ({
+    minHeight: '48px', padding: `0 ${spacing['4xl']}`, border: 'none', borderRadius: radius.xl,
+    background: actif ? colors.accent.green : colors.background.raised,
+    color: actif ? colors.black : colors.text.disabled,
+    fontWeight: 800, fontSize: fontSize['2xl'], cursor: actif ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif',
+  })
 
   const radarConfig = poste === 'Gardien'
     ? { labels: ['Arrêts%', 'Sorties', 'Relances', 'Duels', 'Comm.', 'Réflexes'], data: [moy.pct_arrets || 0, Math.min((moy.moy_arrets || 0) * 20, 100), Math.min((moy.moy_recuperations || 0) * 20, 100), moy.pct_duels || 0, 70, 75] }
@@ -164,142 +200,148 @@ export default function MesStats({ userId, joueurPoste }) {
   ].filter(Boolean)
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>Mon Développement</div>
-        <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 900, margin: 0 }}>Mes Statistiques</h1>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
+    <div style={{ padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
+      <div>
+        <TitreSection couleur={colors.accent.green} style={{ margin: `0 0 ${spacing.xs}` }}>Mon développement</TitreSection>
+        <h1 style={{ color: colors.text.primary, fontSize: fontSize['7xl'], fontWeight: 800, margin: 0 }}>Mes statistiques</h1>
+        <p style={{ color: colors.text.faint, fontSize: fontSize.lg, margin: `${spacing.xs} 0 0` }}>
           {moy.nb_matchs || 0} match{(moy.nb_matchs || 0) > 1 ? 's' : ''} enregistré{(moy.nb_matchs || 0) > 1 ? 's' : ''} · {joueurPoste || poste}
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: '+ Saisir un match' }, { key: 'historique', label: `Historique (${matchs.length})` }].map(o => (
-          <button key={o.key} onClick={() => setVue(o.key)}
-            style={{ padding: '9px 18px', borderRadius: '20px', border: vue === o.key ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: vue === o.key ? colors.accent.green + alpha.subtle : 'transparent', color: vue === o.key ? colors.accent.green : colors.text.faint, fontWeight: vue === o.key ? 700 : 400, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {o.label}
-          </button>
+      <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
+        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${matchs.length})` }].map(o => (
+          <button key={o.key} onClick={() => changerVue(o.key)} style={pastille(vue === o.key)}>{o.label}</button>
         ))}
       </div>
 
+      {vue === 'profil' && enregistre && (
+        <Carte isMobile={isMobile} accent={colors.accent.green} style={{ display: 'flex', alignItems: 'center', gap: spacing.lg, color: colors.accent.green, fontWeight: 700, fontSize: fontSize.xl }}>
+          <IconCheck size={18} /> Match enregistré, ton profil est à jour.
+        </Carte>
+      )}
+
       {vue === 'profil' && (
         matchs.length === 0 ? (
-          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '60px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.icon.muted }}><IconChart size={44} /></div>
-            <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Aucune stat enregistrée</div>
-            <div style={{ color: colors.text.faint, fontSize: '14px', marginBottom: '20px' }}>Saisis tes stats après chaque match pour construire ton profil</div>
-            <button onClick={() => setVue('saisir')} style={{ background: colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px 24px', color: colors.black, fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              + Saisir mon premier match
-            </button>
-          </div>
+          <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '48px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.lg, color: colors.icon.muted }}><IconChart size={44} /></div>
+            <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Aucune stat enregistrée</div>
+            <div style={{ color: colors.text.faint, fontSize: fontSize.xl, marginBottom: spacing['3xl'] }}>Saisis tes stats après chaque match pour construire ton profil.</div>
+            <button onClick={() => changerVue('saisir')} style={boutonPrincipal(true)}>Saisir mon premier match</button>
+          </Carte>
         ) : (
-          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['5xl'], alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
             <RadarChart data={radarConfig.data} labels={radarConfig.labels} color={colors.accent.green} gridColor={colors.border.subtle} textColor={colors.text.faint} />
-            <div style={{ flex: 1, minWidth: '200px' }}>
-              <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
-                Saison en cours · {moy.nb_matchs} matchs
-              </div>
+            <div style={{ flex: 1, minWidth: '220px' }}>
+              <TitreSection couleur={colors.accent.green} style={{ marginBottom: spacing['2xl'] }}>Saison en cours · {moy.nb_matchs} matchs</TitreSection>
               {statsClesRadar.map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
-                  <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{label}</span>
-                  <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{value}</span>
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: `${spacing.sm} 0`, borderBottom: `1px solid ${colors.border.faint}` }}>
+                  <span style={{ color: colors.text.secondary, fontSize: fontSize.lg }}>{label}</span>
+                  <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>{value}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </Carte>
         )
       )}
 
       {vue === 'saisir' && (
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px' }}>
-          <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontWeight: 800 }}>Saisir un match</h3>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-            <div>
-              <label style={labelStyle}>Date *</label>
-              <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Adversaire *</label>
-              <input value={form.adversaire} onChange={e => setForm(p => ({ ...p, adversaire: e.target.value }))} placeholder="AS Monaco" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Niveau</label>
-              <select value={form.niveau} onChange={e => setForm(p => ({ ...p, niveau: e.target.value }))} style={inputStyle}>
-                <option value="">— Choisir —</option>
-                {NIVEAUX.map(n => <option key={n}>{n}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Minutes jouées</label>
-              <input type="number" min="0" max="120" value={form.minutes} onChange={e => setForm(p => ({ ...p, minutes: Number(e.target.value) }))} style={inputStyle} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-            {[{ label: 'Titulaire', val: true }, { label: 'Remplaçant', val: false }].map(({ label, val }) => (
-              <button key={label} onClick={() => setForm(p => ({ ...p, titulaire: val }))}
-                style={{ padding: '8px 20px', borderRadius: '20px', border: form.titulaire === val ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.strong}`, background: form.titulaire === val ? colors.accent.green + alpha.subtle : 'transparent', color: form.titulaire === val ? colors.accent.green : colors.text.faint, fontWeight: form.titulaire === val ? 700 : 400, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Stats de base</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' }}>
-            {[
-              { key: 'buts', label: 'Buts' },
-              { key: 'passes_decisives', label: 'Passes décisives' },
-              { key: 'cartons_jaunes', label: 'Cartons jaunes' },
-              { key: 'cartons_rouges', label: 'Cartons rouges' },
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label style={labelStyle}>{label}</label>
-                <input type="number" min="0" value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: Number(e.target.value) }))} style={inputStyle} />
+        <Carte isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing['4xl'] }}>
+          <Groupe titre="Le match" aide="Ces deux champs sont obligatoires : la date et l'adversaire.">
+            <div style={grille(isMobile ? 1 : 2)}>
+              <div>
+                <label style={labelStyle} htmlFor="ms-date">Date</label>
+                <input id="ms-date" type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} style={inputStyle} />
               </div>
-            ))}
-          </div>
-
-          <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Stats {poste}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '24px' }}>
-            {statsSpec.map(({ key, label, decimal }) => (
-              <div key={key}>
-                <label style={labelStyle}>{label}</label>
-                <input type="number" min="0" step={decimal ? '0.1' : '1'} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder="0" style={inputStyle} />
+              <div>
+                <label style={labelStyle} htmlFor="ms-adv">Adversaire</label>
+                <input id="ms-adv" value={form.adversaire} onChange={e => setForm(p => ({ ...p, adversaire: e.target.value }))} placeholder="AS Monaco" style={inputStyle} />
               </div>
-            ))}
-          </div>
+              <div>
+                <label style={labelStyle} htmlFor="ms-niv">Niveau</label>
+                <select id="ms-niv" value={form.niveau} onChange={e => setForm(p => ({ ...p, niveau: e.target.value }))} style={inputStyle}>
+                  <option value="">Choisir</option>
+                  {NIVEAUX.map(n => <option key={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle} htmlFor="ms-min">Minutes jouées</label>
+                <input id="ms-min" type="number" inputMode="numeric" min="0" max="120" value={form.minutes} onChange={e => setForm(p => ({ ...p, minutes: Number(e.target.value) }))} style={inputStyle} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: spacing.md, marginTop: spacing.lg }}>
+              {[{ label: 'Titulaire', val: true }, { label: 'Remplaçant', val: false }].map(({ label, val }) => (
+                <button key={label} onClick={() => setForm(p => ({ ...p, titulaire: val }))} style={pastille(form.titulaire === val)}>{label}</button>
+              ))}
+            </div>
+          </Groupe>
 
-          <button onClick={sauvegarder} disabled={saving || !form.adversaire}
-            style={{ width: '100%', background: (saving || !form.adversaire) ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '14px', color: (saving || !form.adversaire) ? colors.text.disabled : colors.black, fontWeight: 800, fontSize: '15px', cursor: (saving || !form.adversaire) ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            {saving ? 'Sauvegarde...' : 'Enregistrer ce match'}
-          </button>
-        </div>
+          <Groupe titre="Ton match en chiffres" aide="Mets 0 si tu n'as rien à signaler.">
+            <div style={grille(isMobile ? 2 : 4)}>
+              {[
+                { key: 'buts', label: 'Buts' },
+                { key: 'passes_decisives', label: 'Passes décisives' },
+                { key: 'cartons_jaunes', label: 'Cartons jaunes' },
+                { key: 'cartons_rouges', label: 'Cartons rouges' },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label style={labelStyle} htmlFor={`ms-${key}`}>{label}</label>
+                  <input id={`ms-${key}`} type="number" inputMode="numeric" min="0" value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: Number(e.target.value) }))} style={inputStyle} />
+                </div>
+              ))}
+            </div>
+          </Groupe>
+
+          <Groupe titre={`Stats détaillées · ${poste}`} aide="Facultatif. Remplis ce que tu connais, laisse vide le reste : ton profil se calcule avec ce que tu donnes.">
+            <div style={grille(isMobile ? 2 : 3)}>
+              {statsSpec.map(({ key, label, decimal }) => (
+                <div key={key}>
+                  <label style={labelStyle} htmlFor={`ms-${key}`}>{label}</label>
+                  <input id={`ms-${key}`} type="number" inputMode={decimal ? 'decimal' : 'numeric'} min="0" step={decimal ? '0.1' : '1'} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder="0" style={inputStyle} />
+                </div>
+              ))}
+            </div>
+          </Groupe>
+
+          {erreur && (
+            <div role="alert" style={{ color: colors.accent.red, fontSize: fontSize.lg, fontWeight: 600 }}>
+              Le match n'a pas été enregistré. {erreur}
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing['2xl'], flexWrap: 'wrap' }}>
+            <button onClick={sauvegarder} disabled={saving || !formulaireValide} style={{ ...boutonPrincipal(!saving && formulaireValide), width: isMobile ? '100%' : 'auto' }}>
+              {saving ? 'Enregistrement...' : 'Enregistrer ce match'}
+            </button>
+            {!formulaireValide && <span style={{ color: colors.text.faint, fontSize: fontSize.lg }}>Indique la date et l'adversaire pour enregistrer.</span>}
+          </div>
+        </Carte>
       )}
 
       {vue === 'historique' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {matchs.length === 0 && <div style={{ color: colors.text.disabled, textAlign: 'center', padding: '40px' }}>Aucun match enregistré</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+          {matchs.length === 0 && (
+            <Carte isMobile={isMobile} style={{ textAlign: 'center', color: colors.text.faint, fontSize: fontSize.xl }}>Aucun match enregistré pour le moment.</Carte>
+          )}
           {matchs.map(m => (
-            <div key={m.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <Carte key={m.id} isMobile={isMobile} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
               <div>
-                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>
+                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl, marginBottom: '3px' }}>
                   vs {m.adversaire}
-                  {m.niveau && <span style={{ color: colors.text.disabled, fontWeight: 400, fontSize: '12px', marginLeft: '8px' }}>{m.niveau}</span>}
+                  {m.niveau && <span style={{ color: colors.text.disabled, fontWeight: 400, fontSize: fontSize.md, marginLeft: spacing.md }}>{m.niveau}</span>}
                 </div>
-                <div style={{ color: colors.text.faint, fontSize: '12px' }}>
-                  {new Date(m.date).toLocaleDateString('fr-FR')} · {m.titulaire ? 'Titulaire' : 'Remplaçant'} · {m.minutes}min
+                <div style={{ color: colors.text.faint, fontSize: fontSize.md }}>
+                  {new Date(m.date).toLocaleDateString('fr-FR')} · {m.titulaire ? 'Titulaire' : 'Remplaçant'} · {m.minutes} min
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '12px', fontSize: '13px', flexWrap: 'wrap' }}>
-                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconTarget size={13} />{m.buts}</span>}
-                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPass size={13} />{m.passes_decisives}</span>}
-                {m.km_parcourus && <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconRun size={13} />{m.km_parcourus}km</span>}
+              <div style={{ display: 'flex', gap: spacing.lg, fontSize: fontSize.lg, flexWrap: 'wrap' }}>
+                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconTarget size={13} />{m.buts}</span>}
+                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconPass size={13} />{m.passes_decisives}</span>}
+                {m.km_parcourus && <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconRun size={13} />{m.km_parcourus} km</span>}
                 {m.passes_tentees && m.passes_reussies && (
-                  <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconChart size={13} />{Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
+                  <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconChart size={13} />{Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
                 )}
               </div>
-            </div>
+            </Carte>
           ))}
         </div>
       )}

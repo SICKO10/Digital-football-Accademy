@@ -9,6 +9,9 @@ import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
 import { STRIPE_LINKS } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
+import { IconBall, IconTarget, IconClipboard, IconHeart, IconMessage, IconStar, IconTrash, IconShare, IconLink, IconLock, IconVideo, IconSearch, IconClose, IconCheck, IconPin, IconStadium, IconTrophy, IconRun } from '../components/icones'
+
+const Ic = ({ children }) => <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: '4px' }}>{children}</span>
 
 const detectVideoType = (url) => {
   if (!url) return null
@@ -31,12 +34,12 @@ const getTikTokId = (url) => {
 }
 
 const TYPE_META = {
-  mp4:       { color: colors.accent.green, emoji: '🎬' },
-  youtube:   { label: 'YouTube',    color: '#ff0000', emoji: '▶' },
-  veo:       { label: 'Veo',        color: colors.accent.blue, emoji: '🎥' },
-  instagram: { label: 'Instagram',  color: '#E1306C', emoji: '📸' },
-  tiktok:    { label: 'TikTok',     color: '#69C9D0', emoji: '♪' },
-  link:      { color: colors.accent.green, emoji: '▶' },
+  mp4:       { color: colors.accent.green },
+  youtube:   { label: 'YouTube',    color: '#ff0000' },
+  veo:       { label: 'Veo',        color: colors.accent.blue },
+  instagram: { label: 'Instagram',  color: '#E1306C' },
+  tiktok:    { label: 'TikTok',     color: '#69C9D0' },
+  link:      { color: colors.accent.green },
 }
 
 function typeLabel(type, lang) {
@@ -79,7 +82,7 @@ function VideoBadge({ url, lang }) {
   const type = detectVideoType(url)
   const { color } = TYPE_META[type] || TYPE_META.link
   const label = typeLabel(type, lang)
-  return (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: `${color}15`, border: `1px solid ${color}40`, color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>🎬 {label}</span>)
+  return (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: `${color}15`, border: `1px solid ${color}40`, color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}><IconVideo size={12} />{label}</span>)
 }
 
 function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st, onDeleteVideo, certif, lang }) {
@@ -175,8 +178,8 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <p onClick={() => onOpenProfile(j)} style={{ margin: 0, fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>{j.prenom} {j.nom}</p>
-            {certif && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>⭐ Certifié {certif.niveau}</span>}
-            {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>🪪 FFF</span>}
+            {certif && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>Certifié {certif.niveau}</span>}
+            {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap' }}>FFF</span>}
           </div>
           <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.accent.green }}>{j.poste}{j.categorie ? ` · ${j.categorie}` : ''}{j.club ? ` · ${j.club}` : ''}</p>
         </div>
@@ -201,15 +204,15 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
       </div>
       <VideoPlayer url={j.clip_url} lang={lang} />
       <div style={{ padding: '10px 16px', display: 'flex', gap: '8px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
-        <span style={st.stat}>⚽ <span style={st.statVal}>{j.buts_total ?? 0}</span> {t('feed_buts_suffix', lang)}</span>
-        <span style={st.stat}>🎯 <span style={st.statVal}>{j.passes_decisives ?? 0}</span> {t('feed_passes_suffix', lang)}</span>
-        <span style={st.stat}>📋 <span style={st.statVal}>{j.matchs_officiel ?? 0}</span> {t('feed_matchs_suffix', lang)}</span>
+        <span style={st.stat}><Ic><IconBall size={12} /></Ic><span style={st.statVal}>{j.buts_total ?? 0}</span> {t('feed_buts_suffix', lang)}</span>
+        <span style={st.stat}><Ic><IconTarget size={12} /></Ic><span style={st.statVal}>{j.passes_decisives ?? 0}</span> {t('feed_passes_suffix', lang)}</span>
+        <span style={st.stat}><Ic><IconClipboard size={12} /></Ic><span style={st.statVal}>{j.matchs_officiel ?? 0}</span> {t('feed_matchs_suffix', lang)}</span>
         {j.region && <span style={st.stat}>{j.region}</span>}
       </div>
       <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' }}>
-        <button style={actionBtn(liked, colors.accent.red)} onClick={handleLike}><span style={{ fontSize: '16px' }}>{liked ? '❤️' : '🤍'}</span><span>{likeCount}</span></button>
-        <button style={actionBtn(showComments, colors.accent.blue)} onClick={() => setShowComments(!showComments)}><span style={{ fontSize: '16px' }}>💬</span><span>{commentCount}</span></button>
-        <button style={actionBtn(favori, '#f59e0b')} onClick={handleFavori}><span style={{ fontSize: '16px' }}>{favori ? '⭐' : '☆'}</span></button>
+        <button style={actionBtn(liked, colors.accent.red)} onClick={handleLike}><IconHeart size={18} filled={liked} /><span>{likeCount}</span></button>
+        <button style={actionBtn(showComments, colors.accent.blue)} onClick={() => setShowComments(!showComments)}><IconMessage size={18} /><span>{commentCount}</span></button>
+        <button style={actionBtn(favori, '#f59e0b')} onClick={handleFavori}><IconStar size={18} filled={favori} /></button>
 
         {/* ── BOUTON SUPPRIMER — visible uniquement par le propriétaire ── */}
         {isOwner && (
@@ -218,23 +221,23 @@ function VideoCard({ j, user, profil, interactions, onRefresh, onOpenProfile, st
             disabled={deleting}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: deleting ? colors.text.faint : colors.accent.red, padding: '6px 8px', borderRadius: '8px', fontWeight: 600 }}
           >
-            <span style={{ fontSize: '16px' }}>🗑️</span>
+            <IconTrash size={16} />
             <span>{deleting ? t('feed_suppression_cours', lang) : t('feed_supprimer_ma_video', lang)}</span>
           </button>
         )}
 
         <div style={{ marginLeft: 'auto', position: 'relative' }} ref={shareRef}>
-          <button style={actionBtn(false, colors.text.secondary)} onClick={() => setShareOpen(!shareOpen)}><span style={{ fontSize: '16px' }}>📤</span><span style={{ fontSize: '12px' }}>{t('feed_partager', lang)}</span></button>
+          <button style={actionBtn(false, colors.text.secondary)} onClick={() => setShareOpen(!shareOpen)}><IconShare size={16} /><span style={{ fontSize: '12px' }}>{t('feed_partager', lang)}</span></button>
           {shareOpen && (
             <div style={{ position: 'absolute', bottom: '40px', right: 0, background: colors.background.raised, border: '1px solid #333', borderRadius: '12px', padding: '8px', zIndex: 100, minWidth: '180px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-              {[{ id: 'whatsapp', label: 'WhatsApp', color: '#25D366', emoji: '💬' }, { id: 'telegram', label: 'Telegram', color: '#0088cc', emoji: '✈️' }, { id: 'twitter', label: 'X / Twitter', color: '#1DA1F2', emoji: '🐦' }, { id: 'facebook', label: 'Facebook', color: '#1877F2', emoji: '📘' }].map(({ id, label, color, emoji }) => (
+              {[{ id: 'whatsapp', label: 'WhatsApp', color: '#25D366', }, { id: 'telegram', label: 'Telegram', color: '#0088cc' }, { id: 'twitter', label: 'X / Twitter', color: '#1DA1F2' }, { id: 'facebook', label: 'Facebook', color: '#1877F2' }].map(({ id, label, color }) => (
                 <button key={id} onClick={() => handleShare(id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: 'transparent', border: 'none', color: colors.text.primary, padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', textAlign: 'left' }} onMouseEnter={e => e.currentTarget.style.background = colors.border.default} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <span>{emoji}</span><span style={{ color }}>{label}</span>
+                  <span style={{ color }}>{label}</span>
                 </button>
               ))}
               <div style={{ borderTop: '1px solid #333', margin: '4px 0' }} />
               <button onClick={handleCopyLink} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', background: 'transparent', border: 'none', color: colors.text.secondary, padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }} onMouseEnter={e => e.currentTarget.style.background = colors.border.default} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <span>🔗</span> {t('feed_copier_le_lien', lang)}
+                <IconLink size={14} /> {t('feed_copier_le_lien', lang)}
               </button>
             </div>
           )}
@@ -391,7 +394,7 @@ function Feed() {
   if (acces === false) return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ maxWidth: '480px', width: '100%', background: colors.background.surface, border: '1px solid #222', borderRadius: '20px', padding: '3rem', textAlign: 'center', margin: '1rem' }}>
-        <div style={{ fontSize: '60px', marginBottom: '1rem' }}>🔒</div>
+        <div style={{ marginBottom: '1rem', color: colors.accent.green, display: 'flex', justifyContent: 'center' }}><IconLock size={56} /></div>
         <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px' }}>{t('feed_reserve_plan_pro', lang)}</h1>
         <p style={{ fontSize: '15px', color: colors.text.dim, marginBottom: '2rem', lineHeight: 1.6 }}>
           {t('feed_scout_center_desc', lang)}
@@ -400,7 +403,7 @@ function Feed() {
           <p style={{ margin: '0 0 10px', fontWeight: 700, color: colors.accent.green, fontSize: '15px' }}>{t('feed_plan_pro_prix', lang)}</p>
           {[t('feed_feature_profil_visible', lang), t('feed_feature_acces_feed', lang), t('feed_feature_acces_jogabonito', lang), t('feed_feature_analyses_video', lang), t('feed_feature_compile', lang)].map(f => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: colors.text.secondary, marginBottom: '6px' }}>
-              <span style={{ color: colors.accent.green }}>✓</span> {f}
+              <span style={{ color: colors.accent.green, display: 'inline-flex' }}><IconCheck size={14} /></span> {f}
             </div>
           ))}
         </div>
@@ -422,7 +425,7 @@ function Feed() {
         <div onClick={() => navigate('/')} style={{ fontSize: '18px', fontWeight: '700', cursor: 'pointer' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {favoriIds.length > 0 && vue === 'videos' && (
-            <button onClick={() => setVue('favoris')} style={{ background: '#f59e0b15', border: '1px solid #f59e0b40', color: '#f59e0b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>⭐ {t('feed_favoris', lang)} ({favoriIds.length})</button>
+            <button onClick={() => setVue('favoris')} style={{ background: '#f59e0b15', border: '1px solid #f59e0b40', color: '#f59e0b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}><Ic><IconStar size={14} filled /></Ic>{t('feed_favoris', lang)} ({favoriIds.length})</button>
           )}
           <button onClick={() => navigate(isClub ? '/club' : isRecruteur ? '/scout-club' : '/dashboard')} style={{ background: colors.accent.green, color: colors.background.base, border: 'none', padding: '8px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
             {isRecruteur ? t('feed_scout_center', lang) : t('feed_mon_espace', lang)}
@@ -438,7 +441,7 @@ function Feed() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', justifyContent: 'center' }}>
-          {[{ id: 'videos', label: `🎬 ${t('feed_tab_videos', lang)} (${joueursAvecClip.length})` }, { id: 'profils', label: `👤 ${t('feed_tab_profils', lang)} (${joueursPro.length})` }, ...(favoriIds.length > 0 ? [{ id: 'favoris', label: `⭐ ${t('feed_favoris', lang)} (${favoriIds.length})` }] : [])].map(tb => (
+          {[{ id: 'videos', label: `${t('feed_tab_videos', lang)} (${joueursAvecClip.length})` }, { id: 'profils', label: `${t('feed_tab_profils', lang)} (${joueursPro.length})` }, ...(favoriIds.length > 0 ? [{ id: 'favoris', label: `${t('feed_favoris', lang)} (${favoriIds.length})` }] : [])].map(tb => (
             <button key={tb.id} onClick={() => setVue(tb.id)} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, background: vue === tb.id ? colors.accent.green : colors.background.raised, color: vue === tb.id ? colors.black : colors.text.secondary }}>{tb.label}</button>
           ))}
         </div>
@@ -461,7 +464,7 @@ function Feed() {
 
         {vue === 'videos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {feedVideos.length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ fontSize: '3rem' }}>🎬</p><p>{t('feed_aucune_video_moment', lang)}</p></div>)
+            {feedVideos.length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ display: 'flex', justifyContent: 'center' }}><IconVideo size={48} /></p><p>{t('feed_aucune_video_moment', lang)}</p></div>)
               : feedVideos.map(j => (
                 <VideoCard
                   key={j.id}
@@ -482,7 +485,7 @@ function Feed() {
 
         {vue === 'favoris' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {joueursAvecClip.filter(j => favoriIds.includes(j.id)).length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ fontSize: '3rem' }}>⭐</p><p>{t('feed_aucun_favori', lang)}</p></div>)
+            {joueursAvecClip.filter(j => favoriIds.includes(j.id)).length === 0 ? (<div style={{ textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ display: 'flex', justifyContent: 'center' }}><IconStar size={48} /></p><p>{t('feed_aucun_favori', lang)}</p></div>)
               : joueursAvecClip.filter(j => favoriIds.includes(j.id)).map(j => (
                 <VideoCard
                   key={j.id}
@@ -503,7 +506,7 @@ function Feed() {
 
         {vue === 'profils' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
-            {joueursFiltres.length === 0 ? (<div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ fontSize: '2rem' }}>🔍</p><p>{t('feed_aucun_joueur_trouve', lang)}</p></div>)
+            {joueursFiltres.length === 0 ? (<div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: colors.text.faint }}><p style={{ display: 'flex', justifyContent: 'center' }}><IconSearch size={40} /></p><p>{t('feed_aucun_joueur_trouve', lang)}</p></div>)
               : joueursFiltres.map(j => (
                 <div key={j.id} style={{ background: colors.background.surface, border: '1px solid #222', borderRadius: '12px', padding: '1.25rem', cursor: 'pointer' }} onClick={() => setJoueurModal(j)}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
@@ -511,8 +514,8 @@ function Feed() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <p style={{ fontWeight: 700, fontSize: '15px', margin: 0 }}>{j.prenom} {j.nom}</p>
-                        {certifMap[j.id] && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>⭐ Certifié {certifMap[j.id].niveau}</span>}
-                        {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>🪪 FFF</span>}
+                        {certifMap[j.id] && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>Certifié {certifMap[j.id].niveau}</span>}
+                        {j.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px' }}>FFF</span>}
                       </div>
                       <p style={{ color: colors.accent.green, fontSize: '12px', margin: '2px 0 0' }}>{j.poste}</p>
                     </div>
@@ -523,14 +526,14 @@ function Feed() {
                     {j.region && <span style={st.stat}>{j.region}</span>}
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <span style={st.stat}>⚽ <span style={st.statVal}>{j.buts_total ?? 0}</span></span>
-                    <span style={st.stat}>🎯 <span style={st.statVal}>{j.passes_decisives ?? 0}</span></span>
-                    <span style={st.stat}>📋 <span style={st.statVal}>{j.matchs_officiel ?? 0}</span></span>
+                    <span style={st.stat}><Ic><IconBall size={12} /></Ic><span style={st.statVal}>{j.buts_total ?? 0}</span></span>
+                    <span style={st.stat}><Ic><IconTarget size={12} /></Ic><span style={st.statVal}>{j.passes_decisives ?? 0}</span></span>
+                    <span style={st.stat}><Ic><IconClipboard size={12} /></Ic><span style={st.statVal}>{j.matchs_officiel ?? 0}</span></span>
                   </div>
                   {j.clip_url && <div style={{ marginTop: '10px' }}><VideoBadge url={j.clip_url} lang={lang} /></div>}
                   <div style={{ marginTop: '10px', display: 'flex', gap: '6px', alignItems: 'center', fontSize: '12px', color: colors.text.faint }}>
-                    {(likeCounts[j.id] || 0) > 0 && <span>❤️ {likeCounts[j.id]}</span>}
-                    {(commentCounts[j.id] || 0) > 0 && <span>💬 {commentCounts[j.id]}</span>}
+                    {(likeCounts[j.id] || 0) > 0 && <span><Ic><IconHeart size={12} filled /></Ic>{likeCounts[j.id]}</span>}
+                    {(commentCounts[j.id] || 0) > 0 && <span><Ic><IconMessage size={12} /></Ic>{commentCounts[j.id]}</span>}
                   </div>
                 </div>
               ))}
@@ -548,18 +551,18 @@ function Feed() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{joueurModal.prenom} {joueurModal.nom}</h2>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                      {certifMap[joueurModal.id] && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>⭐ Certifié {certifMap[joueurModal.id].niveau} {certifMap[joueurModal.id].saison}</span>}
-                      {joueurModal.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>🪪 Licencié FFF · {joueurModal.numero_licence}</span>}
+                      {certifMap[joueurModal.id] && <span style={{ background: colors.accent.amber + alpha.soft, border: '1px solid #fbbf2460', color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>Certifié {certifMap[joueurModal.id].niveau} {certifMap[joueurModal.id].saison}</span>}
+                      {joueurModal.numero_licence && <span style={{ background: '#1a2e4a', border: '1px solid #3b82f640', color: colors.accent.blue, fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px' }}>Licencié FFF · {joueurModal.numero_licence}</span>}
                     </div>
                   </div>
                   <p style={{ margin: '4px 0 0', color: colors.accent.green, fontSize: '14px' }}>{joueurModal.poste} {joueurModal.categorie ? `· ${joueurModal.categorie}` : ''}</p>
                 </div>
               </div>
-              <button onClick={() => setJoueurModal(null)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setJoueurModal(null)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '20px', cursor: 'pointer', display: 'inline-flex' }}><IconClose size={20} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-              {[['📍', t('feed_stat_region', lang), joueurModal.region], ['🦵', t('feed_stat_pied', lang), joueurModal.pied], ['🏟️', t('feed_stat_niveau', lang), joueurModal.niveau_equipe], ['🏆', t('feed_stat_club', lang), joueurModal.club]].filter(([,,v]) => v).map(([ico, label, val]) => (
-                <div key={label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>{ico} {label}</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p></div>
+              {[[<IconPin size={12} />, t('feed_stat_region', lang), joueurModal.region], [<IconRun size={12} />, t('feed_stat_pied', lang), joueurModal.pied], [<IconStadium size={12} />, t('feed_stat_niveau', lang), joueurModal.niveau_equipe], [<IconTrophy size={12} />, t('feed_stat_club', lang), joueurModal.club]].filter(([,,v]) => v).map(([ico, label, val]) => (
+                <div key={label} style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px' }}><p style={{ margin: 0, fontSize: '11px', color: colors.text.dim, display: 'flex', alignItems: 'center', gap: '4px' }}>{ico} {label}</p><p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: '14px' }}>{val}</p></div>
               ))}
             </div>
             <p style={{ fontSize: '12px', color: colors.accent.green, fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('feed_statistiques', lang)}</p>

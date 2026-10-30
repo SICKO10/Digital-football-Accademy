@@ -709,6 +709,18 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     patchComposition({ remplacants: (ficheCourante.remplacants || []).filter((_, i) => i !== idx) })
   }
 
+  // Déplacement manuel d'une photo sur le terrain (glisser-déposer) : position
+  // x/y en pourcentage stockée sur le titulaire lui-même, à côté de ses autres
+  // champs (joueur_id, numero...) — pas de colonne dédiée, le tableau
+  // titulaires est déjà un JSONB libre.
+  const deplacerTitulaireCompo = (slotIndex, pos) => {
+    const titulaires = [...(ficheCourante.titulaires || [])]
+    const joueur = titulaires[slotIndex]
+    if (!joueur) return
+    titulaires[slotIndex] = { ...joueur, pos }
+    patchComposition({ titulaires })
+  }
+
   // ─── Styles ────────────────────────────────────────────────────────────
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '20px' }
   const label = { display: 'block', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }
@@ -1326,6 +1338,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           onChangerFormation={changerFormationCompo}
           onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
           onRetirerTitulaire={retirerTitulaireCompo}
+          onDeplacerTitulaire={deplacerTitulaireCompo}
           onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}
           onRetirerRemplacant={retirerRemplacantCompo}
         />

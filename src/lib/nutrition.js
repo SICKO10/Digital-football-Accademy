@@ -32,9 +32,17 @@ export function calculerTDEE(profil) {
   return Math.round(bmr * mult + ajPoste + ajObj)
 }
 
+// Plafond de protéines, en g par kg de poids corporel : c'est la borne haute
+// du conseil affiché aux joueurs (« 1.6–2g de protéines/kg », cf.
+// CONSEILS_JOURNEE). Sans lui, les 25 à 35 % de calories en protéines
+// dépassaient ce conseil (jusqu'à environ 2.9 g/kg).
+export const PROTEINES_MAX_G_PAR_KG = 2
+
 // Répartition macros selon le type de journée. Retourne les grammes et les
 // pourcentages de calories (glucides/protéines = 4 kcal/g, lipides = 9 kcal/g).
-export function calculerMacros(calories, typeJournee) {
+// Si le poids est connu, les protéines sont plafonnées à PROTEINES_MAX_G_PAR_KG
+// et les calories retirées vont aux glucides : le total du jour ne change pas.
+export function calculerMacros(calories, typeJournee, poids_kg) {
   const splits = {
     match: { g: 0.60, p: 0.20, l: 0.20 },
     avant_match: { g: 0.65, p: 0.18, l: 0.17 },
@@ -43,12 +51,17 @@ export function calculerMacros(calories, typeJournee) {
     repos: { g: 0.40, p: 0.30, l: 0.30 },
   }
   const s = splits[typeJournee] || splits.entrainement
+  let proteines = (calories * s.p) / 4
+  const poids = parseFloat(poids_kg)
+  if (poids > 0) proteines = Math.min(proteines, poids * PROTEINES_MAX_G_PAR_KG)
+  const lipides = (calories * s.l) / 9
+  const glucides = (calories - proteines * 4 - lipides * 9) / 4
   return {
-    glucides_g: Math.round((calories * s.g) / 4),
-    proteines_g: Math.round((calories * s.p) / 4),
-    lipides_g: Math.round((calories * s.l) / 9),
-    glucides_pct: Math.round(s.g * 100),
-    proteines_pct: Math.round(s.p * 100),
+    glucides_g: Math.round(glucides),
+    proteines_g: Math.round(proteines),
+    lipides_g: Math.round(lipides),
+    glucides_pct: Math.round((glucides * 4 / calories) * 100),
+    proteines_pct: Math.round((proteines * 4 / calories) * 100),
     lipides_pct: Math.round(s.l * 100),
   }
 }
