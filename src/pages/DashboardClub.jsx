@@ -30,6 +30,7 @@ import { chargerMesRoles } from '../lib/multiRole'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
+import DemandesClub from '../components/saisons/DemandesClub'
 import RessentiCollectifEquipe from '../components/club/RessentiCollectifEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
@@ -1150,6 +1151,8 @@ export default function DashboardClub() {
   // AlertesClub) pour leurs callbacks de navigation existants.
   const [, setActiveCategorie] = useState('accueil')
   const [monRole, setMonRole] = useState(null)
+  const [monUserId, setMonUserId] = useState(null)
+  const [nbDemandesSaison, setNbDemandesSaison] = useState(0) // demandes coach → club en attente (saison_demandes)
   const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (éducateur/joueur/parent), cf. lib/multiRole
   const [saisonActuelle] = useState(() => {
     const now = new Date()
@@ -1508,6 +1511,7 @@ export default function DashboardClub() {
     }
 
     setClubId(resolvedClubId)
+    setMonUserId(user.id)
     // Log de connexion (audience sponsors, cf. supabase_stats_sponsors_phase1.sql)
     // — même pattern que DashboardEducateur/DashboardJoueur. user_id = le
     // club (resolvedClubId), pas l'identité du staff qui ouvre la page : on
@@ -1546,7 +1550,7 @@ export default function DashboardClub() {
     // déclaration de activeTab plus haut) — elles ne bloquaient auparavant
     // l'affichage de tout le dashboard que pour des onglets pas forcément
     // ouverts (audit perf 2026-10-27).
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId)])
+    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId), chargerNbDemandesSaison(resolvedClubId)])
     setLoading(false)
   }
 
@@ -2023,6 +2027,12 @@ export default function DashboardClub() {
       .eq('cible_id', uid)
       .order('created_at', { ascending: false })
     setAvisRecus(data || [])
+  }
+
+  // Compteur de l'onglet Éducateurs : demandes des coachs à traiter (circuit saisons).
+  const chargerNbDemandesSaison = async (uid) => {
+    const { count } = await supabase.from('saison_demandes').select('id', { count: 'exact', head: true }).eq('club_id', uid).eq('statut', 'en_attente')
+    setNbDemandesSaison(count || 0)
   }
 
   const chargerEducateurs = async (uid) => {
@@ -3515,7 +3525,7 @@ export default function DashboardClub() {
       { id: 'tournoi', label: 'Tournois', Icon: IcoTrophy },
       { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
       ...(recrutementActif(club?.email) ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
-      { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length },
+      { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length + nbDemandesSaison },
     ] : []),
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
     ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
@@ -4020,6 +4030,18 @@ export default function DashboardClub() {
                     {educateursAcceptes.length} affilié{educateursAcceptes.length > 1 ? 's' : ''}{club?.educateurs_inclus != null ? ` sur ${club.educateurs_inclus} inclus` : ''} · {nbEquipesEncadrees} équipe{nbEquipesEncadrees > 1 ? 's' : ''} encadrée{nbEquipesEncadrees > 1 ? 's' : ''}
                   </p>
                 </div>
+
+                {/* Demandes des coachs (rester affilié, responsable d'une catégorie) */}
+                {clubId && monUserId && (
+                  <DemandesClub
+                    clubId={clubId}
+                    userId={monUserId}
+                    staff={staffMembers}
+                    libelleRole={ROLE_STAFF_LABEL}
+                    onCompte={setNbDemandesSaison}
+                    onChangement={() => Promise.all([chargerCategories(clubId), chargerEducateurs(clubId)])}
+                  />
+                )}
 
                 {/* En attente */}
                 {educateursEnAttente.length > 0 && (

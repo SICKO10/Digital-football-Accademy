@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { alpha } from '../tokens'
 import { useColors } from '../lib/theme'
 import { useWindowWidth } from '../hooks/useWindowWidth'
+import { saisonActuelle, filtrerParSaison } from '../lib/saison'
 
 const NATURES_BUT = [
   { value: 'cpa', label: 'CPA' },
@@ -83,7 +84,9 @@ function BarresHorizontales({ data, color, colors }) {
 // (est_note_equipe=true), calculée par l'appelant. Seul DashboardEducateur.jsx la
 // passe : c'est l'éducateur qui note ses propres matchs, cette donnée n'existe pas
 // côté DashboardJoueur.jsx/DashboardClub.jsx qui réutilisent aussi ce composant.
-export default function StatsEquipe({ matchs = [], masquerVND = false, noteEquipe = null }) {
+export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = false, noteEquipe = null, saison = saisonActuelle() }) {
+  // Seuls les matchs de la saison demandée (en cours par défaut) comptent.
+  const matchs = useMemo(() => filtrerParSaison(tousMatchs, saison), [tousMatchs, saison])
   const colors = useColors()
   const isMobile = useWindowWidth() < 768
   const [filtreCompetition, setFiltreCompetition] = useState('all')

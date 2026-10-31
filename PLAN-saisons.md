@@ -81,7 +81,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Journal : 2026-10-31, Sonnet 5.5. Trois commits de départ créés (scripts SQL, ressenti collectif club, brief et plan saisons), rien de poussé. Inventaire écrit en bas de ce fichier. Aucun écart.
 
 ### Bloc 1 : socle saison (sélecteur et filtrage par dates)
-- Statut : à faire
+- Statut : fait (2026-10-31, attend la validation de Kevin)
 - Objectif : un sélecteur de saison réutilisable partout, et des fonctions qui filtrent les données sur une saison donnée.
 - Résultat testable : dans l'onglet Stats du coach, les notes RPE ne montrent plus que la saison en cours (correction du mélange actuel), avec le libellé « Saison 2026 - 2027 ». Un fichier `tests/saison.test.js` (lancé par `npm test`) prouve, sur des données fictives, que les bornes et le filtrage d'une saison passée sont justes (cas limites : 30 juin, 1er juillet, année bissextile).
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -97,11 +97,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Filtrer les notes RPE de l'onglet Stats sur la saison en cours.
   - `npm run build` sans erreur.
 - Ce que je teste pour valider : onglet Stats du coach, les RPE de l'an dernier ont disparu, le reste est inchangé.
-- Reste à finir :
-- Journal :
+- Reste à finir : `SelecteurSaison` créé mais pas encore affiché nulle part (il sert aux blocs 2, 3, 9). `StatsEquipe` ne montre désormais que la saison en cours par défaut, aussi côté club et joueur (la saison 2025 - 2026 n'existe pas, les matchs de juin 2026 avant la bascule n'y sont plus comptés). Test visuel dans le navigateur non fait (pas de navigateur ici).
+- Journal : 2026-10-31, Sonnet 5.5. `saison.js` complété (fonctions pures), 6 tests ajoutés dans `tests/saison.test.js`, `npm test` 71/71, `npm run build` ok. Écart : `saisonActuelle` accepte maintenant une date en paramètre (pour les tests), comportement inchangé sans paramètre.
 
 ### Bloc 2 : coach, onglet Historique collectif
-- Statut : à faire
+- Statut : fait (2026-10-31, attend la validation de Kevin)
 - Objectif : nouvel onglet Historique après Santé, avec l'accès Collectif d'une saison passée.
 - Résultat testable : je choisis la saison 2026-2027 (la seule avec des données réelles, étiquetée « en cours ») et je vois effectif, résultats, % victoires/nuls/défaites, buts par match et par quart d'heure, nature des buts, cartons, classements (buteurs, passeurs, présence, victoires, temps de jeu, note), présence entraînement et résumé santé.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -115,11 +115,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Retrouver l'équipe de la saison choisie selon la réponse (a) de l'Inventaire.
   - Afficher « non disponible » proprement quand une donnée n'existe pas pour cette saison.
 - Ce que je teste pour valider : Historique > Collectif > 2026-2027, chiffres identiques à l'onglet Stats actuel ; et l'état vide quand aucune saison passée n'existe.
-- Reste à finir :
-- Journal :
+- Reste à finir : l'interrupteur Collectif / Individuel n'est pas affiché (rien à mettre derrière avant le bloc 3, il sera ajouté avec `HistoriqueIndividuel`). Test visuel dans le navigateur non fait (pas de navigateur ici). Pour une saison passée, l'effectif = effectif actuel + joueurs ayant des stats cette saison-là (affichés « Ancien joueur » s'ils ont quitté l'équipe). Les séances de la saison passée dont la présence vient du sondage seulement comptent comme dans Stats.
+- Journal : 2026-10-31, Sonnet 5.5. Créé `src/lib/statsSaison.js` (calculs purs), `tests/statsSaison.test.js` (6 tests, `npm test` 77/77), `src/components/saisons/HistoriqueCollectif.jsx` (requêtes propres à la saison choisie, équipe active du coach). Onglet Historique ajouté dans Mon équipe (droit « stats » pour un dirigeant délégué). `npm run build` ok, lint propre sur les fichiers créés. Écart : les classements écartent les joueurs à zéro ; « Temps de jeu » et « Victoires » disent « non disponible » si aucune minute n'est saisie (les victoires dépendent des minutes).
 
 ### Bloc 3 : coach, Historique individuel
-- Statut : à faire
+- Statut : fait (2026-10-31, attend la validation de Kevin)
 - Objectif : l'accès Individuel de l'onglet Historique, joueur par joueur.
 - Résultat testable : je choisis une saison puis un joueur et je vois sa fiche d'évaluation, buts, passes, clean sheets (gardien seulement), cartons, minutes, % victoires, note de saison, tests physiques, récapitulatif santé.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -133,11 +133,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Clean sheets : seulement si le poste gardien est connu (réponse (b) de l'Inventaire), sinon ligne masquée.
   - Brancher dans l'interrupteur Collectif / Individuel du bloc 2.
 - Ce que je teste pour valider : deux joueurs, dont un gardien si possible, chiffres cohérents.
-- Reste à finir :
-- Journal :
+- Reste à finir : test visuel dans le navigateur non fait (pas de navigateur ici). Les minutes non saisies s'affichent « n.d. ». Le sélecteur de joueur est une rangée de boutons (un par joueur), à remplacer par une liste si l'effectif est grand. Les tests physiques ne sont lus que pour les joueurs liés à un compte (`joueur_id`). La fiche figée de fin de saison n'est lue que pour une saison passée (aucune avant juillet 2027).
+- Journal : 2026-10-31, Sonnet 5.5. Créé `HistoriqueIndividuel.jsx` (stats, % victoires, clean sheets conditionnels, cartons, présence, note de match, note de saison /20, évaluations par période, tests physiques début/dernier, santé), interrupteur Collectif / Individuel ajouté dans `HistoriqueCollectif.jsx`, 2 fonctions pures dans `statsSaison.js` + test. `npm test` 78/78, build ok, lint : 1 avertissement de dépendances sur le useEffect. Écart : la fiche de fin de saison (`historique_saisons`) n'est pas dupliquée, seule sa note et son date de clôture sont reprises.
 
 ### Bloc 4 : coach, mes saisons dans Mon profil
-- Statut : à faire
+- Statut : fait (2026-10-31, attend la validation de Kevin)
 - Objectif : l'historique de carrière du coach, une ligne par saison, séparé de l'historique de son équipe actuelle.
 - Résultat testable : dans Mon profil, une section « Mes saisons » : par saison, club et équipe, % victoires/nuls/défaites, buts marqués et pris par match, % nature des buts, classement en compétition, résumé blessures, % présence entraînement, moyenne RPE.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -150,11 +150,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Créer `src/components/saisons/MesSaisonsCoach.jsx` et le brancher dans Mon profil.
   - Ne garder que les saisons où ce coach encadrait l'équipe (réponse (a) de l'Inventaire).
 - Ce que je teste pour valider : Mon profil, la saison 2026-2027 (en cours) apparaît avec des chiffres qui correspondent à l'onglet Historique ; avant juillet 2027 la section dit clairement qu'il n'y a pas encore de saison archivée.
-- Reste à finir :
-- Journal :
+- Reste à finir : test visuel dans le navigateur non fait (pas de navigateur ici). Le classement en compétition n'existe pas en base : la section affiche le bilan V/N/D par compétition et le dit à l'écran. Les blessures ne sont comptées que pour les équipes ayant un match ou une séance cette saison-là. Le nom du club vient de `profiles_public.club` ; si absent, seul le nom de l'équipe s'affiche. L'équipe n'est pas filtrée sur « le coach encadrait l'équipe » via une affiliation : seuls les matchs et séances du coach comptent (réponse (a) de l'Inventaire).
+- Journal : 2026-10-31, Sonnet 5.5. Ajout de `bilanSaisonEquipe` dans `statsSaison.js` (+2 tests, `npm test` 80/80), création de `MesSaisonsCoach.jsx`, branché dans Mon profil sous le parrainage (`DashboardEducateur.jsx`). Build ok, lint propre. Écart : les calculs de `StatsEquipe` (React) n'ont pas été extraits tels quels, le bilan est une fonction pure indépendante qui applique les mêmes règles.
 
 ### Bloc 5 : base de données, demandes et droits de validation
-- Statut : à faire
+- Statut : fait (2026-10-31), exécuté en production par Kevin, vérification 36/36 ok
 - Objectif : créer en base le circuit de demande (affiliation au club, responsabilité d'une catégorie) et les droits de validation par rôle, **sans encore rien interdire** de ce qui marche aujourd'hui.
 - Résultat testable : le fichier de vérification montre la table des demandes, les fonctions de validation, et un test qui prouve qu'un responsable préformation ne peut pas valider une demande U17, mais le directeur sportif oui.
 - Modèle : opus · Effort : high · Coût estimé : élevé
@@ -169,11 +169,15 @@ Rappel : `/clear` et une session neuve par bloc.
   - Fichier de vérification + fichier de retour arrière livré séparément.
   - Aucune modification des règles actuelles de `club_categories` dans ce bloc.
 - Ce que je teste pour valider : j'exécute le SQL puis la vérification, je colle le résultat, Claude confirme ligne par ligne.
-- Reste à finir :
-- Journal :
+- Reste à finir : SQL et vérification exécutés par Kevin le 2026-10-31, 33/33 ok. Kevin a aussi lancé par erreur le fichier d'annulation : échec dès la 1re ligne (ordre de suppression), rien supprimé. Corrigé et verrouillé (`supabase_saisons_demandes_ANNULATION_NE_PAS_EXECUTER.sql`, ligne de blocage en tête). Décisions de Kevin (2026-10-31) : affiliation et clôture club validées par compte principal, président, directeur sportif **et responsable formation** ; personne ne valide sa propre demande ; un départ ne se refuse pas ; option colonne équipe sur `historique_saisons` acceptée. Fichier principal mis à jour (seule `saison_role_couvre_categorie` change), retesté localement : 36/36 et parcours 0 KO. Relancé par Kevin avec l'option, vérification 36/36 ok en production. Commit local des fichiers SQL, pas de push (rien de visible tant que les blocs 6 et 7 ne sont pas en ligne).
+- Pour les blocs 6 et 7 :
+  - Coach : `insert` direct dans `saison_demandes` (type `affiliation` avec `souhaite_rester`, ou `categorie` avec `categorie_nom` + `categorie_equipe`, `club_categorie_id` si l'équipe existe déjà), saison au format `2027-2028`. Annulation : RPC `saison_annuler_demande(id)`.
+  - Club : RPC `saison_traiter_demande(id, 'validee' | 'refusee', commentaire)` ; `saison_peut_valider(club_id, categorie_nom)` dit si l'utilisateur connecté peut traiter (catégorie vide pour une affiliation) et sert à afficher ou non les boutons. Messages d'erreur en français, prêts à afficher.
+  - Clôture club (bloc 10) : `insert` dans `saisons_closes_club (club_id, saison, close_par)`.
+- Journal : 2026-10-31, Opus 5.5. Fichiers SQL écrits, puis exécutés et testés sur une base Postgres locale factice (PGlite, hors projet, rien en production) avec des bouchons des tables existantes : 33/33 contrôles de vérification ok, 29/29 parcours simulés ok (préformation refusée sur U17, directeur sportif et responsable formation acceptés, secrétaire refusée, pas de demande au nom d'un autre, pas de vol d'équipe déjà tenue, réutilisation de l'équipe vacante, départ, annulation, clôture club), fichier relançable deux fois sans erreur. Décisions prises : (1) les demandes d'affiliation et la clôture club sont réservées au compte principal, président, directeur sportif, puis Kevin a ajouté le responsable formation ; (2) personne ne valide sa propre demande ; (3) la règle des rôles est fixe, indépendante des réglages « voir » de `role_categories_access` ; (4) un départ (« non » à l'affiliation) ne se refuse pas, sa validation retire le coach du club et libère ses équipes, comme le bouton « Retirer » ; (5) une catégorie non reconnue (ex. Vétérans) ne peut être validée que par les rôles « tout » ; (6) l'école de foot couvre U10 et moins. Aucune règle existante modifiée.
 
 ### Bloc 6 : coach, les deux questions après clôture
-- Statut : à faire
+- Statut : fait, poussé en production avec le bloc 7 (2026-10-31)
 - Objectif : après « Clôturer la saison », Mon équipe demande « Restes-tu affilié à [club] ? » puis « De quelle catégorie es-tu responsable ? », chaque réponse devient une demande au club. L'auto-déclaration actuelle passe aussi par une demande.
 - Résultat testable : avec le deuxième compte coach, je clôture (ou j'arrive sans équipe), je réponds, je vois « Demande envoyée, en attente du club » et je n'accède pas aux nouvelles données.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -188,11 +192,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Réponse « non » à l'affiliation : explication claire de ce que ça change, confirmation avant d'envoyer.
   - **Pas de push** à la fin de ce bloc : commit local seulement.
 - Ce que je teste pour valider : parcours coach complet jusqu'à « en attente », sans erreur.
-- Reste à finir :
-- Journal :
+- Reste à finir : test dans le navigateur non fait (pas de navigateur ici) : à faire par Kevin avec le deuxième compte coach. Le coach ne voit pas encore de réponse tant que le bloc 7 (validation côté club) n'existe pas : **ne pas pousser avant le bloc 7**. La question 1 « Restes-tu affilié » ne se pose que si la clôture a laissé une trace (au moins une affiliation joueur archivée par ce coach) et que le coach n'a plus aucune équipe ; un coach qui clôture une seule de ses équipes alors qu'il en garde une autre n'est pas interrogé. Une demande d'affiliation « je reste » refusée par le club n'a pas d'effet automatique (le coach reste accepté au club). Le coach ne peut pas ajouter une équipe tenue par un autre coach (message d'avance). L'auto-déclaration en base reste ouverte jusqu'au bloc 8 (un coach qui contourne l'écran peut encore s'attribuer une équipe).
+- Journal : 2026-10-31, Sonnet 5.5. Création de `src/lib/demandesSaison.js` (règles pures : saison visée, après clôture, étape à afficher, préparation de la demande) + `tests/demandesSaison.test.js` (9 tests, `npm test` 89/89), de `src/components/saisons/DemandesCoach.jsx` (question 1, confirmation du départ, question 2, carte « en attente » avec annulation et bouton « Vérifier la réponse du club », relecture au retour sur l'onglet). `DashboardEducateur.jsx` : `declarerMaCategorie` supprimée (plus d'écriture directe dans `club_categories` pour s'attribuer une équipe), remplacée par `apresDemandeSaison` (relit équipes et affiliation, bascule sur l'équipe accordée) ; états `promptCategorieForm` et `savingCategorieClub` retirés ; retrait de soi-même d'une équipe et `AcceptInvite.jsx` inchangés. Build ok, lint propre sur les nouveaux fichiers (19 erreurs déjà présentes dans le gros fichier, identiques avant/après). Décision : la saison visée par la demande est la plus tardive entre la saison en cours et la suivante de la dernière saison clôturée par le coach.
 
 ### Bloc 7 : club, demandes à valider sur la page Éducateurs
-- Statut : à faire
+- Statut : fait, poussé en production avec les blocs 1 à 6 sur le « ok » de Kevin (2026-10-31)
 - Objectif : les demandes remontent dans la page Éducateurs du club ; la personne qui a le bon rôle valide ou refuse en un clic.
 - Résultat testable : connecté en directeur sportif, je valide la demande du bloc 6 ; le coach accède à son équipe. Connecté avec un rôle non autorisé, je vois la demande sans bouton de validation.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -206,8 +210,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Notification plateforme au coach à la validation ou au refus.
   - Test du parcours complet avec deux comptes, puis **push commun des blocs 6 et 7** après le « ok » de Kevin.
 - Ce que je teste pour valider : parcours complet, et le cas de la secrétaire qui ne peut pas valider.
-- Reste à finir :
-- Journal :
+- Reste à finir : test dans le navigateur non fait (pas de navigateur ici) : parcours complet à jouer par Kevin (coach de test qui demande, compte club qui valide), puis cas du rôle non autorisé (la page doit afficher « À valider par … » sans boutons). **Push commun des blocs 6 et 7 seulement après son « ok »** (rien n'est poussé). Le compteur de l'onglet Éducateurs additionne les affiliations en attente et les demandes de saison ; le bloc « Traiter » de l'accueil club ne compte pas encore les demandes de saison (amélioration hors bloc). Pas d'email au coach, seulement la notification dans l'appli (clochette). L'historique des demandes déjà traitées n'est pas affiché côté club (seulement celles en attente). Un club sans staff déclaré : seul le compte principal valide (affiché « le compte principal du club »).
+- Journal : 2026-10-31, Sonnet 5.5. Ajout dans `src/lib/demandesSaison.js` des règles pures côté club : `roleCouvreCategorie` (miroir de la règle de la base, sert seulement à écrire « à valider par … »), `libelleValideurs`, `actionsDemandeClub` (valider, confirmer un départ, sa propre demande, rôle non autorisé), `notificationCoach`, `categoriePourDroit` ; 6 tests ajoutés (`npm test` 95/95). Nouveau `src/components/saisons/DemandesClub.jsx` : lit les demandes en attente du club, interroge `saison_peut_valider` une fois par catégorie différente pour afficher ou non les boutons, Valider / Refuser (motif facultatif vu par le coach) via `saison_traiter_demande`, un départ se confirme en deux temps et ne se refuse pas, notification dans l'appli au coach (table `notifications`, sans email), relecture au retour sur l'onglet. `DashboardClub.jsx` : composant placé en tête de la page Éducateurs, compteur dans l'onglet (`nbDemandesSaison`), rechargement des équipes et des éducateurs après un traitement. Build ok, lint propre sur les nouveaux fichiers (10 erreurs déjà présentes dans `DashboardClub.jsx`, identiques avant et après). Décisions : une demande faite par la personne connectée elle-même (compte à double rôle) n'a pas de bouton, comme la base l'impose ; « à valider par » cite le compte principal puis les membres du staff dont le rôle couvre la catégorie.
 
 ### Bloc 8 : verrouillage en base
 - Statut : à faire

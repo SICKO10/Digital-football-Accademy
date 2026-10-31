@@ -12,7 +12,7 @@ import { ZONES_RPE, DEFINITION_RPE, zoneRpe, rpeDeReponse } from '../lib/rpe'
 import Tactipad from '../components/Tactipad'
 import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
-import { saisonActuelle, bornesSaison } from '../lib/saison'
+import { saisonActuelle, bornesSaison, libelleSaison, filtrerParSaison } from '../lib/saison'
 import { JOURS_SEMAINE } from '../lib/jours'
 import { chargerMesRoles } from '../lib/multiRole'
 import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
@@ -26,6 +26,9 @@ const StagesModule = lazy(() => import('../components/stages/StagesModule'))
 const RapportMatch = lazy(() => import('../components/RapportMatch'))
 const GestionPrepPhysique = lazy(() => import('../components/prepphysique/GestionPrepPhysique'))
 const SanteEquipe = lazy(() => import('../components/SanteEquipe'))
+const HistoriqueCollectif = lazy(() => import('../components/saisons/HistoriqueCollectif'))
+const MesSaisonsCoach = lazy(() => import('../components/saisons/MesSaisonsCoach'))
+const DemandesCoach = lazy(() => import('../components/saisons/DemandesCoach'))
 const GestionCloturesSaison = lazy(() => import('../components/prepphysique/GestionCloturesSaison'))
 const Deplacements = lazy(() => import('../components/Deplacements'))
 const PlanningTerrains = lazy(() => import('../components/PlanningTerrains'))
@@ -2149,31 +2152,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     return data || []
   }
 
-  // Déclare la catégorie/équipe gérée par cet éducateur (un dashboard educateur =
-  // une équipe) — réclame une ligne club_categories déjà créée par le club mais
-  // pas encore assignée (educateur_id null) si elle existe, sinon en crée une
-  // nouvelle. Une fois déclarée, tous les nouveaux joueurs ajoutés en héritent
-  // automatiquement (cf. ajouterJoueur) — plus besoin de le choisir à chaque fois.
-  const declarerMaCategorie = async () => {
-    if (!clubAffiliation?.club_id) return
-    setSavingCategorieClub(true)
-    const vacante = clubCategories.find(c => !c.educateur_id && c.nom === promptCategorieForm.nom && c.equipe === promptCategorieForm.equipe)
-    const { data: nouvelle, error } = vacante
-      ? await supabase.from('club_categories').update({ educateur_id: userId }).eq('id', vacante.id).select().maybeSingle()
-      : await supabase.from('club_categories').insert({ club_id: clubAffiliation.club_id, nom: promptCategorieForm.nom, equipe: promptCategorieForm.equipe, educateur_id: userId }).select().maybeSingle()
-    setSavingCategorieClub(false)
-    if (error) { alert('Erreur : ' + error.message); return }
-    await chargerClubCategories(userId)
-    setAjouterEquipeOuvert(false)
-    // Bascule automatiquement sur l'équipe qu'on vient de déclarer/réclamer —
-    // sinon elle serait créée mais invisible tant qu'on ne la sélectionne pas.
-    if (nouvelle) changerEquipe(nouvelle)
+  // Mon équipe ne déclare plus la catégorie directement : le coach envoie une
+  // demande au club (composant DemandesCoach, table saison_demandes). C'est le
+  // club qui l'accepte et rattache la ligne club_categories au coach. Cette
+  // fonction relit l'état après une réponse du club : équipe accordée (bascule
+  // dessus, tous les joueurs ajoutés ensuite en héritent, cf. ajouterJoueur) ou
+  // départ du club validé.
+  const apresDemandeSaison = async () => {
+    const avaitEquipe = mesEquipes.length > 0
+    const [toutes, aff] = await Promise.all([chargerClubCategories(userId), chargerClubAffiliation(userId)])
+    if (aff?.statut !== 'accepte') return
+    const miennes = toutes.filter(c => c.educateur_id === userId)
+    if (!avaitEquipe && miennes.length > 0) changerEquipe(miennes[0])
   }
 
   // "Supprimer" une équipe = libérer la ligne club_categories (educateur_id →
   // null), pas la supprimer — c'est une catégorie appartenant au club, pas au
-  // coach (même logique que declarerMaCategorie qui réclame une ligne vacante
-  // plutôt que d'en recréer une). L'effectif/séances/matchs déjà enregistrés
+  // coach (même logique que la validation d'une demande, qui réclame une ligne
+  // vacante plutôt que d'en recréer une). L'effectif/séances/matchs déjà enregistrés
   // pour cette équipe ne sont donc pas perdus, juste plus visibles depuis ce
   // dashboard tant que personne ne la reprend (cf. le bouton "+ Équipe").
   const supprimerEquipe = async (equipe) => {
@@ -2468,12 +2464,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
   const [clubCategories, setClubCategories] = useState([])
   const [clubCategoriesChargees, setClubCategoriesChargees] = useState(false)
-  const [promptCategorieForm, setPromptCategorieForm] = useState({ nom: 'U13', equipe: 'A' })
-  const [savingCategorieClub, setSavingCategorieClub] = useState(false)
   const [ajouterEquipeOuvert, setAjouterEquipeOuvert] = useState(false)
   // Un éducateur peut gérer plusieurs équipes (switcher) — toutes les lignes
   // club_categories qui lui sont assignées, pas juste la première (cf.
-  // declarerMaCategorie, appelable plusieurs fois pour ajouter une équipe).
+  // DemandesCoach, appelable plusieurs fois pour ajouter une équipe).
   const mesEquipes = clubCategories.filter(c => c.educateur_id === userId)
   // Tutoriels guidés : ouverts à la demande (bouton « Tutoriel ») ou
   // automatiquement à la première visite de la page concernée (cf. tutoAuto
@@ -4343,7 +4337,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // date_naissance vaut '' par défaut (input vide) — Postgres rejette '' pour
     // une colonne date, il faut null. club_categorie_id/categorie héritent
     // automatiquement de l'équipe active du coach (equipeActive, switcher) :
-    // plus besoin de le choisir à chaque joueur (cf. declarerMaCategorie).
+    // plus besoin de le choisir à chaque joueur (cf. DemandesCoach).
     const { error } = await supabase.from('equipe_joueurs').insert({
       ...snapshot,
       date_naissance: snapshot.date_naissance || null,
@@ -5651,7 +5645,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // pour un dirigeant délégué via canView('dirigeants') à cet endroit.
   const sidebarSections = [
     { titre: 'MON ÉQUIPE', items: [
-      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante'] },
+      { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante', 'historique'] },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
       // Stages du club : éducateur affilié accepté uniquement (droit appliqué
@@ -5685,7 +5679,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // toujours masqués pour un dirigeant délégué : non pertinents pour ce rôle.
   const SECTIONS_MASQUEES_DIRIGEANT = ['recrutement', 'dirigeants']
   const PERMISSION_PAR_SECTION = {
-    equipe: 'effectif', stats: 'stats', matchs: 'competition',
+    equipe: 'effectif', stats: 'stats', historique: 'stats', matchs: 'competition',
     entrainements: 'entrainements', prep_physique: 'prep_physique', notes: 'notes',
   }
   const canView = (sidebarKey) => {
@@ -6134,9 +6128,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           </>
         )}
 
-        {['equipe', 'stats', 'sante'].includes(activeSection) && (
+        {['equipe', 'stats', 'sante', 'historique'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }].filter(it => canView(it.key))}
+            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }, { key: 'historique', label: 'Historique' }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -6144,56 +6138,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== MON ÉQUIPE ===== */}
         {activeSection === 'equipe' && (
           <>
-            {/* Déclaration de la catégorie/équipe gérée — obligatoire et non
-                dismissable à la toute première visite de cet onglet (aucune
-                équipe déclarée du tout, mesEquipes vide : les nouveaux joueurs
+            {/* Catégorie/équipe gérée : obligatoire et non dismissable tant qu'aucune
+                équipe n'est accordée (mesEquipes vide : les nouveaux joueurs
                 n'auraient nulle part où s'auto-rattacher), ou ouverte
-                volontairement ensuite via "Ajouter une équipe" pour gérer une
-                équipe supplémentaire (cf. declarerMaCategorie, switcher).
+                volontairement via "+ Équipe" pour gérer une équipe supplémentaire.
+                Depuis le chantier saisons, le coach envoie une demande au club
+                (DemandesCoach) au lieu de s'attribuer l'équipe.
                 !permissions : réservé au compte éducateur lui-même — un
                 dirigeant délégué (permissions défini) ne doit jamais se voir
-                imposer cette déclaration, qui ne le concerne pas et n'a pas de
-                bouton "Annuler" tant qu'aucune équipe n'existe. */}
-            {!permissions && clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && (mesEquipes.length === 0 || ajouterEquipeOuvert) && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '420px', padding: '28px' }}>
-                  <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '17px' }}>Quelle catégorie et équipe gères-tu ?</p>
-                  <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint }}>
-                    {mesEquipes.length === 0
-                      ? 'Nécessaire une seule fois : tes prochains joueurs ajoutés seront ensuite rattachés automatiquement, sans avoir à le refaire à chaque fois.'
-                      : 'Cette équipe s\'ajoute aux tiennes — tu pourras basculer entre elles à tout moment.'}
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-                    <div>
-                      <label style={st.label}>{t('equipe_categorie', lang)}</label>
-                      <select style={st.input} value={promptCategorieForm.nom} onChange={e => setPromptCategorieForm(p => ({ ...p, nom: e.target.value }))}>
-                        <optgroup label="Masculin">
-                          {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
-                        </optgroup>
-                        <optgroup label="Féminin">
-                          {CATEGORIES_FEMININ.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
-                        </optgroup>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={st.label}>{t('club_equipe_label', lang)}</label>
-                      <select style={st.input} value={promptCategorieForm.equipe} onChange={e => setPromptCategorieForm(p => ({ ...p, equipe: e.target.value }))}>
-                        {['A', 'B', 'C', 'D', 'E'].map(e => <option key={e}>{e}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    {mesEquipes.length > 0 && (
-                      <button onClick={() => setAjouterEquipeOuvert(false)} disabled={savingCategorieClub} style={{ ...st.btn(colors.text.dim), color: colors.black }}>
-                        {t('btn_annuler', lang)}
-                      </button>
-                    )}
-                    <button onClick={declarerMaCategorie} disabled={savingCategorieClub} style={{ ...st.btnSolid, flex: 1 }}>
-                      {savingCategorieClub ? 'Enregistrement...' : 'Confirmer'}
-                    </button>
-                  </div>
-                </div>
-              </div>
+                imposer cette déclaration, qui ne le concerne pas. */}
+            {!permissions && clubCategoriesChargees && clubAffiliation?.statut === 'accepte' && (
+              <Suspense fallback={null}>
+                <DemandesCoach
+                  userId={userId}
+                  clubId={clubAffiliation.club_id}
+                  clubNom={clubAffiliation.club?.club || ''}
+                  clubCategories={clubCategories}
+                  nbEquipes={mesEquipes.length}
+                  ajoutOuvert={ajouterEquipeOuvert}
+                  onFermerAjout={() => setAjouterEquipeOuvert(false)}
+                  onChangement={apresDemandeSaison}
+                />
+              </Suspense>
             )}
 
             {(() => {
@@ -7671,7 +7637,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ─ Notes de séance (ressenti joueurs) ─ */}
             {statsSubTab === 'notes' && (() => {
-              const demandesTriees = Object.values(demandesNote).sort((a, b) => (b.date_seance || '').localeCompare(a.date_seance || ''))
+              const demandesTriees = filtrerParSaison(Object.values(demandesNote), saisonActuelle(), d => d.date_seance).sort((a, b) => (b.date_seance || '').localeCompare(a.date_seance || ''))
               // Légende de l'échelle RPE (cf. lib/rpe) — repliable, ouverte
               // tant que l'éducateur n'a encore aucune demande de ressenti.
               const legendeRpe = (
@@ -7703,9 +7669,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               if (demandesTriees.length === 0) {
                 return (
                   <>
+                  <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>Saison {libelleSaison(saisonActuelle())}</p>
                   {legendeRpe}
                   <div style={{ ...st.card, textAlign: 'center', padding: '40px 20px' }}>
-                    <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>Aucune demande de ressenti envoyée</p>
+                    <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>Aucune demande de ressenti envoyée cette saison</p>
                     <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Demande le ressenti RPE depuis une séance, dans l'onglet Entraînements.</p>
                   </div>
                   </>
@@ -7755,6 +7722,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const ouvertParDefaut = demandesTriees[0].id
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>Saison {libelleSaison(saisonActuelle())}</p>
                   {legendeRpe}
                   {demandesTriees.map(d => {
                     const reponses = reponsesNote.filter(r => r.demande_id === d.id)
@@ -7867,6 +7835,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== SANTÉ ===== */}
         {activeSection === 'sante' && (
           <Suspense fallback={<SectionLoader />}><SanteEquipe joueurs={joueurs} educateurId={userId} /></Suspense>
+        )}
+
+        {/* ===== HISTORIQUE (saisons) ===== */}
+        {activeSection === 'historique' && (
+          <>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 1.5rem' }}>Historique</h1>
+            <Suspense fallback={<SectionLoader />}><HistoriqueCollectif educateurId={userId} equipeId={equipeActive?.id || null} joueurs={joueurs} /></Suspense>
+          </>
         )}
 
         {/* ===== COMPÉTITION ===== */}
@@ -12253,6 +12229,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
               <ParrainageWidget userId={userId} accentColor={colors.accent.blue} />
+            </div>
+
+            <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 0.75rem' }}>Mes saisons</h2>
+              <Suspense fallback={<SectionLoader />}><MesSaisonsCoach educateurId={userId} /></Suspense>
             </div>
 
             <div className="profil-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
