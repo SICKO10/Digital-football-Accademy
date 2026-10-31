@@ -30,6 +30,7 @@ import { chargerMesRoles } from '../lib/multiRole'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
+import RessentiCollectifEquipe from '../components/club/RessentiCollectifEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
 import TachesClub from '../components/club/TachesClub'
@@ -4521,6 +4522,8 @@ export default function DashboardClub() {
                         <StatsEquipe matchs={matchsCat} masquerVND />
                       </div>
                     )}
+
+                    <RessentiCollectifEquipe key={categorieActive} categorieId={categorieActive} />
 
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.6fr) minmax(0,1fr)', gap: '16px', alignItems: 'start' }}>
                       <div style={carteSt}>
