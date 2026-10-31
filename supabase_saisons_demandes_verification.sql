@@ -30,7 +30,7 @@ tests(n, test, attendu, obtenu) as (
   union all select 9, 'visiteur non connecté ne peut pas valider (droit)', 'false', has_function_privilege('anon', 'public.saison_traiter_demande(uuid, text, text)', 'execute')::text
   union all select 10, 'utilisateur connecté peut appeler la validation', 'true', has_function_privilege('authenticated', 'public.saison_traiter_demande(uuid, text, text)', 'execute')::text
   union all select 11, 'aucune demande en base pour l''instant', '0', (select count(*)::text from saison_demandes)
-  union all select 12, 'règles actuelles de club_categories intactes (coach déclare, réclame, quitte)', '3', (select count(*)::text from pg_policies where tablename = 'club_categories' and policyname in ('educateur_declare_sa_categorie', 'educateur_reclame_categorie_vacante', 'educateur_quitte_sa_categorie'))
+  union all select 12, 'règles actuelles de club_categories intactes (coach déclare, réclame, quitte ; 1 seule après le bloc 8)', '3', (select count(*)::text from pg_policies where tablename = 'club_categories' and policyname in ('educateur_declare_sa_categorie', 'educateur_reclame_categorie_vacante', 'educateur_quitte_sa_categorie'))
   -- Règle des rôles
   union all select 20, 'responsable préformation valide U17', 'false', public.saison_role_couvre_categorie('responsable_preformation', 'U17')::text
   union all select 21, 'directeur sportif valide U17', 'true', public.saison_role_couvre_categorie('directeur_sportif', 'U17')::text
