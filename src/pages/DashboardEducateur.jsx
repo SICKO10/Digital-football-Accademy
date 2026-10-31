@@ -693,15 +693,15 @@ function FicheContenu({ fiche, categorieLabel, logo }) {
   // mécaniquement par hauteur de page sans égard aux blocs procédé).
   const procedes = fiche.procedes || []
   const pages = []
-  for (let i = 0; i < procedes.length; i += 2) pages.push(procedes.slice(i, i + 2))
+  for (let i = 0; i < procedes.length; i += 4) pages.push(procedes.slice(i, i + 4))
   if (pages.length === 0) pages.push([])
 
   return (
     <>
       {pages.map((procedesPage, pageIndex) => (
-        <div className="fiche-page" key={pageIndex} style={logo ? { position: 'relative', isolation: 'isolate' } : undefined}>
-          {/* Logo du club en filigrane : au centre de chaque page, derrière le contenu, très transparent. */}
-          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '60%', maxHeight: '70%', objectFit: 'contain', opacity: 0.1, zIndex: -1, pointerEvents: 'none' }} />}
+        <div className="fiche-page" key={pageIndex} style={logo ? { position: 'relative', isolation: 'isolate', boxSizing: 'border-box', aspectRatio: '210 / 296' } : undefined}>
+          {/* Logo du club en filigrane : au centre de la page A4 (la page prend le ratio A4), rond, derrière le contenu, très transparent. */}
+          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '55%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: '50%', opacity: 0.1, zIndex: -1, pointerEvents: 'none' }} />}
           {pageIndex === 0 && (
             <>
               <div className="fiche-header">
@@ -3395,13 +3395,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
     const capturerEtAjouter = async (target, premierePage) => {
       const canvas = await html2canvas(target, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      const imgWidth = pageWidth
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let imgWidth = pageWidth
+      let imgHeight = (canvas.height * imgWidth) / canvas.width
+      // Page de fiche libre (4 procédés) : elle doit tenir sur UNE feuille A4. Si elle
+      // est un peu plus haute qu'une A4, on la réduit proportionnellement au lieu
+      // de déborder sur une 2e feuille.
+      let decalageX = 0
+      if (target.classList.contains('fiche-page') && imgHeight > pageHeight) {
+        imgWidth = (canvas.width * pageHeight) / canvas.height
+        imgHeight = pageHeight
+        decalageX = (pageWidth - imgWidth) / 2
+      }
       const imgData = canvas.toDataURL('image/png')
       let heightLeft = imgHeight
       let position = 0
       if (!premierePage) pdf.addPage()
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      pdf.addImage(imgData, 'PNG', decalageX, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
       while (heightLeft > 0) {
         position -= pageHeight
