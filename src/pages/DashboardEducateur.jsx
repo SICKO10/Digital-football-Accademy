@@ -12115,10 +12115,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
-                          <a href={`/clubs/${p.id}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                            style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                            Voir le profil public
-                          </a>
                           {explorerOnglet === 'educateurs' && (
                             <button onClick={e => { e.stopPropagation(); setParcoursOuvertExplorer(id => (id === p.id ? null : p.id)) }}
                               style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
