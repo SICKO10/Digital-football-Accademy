@@ -62,7 +62,7 @@ Rappel : `/clear` et une session neuve par bloc.
 ## Blocs
 
 ### Bloc 0 : mise en place et inventaire des données
-- Statut : en cours
+- Statut : fait (2026-10-31, attend la validation de Kevin sur les choix de l'Inventaire)
 - Objectif : partir d'un état propre et savoir précisément quelles données datées existent pour recalculer une saison passée.
 - Résultat testable : une section « Inventaire » ajoutée en bas de ce fichier, qui répond aux questions ci-dessous, et un commit de départ.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -77,8 +77,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Repérer où est stocké le rôle staff d'un membre du club (`ROLES_STAFF`, `staff_club_delegation`, `role_permissions`) pour préparer le bloc 5.
   - Écrire la section « Inventaire » avec, pour chaque manque, la conséquence : à ajouter au SQL du bloc 5, ou donnée affichée « non disponible ».
 - Ce que je teste pour valider : je lis la section Inventaire et je confirme les choix sur les manques.
-- Reste à finir :
-- Journal :
+- Reste à finir : `supabase_sponsors_diagnostic_resultats.txt` laissé non suivi volontairement (sortie brute de psql, jamais relue pour d'éventuelles données sensibles). À ranger ou à mettre dans le .gitignore.
+- Journal : 2026-10-31, Sonnet 5.5. Trois commits de départ créés (scripts SQL, ressenti collectif club, brief et plan saisons), rien de poussé. Inventaire écrit en bas de ce fichier. Aucun écart.
 
 ### Bloc 1 : socle saison (sélecteur et filtrage par dates)
 - Statut : à faire
@@ -300,3 +300,50 @@ Rappel : `/clear` et une session neuve par bloc.
 - Ce que je teste pour valider : je parcours la liste du compte rendu.
 - Reste à finir :
 - Journal :
+
+---
+
+## Inventaire (bloc 0, 2026-10-31)
+Lu dans les scripts `supabase_*.sql` et dans le code. Aucune requête sur la base de production : les tables créées hors fichiers SQL (ex. `historique_saisons`, `stats_match`, `matchs_equipe`) sont décrites d'après le code qui les lit et les écrit.
+
+### Données disponibles pour recalculer une saison
+| Donnée | Table | Date | Équipe | Coach |
+|---|---|---|---|---|
+| Matchs, score, compétition | `matchs_equipe` | `date` | `club_categorie_id` | `educateur_id` |
+| Buts (minute, nature, côté) | `matchs_equipe.buts_detail` (JSON) | via le match | idem | idem |
+| Stats par joueur et match : minutes, buts, passes, clean sheet, cartons | `stats_match` | via `match_id` | via le match | `educateur_id` |
+| Séances | `entrainements` | `date` | `club_categorie_id` | `educateur_id` |
+| Présences | `presences_entrainement` (+ `disponibilites`) | via la séance | via la séance | via la séance |
+| Notes RPE et plaisir | `seances_notes_demandes` / `seances_notes_joueurs` | `date_seance` | `club_categorie_id` | `educateur_id` |
+| Blessures et suivi médical | `blessures` / `suivi_medical` | `date_debut`, `saison` (texte) | `equipe_joueur_id` | `educateur_id` |
+| Tests physiques | `tests_physiques` | `date_test` | `club_categorie_id` | `educateur_id` |
+| Évaluations | `evaluations_joueur` (`note_globale_saison`) | `updated_at` seulement | `equipe_joueur_id` | `educateur_id` |
+| Fiche de fin de saison (photo figée) | `historique_saisons` | `saison` (texte), `date_cloture` | aucune colonne équipe | `educateur_id` |
+| Effectif | `equipe_joueurs` (poste en texte libre) | aucune | `club_categorie_id` | `educateur_id` |
+| Projet sportif | `planification_annuelle` (colonne `saison`), `regles_jeu` (colonne `saison`), `principes_jeu` (sans saison) | voir à gauche | `club_id` + `pole_key` | sans objet |
+
+### Les quatre questions
+**(a) Quel coach avait quelle équipe en saison passée ?** La clôture (`GestionCloturesSaison.jsx`) passe les affiliations en `archive` (avec `saison` et `date_fin`) puis met `club_categories.educateur_id` à vide. Mais chaque match, séance et test garde son `educateur_id` et son `club_categorie_id`. Réponse : on retrouve le couple coach + équipe d'une saison en regardant les matchs et séances datés de cette saison. Limite : une équipe sans aucun match ni séance dans la saison n'apparaît pas. Les affiliations archivées complètent pour l'effectif. Ce n'est pas bloquant.
+**(b) Le poste gardien est-il connu ?** Pas besoin : `stats_match.clean_sheet` est saisi match par match par le coach. Les clean sheets de la saison = somme de ces cases. Pour l'affichage « gardien seulement » du bloc 3 : on affiche la ligne dès qu'un clean sheet existe, ou si le poste texte libre contient « gardien » (`src/lib/postes.js`).
+**(c) Les minutes jouées sont-elles saisies ?** Oui, `stats_match.minutes` est enregistré par le coach (valeur 0 si non saisi). Piège : 0 veut dire « pas saisi » autant que « n'a pas joué ». Le bloc 2 affiche « non disponible » si aucune minute n'est saisie sur la saison, comme le fait déjà `StatsEquipe` pour sa section.
+**(d) Le projet sportif garde-t-il ses versions précédentes ?** Non pour les principes de jeu (`principes_jeu` n'a pas de saison, modifié en place). Oui pour la planification annuelle et les règles (colonne `saison`). Conséquence : le bloc 9 compare les deux saisons pour la planification et les règles. Pour les principes de jeu, l'historique commence à partir du moment où on le sauvegarde.
+
+### Autres constats
+- Les données de saison passée **se recalculent depuis les dates** : pas besoin de nouvelle table pour les chiffres. Seule la fiche `historique_saisons` reste une photo.
+- `historique_saisons` n'a pas de colonne équipe : un coach à plusieurs équipes mélange ses fiches de fin de saison (clé : joueur, éducateur, saison). Contournement : relier la fiche à l'équipe via `equipe_joueurs.club_categorie_id` du joueur.
+- Les évaluations n'ont pas de date de saison. Le bloc 3 affichera la fiche `historique_saisons` pour une saison close, et l'évaluation en cours seulement pour la saison en cours.
+- **Classement en compétition** (bloc 4) : aucune table de classement trouvée. Seul le nom de la compétition est stocké sur les matchs. Le bloc 4 affichera le bilan des matchs par compétition et « non disponible » pour le rang.
+- `matchs_equipe.club_categorie_id` a été rempli après coup pour les anciens matchs (scripts de rattrapage) : certains matchs d'un coach à plusieurs équipes peuvent rester sans équipe. Ces matchs sont comptés pour le coach mais pas pour une équipe précise.
+- Les blessures portent déjà une saison en texte : filtre direct possible.
+
+### Rôles staff (pour le bloc 5)
+- Table `staff_club` (colonne `role`) et `role_permissions`, contrainte de valeurs définie dans `supabase_inventaire.sql` (19 rôles).
+- Liste côté appli : `ROLES_STAFF` dans `DashboardClub.jsx` (ligne 120).
+- Catégories par rôle : `role_categories_access` ; défauts `ACCES_CATEGORIES_DEFAUT` (`DashboardClub.jsx` ~148) : formation U15 à Seniors, préformation U11 à U14, école de foot U7 à U10 ; le directeur sportif a tout ; le président a tout. La secrétaire figure aussi dans les rôles à accès complet par défaut (`ROLES_ACCES_COMPLET_DEFAUT`) : **le bloc 5 doit l'exclure explicitement de la validation**, comme prévu.
+- Règles actuelles de `club_categories` à ne pas casser avant le bloc 8 : un éducateur accepté du club peut s'insérer (`educateur_declare_sa_categorie`), réclamer une catégorie vacante, et la quitter (`supabase_club_categories_educateur_declare.sql`).
+
+### Conséquences pour le bloc 5 (à valider par Kevin)
+1. **Ajout au SQL** : table « saison close pour ce club » (déjà prévue), table des demandes (prévue).
+2. **Pas d'ajout** pour la trace coach + équipe : déjà dans les matchs et séances.
+3. **Facultatif** : colonne `club_categorie_id` sur `historique_saisons` pour séparer les fiches d'un coach à plusieurs équipes. Recommandé, petit, sans risque (colonne vide par défaut).
+4. **Rien pour les principes de jeu** : l'historique démarre à la première sauvegarde, c'est dit à l'écran.
