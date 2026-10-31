@@ -55,6 +55,7 @@ import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
+const ParcoursCoach = lazy(() => import('../components/saisons/ParcoursCoach'))
 const OnboardingGuide = lazy(() => import('../components/OnboardingGuide'))
 const FloatingHelper = lazy(() => import('../components/FloatingHelper'))
 import ParrainageWidget from '../components/ParrainageWidget'
@@ -1970,6 +1971,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [explorerRecherche, setExplorerRecherche] = useState('')
   const [explorerRegion, setExplorerRegion] = useState('')
   const [educateursExplorer, setEducateursExplorer] = useState([])
+  const [parcoursOuvertExplorer, setParcoursOuvertExplorer] = useState(null) // id de l'éducateur dont le parcours est déplié
   const [clubsExplorer, setClubsExplorer] = useState([])
   const [recrutementsParClubExplorer, setRecrutementsParClubExplorer] = useState({})
   const [explorerLoading, setExplorerLoading] = useState(false)
@@ -8071,8 +8073,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                     <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), passes_dec: parseInt(e.target.value) || 0 } } }))}
                                       style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
-                                      onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: e.target.value === '1' } } }))}
+                                    <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
+                                      onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: parseInt(e.target.value) > 0 } } }))}
                                       style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
                                     <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
                                       onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))} />
@@ -8622,8 +8624,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), passes_dec: parseInt(e.target.value) || 0 } } }))}
                             style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                          <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : 0}
-                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: e.target.value === '1' } } }))}
+                          <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
+                            onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: parseInt(e.target.value) > 0 } } }))}
                             style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
                             onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))} />
@@ -12087,7 +12089,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     const nomAffiche = explorerOnglet === 'clubs' ? (p.club || `${p.prenom || ''} ${p.nom || ''}`.trim()) : `${p.prenom || ''} ${p.nom || ''}`.trim()
                     return (
                       <div key={p.id} onClick={() => ouvrirChatExplorer(p)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile || parcoursOuvertExplorer === p.id ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer' }}>
                         <Avatar person={{ ...p, nom: nomAffiche }} size={40} border={`2px solid ${colors.accent.blue}30`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
                         <div style={{ flex: 1, minWidth: '180px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -12115,8 +12117,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                             Voir le profil public
                           </a>
+                          {explorerOnglet === 'educateurs' && (
+                            <button onClick={e => { e.stopPropagation(); setParcoursOuvertExplorer(id => (id === p.id ? null : p.id)) }}
+                              style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                              {parcoursOuvertExplorer === p.id ? 'Masquer le parcours' : 'Parcours et stats'}
+                            </button>
+                          )}
                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}><IcoSend /> Message</span>
                         </div>
+                        {explorerOnglet === 'educateurs' && parcoursOuvertExplorer === p.id && (
+                          <div onClick={e => e.stopPropagation()} style={{ flexBasis: '100%', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 12, cursor: 'default' }}>
+                            <Suspense fallback={<SectionLoader />}><ParcoursCoach educateurId={p.id} /></Suspense>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -12240,11 +12253,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
               <ParrainageWidget userId={userId} accentColor={colors.accent.blue} />
-            </div>
-
-            <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 0.75rem' }}>Mes saisons</h2>
-              <Suspense fallback={<SectionLoader />}><MesSaisonsCoach educateurId={userId} /></Suspense>
             </div>
 
             <div className="profil-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', maxWidth: '900px' }}>
@@ -12696,6 +12704,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 </div>
               )
             })()}
+
+            <div style={{ maxWidth: '900px', marginTop: '2rem' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 0.75rem' }}>Mes saisons</h2>
+              <Suspense fallback={<SectionLoader />}><MesSaisonsCoach educateurId={userId} /></Suspense>
+            </div>
           </>
         )}
 
@@ -12813,7 +12826,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             onChange={e => setS('passes_dec', parseInt(e.target.value) || 0)}
                             style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
                           <input type="number" min="0" max="1" value={s.clean_sheet ? 1 : ''} placeholder="—"
-                            onChange={e => setS('clean_sheet', e.target.value === '1')}
+                            onChange={e => setS('clean_sheet', parseInt(e.target.value) > 0)}
                             style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <span onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_jaune ? 1 : 0.2 }}>🟨</span>
                           <span onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_rouge ? 1 : 0.2 }}>🟥</span>

@@ -115,3 +115,29 @@ test('bilan de saison sans aucune donnée : valeurs nulles, pas de division par 
   assert.equal(b.presence, null)
   assert.equal(b.rpeMoyen, null)
 })
+
+test('filtre compétition : championnat, coupe, amical, casse et espaces ignorés', async () => {
+  const { filtrerParCompetition } = await import('../src/lib/statsSaison.js')
+  const liste = [
+    { id: 1, competition: 'Championnat' }, { id: 2, competition: ' coupe ' },
+    { id: 3, competition: 'Amical' }, { id: 4, competition: null },
+  ]
+  assert.deepEqual(filtrerParCompetition(liste, 'toutes').map(m => m.id), [1, 2, 3, 4])
+  assert.deepEqual(filtrerParCompetition(liste, 'championnat').map(m => m.id), [1])
+  assert.deepEqual(filtrerParCompetition(liste, 'coupe').map(m => m.id), [2])
+  assert.deepEqual(filtrerParCompetition(liste, 'amical').map(m => m.id), [3])
+})
+
+test('vue d\'ensemble : on additionne les effectifs, pas les pourcentages', async () => {
+  const { cumulerBilans } = await import('../src/lib/statsSaison.js')
+  const c = cumulerBilans([
+    { matchs: 10, nbV: 5, nbN: 3, nbD: 2, butsMarques: 20, butsEncaisses: 10, presents: 8, nbPresences: 10 },
+    { matchs: 2, nbV: 2, nbN: 0, nbD: 0, butsMarques: 6, butsEncaisses: 0, presents: 1, nbPresences: 10 },
+  ])
+  assert.equal(c.matchs, 12)
+  assert.deepEqual([c.victoires, c.nuls, c.defaites], [58, 25, 17])
+  assert.equal(c.butsMarquesParMatch, 2.17)
+  assert.equal(c.butsEncaissesParMatch, 0.83)
+  assert.equal(c.presence, 45)
+  assert.equal(cumulerBilans([]).victoires, null)
+})

@@ -60,6 +60,19 @@ export const lignesJoueurs = ({ joueurs, matchs, entrainements, dispos, notation
     note: noteMoyenneJoueur(j.id, notations),
   }))
 
+// Filtre par type de compétition (valeurs du formulaire de match, comparées en minuscule).
+export const FILTRES_COMPETITION = [
+  { id: 'toutes', label: 'Toutes compétitions' },
+  { id: 'championnat', label: 'Championnat' },
+  { id: 'coupe', label: 'Coupe' },
+  { id: 'amical', label: 'Amical' },
+]
+
+export const filtrerParCompetition = (matchs, filtre) =>
+  !filtre || filtre === 'toutes'
+    ? (matchs || [])
+    : (matchs || []).filter(m => (m.competition || '').trim().toLowerCase() === filtre)
+
 // Critères de classement : clé, valeur lue sur une ligne, unité.
 export const CRITERES_CLASSEMENT = [
   { key: 'buts', label: 'Buteurs', get: l => l.s.buts, unite: 'buts' },
@@ -154,6 +167,7 @@ export const bilanSaisonEquipe = ({ matchs, entrainements, blessures, rpes, aujo
   const rpeListe = (rpes || []).filter(x => typeof x === 'number' && !Number.isNaN(x))
   return {
     matchs: total,
+    nbV: v, nbN: n, nbD: d, butsMarques, butsEncaisses, presents, nbPresences: presences.length,
     victoires: pct(v, total), nuls: pct(n, total), defaites: pct(d, total),
     butsMarquesParMatch: moy2(butsMarques, total),
     butsEncaissesParMatch: moy2(butsEncaisses, total),
@@ -163,3 +177,28 @@ export const bilanSaisonEquipe = ({ matchs, entrainements, blessures, rpes, aujo
     rpeMoyen: rpeListe.length ? Number((rpeListe.reduce((t, x) => t + x, 0) / rpeListe.length).toFixed(1)) : null,
   }
 }
+
+// Additionne des bilans (une équipe, une saison chacun) pour la vue d'ensemble
+// d'une carrière : on cumule les effectifs bruts, jamais les pourcentages.
+export const cumulerBilans = (bilans) => {
+  const t = (bilans || []).reduce((a, b) => ({
+    matchs: a.matchs + (b.matchs || 0), v: a.v + (b.nbV || 0), n: a.n + (b.nbN || 0), d: a.d + (b.nbD || 0),
+    bm: a.bm + (b.butsMarques || 0), be: a.be + (b.butsEncaisses || 0),
+    pr: a.pr + (b.presents || 0), np: a.np + (b.nbPresences || 0),
+  }), { matchs: 0, v: 0, n: 0, d: 0, bm: 0, be: 0, pr: 0, np: 0 })
+  return {
+    matchs: t.matchs,
+    victoires: pct(t.v, t.matchs), nuls: pct(t.n, t.matchs), defaites: pct(t.d, t.matchs),
+    butsMarquesParMatch: moy2(t.bm, t.matchs), butsEncaissesParMatch: moy2(t.be, t.matchs),
+    presence: pct(t.pr, t.np),
+  }
+}
+
+// Même cumul à partir des lignes de coach_bilans_publics (colonnes en base).
+export const bilanDepuisLigne = (l) => ({
+  matchs: l.matchs, nbV: l.nb_v, nbN: l.nb_n, nbD: l.nb_d,
+  butsMarques: l.buts_marques, butsEncaisses: l.buts_encaisses, presents: l.presents, nbPresences: l.nb_presences,
+})
+
+// Niveau de pratique d'une équipe (choisi par le coach, même liste que la contrainte en base).
+export const NIVEAUX_PRATIQUE = ['District', 'Régional 3', 'Régional 2', 'Régional 1', 'National 3', 'National 2', 'National 1']

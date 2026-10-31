@@ -10,7 +10,7 @@ import {
 } from '../../lib/saison'
 import {
   lignesJoueurs, classement, CRITERES_CLASSEMENT, minutesSaisies,
-  presenceMoyenneEquipe, resumeSante, noteEquipe,
+  presenceMoyenneEquipe, resumeSante, noteEquipe, FILTRES_COMPETITION, filtrerParCompetition,
 } from '../../lib/statsSaison'
 import SelecteurSaison from './SelecteurSaison'
 import StatsEquipe from '../StatsEquipe'
@@ -28,6 +28,7 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
   const [brut, setBrut] = useState(null)
   const [critere, setCritere] = useState('buts')
   const [vue, setVue] = useState('collectif')
+  const [filtreComp, setFiltreComp] = useState('toutes')
 
   // Dates de tous les matchs et séances du coach (légères) pour savoir quelles saisons existent.
   useEffect(() => {
@@ -91,9 +92,15 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     return [...joueurs, ...[...anciens].map(id => ({ id, prenom: 'Ancien', nom: 'joueur' }))]
   }, [donnees, joueurs])
 
-  const lignes = useMemo(() => donnees
-    ? lignesJoueurs({ joueurs: effectif, matchs: donnees.matchs, entrainements: donnees.entrainements, dispos: donnees.dispos, notations: donnees.notations })
-    : [], [donnees, effectif])
+  // Le filtre compétition joue sur les chiffres de match des joueurs (la présence
+  // vient des entraînements, elle n'est pas concernée).
+  const lignes = useMemo(() => {
+    if (!donnees) return []
+    const matchs = filtrerParCompetition(donnees.matchs, filtreComp)
+    const ids = new Set(matchs.map(m => m.id))
+    const notations = filtreComp === 'toutes' ? donnees.notations : donnees.notations.filter(n => ids.has(n.match_id))
+    return lignesJoueurs({ joueurs: effectif, matchs, entrainements: donnees.entrainements, dispos: donnees.dispos, notations })
+  }, [donnees, effectif, filtreComp])
 
   const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.lg, padding: isMobile ? 14 : '16px 18px', minWidth: 0 }
   const eyebrow = (texte) => (
@@ -218,6 +225,14 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
           <button key={cle} onClick={() => setVue(cle)} style={{ padding: '6px 14px', borderRadius: 16, border: `1px solid ${vue === cle ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: vue === cle ? colors.accent.blue + alpha.subtle : 'transparent', color: vue === cle ? colors.accent.blue : colors.text.faint, fontWeight: vue === cle ? 700 : 500, fontFamily: 'Inter, sans-serif' }}>{label}</button>
         ))}
       </div>
+      {donnees && (donnees.matchs.length > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {FILTRES_COMPETITION.map(f => (
+            <button key={f.id} onClick={() => setFiltreComp(f.id)} style={{ padding: '6px 14px', borderRadius: 16, border: `1px solid ${filtreComp === f.id ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: filtreComp === f.id ? colors.accent.green + alpha.subtle : 'transparent', color: filtreComp === f.id ? colors.accent.green : colors.text.faint, fontWeight: filtreComp === f.id ? 700 : 500, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{f.label}</button>
+          ))}
+          <span style={{ fontSize: 11, color: colors.text.faint }}>Classements et fiches joueurs</span>
+        </div>
+      )}
       {dates && !aSaisonsPassees(saisons) && (
         <p style={{ margin: 0, fontSize: 12, color: colors.text.faint }}>{MESSAGE_AUCUNE_SAISON_ARCHIVEE}</p>
       )}
