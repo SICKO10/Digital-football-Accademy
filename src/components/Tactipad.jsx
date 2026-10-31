@@ -24,6 +24,18 @@ const IcoFleche = () => sv(<><line x1="5" y1="19" x2="19" y2="5"/><polyline poin
 const IcoFilm = () => sv(<><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="2" y1="12" x2="22" y2="12"/></>)
 const IcoDisquette = () => sv(<><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>)
 const IcoLien = () => sv(<><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></>, 13)
+// 3 ronds reliés par des traits — même icône que le partage (réseau), reprise
+// ici pour « Relier des joueurs » car elle représente mieux la fonction que
+// le maillon de chaîne d'IcoLien (demande explicite : capture d'écran fournie).
+const IcoRelierJoueurs = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    <circle cx="18" cy="5" r="3" fill="currentColor"/>
+    <circle cx="6" cy="12" r="3" fill="currentColor"/>
+    <circle cx="18" cy="19" r="3" fill="currentColor"/>
+    <line x1="8.59" y1="10.49" x2="15.42" y2="6.51"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+  </svg>
+)
 const IcoJoueurs = () => sv(<><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></>, 13)
 const IcoSchema = () => sv(<><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="12" r="3"/></>, 18)
 const IcoCrayon = () => sv(<><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></>, 13)
@@ -495,6 +507,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const TOUR_STEPS = [
     { ref: 'select', titre: t('tac_tour_1_titre', lang), texte: t('tac_tour_1_texte', lang) },
     { ref: 'fleches', titre: t('tac_tour_3_titre', lang), texte: t('tac_tour_3_texte', lang) },
+    { ref: 'lien', titre: t('tac_tour_11_titre', lang), texte: t('tac_tour_11_texte', lang) },
     { ref: 'zones', titre: t('tac_tour_4_titre', lang), texte: t('tac_tour_4_texte', lang) },
     { ref: 'objets', titre: t('tac_tour_5_titre', lang), texte: t('tac_tour_5_texte', lang) },
     { ref: 'joueur', titre: t('tac_tour_6_titre', lang), texte: t('tac_tour_6_texte', lang) },
@@ -627,6 +640,9 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const [pendingStart, setPendingStart] = useState(null)
   // ── NOUVEAU : position souris pour preview flèche ─────────────────────────
   const [mousePos, setMousePos] = useState(null)
+  // Outil "Relier" : ids des joueurs cliqués dans l'ordre, pas encore
+  // transformés en élément lien-joueurs (tant qu'on n'a pas cliqué "Relier").
+  const [liaisonEnCours, setLiaisonEnCours] = useState([])
 
   // ── Ajout d'un joueur individuel (par opposition au dispositif complet de
   // 11 posé par appliquerDispositif) ────────────────────────────────────────
@@ -848,6 +864,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         setSelectedIds(new Set())
         setPendingStart(null)
         setMousePos(null)
+        setLiaisonEnCours([])
         setTool('select')
         return
       }
@@ -953,6 +970,22 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
 
   const updateElement = (updated) => {
     applyElements(elements.map(e => (e.id === updated.id ? updated : e)))
+  }
+
+  // Outil "Relier" : un clic sur un joueur l'ajoute à la chaîne en cours (ou
+  // l'en retire s'il y était déjà, pour corriger sans tout recommencer).
+  const toggleLiaisonJoueur = (id) => {
+    setLiaisonEnCours(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]))
+  }
+
+  // Transforme la chaîne en cours en élément lien-joueurs (couleur = arrowColor,
+  // comme les autres lignes/flèches). L'outil reste actif après validation pour
+  // enchaîner une autre ligne (ex. défenseurs, puis milieux, puis attaquants)
+  // en changeant juste la couleur entre deux validations.
+  const validerLiaisonJoueurs = () => {
+    if (liaisonEnCours.length < 2) return
+    applyElements([...elements, { id: uid(), type: 'lien-joueurs', joueurIds: [...liaisonEnCours], color: arrowColor }])
+    setLiaisonEnCours([])
   }
 
   // Clic droit sur une flèche/ligne posée : inverse son sens (la pointe d'une
@@ -1871,6 +1904,14 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               </div>
             )}
           </div>
+          <button
+            ref={el => (tourRefs.current.lien = el)}
+            onClick={() => { setTool(tool === 'lien-joueurs' ? 'select' : 'lien-joueurs'); setLiaisonEnCours([]); setPendingStart(null); setMousePos(null) }}
+            style={btnStyle(tool === 'lien-joueurs')}
+            title="Relier des joueurs par une ligne : clique-les dans l'ordre (ex. les 4 défenseurs), puis Relier. Change la couleur avant de recommencer pour une autre ligne."
+          >
+            <IcoRelierJoueurs />
+          </button>
           <div style={{ height: '1px', background: colors.border.default }} />
           <div ref={el => (tourRefs.current.zones = el)} style={{ position: 'relative' }}>
             <button
@@ -2019,6 +2060,21 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               Clique le point d'arrivée de la flèche… <span style={{ color: colors.text.faint }}>(Échap pour annuler)</span>
             </p>
           )}
+          {tool === 'lien-joueurs' && (
+            <p style={{ fontSize: '11px', color: '#4ade80', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span>
+                {liaisonEnCours.length === 0
+                  ? "Clique les joueurs à relier, dans l'ordre…"
+                  : `${liaisonEnCours.length} joueur${liaisonEnCours.length > 1 ? 's' : ''} sélectionné${liaisonEnCours.length > 1 ? 's' : ''}…`}
+                {' '}<span style={{ color: colors.text.faint }}>(Échap pour annuler)</span>
+              </span>
+              {liaisonEnCours.length >= 2 && (
+                <button onClick={validerLiaisonJoueurs} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '6px', padding: '3px 10px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                  ✓ Relier
+                </button>
+              )}
+            </p>
+          )}
           <Stage
             ref={stageRef}
             width={width}
@@ -2129,8 +2185,23 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   dragBoundFunc={dragBound}
                 />
               ))}
+              {/* Rendu avant les joueurs pour que leurs pastilles recouvrent la
+                  ligne au niveau des centres, plutôt que l'inverse. Points
+                  recalculés à chaque rendu depuis la position courante de
+                  chaque joueur (pas de x/y stockés sur l'élément) : la ligne
+                  suit automatiquement un joueur déplacé ensuite. */}
+              {elements.filter(e => e.type === 'lien-joueurs').map(e => {
+                const pts = e.joueurIds.map(id => elements.find(x => x.id === id)).filter(Boolean)
+                if (pts.length < 2) return null
+                return (
+                  <Line key={e.id} id={e.id} points={pts.flatMap(p => [p.x, p.y])}
+                    stroke={e.color} strokeWidth={3} lineCap="round" lineJoin="round" hitStrokeWidth={16}
+                    onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }} />
+                )
+              })}
               {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id)} onSelect={id => { if (tool === 'select') setSelectedId(id) }}
+                <JoueurNode key={e.id} el={e} isSelected={selectedId === e.id || selectedIds.has(e.id) || liaisonEnCours.includes(e.id)}
+                  onSelect={id => { if (tool === 'select') setSelectedId(id); else if (tool === 'lien-joueurs') toggleLiaisonJoueur(id) }}
                   onChange={updated => { if (groupDragRef.current) return; updateElement(updated) }}
                   onEdit={editerJoueur} couleurs={equipesCouleurs} dragBoundFunc={dragBound} />
               ))}
