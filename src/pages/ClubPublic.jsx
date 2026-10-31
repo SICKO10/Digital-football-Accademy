@@ -128,7 +128,7 @@ export default function ClubPublic() {
         // passe par cette table.
         (estClub && user.id !== id) ? supabase.from('club_educateurs').select('id').eq('club_id', id).eq('educateur_id', user.id).eq('statut', 'accepte').maybeSingle() : noop,
         // Joueurs de l'équipe
-        supabase.from('equipe_joueurs').select('*').eq('educateur_id', id).order('categorie'),
+        supabase.from('equipe_joueurs').select('id, categorie').eq('educateur_id', id).order('categorie'),
         // Matchs
         supabase.from('matchs_equipe').select('*').eq('educateur_id', id).order('date', { ascending: false }),
         // Lien classement officiel + diplôme + niveau championnat (saisis par l'éducateur dans son profil)
@@ -621,17 +621,6 @@ export default function ClubPublic() {
               return (
                 <div key={cat} style={st.card}>
                   <p style={st.sectionTitle}>{cat} · {joueursCat.length} {joueursCat.length > 1 ? t('clubpub_joueurs_plural', lang) : t('clubpub_joueur_singular', lang)}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {joueursCat.map((j, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.sunken, borderRadius: '8px' }}>
-                        <span style={{ width: '26px', height: '26px', background: colors.accent.green + alpha.subtle, border: '1px solid #4ade8030', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: colors.accent.green, flexShrink: 0 }}>
-                          {j.numero_maillot || '—'}
-                        </span>
-                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 500 }}>{j.prenom} {j.nom}</span>
-                        {j.poste && <span style={{ fontSize: '11px', color: colors.text.faint, background: colors.background.raised, padding: '2px 8px', borderRadius: '10px' }}>{j.poste}</span>}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )
             })}

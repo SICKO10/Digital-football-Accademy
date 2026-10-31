@@ -55,6 +55,7 @@ import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
+const PublierParcours = lazy(() => import('../components/saisons/PublierParcours'))
 const ParcoursCoach = lazy(() => import('../components/saisons/ParcoursCoach'))
 const OnboardingGuide = lazy(() => import('../components/OnboardingGuide'))
 const FloatingHelper = lazy(() => import('../components/FloatingHelper'))
@@ -5905,6 +5906,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         return <TutorielCompetition onFermer={fermer} />
       })()}
       <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={userId} steps={getEducateurOnboardingSteps(profil?.email)} accentColor={colors.accent.blue} />
+      {!educateurIdOverride && <Suspense fallback={null}><PublierParcours educateurId={userId} /></Suspense>}
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     </Suspense>
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
