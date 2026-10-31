@@ -231,7 +231,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Journal : 2026-10-31, Opus 5.5. Inventaire du code : 5 écritures sur `club_categories` (coach : retrait dans `GestionCloturesSaison.jsx` et `DashboardEducateur.jsx`, toutes deux vers « sans coach » ; club : création, suppression, création à l'acceptation d'une affiliation dans `DashboardClub.jsx`), aucune dans `api/` ni `supabase/functions`, `AcceptInvite.jsx` n'écrit pas dans la table. SQL : fonction `saison_peut_attribuer_equipe` + déclencheur `saison_garde_attribution_equipe` (refuse toute attribution d'équipe par un coach, même si une règle inconnue de la production l'autorisait), suppression des règles `educateur_declare_sa_categorie` et `educateur_reclame_categorie_vacante`, `educateur_quitte_sa_categorie` conservée. Testé sur une base Postgres locale factice (PGlite, hors projet) : 40/40 (vérification 13/13, coach, pire cas avec règle « tout permis », club et staff, circuit de demande des blocs 5 à 7, script serveur, fichier relancé deux fois, annulation verrouillée puis déverrouillée = retour exact à l'état d'avant). `npm test` 95/95. Libellé du test 12 de la vérification du bloc 5 précisé (il comptera 1 règle après ce bloc). Décision : un staff qui est aussi coach ne s'attribue pas d'équipe lui-même.
 
 ### Bloc 9 : club, boutons Historique
-- Statut : à faire
+- Statut : fait (2026-10-31), non poussé, attend la validation de Kevin
 - Objectif : rouvrir une saison passée côté club.
 - Résultat testable : bouton « Historique saison » avec choix de la saison, et un bouton Historique sur Stats équipe, Projet sportif (évolution d'une saison à l'autre) et Éducateurs (qui encadrait quelle équipe, avec quel effectif).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -245,11 +245,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Éducateurs : liste par saison, coach, équipe, effectif.
   - Projet sportif : comparaison entre deux saisons, selon ce que le bloc 0 a trouvé (sinon, l'historique démarre à partir de la saison en cours, et c'est dit à l'écran).
 - Ce que je teste pour valider : les quatre boutons sur 2026-2027 (en cours), et l'état vide pour les saisons passées.
-- Reste à finir :
-- Journal :
+- Reste à finir : parcours à tester par Kevin sur son compte club (je n'ai pas de navigateur ni de compte, build et `npm test` 97/97 seulement). Limites assumées : les matchs et séances sans équipe précise (anciens, `club_categorie_id` vide) ne sont pas comptés dans l'historique d'une équipe côté club ; l'effectif d'une saison passée = joueurs ayant des stats de match cette saison-là (effectif actuel pour la saison en cours) ; pas de vue individuelle côté club (les évaluations restent privées au coach) ; principes de jeu et zones sans saison, dit à l'écran. À vérifier : que les règles d'accès de la base laissent le compte club lire `matchs_equipe`, `entrainements`, `stats_match`, `notations_match`, `blessures`, `plan_annuel` de ses équipes (si un tableau reste vide ou affiche « Impossible de charger », c'est là).
+- Journal : 2026-10-31, Sonnet 5.5. Un seul composant `src/components/saisons/HistoriqueClub.jsx` (fenêtre à trois vues : équipe, éducateurs, projet sportif) et un bouton `BoutonHistoriqueSaison`, branchés dans `DashboardClub.jsx` sur Catégories & Équipes, Stat équipe (équipe active préchoisie), Éducateurs et Projet sportif. `HistoriqueCollectif` rendu utilisable sans éducateur (filtre équipe seule, prop `sansIndividuel`) ; usage coach inchangé. Aucune écriture en base, aucun SQL.
 
 ### Bloc 10 : club, clôture de saison et Planifier séance à zéro
-- Statut : à faire
+- Statut : fait (2026-10-31), non poussé, attend la validation de Kevin
 - Objectif : le bouton « Clôturer une saison » en bas du dashboard club (bilan, sans rien archiver) et la remise à zéro de Planifier séance.
 - Résultat testable : le bouton affiche quelles équipes ont clôturé et lesquelles non, puis marque la saison close pour le club. Dans Planifier séance, « Repartir à zéro » masque les séances des saisons passées ; la présence entraînement reste dans l'historique.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -263,11 +263,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - [IDÉE] Bouton « Relancer » à côté d'une équipe non clôturée : notification plateforme au coach. Optionnel, 10 minutes, à garder si Kevin le veut.
   - `PlanificationSeances.jsx` : filtre par défaut sur la saison en cours, interrupteur pour revoir les anciennes. Aucune suppression.
 - Ce que je teste pour valider : bilan affiché, aucune affiliation modifiée, anciennes séances masquées puis réaffichables.
-- Reste à finir :
-- Journal :
+- Reste à finir : parcours à tester par Kevin sur son compte club (pas de navigateur ici ; build, lint et `npm test` 103/103 seulement) : en bas de l'Accueil, bouton « Clôturer une saison » puis bilan des équipes, marquage « close », puis « Rouvrir ». Dans Planifier séance : bouton « Voir les N séances des saisons passées » (visible seulement s'il y en a). Le bouton [IDÉE] « Relancer » le coach d'une équipe non clôturée n'est pas fait (optionnel, à demander). Le droit de clôturer est celui de la base (`saison_peut_valider`) : compte principal, président, directeur sportif, responsable formation ; les autres voient le bilan sans bouton. Limites : l'état d'une équipe se déduit des affiliations de ses joueurs (aucun joueur ni coach = « Sans éducateur » ; coach sans joueur = « Aucun joueur à archiver »). La saison close est toujours la saison en cours (`saisonActuelle()`). Rien d'autre ne lit encore `saisons_closes_club`.
+- Journal : 2026-10-31, Sonnet 5.5. `src/lib/cloturesClub.js` (état d'une équipe et bilan, fonctions pures) + `tests/cloturesClub.test.js` (6 tests). Nouveau `src/components/saisons/ClotureSaisonClub.jsx` (carte en bas de l'Accueil, fenêtre avec le bilan par équipe, insertion ou suppression dans `saisons_closes_club`, texte « Rien n'est archivé ici… »), branché dans `DashboardClub.jsx`. `PlanificationSeances.jsx` : les séances d'avant le 1er juillet de la saison en cours sont masquées par défaut (interrupteur pour les revoir), aucune suppression, les séances de la saison suivante restent visibles ; la génération de planning teste toujours les doublons sur toutes les séances. Aucun SQL. Décision : masquage par bornes de date (avant le début de la saison en cours), pas par égalité de saison, pour ne pas cacher des séances déjà planifiées pour la saison suivante.
 
 ### Bloc 11 : joueur, saison en cours et Mes saisons
-- Statut : à faire
+- Statut : fait (2026-10-31), non poussé, attend la validation de Kevin
 - Objectif : côté joueur starter et Pro, la saison actuelle au premier plan et les anciennes rangées.
 - Résultat testable : Mon équipe affiche « Saison 2026 - 2027 » et garde le bouton Mes stats ; une sous-rubrique Historique liste les saisons passées ; un joueur dont le coach a clôturé voit le message de fin de saison ; quand le nouveau coach l'intègre, il reçoit une notification de confirmation.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -283,11 +283,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Notification plateforme de reconduction à l'ajout dans l'effectif d'un nouveau coach. Si les règles d'accès des notifications l'empêchent, s'arrêter et proposer un petit SQL à Kevin plutôt que de le contourner.
   - Les deux branches du dashboard joueur sont concernées (starter et Pro).
 - Ce que je teste pour valider : les trois états du joueur (en cours, saison terminée, reconduit), sur téléphone.
-- Reste à finir :
-- Journal :
+- Reste à finir : parcours à tester par Kevin sur téléphone avec un compte joueur de test (pas de navigateur ici ; build, lint inchangé, `npm test` 107/107 seulement). (1) Mon équipe : « Saison 2026 - 2027 » sous le titre, bouton Mes stats inchangé, en bas la rubrique « Mes saisons » (carte « Saison 2026 - 2027 · En cours » puis « Ta première saison archivée apparaîtra en juillet 2027. »). (2) Compte dont le coach a clôturé (affiliation archivée, aucune active) : encadré « Saison terminée » avec le message exact, sur l'Accueil et dans Mon équipe. (3) Le coach accepte le joueur (demande en attente) : le joueur reçoit une notification dans la clochette, l'encadré disparaît. Limites : la notification de reconduction ne part que quand le coach accepte une demande du joueur (`gererAffiliation`) ; un joueur qui arrive par lien d'invitation (AcceptInvite) n'en reçoit pas, il est déjà dans l'appli à ce moment. Le type `reconduction` n'a aucune contrainte connue côté base (la table `notifications` n'est pas décrite dans les fichiers SQL du projet) : si l'insertion était refusée, l'erreur est seulement journalisée et rien ne casse, il faudrait alors un petit SQL. Dépendance du bloc : le chantier `PLAN.md` y est encore noté « publication en attente », mais seul 1 commit local (Explorer) reste à pousser.
+- Journal : 2026-10-31, Sonnet 5.5. Nouveau `src/lib/finSaisonJoueur.js` (état en_cours / terminée / aucune, message exact, test de reconduction) + `tests/finSaisonJoueur.test.js` (4 tests). Nouveaux composants `MessageFinSaisonJoueur.jsx` et `MesSaisonsJoueur.jsx`. `HistoriqueSaisons.jsx` : état vide remplacé par la phrase de juillet 2027. `DashboardJoueur.jsx` : libellé de saison, encadré, rubrique Mes saisons, et les affiliations archivées ne s'affichent plus dans « Mes éducateurs » (elles apparaissaient avec le badge rouge des refus). `DashboardEducateur.jsx` (`gererAffiliation`) : notification de reconduction. Décisions : (a) seule la branche vivante du dashboard joueur (onglet Mon équipe, plans Starter et Pro) est modifiée, la branche `estAffilie` est morte et abandonnée (mémoire du 2026-10-29), contrairement à la ligne « deux branches » du bloc ; (b) notification insérée directement dans `notifications`, sans `notifierJoueur`, pour respecter « aucun email ». Aucun SQL.
 
 ### Bloc 12 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait (2026-10-31), non poussé, attend la validation de Kevin
 - Objectif : vérifier le chantier de bout en bout et ranger.
 - Résultat testable : un compte rendu avec, pour chaque point du brief, l'écran où le voir ; build propre ; fichiers SQL du chantier rangés.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -302,8 +302,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Tutoriels club et éducateur : ajouter une ligne sur l'historique et la validation, si un tutoriel couvre déjà ces écrans.
   - Mettre à jour la mémoire projet, puis commit et push après le « ok » de Kevin.
 - Ce que je teste pour valider : je parcours la liste du compte rendu.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) push à décider par Kevin, avec les blocs 6 et 7 ensemble (voir compte rendu). (2) Parcours réels à tester par Kevin (pas de navigateur ici). (3) Première vraie bascule de saison (1er juillet 2027) et premier historique archivé non vérifiables avant : répétition générale conseillée en mai 2027 avec des comptes de test. (4) Dette hors chantier : 2 erreurs lint `set-state-in-effect` déjà présentes avant le chantier (`HistoriqueSaisons.jsx`, `PlanificationSeances.jsx`) et 1 avertissement `exhaustive-deps` dans `HistoriqueIndividuel.jsx`. (5) Tutoriel éducateur non modifié (aucune étape existante sur ces écrans à compléter).
+- Journal : 2026-10-31, Sonnet 5.5. `npm test` 107/107, `npm run build` propre, aucun `console.log` dans les fichiers du chantier. Lint : aucune erreur nouvelle (les 2 erreurs existent sans nos changements). Tutoriel club : 2 étapes ajoutées (demandes de fin de saison sur Éducateurs, repartir à zéro sur Planifier séance). SQL du chantier : `supabase_saisons_demandes*.sql`, `supabase_saisons_verrouillage_categories*.sql`, `supabase_saisons_historique_equipe.sql`, `supabase_historique_saisons_multi_equipe.sql` (les fichiers ANNULATION restent marqués « NE_PAS_EXECUTER »). Mémoire projet mise à jour.
 
 ---
 

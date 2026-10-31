@@ -72,6 +72,7 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { STRIPE_LINKS_EDU, stripeUrl } from '../lib/stripeLinks'
 import { normaliserCle } from '../lib/excelImport'
 import { notifierJoueur } from '../lib/notifications'
+import { estReconduction, NOTIF_RECONDUCTION } from '../lib/finSaisonJoueur'
 import { statutPresenceEffectif, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import { colors, alpha } from '../tokens'
@@ -4226,6 +4227,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const update = { statut }
     if (equipeJoueurId) update.equipe_joueur_id = equipeJoueurId
     await supabase.from('affiliations').update(update).eq('id', id)
+    // Reconduction : un joueur dont la saison précédente est archivée et qui
+    // entre dans l'effectif d'un nouveau coach reçoit une notification dans
+    // l'appli (clochette seulement, aucun email : on n'utilise pas notifierJoueur).
+    if (statut === 'accepte') {
+      try {
+        const { data: cette } = await supabase.from('affiliations').select('joueur_id').eq('id', id).maybeSingle()
+        if (cette?.joueur_id) {
+          const { data: avant } = await supabase.from('affiliations').select('statut, educateur_id').eq('joueur_id', cette.joueur_id)
+          if (estReconduction(avant, userId)) {
+            await supabase.from('notifications').insert({
+              user_id: cette.joueur_id,
+              type: NOTIF_RECONDUCTION.type,
+              titre: NOTIF_RECONDUCTION.titre,
+              contenu: NOTIF_RECONDUCTION.texte([profilEdu?.prenom, profilEdu?.nom].filter(Boolean).join(' ')),
+              lien: '/dashboard',
+            })
+          }
+        }
+      } catch (e) {
+        console.error('Erreur notification reconduction:', e)
+      }
+    }
     // equipe_joueurs.joueur_id doit aussi être renseigné ici — sinon l'affiliation
     // est bien "accepte" mais le joueur reste invisible dans le roster réel
     // (Mon équipe, décompte du sondage de présence) qui se base sur equipe_joueurs,

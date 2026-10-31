@@ -36,6 +36,9 @@ import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
+import MesSaisonsJoueur from '../components/saisons/MesSaisonsJoueur'
+import MessageFinSaisonJoueur from '../components/saisons/MessageFinSaisonJoueur'
+import { libelleSaison } from '../lib/saison'
 import CarteJoueur from '../components/CarteJoueur'
 import SponsorsBar from '../components/SponsorsBar'
 import NoteSeanceForm from '../components/NoteSeanceForm'
@@ -3997,6 +4000,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 </div>
 
                 {/* TEASER MON ÉQUIPE */}
+                {!mesAffiliations.some(a => a.statut === 'accepte') && (
+                  <MessageFinSaisonJoueur affiliations={mesAffiliations} isMobile={isMobile} onVoirSaisons={() => setOnglet('equipe')} />
+                )}
                 {(() => {
                   const aff = mesAffiliations.find(a => a.statut === 'accepte')
                   const pending = !aff && mesAffiliations.find(a => a.statut === 'en_attente')
@@ -5086,7 +5092,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {onglet === 'equipe' && (
           <div style={{ padding: isMobile ? '16px' : '24px 32px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>{t('jeq_titre', lang)}</h1>
+            <p style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700, margin: '0 0 4px' }}>Saison {libelleSaison(saisonActuelle())}</p>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '2rem' }}>{t('jeq_desc', lang)}</p>
+
+            <MessageFinSaisonJoueur affiliations={mesAffiliations} isMobile={isMobile} />
 
             {/* Code d'entrée */}
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', marginBottom: '1.5rem' }}>
@@ -5110,10 +5119,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
 
             {/* Mes affiliations */}
-            {mesAffiliations.length > 0 && (
+            {mesAffiliations.some(a => a.statut !== 'archive') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('jeq_mes_educateurs', lang)}</p>
-                {mesAffiliations.map(a => {
+                {mesAffiliations.filter(a => a.statut !== 'archive').map(a => {
                   const pe = a.profil_educateur
                   const isAccepted = a.statut === 'accepte'
                   return (
@@ -5488,6 +5497,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             {mesAffiliations.length === 0 && (
               <EmptyState icon={<IconStadium size={40} />} title="Tu n'es encore affilié à aucune équipe" subtitle="Entre un code d'équipe pour commencer." />
             )}
+
+            <MesSaisonsJoueur joueurId={userId} isMobile={isMobile} />
           </div>
         )}
 

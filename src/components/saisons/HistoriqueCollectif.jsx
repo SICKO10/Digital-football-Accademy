@@ -20,7 +20,9 @@ import HistoriqueIndividuel from './HistoriqueIndividuel'
 // les données datées (matchs, séances, blessures), rien n'est copié ailleurs.
 // La saison en cours est proposée aussi (étiquetée « en cours ») pour pouvoir
 // vérifier les chiffres avec les vraies données avant la première clôture.
-export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [] }) {
+// `educateurId` est facultatif : côté club, on filtre sur l'équipe seule (peu importe
+// quel coach l'encadrait cette saison-là) et la vue individuelle n'est pas proposée.
+export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [], sansIndividuel = false }) {
   const colors = useColors()
   const isMobile = useWindowWidth() < 768
   const [dates, setDates] = useState(null)
@@ -32,11 +34,12 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
 
   // Dates de tous les matchs et séances du coach (légères) pour savoir quelles saisons existent.
   useEffect(() => {
-    if (!educateurId) return
+    if (!educateurId && !equipeId) return
     let annule = false
     ;(async () => {
       const lire = (table) => fetchToutesLignes(() => {
-        let q = supabase.from(table).select('id, date').eq('educateur_id', educateurId).order('id')
+        let q = supabase.from(table).select('id, date').order('id')
+        if (educateurId) q = q.eq('educateur_id', educateurId)
         if (equipeId) q = q.eq('club_categorie_id', equipeId)
         return q
       })
@@ -49,22 +52,25 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
 
   // Données de la saison choisie.
   useEffect(() => {
-    if (!educateurId) return
+    if (!educateurId && !equipeId) return
     let annule = false
     const cle = `${equipeId}|${saison}`
     ;(async () => {
       const { debut, fin } = bornesDatesSaison(saison)
-      const scope = (q) => (equipeId ? q.eq('club_categorie_id', equipeId) : q)
+      const scope = (q) => {
+        if (educateurId) q = q.eq('educateur_id', educateurId)
+        return equipeId ? q.eq('club_categorie_id', equipeId) : q
+      }
       const [m, e] = await Promise.all([
-        fetchToutesLignes(() => scope(supabase.from('matchs_equipe').select('*, stats_match(*)').eq('educateur_id', educateurId).gte('date', debut).lte('date', fin).order('id'))),
-        fetchToutesLignes(() => scope(supabase.from('entrainements').select('*, presences_entrainement(*)').eq('educateur_id', educateurId).gte('date', debut).lte('date', fin).order('id'))),
+        fetchToutesLignes(() => scope(supabase.from('matchs_equipe').select('*, stats_match(*)').gte('date', debut).lte('date', fin).order('id'))),
+        fetchToutesLignes(() => scope(supabase.from('entrainements').select('*, presences_entrainement(*)').gte('date', debut).lte('date', fin).order('id'))),
       ])
       if (m.error || e.error) { if (!annule) setBrut({ cle, erreur: true }); return }
       const matchIds = m.data.map(x => x.id)
       const seanceIds = e.data.map(x => x.id)
       const joueurIds = joueurs.map(j => j.id)
       const [n, d, b] = await Promise.all([
-        matchIds.length ? fetchToutesLignesIn(matchIds, ids => supabase.from('notations_match').select('id, joueur_id, note, match_id, est_note_equipe').eq('educateur_id', educateurId).in('match_id', ids).order('id')) : { data: [] },
+        matchIds.length ? fetchToutesLignesIn(matchIds, ids => { const q = supabase.from('notations_match').select('id, joueur_id, note, match_id, est_note_equipe').in('match_id', ids).order('id'); return educateurId ? q.eq('educateur_id', educateurId) : q }) : { data: [] },
         seanceIds.length ? fetchToutesLignesIn(seanceIds, ids => supabase.from('disponibilites').select('id, joueur_id, seance_id, statut').in('seance_id', ids).order('id')) : { data: [] },
         joueurIds.length ? supabase.from('blessures').select('id, equipe_joueur_id, statut, saison').eq('saison', saison).in('equipe_joueur_id', joueurIds) : { data: [] },
       ])
@@ -120,7 +126,7 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     contenu = <p style={{ color: colors.text.faint, fontSize: 13 }}>Chargement…</p>
   } else if (!donnees.matchs.length && !donnees.entrainements.length) {
     contenu = <div style={{ ...carte, textAlign: 'center', padding: 28 }}>{nonDispo('Aucun match ni séance enregistré cette saison-là.')}</div>
-  } else if (vue === 'individuel') {
+  } else if (vue === 'individuel' && !sansIndividuel) {
     contenu = <HistoriqueIndividuel educateurId={educateurId} saison={saison} lignes={lignes} blessures={donnees.blessures} />
   } else {
     const matchsJoues = donnees.matchs.filter(m => m.score_nous !== null && m.score_nous !== '' && m.score_eux !== null && m.score_eux !== '')
@@ -220,11 +226,11 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
         <SelecteurSaison saisons={saisons} valeur={saison} onChange={setSaison} />
         <span style={{ fontSize: 13, color: colors.text.faint }}>{titreSaison}</span>
       </div>
-      <div style={{ display: 'flex', gap: 6 }}>
+      {!sansIndividuel && <div style={{ display: 'flex', gap: 6 }}>
         {[['collectif', 'Collectif'], ['individuel', 'Individuel']].map(([cle, label]) => (
           <button key={cle} onClick={() => setVue(cle)} style={{ padding: '6px 14px', borderRadius: 16, border: `1px solid ${vue === cle ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: vue === cle ? colors.accent.blue + alpha.subtle : 'transparent', color: vue === cle ? colors.accent.blue : colors.text.faint, fontWeight: vue === cle ? 700 : 500, fontFamily: 'Inter, sans-serif' }}>{label}</button>
         ))}
-      </div>
+      </div>}
       {donnees && (donnees.matchs.length > 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {FILTRES_COMPETITION.map(f => (

@@ -133,6 +133,10 @@ const TUTORIELS = {
         visuel: <Liste titre="En attente de validation" lignes={[['Karim B. · a rejoint via code', <Boutons key="b" items={['Accepter', 'Refuser']} actifs={['Accepter']} />]]} />,
       },
       {
+        titre: 'Valider les demandes de fin de saison',
+        texte: 'Un éducateur qui veut rester affilié ou prendre la responsabilité d’une catégorie envoie une demande, qui remonte sur cette page. Seuls peuvent la valider le compte principal, le président, le directeur sportif et le responsable de la catégorie concernée.',
+      },
+      {
         titre: 'Gérer un éducateur',
         texte: 'Dans « Éducateurs affiliés », le menu d’actions de chaque éducateur permet de :',
         points: [
@@ -371,6 +375,10 @@ const TUTORIELS = {
         titre: 'Ou une séance ponctuelle',
         texte: '« Séance ponctuelle » : date, heure, lieu et thème. La séance apparaît directement dans le planning de l’éducateur de l’équipe.',
         visuel: <Formulaire champs={[['Date *', '04/11/2026'], ['Heure', '18:00'], ['Lieu', 'Stade municipal'], ['Thème', 'Conservation du ballon']]} />,
+      },
+      {
+        titre: 'Repartir à zéro en début de saison',
+        texte: 'Les séances des saisons passées sont masquées par défaut. Rien n’est supprimé : le bouton « Voir les séances des saisons passées » les réaffiche, et la présence à l’entraînement reste dans l’historique.',
       },
     ],
   }),

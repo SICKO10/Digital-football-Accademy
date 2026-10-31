@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { makeUseSt } from '../../lib/theme'
+import { MESSAGE_AUCUNE_SAISON_ARCHIVEE } from '../../lib/saison'
 
 const stSombre = {
   card: { background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '1.25rem' },
@@ -111,7 +112,7 @@ export default function HistoriqueSaisons({ joueurId }) {
   }, [joueurId])
 
   if (loading) return <p style={{ color: st.empty, fontSize: '13px' }}>Chargement...</p>
-  if (saisons.length === 0) return <p style={{ color: st.empty, fontSize: '13px' }}>Aucune saison clôturée pour l'instant.</p>
+  if (saisons.length === 0) return <p style={{ color: st.dim, fontSize: '13px', margin: 0 }}>{MESSAGE_AUCUNE_SAISON_ARCHIVEE}</p>
 
   const labelEquipe = (s) => s.educateur_id ? (equipeLabels[s.educateur_id] || 'Équipe') : 'Coach parti'
 

@@ -31,6 +31,8 @@ import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import DemandesClub from '../components/saisons/DemandesClub'
+import ClotureSaisonClub from '../components/saisons/ClotureSaisonClub'
+import HistoriqueClub, { BoutonHistoriqueSaison } from '../components/saisons/HistoriqueClub'
 import RessentiCollectifEquipe from '../components/club/RessentiCollectifEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
 import Newsletter from '../components/club/Newsletter'
@@ -1206,6 +1208,8 @@ export default function DashboardClub() {
 
   // Catégories & équipes
   const [categories, setCategories] = useState([])
+  // Fenêtre Historique saison : { vue: 'equipe' | 'educateurs' | 'projet', equipeId? }
+  const [historiqueSaison, setHistoriqueSaison] = useState(null)
   const [showAddCategorie, setShowAddCategorie] = useState(false)
   const [newCategorie, setNewCategorie] = useState({ nom: 'U13', equipe: 'A', educateur_id: '' })
   const [savingCategorie, setSavingCategorie] = useState(false)
@@ -3792,6 +3796,9 @@ export default function DashboardClub() {
             email={club?.email}
           />
         )}
+        {activeTab === 'accueil' && clubId && monUserId && (
+          <ClotureSaisonClub clubId={clubId} userId={monUserId} categories={categories} accentColor={couleurPrincipale} />
+        )}
 
         {/* ── CATÉGORIES ── */}
         {activeTab === 'categories' && canViewSection('sportif') && (() => {
@@ -3826,6 +3833,7 @@ export default function DashboardClub() {
                   {nbSansEducateur > 0 && <span style={{ color: colors.accent.amber }}> · {nbSansEducateur} sans éducateur</span>}
                 </p>
               </div>
+              <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'equipe' })} style={{ width: isMobile ? '100%' : 'auto' }} />
               {canEditSection('sportif') && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
                   <button onClick={autoAssignerJoueurs} disabled={autoAssignLoading} title="Rattache automatiquement les joueurs sans équipe à l'équipe A de leur éducateur"
@@ -3968,6 +3976,9 @@ export default function DashboardClub() {
                 individuel reste possible depuis le menu ⋯ de chaque éducateur
                 (onglet Éducateurs), cf. modalDroitsEdu. Affiché directement sur cette
                 page (pas dans Profil) pour rester à côté de ce qu'il configure. */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
+              <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'projet' })} style={{ width: isMobile ? '100%' : 'auto' }} />
+            </div>
             <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
               logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
             {/* Permissions éducateurs — Projet Sportif / Planification : réglage
@@ -4024,11 +4035,14 @@ export default function DashboardClub() {
 
               {/* ── Colonne principale ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
                 <div>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Éducateurs</h1>
                   <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
                     {educateursAcceptes.length} affilié{educateursAcceptes.length > 1 ? 's' : ''}{club?.educateurs_inclus != null ? ` sur ${club.educateurs_inclus} inclus` : ''} · {nbEquipesEncadrees} équipe{nbEquipesEncadrees > 1 ? 's' : ''} encadrée{nbEquipesEncadrees > 1 ? 's' : ''}
                   </p>
+                </div>
+                <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'educateurs' })} style={{ width: isMobile ? '100%' : 'auto' }} />
                 </div>
 
                 {/* Demandes des coachs (rester affilié, responsable d'une catégorie) */}
@@ -4472,9 +4486,12 @@ export default function DashboardClub() {
           const formaterVal = (val) => val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '–'
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
               <div>
                 <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Stat équipe</h1>
                 <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{catActive ? `${labelCategorie(catActive.nom)} ${catActive.equipe || ''}${catActive.educateur ? ` · ${catActive.educateur.prenom || ''} ${catActive.educateur.nom || ''}` : ''}` : 'Choisis une équipe'}</p>
+              </div>
+              <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'equipe', equipeId: categorieActive })} style={{ width: isMobile ? '100%' : 'auto' }} />
               </div>
 
               <div style={{ display: 'flex', gap: '6px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -7516,6 +7533,10 @@ export default function DashboardClub() {
         )
       })()}
 
+      {historiqueSaison && clubId && (
+        <HistoriqueClub clubId={clubId} categories={categories} vue={historiqueSaison.vue}
+          equipeInitiale={historiqueSaison.equipeId} onClose={() => setHistoriqueSaison(null)} />
+      )}
       {activeTab === 'accueil' && <SponsorsBar clubId={clubId} sidebarWidth={240} />}
     </div>
   )

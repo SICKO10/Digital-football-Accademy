@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
+import { bornesDatesSaison, saisonActuelle } from '../../lib/saison'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 
@@ -25,6 +26,7 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
   const [loading, setLoading] = useState(false)
   const [vue, setVue] = useState('saison')
   const [afficherPassees, setAfficherPassees] = useState(false)
+  const [afficherAnciennes, setAfficherAnciennes] = useState(false)
 
   const [form, setForm] = useState({ date: '', heure: '', lieu: '', description: '' })
   const [saving, setSaving] = useState(false)
@@ -128,9 +130,14 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
     return n
   })()
   const aujourdHui = new Date().toISOString().split('T')[0]
-  const aVenir = seances.filter(x => x.date >= aujourdHui)
-  const passees = seances.filter(x => x.date < aujourdHui)
-  const visibles = afficherPassees ? seances : aVenir
+  // « Repartir à zéro » : les séances des saisons passées sont masquées, jamais supprimées.
+  const saisonEnCours = saisonActuelle()
+  const debutSaison = bornesDatesSaison(saisonEnCours).debut
+  const nbAnciennes = seances.filter(x => x.date.slice(0, 10) < debutSaison).length
+  const seancesSaison = afficherAnciennes ? seances : seances.filter(x => x.date.slice(0, 10) >= debutSaison)
+  const aVenir = seancesSaison.filter(x => x.date >= aujourdHui)
+  const passees = seancesSaison.filter(x => x.date < aujourdHui)
+  const visibles = afficherPassees ? seancesSaison : aVenir
   const parMois = visibles.reduce((acc, x) => { const k = x.date.slice(0, 7); (acc[k] = acc[k] || []).push(x); return acc }, {})
   const saisonInvalide = generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length
 
@@ -245,6 +252,11 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <p style={eyebrow}>Séances planifiées · {aVenir.length} à venir</p>
+          {nbAnciennes > 0 && (
+            <button onClick={() => setAfficherAnciennes(v => !v)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              {afficherAnciennes ? `Repartir à zéro (masquer les ${nbAnciennes} des saisons passées)` : `Voir les ${nbAnciennes} séances des saisons passées`}
+            </button>
+          )}
           {passees.length > 0 && (
             <button onClick={() => setAfficherPassees(v => !v)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               {afficherPassees ? 'Masquer les passées' : `Afficher les ${passees.length} passées`}
