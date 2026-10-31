@@ -2865,7 +2865,8 @@ export default function DashboardClub() {
     const [{ data: statsMatch }, { data: presences }, { data: notes }, { data: dispos }, { data: entrainementsClub }] = await Promise.all([
       fetchToutesLignesIn(joueurIds, ids => supabase.from('stats_match').select('joueur_id, match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', ids).order('match_id').order('joueur_id')),
       fetchToutesLignesIn(joueurIds, ids => supabase.from('presences_entrainement').select('entrainement_id, joueur_id, statut, present, point_seance').in('joueur_id', ids).order('entrainement_id').order('joueur_id')),
-      fetchToutesLignesIn(joueurIds, ids => supabase.from('evaluations_joueur').select('id, equipe_joueur_id, note_globale_saison').eq('periode', 'fin_saison').in('equipe_joueur_id', ids).order('id')),
+      // Moyenne des notes de match de chaque joueur (sur 10), comme le classement « Note » de l'éducateur.
+      supabase.rpc('notes_moyennes_equipe_club', { p_club_id: clubId }),
       profilIds.length
         ? fetchToutesLignesIn(profilIds, ids => supabase.from('disponibilites').select('id, joueur_id, seance_id, statut').in('joueur_id', ids).not('seance_id', 'is', null).order('id'))
         : Promise.resolve({ data: [] }),
@@ -2878,7 +2879,7 @@ export default function DashboardClub() {
     const buildStats = (joueur) => {
       const joueurId = joueur.id
       const sm = (statsMatch || []).filter(s => s.joueur_id === joueurId)
-      const note = (notes || []).find(n => n.equipe_joueur_id === joueurId)
+      const noteMatch = (notes || []).find(n => n.equipe_joueur_id === joueurId)
 
       // Une ligne par séance de l'éducateur du joueur (déjà passée) ayant une
       // saisie OU une réponse au sondage — mêmes règles que tauxPresence côté
@@ -2898,7 +2899,7 @@ export default function DashboardClub() {
       const totalPresences = pr.filter(p => p.statut).length
       const presents = pr.filter(p => estStatutPresent(p.statut)).length
       const points = (presences || []).filter(p => p.joueur_id === joueurId && p.point_seance).length
-      const noteGlobale = note?.note_globale_saison ?? null
+      const noteGlobale = noteMatch ? Number(noteMatch.moyenne) : null
 
       // Matchs réellement joués (minutes > 0) — le résultat V/N/D vient du match lié, pas d'une
       // colonne stats_match.victoire (existe en base mais jamais renseignée par l'app).
@@ -4427,7 +4428,7 @@ export default function DashboardClub() {
             { key: 'matchsJoues', label: t('stats_graph_matchs', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.purpleLight, Icone: IcoCalendar, unite: v => v > 1 ? 'matchs' : 'match' },
             { key: 'tauxPresence', label: t('stats_filtre_presence', lang).replace(/^[^\p{L}]+/u, ''), color: '#34d399', unit: '%', Icone: IcoUsers, unite: () => '%' },
             { key: 'pointsSeance', label: t('club_points_seance', lang).replace(/^[^\p{L}]+/u, ''), color: colors.accent.amber, Icone: IcoStar, unite: v => v > 1 ? 'points' : 'point' },
-            { key: 'noteGlobale', label: t('club_note_educateur', lang).replace(/^[^\p{L}]+/u, ''), color: '#f59e0b', unit: '/20', Icone: IcoClipboard, unite: () => '/20' },
+            { key: 'noteGlobale', label: t('club_note_educateur', lang).replace(/^[^\p{L}]+/u, ''), color: '#f59e0b', unit: '/10', Icone: IcoClipboard, unite: () => '/10' },
           ]
           const catData = categorieActive ? statsParCategorie[categorieActive] : null
           const triActif = TRIS.find(t => t.key === triClassement) || TRIS[0]
@@ -7325,7 +7326,7 @@ export default function DashboardClub() {
                                 {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/20</span> : <span style={{ color: colors.border.strong }}>—</span>}
+                                {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/10</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                             </tr>
                           )
@@ -7371,7 +7372,7 @@ export default function DashboardClub() {
                                   <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
                                 )}
                                 {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: colors.accent.amber }}>⭐ {j.stats.pointsSeance}</span>}
-                                {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/20</span>}
+                                {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/10</span>}
                               </div>
                               <button
                                 onClick={(e) => {

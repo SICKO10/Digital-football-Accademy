@@ -7079,8 +7079,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
                   const formater = (val) => typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val
-                  // Médailles en couleur (or / argent / bronze) plutôt qu'en emoji.
-                  const COULEURS_RANG = [colors.accent.amber, colors.text.secondary, colors.accent.orange]
                   const podium = sorted.slice(0, 3)
                   const { Icone: IconeTri } = triActif
                   return (
@@ -7115,30 +7113,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         })}
                       </div>
 
-                      {/* Top 3 */}
+                      {/* Podium : le n°1 au centre, en avant ; le n°2 à gauche, le n°3 à droite. */}
                       {podium.length > 0 && (
-                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : Math.max(podium.length, 3)}, minmax(0,1fr))`, gap: isMobile ? '8px' : '12px' }}>
-                          {podium.map((j, rang) => {
-                            const val = triActif.get(j)
-                            const couleurRang = COULEURS_RANG[rang]
-                            const premier = rang === 0
-                            return (
-                              <div key={j.id} style={{ position: 'relative', borderRadius: '14px', padding: isMobile ? '12px 8px' : '18px 20px', background: premier ? triActif.color + '14' : colors.background.surface, border: `1px solid ${premier ? triActif.color + '55' : colors.border.subtle}`, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '6px' : '16px', textAlign: isMobile ? 'center' : 'left', minWidth: 0 }}>
-                                <span style={{ position: 'absolute', top: isMobile ? '8px' : '12px', left: isMobile ? '8px' : '12px', width: isMobile ? '22px' : '26px', height: isMobile ? '22px' : '26px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '11px' : '13px', fontWeight: 800, color: colors.black, background: couleurRang }}>{rang + 1}</span>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0, paddingTop: isMobile ? '6px' : 0 }}>
-                                  <Avatar person={j} size={isMobile ? 48 : 64} bg={triActif.color + '20'} border={`2px solid ${couleurRang}`} textColor={triActif.color} />
-                                  <div style={{ minWidth: 0, maxWidth: '100%', textAlign: 'center' }}>
-                                    <p style={{ margin: 0, fontWeight: 800, fontSize: isMobile ? '12px' : '15px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                    <p style={{ margin: '2px 0 0', fontSize: isMobile ? '11px' : '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || 'Poste non renseigné'}</p>
+                        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px 10px 16px' : '18px 24px 22px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '14px' : '20px', color: colors.text.primary }}>
+                            <span style={{ display: 'inline-flex', color: triActif.color }}><IconeTri /></span>
+                            <span style={{ fontSize: '15px', fontWeight: 800 }}>Meilleurs {triActif.label.toLowerCase()}</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${[1, 0, 2].filter(r => podium[r]).length}, minmax(0,1fr))`, alignItems: 'end', gap: isMobile ? '6px' : '20px' }}>
+                            {[1, 0, 2].filter(r => podium[r]).map(rang => {
+                              const j = podium[rang]
+                              const val = triActif.get(j)
+                              const premier = rang === 0
+                              const taille = isMobile ? (premier ? 64 : 46) : (premier ? 92 : 64)
+                              return (
+                                <div key={j.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0, paddingBottom: premier ? 0 : (isMobile ? 4 : 10) }}>
+                                  <div style={{ position: 'relative', marginBottom: '10px' }}>
+                                    <span style={{ display: 'flex', borderRadius: '50%', padding: '3px', border: `2px solid ${premier ? triActif.color : colors.border.default}`, boxShadow: premier ? `0 0 0 4px ${triActif.color}22` : 'none' }}>
+                                      <Avatar person={j} size={taille} bg={triActif.color + '20'} border="none" textColor={triActif.color} />
+                                    </span>
+                                    <span style={{ position: 'absolute', top: premier ? '-6px' : '-4px', left: '50%', transform: 'translateX(-50%)', minWidth: premier ? '26px' : '22px', height: premier ? '26px' : '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premier ? '13px' : '12px', fontWeight: 800, color: premier ? colors.black : colors.text.secondary, background: premier ? triActif.color : colors.background.raised, border: `1px solid ${premier ? triActif.color : colors.border.default}` }}>{rang + 1}</span>
                                   </div>
+                                  <p style={{ margin: 0, maxWidth: '100%', fontWeight: 800, fontSize: isMobile ? (premier ? '13px' : '11px') : (premier ? '16px' : '14px'), lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', maxWidth: '100%', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || 'Poste non renseigné'}</p>
+                                  <p style={{ margin: '8px 0 0', fontSize: isMobile ? (premier ? '28px' : '22px') : (premier ? '40px' : '30px'), fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formater(val)}</p>
+                                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
                                 </div>
-                                <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                                  <p style={{ margin: 0, fontSize: isMobile ? '22px' : '34px', fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formater(val)}</p>
-                                  <p style={{ margin: '4px 0 0', fontSize: isMobile ? '11px' : '13px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
-                                </div>
-                              </div>
-                            )
-                          })}
+                              )
+                            })}
+                          </div>
                         </div>
                       )}
 
@@ -7167,7 +7170,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               const nul = !Number(val)
                               return (
                                 <tr key={j.id} className="classement-ligne">
-                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: i < 3 ? COULEURS_RANG[i] : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>{i + 1}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: i < 3 ? colors.text.secondary : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>{i + 1}</td>
                                   <td style={{ padding: '8px 12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                                       <Avatar person={j} size={30} />
