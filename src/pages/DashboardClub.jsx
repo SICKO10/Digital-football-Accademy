@@ -2840,7 +2840,7 @@ export default function DashboardClub() {
 
     const { data: joueurs } = await fetchToutesLignes(() => supabase
       .from('equipe_joueurs')
-      .select('id, joueur_id, prenom, nom, poste, categorie, educateur_id, club_categorie_id, numero_maillot')
+      .select('id, joueur_id, prenom, nom, poste, categorie, educateur_id, club_categorie_id, numero_maillot, photo_url')
       .in('educateur_id', educateurIds)
       .order('id'))
 
@@ -2856,6 +2856,12 @@ export default function DashboardClub() {
     // validé la séance, comme dans DashboardEducateur — sinon le taux du club
     // ne comptait que les séances pointées et différait de celui du coach.
     const profilIds = [...new Set(joueurs.map(j => j.joueur_id).filter(Boolean))]
+    // Photos du classement : celle saisie par l'éducateur (equipe_joueurs.photo_url)
+    // en priorité, sinon celle du compte du joueur — même règle que DashboardEducateur.
+    const { data: profilsPhotos } = profilIds.length
+      ? await fetchToutesLignesIn(profilIds, ids => supabase.from('profiles_public').select('id, avatar_url').in('id', ids).order('id'))
+      : { data: [] }
+    const photoProfil = Object.fromEntries((profilsPhotos || []).map(p => [p.id, p.avatar_url]))
     const [{ data: statsMatch }, { data: presences }, { data: notes }, { data: dispos }, { data: entrainementsClub }] = await Promise.all([
       fetchToutesLignesIn(joueurIds, ids => supabase.from('stats_match').select('joueur_id, match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', ids).order('match_id').order('joueur_id')),
       fetchToutesLignesIn(joueurIds, ids => supabase.from('presences_entrainement').select('entrainement_id, joueur_id, statut, present, point_seance').in('joueur_id', ids).order('entrainement_id').order('joueur_id')),
@@ -2964,7 +2970,7 @@ export default function DashboardClub() {
         const cible = candidats.find(c => c.equipe === 'A') || (candidats.length === 1 ? candidats[0] : null)
         return cible?.id === cat.id
       })
-      grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, stats: buildStats(j) })) }
+      grouped[cat.id] = { categorie: cat, joueurs: joueursCat.map(j => ({ ...j, avatar_url: j.photo_url || photoProfil[j.joueur_id] || null, stats: buildStats(j) })) }
     })
 
     setStatsParCategorie(grouped)
@@ -4441,7 +4447,6 @@ export default function DashboardClub() {
           const carteSt = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px', minWidth: 0 }
           const catActive = categories.find(c => c.id === categorieActive)
           const formaterVal = (val) => val !== null && val !== undefined ? (typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val) : '–'
-          const COULEURS_RANG = [colors.accent.amber, colors.text.secondary, colors.accent.orange]
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
@@ -4587,29 +4592,40 @@ export default function DashboardClub() {
                     })}
                   </div>
 
-                  {/* Top 3 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, minmax(0,1fr))`, gap: isMobile ? '8px' : '12px' }}>
-                    {sorted.slice(0, 3).map((j, rang) => {
-                      const val = j.stats[triClassement]
-                      const premier = rang === 0
-                      return (
-                        <div key={j.id} style={{ position: 'relative', borderRadius: '14px', padding: isMobile ? '12px 8px' : '16px 18px', background: premier ? triActif.color + '14' : colors.background.surface, border: `1px solid ${premier ? triActif.color + '55' : colors.border.subtle}`, display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '6px' : '14px', textAlign: isMobile ? 'center' : 'left', minWidth: 0 }}>
-                          <span style={{ position: 'absolute', top: '10px', left: '10px', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: colors.black, background: COULEURS_RANG[rang] }}>{rang + 1}</span>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0, paddingTop: isMobile ? '6px' : 0 }}>
-                            <PhotoPersonne personne={j} taille={isMobile ? 44 : 56} />
-                            <div style={{ minWidth: 0, maxWidth: '100%', textAlign: 'center' }}>
-                              <p style={{ margin: 0, fontWeight: 800, fontSize: isMobile ? '12px' : '14px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                            <p style={{ margin: 0, fontSize: isMobile ? '20px' : '30px', fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formaterVal(val)}</p>
-                            <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
-                          </div>
+                  {/* Podium : le n°1 au centre, en avant ; le n°2 à gauche, le n°3 à droite. */}
+                  {sorted.length > 0 && (() => {
+                    const ordre = [1, 0, 2].filter(r => sorted[r])
+                    const IcPodium = triActif.Icone
+                    return (
+                      <div style={{ ...carteSt, padding: isMobile ? '14px 10px 16px' : '18px 24px 22px', background: colors.background.surface }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '14px' : '20px', color: colors.text.primary }}>
+                          <span style={{ display: 'inline-flex', color: triActif.color }}><IcPodium /></span>
+                          <span style={{ fontSize: '15px', fontWeight: 800 }}>Meilleurs {triActif.label.toLowerCase()}</span>
                         </div>
-                      )
-                    })}
-                  </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ordre.length}, minmax(0,1fr))`, alignItems: 'end', gap: isMobile ? '6px' : '20px' }}>
+                          {ordre.map(rang => {
+                            const j = sorted[rang]
+                            const premier = rang === 0
+                            const taille = isMobile ? (premier ? 64 : 46) : (premier ? 92 : 64)
+                            return (
+                              <div key={j.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0, paddingBottom: premier ? 0 : (isMobile ? 4 : 10) }}>
+                                <div style={{ position: 'relative', marginBottom: '10px' }}>
+                                  <span style={{ display: 'flex', borderRadius: '50%', padding: '3px', border: `2px solid ${premier ? triActif.color : colors.border.default}`, boxShadow: premier ? `0 0 0 4px ${triActif.color}22` : 'none' }}>
+                                    <PhotoPersonne personne={j} taille={taille} />
+                                  </span>
+                                  <span style={{ position: 'absolute', top: premier ? '-6px' : '-4px', left: '50%', transform: 'translateX(-50%)', minWidth: premier ? '26px' : '22px', height: premier ? '26px' : '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premier ? '13px' : '12px', fontWeight: 800, color: premier ? colors.black : colors.text.secondary, background: premier ? triActif.color : colors.background.raised, border: `1px solid ${premier ? triActif.color : colors.border.default}` }}>{rang + 1}</span>
+                                </div>
+                                <p style={{ margin: 0, maxWidth: '100%', fontWeight: 800, fontSize: isMobile ? (premier ? '13px' : '11px') : (premier ? '16px' : '14px'), lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                <p style={{ margin: '2px 0 0', maxWidth: '100%', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>
+                                <p style={{ margin: '8px 0 0', fontSize: isMobile ? (premier ? '28px' : '22px') : (premier ? '40px' : '30px'), fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formaterVal(j.stats[triClassement])}</p>
+                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{triActif.unite(Number(j.stats[triClassement]))}</p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   <div style={{ ...carteSt, padding: 0, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
@@ -4633,7 +4649,7 @@ export default function DashboardClub() {
                           const vide = !Number(val)
                           return (
                             <tr key={j.id} className="classement-club-ligne">
-                              <td style={{ padding: '9px 12px', textAlign: 'center', fontWeight: 800, color: i < 3 ? COULEURS_RANG[i] : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</td>
+                              <td style={{ padding: '9px 12px', textAlign: 'center', fontWeight: 800, color: i < 3 ? colors.text.secondary : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</td>
                               <td style={{ padding: '8px 12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                                   <PhotoPersonne personne={j} taille={28} />
