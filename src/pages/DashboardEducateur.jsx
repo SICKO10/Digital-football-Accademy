@@ -682,7 +682,7 @@ const getTerrainComponent = (numeroProcede, sport) => {
   return estDemi ? <DemiTerrain /> : <TerrainFoot />
 }
 
-function FicheContenu({ fiche, categorieLabel }) {
+function FicheContenu({ fiche, categorieLabel, logo }) {
   // Pagination par page réelle du PDF, même principe que FicheBEFContenu : 2
   // procédés par page (la grille .procedes-grid a 2 colonnes, donc 1 ligne de
   // grille = 1 page) — l'en-tête ne se répète pas d'une page à l'autre ici
@@ -699,7 +699,9 @@ function FicheContenu({ fiche, categorieLabel }) {
   return (
     <>
       {pages.map((procedesPage, pageIndex) => (
-        <div className="fiche-page" key={pageIndex}>
+        <div className="fiche-page" key={pageIndex} style={logo ? { position: 'relative', isolation: 'isolate' } : undefined}>
+          {/* Logo du club en filigrane : au centre de chaque page, derrière le contenu, très transparent. */}
+          {logo && <img src={logo} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '60%', maxHeight: '70%', objectFit: 'contain', opacity: 0.1, zIndex: -1, pointerEvents: 'none' }} />}
           {pageIndex === 0 && (
             <>
               <div className="fiche-header">
@@ -880,7 +882,7 @@ function FicheSeancePrint({ fiche, categorieLabel, nomEducateur, logoClub }) {
         ? <FicheBEFContenu fiche={fiche} categorieLabel={categorieLabel} nomEducateur={nomEducateur} />
         : fiche.mode_diplome === 'BMF'
           ? <FicheBMFContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />
-          : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} />}
+          : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />}
     </div>,
     document.body
   )
@@ -12904,7 +12906,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
                 : fiche.mode_diplome === 'BMF'
                   ? <FicheBMFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />
-                  : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} />}
+                  : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />}
             </div>
           </ApercuFicheResponsive>
         </div>
@@ -13146,6 +13148,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <FicheContenu
                 fiche={ficheApercu.fiche_seance || {}}
                 categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
+                logo={clubAffiliation?.club?.avatar_url || null}
               />
             )}
           </div>
