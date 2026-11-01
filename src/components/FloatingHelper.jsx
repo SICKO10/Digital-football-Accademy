@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 import { useColors } from "../lib/theme";
-import { IconBall, IconHelp, IconMessage, IconCheck, IconClock, IconSend, IconMail, IconClose } from './icones'
+import { IconBall, IconHelp, IconMessage, IconCheck, IconClock, IconSend, IconMail } from './icones'
 
 // ─── FAQ RAPIDE ──────────────────────────────────────────────────────────────
 // FAQ par défaut (dashboard joueur) — passe une prop `faq` personnalisée pour
@@ -602,7 +602,7 @@ export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAU
         onClick={() => setOpen((o) => !o)}
         title="Aide"
       >
-        {open ? <IconClose size={22} /> : <IconBall size={24} />}
+        {open ? "✕" : "⚽"}
       </button>
     </>
   );
