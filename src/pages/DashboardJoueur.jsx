@@ -4319,7 +4319,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                             padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
                             background: selected ? colors.accent.green + alpha.soft : colors.background.raised,
                             border: selected ? '1px solid #4ade80' : `1px solid ${colors.border.strong}`,
-                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : 'white',
+                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : colors.text.primary,
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             opacity: disabled ? 0.5 : 1,
                           }}
@@ -4345,7 +4345,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                             padding: '6px 12px', borderRadius: '20px', fontSize: '13px',
                             background: selected ? colors.accent.green + alpha.soft : colors.background.raised,
                             border: selected ? '1px solid #4ade80' : `1px solid ${colors.border.strong}`,
-                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : 'white',
+                            color: selected ? colors.accent.green : disabled ? colors.text.disabled : colors.text.primary,
                             cursor: disabled ? 'not-allowed' : 'pointer',
                             opacity: disabled ? 0.5 : 1,
                           }}

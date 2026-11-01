@@ -32,6 +32,7 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import StatsEquipe from '../components/StatsEquipe'
 import DemandesClub from '../components/saisons/DemandesClub'
 import ClotureSaisonClub from '../components/saisons/ClotureSaisonClub'
+import ResponsableClub from '../components/club/ResponsableClub'
 import HistoriqueClub, { BoutonHistoriqueSaison } from '../components/saisons/HistoriqueClub'
 import RessentiCollectifEquipe from '../components/club/RessentiCollectifEquipe'
 import ProjetDetail from '../components/club/ProjetDetail'
@@ -3796,7 +3797,7 @@ export default function DashboardClub() {
             email={club?.email}
           />
         )}
-        {activeTab === 'accueil' && clubId && monUserId && (
+        {activeTab === 'accueil' && clubId && monUserId && clubId === monUserId && (
           <ClotureSaisonClub clubId={clubId} userId={monUserId} categories={categories} accentColor={couleurPrincipale} />
         )}
 
@@ -4731,6 +4732,8 @@ export default function DashboardClub() {
               <div style={{ marginBottom: '1.5rem' }}>
                 <ParrainageWidget userId={clubId} accentColor={couleurPrincipale} />
               </div>
+
+              <ResponsableClub userId={monUserId} estCreateur={clubId === monUserId} nomClub={profilClubEdit.club || club?.club} emailActuel={club?.email} accentColor={couleurPrincipale} />
 
               {/* Avatar + infos */}
               <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '1.5rem' }}>
