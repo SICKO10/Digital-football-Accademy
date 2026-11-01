@@ -6114,7 +6114,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 padding: '12px', minWidth: '48px', minHeight: '48px', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
               }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.text.primary} strokeWidth="2.5" strokeLinecap="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />

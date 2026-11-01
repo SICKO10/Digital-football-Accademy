@@ -77,7 +77,7 @@ export default function ResponsableClub({ userId, estCreateur, nomClub, emailAct
       {!mode && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {estCreateur && <button style={bouton(true)} onClick={() => { setEnvoye(''); setMode('transfert') }}>Transférer la responsabilité</button>}
-          <button style={bouton(false)} onClick={() => { setEnvoye(''); setMode('contact') }}>Contactez-nous (conflit interne)</button>
+          <button style={bouton(false)} onClick={() => { setEnvoye(''); setMode('contact') }}>Contactez-nous</button>
         </div>
       )}
 
