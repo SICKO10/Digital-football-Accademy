@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha, fontSize, radius, spacing } from '../tokens'
@@ -97,14 +98,80 @@ function GalerieImages({ images, colors }) {
   )
 }
 
+// Schémas partagés en premier : c'est ce que le joueur consulte le plus
+// (avant un match, après une séance), les phases de jeu du club viennent ensuite.
 const ONGLETS = [
+  { key: 'schemas', label: 'Schémas partagés' },
   { key: 'offensif', label: 'Projet Offensif' },
   { key: 'defensif', label: 'Projet Défensif' },
   { key: 'transitions', label: 'Transitions' },
   { key: 'pressing', label: 'Pressing' },
   { key: 'cpa', label: 'CPA' },
-  { key: 'schemas', label: 'Schémas partagés' },
 ]
+
+// Schéma en plein écran, pour le téléphone : un calque qui couvre tout l'écran
+// et dimensionne le terrain (ratio 16:10) sur l'écran en paysage. On tente
+// aussi le vrai plein écran du navigateur et le verrouillage en paysage
+// (Android/Chrome) ; là où ce n'est pas possible (iPhone), le joueur tourne
+// simplement son téléphone — tant qu'il est en portrait, on le lui demande.
+function SchemaPleinEcran({ schema, nom, colors, onFermer }) {
+  const [taille, setTaille] = useState({ l: window.innerWidth, h: window.innerHeight })
+
+  useEffect(() => {
+    const maj = () => setTaille({ l: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', maj)
+    window.addEventListener('orientationchange', maj)
+    const surChangementPleinEcran = () => { if (!document.fullscreenElement) onFermer() }
+    let pleinEcranObtenu = false
+    ;(async () => {
+      try {
+        await document.documentElement.requestFullscreen?.()
+        pleinEcranObtenu = !!document.fullscreenElement
+        if (pleinEcranObtenu) document.addEventListener('fullscreenchange', surChangementPleinEcran)
+        await screen.orientation?.lock?.('landscape')
+      } catch { /* navigateur sans plein écran ou verrouillage : le calque suffit */ }
+    })()
+    const bodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('resize', maj)
+      window.removeEventListener('orientationchange', maj)
+      document.removeEventListener('fullscreenchange', surChangementPleinEcran)
+      document.body.style.overflow = bodyOverflow
+      try { screen.orientation?.unlock?.() } catch { /* sans effet */ }
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const paysage = taille.l > taille.h
+  // 56 px de barre du haut + 56 px pour le bouton de lecture sous le terrain.
+  const largeur = Math.max(260, Math.floor(Math.min(taille.l - 24, (taille.h - 112) * 1.6)))
+
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 5000, background: colors.background.base, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '56px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, padding: '0 16px', boxSizing: 'border-box' }}>
+        <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nom || 'Sans titre'}</span>
+        <button onClick={onFermer} style={{ flexShrink: 0, background: colors.background.raised, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: '8px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Fermer
+        </button>
+      </div>
+      {paysage ? (
+        <TactipadViewer schema={schema} width={largeur} />
+      ) : (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: spacing.xl, padding: '0 32px', textAlign: 'center' }}>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={colors.accent.green} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="7" y="2" width="10" height="20" rx="2" style={{ transformOrigin: '12px 12px', transform: 'rotate(-90deg)' }} />
+            <path d="M20 8a9 9 0 0 0-4-4M20 4v4h-4" />
+          </svg>
+          <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: fontSize['3xl'] }}>Tourne ton téléphone en paysage</p>
+          <p style={{ margin: 0, color: colors.text.faint, fontSize: fontSize.lg, lineHeight: 1.5 }}>Le schéma s'affichera en grand, sur tout l'écran.</p>
+        </div>
+      )}
+    </div>,
+    document.body
+  )
+}
 
 // Vue joueur du projet tactique du club : les zones de terrain que le club/
 // éducateur a personnalisées (table terrain_zones, éditées côté club dans
@@ -119,7 +186,8 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const colors = useColors()
   const locale = localeOf(lang)
   const pole = categorie ? getPoleDeCategorie(categorie) : null
-  const [onglet, setOnglet] = useState('offensif')
+  const [onglet, setOnglet] = useState('schemas')
+  const [pleinEcran, setPleinEcran] = useState(false)
   const [zones, setZones] = useState([])
   const [fondUrls, setFondUrls] = useState({})
   const [cpaSchemas, setCpaSchemas] = useState([])
@@ -195,10 +263,17 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         </button>
         <Carte isMobile={isMobile}>
           <h2 style={{ color: colors.text.primary, margin: `0 0 ${spacing['2xl']}`, fontSize: fontSize['4xl'] }}>{schemaActif.nom || 'Sans titre'}</h2>
+          {isMobile && (
+            <button onClick={() => setPleinEcran(true)}
+              style={{ width: '100%', marginBottom: spacing['2xl'], background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '12px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Plein écran (téléphone en paysage)
+            </button>
+          )}
           <div style={{ overflowX: 'auto' }}>
             <TactipadViewer schema={schemaActif.schema} width={largeurSchema} />
           </div>
         </Carte>
+        {pleinEcran && <SchemaPleinEcran schema={schemaActif.schema} nom={schemaActif.nom} colors={colors} onFermer={() => setPleinEcran(false)} />}
       </div>
     )
   }
