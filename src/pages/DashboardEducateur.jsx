@@ -65,6 +65,8 @@ import { enqueueIARequest, libelleStatutGroq } from '../lib/groqQueue'
 import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { remplacerSchemaParLien, miniatureSchema } from '../lib/schemaUpload'
 import LigneResultat from '../components/LigneResultat'
+import PublierSeanceJoueurs from '../components/PublierSeanceJoueurs'
+import { dateParisAujourdhui } from '../lib/seancePubliee'
 import CarteMatchAVenir from '../components/CarteMatchAVenir'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
@@ -1931,6 +1933,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
   const [entrainementEnEdition, setEntrainementEnEdition] = useState(null)
+  const [publicationsSeance, setPublicationsSeance] = useState({}) // entrainement_id → séance publiée aux joueurs (aujourd'hui ou à venir)
+  const [entrainementAPublier, setEntrainementAPublier] = useState(null) // entraînement dont la fenêtre « Publier aux joueurs » est ouverte
   const [savingEntrainementEdit, setSavingEntrainementEdit] = useState(false)
   const [showImportFiche, setShowImportFiche] = useState(false)
   const [entrainementActif, setEntrainementActif] = useState(null)
@@ -2289,6 +2293,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       return q
     })
     setEntrainements(data || [])
+
+    // Séances publiées aux joueurs (PublierSeanceJoueurs) : seules celles
+    // d'aujourd'hui ou à venir sont encore modifiables, inutile de lire l'archive.
+    let qPub = supabase.from('seances_publiees').select('*, seances_publiees_destinataires(joueur_id)').eq('educateur_id', uid).gte('date_seance', dateParisAujourdhui())
+    if (catId) qPub = qPub.eq('club_categorie_id', catId)
+    const { data: pubs } = await qPub
+    const pubsMap = {}
+    ;(pubs || []).forEach(({ seances_publiees_destinataires: dest, ...p }) => { if (p.entrainement_id) pubsMap[p.entrainement_id] = { ...p, destinataires: (dest || []).map(d => d.joueur_id) } })
+    setPublicationsSeance(pubsMap)
 
     // Dispos auto-déclarées par les joueurs pour ces entraînements (RLS : lisible car éducateur affilié)
     const entrainementIds = (data || []).map(e => e.id)
@@ -5319,6 +5332,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       alert('Erreur : ' + error.message)
       if (avant) setEntrainements(prev => prev.map(e => e.id === id ? avant : e))
       setEntrainementEnEdition(snapshot)
+      return
+    }
+    // La séance publiée aux joueurs garde une copie de la date, l'heure et le
+    // lieu (le joueur ne lit pas entrainements) : on la recopie.
+    const pub = publicationsSeance[id]
+    if (pub) {
+      const maj = { date_seance: date, heure: heure ? String(heure).slice(0, 5) : null, lieu: lieu || null }
+      const { error: errPub } = await supabase.from('seances_publiees').update(maj).eq('id', pub.id)
+      if (errPub) alert('Séance modifiée, mais la version publiée aux joueurs n\'a pas suivi : ' + errPub.message)
+      else setPublicationsSeance(prev => ({ ...prev, [id]: { ...pub, ...maj } }))
     }
   }
 
@@ -9541,6 +9564,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                   </span>
                                 </span>
                               )}
+                              {canEdit('entrainements') && e.date >= dateParisAujourdhui() && (e.fiche_id || publicationsSeance[e.id]) && (
+                                <span
+                                  onClick={ev => { ev.stopPropagation(); setEntrainementAPublier(e) }}
+                                  title={publicationsSeance[e.id] ? 'Voir, modifier ou retirer la séance publiée aux joueurs' : 'Choisir les procédés visibles par les joueurs'}
+                                  style={publicationsSeance[e.id]
+                                    ? { fontSize: '11px', fontWeight: 700, color: colors.accent.green, background: colors.accent.green + '1a', border: `1px solid ${colors.accent.green}55`, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }
+                                    : { fontSize: '11px', fontWeight: 600, color: colors.accent.blue, background: colors.accent.blue + '10', border: `1px solid ${colors.accent.blue}40`, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}>
+                                  {publicationsSeance[e.id]
+                                    ? `Publiée · ${publicationsSeance[e.id].destinataires.length} joueur${publicationsSeance[e.id].destinataires.length > 1 ? 's' : ''}`
+                                    : 'Publier aux joueurs'}
+                                </span>
+                              )}
                             </div>
                             {!estFuture && total > 0 && (
                               <div style={{ marginTop: '8px', maxWidth: '460px' }}>
@@ -11773,6 +11808,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             </div>
           )
         })()}
+
+        {entrainementAPublier && (
+          <PublierSeanceJoueurs
+            userId={userId}
+            entrainement={entrainementAPublier}
+            fiche={mesSeancesOuvertes.find(s => s.id === entrainementAPublier.fiche_id) || null}
+            clubCategorieId={equipeActive?.id || null}
+            equipeNom={equipeActive ? `${labelCategorie(equipeActive.nom)} ${equipeActive.equipe || ''}`.trim() : ''}
+            joueurs={joueurs}
+            publication={publicationsSeance[entrainementAPublier.id] || null}
+            onFermer={() => setEntrainementAPublier(null)}
+            onChange={pub => setPublicationsSeance(prev => {
+              const suivant = { ...prev }
+              if (pub) suivant[entrainementAPublier.id] = pub
+              else delete suivant[entrainementAPublier.id]
+              return suivant
+            })}
+          />
+        )}
 
         {/* ── Modal import d'une fiche archivée sur un entraînement déjà créé ── */}
         {modalImportFicheEntrainement !== null && (

@@ -10,19 +10,19 @@ Validation : Kevin lit les constats.
 Table de publication (séance, date, équipe, éducateur) et table des destinataires (joueur ou groupe de poste), avec les procédés cochés. Règle de lecture joueur : publié pour lui, jour J, avant 22h Paris. Règle d'écriture : l'éducateur propriétaire seulement. Fichier `supabase_entrainement_publie.sql`, que Kevin exécute après la sauvegarde.
 Validation : Kevin exécute le SQL, on vérifie avec une lecture de test.
 
-## Bloc 2 : Côté éducateur (Sonnet, effort medium)
+## Bloc 2 : Côté éducateur (Sonnet, effort medium) — FAIT, en attente du test de Kevin (2026-11-02)
 Cases « Visible par les joueurs » sur les procédés, fenêtre de publication (équipe, postes, joueurs au choix), voir, modifier et retirer ce qui est publié.
 Validation : Kevin publie une séance test sur son équipe.
 
-## Bloc 3 : Côté joueur (Sonnet, effort medium)
+## Bloc 3 : Côté joueur (Sonnet, effort medium) — FAIT, en attente du test de Kevin (2026-11-02)
 Rubrique « Entraînement » dans Préparation, carte « Séance du jour », consigne, critères, schéma animé, état vide, disparition à 22h. Le joueur peut voir deux séances à la fois (celle du jour avant 22h et la suivante déjà publiée) : trier par date, la plus proche en premier, avec « Aujourd'hui » / « Demain » / date. Vérifier les deux variantes du dashboard joueur.
 Validation : Kevin vérifie avec un compte joueur concerné et un non concerné.
 
-## Bloc 4 : Notification (Sonnet, effort medium)
+## Bloc 4 : Notification (Sonnet, effort medium) — FAIT, en attente du test de Kevin (2026-11-02)
 Notification clochette aux joueurs destinataires à la publication (via `notifierJoueur`). Email seulement après « ok » explicite de Kevin.
 Validation : Kevin reçoit la clochette sur le compte de test.
 
-## Bloc 5 : Contrôle final (Sonnet, effort medium)
+## Bloc 5 : Contrôle final (Sonnet, effort medium) — CONTRÔLES FAITS, commit en attente de l'ok de Kevin (2026-11-02)
 Parcours complet, cas limites (publication à 21h59 et 22h01, joueur d'une autre équipe, procédé décoché ensuite), build, commit et push.
 
 ### Constats du bloc 0 (2026-11-02, Sonnet 5.5, lecture seule)
@@ -74,4 +74,70 @@ Parcours complet, cas limites (publication à 21h59 et 22h01, joueur d'une autre
 
 **Questions pour Kevin avant le bloc 1**
 1. Schéma animé : OK pour afficher l'animation seulement quand le procédé vient de la bibliothèque (lien ajouté), et l'image fixe sinon ? (Recommandé : simple et sans perte.)
+   **Réponse Kevin (2026-11-02) : oui, animé si possible.** Bloc 2 : quand un procédé est ajouté à la fiche depuis la bibliothèque, garder son `schema_data` (ou son lien) dans le procédé, et le copier dans `seances_publiees.procedes` à la publication. Sans animation : image fixe `schema_png`.
 2. Comptes de test : tu recrées un club test + un éducateur test + 2 joueurs (un concerné, un non) avant le bloc 3 ?
+   **Réponse Kevin (2026-11-02) : non, vérification avec ses vrais comptes.** Et le bloc 3 s'enchaîne sans attendre le test du bloc 2 : les deux seront testés ensemble, aucun commit avant son ok.
+
+### Journal du bloc 2 (2026-11-02, Opus 5.5 au lieu de Sonnet : changement de modèle non fait)
+
+**Fichiers** : `src/components/PublierSeanceJoueurs.jsx` (nouvelle fenêtre), `src/lib/seancePubliee.js` (date et heure de Paris pour l'affichage), `src/pages/DashboardEducateur.jsx` (chargement des publications, bouton sur l'entraînement, recopie date/heure/lieu).
+
+**Ce qui marche**
+- Planning > liste des entraînements : sur un entraînement d'aujourd'hui ou à venir qui a une fiche liée, étiquette bleue « Publier aux joueurs ». Une fois publiée : étiquette verte « Publiée · N joueurs », qui rouvre la fenêtre pour voir, modifier ou retirer.
+- Fenêtre : cases « visible par les joueurs » sur chaque procédé rempli de la fiche (avec miniature, durée, mention « schéma animé »), destinataires cumulables (toute l'équipe, gardiens, défenseurs, milieux, attaquants, joueurs un par un), compteur « N joueurs recevront la séance » et nombre de joueurs sans compte relié. Bouton désactivé sans procédé coché ou sans destinataire, et après 22h le jour J.
+- Modifier : recalcule la liste des joueurs (retire ceux qui ne sont plus visés, ajoute les nouveaux, sans tout effacer). Retirer : supprime la publication.
+- Modifier la date, l'heure ou le lieu de l'entraînement recopie ces infos dans la séance publiée.
+
+**Écarts et décisions**
+- Constat du bloc 0 corrigé : le schéma animé (`schema_data`) est déjà gardé dans le procédé de la fiche, quand il vient de la bibliothèque comme quand il est dessiné dans la fiche. Rien à ajouter : la publication le copie tel quel. Les fiches anciennes ou importées depuis un PDF n'ont que l'image fixe.
+- Les cases « visible par les joueurs » sont dans la fenêtre de publication, pas sur la fiche elle-même : la fiche a trois gabarits d'affichage (libre, BEF, BMF) et des cases dedans se retrouveraient dans le PDF. Même résultat pour l'éducateur, en un seul endroit.
+- Destinataires possibles : joueurs de l'équipe active avec compte relié ET affiliation acceptée (même condition que la règle en base).
+
+**Vérifications** : lint du nouveau code sans erreur, build de production réussi. Pas de test en conditions réelles possible de mon côté (pas d'accès à un compte éducateur) : c'est la validation de Kevin ci-dessous.
+
+**Reste à finir**
+- Kevin : publier une séance test sur un entraînement de demain (ce soir après 22h, celui d'aujourd'hui est fermé), puis modifier les destinataires, puis retirer.
+- Bloc 3 : affichage joueur. Bloc 4 : notification à la publication (pas encore envoyée par ce bloc).
+- Hors bloc, à noter : un entraînement dont la fiche est détachée garde sa séance publiée (copie figée) ; l'étiquette reste visible pour pouvoir la retirer.
+
+### Journal du bloc 3 (2026-11-02, Sonnet 5.5)
+
+**Fichiers** : `src/components/SeanceDuJourJoueur.jsx` (nouveau), `src/components/PreparationTactiqueJoueur.jsx` (onglet « Entraînement » ajouté en premier et ouvert par défaut).
+
+**Ce qui marche (par le code, pas encore vu à l'écran)**
+- Préparation > « Entraînement » : une carte par séance publiée, triée par date (la plus proche d'abord), avec « Aujourd'hui » / « Demain » / date, thème, heure, lieu. Chaque procédé : titre, durée, nombre de joueurs, but, organisation, consignes, critères de réalisation et de réussite, schéma animé (TactipadViewer) ou image fixe.
+- État vide si rien n'est publié pour le joueur. Disparition à 22h : la base ne renvoie plus la séance, et un filtre à l'affichage la masque aussi si la page reste ouverte après 22h.
+- Les deux variantes du dashboard joueur appellent le même composant : un seul ajout couvre `estAffilie` et `navItems`.
+
+**Décisions** : onglet « Entraînement » ouvert par défaut dans Préparation (avant : Schémas partagés). Pas de plein écran paysage pour les schémas de séance (hors bloc, noté ci-dessous).
+
+**Vérifications** : lint du nouveau fichier sans erreur (les 6 alertes de PreparationTactiqueJoueur existaient déjà), build de production réussi. Pas de test avec un vrai compte joueur de mon côté.
+
+**Reste à finir** : Kevin teste avec un joueur concerné et un non concerné (le non concerné doit voir l'état vide). Plein écran paysage mobile pour le schéma animé d'une séance : amélioration possible. Aucun commit avant l'ok de Kevin.
+
+### Journal du bloc 4 (2026-11-02, Sonnet 5.5)
+
+**Fichiers** : `src/lib/seancePubliee.js` (texte de la notification), `src/components/PublierSeanceJoueurs.jsx` (envoi à la publication).
+
+**Ce qui marche (par le code, pas encore vu à l'écran)**
+- À la publication, chaque joueur qui reçoit la séance pour la première fois a une notification dans sa clochette : « Nouvelle séance disponible », avec le jour (aujourd'hui ou « du lundi 3 novembre »), l'heure, et le chemin Préparation > Entraînement. Clic : ouvre son dashboard.
+- Modifier une publication ne notifie que les joueurs ajoutés (pas de doublon pour les autres). Retirer ne notifie personne.
+- Clochette seulement, aucun email (même méthode que la reconduction, `notifierJoueur` non utilisé). Si l'envoi de la clochette échoue, la publication reste enregistrée.
+
+**Décision** : email non fait, en attente du « ok » explicite de Kevin (il faudrait un modèle d'email côté serveur).
+
+**Vérifications** : lint sans erreur, build de production réussi. Pas de test avec un vrai compte de mon côté.
+
+**Reste à finir** : Kevin publie une séance sur un entraînement de demain et vérifie la clochette du joueur concerné.
+
+### Journal du bloc 5 (2026-11-02, Sonnet 5.5)
+
+**Contrôles faits**
+- Lint des 3 nouveaux fichiers : 0 erreur. Build de production : réussi.
+- Heure de Paris côté écran testée à 21h59 / 22h01 (hiver et été) et au passage de minuit : bon jour et bonne heure.
+- Règles en base (bloc 1, 36 contrôles sur base jetable) : 21h59 / 22h00 / 22h01, joueur d'une autre équipe (rien), joueur non destinataire (rien), joueur désaffilié (rien).
+- Procédé décoché après coup : la publication garde une copie figée des procédés cochés ; décocher puis « Modifier » met à jour la copie, sans effet tant qu'on ne republie pas.
+
+**Non vérifié (honnêtement)** : aucun parcours réel avec les vrais comptes de Kevin (éducateur, joueur concerné, joueur non concerné). Je n'ai pas pu confirmer que `supabase_entrainement_publie_visible_avant.sql` a été exécuté en production (le journal du bloc 1 ne le dit pas).
+
+**Commit et push** : non faits, en attente de l'ok de Kevin (règle posée au bloc 1 : aucun commit avant son ok).

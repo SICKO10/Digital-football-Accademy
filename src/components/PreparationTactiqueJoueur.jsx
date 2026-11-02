@@ -10,6 +10,7 @@ import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
 import EmptyState from './EmptyState'
 import TactipadViewer from './TactipadViewer'
+import SeanceDuJourJoueur from './SeanceDuJourJoueur'
 import TerrainZonesSvg from './TerrainZonesSvg'
 import DemiTerrainSchema from './DemiTerrainSchema'
 
@@ -101,6 +102,7 @@ function GalerieImages({ images, colors }) {
 // Schémas partagés en premier : c'est ce que le joueur consulte le plus
 // (avant un match, après une séance), les phases de jeu du club viennent ensuite.
 const ONGLETS = [
+  { key: 'entrainement', label: 'Entraînement' },
   { key: 'schemas', label: 'Schémas partagés' },
   { key: 'offensif', label: 'Projet Offensif' },
   { key: 'defensif', label: 'Projet Défensif' },
@@ -186,7 +188,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const colors = useColors()
   const locale = localeOf(lang)
   const pole = categorie ? getPoleDeCategorie(categorie) : null
-  const [onglet, setOnglet] = useState('schemas')
+  const [onglet, setOnglet] = useState('entrainement')
   const [pleinEcran, setPleinEcran] = useState(false)
   const [zones, setZones] = useState([])
   const [fondUrls, setFondUrls] = useState({})
@@ -330,7 +332,9 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         {ONGLETS.map(o => <button key={o.key} style={tabStyle(onglet === o.key)} onClick={() => setOnglet(o.key)}>{o.label}</button>)}
       </div>
 
-      {onglet !== 'schemas' && blocPhasesVide}
+      {onglet !== 'schemas' && onglet !== 'entrainement' && blocPhasesVide}
+
+      {onglet === 'entrainement' && <SeanceDuJourJoueur isMobile={isMobile} lang={lang} />}
 
       {phasesPretes && onglet === 'offensif' && <div>{panneau('attaque')}{galerie('attaque')}</div>}
       {phasesPretes && onglet === 'defensif' && <div>{panneau('defense')}{galerie('defense')}</div>}
