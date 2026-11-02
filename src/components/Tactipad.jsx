@@ -166,8 +166,37 @@ export const DISPOSITIFS = {
   ],
 }
 
+// Foot à 8 et futsal : le gardien (n°1) est ajouté automatiquement, chaque
+// rang est [x, nombre de joueurs] réparti sur la largeur.
+const REPARTITION_Y = { 1: [0.5], 2: [0.35, 0.65], 3: [0.2, 0.5, 0.8], 4: [0.15, 0.38, 0.62, 0.85] }
+const construireDispositif = (...rangs) => {
+  let num = 1
+  const joueurs = [{ num: num++, x: 0.05, y: 0.5 }]
+  rangs.forEach(([x, n]) => REPARTITION_Y[n].forEach(y => joueurs.push({ num: num++, x, y })))
+  return joueurs
+}
+
+export const DISPOSITIFS_FOOT8 = {
+  '3-3-1': construireDispositif([0.22, 3], [0.45, 3], [0.68, 1]),
+  '3-2-2': construireDispositif([0.22, 3], [0.45, 2], [0.68, 2]),
+  '2-3-2': construireDispositif([0.22, 2], [0.45, 3], [0.68, 2]),
+  '2-4-1': construireDispositif([0.22, 2], [0.45, 4], [0.68, 1]),
+  '4-2-1': construireDispositif([0.22, 4], [0.45, 2], [0.68, 1]),
+}
+
+export const DISPOSITIFS_FUTSAL = {
+  '2-2': construireDispositif([0.25, 2], [0.55, 2]),
+  '1-2-1': construireDispositif([0.22, 1], [0.42, 2], [0.65, 1]),
+  '3-1': construireDispositif([0.25, 3], [0.6, 1]),
+  '1-3': construireDispositif([0.25, 1], [0.58, 3]),
+  '4-0': construireDispositif([0.4, 4]),
+}
+
+const dispositifsDuSport = (sport) =>
+  sport === 'foot8' ? DISPOSITIFS_FOOT8 : sport === 'futsal' ? DISPOSITIFS_FUTSAL : DISPOSITIFS
+
 export function terrainSvgString({ sport, vue, fond, w, h }) {
-  const bg = fond === 'vert' ? '#1a7a3c' : '#ffffff'
+  const bg = fond === 'vert' ? (sport === 'futsal' ? '#1f5fa8' : '#1a7a3c') : '#ffffff'
   const line = fond === 'vert' ? '#ffffff' : '#333333'
   const lw = 2
   const cx = w / 2, cy = h / 2
@@ -195,7 +224,8 @@ export function terrainSvgString({ sport, vue, fond, w, h }) {
     </svg>`
   }
 
-  const boxW = w * 0.16, boxH = h * 0.55, goalW = w * 0.06, goalH = h * 0.28
+  const foot8 = sport === 'foot8'
+  const boxW = w * (foot8 ? 0.13 : 0.16), boxH = h * (foot8 ? 0.5 : 0.55), goalW = w * (foot8 ? 0.05 : 0.06), goalH = h * (foot8 ? 0.26 : 0.28)
   if (vue === 'demi') {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
       <rect width="${w}" height="${h}" fill="${bg}" stroke="${line}" stroke-width="${lw}"/>
@@ -945,9 +975,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // la gauche (côté droit) — sans ce mirroring, B était le seul côté
   // inversé et C se retrouvait superposée à A au lieu d'être en face de B.
   const appliquerDispositif = (cle) => {
-    if (!cle || !DISPOSITIFS[cle]) return
+    const dispositif = dispositifsDuSport(sport)[cle]
+    if (!cle || !dispositif) return
     const mirror = equipeActive === 'B' || equipeActive === 'C'
-    const nouveauxJoueurs = DISPOSITIFS[cle].map(p => {
+    const nouveauxJoueurs = dispositif.map(p => {
       const px = mirror ? 1 - p.x : p.x
       const ancien = elements.find(e => e.type === 'joueur' && e.equipe === equipeActive && String(e.numero) === String(p.num))
       return {
@@ -1744,7 +1775,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
       {/* Barre du haut */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
-          {[['football', t('tac_football', lang)], ['futsal', t('tac_futsal', lang)]].map(([v, label]) => (
+          {[['football', t('tac_football', lang)], ['foot8', t('tac_foot8', lang)], ['futsal', t('tac_futsal', lang)]].map(([v, label]) => (
             <button key={v} onClick={() => setSport(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: sport === v ? '#4ade80' : 'transparent', color: sport === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
@@ -1754,7 +1785,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           ))}
         </div>
         <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
-          {[['vert', t('tac_vert', lang)], ['blanc', t('tac_blanc', lang)]].map(([v, label]) => (
+          {[['vert', t(sport === 'futsal' ? 'tac_salle' : 'tac_vert', lang)], ['blanc', t('tac_blanc', lang)]].map(([v, label]) => (
             <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
@@ -1764,24 +1795,30 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
           style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', padding: '7px 10px', cursor: 'pointer' }}
         >
           <option value="">{t('tac_dispositif', lang)} ({t(EQUIPES_CONFIG[equipeActive].label, lang)})...</option>
-          <optgroup label="4 défenseurs">
-            <option value="4-3-3">4-3-3</option>
-            <option value="4-4-2">4-4-2</option>
-            <option value="4-4-2-plat">4-4-2 plat</option>
-            <option value="4-2-3-1">4-2-3-1</option>
-            <option value="4-5-1">4-5-1</option>
-            <option value="4-1-4-1">4-1-4-1</option>
-            <option value="4-3-2-1">4-3-2-1 (arbre de Noël)</option>
-          </optgroup>
-          <optgroup label="3 défenseurs">
-            <option value="3-4-3">3-4-3</option>
-            <option value="3-5-2">3-5-2</option>
-            <option value="3-4-1-2">3-4-1-2</option>
-          </optgroup>
-          <optgroup label="5 défenseurs">
-            <option value="5-3-2">5-3-2</option>
-            <option value="5-4-1">5-4-1</option>
-          </optgroup>
+          {sport === 'football' ? (
+            <>
+              <optgroup label="4 défenseurs">
+                <option value="4-3-3">4-3-3</option>
+                <option value="4-4-2">4-4-2</option>
+                <option value="4-4-2-plat">4-4-2 plat</option>
+                <option value="4-2-3-1">4-2-3-1</option>
+                <option value="4-5-1">4-5-1</option>
+                <option value="4-1-4-1">4-1-4-1</option>
+                <option value="4-3-2-1">4-3-2-1 (arbre de Noël)</option>
+              </optgroup>
+              <optgroup label="3 défenseurs">
+                <option value="3-4-3">3-4-3</option>
+                <option value="3-5-2">3-5-2</option>
+                <option value="3-4-1-2">3-4-1-2</option>
+              </optgroup>
+              <optgroup label="5 défenseurs">
+                <option value="5-3-2">5-3-2</option>
+                <option value="5-4-1">5-4-1</option>
+              </optgroup>
+            </>
+          ) : (
+            Object.keys(dispositifsDuSport(sport)).map(cle => <option key={cle} value={cle}>{cle}</option>)
+          )}
         </select>
         {/* Les 4 équipes se comportent pareil : le clic ne fait que sélectionner
             l'équipe active, aucun joueur n'apparaît tout seul — il faut soit les

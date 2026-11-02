@@ -735,6 +735,8 @@ export const T = {
   tac_undo:                 { fr: 'Undo',            en: 'Undo',             pt: 'Desfazer',        es: 'Deshacer',        it: 'Annulla',         de: 'Rückgängig'       },
   tac_redo:                 { fr: 'Redo',            en: 'Redo',             pt: 'Refazer',         es: 'Rehacer',         it: 'Ripristina',      de: 'Wiederholen'      },
   tac_football:              { fr: 'Football',     en: 'Football',      pt: 'Futebol',      es: 'Fútbol',       it: 'Calcio',       de: 'Fußball'        },
+  tac_salle:                 { fr: 'Salle',        en: 'Indoor',        pt: 'Pavilhão',     es: 'Pista',        it: 'Palazzetto',   de: 'Halle'          },
+  tac_foot8:                 { fr: 'Foot à 8',     en: '8-a-side',      pt: 'Futebol a 8',  es: 'Fútbol 8',     it: 'Calcio a 8',   de: '8er-Fußball'    },
   tac_futsal:                { fr: 'Futsal',       en: 'Futsal',        pt: 'Futsal',       es: 'Futsal',       it: 'Futsal',       de: 'Futsal'         },
 
   // ── Tacticboard — tutoriel interactif (première utilisation + bouton ? discret) ──
