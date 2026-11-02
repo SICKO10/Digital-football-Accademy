@@ -9,6 +9,7 @@ import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
 import EmptyState from './EmptyState'
 import TactipadViewer from './TactipadViewer'
+import SchemaPleinEcran from './SchemaPleinEcran'
 
 // Onglet « Entraînement » de la Préparation : la ou les séances que l'éducateur
 // a publiées pour ce joueur. La base ne renvoie que ce que le joueur a le droit
@@ -38,6 +39,7 @@ function Procede({ p, colors, isMobile }) {
       <p style={{ margin: 0, fontSize: fontSize.lg, color: colors.text.primary, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{texte}</p>
     </div>
   ) : null
+  const [pleinEcran, setPleinEcran] = useState(false)
   const infos = [p.duree && `${p.duree} min`, p.nb_joueurs && `${p.nb_joueurs} joueurs`].filter(Boolean).join(' · ')
 
   return (
@@ -54,8 +56,15 @@ function Procede({ p, colors, isMobile }) {
       {bloc('Critères de réalisation', p.criteres_realisation)}
       {bloc('Critères de réussite', p.criteres_reussite)}
       {p.schema_data ? (
-        <div style={{ overflowX: 'auto' }}>
-          <TactipadViewer schema={p.schema_data} width={largeur} />
+        <div>
+          <div style={{ overflowX: 'auto' }}>
+            <TactipadViewer schema={p.schema_data} width={largeur} />
+          </div>
+          <button onClick={() => setPleinEcran(true)}
+            style={{ marginTop: spacing.lg, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '10px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Voir en plein écran
+          </button>
+          {pleinEcran && <SchemaPleinEcran schema={p.schema_data} nom={p.titre} colors={colors} onFermer={() => setPleinEcran(false)} />}
         </div>
       ) : p.schema_png ? (
         <img src={p.schema_png} alt={`Schéma : ${p.titre || 'exercice'}`} style={{ width: '100%', maxWidth: '640px', borderRadius: radius.base }} />
