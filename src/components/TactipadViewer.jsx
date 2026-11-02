@@ -98,8 +98,13 @@ export default function TactipadViewer({ schema, width = 640 }) {
     setPlaying(false)
   }
 
+  // Comme une vidéo : toucher le terrain lance ou met en pause l'animation.
+  // Quand elle est à l'arrêt, un grand bouton lecture s'affiche au centre.
+  const basculer = () => { if (hasAnimation) (playing ? stop() : lire()) }
+
   return (
     <div>
+      <div onClick={basculer} style={{ position: 'relative', width, height, cursor: hasAnimation ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent' }}>
       <Stage width={width} height={height} style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <Layer>
           {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
@@ -146,10 +151,18 @@ export default function TactipadViewer({ schema, width = 640 }) {
           ))}
         </Layer>
       </Stage>
+      {hasAnimation && !playing && (
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <span style={{ width: '68px', height: '68px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: '2px solid rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: '4px' }}><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" /></svg>
+          </span>
+        </div>
+      )}
+      </div>
 
       {hasAnimation && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-          <button onClick={playing ? stop : lire} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={(e) => { e.stopPropagation(); basculer() }} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {playing ? '⏸ Pause' : '▶ Lire l\'animation'}
           </button>
           <span style={{ color: colors.text.faint, fontSize: '12px' }}>Étape {etape + 1}/{sequences.length}</span>
