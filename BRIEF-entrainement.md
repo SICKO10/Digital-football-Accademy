@@ -6,7 +6,7 @@ L'éducateur choisit, parmi les procédés de sa séance, ceux qu'il veut montre
 
 ## Décisions de Kevin (2026-11-02)
 1. **Choix par procédé** : l'éducateur coche les procédés à rendre visibles. Rien n'est envoyé sans case cochée.
-2. **Disparition à 22h le jour même** (heure de Paris). Après 22h le joueur ne voit plus rien. La séance reste archivée chez l'éducateur.
+2. **Visible dès la publication, disparition à 22h le jour de la séance** (heure de Paris). L'éducateur peut publier la veille ou plus tôt, le joueur la voit tout de suite. Après 22h le jour J le joueur ne voit plus rien. La séance reste archivée chez l'éducateur. (Précisé le 2026-11-02 : avant, visible seulement le jour J.)
 3. **Destinataires** : toute l'équipe, ou les défenseurs, ou les milieux, ou les attaquants (gardiens aussi), ou des joueurs choisis un par un. Plusieurs groupes cumulables.
 4. **Équipe automatique** : l'équipe active du dashboard éducateur (U18, etc.) est la destinataire. Pas de choix d'équipe dans la fenêtre de publication.
 5. **Notification au joueur** : oui, dans ce premier lot (clochette dans l'appli, email selon ses préférences déjà gérées par la plateforme).

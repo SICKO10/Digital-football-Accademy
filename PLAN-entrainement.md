@@ -15,7 +15,7 @@ Cases « Visible par les joueurs » sur les procédés, fenêtre de publication 
 Validation : Kevin publie une séance test sur son équipe.
 
 ## Bloc 3 : Côté joueur (Sonnet, effort medium)
-Rubrique « Entraînement » dans Préparation, carte « Séance du jour », consigne, critères, schéma animé, état vide, disparition à 22h. Vérifier les deux variantes du dashboard joueur.
+Rubrique « Entraînement » dans Préparation, carte « Séance du jour », consigne, critères, schéma animé, état vide, disparition à 22h. Le joueur peut voir deux séances à la fois (celle du jour avant 22h et la suivante déjà publiée) : trier par date, la plus proche en premier, avec « Aujourd'hui » / « Demain » / date. Vérifier les deux variantes du dashboard joueur.
 Validation : Kevin vérifie avec un compte joueur concerné et un non concerné.
 
 ## Bloc 4 : Notification (Sonnet, effort medium)
@@ -69,6 +69,8 @@ Parcours complet, cas limites (publication à 21h59 et 22h01, joueur d'une autre
 **Tests faits** : PostgreSQL local (PGlite, base jetable imitant Supabase), 32 contrôles sur 32 réussis : 21h59 / 22h00 / 22h01 hiver et été, minuit, veille, lendemain ; joueur destinataire voit, joueur de la même équipe non destinataire ne voit rien, joueur d'une autre équipe ne voit rien, joueur désaffilié ne voit plus rien ; joueur ne peut ni modifier ni supprimer ni ajouter ; autre éducateur ne voit ni ne modifie ; refus d'un destinataire hors équipe ; refus d'une publication sans procédé. Fichier relancé deux fois sans erreur.
 
 **Clôture** : Kevin a exécuté le SQL en production, fichier de vérification 9/9 `ok = true` (2026-11-02).
+
+**Correction du 2026-11-02 (décision Kevin)** : visible dès la publication (la veille ou avant), jusqu'à 22h Paris le jour de la séance, pour pouvoir mettre la suivante en ligne dès que celle du jour est passée. Fichier `supabase_entrainement_publie_visible_avant.sql` (remplace seulement la fonction `seance_publiee_ouverte`). Tests locaux 36/36 (dont séance de demain visible, séance dans une semaine visible, passage à l'heure d'été). Vérification mise à jour : 10 lignes.
 
 **Questions pour Kevin avant le bloc 1**
 1. Schéma animé : OK pour afficher l'animation seulement quand le procédé vient de la bibliothèque (lien ajouté), et l'image fixe sinon ? (Recommandé : simple et sans perte.)

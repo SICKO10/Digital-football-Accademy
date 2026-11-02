@@ -17,6 +17,8 @@ SELECT 'été 21h59 Paris : visible', seance_publiee_ouverte('2026-07-01', '2026
 UNION ALL
 SELECT 'été 22h01 Paris : masqué', seance_publiee_ouverte('2026-07-01', '2026-07-01 20:01:00+00') = false
 UNION ALL
-SELECT 'veille : masqué', seance_publiee_ouverte('2026-11-01', '2026-11-02 10:00:00+00') = false
+SELECT 'séance d''hier : masquée', seance_publiee_ouverte('2026-11-01', '2026-11-02 10:00:00+00') = false
+UNION ALL
+SELECT 'séance de demain : visible dès la publication', seance_publiee_ouverte('2026-11-03', '2026-11-02 18:00:00+00') = true
 UNION ALL
 SELECT 'aucune publication pour l''instant', (SELECT count(*) FROM seances_publiees) = 0;
