@@ -950,7 +950,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               {estimationEnCours && <p style={{ fontSize: '11px', color: st.textFaint, margin: '6px 0 0' }}>Estimation du trajet...</p>}
               {!estimationEnCours && form.distance_km != null && (
                 <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: st.textDim }}>
-                  <strong style={{ color: 'white' }}>{form.distance_km} km</strong>
+                  <strong style={{ color: st.text }}>{form.distance_km} km</strong>
                   {form.duree_trajet_min != null && <> · {Math.floor(form.duree_trajet_min / 60)}h{String(form.duree_trajet_min % 60).padStart(2, '0')} de trajet (aller simple, depuis {clubVille})</>}
                 </p>
               )}
