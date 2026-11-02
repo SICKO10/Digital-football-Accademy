@@ -52,8 +52,8 @@ const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
   { q: "Comment affilier un éducateur à mon club ?", a: "Dans Sportif → Éducateurs, recherche-le par nom ou envoie une invitation par email. Il doit accepter pour rejoindre officiellement le club." },
   { q: "Comment gérer le planning des terrains ?", a: "Dans Sportif → Planning des terrains, importe ton fichier Excel/CSV ou saisis les créneaux manuellement pour chaque catégorie." },
-  { q: "Comment répartir les joueurs dans les mini-bus ?", a: "Dans Administratif → Répartition mini-bus, ajoute tes véhicules et l'outil répartit automatiquement les joueurs inscrits au déplacement." },
-  { q: "Qui peut voir le budget du club ?", a: "L'onglet Budget est réservé aux rôles Président et Secrétaire." },
+  { q: "Comment mettre en place le projet sportif du club ?", a: "Dans Sportif → Projet Sportif, choisis le pôle (la tranche d'âge) puis avance onglet par onglet : Principes de jeu (tes principes écrits pour chaque phase : organisation offensive et défensive, transitions, coups de pied arrêtés), Zones de terrain (dessine les zones et explique-les), Planification annuelle, puis Règles du jeu. Tes joueurs retrouvent ensuite ce projet dans leur Préparation tactique. Dans Sportif → Éducateurs, tu choisis aussi si chaque éducateur peut le modifier ou seulement le lire." },
+  { q: "Pourquoi bien régler Staff Permission ?", a: "Dans Administratif → Staff Permission, tu invites les membres du club par email, tu leur donnes un rôle (directeur sportif, secrétaire, trésorier...) et tu choisis, rubrique par rubrique, ce qu'ils peuvent voir ou modifier. C'est ce qui protège les données sensibles du club : le budget, les sponsors ou les déplacements ne sont pas faits pour tout le monde. Sans réglage de ta part, seul le président a accès aux rubriques récentes (Événements, Organigramme, Inventaire, Newsletter...). Donne à chacun uniquement ce dont il a besoin." },
 ];
 
 
