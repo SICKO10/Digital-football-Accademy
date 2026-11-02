@@ -35,7 +35,9 @@ export default function TactipadViewer({ schema, width = 640 }) {
   const stopRef = useRef(false)
 
   // Une même causerie peut proposer plusieurs mouvements : on repart de zéro
-  // si le schéma affiché change (nouvelle instance logique, même composant monté).
+  // si le schéma affiché change (nouvelle instance logique, même composant monté),
+  // et aussi si la largeur change : les éléments sont mis à l'échelle de la
+  // largeur, le fond du terrain suit déjà (plein écran qui s'agrandit après coup).
   useEffect(() => {
     stopRef.current = true
     cancelAnimationFrame(animRef.current)
@@ -44,7 +46,7 @@ export default function TactipadViewer({ schema, width = 640 }) {
     setEtape(0)
     setPlaying(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schema])
+  }, [schema, width])
 
   useEffect(() => () => { cancelAnimationFrame(animRef.current); clearTimeout(stepTimeoutRef.current) }, [])
 
