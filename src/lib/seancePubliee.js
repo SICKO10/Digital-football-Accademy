@@ -17,6 +17,6 @@ export const NOTIF_SEANCE_PUBLIEE = {
     const quand = dateSeance === dateParisAujourdhui()
       ? 'd\'aujourd\'hui'
       : 'du ' + new Date(dateSeance + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-    return `Ton éducateur a publié la séance ${quand}${heure ? ' à ' + String(heure).slice(0, 5) : ''}. Retrouve-la dans Préparation > Entraînement.`
+    return `Ton éducateur a publié la séance ${quand}${heure ? ' à ' + String(heure).slice(0, 5) : ''}. Retrouve-la dans Entraînement.`
   },
 }

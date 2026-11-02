@@ -33,6 +33,7 @@ import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
+import SeanceDuJourJoueur from '../components/SeanceDuJourJoueur'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
@@ -3422,7 +3423,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'annonces', label: 'Actualités du club', icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
     { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
     { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
-    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic />, section: t('jsec_preparation', lang) },
+    { id: 'entrainement', label: 'Entraînement', icon: <IconDumbbell />, section: t('jsec_preparation', lang) },
+    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
     { id: 'sante', label: t('nav_sante', lang), icon: <IconHealth /> },
     { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
@@ -3742,8 +3744,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 ? {
                     couleur: colors.accent.green,
                     surTitre: 'Prochaine séance',
+                    onglet: 'entrainement',
                     titre: widgetProchainEnt.description || t('aff_entrainement_titre', lang),
-                    detail: [dateLongue(widgetProchainEnt.date), widgetProchainEnt.heure ? `à ${widgetProchainEnt.heure}` : null, widgetProchainEnt.lieu].filter(Boolean).join(' · '),
+                    detail: [dateLongue(widgetProchainEnt.date), widgetProchainEnt.heure ? `à ${widgetProchainEnt.heure}` : null, widgetProchainEnt.lieu].filter(Boolean).join(' · ') + ' · Voir la séance',
                   }
                 : widgetProchainMatch
                 ? {
@@ -3755,7 +3758,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 : null
               if (!aLaUne) return null
               return (
-                <Carte accent={aLaUne.couleur} isMobile={isMobile} style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}>
+                <Carte accent={aLaUne.couleur} isMobile={isMobile} style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'], cursor: aLaUne.onglet ? 'pointer' : undefined }}
+                  onClick={aLaUne.onglet ? () => setOnglet(aLaUne.onglet) : undefined}>
                   <p style={{ margin: 0, fontSize: fontSize.base, fontWeight: 700, color: aLaUne.couleur, textTransform: 'uppercase', letterSpacing: '1px' }}>{aLaUne.surTitre}</p>
                   <p style={{ margin: `${spacing.md} 0 0`, fontSize: isMobile ? fontSize['4xl'] : fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.4px', color: colors.text.primary }}>{aLaUne.titre}</p>
                   {aLaUne.detail && <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary }}>{aLaUne.detail}</p>}
@@ -5075,6 +5079,19 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         {/* ── COMPÉTITION (lecture seule) ── */}
         {onglet === 'competition' && renduCompetition()}
+
+        {/* ── ENTRAÎNEMENT : séance publiée par l'éducateur ── */}
+        {onglet === 'entrainement' && (
+          <div style={{ padding: isMobile ? '16px' : '24px 32px', display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Entraînement</h1>
+              <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
+                La séance que ton éducateur a préparée pour toi.
+              </p>
+            </div>
+            <SeanceDuJourJoueur isMobile={isMobile} lang={lang} />
+          </div>
+        )}
 
         {/* ── PRÉPARATION TACTIQUE ── */}
         {onglet === 'preparation_tactique' && (
