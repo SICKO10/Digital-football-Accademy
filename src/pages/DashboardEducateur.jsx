@@ -215,6 +215,10 @@ const EDUCATEUR_FAQ = [
     a: "Dans Mon profil, entre le code club que t'a donné ton club. Une fois accepté, tu accèdes au planning des terrains et à la répartition des mini-bus.",
   },
   {
+    q: "Comment intégrer un dirigeant ?",
+    a: "Dans Explorer → Dirigeants, clique sur \"Inviter un dirigeant\" et saisis son adresse email. Pour chaque rubrique (effectif, stats, compétition, entraînements, préparation physique, notes), choisis ce qu'il peut faire : aucun accès, lecture seule ou édition. Il reçoit l'invitation par email, crée son compte et retrouve ton dashboard avec uniquement les droits que tu as donnés. Tu peux les modifier ou le retirer à tout moment.",
+  },
+  {
     q: "Comment créer une fiche de séance ?",
     a: "Dans Mes séances, rédige-la directement ou scanne une fiche papier — l'IA remplit les champs automatiquement, tu n'as plus qu'à vérifier.",
   },
