@@ -5,6 +5,7 @@ import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, stripeUrl } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
+import { promoActive, prixPromo, prixDepuisTexte } from '../lib/promo'
 
 const PILLS = ['Joueurs actifs', 'Clubs actifs', 'Éducateurs actifs']
 
@@ -511,7 +512,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
       {profilChoisi.stripeMensuel && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
           {[
-            { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: '10€/mois', desc: t('reginsc_cycle_mensuel_desc', lang) },
+            { key: 'mensuel', titre: t('reginsc_cycle_mensuel_titre', lang), prix: promoActive() ? `${prixPromo(10)}€ le 1er mois` : '10€/mois', prixBarre: promoActive() ? '10€/mois' : null, desc: t('reginsc_cycle_mensuel_desc', lang), badge: promoActive() ? '-70%' : null },
             { key: 'annuel', titre: t('reginsc_cycle_annuel_titre', lang), prix: '100€/an', desc: t('reginsc_cycle_annuel_desc', lang), badge: t('reginsc_cycle_2mois_offerts', lang) },
           ].map(opt => (
             <button key={opt.key} type="button" onClick={() => setCycle(opt.key)}
@@ -525,7 +526,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
                 <span style={{ position: 'absolute', top: '-9px', right: '10px', background: colors.accent.green, color: colors.black, fontSize: '9px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>{opt.badge}</span>
               )}
               <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: cycle === opt.key ? colors.accent.green : colors.text.primary }}>{opt.titre}</p>
-              <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{opt.prix}</p>
+              <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{opt.prix}{opt.prixBarre && <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, fontSize: '12px', marginLeft: '8px' }}>{opt.prixBarre}</span>}</p>
               <p style={{ margin: '4px 0 0', fontSize: '10px', color: colors.text.dim, lineHeight: 1.4 }}>{opt.desc}</p>
             </button>
           ))}
@@ -771,7 +772,9 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
                 <button key={key} type="button" onClick={() => setPalier(key)}
                   style={{ textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: palier === key ? color + '15' : colors.background.surface, border: `2px solid ${palier === key ? color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px' }}>
                   <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: palier === key ? color : colors.text.primary }}>Jusqu'à {quota} équipes</p>
-                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{cycle === 'annuel' ? p.annuelPrix : p.mensuelPrix}</p>
+                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{cycle === 'annuel' ? p.annuelPrix : promoActive()
+                    ? <>{prixPromo(prixDepuisTexte(p.mensuelPrix))}€ le 1er mois <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, fontSize: '12px', marginLeft: '6px' }}>{p.mensuelPrix.replace('/mois', '')}</span></>
+                    : p.mensuelPrix}</p>
                 </button>
               )
             })}
