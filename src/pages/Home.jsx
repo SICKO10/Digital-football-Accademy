@@ -10,6 +10,7 @@ import { colors, alpha } from '../tokens'
 import { supabase } from '../supabase'
 import NewsletterForm from '../components/NewsletterForm'
 import HomeNav from '../components/HomeNav'
+import BandeauPromo from '../components/BandeauPromo'
 import HeroDashboardsPreview from '../components/HeroDashboardsPreview'
 import DemoSemaineMatch from '../components/DemoSemaineMatch'
 
@@ -212,6 +213,7 @@ function Home() {
   return (
     <>
     <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
+    <BandeauPromo lang={lang} onClick={() => navigate('/offres')} />
     <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
 
       {/* maxWidth élargi de 800px à 1400px (strictement pour laisser la place

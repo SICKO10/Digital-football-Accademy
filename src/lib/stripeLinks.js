@@ -1,3 +1,5 @@
+import { promoActive, PROMO_CODE } from './promo'
+
 // Source unique des liens de paiement Stripe (mode LIVE).
 //
 // Le webhook (supabase/functions/stripe-webhook) identifie le produit acheté
@@ -54,8 +56,20 @@ export const CONTACT_EMAIL = 'Jimmy.digital.football@gmail.com'
 // client_reference_id permet au webhook Stripe (supabase/functions/stripe-webhook)
 // d'identifier le profil à activer/créditer après paiement. prefilled_email
 // pré-remplit le champ email du checkout Stripe pour éviter une ressaisie.
+//
+// Promo de lancement : le code est pré-rempli seulement sur les liens MENSUELS,
+// tant que la promo court (cf. lib/promo.js). Le lien Stripe doit autoriser
+// les codes promotionnels, sinon Stripe ignore le paramètre.
+const LIENS_MENSUELS = new Set([
+  STRIPE_LINKS.starter,
+  STRIPE_LINKS_EDU.edu_mensuel,
+  STRIPE_LINKS_RECRUTEUR.mensuel,
+  ...Object.values(STRIPE_LINKS_CLUB).map(p => p.mensuel),
+])
+
 export const stripeUrl = (base, uid, email) => {
   const params = new URLSearchParams()
+  if (promoActive() && LIENS_MENSUELS.has(base)) params.set('prefilled_promo_code', PROMO_CODE)
   if (uid) params.set('client_reference_id', uid)
   if (email) params.set('prefilled_email', email)
   const qs = params.toString()

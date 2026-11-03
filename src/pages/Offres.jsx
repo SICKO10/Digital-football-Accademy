@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
+import BandeauPromo from '../components/BandeauPromo'
+import { promoActive, prixPromo, prixDepuisTexte } from '../lib/promo'
 import { IconCheck, IconTool, IconBall, IconChart, IconBolt } from '../components/icones'
 
 const st = {
@@ -35,6 +37,17 @@ function BadgeRecommande({ color }) {
   )
 }
 
+// Prix mensuel : barré + prix promo (1er mois) tant que la promo court.
+function PrixMensuel({ prix }) {
+  if (!promoActive()) return <>{prix}€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></>
+  return (
+    <>
+      {prixPromo(prix)}€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}> le 1er mois</span>
+      <span style={{ fontSize: '13px', color: colors.text.faint, textDecoration: 'line-through', fontWeight: 400, marginLeft: '10px' }}>{prix}€</span>
+    </>
+  )
+}
+
 function Feature({ children }) {
   return <div style={st.feature}><span style={{ color: colors.accent.green, flexShrink: 0, display: 'inline-flex', verticalAlign: 'middle' }}><IconCheck size={14} /></span> {children}</div>
 }
@@ -61,14 +74,14 @@ function OffrePro({ titre, color, features, profilId, cycle }) {
         ) : (
           <>
             <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 10px' }}>MENSUEL</p>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
+            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}><PrixMensuel prix={10} /></p>
           </>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
           {features.map(f => <Feature key={f}>{f}</Feature>)}
         </div>
         <button onClick={() => navigate(`/register?profil=${profilId}&cycle=${cycle}`)} style={st.cta(isAnnuel ? color : null, isAnnuel)}>
-          {isAnnuel ? 'Commencer à 100€/an' : 'Commencer à 10€/mois'}
+          {isAnnuel ? 'Commencer à 100€/an' : promoActive() ? `Commencer à ${prixPromo(10)}€ le 1er mois` : 'Commencer à 10€/mois'}
         </button>
       </div>
     </div>
@@ -220,6 +233,8 @@ export default function Offres() {
         <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.background.base, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Créer un compte</button>
       </nav>
 
+      <BandeauPromo />
+
       <div style={{ textAlign: 'center', padding: '3rem 1.5rem 1rem' }}>
         <div style={st.eyebrow}>TARIFS</div>
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>Une offre pour chaque profil</h1>
@@ -275,7 +290,7 @@ export default function Offres() {
               ) : (
                 <>
                   <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>Mensuel</h3>
-                  <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>10€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/mois</span></p>
+                  <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}><PrixMensuel prix={10} /></p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
                     <Feature>1 analyse vidéo / an</Feature>
                     <Feature>Analyse supplémentaire : 60€ à l'unité</Feature>
@@ -286,7 +301,7 @@ export default function Offres() {
                     <Feature>Réseau clubs et agents</Feature>
                     <Feature>Feed & visibilité</Feature>
                   </div>
-                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>Commencer à 10€/mois</button>
+                  <button onClick={() => navigate('/register?profil=joueur_pro&cycle=mensuel')} style={st.cta(null, false)}>{promoActive() ? `Commencer à ${prixPromo(10)}€ le 1er mois` : 'Commencer à 10€/mois'}</button>
                 </>
               )}
             </div>
@@ -394,7 +409,9 @@ export default function Offres() {
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
                     style={{ padding: '10px 18px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                    {p.mensuelPrix}
+                    {promoActive()
+                      ? <>{prixPromo(prixDepuisTexte(p.mensuelPrix))}€ le 1er mois <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, marginLeft: '6px' }}>{p.mensuelPrix.replace('/mois', '')}</span></>
+                      : p.mensuelPrix}
                   </button>
                   <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
                     style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
