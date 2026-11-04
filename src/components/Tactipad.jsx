@@ -87,115 +87,114 @@ const cloneAvecDecalage = (el, dx, dy) => {
 const lerp = (a, b, t) => a + (b - a) * t
 const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 
-export const DISPOSITIFS = {
-  '4-3-3': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.42, y: 0.25 }, { num: 7, x: 0.42, y: 0.50 }, { num: 8, x: 0.42, y: 0.75 },
-    { num: 9, x: 0.65, y: 0.20 }, { num: 10, x: 0.65, y: 0.50 }, { num: 11, x: 0.65, y: 0.80 },
-  ],
-  '4-4-2': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.42, y: 0.15 }, { num: 7, x: 0.42, y: 0.38 }, { num: 8, x: 0.42, y: 0.62 }, { num: 9, x: 0.42, y: 0.85 },
-    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
-  ],
-  '4-4-2-plat': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.40, y: 0.15 }, { num: 7, x: 0.40, y: 0.38 }, { num: 8, x: 0.40, y: 0.62 }, { num: 9, x: 0.40, y: 0.85 },
-    { num: 10, x: 0.65, y: 0.38 }, { num: 11, x: 0.65, y: 0.62 },
-  ],
-  '4-2-3-1': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.38, y: 0.35 }, { num: 7, x: 0.38, y: 0.65 },
-    { num: 8, x: 0.55, y: 0.15 }, { num: 9, x: 0.55, y: 0.50 }, { num: 10, x: 0.55, y: 0.85 },
-    { num: 11, x: 0.70, y: 0.50 },
-  ],
-  '4-5-1': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.40, y: 0.10 }, { num: 7, x: 0.40, y: 0.30 }, { num: 8, x: 0.40, y: 0.50 }, { num: 9, x: 0.40, y: 0.70 }, { num: 10, x: 0.40, y: 0.90 },
-    { num: 11, x: 0.65, y: 0.50 },
-  ],
-  '4-1-4-1': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.35, y: 0.50 },
-    { num: 7, x: 0.50, y: 0.15 }, { num: 8, x: 0.50, y: 0.38 }, { num: 9, x: 0.50, y: 0.62 }, { num: 10, x: 0.50, y: 0.85 },
-    { num: 11, x: 0.68, y: 0.50 },
-  ],
-  '4-3-2-1': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.15 }, { num: 3, x: 0.20, y: 0.38 }, { num: 4, x: 0.20, y: 0.62 }, { num: 5, x: 0.20, y: 0.85 },
-    { num: 6, x: 0.38, y: 0.20 }, { num: 7, x: 0.38, y: 0.50 }, { num: 8, x: 0.38, y: 0.80 },
-    { num: 9, x: 0.55, y: 0.35 }, { num: 10, x: 0.55, y: 0.65 },
-    { num: 11, x: 0.70, y: 0.50 },
-  ],
-  '3-5-2': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
-    { num: 5, x: 0.40, y: 0.10 }, { num: 6, x: 0.40, y: 0.30 }, { num: 7, x: 0.40, y: 0.50 }, { num: 8, x: 0.40, y: 0.70 }, { num: 9, x: 0.40, y: 0.90 },
-    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
-  ],
-  '3-4-3': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
-    { num: 5, x: 0.40, y: 0.15 }, { num: 6, x: 0.40, y: 0.38 }, { num: 7, x: 0.40, y: 0.62 }, { num: 8, x: 0.40, y: 0.85 },
-    { num: 9, x: 0.65, y: 0.20 }, { num: 10, x: 0.65, y: 0.50 }, { num: 11, x: 0.65, y: 0.80 },
-  ],
-  '3-4-1-2': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.25 }, { num: 3, x: 0.20, y: 0.50 }, { num: 4, x: 0.20, y: 0.75 },
-    { num: 5, x: 0.42, y: 0.15 }, { num: 6, x: 0.42, y: 0.38 }, { num: 7, x: 0.42, y: 0.62 }, { num: 8, x: 0.42, y: 0.85 },
-    { num: 9, x: 0.55, y: 0.50 },
-    { num: 10, x: 0.68, y: 0.35 }, { num: 11, x: 0.68, y: 0.65 },
-  ],
-  '5-3-2': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.10 }, { num: 3, x: 0.20, y: 0.30 }, { num: 4, x: 0.20, y: 0.50 }, { num: 5, x: 0.20, y: 0.70 }, { num: 6, x: 0.20, y: 0.90 },
-    { num: 7, x: 0.42, y: 0.25 }, { num: 8, x: 0.42, y: 0.50 }, { num: 9, x: 0.42, y: 0.75 },
-    { num: 10, x: 0.65, y: 0.35 }, { num: 11, x: 0.65, y: 0.65 },
-  ],
-  '5-4-1': [
-    { num: 1, x: 0.05, y: 0.50 },
-    { num: 2, x: 0.20, y: 0.10 }, { num: 3, x: 0.20, y: 0.30 }, { num: 4, x: 0.20, y: 0.50 }, { num: 5, x: 0.20, y: 0.70 }, { num: 6, x: 0.20, y: 0.90 },
-    { num: 7, x: 0.45, y: 0.15 }, { num: 8, x: 0.45, y: 0.38 }, { num: 9, x: 0.45, y: 0.62 }, { num: 10, x: 0.45, y: 0.85 },
-    { num: 11, x: 0.68, y: 0.50 },
-  ],
-}
+// Numéros = postes, pour toutes les formations : 1 gardien, 2 latéral/piston
+// droit, 3 latéral/piston gauche, 4 et 5 défenseurs centraux, 6 / 8 / 10
+// milieux axiaux, 7 joueur de couloir droit, 11 joueur de couloir gauche,
+// 9 attaquant (le 11 joue aussi devant dans les systèmes à deux attaquants).
+// Équipe qui attaque vers la droite de l'écran : sa droite est en bas (y grand),
+// sa gauche en haut (y petit). Chaque ligne = [numéro, x, y] en fraction du terrain.
+const dispo = (...lignes) => [{ num: 1, x: 0.05, y: 0.5 }, ...lignes.map(([num, x, y]) => ({ num, x, y }))]
 
-// Foot à 8 et futsal : le gardien (n°1) est ajouté automatiquement, chaque
-// rang est [x, nombre de joueurs] réparti sur la largeur.
-const REPARTITION_Y = { 1: [0.5], 2: [0.35, 0.65], 3: [0.2, 0.5, 0.8], 4: [0.15, 0.38, 0.62, 0.85] }
-const construireDispositif = (...rangs) => {
-  let num = 1
-  const joueurs = [{ num: num++, x: 0.05, y: 0.5 }]
-  rangs.forEach(([x, n]) => REPARTITION_Y[n].forEach(y => joueurs.push({ num: num++, x, y })))
-  return joueurs
+const D4 = [[3, 0.20, 0.15], [5, 0.20, 0.38], [4, 0.20, 0.62], [2, 0.20, 0.85]]
+const D3 = [[5, 0.20, 0.25], [6, 0.20, 0.50], [4, 0.20, 0.75]]
+const D5 = [[3, 0.20, 0.10], [5, 0.20, 0.30], [6, 0.20, 0.50], [4, 0.20, 0.70], [2, 0.20, 0.90]]
+
+export const DISPOSITIFS = {
+  '4-3-3': dispo(...D4, [6, 0.38, 0.50], [10, 0.46, 0.32], [8, 0.46, 0.68], [11, 0.65, 0.20], [9, 0.65, 0.50], [7, 0.65, 0.80]),
+  '4-4-2': dispo(...D4, [11, 0.42, 0.15], [6, 0.42, 0.38], [8, 0.42, 0.62], [7, 0.42, 0.85], [10, 0.65, 0.35], [9, 0.65, 0.65]),
+  '4-4-2-plat': dispo(...D4, [11, 0.40, 0.15], [6, 0.40, 0.38], [8, 0.40, 0.62], [7, 0.40, 0.85], [10, 0.65, 0.38], [9, 0.65, 0.62]),
+  '4-2-3-1': dispo(...D4, [6, 0.38, 0.35], [8, 0.38, 0.65], [11, 0.55, 0.15], [10, 0.55, 0.50], [7, 0.55, 0.85], [9, 0.70, 0.50]),
+  '4-5-1': dispo(...D4, [11, 0.40, 0.10], [10, 0.40, 0.30], [6, 0.40, 0.50], [8, 0.40, 0.70], [7, 0.40, 0.90], [9, 0.65, 0.50]),
+  '4-1-4-1': dispo(...D4, [6, 0.35, 0.50], [11, 0.50, 0.15], [10, 0.50, 0.38], [8, 0.50, 0.62], [7, 0.50, 0.85], [9, 0.68, 0.50]),
+  '4-3-2-1': dispo(...D4, [8, 0.38, 0.20], [6, 0.38, 0.50], [10, 0.38, 0.80], [11, 0.55, 0.35], [7, 0.55, 0.65], [9, 0.70, 0.50]),
+  '3-5-2': dispo(...D3, [3, 0.40, 0.10], [8, 0.40, 0.30], [10, 0.40, 0.50], [7, 0.40, 0.70], [2, 0.40, 0.90], [11, 0.65, 0.35], [9, 0.65, 0.65]),
+  '3-4-3': dispo(...D3, [3, 0.40, 0.15], [8, 0.40, 0.38], [10, 0.40, 0.62], [2, 0.40, 0.85], [11, 0.65, 0.20], [9, 0.65, 0.50], [7, 0.65, 0.80]),
+  '3-4-1-2': dispo(...D3, [3, 0.42, 0.15], [8, 0.42, 0.38], [7, 0.42, 0.62], [2, 0.42, 0.85], [10, 0.55, 0.50], [11, 0.68, 0.35], [9, 0.68, 0.65]),
+  '5-3-2': dispo(...D5, [8, 0.42, 0.25], [10, 0.42, 0.50], [7, 0.42, 0.75], [11, 0.65, 0.35], [9, 0.65, 0.65]),
+  '5-4-1': dispo(...D5, [11, 0.45, 0.15], [8, 0.45, 0.38], [10, 0.45, 0.62], [7, 0.45, 0.85], [9, 0.68, 0.50]),
 }
 
 export const DISPOSITIFS_FOOT8 = {
-  '3-3-1': construireDispositif([0.22, 3], [0.45, 3], [0.68, 1]),
-  '3-2-2': construireDispositif([0.22, 3], [0.45, 2], [0.68, 2]),
-  '2-3-2': construireDispositif([0.22, 2], [0.45, 3], [0.68, 2]),
-  '2-4-1': construireDispositif([0.22, 2], [0.45, 4], [0.68, 1]),
-  '4-2-1': construireDispositif([0.22, 4], [0.45, 2], [0.68, 1]),
+  '3-3-1': dispo([3, 0.22, 0.20], [4, 0.22, 0.50], [2, 0.22, 0.80], [8, 0.45, 0.25], [6, 0.45, 0.50], [10, 0.45, 0.75], [9, 0.68, 0.50]),
+  '3-2-2': dispo([3, 0.22, 0.20], [4, 0.22, 0.50], [2, 0.22, 0.80], [6, 0.45, 0.35], [8, 0.45, 0.65], [11, 0.68, 0.30], [9, 0.68, 0.70]),
+  '2-3-2': dispo([5, 0.22, 0.35], [4, 0.22, 0.65], [8, 0.45, 0.25], [6, 0.45, 0.50], [10, 0.45, 0.75], [11, 0.68, 0.30], [9, 0.68, 0.70]),
+  '2-4-1': dispo([5, 0.22, 0.35], [4, 0.22, 0.65], [3, 0.45, 0.15], [8, 0.45, 0.38], [10, 0.45, 0.62], [2, 0.45, 0.85], [9, 0.68, 0.50]),
+  '4-2-1': dispo([3, 0.22, 0.15], [5, 0.22, 0.38], [4, 0.22, 0.62], [2, 0.22, 0.85], [6, 0.45, 0.35], [8, 0.45, 0.65], [9, 0.68, 0.50]),
 }
 
 export const DISPOSITIFS_FUTSAL = {
-  '2-2': construireDispositif([0.25, 2], [0.55, 2]),
-  '1-2-1': construireDispositif([0.22, 1], [0.42, 2], [0.65, 1]),
-  '3-1': construireDispositif([0.25, 3], [0.6, 1]),
-  '1-3': construireDispositif([0.25, 1], [0.58, 3]),
-  '4-0': construireDispositif([0.4, 4]),
+  '2-2': dispo([5, 0.25, 0.35], [4, 0.25, 0.65], [11, 0.55, 0.30], [9, 0.55, 0.70]),
+  '1-2-1': dispo([4, 0.22, 0.50], [3, 0.42, 0.25], [2, 0.42, 0.75], [9, 0.65, 0.50]),
+  '3-1': dispo([3, 0.25, 0.20], [4, 0.25, 0.50], [2, 0.25, 0.80], [9, 0.60, 0.50]),
+  '1-3': dispo([4, 0.25, 0.50], [11, 0.58, 0.20], [10, 0.58, 0.50], [7, 0.58, 0.80]),
+  '4-0': dispo([11, 0.40, 0.15], [10, 0.40, 0.38], [9, 0.40, 0.62], [7, 0.40, 0.85]),
 }
 
 const dispositifsDuSport = (sport) =>
   sport === 'foot8' ? DISPOSITIFS_FOOT8 : sport === 'futsal' ? DISPOSITIFS_FUTSAL : DISPOSITIFS
 
+// Terrain de football à 11 tracé en mètres (dimensions IFAB).
+// Terrain complet : une seule échelle pour la largeur et la hauteur (cercles
+// ronds, proportions exactes), 105 m centrés avec 2,5 m de marge à chaque bout
+// pour voir les buts ; la largeur visible s'adapte à la hauteur du canvas.
+// Demi-terrain : il remplit tout le canvas, donc il est étiré en largeur (sx et
+// sy différents). Les surfaces et le but gardent leurs vraies mesures sur chaque
+// axe ; les arcs sont dessinés en vrais arcs de cercle (pas en ovales).
+function terrainFootballSvg({ vue, fond, w, h }) {
+  const bg = fond === 'vert' ? '#1a7a3c' : '#ffffff'
+  const line = fond === 'vert' ? '#ffffff' : '#333333'
+  const lw = 2
+  const demi = vue === 'demi'
+  const MARGE_BUT = 2.5
+  const sx = demi ? w / (52.5 + MARGE_BUT) : w / (105 + 2 * MARGE_BUT)
+  const sy = demi ? h / 68 : sx
+  const x0 = MARGE_BUT * sx
+  const x1 = demi ? w - 1 : w - MARGE_BUT * sx
+  const cy = h / 2
+  const y0 = 1
+  const y1 = h - 1
+  const stroke = `fill="none" stroke="${line}" stroke-width="${lw}"`
+
+  // Arc de réparation : coupe la ligne de surface à 7,31 m de l'axe (distance
+  // exacte), mais bombé d'une flèche de 3,65 m mesurée en hauteur pour rester
+  // un arc de cercle régulier même quand l'échelle est étirée.
+  const demiCorde = Math.sqrt(9.15 * 9.15 - 5.5 * 5.5) * sy
+  const fleche = (9.15 - 5.5) * sy
+  const rayonArc = (demiCorde * demiCorde + fleche * fleche) / (2 * fleche)
+  const cote = (gx, dir) => {
+    const bx = gx + dir * 16.5 * sx
+    return `
+      <rect x="${dir > 0 ? gx : gx - 16.5 * sx}" y="${cy - 20.16 * sy}" width="${16.5 * sx}" height="${40.32 * sy}" ${stroke}/>
+      <rect x="${dir > 0 ? gx : gx - 5.5 * sx}" y="${cy - 9.16 * sy}" width="${5.5 * sx}" height="${18.32 * sy}" ${stroke}/>
+      <circle cx="${gx + dir * 11 * sx}" cy="${cy}" r="2.5" fill="${line}"/>
+      <path d="M ${bx} ${cy - demiCorde} A ${rayonArc} ${rayonArc} 0 0 ${dir > 0 ? 1 : 0} ${bx} ${cy + demiCorde}" ${stroke}/>
+      <rect x="${dir > 0 ? gx - 2 * sx : gx}" y="${cy - 3.66 * sy}" width="${2 * sx}" height="${7.32 * sy}" fill="${line}" fill-opacity="0.25" stroke="${line}" stroke-width="${lw}"/>`
+  }
+  const coin = (cx, cyy, dx, dy, sweep) =>
+    `<path d="M ${cx + dx * sx} ${cyy} A ${sx} ${sx} 0 0 ${sweep} ${cx} ${cyy + dy * sx}" ${stroke}/>`
+
+  const centre = demi
+    ? `<line x1="${x1}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${line}" stroke-width="${lw}" stroke-dasharray="8,6"/>
+       <path d="M ${x1} ${cy - 9.15 * sy} A ${9.15 * sy} ${9.15 * sy} 0 0 0 ${x1} ${cy + 9.15 * sy}" ${stroke}/>
+       <circle cx="${x1}" cy="${cy}" r="2.5" fill="${line}"/>`
+    : `<line x1="${w / 2}" y1="${y0}" x2="${w / 2}" y2="${y1}" stroke="${line}" stroke-width="${lw}"/>
+       <circle cx="${w / 2}" cy="${cy}" r="${9.15 * sx}" ${stroke}/>
+       <circle cx="${w / 2}" cy="${cy}" r="2.5" fill="${line}"/>`
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <rect width="${w}" height="${h}" fill="${bg}"/>
+    <rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" ${stroke}/>
+    ${centre}
+    ${cote(x0, 1)}
+    ${demi ? '' : cote(x1, -1)}
+    ${coin(x0, y0, 1, 1, 1)}${coin(x0, y1, 1, -1, 0)}
+    ${demi ? '' : coin(x1, y0, -1, 1, 0) + coin(x1, y1, -1, -1, 1)}
+  </svg>`
+}
+
 export function terrainSvgString({ sport, vue, fond, w, h }) {
+  if (sport !== 'futsal' && sport !== 'foot8') return terrainFootballSvg({ vue, fond, w, h })
+
   const bg = fond === 'vert' ? (sport === 'futsal' ? '#1f5fa8' : '#1a7a3c') : '#ffffff'
   const line = fond === 'vert' ? '#ffffff' : '#333333'
   const lw = 2
@@ -974,6 +973,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // Équipes A/D attaquent vers la droite (côté gauche du terrain), B/C vers
   // la gauche (côté droit) — sans ce mirroring, B était le seul côté
   // inversé et C se retrouvait superposée à A au lieu d'être en face de B.
+  // Le miroir inverse aussi y : une équipe qui regarde l'autre but a sa droite
+  // et sa gauche inversées, sinon les 2/7 (droite) et 3/11 (gauche) changeraient de côté.
   const appliquerDispositif = (cle) => {
     const dispositif = dispositifsDuSport(sport)[cle]
     if (!cle || !dispositif) return
@@ -989,7 +990,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         numero: p.num,
         nom: ancien?.nom || '',
         x: px * width,
-        y: p.y * height,
+        y: (mirror ? 1 - p.y : p.y) * height,
       }
     })
     applyElements([
