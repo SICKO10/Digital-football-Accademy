@@ -1934,6 +1934,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Entraînements
   const [entrainements, setEntrainements] = useState([])
+  const filePresences = useRef(new Map())  // file d'écriture des présences, par séance et joueur (cf. cyclerPresence)
   const [showAddEntrainement, setShowAddEntrainement] = useState(false)
   const [newEntrainement, setNewEntrainement] = useState({ date: '', description: '', heure: '', lieu: '', fiche_id: null })
   const [entrainementEnEdition, setEntrainementEnEdition] = useState(null)
@@ -5537,22 +5538,55 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // dashboard joueur se fiait au champ sondage_clos brut, jamais mis à jour
   // automatiquement, donc les joueurs pouvaient répondre après le délai).
 
-  const cyclerPresence = async (entrainementId, joueurId, statutActuel) => {
-    if (statutActuel === 'convoque') {
-      // Dernier statut → retour à "non saisi" : on supprime la ligne
-      await supabase.from('presences_entrainement')
-        .delete()
-        .eq('entrainement_id', entrainementId)
-        .eq('joueur_id', joueurId)
-    } else {
+  // Un clic = changement affiché tout de suite (mise à jour locale), puis
+  // enregistrement en arrière-plan. Les clics sur un même joueur sont traités
+  // dans l'ordre (file par joueur). Si l'enregistrement échoue, on relit les
+  // vraies données et on prévient — avant, chaque clic attendait un
+  // rechargement complet de la saison, et une erreur passait inaperçue.
+  const majPresenceLocale = (entrainementId, joueurId, ligne) => {
+    setEntrainements(prev => prev.map(e => {
+      if (e.id !== entrainementId) return e
+      const autres = (e.presences_entrainement || []).filter(p => p.joueur_id !== joueurId)
+      const ancienne = (e.presences_entrainement || []).find(p => p.joueur_id === joueurId)
+      return { ...e, presences_entrainement: ligne ? [...autres, { ...ancienne, ...ligne }] : autres }
+    }))
+  }
+
+  const ecrirePresence = (entrainementId, joueurId, ligne) => (
+    ligne
+      ? supabase.from('presences_entrainement').upsert(ligne, { onConflict: 'entrainement_id,joueur_id' })
+      : supabase.from('presences_entrainement').delete().eq('entrainement_id', entrainementId).eq('joueur_id', joueurId)
+  )
+
+  const cyclerPresence = (entrainementId, joueurId, statutActuel) => {
+    let ligne = null
+    if (statutActuel !== 'convoque') {
       const idx = statutActuel === 'non_saisi' ? -1 : STATUTS.indexOf(statutActuel)
       const prochain = STATUTS[(idx + 1) % STATUTS.length]
-      await supabase.from('presences_entrainement').upsert(
-        { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, statut: prochain, present: prochain === 'present' || prochain === 'convoque' },
-        { onConflict: 'entrainement_id,joueur_id' }
-      )
+      ligne = { entrainement_id: entrainementId, joueur_id: joueurId, educateur_id: userId, statut: prochain, present: prochain === 'present' || prochain === 'convoque' }
     }
-    await chargerEntrainements(userId, equipeActive?.id)
+    majPresenceLocale(entrainementId, joueurId, ligne)
+
+    const cle = `${entrainementId}:${joueurId}`
+    const precedent = filePresences.current.get(cle) || Promise.resolve()
+    const suite = precedent.then(async () => {
+      let { error } = await ecrirePresence(entrainementId, joueurId, ligne)
+      if (error) {
+        // Session expirée après un passage en arrière-plan : on la renouvelle et on réessaie une fois
+        await supabase.auth.refreshSession()
+        ;({ error } = await ecrirePresence(entrainementId, joueurId, ligne))
+      }
+      if (error) {
+        afficherToast('Présence non enregistrée, vérifie ta connexion. Les vraies données sont rechargées.', 'erreur')
+        await chargerEntrainements(userId, equipeActive?.id)
+      }
+    }).catch(async () => {
+      afficherToast('Présence non enregistrée, vérifie ta connexion. Les vraies données sont rechargées.', 'erreur')
+      await chargerEntrainements(userId, equipeActive?.id)
+    }).finally(() => {
+      if (filePresences.current.get(cle) === suite) filePresences.current.delete(cle)
+    })
+    filePresences.current.set(cle, suite)
   }
 
   // Convertit en vraies présences les réponses au sondage (dispoJoueurs, table
