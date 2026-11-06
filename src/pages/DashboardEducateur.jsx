@@ -1,3 +1,4 @@
+import { menuLateralCss } from '../lib/menuLateral'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
@@ -6078,35 +6079,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {!(isTablet && sidebarCollapsed) && <>
         <div style={{ padding: isTablet ? '0 8px' : '0 10px' }}>
-          <button onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'accueil' ? '#60a5fa12' : 'transparent', color: activeSection === 'accueil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'accueil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ flexShrink: 0 }}><IcoHome /></span>{!isTablet && <span style={{ flex: 1 }}>Accueil</span>}
+          <style>{menuLateralCss(colors)}</style>
+          <button className="df-nav-btn" data-actif={activeSection === 'accueil'} data-compact={isTablet}
+            onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}
+            style={{ '--df-accent': colors.accent.blue }}>
+            <span className="df-nav-icone"><IcoHome /></span>{!isTablet && <span style={{ flex: 1 }}>Accueil</span>}
           </button>
         </div>
 
         <nav style={{ flex: 1, padding: isTablet ? '8px' : '8px 10px', overflowY: 'auto' }}>
           {sidebarSectionsVisibles.map(section => (
             <div key={section.titre}>
-              {!isTablet && (
-                <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
-                  {section.titre}
-                </div>
-              )}
+              {!isTablet && <p className="df-nav-section">{section.titre}</p>}
               {section.items.map(item => {
                 const actif = item.subKeys ? item.subKeys.includes(activeSection) : activeSection === item.key
                 const cible = item.subKeys ? (item.subKeys.find(canView) || item.subKeys[0]) : item.key
                 return (
-                <button key={item.key} id={`nav-${item.key}`} onClick={() => { setActiveSection(cible); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', marginTop: isTablet ? '4px' : 0, borderRadius: '10px', border: 'none', cursor: 'pointer', background: actif ? '#60a5fa12' : 'transparent', color: actif ? colors.accent.blue : item.locked ? colors.border.strong : colors.text.muted, fontSize: '13px', fontWeight: actif ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
-                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                <button key={item.key} id={`nav-${item.key}`} className="df-nav-btn" data-actif={actif} data-locked={!!item.locked} data-compact={isTablet}
+                  onClick={() => { setActiveSection(cible); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
+                  style={{ '--df-accent': colors.accent.blue }}>
+                  <span className="df-nav-icone">{item.icon}</span>
                   {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
-                  {!!item.badge && (
-                    <span style={{ background: colors.accent.blue, color: colors.background.base, borderRadius: '10px', minWidth: '18px', height: '18px', padding: '0 5px', fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.badge}</span>
-                  )}
+                  {!!item.badge && <span className="df-nav-badge">{item.badge}</span>}
                   {item.locked && !isTablet && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
-                  {actif && (
-                    <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.blue, borderRadius: '0 3px 3px 0' }} />
-                  )}
                 </button>
                 )
               })}
@@ -6115,9 +6110,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         </nav>
 
         <div style={{ borderTop: `1px solid ${colors.border.subtle}`, padding: isTablet ? '8px' : '8px 10px' }}>
-          <button id="nav-profil" onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isTablet ? 'center' : 'flex-start', gap: '10px', padding: isTablet ? '10px 0' : '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: activeSection === 'profil' ? '#60a5fa12' : 'transparent', color: activeSection === 'profil' ? colors.accent.blue : colors.text.muted, fontSize: '13px', fontWeight: activeSection === 'profil' ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ flexShrink: 0 }}><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
+          <button id="nav-profil" className="df-nav-btn" data-actif={activeSection === 'profil'} data-compact={isTablet}
+            onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}
+            style={{ '--df-accent': colors.accent.blue }}>
+            <span className="df-nav-icone"><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
           </button>
           {mesRoles?.club && !isTablet && (
             <button onClick={() => navigate('/club')}

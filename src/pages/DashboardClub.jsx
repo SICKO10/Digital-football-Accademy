@@ -1,3 +1,4 @@
+import { menuLateralCss } from '../lib/menuLateral'
 import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
 import { useEffect, useState, Fragment } from 'react'
@@ -3559,24 +3560,13 @@ export default function DashboardClub() {
     const actif = activeTab === item.id
     const { Icon } = item
     return (
-      <button key={item.id} id={`nav-${item.id}`}
+      <button key={item.id} id={`nav-${item.id}`} className="df-nav-btn" data-actif={actif}
         onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}
-        onMouseEnter={e => { if (!actif) e.currentTarget.style.background = colors.background.raised }}
-        onMouseLeave={e => { if (!actif) e.currentTarget.style.background = 'transparent' }}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
-          padding: '8px 16px', background: actif ? couleurPrincipale + alpha.subtle : 'transparent',
-          border: 'none', borderLeft: `2px solid ${actif ? couleurPrincipale : 'transparent'}`,
-          color: actif ? couleurPrincipale : colors.text.secondary, cursor: 'pointer',
-          fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: actif ? 700 : 500,
-          textAlign: 'left', transition: 'color 0.15s ease, background 0.15s ease',
-        }}>
-        <span style={{ display: 'flex', opacity: actif ? 1 : 0.7, flexShrink: 0 }}><Icon /></span>
+        style={{ '--df-accent': couleurPrincipale }}>
+        <span className="df-nav-icone"><Icon /></span>
         <span style={{ flex: 1 }}>{item.label}</span>
         {item.badge > 0 && (
-          <span style={{ background: colors.accent.red, color: '#fff', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', minWidth: '18px', textAlign: 'center' }}>
-            {item.badge}
-          </span>
+          <span className="df-nav-badge" style={{ background: colors.accent.red, color: '#fff' }}>{item.badge}</span>
         )}
       </button>
     )
@@ -3584,9 +3574,7 @@ export default function DashboardClub() {
 
   const renderNavSection = (id, label, items) => items.length > 0 && (
     <div key={id} id={id}>
-      <p style={{ fontSize: '10px', color: colors.text.ghost, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '14px 16px 5px', margin: 0 }}>
-        {label}
-      </p>
+      <p className="df-nav-section">{label}</p>
       {items.map(renderNavItem)}
     </div>
   )
@@ -3716,7 +3704,8 @@ export default function DashboardClub() {
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '8px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 8px' }}>
+            <style>{menuLateralCss(colors)}</style>
             {renderNavSection('cat-accueil', t('club_accueil', lang), NAV_GENERAL)}
             {renderNavSection('cat-sportif', t('club_sportif', lang), NAV_SPORTIF)}
             {renderNavSection('cat-administratif', t('club_administratif', lang), NAV_ADMINISTRATIF)}

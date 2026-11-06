@@ -33,6 +33,7 @@ import { CRITERES_EDU as CRITERES_EDU_KEYS } from './DashboardEducateur'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
+import { menuLateralCss } from '../lib/menuLateral'
 import SeanceDuJourJoueur from '../components/SeanceDuJourJoueur'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
@@ -3516,29 +3517,22 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           )}
         </div>
 
-        <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <nav style={{ flex: 1, padding: '8px 10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <style>{menuLateralCss(colors)}</style>
           {navItems.map((item, i) => (
             <div key={item.id}>
               {item.section && item.section !== navItems[i - 1]?.section && (
-                <div style={{ color: colors.border.strong, fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', padding: '16px 12px 6px', textTransform: 'uppercase' }}>
-                  {item.section}
-                </div>
+                <p className="df-nav-section">{item.section}</p>
               )}
-              <button className="dj-nav-btn"
+              <button className="df-nav-btn"
                 id={NAV_SECTION_IDS[item.id]}
+                data-actif={onglet === item.id} data-locked={!!item.locked}
                 onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? '#4ade8012' : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
-                <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                style={{ '--df-accent': colors.accent.green }}>
+                <span className="df-nav-icone">{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock size={13} /></span>}
-                {item.badge > 0 && (
-                  <span style={{ background: colors.accent.green, color: colors.black, fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '20px', letterSpacing: '0.3px' }}>
-                    {item.badge}
-                  </span>
-                )}
-                {onglet === item.id && (
-                  <div style={{ position: 'absolute', left: 0, top: '20%', height: '60%', width: '3px', background: colors.accent.green, borderRadius: '0 3px 3px 0' }} />
-                )}
+                {item.badge > 0 && <span className="df-nav-badge">{item.badge}</span>}
               </button>
             </div>
           ))}
