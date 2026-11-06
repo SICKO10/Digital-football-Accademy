@@ -2360,10 +2360,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setDemandeNoteEnCours(null)
   }
 
+  // Bascule ouverte <-> fermée : un clic sur l'icône annule la demande
+  // (les joueurs ne la voient plus), un second clic la rouvre.
   async function fermerDemandeNote(demandeId, entrainementId) {
-    const { error } = await supabase.from('seances_notes_demandes').update({ statut: 'fermee' }).eq('id', demandeId)
+    const statut = demandesNote[entrainementId]?.statut === 'ouverte' ? 'fermee' : 'ouverte'
+    const { error } = await supabase.from('seances_notes_demandes').update({ statut }).eq('id', demandeId)
     if (error) { console.error('fermerDemandeNote error:', error); return }
-    setDemandesNote(prev => ({ ...prev, [entrainementId]: { ...prev[entrainementId], statut: 'fermee' } }))
+    setDemandesNote(prev => ({ ...prev, [entrainementId]: { ...prev[entrainementId], statut } }))
   }
 
   const chargerRapportsRecents = async (uid, catId) => {
@@ -9522,9 +9525,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           )}
                           {canEdit('entrainements') && (
                             demandesNote[e.id] ? (
-                              <span onClick={() => { if (demandesNote[e.id].statut === 'ouverte') fermerDemandeNote(demandesNote[e.id].id, e.id) }}
-                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti RPE demandé — clique pour fermer' : 'Ressenti RPE fermé'}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '1a' : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '55' : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber : colors.text.disabled, padding: '5px 9px', borderRadius: '8px', cursor: demandesNote[e.id].statut === 'ouverte' ? 'pointer' : 'default', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              <span onClick={() => fermerDemandeNote(demandesNote[e.id].id, e.id)}
+                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti RPE demandé — clique pour annuler' : 'Ressenti RPE fermé — clique pour rouvrir'}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '1a' : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '55' : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber : colors.text.disabled, padding: '5px 9px', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                 <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'RPE en cours' : 'RPE fermé'}
                               </span>
                             ) : (
