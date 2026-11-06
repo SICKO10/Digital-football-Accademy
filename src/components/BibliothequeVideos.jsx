@@ -40,7 +40,11 @@ const TYPES_PROCEDE = [
 // toute façon une écriture hors-scope, mais autant ne pas montrer un bouton
 // voué à échouer (ex: éducateur consultant la bibliothèque du club en lecture
 // seule).
-export default function BibliothequeVideos({ type, clubId = null, proprietaireId = null, peutAjouter = false, accentColor = '#4ade80' }) {
+// favorisId : profiles.id de l'éducateur — active les favoris et dossiers
+// (cf. supabase_videos_favoris.sql). Avec type='df', une étoile ajoute/retire
+// une vidéo des favoris. type='favoris' affiche « Mes favoris » : ses vidéos
+// perso + ses favoris Digital Football, classés en dossiers.
+export default function BibliothequeVideos({ type, clubId = null, proprietaireId = null, favorisId = null, peutAjouter = false, accentColor = '#4ade80' }) {
   const colors = useColors()
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -54,6 +58,14 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   const [filtreTypeProcede, setFiltreTypeProcede] = useState('tous')
   const [recherche, setRecherche] = useState('')
   const [saving, setSaving] = useState(false)
+  const [favoris, setFavoris] = useState({}) // { [video_id]: dossier_id | null }
+  const [dossiers, setDossiers] = useState([])
+  const [dossierActif, setDossierActif] = useState('tous') // 'tous' | 'sans' | id de dossier
+  const [saisieDossier, setSaisieDossier] = useState(null) // null | { id: null | id, nom }
+  const [suppressionArmee, setSuppressionArmee] = useState(null)
+  const [messageFavoris, setMessageFavoris] = useState('')
+  const typeBase = type === 'favoris' ? 'perso' : type
+  const proprio = proprietaireId || favorisId
   const [formPhase, setFormPhase] = useState('offensif') // phase affichée dans le sélecteur du formulaire (pas persisté, theme_seance suffit)
   const [form, setForm] = useState({
     titre: '', description: '', youtube_url: '',
@@ -61,8 +73,34 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     tags: '', duree: '', visible_joueurs: false,
   })
 
+  const echecFavoris = (error) => { console.error('favoris vidéo error:', error); setMessageFavoris('Action impossible pour le moment, réessaie.') }
+
+  const chargerFavoris = async () => {
+    const [{ data: favs }, { data: dos }] = await Promise.all([
+      supabase.from('videos_favoris').select('video_id, dossier_id').eq('educateur_id', favorisId),
+      supabase.from('videos_favoris_dossiers').select('id, nom').eq('educateur_id', favorisId).order('nom'),
+    ])
+    const map = {}
+    ;(favs || []).forEach(f => { map[f.video_id] = f.dossier_id })
+    setFavoris(map)
+    setDossiers(dos || [])
+    return map
+  }
+
   const chargerVideos = async () => {
     setLoading(true)
+    if (type === 'favoris') {
+      const map = await chargerFavoris()
+      const { data: persos } = await supabase.from('bibliotheque_videos').select('*').eq('type', 'perso').eq('proprietaire_id', proprio)
+      const idsDf = Object.keys(map)
+      const { data: dfs } = idsDf.length
+        ? await supabase.from('bibliotheque_videos').select('*').eq('type', 'df').in('id', idsDf)
+        : { data: [] }
+      setVideos([...(persos || []), ...(dfs || [])].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')))
+      setLoading(false)
+      return
+    }
+    if (type === 'df' && favorisId) await chargerFavoris()
     let query = supabase.from('bibliotheque_videos').select('*').eq('type', type)
     if (type === 'club') query = query.eq('club_id', clubId)
     if (type === 'perso') query = query.eq('proprietaire_id', proprietaireId)
@@ -71,11 +109,65 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     setLoading(false)
   }
 
+  const basculerFavori = async (video) => {
+    setMessageFavoris('')
+    if (video.id in favoris) {
+      const { error } = await supabase.from('videos_favoris').delete().eq('educateur_id', favorisId).eq('video_id', video.id)
+      if (error) { echecFavoris(error); return }
+      setFavoris(prev => { const n = { ...prev }; delete n[video.id]; return n })
+      if (type === 'favoris') { setVideos(prev => prev.filter(v => v.id !== video.id)); setVideoActive(null) }
+    } else {
+      const { error } = await supabase.from('videos_favoris').insert({ educateur_id: favorisId, video_id: video.id })
+      if (error) { echecFavoris(error); return }
+      setFavoris(prev => ({ ...prev, [video.id]: null }))
+    }
+  }
+
+  const rangerVideo = async (video, dossierId) => {
+    setMessageFavoris('')
+    const { error } = await supabase.from('videos_favoris').upsert(
+      { educateur_id: favorisId, video_id: video.id, dossier_id: dossierId || null },
+      { onConflict: 'educateur_id,video_id' })
+    if (error) { echecFavoris(error); return }
+    setFavoris(prev => ({ ...prev, [video.id]: dossierId || null }))
+  }
+
+  const enregistrerDossier = async () => {
+    const nom = (saisieDossier?.nom || '').trim()
+    if (!nom) return
+    setMessageFavoris('')
+    if (saisieDossier.id) {
+      const { error } = await supabase.from('videos_favoris_dossiers').update({ nom }).eq('id', saisieDossier.id).eq('educateur_id', favorisId)
+      if (error) { echecFavoris(error); return }
+      setDossiers(prev => prev.map(d => d.id === saisieDossier.id ? { ...d, nom } : d).sort((a, b) => a.nom.localeCompare(b.nom)))
+    } else {
+      const { data, error } = await supabase.from('videos_favoris_dossiers').insert({ educateur_id: favorisId, nom }).select('id, nom').single()
+      if (error) { echecFavoris(error); return }
+      setDossiers(prev => [...prev, data].sort((a, b) => a.nom.localeCompare(b.nom)))
+      setDossierActif(data.id)
+    }
+    setSaisieDossier(null)
+  }
+
+  const supprimerDossier = async (id) => {
+    if (suppressionArmee !== 'dossier:' + id) {
+      setSuppressionArmee('dossier:' + id)
+      setTimeout(() => setSuppressionArmee(s => (s === 'dossier:' + id ? null : s)), 4000)
+      return
+    }
+    setSuppressionArmee(null)
+    const { error } = await supabase.from('videos_favoris_dossiers').delete().eq('id', id).eq('educateur_id', favorisId)
+    if (error) { echecFavoris(error); return }
+    setDossiers(prev => prev.filter(d => d.id !== id))
+    setFavoris(prev => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, v === id ? null : v])))
+    setDossierActif('tous')
+  }
+
   useEffect(() => {
-    if ((type === 'club' && !clubId) || (type === 'perso' && !proprietaireId)) return
+    if ((type === 'club' && !clubId) || (type === 'perso' && !proprietaireId) || (type === 'favoris' && !favorisId)) return
     chargerVideos()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, clubId, proprietaireId])
+  }, [type, clubId, proprietaireId, favorisId])
 
   const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: '', type_seance: 'collectif', type_procede: '', tags: '', duree: '', visible_joueurs: false }
 
@@ -111,7 +203,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     const { error } = videoEnEdition
       ? await supabase.from('bibliotheque_videos').update(payload).eq('id', videoEnEdition.id)
       : await supabase.from('bibliotheque_videos').insert({
-          ...payload, type, club_id: type === 'club' ? clubId : null, proprietaire_id: type === 'perso' ? proprietaireId : null,
+          ...payload, type: typeBase, club_id: typeBase === 'club' ? clubId : null, proprietaire_id: typeBase === 'perso' ? proprio : null,
         })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
@@ -122,7 +214,12 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   }
 
   const supprimerVideo = async (id) => {
-    if (!confirm('Supprimer cette vidéo ?')) return
+    if (suppressionArmee !== 'video:' + id) {
+      setSuppressionArmee('video:' + id)
+      setTimeout(() => setSuppressionArmee(s => (s === 'video:' + id ? null : s)), 4000)
+      return
+    }
+    setSuppressionArmee(null)
     const { error } = await supabase.from('bibliotheque_videos').delete().eq('id', id)
     if (error) { alert('Erreur : ' + error.message); return }
     setVideoActive(null)
@@ -137,7 +234,9 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     const matchTypeProcede = filtreTypeProcede === 'tous' || v.type_procede === filtreTypeProcede
     const r = recherche.trim().toLowerCase()
     const matchRecherche = !r || v.titre.toLowerCase().includes(r) || v.description?.toLowerCase().includes(r)
-    return matchCat && matchPhase && matchTheme && matchType && matchTypeProcede && matchRecherche
+    const matchDossier = type !== 'favoris' || dossierActif === 'tous'
+      || (dossierActif === 'sans' ? !favoris[v.id] : favoris[v.id] === dossierActif)
+    return matchCat && matchPhase && matchTheme && matchType && matchTypeProcede && matchRecherche && matchDossier
   })
 
   // Regroupement par phase (Offensif/Défensif, thèmes officiels FFF — mêmes
@@ -162,6 +261,14 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       <div style={{ position: 'relative', paddingBottom: '56.25%', background: colors.background.sunken }}>
         <img src={youtubeThumbnail(video.youtube_id)} alt={video.titre}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        {favorisId && video.type === 'df' && (
+          <button onClick={ev => { ev.stopPropagation(); basculerFavori(video) }}
+            title={video.id in favoris ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            aria-label={video.id in favoris ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            style={{ position: 'absolute', top: '8px', right: '8px', width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.75)', color: video.id in favoris ? '#fbbf24' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={video.id in favoris ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><polygon points="12 2 15.1 8.6 22 9.3 16.8 14.1 18.2 21 12 17.6 5.8 21 7.2 14.1 2 9.3 8.9 8.6" /></svg>
+          </button>
+        )}
         {video.duree && (
           <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.85)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
             {video.duree}
@@ -210,6 +317,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>
           {videos.length} vidéo{videos.length > 1 ? 's' : ''}
         </p>
+        {messageFavoris && <p style={{ color: colors.accent.red, fontSize: '12px', margin: 0, width: '100%' }}>{messageFavoris}</p>}
         {peutAjouter && (
           <button onClick={() => setShowForm(v => {
               const next = !v
@@ -321,6 +429,53 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         </div>
       )}
 
+      {type === 'favoris' && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {[{ id: 'tous', nom: 'Toutes', n: videos.length }, { id: 'sans', nom: 'Sans dossier', n: videos.filter(v => !favoris[v.id]).length },
+              ...dossiers.map(d => ({ id: d.id, nom: d.nom, n: videos.filter(v => favoris[v.id] === d.id).length }))].map(d => (
+              <button key={d.id} onClick={() => { setDossierActif(d.id); setSaisieDossier(null) }}
+                style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  background: dossierActif === d.id ? accentColor + '22' : 'transparent',
+                  borderColor: dossierActif === d.id ? accentColor : colors.border.strong,
+                  color: dossierActif === d.id ? accentColor : colors.text.faint }}>
+                {d.nom} <span style={{ opacity: 0.7 }}>{d.n}</span>
+              </button>
+            ))}
+            <button onClick={() => setSaisieDossier({ id: null, nom: '' })}
+              style={{ padding: '7px 13px', borderRadius: '8px', border: `1px dashed ${colors.border.strong}`, background: 'transparent', color: colors.text.faint, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              + Nouveau dossier
+            </button>
+          </div>
+          {dossiers.some(d => d.id === dossierActif) && !saisieDossier && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+              <button onClick={() => setSaisieDossier({ id: dossierActif, nom: dossiers.find(d => d.id === dossierActif)?.nom || '' })}
+                style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Renommer le dossier
+              </button>
+              <button onClick={() => supprimerDossier(dossierActif)}
+                style={{ background: suppressionArmee === 'dossier:' + dossierActif ? '#ef444420' : 'transparent', border: `1px solid ${suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.border.strong}`, color: suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                {suppressionArmee === 'dossier:' + dossierActif ? 'Confirmer ? Les vidéos restent en favoris' : 'Supprimer le dossier'}
+              </button>
+            </div>
+          )}
+          {saisieDossier && (
+            <form onSubmit={ev => { ev.preventDefault(); enregistrerDossier() }} style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <input autoFocus value={saisieDossier.nom} onChange={ev => setSaisieDossier(sd => ({ ...sd, nom: ev.target.value }))}
+                placeholder="Nom du dossier" maxLength={60} style={{ ...inputStyle, width: '220px' }} />
+              <button type="submit" disabled={!saisieDossier.nom.trim()}
+                style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: saisieDossier.nom.trim() ? 1 : 0.5, fontFamily: 'Inter, sans-serif' }}>
+                {saisieDossier.id ? 'Renommer' : 'Créer'}
+              </button>
+              <button type="button" onClick={() => setSaisieDossier(null)}
+                style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Annuler
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
         <input value={recherche} onChange={e => setRecherche(e.target.value)}
           placeholder="Rechercher..." style={{ ...inputStyle, width: '200px' }} />
@@ -419,7 +574,9 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
           {videosFiltrees.map(renderCard)}
           {videosFiltrees.length === 0 && (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px', color: colors.text.disabled, fontSize: '14px' }}>
-              Aucune vidéo{filtreCategorie !== 'toutes' ? ' dans cette catégorie' : ''}
+              {type === 'favoris' && videos.length === 0
+                ? 'Aucun favori pour le moment. Dans l’onglet Digital Football, clique sur l’étoile d’une vidéo pour l’ajouter ici.'
+                : `Aucune vidéo${filtreCategorie !== 'toutes' ? ' dans cette catégorie' : ''}`}
             </div>
           )}
         </div>
@@ -435,7 +592,13 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                 {videoActive.description && <p style={{ color: '#999', margin: 0, fontSize: '13px' }}>{videoActive.description}</p>}
               </div>
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                {peutAjouter && (
+                {favorisId && videoActive.type === 'df' && (
+                  <button onClick={() => basculerFavori(videoActive)}
+                    style={{ background: '#fbbf2420', border: '1px solid #fbbf2450', color: '#fbbf24', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {videoActive.id in favoris ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                  </button>
+                )}
+                {peutAjouter && videoActive.type !== 'df' && (
                   <>
                     <button onClick={() => ouvrirEditionVideo(videoActive)}
                       style={{ background: accentColor + '20', border: `1px solid ${accentColor}40`, color: accentColor, borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -443,7 +606,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                     </button>
                     <button onClick={() => supprimerVideo(videoActive.id)}
                       style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      Supprimer
+                      {suppressionArmee === 'video:' + videoActive.id ? 'Confirmer ?' : 'Supprimer'}
                     </button>
                   </>
                 )}
@@ -451,6 +614,15 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                   style={{ background: '#1a1a1a', border: 'none', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', fontSize: '18px', cursor: 'pointer' }}>×</button>
               </div>
             </div>
+            {type === 'favoris' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <span style={{ color: '#999', fontSize: '12px' }}>Dossier</span>
+                <select value={favoris[videoActive.id] || ''} onChange={ev => rangerVideo(videoActive, ev.target.value)} style={inputStyle}>
+                  <option value="">Sans dossier</option>
+                  {dossiers.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                </select>
+              </div>
+            )}
             <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
               <iframe
                 src={`https://www.youtube.com/embed/${videoActive.youtube_id}?autoplay=1&rel=0`}

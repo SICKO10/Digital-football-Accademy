@@ -1803,7 +1803,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
   const [statsSubTab, setStatsSubTab] = useState('tableau')
   const [moisPointsSeanceSelectionne, setMoisPointsSeanceSelectionne] = useState(null) // clé 'YYYY-MM' choisie dans l'historique (onglet Mois) — null = mois en cours
-  const [biblioVideoTab, setBiblioVideoTab] = useState('perso') // 'perso' | 'club' | 'df'
+  const [biblioVideoTab, setBiblioVideoTab] = useState('df') // 'favoris' | 'df'
   const [statsTri, setStatsTri] = useState('buts') // pour classement
   const [ressentiOuverts, setRessentiOuverts] = useState({}) // Stats > Ressenti joueurs : séances dépliées (la plus récente l'est par défaut)
   const [graphDeplies, setGraphDeplies] = useState({}) // Stats > Graphiques : cartes dépliées (« Voir tous »)
@@ -11473,8 +11473,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <div>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   {[
-                    { id: 'perso', label: 'Ma bibliothèque' },
                     { id: 'df', label: 'Digital Football' },
+                    { id: 'favoris', label: 'Mes favoris' },
                   ].map(t2 => (
                     <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
                       style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTab === t2.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioVideoTab === t2.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioVideoTab === t2.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -11482,11 +11482,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </button>
                   ))}
                 </div>
-                {biblioVideoTab === 'perso' && (
-                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="perso" proprietaireId={userId} peutAjouter accentColor={colors.accent.blue} /></Suspense>
+                {biblioVideoTab === 'favoris' && (
+                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="favoris" favorisId={userId} peutAjouter accentColor={colors.accent.blue} /></Suspense>
                 )}
                 {biblioVideoTab === 'df' && (
-                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="df" peutAjouter={false} accentColor={colors.accent.blue} /></Suspense>
+                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="df" favorisId={userId} peutAjouter={false} accentColor={colors.accent.blue} /></Suspense>
                 )}
               </div>
             )}
