@@ -964,8 +964,32 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     setSelectedId(null)
   }
 
+  // Saisie de texte dans l'appli plutôt que prompt() : le navigateur peut
+  // bloquer les boîtes natives (Safari, appli installée), prompt() renvoie alors
+  // null tout seul. demanderTexte renvoie une promesse : le texte saisi, ou null
+  // si l'utilisateur annule.
+  const [saisie, setSaisie] = useState(null)
+  const demanderTexte = (titre, valeur = '') => new Promise(resolve => setSaisie({ titre, valeur, resolve }))
+  const fermerSaisie = (resultat) => {
+    saisie?.resolve(resultat)
+    setSaisie(null)
+  }
+
+  // Confirmation en deux clics sur le bouton lui-même plutôt que confirm() :
+  // le navigateur peut bloquer les boîtes de dialogue natives (Safari, appli
+  // installée), auquel cas confirm() répond non tout seul et rien ne se passe.
+  // `cle` identifie le bouton armé ; il se désarme seul après 4 secondes.
+  const [boutonArme, setBoutonArme] = useState(null)
+  const confirmerPuis = (cle, action) => {
+    if (boutonArme !== cle) {
+      setBoutonArme(cle)
+      setTimeout(() => setBoutonArme(courant => (courant === cle ? null : courant)), 4000)
+      return
+    }
+    setBoutonArme(null)
+    action()
+  }
   const toutEffacer = () => {
-    if (!confirm('Tout effacer le schéma actuel ?')) return
     applyElements([])
     setSelectedId(null)
   }
@@ -1089,18 +1113,18 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     updateElement({ ...e, points: [x1, y1, nmx, nmy, x2, y2] })
   }
 
-  const editerJoueur = (id) => {
+  const editerJoueur = async (id) => {
     const el = elements.find(e => e.id === id)
     if (!el) return
     if (el.type === 'joker') {
-      const nom = prompt('Nom du joker (optionnel) :', el.nom ?? '')
+      const nom = await demanderTexte('Nom du joker (optionnel)', el.nom ?? '')
       if (nom === null) return
       updateElement({ ...el, nom: nom.trim() })
       return
     }
-    const numero = prompt('Numéro du joueur :', el.numero ?? '')
+    const numero = await demanderTexte('Numéro du joueur', el.numero ?? '')
     if (numero === null) return
-    const nom = prompt('Nom du joueur (optionnel) :', el.nom ?? '')
+    const nom = await demanderTexte('Nom du joueur (optionnel)', el.nom ?? '')
     updateElement({ ...el, numero: numero.trim(), nom: (nom || '').trim() })
   }
 
@@ -1250,11 +1274,12 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     }
 
     if (tool === 'texte') {
-      const texte = prompt('Texte à afficher :', '')
-      if (texte && texte.trim()) {
-        applyElements([...elements, { id: uid(), type: 'texte', x: pos.x, y: pos.y, text: texte.trim(), color: arrowColor }])
-        setTool('select')
-      }
+      demanderTexte('Texte à afficher', '').then(texte => {
+        if (texte && texte.trim()) {
+          applyElements([...elements, { id: uid(), type: 'texte', x: pos.x, y: pos.y, text: texte.trim(), color: arrowColor }])
+          setTool('select')
+        }
+      })
       return
     }
 
@@ -1555,7 +1580,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   }
 
   const supprimerDossier = async (id) => {
-    if (!confirm('Supprimer ce dossier ? Les schémas qu\'il contient ne seront pas supprimés.')) return
     const { error } = await supabase.from('schemas_dossiers').delete().eq('id', id).eq('educateur_id', userId)
     if (error) { alert('Erreur lors de la suppression : ' + error.message); return }
     if (dossierActif === id) setDossierActif(null)
@@ -1620,7 +1644,6 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   }
 
   const supprimerSchema = async (id) => {
-    if (!confirm('Supprimer ce schéma ?')) return
     const { error } = await supabase.from('tactipads').delete().eq('id', id).eq('educateur_id', userId)
     if (error) { alert('Erreur lors de la suppression : ' + error.message); return }
     if (currentSchemaId === id) setCurrentSchemaId(null)
@@ -1628,7 +1651,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   }
 
   const renommerSchema = async (s) => {
-    const nouveauNom = prompt('Renommer le schéma :', s.nom || '')
+    const nouveauNom = await demanderTexte('Renommer le schéma', s.nom || '')
     if (nouveauNom === null || !nouveauNom.trim() || nouveauNom.trim() === s.nom) return
     const { error } = await supabase.from('tactipads').update({ nom: nouveauNom.trim() }).eq('id', s.id)
     if (error) { alert('Erreur lors du renommage : ' + error.message); return }
@@ -2212,7 +2235,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
               {elements.filter(e => e.type === 'texte').map(e => (
                 <Text key={e.id} id={e.id} ref={n => (nodeRefs.current[e.id] = n)} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} draggable
                   onClick={() => { if (tool === 'select') setSelectedId(e.id) }} onTap={() => { if (tool === 'select') setSelectedId(e.id) }}
-                  onDblClick={() => { if (tool !== 'select') return; const t = prompt('Modifier le texte :', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
+                  onDblClick={async () => { if (tool !== 'select') return; const t = await demanderTexte('Modifier le texte', e.text); if (t !== null) updateElement({ ...e, text: t }) }}
                   onDragEnd={ev => { if (groupDragRef.current) return; updateElement({ ...e, x: ev.target.x(), y: ev.target.y() }) }} />
               ))}
               {elements.filter(e => e.type === 'objet').map(e => (
@@ -2356,7 +2379,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             )}
             <span style={{ flex: 1 }} />
             <button onClick={exportPNG} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#60a5fa' }}><IcoTelecharger /> {t('tac_export_png', lang)}</button>
-            <button onClick={toutEffacer} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: '#ef4444' }}><IcoGomme /> {t('tac_tout_effacer', lang)}</button>
+            <button onClick={() => confirmerPuis('tout-effacer', toutEffacer)} style={{ ...btnStyle(false), width: 'auto', padding: '0 12px', color: boutonArme === 'tout-effacer' ? '#fff' : '#ef4444', background: boutonArme === 'tout-effacer' ? '#ef4444' : undefined, fontWeight: boutonArme === 'tout-effacer' ? 700 : undefined }}><IcoGomme /> {boutonArme === 'tout-effacer' ? 'Confirmer ?' : t('tac_tout_effacer', lang)}</button>
           </div>
 
           {/* Séquences */}
@@ -2545,8 +2568,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: actif ? d.couleur : colors.text.faint, padding: lectureSeule ? '6px 13px' : '6px 4px 6px 12px', fontSize: '12px', fontWeight: actif ? 700 : 500, cursor: 'pointer' }}>
                         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: d.couleur }} />{d.nom} <span style={{ fontWeight: 700 }}>{count}</span>
                       </button>
-                      {!lectureSeule && <button onClick={() => supprimerDossier(d.id)} title="Supprimer le dossier"
-                        style={{ background: 'none', border: 'none', color: colors.text.faint, padding: '6px 10px 6px 4px', fontSize: '13px', lineHeight: 1, cursor: 'pointer' }}>×</button>}
+                      {!lectureSeule && <button onClick={() => confirmerPuis('dossier:' + d.id, () => supprimerDossier(d.id))} title={boutonArme === 'dossier:' + d.id ? 'Les schémas du dossier ne sont pas supprimés. Clique à nouveau pour confirmer.' : 'Supprimer le dossier'}
+                        style={boutonArme === 'dossier:' + d.id
+                          ? { background: '#ef4444', border: 'none', color: '#fff', padding: '4px 8px', margin: '0 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, lineHeight: 1, cursor: 'pointer' }
+                          : { background: 'none', border: 'none', color: colors.text.faint, padding: '6px 10px 6px 4px', fontSize: '13px', lineHeight: 1, cursor: 'pointer' }}>{boutonArme === 'dossier:' + d.id ? 'Confirmer ?' : '×'}</button>}
                     </div>
                   )
                 })}
@@ -2606,7 +2631,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                           <IcoJoueurs />{s.visible_joueurs ? 'Visible' : 'Masqué'}
                         </button>
                         <button onClick={() => partagerSchema(s.id)} style={btnPetit('#a78bfa', false)}><IcoLien />Partager</button>
-                        <button onClick={() => supprimerSchema(s.id)} title="Supprimer" style={{ ...btnPetit('#ef4444', false), marginLeft: 'auto', color: '#ef4444', borderColor: '#ef444440' }}><IcoCorbeille /></button>
+                        <button onClick={() => confirmerPuis('schema:' + s.id, () => supprimerSchema(s.id))} title="Supprimer" style={{ ...btnPetit('#ef4444', false), marginLeft: 'auto', color: boutonArme === 'schema:' + s.id ? '#fff' : '#ef4444', borderColor: '#ef444440', background: boutonArme === 'schema:' + s.id ? '#ef4444' : 'transparent' }}><IcoCorbeille />{boutonArme === 'schema:' + s.id && ' Confirmer ?'}</button>
                         </>}
                       </div>
                     </div>
@@ -2688,6 +2713,25 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             </button>
           </div>
         </>
+      )}
+
+      {saisie && (
+        <div onClick={() => fermerSaisie(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <form
+            onClick={ev => ev.stopPropagation()}
+            onSubmit={ev => { ev.preventDefault(); fermerSaisie(new FormData(ev.currentTarget).get('texte')) }}
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '12px', padding: '18px', width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: colors.text.primary }}>{saisie.titre}</p>
+            <input
+              name="texte" autoFocus defaultValue={saisie.valeur}
+              onKeyDown={ev => { if (ev.key === 'Escape') fermerSaisie(null) }}
+              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, fontSize: '16px', padding: '10px 12px', fontFamily: 'Inter, sans-serif' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => fermerSaisie(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
+              <button type="submit" style={{ background: '#4ade80', border: 'none', color: '#000', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>OK</button>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* ── Picker "Ajouter du matériel" — ouvert par un clic sur le terrain avec
