@@ -71,7 +71,7 @@ Rappel : `/clear` et une session neuve par bloc.
 ## Blocs
 
 ### Bloc 0 : inventaire, sauvegarde et proposition de découpage
-- Statut : fait (en attente de validation de Kevin)
+- Statut : fait
 - Objectif : savoir précisément quels menus existent côté club et éducateur, et proposer la liste socle / outils et les 3 questions.
 - Résultat testable : un fichier `docs/outils-a-la-carte/INVENTAIRE.md` lisible, avec un tableau « entrée de menu → outil ou socle », les 3 questions et leurs pré-cochages, et la méthode pour créer les comptes de test.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -90,7 +90,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Journal : 2026-11-07, Sonnet 5.5. Commit de sauvegarde 7e789e8 (brief et plan seuls). Inventaire fait par grep, aucun fichier de code touché. Écart par rapport aux hypothèses 9 : un club non payé n'a pas d'accès limité aujourd'hui, il voit un écran plein « Abonnement non actif ». Point à trancher : CFF4 ne doit pas être mis derrière un outil payant sans ton accord.
 
 ### Bloc 1 : catalogue des outils et règles d'accès
-- Statut : à faire
+- Statut : fait
 - Objectif : la source unique des outils et le calcul « quels outils sont visibles pour ce compte ».
 - Résultat testable : `npm test` vert avec des cas couvrant éducateur seul, éducateur affilié, club, essai expiré, outil retiré encore payé, outil retiré du club.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -104,11 +104,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Un garde-fou : un test échoue si un outil n'a pas de prix au moment de la bascule (vérifié au bloc 16).
   - Tests dans `tests/catalogueOutils.test.js`.
 - Ce que je teste pour valider : je lis le compte rendu ; les noms et promesses des outils me conviennent.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) « stats collectives » de Compétition éducateur : je ne sais pas quel onglet exactement, à repérer au bloc 3 ; (2) découper au bloc 3 les pages Suivi des joueurs (onglet présences gratuit) et Compétition (calendrier gratuit) ; (3) Explorer à retirer du menu éducateur au bloc 3 ; (4) lien club vers éducateur à confirmer par Kevin (question 4) ; (5) prix et grille au bloc 5 ; (6) Recrutement retiré du catalogue et à retirer des menus des deux dashboards (blocs 3 et 4) ; à rouvrir plus tard.
+- Journal : 2026-11-07, Sonnet 5.5. Décisions de Kevin : socle éducateur = accueil, profil, effectif, compétition sans stats collectives, calendrier, présences, taux de présence, organisation ; socle club = accueil, profil, catégories et équipes, éducateurs, staff, organigramme, inventaire, planning, séances, terrains, déplacements ; CFF4 et Stages = outils payants, l'éducateur affilié les reçoit seulement si son club les a ; Explorer retiré ; regroupements Finances et Vie du club validés ; écran « Abonnement non actif » conservé pour le club. Outils éducateur : 8 (dont Stages non achetable seul ; CFF4 achetable seul ET reçu via le club), club : 6. Recrutement retiré partout. Fichiers : `src/lib/catalogueOutils.js`, `tests/catalogueOutils.test.js`. `npm test` : 158 réussis, 1 ignoré (garde-fou prix, actif avec `BASCULE_LIVE=1`).
 
 ### Bloc 2 : base de données des outils
-- Statut : à faire
+- Statut : fait
 - Objectif : enregistrer qui a quel outil, d'où il vient et jusqu'à quand, avec un contrôle d'accès côté base.
 - Résultat testable : le SQL de vérification renvoie les tables, les règles d'accès et des résultats attendus pour `a_outil(...)` sur les comptes de test.
 - Modèle : opus · Effort : high · Coût estimé : moyen
@@ -122,8 +122,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Règles d'accès : chacun lit ses lignes ; seules les fonctions serveur écrivent les achats et essais ; le club gère ses outils ouverts ; l'éducateur gère son affichage.
   - Fichiers `_verification.sql` et `_ANNULATION_NE_PAS_EXECUTER.sql`, plus un petit SQL qui active `modele_outils` sur les comptes de test (par email).
 - Ce que je teste pour valider : je lance sauvegarde, SQL, vérification, et je colle le résultat.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) `supabase_outils_a_la_carte_comptes_test.sql` seulement après avoir créé les 3 comptes de test (avant le bloc 3) ; (2) délégation au staff pour ouvrir les outils du club : non faite, à voir au bloc 10.
+- Journal : 2026-11-07, Opus 5.5. Fichiers : `supabase_outils_a_la_carte.sql`, `_verification.sql`, `_comptes_test.sql`, `_ANNULATION_NE_PAS_EXECUTER.sql`. Écarts et décisions : pas de source « club » stockée dans `outils_comptes` (l'outil reçu du club est calculé à la lecture, il s'éteint à la même date que chez le club sans recopie) ; un outil du club arrive chez l'éducateur seulement si le club l'a actif, l'a ouvert, et a son abonnement actif ; `fin_le` vide = abonnement en cours ; une offre admin n'est pas inscrite dans les essais utilisés ; ajout de `outils_actifs(compte)` (liste des outils actifs avec leur source, pour le bloc 3) ; seul le compte club ouvre ou ferme un outil. Testé sur un PostgreSQL local imitant Supabase : SQL rejoué deux fois sans erreur, vérification 37/37, données de test effacées, SQL des comptes de test limité aux 3 adresses, annulation corrigée (ordre de suppression) puis validée. 2026-11-07 : Kevin a exécuté sauvegarde, SQL et vérification en production : 37/37 ok.
 
 ### Bloc 3 : dashboard éducateur composé
 - Statut : à faire
