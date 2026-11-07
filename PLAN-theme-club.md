@@ -182,7 +182,7 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
 - Journal : 2026-11-07, Sonnet 5.5. Nouveau composant `PlanningSemaineAccueil` (DashboardEducateur) : 7 colonnes lundi à dimanche, navigation semaine précédente / suivante / aujourd'hui, séances en teinte douce (`--club-primary-soft` / `-dark`), séance du jour et match du week-end en couleur pleine, colonnes qui défilent sur petit écran. `DeplacementsAssignesWidget` (utilisé seulement par l'accueil éducateur) refait : icône bus sur fond doux, destination, date et heure de départ, pastille J-x / Demain / Aujourd'hui, bouton « Remplir la fiche » en contour couleur du club (« Fiche remplie » si déjà fait). Podium refait : 3 emplacements fixes, 2e gauche / 1er centre (avatar plus grand bordé couleur du club, marche pleine couleur du club) / 3e droite (marches grises plus basses), places vides laissées vides avec moins de 3 classés ; rappel du mois précédent réduit à une ligne discrète. Anciennes versions retirées (import du widget de planning partagé, ancien podium). Sauvegardes : ~/Sauvegardes-DigitalFootball/theme-club-2026-11-07/*.avant-bloc6.jsx. Build OK, `npm test` 142/142, lint 173 erreurs / 70 avertissements (= référence).
 
 ### Bloc 7 : Accueil éducateur, partie basse
-- Statut : en cours
+- Statut : fait (en attente de ta validation visuelle)
 - Objectif : actions rapides, carte d'alertes compacte, bandeau partenaire (points 8 à 10 du brief).
 - Résultat testable : 4 boutons d'action de même largeur avec l'action « à préparer » surlignée ; une seule carte d'alertes en liste (deux petits cartons jaunes dessinés, nom, « prochain jaune = suspension », coche « vu ») à la place des trois cartes tronquées ; bandeau partenaire sobre.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -196,11 +196,11 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
   - Partenaire : bandeau blanc à bordure fine, même donnée qu'aujourd'hui.
   - Relire l'accueil complet de haut en bas en sombre.
 - Ce que je teste pour valider : alertes avec 0, 1 et plusieurs joueurs ; cocher « vu » puis recharger ; clic sur chaque action rapide.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) Seule la causerie peut être surlignée « à préparer » (pas de donnée de composition en base pour le prochain match) ; sans match à venir, il n'y a que 3 boutons sur la rangée. (2) Le bandeau partenaire est partagé avec les dashboards joueur et club : la version sobre (blanche, bordure fine, sans halo ni animation) est une option activée seulement sur l'accueil éducateur, joueur et club gardent l'ancien aspect ; à généraliser si tu veux. (3) Les alertes autres que les cartons gardent leur icône d'origine, la ligne de carton affiche les deux cartons jaunes ; le sous-titre « Suspendu au prochain match » (3 cartons et plus) existait déjà. (4) Aucun test d'écran connecté possible côté Claude.
+- Journal : 2026-11-07, Sonnet 5.5. Actions rapides : grille de 4 boutons de même largeur (2 x 2 sur mobile), icônes couleur du club, causerie surlignée (fond doux + contour couleur du club) tant qu'elle n'est pas préparée, « Préparée » en vert de statut ensuite (`DerniereCauserieWidget`, nouvelle propriété `styleAPreparer`). Alertes (`AlertesPanel`, mode compact utilisé seulement par l'accueil éducateur) : une seule carte, une ligne par alerte, deux cartons jaunes dessinés en SVG pour les cartons, coche « Marquer comme vu » branchée sur `alertes_masquees` (hook existant, aucune nouvelle table). Partenaire : `SponsorsBar` option `sobre`. Sauvegarde : ~/Sauvegardes-DigitalFootball/theme-club-2026-11-07/DashboardEducateur.avant-bloc7.jsx. Build OK, `npm test` 142/142, lint 173 erreurs / 70 avertissements (= référence ; une icône devenue inutile retirée).
 
 ### Bloc 8 : Vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait (vérifications par calcul et build ; parcours visuel connecté à faire par Kevin)
 - Objectif : passer toute la liste « Vérifications attendues » du brief, corriger les petits écarts, nettoyer.
 - Résultat testable : un tableau de vérification rempli (OK ou corrigé) pour chaque point du brief, build sans erreur, lint ≤ 173 erreurs / 70 avertissements, console propre.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -215,11 +215,11 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
   - Retirer le code mort (ancien menu sobre, anciennes sections d'accueil), mettre à jour les repères de ce plan.
   - Proposer la mise en ligne (version de test Vercel d'abord) sans la lancer avant ton « ok ».
 - Ce que je teste pour valider : le parcours complet joueur, éducateur, club ; puis la version de test Vercel.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) Les contrôles visuels (bureau/tablette/mobile, clair/sombre, comptes AS Cannes, parent, dirigeant, console du navigateur) ne sont pas faisables côté Claude : à passer par toi sur http://localhost:5173 puis sur la version de test. (2) Les blocs 6 et 7 (alertes, actions rapides, partenaire sobre) sont encore non commités dans le dossier. (3) Mise en ligne : version de test Vercel d'abord, seulement sur ton « ok ».
+- Journal : 2026-11-07, Sonnet 5.5. Palette calculée pour 6 couleurs en clair et sombre : blanc → retombe sur le vert (garde-fou), jaune pâle → texte foncé lisible, noir et bleu nuit → éclaircis en sombre, rouge Cannes conservé, aucune couleur → vert. `?couleurClub=` absent du site construit (recherche `get("couleurClub")` dans dist : 0 résultat). Build OK, `npm test` 142/142, lint 173 erreurs / 70 avertissements (= référence). Code mort : aucun trouvé (EnTeteMenu et HomeNav servent encore), rien retiré.
 
 ### Bloc 9 (optionnel) : [IDÉE] Aperçu en direct dans les réglages couleurs du club
-- Statut : à faire
+- Statut : fait (aperçu à valider par Kevin dans le navigateur)
 - Objectif : quand le club choisit sa couleur, il voit tout de suite une miniature du menu et d'une carte « comme vos joueurs et éducateurs la verront », et un message clair si le garde-fou a dû ajuster la couleur (« ajustée pour rester lisible »).
 - Pourquoi c'est utile : un dirigeant de club amateur n'a aucune idée de l'effet d'un jaune ou d'un bleu nuit ; il voit le résultat avant d'enregistrer et n'a pas la surprise d'une couleur « changée » sans explication.
 - Résultat testable : dans les réglages du club, changer la couleur met à jour la miniature avant tout enregistrement.
@@ -233,5 +233,24 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
   - Miniature (bout de menu + une carte + un bouton) alimentée par `paletteClub.js`.
   - Message si la couleur a été ajustée par le garde-fou.
 - Ce que je teste pour valider : essayer 3 couleurs dans les réglages, sans enregistrer, puis en enregistrant.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle visuel par Kevin (réglages du club, 3 couleurs sans enregistrer puis en enregistrant). Les presets enregistrent toujours au clic (comportement d'origine, non changé).
+- Journal : 2026-11-07, Sonnet 5.5. Nouveau composant `src/components/ApercuCouleurClub.jsx` (deux miniatures clair et sombre : bout de menu, carte, bouton), calculé par `calculerPalette`, placé dans `ThemeEditor` de DashboardClub, suit la couleur choisie avant enregistrement. Message orange si la couleur est ajustée ou remplacée par le vert (trop pâle, invalide, illisible). Build OK, `npm test` 0 échec, lint sans nouvelle erreur.
+
+### Bloc 10 : Le vert de décor suit la couleur du club (dashboards club et éducateur)
+- Statut : à faire (demandé par Kevin le 2026-11-07)
+- Objectif : pour un club rouge et blanc, plus aucun vert « de décor » (boutons, onglets, titres, icônes, jauges, cases à cocher) dans les dashboards club et éducateur : tout prend la couleur configurée par le club, pour tous les clubs (pas un cas rouge codé en dur), en clair comme en sombre, comme le menu.
+- Restent verts : les statuts (présent, victoire, OUVERT, validé, recettes, taux de présence élevé), le terrain Tactipad et les barres d'évaluation.
+- Résultat testable : avec `?couleurClub=%23C8102E`, parcourir les onglets club et éducateur : aucun vert hors statuts, terrain Tactipad et barres d'évaluation.
+- Modèle : sonnet · Effort : high · Coût estimé : élevé (environ 230 usages de `accent.green` et 38 verts en dur dans DashboardClub et DashboardEducateur, à classer un par un : décor ou statut)
+- Lancement : `/clear`, puis `/model sonnet`, puis `/effort high`, puis `/bloc 10 PLAN-theme-club.md`
+- Dépend de : bloc 8
+- Prérequis : sauvegarde datée de DashboardClub.jsx et DashboardEducateur.jsx
+- Étapes :
+  - Dans `colorsAvecClub` (`src/lib/clubTheme.js`), pour les portées `statut` et `educateur`, `accent.green` devient la couleur du club (décor) ; `accent.success` reste le vert de statut.
+  - Classer chaque usage : décor reste `accent.green`, statut (présent, V/N/D, recettes, taux, ok/erreur, OUVERT, validé, consentement) passe à `accent.success`.
+  - Remplacer les verts en dur (`#4ade80`, `#22c55e`, rgba équivalents) selon la même règle.
+  - Exclure Tactipad et les barres d'évaluation (ne pas toucher).
+  - Garder la lisibilité du texte posé sur la couleur (`onBrand`).
+- Ce que je teste pour valider : club rouge, puis un club d'une autre couleur : onglets club et éducateur, thèmes clair et sombre.
+- Reste à finir : (rempli en fin de bloc)
+- Journal : (rempli en fin de bloc)
