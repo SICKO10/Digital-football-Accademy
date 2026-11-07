@@ -2351,23 +2351,36 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
   }
 
-  // Demande une note de séance aux joueurs affiliés (acceptés) — un seul
-  // envoi par entraînement (UNIQUE(entrainement_id) côté SQL). Notifie
-  // chaque joueur affilié à CET éducateur (pas toute la plateforme comme le
-  // ferait un chargement non scopé côté joueur).
+  // Demande une note de séance aux seuls joueurs présents à la séance — un
+  // seul envoi par entraînement (UNIQUE(entrainement_id) côté SQL). Présent =
+  // statut 'present' selon la règle commune (lib/presence : saisie de
+  // l'éducateur, sinon réponse au sondage) ; un convoqué en équipe supérieure
+  // n'a pas fait CETTE séance. joueurs_cibles fige la liste : la RLS ne montre
+  // la demande qu'à eux (cf. supabase_rpe_joueurs_presents.sql).
   async function demanderNoteSeance(e) {
+    const { data: affiliesAcceptes } = await supabase.from('affiliations').select('joueur_id').eq('educateur_id', userId).eq('statut', 'accepte')
+    const affilies = new Set((affiliesAcceptes || []).map(a => a.joueur_id))
+    const cibles = joueurs
+      .filter(j => j.joueur_id && affilies.has(j.joueur_id) && statutPresenceEffectif(
+        (e.presences_entrainement || []).find(pr => pr.joueur_id === j.id),
+        dispoJoueurs[e.id]?.[j.joueur_id],
+      ) === 'present')
+      .map(j => j.joueur_id)
+    if (cibles.length === 0) {
+      alert("Aucun joueur n'est noté présent sur cette séance. Fais l'appel d'abord, puis demande le ressenti RPE.")
+      return
+    }
     setDemandeNoteEnCours(e.id)
     const titre = `Séance du ${new Date(`${e.date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`
     const { data, error } = await supabase.from('seances_notes_demandes').insert({
       entrainement_id: e.id, educateur_id: userId, club_categorie_id: e.club_categorie_id || null,
-      titre, date_seance: e.date, statut: 'ouverte',
+      titre, date_seance: e.date, statut: 'ouverte', joueurs_cibles: cibles,
     }).select().single()
     if (error) { console.error('demanderNoteSeance error:', error); alert('Erreur : ' + error.message); setDemandeNoteEnCours(null); return }
     setDemandesNote(prev => ({ ...prev, [e.id]: data }))
 
-    const { data: affiliesAcceptes } = await supabase.from('affiliations').select('joueur_id').eq('educateur_id', userId).eq('statut', 'accepte')
-    await Promise.all((affiliesAcceptes || []).map(a => notifierJoueur({
-      type: 'seance_note', userId: a.joueur_id, titre: 'Nouveau ressenti de séance à donner',
+    await Promise.all(cibles.map(joueurId => notifierJoueur({
+      type: 'seance_note', userId: joueurId, titre: 'Nouveau ressenti de séance à donner',
       contenu: { texte: titre }, lien: '/dashboard-joueur',
     }).catch(err => console.error('notifierJoueur seance_note error:', err))))
     setDemandeNoteEnCours(null)
@@ -7840,7 +7853,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.titre}</p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '6px', color: ouverte ? colors.accent.green : colors.text.faint, background: ouverte ? colors.accent.green + '1a' : colors.background.raised, border: `1px solid ${ouverte ? colors.accent.green + '40' : colors.border.default}` }}>{ouverte ? 'En cours' : 'Fermée'}</span>
-                              <span style={{ fontSize: '12px', color: colors.text.faint }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}{joueurs.length ? ` / ${joueurs.length}` : ''}</span>
+                              <span style={{ fontSize: '12px', color: colors.text.faint }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}{(d.joueurs_cibles?.length || joueurs.length) ? ` / ${d.joueurs_cibles?.length || joueurs.length}` : ''}</span>
                             </div>
                             {reponses.length > 0 && (
                               <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', gap: '2px', marginTop: '8px', maxWidth: '260px' }}>
@@ -9522,7 +9535,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               </span>
                             ) : (
                               <button onClick={() => demanderNoteSeance(e)} disabled={demandeNoteEnCours === e.id}
-                                title="Demander le ressenti RPE aux joueurs sur cette séance" aria-label="Demander le ressenti RPE"
+                                title="Demander le ressenti RPE aux joueurs présents à cette séance" aria-label="Demander le ressenti RPE"
                                 style={btnIcone(colors.accent.amber)}>
                                 {demandeNoteEnCours === e.id ? '…' : <IcoEtoileTrait />}
                               </button>
