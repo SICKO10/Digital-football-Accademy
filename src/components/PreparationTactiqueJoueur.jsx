@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha, fontSize, radius, spacing } from '../tokens'
@@ -98,6 +98,66 @@ function GalerieImages({ images, colors }) {
   )
 }
 
+// Carte d'un schéma partagé : l'aperçu réel du schéma (même rendu que le lecteur),
+// un voile sombre et un bouton lecture au centre, comme une vignette vidéo.
+function CarteSchema({ schema, colors, locale, onOuvrir }) {
+  const [largeur, setLargeur] = useState(0)
+  const [survol, setSurvol] = useState(false)
+  const refMedia = useRef(null)
+  const couleur = colors.accent.green
+  const etapes = schema.schema?.sequences?.length || 1
+
+  useEffect(() => {
+    const el = refMedia.current
+    if (!el) return
+    const mesurer = () => setLargeur(Math.round(el.clientWidth))
+    mesurer()
+    const obs = new ResizeObserver(mesurer)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div onClick={onOuvrir} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}
+      style={{
+        cursor: 'pointer', borderRadius: radius.xl, overflow: 'hidden', background: colors.background.surface,
+        border: `1px solid ${survol ? couleur : colors.border.subtle}`,
+        transform: survol ? 'translateY(-4px)' : 'none',
+        boxShadow: survol ? `0 14px 32px ${couleur}33` : 'none',
+        transition: 'transform .2s ease, box-shadow .2s ease, border-color .2s ease',
+      }}>
+      <div ref={refMedia} style={{ position: 'relative', width: '100%', aspectRatio: '16 / 10', overflow: 'hidden', background: '#0B3D1E' }}>
+        {largeur > 0 && (
+          <div style={{ transform: survol ? 'scale(1.05)' : 'scale(1)', transition: 'transform .35s ease', transformOrigin: 'center' }}>
+            <TactipadViewer schema={schema.schema} width={largeur} apercu />
+          </div>
+        )}
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.6) 100%)', pointerEvents: 'none' }} />
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <span style={{
+            width: '58px', height: '58px', borderRadius: '50%', background: couleur, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 6px 22px rgba(0,0,0,0.45), 0 0 0 ${survol ? '10px' : '6px'} rgba(255,255,255,0.18)`,
+            transform: survol ? 'scale(1.1)' : 'scale(1)', transition: 'transform .2s ease, box-shadow .2s ease',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.black} style={{ marginLeft: '3px' }}><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" /></svg>
+          </span>
+        </div>
+        {etapes > 1 && (
+          <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.62)', color: '#fff', fontSize: fontSize.base, fontWeight: 700, padding: '4px 9px', borderRadius: '999px', letterSpacing: '0.4px' }}>
+            Animé · {etapes} étapes
+          </span>
+        )}
+      </div>
+      <div style={{ padding: `${spacing.lg} ${spacing.xl} ${spacing.xl}` }}>
+        <p style={{ margin: 0, fontWeight: 800, fontSize: fontSize['4xl'], lineHeight: 1.25, color: colors.text.primary }}>{schema.nom || 'Sans titre'}</p>
+        <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.base, color: colors.text.faint }}>
+          Mis à jour le {new Date(schema.updated_at || schema.created_at).toLocaleDateString(locale)}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // Schémas partagés en premier : c'est ce que le joueur consulte le plus
 // (avant un match, après une séance), les phases de jeu du club viennent ensuite.
 const ONGLETS = [
@@ -185,7 +245,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
       .then(({ data }) => setGalerieImages(data || []))
   }, [clubId, pole?.key])
 
-  const cadre = { padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto' }
+  const cadre = { padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '1100px', margin: '0 auto' }
 
   if (schemaActif) {
     // Le canevas Konva a une largeur fixe : sur téléphone on le cale sur la
@@ -255,10 +315,16 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
 
   return (
     <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Préparation tactique</h1>
-        <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
-          Le projet de jeu de ton club, phase par phase, et les schémas que ton éducateur partage avec toi.
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: radius.xl, padding: isMobile ? '28px 20px' : '40px 36px', background: `radial-gradient(120% 140% at 0% 0%, ${colors.accent.green}2E 0%, transparent 60%), ${colors.background.surface}`, border: `1px solid ${colors.border.subtle}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+          <span style={{ width: '36px', height: '4px', borderRadius: '2px', background: colors.accent.green }} />
+          <span style={{ fontSize: fontSize.lg, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: colors.accent.green }}>Ton espace tactique</span>
+        </div>
+        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Inter', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '52px' : '88px', color: colors.text.primary }}>
+          Préparation <span style={{ color: colors.accent.green }}>tactique</span>
+        </h1>
+        <p style={{ margin: `${spacing.xl} 0 0`, maxWidth: '620px', fontSize: fontSize['3xl'], color: colors.text.faint, lineHeight: 1.5 }}>
+          Le projet de jeu de ton club, phase par phase, et les schémas que ton éducateur partage avec toi. Arrive au match en sachant exactement quoi faire.
         </p>
       </div>
 
@@ -305,18 +371,8 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
               />
             )
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: spacing.xl }}>
-              {schemas.map(s => (
-                <Carte key={s.id} isMobile onClick={() => setSchemaActif(s)} style={{ borderRadius: radius.xl }}>
-                  <div style={{ background: colors.background.sunken, borderRadius: radius.base, height: '100px', marginBottom: spacing.lg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.icon.muted }}>
-                    <IconTactic />
-                  </div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: fontSize.xl, color: colors.text.primary }}>{s.nom || 'Sans titre'}</p>
-                  <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.base, color: colors.text.faint }}>
-                    Mis à jour le {new Date(s.updated_at || s.created_at).toLocaleDateString(locale)}
-                  </p>
-                </Carte>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: spacing['2xl'] }}>
+              {schemas.map(s => <CarteSchema key={s.id} schema={s} colors={colors} locale={locale} onOuvrir={() => setSchemaActif(s)} />)}
             </div>
           )
         )

@@ -12,7 +12,7 @@ const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 // ObjetNode) en y ajoutant la lecture animée des étapes (sequences), absente
 // de la page de partage public — pas de sauvegarde de durée par étape dans
 // le schéma (Tactipad.jsx ne la persiste pas non plus), 2s par étape par défaut.
-export default function TactipadViewer({ schema, width = 640 }) {
+export default function TactipadViewer({ schema, width = 640, apercu = false }) {
   const terrain = schema?.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
   const sequencesRaw = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
   const height = Math.round(width * 10 / 16)
@@ -106,7 +106,7 @@ export default function TactipadViewer({ schema, width = 640 }) {
 
   return (
     <div>
-      <div onClick={basculer} style={{ position: 'relative', width, height, cursor: hasAnimation ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent' }}>
+      <div onClick={basculer} style={{ position: 'relative', width, height, cursor: hasAnimation ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent', pointerEvents: apercu ? 'none' : undefined }}>
       <Stage width={width} height={height} style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <Layer>
           {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
@@ -153,7 +153,7 @@ export default function TactipadViewer({ schema, width = 640 }) {
           ))}
         </Layer>
       </Stage>
-      {hasAnimation && !playing && (
+      {hasAnimation && !playing && !apercu && (
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <span style={{ width: '68px', height: '68px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: '2px solid rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: '4px' }}><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" /></svg>
@@ -162,7 +162,7 @@ export default function TactipadViewer({ schema, width = 640 }) {
       )}
       </div>
 
-      {hasAnimation && (
+      {hasAnimation && !apercu && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
           <button onClick={(e) => { e.stopPropagation(); basculer() }} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {playing ? '⏸ Pause' : '▶ Lire l\'animation'}
