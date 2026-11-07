@@ -105,7 +105,7 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
     <>
       <div style={{ display: 'flex', gap: spacing['4xl'], flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: isMobile ? 'center' : 'flex-start' }}>
         <div style={{ flexShrink: 0 }}>
-          <CarteJoueur userId={userId} saison={saison} stats={{ buts, passesD: passes, cleanSheets, matchs: nbMatchs }} />
+          <CarteJoueur userId={userId} saison={saison} stats={{ buts, passesD: passes, cleanSheets, matchs: nbMatchs, presencePct: presence ?? undefined }} />
         </div>
         <div style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: spacing.xl }}>
           {tuiles.map(t => (

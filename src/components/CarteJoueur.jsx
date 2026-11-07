@@ -43,7 +43,7 @@ const TITLE_STYLES = {
 const TYPES_COLLECTIFS = { tournoi_victoire: 'gold', champion: 'national', coupe: 'regional' }
 
 export default function CarteJoueur({ userId, saison = saisonActuelle(), stats }) {
-  // `stats` (facultatif) : buts, passesD, cleanSheets, matchs déjà fusionnés (éducateur + joueur)
+  // `stats` (facultatif) : buts, passesD, cleanSheets, matchs (et presencePct) déjà fusionnés (éducateur + joueur)
   // par la page Mes statistiques ; sinon la carte lit seulement les saisies du joueur.
   const [hovered, setHovered] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -133,7 +133,8 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats }
 
   if (loading || !data) return null
 
-  const { profil, tournoisGagnes, presencePct, titresCollectifs, distinctions } = data
+  const { profil, tournoisGagnes, titresCollectifs, distinctions } = data
+  const presencePct = stats?.presencePct ?? data.presencePct
   const { buts, passesD, cleanSheets, matchs } = stats || data
   const ovr = calculerOVR({ buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct })
   const tier = getTier(ovr)

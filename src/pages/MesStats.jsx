@@ -207,7 +207,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
   return (
     <div style={{ padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
       <EnTetePage isMobile={isMobile} kicker="Mon développement" titre="Mes statistiques" accentMot="statistiques"
-        sousTitre={`${moy.nb_matchs || 0} match${(moy.nb_matchs || 0) > 1 ? 's' : ''} saisi${(moy.nb_matchs || 0) > 1 ? 's' : ''} par toi · ${joueurPoste || poste}. Ta carte, tes chiffres et tes récompenses de la saison.`} />
+        sousTitre={`${moy.nb_matchs || 0} match${(moy.nb_matchs || 0) > 1 ? 's' : ''} enregistré${(moy.nb_matchs || 0) > 1 ? 's' : ''} · ${joueurPoste || poste}. Ta carte, tes chiffres et tes récompenses de la saison.`} />
 
       <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
         {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${tousMatchs.length})` }].map(o => (

@@ -665,7 +665,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // via le bouton de l'onglet "Mon Équipe" (chargerStatsJoueur est déjà idempotent).
     // Seulement s'il a une affiliation active — une affiliation archivée n'a plus de
     // stats pertinentes à recharger.
-    if (onglet === 'stats') {
+    if (onglet === 'stats' || onglet === 'mes_stats') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id, a.club_categorie_id)
     }
