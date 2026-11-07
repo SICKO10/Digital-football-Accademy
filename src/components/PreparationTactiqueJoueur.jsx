@@ -7,6 +7,7 @@ import { localeOf } from '../lib/translations'
 import { IconTactic } from './icones'
 import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
+import EnTetePage from './joueur/EnTetePage'
 import EmptyState from './EmptyState'
 import TactipadViewer from './TactipadViewer'
 import SchemaPleinEcran from './SchemaPleinEcran'
@@ -315,18 +316,8 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
 
   return (
     <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: radius.xl, padding: isMobile ? '28px 20px' : '40px 36px', background: `radial-gradient(120% 140% at 0% 0%, ${colors.accent.green}2E 0%, transparent 60%), ${colors.background.surface}`, border: `1px solid ${colors.border.subtle}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-          <span style={{ width: '36px', height: '4px', borderRadius: '2px', background: colors.accent.green }} />
-          <span style={{ fontSize: fontSize.lg, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: colors.accent.green }}>Ton espace tactique</span>
-        </div>
-        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Inter', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '52px' : '88px', color: colors.text.primary }}>
-          Préparation <span style={{ color: colors.accent.green }}>tactique</span>
-        </h1>
-        <p style={{ margin: `${spacing.xl} 0 0`, maxWidth: '620px', fontSize: fontSize['3xl'], color: colors.text.faint, lineHeight: 1.5 }}>
-          Le projet de jeu de ton club, phase par phase, et les schémas que ton éducateur partage avec toi. Arrive au match en sachant exactement quoi faire.
-        </p>
-      </div>
+      <EnTetePage isMobile={isMobile} kicker="Ton espace tactique" titre="Préparation tactique" accentMot="tactique"
+        sousTitre="Le projet de jeu de ton club, phase par phase, et les schémas que ton éducateur partage avec toi. Arrive au match en sachant exactement quoi faire." />
 
       <div style={{ display: 'flex', gap: spacing.xs, background: colors.background.sunken, borderRadius: radius.xl, padding: spacing.xs, width: 'fit-content', maxWidth: '100%', overflowX: 'auto', border: `1px solid ${colors.border.subtle}` }}>
         {ONGLETS.map(o => <button key={o.key} style={tabStyle(onglet === o.key)} onClick={() => setOnglet(o.key)}>{o.label}</button>)}

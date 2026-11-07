@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import EnTetePage from './joueur/EnTetePage'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { calculerTDEE, calculerMacros, CONSEILS_JOURNEE, MULTIPLICATEUR_JOURNEE, RECETTES } from '../lib/nutrition'
@@ -822,10 +823,8 @@ export default function NutritionDashboard({ joueurId, educateurId, isMobile = f
     <div style={cadre}>
       {modalTuto}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '20px' }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontSize: isMobile ? '22px' : '28px', fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Nutrition</h1>
-          <p style={{ margin: '8px 0 0', fontSize: '14px', color: colors.text.secondary }}>Ton plan du jour, calculé pour ton poste et ton objectif.</p>
-        </div>
+        <EnTetePage isMobile={isMobile} kicker="Mange comme un pro" titre="Nutrition" sousTitre="Ton plan du jour, calculé pour ton poste et ton objectif."
+          style={{ flex: 1, minWidth: 0 }} />
         <BoutonTutoriel onClick={() => setTutoOuvert(true)} />
       </div>
       <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>

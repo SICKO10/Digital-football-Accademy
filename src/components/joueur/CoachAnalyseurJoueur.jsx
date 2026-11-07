@@ -13,7 +13,7 @@ import { IconMic, IconCheckCircle } from '../icones'
 // Hiérarchie voulue : 1) titre et explication, 2) l'action principale (écrire),
 // 3) l'historique des échanges en dessous. Avant, l'historique passait avant le champ de saisie : un joueur qui
 // voulait écrire devait d'abord descendre sous toute la conversation.
-export default function CoachAnalyseurJoueur({
+export default function CoachAnalyseurJoueur({ sansEntete = false,
   coaches, coachSelectionne, onChoisirCoach, messages, userId, aHistorique,
   brouillon, onBrouillon, onEnvoyer, envoiEnCours, envoye, erreur, readOnly, isMobile, lang,
 }) {
@@ -37,8 +37,8 @@ export default function CoachAnalyseurJoueur({
 
   const entete = (
     <div>
-      <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('jnav_coach', lang)}</h1>
-      <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
+      {!sansEntete && <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('jnav_coach', lang)}</h1>}
+      <p style={{ margin: sansEntete ? 0 : `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
         Une question sur une analyse, ton rapport ou ta vidéo ? Écris à ton coach analyseur, il te répond ici.
       </p>
     </div>

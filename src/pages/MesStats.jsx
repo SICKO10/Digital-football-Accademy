@@ -7,6 +7,8 @@ import { calculerMoyennes } from '../lib/statsRecrutement'
 import { IconChart, IconTarget, IconPass, IconRun, IconCheck } from '../components/icones'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
+import EnTetePage from '../components/joueur/EnTetePage'
+import ProfilStatsJoueur from '../components/joueur/ProfilStatsJoueur'
 
 const STATS_PAR_POSTE = {
   Gardien: [
@@ -118,7 +120,7 @@ function Groupe({ titre, aide, children }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste, isMobile = false }) {
+export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null }) {
   const colors = useColors()
   const [vue, setVue] = useState('profil') // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
@@ -201,13 +203,8 @@ export default function MesStats({ userId, joueurPoste, isMobile = false }) {
 
   return (
     <div style={{ padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
-      <div>
-        <TitreSection couleur={colors.accent.green} style={{ margin: `0 0 ${spacing.xs}` }}>Mon développement</TitreSection>
-        <h1 style={{ color: colors.text.primary, fontSize: fontSize['7xl'], fontWeight: 800, margin: 0 }}>Mes statistiques</h1>
-        <p style={{ color: colors.text.faint, fontSize: fontSize.lg, margin: `${spacing.xs} 0 0` }}>
-          {moy.nb_matchs || 0} match{(moy.nb_matchs || 0) > 1 ? 's' : ''} enregistré{(moy.nb_matchs || 0) > 1 ? 's' : ''} · {joueurPoste || poste}
-        </p>
-      </div>
+      <EnTetePage isMobile={isMobile} kicker="Mon développement" titre="Mes statistiques" accentMot="statistiques"
+        sousTitre={`${moy.nb_matchs || 0} match${(moy.nb_matchs || 0) > 1 ? 's' : ''} saisi${(moy.nb_matchs || 0) > 1 ? 's' : ''} par toi · ${joueurPoste || poste}. Ta carte, tes chiffres et tes récompenses de la saison.`} />
 
       <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
         {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${matchs.length})` }].map(o => (
@@ -222,27 +219,29 @@ export default function MesStats({ userId, joueurPoste, isMobile = false }) {
       )}
 
       {vue === 'profil' && (
-        matchs.length === 0 ? (
-          <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '48px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.lg, color: colors.icon.muted }}><IconChart size={44} /></div>
-            <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Aucune stat enregistrée</div>
-            <div style={{ color: colors.text.faint, fontSize: fontSize.xl, marginBottom: spacing['3xl'] }}>Saisis tes stats après chaque match pour construire ton profil.</div>
-            <button onClick={() => changerVue('saisir')} style={boutonPrincipal(true)}>Saisir mon premier match</button>
-          </Carte>
-        ) : (
-          <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['5xl'], alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-            <RadarChart data={radarConfig.data} labels={radarConfig.labels} color={colors.accent.green} gridColor={colors.border.subtle} textColor={colors.text.faint} />
-            <div style={{ flex: 1, minWidth: '220px' }}>
-              <TitreSection couleur={colors.accent.green} style={{ marginBottom: spacing['2xl'] }}>Saison en cours · {moy.nb_matchs} matchs</TitreSection>
-              {statsClesRadar.map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: `${spacing.sm} 0`, borderBottom: `1px solid ${colors.border.faint}` }}>
-                  <span style={{ color: colors.text.secondary, fontSize: fontSize.lg }}>{label}</span>
-                  <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>{value}</span>
-                </div>
-              ))}
+        <>
+          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={matchs} statsEquipe={statsEquipe} isMobile={isMobile} />
+          {matchs.length === 0 ? (
+            <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
+              <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Complète ton profil avec tes propres matchs</div>
+              <div style={{ color: colors.text.faint, fontSize: fontSize.xl, marginBottom: spacing['3xl'] }}>Saisis tes stats après chaque match pour obtenir ton radar de joueur.</div>
+              <button onClick={() => changerVue('saisir')} style={boutonPrincipal(true)}>Saisir un match</button>
+            </Carte>
+          ) : (
+      <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['5xl'], alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+        <RadarChart data={radarConfig.data} labels={radarConfig.labels} color={colors.accent.green} gridColor={colors.border.subtle} textColor={colors.text.faint} />
+        <div style={{ flex: 1, minWidth: '220px' }}>
+          <TitreSection couleur={colors.accent.green} style={{ marginBottom: spacing['2xl'] }}>Saison en cours · {moy.nb_matchs} matchs</TitreSection>
+          {statsClesRadar.map(({ label, value }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: `${spacing.sm} 0`, borderBottom: `1px solid ${colors.border.faint}` }}>
+              <span style={{ color: colors.text.secondary, fontSize: fontSize.lg }}>{label}</span>
+              <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>{value}</span>
             </div>
-          </Carte>
-        )
+          ))}
+        </div>
+      </Carte>
+          )}
+        </>
       )}
 
       {vue === 'saisir' && (

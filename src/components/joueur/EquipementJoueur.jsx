@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useColors } from '../../lib/theme'
+import EnTetePage from './EnTetePage'
 import { localeOf } from '../../lib/translations'
 import { alpha, fontSize, radius, spacing } from '../../tokens'
 import Carte from './Carte'
@@ -58,12 +59,8 @@ export default function EquipementJoueur({
 
   return (
     <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Mon équipement</h1>
-        <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
-          Indique tes tailles ici : ton club les reçoit et prépare ton pack de début de saison. Plus tôt elles sont renseignées, plus vite tu reçois ton équipement.
-        </p>
-      </div>
+      <EnTetePage isMobile={isMobile} kicker="Aux couleurs du club" titre="Mon équipement" accentMot="équipement"
+        sousTitre="Indique tes tailles ici : ton club les reçoit et prépare ton pack de début de saison. Plus tôt elles sont renseignées, plus vite tu reçois ton équipement." />
 
       {equipementPret && (
         <Carte isMobile={isMobile} accent={colors.accent.amber}>

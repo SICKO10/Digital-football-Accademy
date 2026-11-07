@@ -44,7 +44,7 @@ function Vignette({ url, isMobile }) {
 // Page "Mes analyses" : les demandes d'analyse vidéo du joueur et leur état.
 // Une demande "en_attente" n'a ni lien ni rapport ; une demande "analyse" a au
 // moins l'un des deux, posés par le coach analyseur.
-export default function AnalysesJoueur({
+export default function AnalysesJoueur({ sansEntete = false,
   demandes, analysesRestantes, isPro, avantagesPro, formulesPro, isMobile, lang, onNouvelleAnalyse,
 }) {
   const colors = useColors()
@@ -55,8 +55,8 @@ export default function AnalysesJoueur({
   const entete = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing['2xl'], flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('ja_titre', lang)}</h1>
-        <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
+        {!sansEntete && <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('ja_titre', lang)}</h1>}
+        <p style={{ margin: sansEntete ? 0 : `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
           {peutDemander
             ? `Il te reste ${analysesRestantes} ${analysesRestantes > 1 ? 'analyses' : 'analyse'} vidéo à utiliser.`
             : 'Chaque analyse arrive ici avec la vidéo commentée et ton rapport.'}

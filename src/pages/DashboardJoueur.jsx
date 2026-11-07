@@ -8,9 +8,9 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
 import EmptyState from '../components/EmptyState'
 import {
-  IconHome, IconUser, IconChart, IconMessage, IconMic, IconPlay,
+  IconHome, IconUser, IconChart, IconMessage, IconPlay,
   IconGlobe, IconUpload, IconVideoOff, IconLock, IconSearch, IconCard,
-  IconBadge, IconClipboard, IconShirt, IconNutrition, IconHealth, IconBuilding,
+  IconBadge, IconClipboard, IconShirt, IconNutrition, IconHealth,
   IconDumbbell, IconUsers, IconTactic, IconTrophy, IconBall, IconStar,
   IconCalendar, IconPin, IconTarget, IconBell, IconCheck, IconCheckCircle,
   IconClose, IconClock, IconLink, IconKey, IconAlert, IconMail,
@@ -63,6 +63,7 @@ import ParrainageWidget from '../components/ParrainageWidget'
 import SondageSemaine from '../components/SondageSemaine'
 import ListeAlertes from '../components/joueur/ListeAlertes'
 import Carte from '../components/joueur/Carte'
+import EnTetePage from '../components/joueur/EnTetePage'
 import TitreSection from '../components/joueur/TitreSection'
 import TuileChiffre from '../components/joueur/TuileChiffre'
 import SectionRepliable from '../components/joueur/SectionRepliable'
@@ -1417,9 +1418,41 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       evalsParSaison[s].push(n)
     })
 
+    // --- Joueur du mois et joueur de l'année, tous deux au nombre de points de
+    // séance (même règle que Stats > Joueur du mois côté éducateur). Un mois n'est
+    // attribué qu'une fois terminé ; l'année qu'une fois la saison terminée (la
+    // saison en cours n'a qu'un classement provisoire). Égalité : tous les premiers.
+    const pointsParMois = {}
+    const pointsParSaison = {}
+    ;(toutesPresences || []).forEach(p => {
+      if (!p.point_seance) return
+      const date = dateMapTous[p.entrainement_id]
+      if (!date) return
+      const mois = date.slice(0, 7)
+      const saisonP = saisonDeDate(date)
+      if (!pointsParMois[mois]) pointsParMois[mois] = {}
+      pointsParMois[mois][p.joueur_id] = (pointsParMois[mois][p.joueur_id] || 0) + 1
+      if (!pointsParSaison[saisonP]) pointsParSaison[saisonP] = {}
+      pointsParSaison[saisonP][p.joueur_id] = (pointsParSaison[saisonP][p.joueur_id] || 0) + 1
+    })
+    const elusMois = Object.entries(pointsParMois).sort(([a], [b]) => a.localeCompare(b)).map(([mois, parJoueur]) => {
+      const max = Math.max(...Object.values(parJoueur))
+      const mesPoints = parJoueur[equipeJoueurId] || 0
+      const enCours = mois >= moisCourantStr
+      return { mois, saison: saisonDeDate(mois + '-01'), mesPoints, max, enCours, estElu: !enCours && mesPoints > 0 && mesPoints === max }
+    })
+    const classementAnnee = Object.entries(pointsParSaison).sort(([a], [b]) => a.localeCompare(b)).map(([saisonP, parJoueur]) => {
+      const max = Math.max(...Object.values(parJoueur))
+      const mesPoints = parJoueur[equipeJoueurId] || 0
+      const rang = Object.values(parJoueur).filter(v => v > mesPoints).length + 1
+      const enCours = saisonP === saisonCourantePoints
+      return { saison: saisonP, mesPoints, max, rang, nbJoueurs: Object.keys(parJoueur).length, enCours, estElu: !enCours && mesPoints > 0 && mesPoints === max }
+    })
+
     setStatsJoueur(prev => ({
       ...prev,
       [affiliationId]: {
+        elusMois, classementAnnee,
         total, present, points, tauxPresence: total ? Math.round((present / total) * 100) : null,
         buts, passes, matchsJoues, cleanSheets, jaunes, rouges, minutesJouees,
         presenceMensuelle,
@@ -1981,16 +2014,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       <div style={cadre}>
         {/* En-tête : le titre, puis le lien vers le classement de la ligue,
             qui est un site extérieur et n'a donc pas besoin d'une carte. */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing['2xl'], flexWrap: 'wrap', marginBottom: spacing['4xl'] }}>
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontSize: fontSize['5xl'], fontWeight: 800, letterSpacing: '-0.3px' }}>
-              {t('jnav_competition', lang)}
-            </h2>
-            <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.lg, color: colors.text.faint }}>
-              Le calendrier, les résultats et le bilan de ton équipe.
-            </p>
-          </div>
-          {lienClassementCompetition && (
+        <EnTetePage isMobile={isMobile} kicker="Ta saison" titre={t('jnav_competition', lang)}
+          sousTitre="Le calendrier, les résultats et le bilan de ton équipe."
+          style={{ marginBottom: spacing['4xl'] }}
+          droite={lienClassementCompetition && (
             <a href={lienClassementCompetition} target="_blank" rel="noopener noreferrer"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: spacing.sm, flexShrink: 0,
@@ -2001,8 +2028,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               }}>
               <IconLink size={14} />Classement officiel
             </a>
-          )}
-        </div>
+          )} />
 
         {/* Filtres de compétition */}
         <div style={{ display: 'flex', gap: spacing.sm, marginBottom: spacing['4xl'], flexWrap: 'wrap' }}>
@@ -3393,16 +3419,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'entrainement', label: 'Entraînement', icon: <IconDumbbell />, section: t('jsec_preparation', lang) },
     { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
     { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
-    { id: 'sante', label: t('nav_sante', lang), icon: <IconHealth /> },
+    // Santé et Recruteurs (id 'messages') : masqués du menu, mais toujours codés et joignables par leurs liens internes.
     { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
-    { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length, section: t('jsec_developpement', lang) },
-    { id: 'coach', label: t('jnav_coach', lang), icon: <IconMic />, badge: coachUnread, section: t('jsec_developpement', lang) },
+    // Analyses et Coach analyseur partagent une seule page (onglets) : l'entrée du menu reste active sur les deux.
+    { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length + (coachUnread || 0), section: t('jsec_developpement', lang) },
     { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
     { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
     { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
     { id: 'carte_joueur', label: 'Carte Joueur', icon: <IconCard />, section: t('jsec_profil', lang) },
-    { id: 'clubs', label: t('jnav_explorer', lang), icon: <IconBuilding />, section: t('jsec_reseau', lang) },
-    { id: 'messages', label: t('jnav_recruteurs', lang), icon: <IconMessage />, badge: conversations.length, section: t('jsec_reseau', lang) },
   ]
 
   // Ids DOM sur les boutons de nav (toujours montés, contrairement au contenu des
@@ -3490,7 +3514,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               )}
               <button className="df-nav-btn"
                 id={NAV_SECTION_IDS[item.id]}
-                data-actif={onglet === item.id} data-locked={!!item.locked}
+                data-actif={onglet === item.id || (item.id === 'analyses' && onglet === 'coach')} data-locked={!!item.locked}
                 onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}>
                 <span className="df-nav-icone">{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
@@ -4025,16 +4049,18 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
           <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, flexWrap: 'wrap', marginBottom: spacing['2xl'] }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', margin: 0 }}>{t('jp_titre', lang)}</h1>
-              {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
-                  automatiquement depuis stats_match_joueur via "Mes Statistiques"
-                  (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
-              <button onClick={() => setOnglet('mes_stats')} title="Tes stats sont calculées automatiquement depuis tes fiches match"
-                style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '9px 16px', color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Voir mes statistiques →
-              </button>
-            </div>
+            {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
+                automatiquement depuis stats_match_joueur via "Mes Statistiques"
+                (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
+            <EnTetePage isMobile={isMobile} kicker="Ta carte d'identité de joueur" titre={t('jp_titre', lang)}
+              sousTitre="Ta photo, ton poste, ton parcours : ce que les clubs et les recruteurs voient de toi."
+              style={{ marginBottom: spacing['2xl'] }}
+              droite={
+                <button onClick={() => setOnglet('mes_stats')} title="Tes stats sont calculées automatiquement depuis tes fiches match"
+                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '9px 16px', color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Voir mes statistiques →
+                </button>
+              } />
 
             <Carte isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
               <TitreSection>{t('jp_identite', lang)}</TitreSection>
@@ -4482,7 +4508,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {onglet === 'nutrition' && (isPro ? (
           <NutritionDashboard joueurId={userId} educateurId={mesAffiliations.find(a => a.statut === 'accepte')?.educateur_id} isMobile={isMobile} />
         ) : (
-          <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px' }}>
+          <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px', display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
+            <EnTetePage isMobile={isMobile} kicker="Mange comme un pro" titre="Nutrition" sousTitre="Ton plan du jour, calculé pour ton poste et ton objectif." />
             <ApercuPro
               titre="Ton outil de nutrition est dans l'offre Pro"
               accroche={t('aff_nutrition_desc', lang)}
@@ -4504,12 +4531,40 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
         {/* ── ANALYSES ── */}
-        {onglet === 'analyses' && (
-          <AnalysesJoueur
-            demandes={demandes} analysesRestantes={profil?.analyses_restantes} isPro={isPro}
-            avantagesPro={avantagesPro} formulesPro={formulesPro} isMobile={isMobile} lang={lang}
-            onNouvelleAnalyse={() => navigate('/upload')}
-          />
+        {(onglet === 'analyses' || onglet === 'coach') && (
+          <div>
+            <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px 16px 0' : '24px 40px 0', display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
+              <EnTetePage isMobile={isMobile} kicker="Progresse avec un regard d'expert" titre="Analyses" accentMot="Analyses"
+                sousTitre="Tes analyses vidéo commentées et ton coach analyseur, au même endroit." />
+              <div style={{ display: 'flex', gap: spacing.xs, background: colors.background.sunken, borderRadius: radius.xl, padding: spacing.xs, width: 'fit-content', maxWidth: '100%', border: `1px solid ${colors.border.subtle}` }}>
+                {[{ id: 'analyses', label: 'Mes analyses vidéo', badge: demandes.filter(d => d.statut === 'analyse').length }, { id: 'coach', label: 'Coach analyseur', badge: coachUnread || 0 }].map(o => {
+                  const actif = onglet === o.id
+                  return (
+                    <button key={o.id} onClick={() => setOnglet(o.id)}
+                      style={{ padding: `${spacing.base} ${spacing['2xl']}`, borderRadius: radius.lg, border: 'none', background: actif ? colors.background.raised : 'transparent', color: actif ? colors.text.primary : colors.text.faint, fontWeight: actif ? 700 : 400, fontSize: fontSize.lg, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: spacing.md }}>
+                      {o.label}
+                      {o.badge > 0 && <span style={{ background: colors.accent.green, color: colors.black, borderRadius: '999px', fontSize: fontSize.base, fontWeight: 800, padding: '1px 7px' }}>{o.badge}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {onglet === 'analyses' ? (
+              <AnalysesJoueur sansEntete
+                demandes={demandes} analysesRestantes={profil?.analyses_restantes} isPro={isPro}
+                avantagesPro={avantagesPro} formulesPro={formulesPro} isMobile={isMobile} lang={lang}
+                onNouvelleAnalyse={() => navigate('/upload')}
+              />
+            ) : (
+              <CoachAnalyseurJoueur sansEntete
+                coaches={coaches} coachSelectionne={coachSelectionne} onChoisirCoach={setCoachSelectionne}
+                messages={messages} userId={userId} aHistorique={convCoach.length > 0}
+                brouillon={messageCoach} onBrouillon={setMessageCoach} onEnvoyer={envoyerMessageCoach}
+                envoiEnCours={sendingCoach} envoye={coachSent} erreur={coachErreur}
+                readOnly={readOnly} isMobile={isMobile} lang={lang}
+              />
+            )}
+          </div>
         )}
 
         {/* ── MESSAGES ── */}
@@ -4646,16 +4701,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         })()}
 
         {onglet === 'certif' && (
-          <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>
-                {t('jcertif_titre', lang)}
-                <span style={{ marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#f0c03020', color: '#f0c030', border: '1px solid #f0c03040', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconStar size={11} />Officiel</span>
-              </h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>
-                {t('jcertif_desc', lang)}
-              </p>
-            </div>
+          <div style={{ maxWidth: '820px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <EnTetePage isMobile={isMobile} kicker="Fais valider ton niveau" titre={t('jcertif_titre', lang)} sousTitre={t('jcertif_desc', lang)}
+              style={{ marginBottom: '20px' }}
+              droite={<span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#f0c03020', color: '#f0c030', border: '1px solid #f0c03040', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconStar size={11} />Officiel</span>} />
 
             {/* Certifications existantes */}
             {certifications.length > 0 && (
@@ -4741,30 +4790,24 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
         {onglet === 'carte_joueur' && (
-          <div style={{ maxWidth: '640px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.3px', marginBottom: '4px' }}>Carte Joueur</h2>
-              <p style={{ fontSize: '13px', color: colors.text.faint, lineHeight: 1.6 }}>Ta note globale et tes stats de la saison, calculées automatiquement.</p>
-            </div>
+          <div style={{ maxWidth: '820px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
+            <EnTetePage isMobile={isMobile} kicker="Ton niveau en un coup d'œil" titre="Carte Joueur" accentMot="Joueur"
+              sousTitre="Ta note globale et tes stats de la saison, calculées automatiquement."
+              style={{ marginBottom: '20px' }} />
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <CarteJoueur userId={userId} />
             </div>
           </div>
         )}
 
-        {onglet === 'coach' && (
-          <CoachAnalyseurJoueur
-            coaches={coaches} coachSelectionne={coachSelectionne} onChoisirCoach={setCoachSelectionne}
-            messages={messages} userId={userId} aHistorique={convCoach.length > 0}
-            brouillon={messageCoach} onBrouillon={setMessageCoach} onEnvoyer={envoyerMessageCoach}
-            envoiEnCours={sendingCoach} envoye={coachSent} erreur={coachErreur}
-            readOnly={readOnly} isMobile={isMobile} lang={lang}
-          />
-        )}
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} />}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={(() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); return a ? statsJoueur[a.id] : null })()} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+            <div style={{ padding: isMobile ? '16px 16px 0' : '24px 16px 0' }}>
+              <EnTetePage isMobile={isMobile} kicker="Ton corps, ton atout" titre="Préparation physique" accentMot="physique"
+                sousTitre="Ton plan, tes séances et ta progression. Un joueur affûté fait la différence en fin de match." />
+            </div>
             <PrepPhysiqueJoueur joueurId={userId} isMobile={isMobile} />
           </div>
         )}
@@ -4877,12 +4920,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {/* ── ENTRAÎNEMENT : séance publiée par l'éducateur ── */}
         {onglet === 'entrainement' && (
           <div style={{ padding: isMobile ? '16px' : '24px 32px', display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Entraînement</h1>
-              <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
-                La séance que ton éducateur a préparée pour toi.
-              </p>
-            </div>
+            <EnTetePage isMobile={isMobile} kicker="Ta séance" titre="Entraînement"
+              sousTitre="La séance que ton éducateur a préparée pour toi. Regarde-la avant d'arriver au terrain." />
             <SeanceDuJourJoueur isMobile={isMobile} lang={lang} />
           </div>
         )}

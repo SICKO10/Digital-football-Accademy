@@ -1,36 +1,10 @@
 import { useColors } from '../../lib/theme'
+import EnTetePage from './EnTetePage'
 import { localeOf } from '../../lib/translations'
 import { alpha, fontSize, radius, spacing } from '../../tokens'
 import Carte from './Carte'
 import EmptyState from '../EmptyState'
 import { IconMessage } from '../icones'
-
-// Motif de terrain dessiné en SVG : aucune image à charger, net à toutes les
-// tailles, et il prend la couleur du thème (traits en `currentColor`), donc
-// lisible en clair comme en sombre. Les traits sont volontairement fins et
-// pâles : l'en-tête reste un décor, le titre passe devant.
-function MotifTerrain() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 400 160"
-      preserveAspectRatio="xMaxYMid slice"
-      style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: '70%', pointerEvents: 'none' }}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <rect x="20" y="16" width="360" height="128" rx="4" />
-      <line x1="200" y1="16" x2="200" y2="144" />
-      <circle cx="200" cy="80" r="26" />
-      <circle cx="200" cy="80" r="2" fill="currentColor" />
-      <rect x="20" y="46" width="48" height="68" />
-      <rect x="20" y="62" width="18" height="36" />
-      <rect x="332" y="46" width="48" height="68" />
-      <rect x="362" y="62" width="18" height="36" />
-    </svg>
-  )
-}
 
 // Page "Actualités du club" du joueur : les annonces publiées par son club,
 // les plus récentes d'abord. Utilisée par la branche navItems du dashboard.
@@ -52,21 +26,7 @@ export default function ActualitesJoueur({ annonces, luesIds, aUnClub, isMobile,
 
   return (
     <div style={cadre}>
-      <Carte
-        accent={colors.accent.green}
-        isMobile={isMobile}
-        style={{ position: 'relative', overflow: 'hidden', marginBottom: spacing['4xl'], minHeight: isMobile ? '112px' : '132px', display: 'flex', alignItems: 'center' }}
-      >
-        <div style={{ position: 'absolute', inset: 0, color: colors.accent.green, opacity: 0.22 }}>
-          <MotifTerrain />
-        </div>
-        <div style={{ position: 'relative' }}>
-          <h1 style={{ margin: 0, fontSize: isMobile ? fontSize['6xl'] : fontSize['8xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>
-            Actualités du club
-          </h1>
-          <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.xl, color: colors.text.secondary }}>{sousTitre}</p>
-        </div>
-      </Carte>
+      <EnTetePage isMobile={isMobile} kicker="La vie de ton club" titre="Actualités du club" accentMot="club" sousTitre={sousTitre} style={{ marginBottom: spacing['4xl'] }} />
 
       {annonces.length === 0 ? (
         <EmptyState
