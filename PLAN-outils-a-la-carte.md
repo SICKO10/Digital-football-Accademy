@@ -71,7 +71,7 @@ Rappel : `/clear` et une session neuve par bloc.
 ## Blocs
 
 ### Bloc 0 : inventaire, sauvegarde et proposition de découpage
-- Statut : en cours
+- Statut : fait (en attente de validation de Kevin)
 - Objectif : savoir précisément quels menus existent côté club et éducateur, et proposer la liste socle / outils et les 3 questions.
 - Résultat testable : un fichier `docs/outils-a-la-carte/INVENTAIRE.md` lisible, avec un tableau « entrée de menu → outil ou socle », les 3 questions et leurs pré-cochages, et la méthode pour créer les comptes de test.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -86,8 +86,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Proposer : socle, liste d'outils club et éducateur (nom, promesse en une phrase, menus débloqués), 3 questions et pré-cochages, réponses aux hypothèses 9.
   - Donner la méthode pour obtenir un club de test sans payer en live.
 - Ce que je teste pour valider : je lis INVENTAIRE.md, je valide ou corrige la liste, les questions et les hypothèses.
-- Reste à finir :
-- Journal :
+- Reste à finir : Kevin tranche les questions A à E de `docs/outils-a-la-carte/INVENTAIRE.md` avant le bloc 1 (Stages, CFF4, lien club vers éducateur, regroupements, écran d'abonnement du club).
+- Journal : 2026-11-07, Sonnet 5.5. Commit de sauvegarde 7e789e8 (brief et plan seuls). Inventaire fait par grep, aucun fichier de code touché. Écart par rapport aux hypothèses 9 : un club non payé n'a pas d'accès limité aujourd'hui, il voit un écran plein « Abonnement non actif ». Point à trancher : CFF4 ne doit pas être mis derrière un outil payant sans ton accord.
 
 ### Bloc 1 : catalogue des outils et règles d'accès
 - Statut : à faire
