@@ -4800,7 +4800,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
 
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={(() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); return a ? statsJoueur[a.id] : null })()} />}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={(() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); return a ? statsJoueur[a.id] : null })()}
+          onOuvrirFiche={() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>

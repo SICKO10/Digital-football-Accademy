@@ -21,10 +21,17 @@ const moisLong = (mois) => {
   return new Date(parseInt(a), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
 
-function Tuile({ valeur, libelle, detail, couleur, colors }) {
+function Tuile({ valeur, libelle, detail, couleur, rang, colors }) {
   return (
     <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.xl, padding: `${spacing.xl} ${spacing.xl}`, minWidth: 0 }}>
-      <div style={{ fontFamily: POLICE_CHIFFRES, fontWeight: 800, fontSize: '44px', lineHeight: 1, color: couleur || colors.text.primary }}>{valeur}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: POLICE_CHIFFRES, fontWeight: 800, fontSize: '44px', lineHeight: 1, color: couleur || colors.text.primary }}>{valeur}</span>
+        {rang && rang.total > 0 && (
+          <span title="Ton rang dans l'équipe" style={{ fontSize: fontSize.md, fontWeight: 700, color: rang.rank === 1 ? colors.accent.amber : colors.text.faint, background: colors.background.sunken, borderRadius: radius.pill, padding: '2px 8px' }}>
+            #{rang.rank}/{rang.total}
+          </span>
+        )}
+      </div>
       <div style={{ marginTop: spacing.md, fontSize: fontSize.base, fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint }}>{libelle}</div>
       {detail && <div style={{ marginTop: spacing.xs, fontSize: fontSize.md, color: colors.text.faint }}>{detail}</div>}
     </div>
@@ -46,7 +53,7 @@ function Pastille({ texte, couleur, colors }) {
 // `matchs` : liste déjà fusionnée (lib/statsFusion) des matchs saisis par
 // l'éducateur et de ceux saisis par le joueur ; `statsEquipe` : présence, points
 // séance, notes et élus du mois (calculés par DashboardJoueur).
-export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile }) {
+export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile, onOuvrirFiche }) {
   const colors = useColors()
   const saison = saisonActuelle()
   const [badges, setBadges] = useState([])
@@ -77,14 +84,14 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
 
   const tuiles = [
     { valeur: joueurPoste || '—', libelle: 'Poste', petit: true },
-    { valeur: nbMatchs, libelle: 'Matchs joués', detail: nbMatchs ? `${parEducateur} saisi${parEducateur > 1 ? 's' : ''} par ton éducateur, ${nbMatchs - parEducateur} par toi` : null },
+    { valeur: nbMatchs, libelle: 'Matchs joués', rang: statsEquipe?.rankMatchs, detail: nbMatchs ? `${parEducateur} saisi${parEducateur > 1 ? 's' : ''} par ton éducateur, ${nbMatchs - parEducateur} par toi` : null },
     { valeur: minutes, libelle: 'Minutes jouées', detail: nbMatchs ? `${Math.round(minutes / nbMatchs)} min par match` : null },
-    { valeur: buts, libelle: 'Buts', couleur: colors.accent.green },
-    { valeur: passes, libelle: 'Passes décisives', couleur: colors.accent.green },
-    estGardien && { valeur: cleanSheets, libelle: 'Clean sheets', couleur: colors.accent.green },
+    { valeur: buts, libelle: 'Buts', couleur: colors.accent.green, rang: statsEquipe?.rankButs },
+    { valeur: passes, libelle: 'Passes décisives', couleur: colors.accent.green, rang: statsEquipe?.rankPasses },
+    estGardien && { valeur: cleanSheets, libelle: 'Clean sheets', couleur: colors.accent.green, rang: statsEquipe?.rankClean },
     { valeur: noteMoyenne != null ? noteMoyenne.toFixed(1).replace('.', ',') : '—', libelle: 'Note moyenne', detail: noteMoyenne != null ? `sur 10, ${notes.length} match${notes.length > 1 ? 's' : ''} noté${notes.length > 1 ? 's' : ''}` : 'Pas encore de note de ton éducateur' },
     { valeur: presence != null ? `${presence}%` : '—', libelle: 'Présence aux séances', detail: statsEquipe?.total ? `${statsEquipe.present} séances sur ${statsEquipe.total}` : null },
-    { valeur: points ?? '—', libelle: 'Points séance', couleur: colors.accent.amber, detail: annee && annee.mesPoints > 0 ? `${annee.rang}${annee.rang === 1 ? 'er' : 'e'} du classement général` : null },
+    { valeur: points ?? '—', libelle: 'Points séance', couleur: colors.accent.amber, rang: statsEquipe?.rankPoints, detail: annee && annee.mesPoints > 0 ? `${annee.rang}${annee.rang === 1 ? 'er' : 'e'} du classement général` : null },
   ].filter(Boolean)
 
   const collectifs = badges.filter(b => TYPES_COLLECTIFS.has(b.type))
@@ -102,7 +109,7 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
         </div>
         <div style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: spacing.xl }}>
           {tuiles.map(t => (
-            <Tuile key={t.libelle} colors={colors} libelle={t.libelle} detail={t.detail} couleur={t.couleur}
+            <Tuile key={t.libelle} colors={colors} libelle={t.libelle} detail={t.detail} couleur={t.couleur} rang={t.rang}
               valeur={t.petit ? <span style={{ fontSize: '28px', lineHeight: 1.15, display: 'block', paddingTop: '8px' }}>{t.valeur}</span> : t.valeur} />
           ))}
         </div>
@@ -153,28 +160,57 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
         )}
       </Carte>
 
-      {suiviMois.length > 0 && (
+      {(statsEquipe?.presenceMensuelle?.length > 0 || suiviMois.length > 0) && (
         <Carte isMobile={isMobile}>
-          <TitreSection couleur={colors.accent.amber}>Points séance, mois par mois</TitreSection>
-          <p style={{ margin: `0 0 ${spacing.xl}`, color: colors.text.faint, fontSize: fontSize.lg }}>
-            Le joueur qui cumule le plus de points séance est élu joueur du mois, une fois le mois terminé. À la fin de la saison, le premier du classement général des points séance est élu joueur de l'année.
+          <TitreSection couleur={colors.accent.amber}>Séances, mois par mois</TitreSection>
+          <p style={{ margin: `0 0 ${spacing.xl}`, color: colors.text.faint, fontSize: fontSize.lg, lineHeight: 1.5 }}>
+            Ta présence et tes points séance. Le joueur qui cumule le plus de points séance est élu joueur du mois, une fois le mois terminé. À la fin de la saison, le premier du classement général des points séance est élu joueur de l'année.
             {annee && annee.mesPoints > 0 && <strong style={{ color: colors.accent.amber }}> Classement général provisoire : {annee.rang}{annee.rang === 1 ? 'er' : 'e'} sur {annee.nbJoueurs}.</strong>}
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-            {suiviMois.map(m => (
-              <div key={m.mois}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing.sm, fontSize: fontSize.lg }}>
-                  <span style={{ color: colors.text.secondary, textTransform: 'capitalize' }}>
-                    {moisLong(m.mois)}{m.enCours ? ' (en cours)' : ''}{m.estElu && <strong style={{ color: colors.accent.amber, marginLeft: spacing.md }}>Joueur du mois</strong>}
-                  </span>
-                  <span style={{ color: colors.accent.amber, fontWeight: 700 }}>{m.mesPoints} pt{m.mesPoints > 1 ? 's' : ''} <span style={{ color: colors.text.faint, fontWeight: 400 }}>· meilleur total {m.max}</span></span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+            {(statsEquipe?.presenceMensuelle || []).slice().reverse().map(m => {
+              const elu = (statsEquipe?.elusMois || []).find(e => e.mois === m.month)
+              const couleurTaux = m.taux >= 80 ? colors.accent.success : m.taux >= 60 ? colors.accent.amber : colors.accent.red
+              return (
+                <div key={m.month}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: spacing.lg, marginBottom: spacing.sm, fontSize: fontSize.lg, flexWrap: 'wrap' }}>
+                    <span style={{ color: colors.text.secondary, textTransform: 'capitalize' }}>
+                      {moisLong(m.month)}{elu?.estElu && <strong style={{ color: colors.accent.amber, marginLeft: spacing.md }}>Joueur du mois</strong>}
+                    </span>
+                    <span>
+                      <strong style={{ color: couleurTaux }}>{m.taux}%</strong>
+                      <span style={{ color: colors.text.faint }}> ({m.present}/{m.total})</span>
+                      {m.points > 0 && <strong style={{ color: colors.accent.amber, marginLeft: spacing.md }}>{m.points} pt{m.points > 1 ? 's' : ''} séance</strong>}
+                      {elu && elu.max > 0 && <span style={{ color: colors.text.faint }}> · meilleur total {elu.max}</span>}
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', borderRadius: radius.pill, background: colors.background.sunken, overflow: 'hidden' }}>
+                    <div style={{ width: `${m.taux}%`, height: '100%', borderRadius: radius.pill, background: couleurTaux }} />
+                  </div>
                 </div>
-                <div style={{ height: '8px', borderRadius: radius.pill, background: colors.background.sunken, overflow: 'hidden' }}>
-                  <div style={{ width: `${m.max ? Math.round((m.mesPoints / m.max) * 100) : 0}%`, height: '100%', borderRadius: radius.pill, background: colors.accent.amber }} />
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
+        </Carte>
+      )}
+
+      {statsEquipe && (
+        <Carte isMobile={isMobile}>
+          <TitreSection couleur={colors.accent.amber}>Avis de ton éducateur</TitreSection>
+          {statsEquipe.evaluations?.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing['2xl'], flexWrap: 'wrap' }}>
+              <span style={{ color: colors.text.secondary, fontSize: fontSize.xl }}>
+                {statsEquipe.evaluations.length} évaluation{statsEquipe.evaluations.length > 1 ? 's' : ''} disponible{statsEquipe.evaluations.length > 1 ? 's' : ''}
+              </span>
+              {onOuvrirFiche && (
+                <button onClick={onOuvrirFiche} style={{ background: colors.accent.green, color: colors.accent.onBrand || colors.black, border: 'none', borderRadius: radius.lg, padding: '9px 18px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Voir ma fiche
+                </button>
+              )}
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: colors.text.faint, fontSize: fontSize.lg, fontStyle: 'italic' }}>Ton éducateur n'a pas encore partagé d'évaluation.</p>
+          )}
         </Carte>
       )}
     </>
