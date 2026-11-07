@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 
+const IcoBus = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10" /><path d="M4 12h16" /><rect x="3" y="16" width="18" height="3" rx="1" /><circle cx="7.5" cy="19" r="1.2" /><circle cx="16.5" cy="19" r="1.2" /></svg>
+
 // horizontal (optionnel) : infos à gauche, bouton de fiche à droite, sur
 // une ligne (desktop) ; sinon carte empilée. Chargement et filtres identiques.
 export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equipeUnique = true, accentColor = '#60a5fa', onOuvrirFiche, horizontal = false }) {
@@ -45,36 +47,44 @@ export default function DeplacementsAssignesWidget({ userId, equipeActiveId, equ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, equipeActiveId])
 
-  // Carte unique "Prochain déplacement" (accueil éducateur, colonne Club) :
-  // seul le déplacement à venir le plus proche, présentation sobre. Les
-  // autres déplacements restent gérés dans la rubrique Déplacements.
+  // Carte unique "Prochain déplacement" (accueil éducateur) : seul le
+  // déplacement à venir le plus proche. Les autres restent gérés dans la
+  // rubrique Déplacements.
   if (loading) return null
   const d = deplacements[0]
 
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '14px 16px', ...(horizontal ? { display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' } : {}) }}>
-      <p style={{ margin: horizontal ? 0 : '0 0 10px', flexShrink: 0, fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>Prochain déplacement</p>
+    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px 18px', ...(horizontal ? { display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' } : {}) }}>
       {!d ? (
-        <p style={{ margin: 0, fontSize: '12px', color: colors.text.disabled }}>Aucun déplacement prévu.</p>
+        <>
+          <span style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--club-primary-soft)', color: 'var(--club-primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoBus /></span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>Prochain déplacement</p>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.disabled }}>Aucun déplacement prévu.</p>
+          </div>
+        </>
       ) : (() => {
         const date = new Date(d.date_depart + 'T12:00:00')
-        const joursRestants = Math.ceil((date - new Date()) / (1000 * 60 * 60 * 24))
+        const debutJour = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate())
+        const joursRestants = Math.round((debutJour(date) - debutJour(new Date())) / (1000 * 60 * 60 * 24))
         const echeance = joursRestants <= 0 ? "Aujourd'hui" : joursRestants === 1 ? 'Demain' : `J-${joursRestants}`
         return (
           <>
-            <div style={horizontal ? { flex: '1 1 220px', minWidth: 0 } : undefined}>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {d.lieu_destination || d.equipe || 'Déplacement'}
-            </p>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>
-              {date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-              {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
-              <span style={{ color: colors.text.muted, fontWeight: 700 }}>{` · ${echeance}`}</span>
-            </p>
+            <span style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--club-primary-soft)', color: 'var(--club-primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoBus /></span>
+            <div style={{ flex: '1 1 220px', minWidth: 0, marginTop: horizontal ? 0 : '10px' }}>
+              <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>Prochain déplacement</p>
+              <p style={{ margin: '3px 0 0', fontWeight: 800, fontSize: '15px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.lieu_destination || d.equipe || 'Déplacement'}
+              </p>
+              <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                {date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {d.heure_depart ? ` · départ ${d.heure_depart.slice(0, 5)}` : ''}
+              </p>
             </div>
+            <span style={{ flexShrink: 0, padding: '4px 10px', borderRadius: '999px', background: 'var(--club-primary-soft)', color: 'var(--club-primary-dark)', fontSize: '12px', fontWeight: 800, marginTop: horizontal ? 0 : '10px' }}>{echeance}</span>
             {onOuvrirFiche && (
               <button onClick={() => onOuvrirFiche(d)}
-                style={{ marginTop: horizontal ? 0 : '12px', width: horizontal ? 'auto' : '100%', flexShrink: 0, minHeight: '36px', background: 'transparent', border: `1px solid ${d.fiche_completee ? accentColor + '60' : colors.border.default}`, color: d.fiche_completee ? accentColor : colors.text.secondary, borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ marginTop: horizontal ? 0 : '12px', width: horizontal ? 'auto' : '100%', flexShrink: 0, minHeight: '40px', background: 'transparent', border: `1.5px solid ${accentColor}`, color: accentColor, borderRadius: '8px', padding: '6px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                 {d.fiche_completee ? 'Fiche remplie' : 'Remplir la fiche'}
               </button>
             )}

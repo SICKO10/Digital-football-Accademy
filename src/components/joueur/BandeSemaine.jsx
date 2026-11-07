@@ -4,7 +4,8 @@ import { localeOf } from '../../lib/translations'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 
-// Bande "Ma semaine" — lundi à dimanche d'un coup d'œil : séances, match, rdv
+// Bande "Ma semaine" (niveau discret, elle recule derrière le bloc « à la une » ;
+// elle ne rend rien quand la semaine n'a aucune échéance) — lundi à dimanche d'un coup d'œil : séances, match, rdv
 // médical, et la présence déjà déclarée. C'est la première question du joueur
 // qui ouvre l'application, et l'information était jusqu'ici éparpillée entre
 // les alertes, le planning et la carte de convocation.
@@ -65,16 +66,19 @@ export default function BandeSemaine({
     }
   })
 
+  // Aucune échéance cette semaine : la bande disparaît (règle d'or du brief, pas
+  // d'emplacement vide).
+  if (jours.every(j => j.vide)) return null
+
   const nbSeances = jours.reduce((n, j) => n + j.seances.length, 0)
   const nbMatchs = jours.reduce((n, j) => n + j.matchs.length, 0)
 
-  // Résumé en une ligne, au singulier ou au pluriel, sans rien afficher quand
-  // la semaine est vide (le joueur voit alors la grille grise, ce qui dit déjà
-  // qu'il n'y a rien).
+  // Résumé en une ligne, au singulier ou au pluriel. Une semaine qui n'a qu'un
+  // rendez-vous médical n'a ni séance ni match : pas de résumé, la grille suffit.
   const morceaux = []
   if (nbSeances > 0) morceaux.push(`${nbSeances} séance${nbSeances > 1 ? 's' : ''}`)
   if (nbMatchs > 0) morceaux.push(`${nbMatchs} match${nbMatchs > 1 ? 's' : ''}`)
-  const resume = morceaux.length > 0 ? morceaux.join(' · ') : 'Rien de prévu cette semaine'
+  const resume = morceaux.join(' · ')
 
   // Présence déjà déclarée, uniquement pour les événements dont le dashboard
   // connaît la réponse.
@@ -97,7 +101,7 @@ export default function BandeSemaine({
   }
 
   return (
-    <Carte isMobile={isMobile} style={style}>
+    <Carte niveau="discret" isMobile={isMobile} style={style}>
       <TitreSection>Ma semaine</TitreSection>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: spacing.md }}>
@@ -139,9 +143,11 @@ export default function BandeSemaine({
         ))}
       </div>
 
-      <p style={{ margin: `${spacing['2xl']} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary }}>
-        {resume}
-      </p>
+      {resume && (
+        <p style={{ margin: `${spacing['2xl']} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary }}>
+          {resume}
+        </p>
+      )}
 
       {declarees.map((d, i) => (
         <p key={i} style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.md, color: colors.text.faint }}>

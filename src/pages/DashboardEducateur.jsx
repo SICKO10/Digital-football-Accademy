@@ -1,4 +1,5 @@
-import { menuLateralCss } from '../lib/menuLateral'
+import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../lib/menuLateral'
+import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
@@ -52,7 +53,6 @@ import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
 const ProjetSportifEducateur = lazy(() => import('../components/ProjetSportifEducateur'))
 const ProjetClubCFF4 = lazy(() => import('../components/ProjetClubCFF4'))
 const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationJoueur'))
-import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
@@ -79,7 +79,8 @@ import { estReconduction, NOTIF_RECONDUCTION } from '../lib/finSaisonJoueur'
 import { statutPresenceEffectif, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import { colors, alpha } from '../tokens'
-import { useColors } from '../lib/theme'
+import { useColors, useTheme } from '../lib/theme'
+import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 
 // Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
@@ -554,33 +555,6 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72, p
   )
 }
 
-// Donut victoires/nuls/défaites — même technique que DonutMulti (conic-gradient)
-// mais 3 segments fixes, pour le widget Effectif de l'Accueil.
-function DonutVND({ v, n, d, size = 72 }) {
-  const colors = useColors()
-  const total = (v || 0) + (n || 0) + (d || 0)
-  if (!total) return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
-    </div>
-  )
-  const pV = (v || 0) / total * 100
-  const pN = (n || 0) / total * 100
-  const vEnd = pV
-  const nEnd = vEnd + pN
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <div style={{
-        width: size, height: size, borderRadius: '50%',
-        background: `conic-gradient(#4ade80 0% ${vEnd}%, #facc15 ${vEnd}% ${nEnd}%, #ef4444 ${nEnd}% 100%)`
-      }} />
-      <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: size * 0.16, fontWeight: 800, color: colors.text.primary, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{total}</span>
-      </div>
-    </div>
-  )
-}
-
 const TerrainFoot = () => (
   <svg viewBox="0 0 300 200" width="100%" style={{ maxHeight: '220px', border: `1px solid ${colors.border.strong}`, display: 'block', margin: '6px 0' }}>
     {/* Fond blanc */}
@@ -972,7 +946,7 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
               }}>
               <span style={{
                 width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: actif ? colors.accent.blue : colors.background.raised, color: actif ? colors.black : colors.text.faint,
+                background: actif ? colors.accent.blue : colors.background.raised, color: actif ? colors.accent.onBrand : colors.text.faint,
               }}>{it.icon}</span>
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: actif ? colors.text.primary : colors.text.secondary }}>{it.label}</span>
@@ -1140,13 +1114,80 @@ function ExplicationPtsSeance() {
   )
 }
 
-function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement }) {
+// Planning de la semaine de l'accueil : 7 colonnes lundi → dimanche, mêmes
+// données que le widget partagé (entrainements + matchs déjà chargés, aucune
+// requête). Séances en teinte douce du club ; séance du jour et match du
+// week-end en couleur pleine du club. Sur petit écran, les colonnes défilent.
+function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntrainement, onClickMatch, onVoirTout }) {
   const colors = useColors()
-  const aujourdHui = new Date().toISOString().split('T')[0]
+  const [offset, setOffset] = useState(0)
+  const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+  const dateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const now = new Date()
+  const lundi = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) + offset * 7)
+  const jours = Array.from({ length: 7 }, (_, i) => new Date(lundi.getFullYear(), lundi.getMonth(), lundi.getDate() + i))
+  const aujourdhuiStr = dateStr(now)
+  const dimanche = jours[6]
+  const label = `${lundi.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} – ${dimanche.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}`
+  const navSt = { background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: '8px', width: '30px', height: '30px', cursor: 'pointer', fontSize: '15px', fontFamily: 'Inter, sans-serif' }
+  const puceBase = { borderRadius: '8px', padding: '5px 7px', fontSize: '11px', lineHeight: 1.3, minWidth: 0, textAlign: 'left', border: 'none', fontFamily: 'Inter, sans-serif', width: '100%', boxSizing: 'border-box' }
+  const heureSt = { display: 'block', fontSize: '11px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }
+  const libelleSt = { display: 'block', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
+  return (
+    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px 18px', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <p style={{ fontWeight: 800, fontSize: '15px', margin: 0, color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}><IcoCalendar /> {t('planning_semaine_titre', lang)}</p>
+        <button aria-label="Semaine précédente" onClick={() => setOffset(o => o - 1)} style={navSt}>‹</button>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '110px', textAlign: 'center' }}>{label}</span>
+        <button aria-label="Semaine suivante" onClick={() => setOffset(o => o + 1)} style={navSt}>›</button>
+        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ ...navSt, width: 'auto', padding: '0 10px', fontSize: '12px', fontWeight: 600 }}>Aujourd'hui</button>}
+        <button onClick={onVoirTout} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(96px, 1fr))', gap: '6px' }}>
+          {jours.map((d, i) => {
+            const s = dateStr(d)
+            const ents = entrainements.filter(e => e.date === s)
+            const mts = matchs.filter(m => m.date === s)
+            const estAujourdhui = s === aujourdhuiStr
+            const weekEnd = i >= 5
+            return (
+              <div key={s} style={{ minHeight: '96px', background: colors.background.sunken, borderRadius: '10px', padding: '6px', border: `1px solid ${estAujourdhui ? colors.accent.brand : colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? colors.accent.blue : colors.text.faint }}>{JOURS[i]} {d.getDate()}</p>
+                {ents.map(e => {
+                  const plein = estAujourdhui
+                  return (
+                    <button key={`e-${e.id}`} onClick={() => onClickEntrainement(e)}
+                      style={{ ...puceBase, cursor: 'pointer', background: plein ? colors.accent.brand : 'var(--club-primary-soft)', color: plein ? colors.accent.onBrand : 'var(--club-primary-dark)' }}>
+                      {e.heure && <span style={heureSt}>{String(e.heure).slice(0, 5)}</span>}
+                      <span style={libelleSt}>{e.description || 'Entraînement'}</span>
+                    </button>
+                  )
+                })}
+                {mts.map(m => {
+                  const plein = weekEnd
+                  return (
+                    <button key={`m-${m.id}`} onClick={() => onClickMatch(m)}
+                      style={{ ...puceBase, cursor: 'pointer', background: plein ? colors.accent.brand : colors.background.raised, color: plein ? colors.accent.onBrand : colors.text.secondary, border: plein ? 'none' : `1px solid ${colors.border.strong}` }}>
+                      {m.heure && <span style={heureSt}>{String(m.heure).slice(0, 5)}</span>}
+                      <span style={libelleSt}>{m.adversaire || 'Match'}</span>
+                      <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, opacity: 0.85 }}>{m.domicile ? 'Domicile' : 'Extérieur'}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  // Initiale de secours si le club n'a pas encore d'avatar_url — même logique
-  // que clubInitiales (DashboardClub.jsx), dupliquée localement pour ce seul usage.
-  const clubInitiale = (club?.club || '?').trim()[0]?.toUpperCase() || '?'
+function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance }) {
+  const colors = useColors()
+  const { theme } = useTheme()
+  const aujourdHui = new Date().toISOString().split('T')[0]
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
   // principal) — il ne peut utiliser que ses props ou des helpers locaux, pas les
@@ -1322,7 +1363,13 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
   // Segment de la bande de score : pas de bordure individuelle, la grille
   // parente dessine les filets (1px de fond visible dans les interstices).
   const segLabelSt = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint, margin: '0 0 6px' }
-  const segValueSt = { fontSize: '24px', fontWeight: 800, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.3px' }
+  // Cartes des chiffres clés : même hauteur minimale, contenu réparti.
+  const kpiCardSt = { ...cardSt, padding: '16px 18px', minHeight: '116px', minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }
+  const kpiValeurSt = { fontSize: '32px', fontWeight: 800, margin: 0, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }
+  const kpiSousSt = { fontSize: '12px', color: colors.text.faint, margin: 0 }
+  // Le prochain match est « du week-end » s'il tombe ce samedi ou ce dimanche.
+  const matchDuWeekEnd = !!prochainMatch && prochainMatch.date <= dimancheStr && [0, 6].includes(new Date(prochainMatch.date + 'T12:00:00').getDay())
+  const dateDuJour = new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase())
 
   // Zone "Club" (annonces / terrains / déplacements) — définie une seule
   // fois, affichée soit en colonne latérale (desktop), soit juste après le
@@ -1346,100 +1393,76 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
 
   return (
     <div>
-      {/* En-tête */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '6px' }}>
-        {club && (
-          club.avatar_url
-            ? <img src={club.avatar_url} alt={club.club || ''} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${colors.border.subtle}`, flexShrink: 0 }} />
-            : <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + '20', color: colors.accent.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>{clubInitiale}</div>
-        )}
-        <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '10px' }}><IcoHome /> Accueil</h1>
-          <p style={{ color: colors.text.secondary, fontSize: '14px', margin: '4px 0 0' }}>{club?.club ? `${club.club} · ` : ''}Vue d'ensemble de ton équipe</p>
+      <style>{`
+        .df-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 1200px) { .df-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 480px) { .df-kpi-grid { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* 1. En-tête : date du jour, salutation, une seule action principale. */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: '0 0 4px', fontSize: '13px', color: colors.text.faint }}>{dateDuJour}</p>
+          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Bonjour{prenom ? ` ${prenom}` : ''}</h1>
         </div>
+        <button onClick={onNouvelleSeance}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 18px', minHeight: '44px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+          <IcoPlus /> Nouvelle séance
+        </button>
       </div>
 
-      <div style={{ height: '1px', background: colors.border.subtle, margin: '1.25rem 0 1.5rem' }} />
-
-      {/* Bande de score — remplace les 4 cartes KPI (demande de validation du
-          2026-10-12, point 1). Une seule ligne continue, filets fins entre
-          segments (via le gap sur fond coloré, pas de bordure par bloc),
-          chiffres en tabular-nums. Données et calculs strictement inchangés. */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : '0.8fr 1.3fr 0.8fr 1.4fr', gap: '1px', background: colors.border.subtle, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', overflow: 'hidden', marginBottom: '1.75rem' }}>
-        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
+      {/* 2. Quatre chiffres clés de même taille. Calculs inchangés (effectif,
+          bilan V/N/D, présence de la semaine, prochain match). */}
+      <div className="df-kpi-grid" style={{ marginBottom: '1.25rem' }}>
+        <div style={kpiCardSt}>
           <p style={segLabelSt}>Effectif</p>
-          <p style={segValueSt}>{totalJoueurs}</p>
+          <p style={kpiValeurSt}>{totalJoueurs}</p>
+          <p style={kpiSousSt}>{totalJoueurs > 1 ? 'joueurs' : 'joueur'}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
+        <div style={kpiCardSt}>
           <p style={segLabelSt}>Bilan</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <DonutVND v={victoires} n={nuls} d={defaites} size={38} />
-            {/* Pourcentages en blanc, couleur portée par un repère discret
-                (mêmes teintes que le donut). Calculs inchangés (pctBilan). */}
-            <div style={{ display: 'flex', gap: isMobile ? '10px' : '16px', flexWrap: 'wrap', minWidth: 0 }}>
-              {[
-                { label: 'Victoires', val: victoires, color: '#4ade80' },
-                { label: 'Nuls', val: nuls, color: '#facc15' },
-                { label: 'Défaites', val: defaites, color: '#ef4444' },
-              ].map(s => (
-                <div key={s.label} style={{ minWidth: 0 }}>
-                  <p style={{ margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', color: colors.text.faint, whiteSpace: 'nowrap' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.color, flexShrink: 0 }} />{s.label}
-                  </p>
-                  <p style={{ ...segValueSt, fontSize: '16px', color: colors.text.primary }}>{pctBilan(s.val)}<span style={{ fontSize: '10px', opacity: 0.6 }}>%</span></p>
-                </div>
-              ))}
-            </div>
+          <p style={kpiValeurSt}>{totalMatchsJoues > 0 ? <>{pctBilan(victoires)}<span style={{ fontSize: '16px', opacity: 0.6 }}>%</span></> : '—'}</p>
+          <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', background: colors.background.raised, margin: '2px 0 6px' }}>
+            {[
+              { n: victoires, couleur: colors.accent.success },
+              { n: nuls, couleur: colors.accent.orange },
+              { n: defaites, couleur: colors.accent.red },
+            ].filter(s => s.n > 0).map(s => <div key={s.couleur} style={{ flex: s.n, background: s.couleur }} />)}
           </div>
+          <p style={kpiSousSt}>{totalMatchsJoues > 0 ? `${victoires} V · ${nuls} N · ${defaites} D` : 'Aucun match joué'}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0 }}>
-          <p style={segLabelSt}>Présence S.</p>
-          <p style={{ ...segValueSt, color: colors.accent.blue }}>{tauxPresenceSemaine != null ? `${tauxPresenceSemaine}%` : '—'}</p>
+        <div style={kpiCardSt}>
+          <p style={segLabelSt}>Présence</p>
+          <p style={{ ...kpiValeurSt, color: tauxPresenceSemaine != null ? colors.accent.success : colors.text.disabled }}>
+            {tauxPresenceSemaine != null ? <>{tauxPresenceSemaine}<span style={{ fontSize: '16px', opacity: 0.6 }}>%</span></> : '—'}
+          </p>
+          <p style={kpiSousSt}>{tauxPresenceSemaine != null ? 'cette semaine' : 'Pas de séance passée cette semaine'}</p>
         </div>
 
-        <div style={{ background: colors.background.surface, padding: '14px 18px', minWidth: 0, gridColumn: isMobile ? 'span 2' : 'auto' }}>
-          <p style={segLabelSt}>Prochain match</p>
+        <div style={{ ...kpiCardSt, background: colors.accent.brand, borderColor: colors.accent.brand, color: colors.accent.onBrand }}>
+          <p style={{ ...segLabelSt, color: 'inherit', opacity: 0.85 }}>{matchDuWeekEnd ? 'Match du week-end' : 'Prochain match'}</p>
           {prochainMatch ? (
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-              <p style={{ ...segValueSt, fontSize: '16px' }}>{new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}</p>
-              <span style={{ fontSize: '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochainMatch.adversaire || '—'}</span>
-              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', color: prochainMatch.domicile ? colors.accent.green : colors.accent.orange }}>
-                {prochainMatch.domicile ? 'DOM' : 'EXT'}
-              </span>
-            </div>
+            <>
+              <p style={{ ...kpiValeurSt, fontSize: '19px', letterSpacing: 0, lineHeight: 1.2 }}>
+                {new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}
+              </p>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {prochainMatch.adversaire || '—'} <span style={{ opacity: 0.85, fontWeight: 500 }}>· {prochainMatch.domicile ? 'Domicile' : 'Extérieur'}</span>
+              </p>
+            </>
           ) : (
-            <p style={{ fontSize: '13px', color: colors.text.disabled, margin: 0 }}>Aucun match planifié</p>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Aucun match planifié</p>
           )}
         </div>
       </div>
 
-      {/* Ligne médiane — signature graphique football (filet + rond central),
-          utilisée une seule fois, purement graphique, sans couleur ni glow. */}
-      <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 1.75rem' }}>
-        <div style={{ flex: 1, height: '1px', background: colors.border.subtle }} />
-        <div style={{ width: '7px', height: '7px', borderRadius: '50%', border: `1.5px solid ${colors.border.strong}`, margin: '0 10px', flexShrink: 0 }} />
-        <div style={{ flex: 1, height: '1px', background: colors.border.subtle }} />
-      </div>
-
-      {/* Prochaine séance — bloc prioritaire (demande de validation du
-          2026-10-12) : regroupe les informations qui étaient éclatées entre
-          la carte "Dernier sondage" (Actions rapides) et la carte
-          "Présences — Prochain entraînement" (Activité, toujours affichée
-          plus bas, qui elle détaille les 5 statuts de réponse — malade/blessé/
-          convoqué distincts — alors qu'ici on n'affiche que les 3 compteurs
-          demandés : présents/absents/en attente, pour rester lisible en un
-          coup d'œil). Les deux raccourcis réutilisent exactement les mêmes
-          mécanismes que le reste de l'app (setFicheApercu/setFicheApercuEnHaut,
-          déjà utilisés ailleurs ; même garde `if (s)` en cas de fiche_id
-          orphelin — cf. bouton "Voir la fiche" de l'onglet Entraînements). */}
-      <p style={eyebrowSt}>Prochaine séance</p>
-      {/* V2.1 : composition en 3 zones sur desktop (identité de la séance |
-          compteurs | raccourcis) au lieu d'un empilement vertical qui laissait
-          la largeur vide ; empilée sur mobile. Données, calculs et actions
-          strictement inchangés — seule la disposition change. */}
-      <div style={{ ...cardSt, marginBottom: '1.75rem' }}>
+      {/* 3. Prochaine séance : carte blanche, trait couleur du club à gauche.
+          Les raccourcis réutilisent les mêmes mécanismes que le reste de l'app
+          (setFicheApercu/setFicheApercuEnHaut ; même garde `if (s)` en cas de
+          fiche_id orphelin). Compteurs : réponses au sondage de dispo. */}
+      <div style={{ ...cardSt, borderLeft: `4px solid ${colors.accent.brand}`, marginBottom: '1.25rem' }}>
         {!prochainEnt ? (
           <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucune séance planifiée.</p>
         ) : (() => {
@@ -1451,56 +1474,53 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
           const estAujourdHui = prochainEnt.date === aujourdHui
           const demain = new Date(); demain.setDate(demain.getDate() + 1)
           const estDemain = prochainEnt.date === demain.toISOString().split('T')[0]
-          const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })
-          const btnSeanceSt = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'transparent', padding: '8px 16px', minHeight: '40px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flex: isMobile ? '1 1 auto' : 'none' }
+          const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+          const btnSeanceSt = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 16px', minHeight: '40px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flex: isMobile ? '1 1 auto' : 'none' }
+          const compteur = (n, libelle, couleur) => (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: colors.text.secondary, whiteSpace: 'nowrap' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleur, flexShrink: 0 }} />
+              <strong style={{ color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{n}</strong> {libelle}
+            </span>
+          )
           return (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.4fr) auto auto', gap: isMobile ? '16px' : '0', alignItems: 'center' }}>
-              {/* Zone 1 — identité de la séance : pavé date façon feuille de
-                  match + thème, date/heure et statut du sondage. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, paddingRight: isMobile ? 0 : '24px' }}>
-                <div style={{ width: '54px', flexShrink: 0, textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '6px', overflow: 'hidden' }}>
-                  <p style={{ margin: 0, padding: '3px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint, background: colors.background.raised }}>{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                  <p style={{ margin: 0, padding: '4px 0 0', fontSize: '22px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
-                  <p style={{ margin: 0, padding: '2px 0 5px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px 24px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0, flex: '1 1 340px' }}>
+                {/* Date en grand : le jour en couleur du club. */}
+                <div style={{ width: '64px', flexShrink: 0, textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                  <p style={{ margin: '2px 0', fontSize: '38px', fontWeight: 800, lineHeight: 1, color: colors.accent.brand, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{prochainEnt.description || mesSeancesOuvertes.find(s => s.id === prochainEnt.fiche_id)?.theme || 'Entraînement'}</p>
-                  <p style={{ margin: '4px 0 8px', fontSize: '12px', color: colors.text.faint }}>{labelDate}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''}</p>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: clos ? colors.background.raised : colors.accent.green + alpha.subtle, border: `1px solid ${clos ? colors.border.strong : colors.accent.green + alpha.medium}`, color: clos ? colors.text.faint : colors.accent.green, whiteSpace: 'nowrap' }}>
-                    {clos
-                      ? <><IcoCadenas /> Sondage clos</>
-                      : <><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: colors.accent.green, flexShrink: 0 }} /> Sondage ouvert</>}
-                  </span>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>Prochaine séance</p>
+                  <p style={{ margin: '3px 0 0', fontSize: '17px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{prochainEnt.description || mesSeancesOuvertes.find(s => s.id === prochainEnt.fiche_id)?.theme || 'Entraînement'}</p>
+                  <p style={{ margin: '3px 0 10px', fontSize: '13px', color: colors.text.faint }}>{labelDate}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''} · {clos ? 'sondage clos' : 'sondage ouvert'}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px 16px', flexWrap: 'wrap' }}>
+                    {compteur(presents, presents > 1 ? 'présents' : 'présent', colors.accent.success)}
+                    {compteur(absents, absents > 1 ? 'absents' : 'absent', colors.accent.red)}
+                    {compteur(enAttente, 'en attente', colors.text.disabled)}
+                  </div>
                 </div>
               </div>
 
-              {/* Zone 2 — compteurs, séparés par des filets (desktop :
-                  verticaux ; mobile : horizontaux). */}
-              <div style={{ display: 'flex', gap: isMobile ? '0' : '28px', justifyContent: isMobile ? 'space-around' : 'flex-start', padding: isMobile ? '14px 0' : '4px 28px', borderLeft: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, borderRight: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, borderTop: isMobile ? `1px solid ${colors.border.subtle}` : 'none', borderBottom: isMobile ? `1px solid ${colors.border.subtle}` : 'none' }}>
-                <div><p style={segLabelSt}>Présents</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.accent.green }}>{presents}</p></div>
-                <div><p style={segLabelSt}>Absents</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.accent.red }}>{absents}</p></div>
-                <div><p style={segLabelSt}>En attente</p><p style={{ ...segValueSt, fontSize: '20px', color: colors.text.dim }}>{enAttente}</p></div>
-              </div>
-
-              {/* Zone 3 — raccourcis (mêmes actions qu'avant). */}
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', flexWrap: 'wrap', gap: '8px', paddingLeft: isMobile ? 0 : '24px', alignItems: 'stretch' }}>
-                <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
-                  style={{ ...btnSeanceSt, border: `1px solid ${colors.border.default}`, color: colors.accent.blue }}>
-                  <IcoCheckCircle /> Voir les joueurs présents
-                </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
                 {prochainEnt.fiche_id ? (
                   <button
                     onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochainEnt.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
-                    style={{ ...btnSeanceSt, border: '1px solid #4ade8040', color: colors.accent.green }}>
-                    <IcoFileText /> Voir la fiche séance
+                    style={{ ...btnSeanceSt, background: colors.accent.brand, color: colors.accent.onBrand, border: `1px solid ${colors.accent.brand}` }}>
+                    <IcoFileText /> Fiche séance
                   </button>
                 ) : (
                   <button
                     onClick={() => setModalImportFicheEntrainement(prochainEnt.id)}
-                    style={{ ...btnSeanceSt, border: '1px solid #4ade8040', color: colors.accent.green }}>
+                    style={{ ...btnSeanceSt, background: colors.accent.brand, color: colors.accent.onBrand, border: `1px solid ${colors.accent.brand}` }}>
                     <IcoLink /> Attacher une fiche
                   </button>
                 )}
+                <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
+                  style={{ ...btnSeanceSt, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary }}>
+                  <IcoCheckCircle /> Joueurs présents
+                </button>
               </div>
             </div>
           )
@@ -1516,38 +1536,32 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
           partir du briefing — planning, Club, classement, actions, alertes. */}
       <div>
         <div style={{ minWidth: 0 }}>
-          <p style={eyebrowSt}>Briefing de la semaine</p>
-
-          {/* V2.1 — résumé compact des alertes : uniquement les catégories
-              présentes dans le panneau "Alertes & infos" (même décompte,
-              sans niveau d'urgence ajouté) + accès au panneau détaillé, qui
-              reste affiché plus bas dans Activité. */}
-          {resumeAlertes && (
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '10px 12px', marginBottom: '1rem', border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', background: colors.background.surface }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: resumeAlertes.total === 0 ? colors.text.faint : colors.text.secondary, lineHeight: 1.5, flex: '1 1 220px', minWidth: 0 }}>
-                {resumeAlertes.total === 0 ? 'Aucune alerte pour le moment.' : `${phraseResumeAlertes(resumeAlertes.parCategorie)}.`}
+          {/* 4. Bandeau d'alerte de la semaine : résumé des alertes du panneau
+              "Alertes & infos" (même décompte, sans niveau d'urgence ajouté) ;
+              "Voir" défile jusqu'au panneau détaillé, affiché plus bas. Rien
+              n'est affiché s'il n'y a aucune alerte. */}
+          {resumeAlertes && resumeAlertes.total > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', marginBottom: '1.25rem', borderRadius: '12px', background: theme === 'claire' ? '#FFF4E5' : colors.accent.amber + '1F', border: `1px solid ${theme === 'claire' ? '#F5DDB8' : colors.accent.amber + '40'}`, color: theme === 'claire' ? '#7A4A06' : colors.accent.amber }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              <span style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.5, flex: 1, minWidth: 0 }}>
+                {`${phraseResumeAlertes(resumeAlertes.parCategorie)}.`}
               </span>
-              {resumeAlertes.total > 0 && (
-                <button onClick={ouvrirPanneauAlertes}
-                  style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 2px', minHeight: '32px' }}>
-                  Voir le détail →
-                </button>
-              )}
+              <button onClick={ouvrirPanneauAlertes}
+                style={{ background: 'transparent', border: 'none', color: 'inherit', fontSize: '13px', fontWeight: 800, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 2px', minHeight: '32px', flexShrink: 0 }}>
+                Voir
+              </button>
             </div>
           )}
 
-          {/* Planning hebdomadaire — widget partagé avec Club/Joueur, non modifié
-              (demande de validation : les 7 jours doivent rester lisibles,
-              donc placé dans la colonne large, pas la colonne secondaire). */}
-          <div style={{ ...cardSt, marginBottom: '1.25rem' }}>
-            <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px', color: colors.accent.blue, display: 'flex', alignItems: 'center', gap: '6px' }}><IcoCalendar /> {t('planning_semaine_titre', lang)}</p>
-            <PlanningSemaineWidget
-              entrainements={entrainements}
-              matchs={matchs}
-              onClickEntrainement={() => setActiveSection('entrainements')}
-              onClickMatch={() => setActiveSection('matchs')}
-            />
-          </div>
+          {/* 5. Planning de la semaine, 7 colonnes. */}
+          <PlanningSemaineAccueil
+            entrainements={entrainements}
+            matchs={matchs}
+            lang={lang}
+            onClickEntrainement={() => setActiveSection('entrainements')}
+            onClickMatch={() => setActiveSection('matchs')}
+            onVoirTout={() => setActiveSection('entrainements')}
+          />
 
           {/* Club — juste sous le planning, sur tous les formats. */}
           <div style={{ marginBottom: '1.75rem' }}>
@@ -1600,33 +1614,35 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
                 {podiumActuel.length === 0 ? (
                   <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
                 ) : (() => {
-                  // V3 : podium (n°1 au centre, mis en avant), photo du profil
-                  // joueur (Avatar : initiales à défaut). Mêmes données qu'avant.
-                  const METAUX = ['#fbbf24', '#cbd5e1', '#d08b4b']
+                  // Vrai podium : 2e à gauche, 1er au centre (avatar plus grand bordé
+                  // couleur du club, marche haute pleine couleur du club), 3e à droite
+                  // (marches grises plus basses). Toujours 3 emplacements : avec moins
+                  // de 3 classés, les places vides restent vides. Mêmes données qu'avant.
                   const Etoile = ({ taille = 14 }) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
-                  const top = podiumActuel.slice(0, 3).map((item, idx) => ({ ...item, rang: idx + 1 }))
-                  const ordre = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : top
+                  const parRang = podiumActuel.slice(0, 3).map((item, idx) => ({ ...item, rang: idx + 1 }))
+                  const emplacements = [2, 1, 3].map(r => parRang.find(x => x.rang === r) || null)
+                  const hauteurMarche = { 1: isMobile ? 64 : 84, 2: isMobile ? 46 : 60, 3: isMobile ? 34 : 44 }
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ordre.length}, minmax(0, 1fr))`, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', overflow: 'hidden' }}>
-                      {ordre.map((item, i) => {
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: isMobile ? '6px' : '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: isMobile ? '16px 10px 0' : '22px 20px 0', overflow: 'hidden' }}>
+                      {emplacements.map((item, i) => {
+                        if (!item) return <div key={`vide-${i}`} />
                         const premier = item.rang === 1
-                        const taille = premier ? (isMobile ? 58 : 76) : (isMobile ? 44 : 58)
-                        const metal = METAUX[item.rang - 1]
+                        const taille = premier ? (isMobile ? 58 : 76) : (isMobile ? 44 : 56)
                         return (
-                          <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', textAlign: 'center', padding: isMobile ? '14px 6px' : '20px 12px', borderLeft: i > 0 ? `1px solid ${colors.border.subtle}` : 'none', background: premier ? colors.background.raised : 'transparent', minWidth: 0 }}>
-                            <div style={{ position: 'relative', marginBottom: '10px' }}>
-                              <Avatar person={item.joueur} size={taille} bg={metal + '22'} border={`${premier ? 3 : 2}px solid ${metal}`} textColor={metal} />
-                              <span style={{ position: 'absolute', top: premier ? '-6px' : '-4px', left: premier ? '-6px' : '-4px', width: premier ? '26px' : '22px', height: premier ? '26px' : '22px', borderRadius: '50%', background: metal, color: colors.black, fontSize: premier ? '13px' : '11px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${premier ? colors.background.raised : colors.background.surface}` }}>
-                                {item.rang}
-                              </span>
+                          <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0 }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <Avatar person={item.joueur} size={taille} bg={colors.background.raised} border={premier ? `3px solid ${colors.accent.brand}` : `2px solid ${colors.border.strong}`} textColor={premier ? colors.accent.blue : colors.text.secondary} />
                             </div>
                             <p style={{ margin: 0, fontSize: isMobile ? '12px' : (premier ? '15px' : '13px'), fontWeight: 800, color: colors.text.primary, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', maxWidth: '100%' }}>
                               {item.joueur.prenom} {item.joueur.nom}
                             </p>
                             {item.joueur.poste && !isMobile && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.joueur.poste}</p>}
-                            <p style={{ margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: '5px', fontSize: isMobile ? '18px' : (premier ? '26px' : '20px'), fontWeight: 800, color: colors.text.primary, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            <p style={{ margin: '6px 0 10px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: isMobile ? '16px' : (premier ? '22px' : '18px'), fontWeight: 800, color: colors.text.primary, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                               {item.count} <Etoile taille={premier ? 18 : 14} />
                             </p>
+                            <div style={{ width: '100%', height: `${hauteurMarche[item.rang]}px`, borderRadius: '8px 8px 0 0', background: premier ? colors.accent.brand : colors.background.raised, color: premier ? colors.accent.onBrand : colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premier ? '28px' : '20px', fontWeight: 800 }}>
+                              {item.rang}
+                            </div>
                           </div>
                         )
                       })}
@@ -1635,19 +1651,15 @@ function AccueilEducateur({ clubId, club, userId, equipeActiveId, equipeUnique, 
                 })()}
 
                 {podiumPrecedent.length > 0 && (
-                  <>
-                    <p style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 8px' }}>
-                      {moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })} (rappel)
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 0.8 }}>
-                      <Avatar person={podiumPrecedent[0].joueur} size={26} bg="#fbbf2422" border="2px solid #fbbf24" textColor="#fbbf24" />
-                      <span style={{ flex: 1, fontSize: '12px' }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>
-                        {podiumPrecedent[0].count}
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
-                      </span>
-                    </div>
-                  </>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', margin: '10px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                    <span style={{ textTransform: 'capitalize' }}>{moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })}</span>
+                    <span>:</span>
+                    <span style={{ fontWeight: 700, color: colors.text.secondary }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                      {podiumPrecedent[0].count}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
+                    </span>
+                  </p>
                 )}
               </div>
             )
@@ -2421,6 +2433,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [affiliations, setAffiliations] = useState([])
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
+  // Couleur du club d'affiliation (lien accepté) ; sans club = vert par défaut.
+  useDonnerCouleurClub(clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null)
+  const logoClubMenu = clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url : null
   const [cancelling, setCancelling] = useState(false)
   const [cancelDone, setCancelDone] = useState(false)
   const [annoncesClub, setAnnoncesClub] = useState([])
@@ -4482,7 +4497,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                          padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: colors.accent.green }} /> Compte lié
           </span>
-          {j.numero_licence && <span style={{ fontSize: 11, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>Licencié</span>}
+          {j.numero_licence && <span style={{ fontSize: 11, color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>Licencié</span>}
           {canEdit('effectif') && (
             <button onClick={() => reinitialiserAccesJoueur(j)}
               style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
@@ -4535,7 +4550,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             onClick={() => inviterJoueur(j)}
             style={{
               background: (inviteEmails[j.id] || '').trim() ? colors.accent.blue + alpha.soft : colors.background.surface,
-              border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? '#60a5fa60' : colors.border.default),
+              border: '1px solid ' + ((inviteEmails[j.id] || '').trim() ? `${colors.accent.blue}60` : colors.border.default),
               color: (inviteEmails[j.id] || '').trim() ? colors.accent.blue : colors.text.faint,
               borderRadius: 6, padding: '5px 10px', fontSize: 11,
               fontWeight: 700, cursor: (inviteEmails[j.id] || '').trim() ? 'pointer' : 'default',
@@ -5442,7 +5457,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     absent:   { label: t('ent_absent', lang),    emoji: '❌', bg: colors.accent.red + alpha.subtle, border: colors.accent.red + alpha.medium, color: colors.accent.red },
     blesse:   { label: t('ent_blesse', lang),    emoji: '🤕', bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.medium, color: colors.accent.orange },
     malade:   { label: t('ent_malade', lang),    emoji: '🤒', bg: colors.accent.purple + alpha.subtle, border: colors.accent.purple + alpha.medium, color: colors.accent.purple },
-    convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.medium, color: colors.accent.blue },
+    convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: colors.accent.info + alpha.subtle, border: colors.accent.info + alpha.medium, color: colors.accent.info },
   }
 
   // Réponses des joueurs à la dispo d'un match (disponibilites.match_id), triées
@@ -5691,7 +5706,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     label: { fontSize: '11px', color: colors.text.faint, marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' },
     btn: (color = colors.accent.blue) => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
-    btnSolid: { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
+    btnSolid: { background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
     // Bouton icône discret — pour les actions secondaires groupées sur une
     // carte (sondage/convocation/édition/suppression) : fond quasi
     // transparent, icône teintée mais atténuée, moins voyant qu'un st.btn
@@ -5725,7 +5740,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
             <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_mensuel', lang)}</button>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_annuel', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_annuel', lang)}</button>
           </div>
           <span onClick={() => { signOutSafe(); navigate('/') }} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>{t('btn_deconnexion', lang)}</span>
         </div>
@@ -5961,7 +5976,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           )}
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
-            <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.black, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon matériel</button>
+            <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.accent.onBrand, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon matériel</button>
           </div>
         </div>
       </div>
@@ -6002,8 +6017,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       {/* Overlay mobile */}
       {isMobile && sidebarOpen && (
         <div
+          className="df-drawer-backdrop"
           onClick={() => setSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 40 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 40 }}
         />
       )}
 
@@ -6019,50 +6035,42 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           {sidebarCollapsed ? <IcoChevronRight /> : <IcoChevronLeft />}
         </button>
       )}
-      <aside style={{
-        width: isTablet ? (sidebarCollapsed ? '0px' : '64px') : '220px', background: colors.background.sunken, borderRight: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', flexShrink: 0, overflowX: 'hidden',
+      <aside className="df-menu df-drawer" data-ouvert={isMobile && sidebarOpen} style={{
+        width: isTablet ? (sidebarCollapsed ? '0px' : '64px') : '220px', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowX: 'hidden',
         ...(isMobile ? {
-          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
+          position: 'fixed', top: 0, left: sidebarOpen ? 0 : -240, height: '100%', zIndex: 50, overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
         } : {
           position: 'sticky', top: 0, height: '100vh', minHeight: '100vh', overflowY: 'auto', transition: isTablet ? 'width 0.2s ease' : 'none',
         }),
       }}>
         <div style={{ padding: isMobile ? '16px 16px 12px' : isTablet ? '20px 8px 12px' : '24px 20px 16px', textAlign: isTablet ? 'center' : 'left', display: 'flex', alignItems: isMobile ? 'center' : undefined, justifyContent: isMobile ? 'space-between' : undefined }}>
           {isTablet ? (
-            <div style={{ fontSize: '16px', fontWeight: 800, whiteSpace: 'nowrap' }}>D<span style={{ color: colors.accent.green }}>F</span></div>
+            <EnTeteMenu compact logoUrl={logoClubMenu} />
           ) : (
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                Digital<span style={{ color: colors.accent.green }}>Football</span>
-              </div>
-              <span style={{ background: colors.accent.green + alpha.soft, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '8px' }}>Éducateur</span>
-              {profil?.club && <p style={{ fontSize: '12px', color: colors.text.faint, margin: '8px 0 0' }}>{profil.club}</p>}
+              <EnTeteMenu logoUrl={logoClubMenu} />
+              <span style={{ background: 'rgba(255,255,255,0.2)', color: 'var(--menu-text, #FFFFFF)', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', display: 'inline-block', marginTop: '10px' }}>Éducateur</span>
+              {profil?.club && <p style={{ fontSize: '12px', color: 'var(--menu-text-muted, #FFFFFF)', margin: '8px 0 0' }}>{profil.club}</p>}
               {mesEquipes.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '10px' }}>
                   {mesEquipes.length > 1 ? mesEquipes.map(equipe => (
-                    <div key={equipe.id} style={{
-                      display: 'inline-flex', alignItems: 'center', borderRadius: '20px',
-                      background: equipeActive?.id === equipe.id ? colors.accent.green : colors.background.raised,
-                    }}>
+                    <div key={equipe.id} className="df-menu-pastille" data-actif={equipeActive?.id === equipe.id}>
                       <button onClick={() => changerEquipe(equipe)} style={{
-                        padding: '4px 4px 4px 10px', borderRadius: '20px 0 0 20px', border: 'none', cursor: 'pointer', background: 'transparent',
-                        color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted,
-                        fontWeight: equipeActive?.id === equipe.id ? 800 : 500, fontSize: '11px', fontFamily: 'Inter, sans-serif',
+                        padding: '4px 4px 4px 10px', borderRadius: '20px 0 0 20px',
+                        fontWeight: equipeActive?.id === equipe.id ? 800 : 500,
                       }}>
                         {labelCategorie(equipe.nom)} {equipe.equipe}
                       </button>
                       <button onClick={() => supprimerEquipe(equipe)} title="Supprimer cette équipe" style={{
-                        padding: '4px 8px 4px 2px', borderRadius: '0 20px 20px 0', border: 'none', cursor: 'pointer', background: 'transparent',
-                        color: equipeActive?.id === equipe.id ? colors.black : colors.text.muted, fontSize: '12px', lineHeight: 1, opacity: 0.7,
+                        padding: '4px 8px 4px 2px', borderRadius: '0 20px 20px 0', fontSize: '12px', lineHeight: 1, opacity: 0.7,
                       }}>
                         ×
                       </button>
                     </div>
                   )) : (
-                    <span style={{ fontSize: '11px', color: colors.text.faint }}>{labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--menu-text-muted, #FFFFFF)' }}>{labelCategorie(equipeActive.nom)} — Équipe {equipeActive.equipe}</span>
                   )}
-                  <button onClick={() => { setActiveSection('equipe'); setAjouterEquipeOuvert(true) }} title="Ajouter une équipe"
-                    style={{ padding: '4px 10px', borderRadius: '20px', border: `1px dashed ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button className="df-menu-contour" data-pointille="true" onClick={() => { setActiveSection('equipe'); setAjouterEquipeOuvert(true) }} title="Ajouter une équipe">
                     + Équipe
                   </button>
                 </div>
@@ -6071,7 +6079,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           )}
           {isMobile && (
             <button onClick={() => setSidebarOpen(false)} title="Réduire le menu"
-              style={{ background: 'transparent', border: 'none', color: colors.text.muted, cursor: 'pointer', padding: '6px', display: 'flex' }}>
+              style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: '6px', display: 'flex' }}>
               <IcoX />
             </button>
           )}
@@ -6079,10 +6087,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {!(isTablet && sidebarCollapsed) && <>
         <div style={{ padding: isTablet ? '0 8px' : '0 10px' }}>
-          <style>{menuLateralCss(colors)}</style>
+          <style>{menuLateralCss}</style>
           <button className="df-nav-btn" data-actif={activeSection === 'accueil'} data-compact={isTablet}
-            onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}
-            style={{ '--df-accent': colors.accent.blue }}>
+            onClick={() => { setActiveSection('accueil'); setSidebarOpen(false) }} title={isTablet ? 'Accueil' : undefined}>
             <span className="df-nav-icone"><IcoHome /></span>{!isTablet && <span style={{ flex: 1 }}>Accueil</span>}
           </button>
         </div>
@@ -6096,12 +6103,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const cible = item.subKeys ? (item.subKeys.find(canView) || item.subKeys[0]) : item.key
                 return (
                 <button key={item.key} id={`nav-${item.key}`} className="df-nav-btn" data-actif={actif} data-locked={!!item.locked} data-compact={isTablet}
-                  onClick={() => { setActiveSection(cible); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}
-                  style={{ '--df-accent': colors.accent.blue }}>
+                  onClick={() => { setActiveSection(cible); setSidebarOpen(false) }} title={isTablet ? item.label : undefined}>
                   <span className="df-nav-icone">{item.icon}</span>
                   {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
                   {!!item.badge && <span className="df-nav-badge">{item.badge}</span>}
-                  {item.locked && !isTablet && <span style={{ fontSize: '12px', opacity: 0.4 }}>🔒</span>}
+                  {item.locked && !isTablet && <span style={{ fontSize: '12px' }}>🔒</span>}
                 </button>
                 )
               })}
@@ -6109,44 +6115,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           ))}
         </nav>
 
-        <div style={{ borderTop: `1px solid ${colors.border.subtle}`, padding: isTablet ? '8px' : '8px 10px' }}>
+        <div style={{ borderTop: BORDURE_MENU, padding: isTablet ? '8px' : '8px 10px' }}>
           <button id="nav-profil" className="df-nav-btn" data-actif={activeSection === 'profil'} data-compact={isTablet}
-            onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}
-            style={{ '--df-accent': colors.accent.blue }}>
+            onClick={() => { setActiveSection('profil'); setSidebarOpen(false) }} title={isTablet ? t('nav_profil', lang) : undefined}>
             <span className="df-nav-icone"><IcoUser /></span>{!isTablet && <span style={{ flex: 1 }}>{t('nav_profil', lang)}</span>}
           </button>
           {mesRoles?.club && !isTablet && (
-            <button onClick={() => navigate('/club')}
-              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: '1px solid #60a5fa', borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+            <button className="df-menu-contour" onClick={() => navigate('/club')} style={{ marginTop: '4px' }}>
               🏢 Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}
             </button>
           )}
           {mesRoles?.joueur && !isTablet && (
-            <button onClick={() => navigate('/dashboard-joueur')}
-              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+            <button className="df-menu-contour" onClick={() => navigate('/dashboard-joueur')} style={{ marginTop: '4px' }}>
               ⚽ Vue Joueur
             </button>
           )}
           {mesRoles?.parent && !isTablet && (
-            <button onClick={() => navigate('/dashboard-parent')}
-              style={{ width: '100%', marginTop: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+            <button className="df-menu-contour" onClick={() => navigate('/dashboard-parent')} style={{ marginTop: '4px' }}>
               👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}
             </button>
           )}
 
           {/* ── Sélecteur de langue — masqué en tablette réduite, pas la place pour la grille de drapeaux ── */}
           {!isTablet && (
-            <div style={{ padding: '8px 2px', borderTop: `1px solid ${colors.border.subtle}`, marginTop: '4px', marginBottom: '4px' }}>
+            <div style={{ padding: '8px 2px', borderTop: BORDURE_MENU, marginTop: '4px', marginBottom: '4px' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {LANGS.map(l => (
-                  <button key={l.code} onClick={() => setLang(l.code)}
-                    title={l.label}
-                    style={{
-                      padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                      background: lang === l.code ? colors.accent.blue + alpha.soft : 'transparent',
-                      outline: lang === l.code ? '1px solid #60a5fa40' : 'none',
-                      fontSize: '14px', lineHeight: 1,
-                    }}>
+                  <button key={l.code} className="df-menu-chip" data-actif={lang === l.code} onClick={() => setLang(l.code)}
+                    title={l.label} style={{ fontSize: '14px', lineHeight: 1 }}>
                     {l.flag}
                   </button>
                 ))}
@@ -6155,11 +6151,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           )}
 
           <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-            <button onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
-              style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center', background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: isTablet ? '8px 0' : '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}>
+            <button className="df-menu-contour" onClick={() => { signOutSafe(); navigate('/') }} title={isTablet ? t('btn_deconnexion', lang) : undefined}
+              style={{ flex: 1, minWidth: 0, justifyContent: 'center', padding: isTablet ? '8px 0' : '8px 12px' }}>
               {isTablet ? <IcoLogOut /> : t('btn_deconnexion', lang)}
             </button>
-            <ThemeToggleButton style={{ border: `1px solid ${colors.border.faint}` }} />
+            <ThemeToggleButton style={MENU_TOGGLE_STYLE} />
           </div>
         </div>
         </>}
@@ -6169,21 +6165,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', marginLeft: '-12px' }}>
-            <button onClick={() => setSidebarOpen(true)}
-              style={{
-                padding: '12px', minWidth: '48px', minHeight: '48px', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
-              }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.text.primary} strokeWidth="2.5" strokeLinecap="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
+            <button className="df-burger" onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu" style={{ ...coqueVars(colors, colors.accent.blue), marginLeft: '12px' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
               </svg>
             </button>
             <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>
               Digital<span style={{ color: colors.accent.green }}>Football</span>
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: colors.accent.blue, color: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, marginRight: '2px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: colors.accent.blue, color: colors.accent.onBrand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, marginRight: '2px' }}>
               {profil?.prenom?.[0] || profil?.nom?.[0] || 'E'}
             </div>
           </div>
@@ -6203,7 +6193,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             )}
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
-              club={clubAffiliation?.club}
+              prenom={profil?.prenom}
               userId={userId}
               equipeActiveId={equipeActive?.id}
               equipeUnique={mesEquipes.length <= 1}
@@ -6222,6 +6212,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               setFicheApercu={setFicheApercu}
               setFicheApercuEnHaut={setFicheApercuEnHaut}
               setModalImportFicheEntrainement={setModalImportFicheEntrainement}
+              onNouvelleSeance={() => {
+                setActiveSection('entrainements'); setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false)
+                setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200)
+              }}
             />
           </>
         )}
@@ -6265,7 +6259,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               // comptes liés, licenciés), semaine en cartes, groupe compact.
               const LIGNES_EFF = [
                 { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
-                { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                { label: t('stats_pres_defenseurs', lang), color: colors.accent.info, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
                 { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
                 { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
               ]
@@ -6331,7 +6325,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         {[
                           { label: 'Comptes liés', val: nbLies, couleur: colors.accent.green },
-                          { label: 'Licenciés', val: nbLicencies, couleur: colors.accent.blue },
+                          { label: 'Licenciés', val: nbLicencies, couleur: colors.accent.info },
                         ].map(k => (
                           <div key={k.label}>
                             <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{k.label}</p>
@@ -6408,7 +6402,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
                             await chargerProfilEdu(userId)
                           }}
-                            style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                             {t('btn_sauvegarder', lang)}
                           </button>
                         </div>
@@ -6437,7 +6431,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const tx = tauxPresence(j.id)
               const s = statsGlobalesJoueur(j.id)
               const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
+              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.info : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
                   <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
@@ -6454,7 +6448,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <div style={{ flex: 1 }}>
                         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
                         <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${labelCategorie(j.categorie)}` : ''}</p>
-                        {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
+                        {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
                       </div>
                       <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
                     </div>
@@ -6472,7 +6466,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                               {[
                                 { emoji: '✅', label: t('ent_present', lang), val: tx.presents, color: colors.accent.green },
-                                { emoji: '🏆', label: t('ent_convoque', lang), val: tx.convoque, color: colors.accent.blue },
+                                { emoji: '🏆', label: t('ent_convoque', lang), val: tx.convoque, color: colors.accent.info },
                                 { emoji: '❌', label: t('ent_absent', lang), val: tx.absents, color: colors.accent.red },
                                 { emoji: '🤕', label: t('ent_blesse', lang), val: tx.blesses, color: colors.accent.orange },
                                 { emoji: '🤒', label: t('ent_malade', lang), val: tx.malade, color: colors.accent.purple },
@@ -6518,7 +6512,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         const rangStats = [
                           { emoji: '🏆', label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: colors.accent.amber },
                           { emoji: '⚽', label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: colors.accent.green },
-                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: colors.accent.blue },
+                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: colors.accent.info },
                           { emoji: '🧤', label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: colors.accent.purpleLight },
                           { emoji: '⏱️', label: 'Temps de jeu', val: `${s.minutes}'`, rang: rang(id => statsGlobalesJoueur(id).minutes), color: '#f59e0b' },
                           { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: colors.accent.green },
@@ -6532,7 +6526,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 { label: 'Victoires', val: s.victoires, color: colors.accent.amber },
                                 { label: 'Minutes', val: `${s.minutes}'`, color: colors.text.primary },
                                 { label: 'Buts', val: s.buts, color: colors.accent.green },
-                                { label: 'Passes D.', val: s.passes_dec, color: colors.accent.blue },
+                                { label: 'Passes D.', val: s.passes_dec, color: colors.accent.info },
                                 { label: 'Clean S.', val: s.clean_sheets, color: colors.accent.purpleLight },
                                 { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
                                 { label: '🟥', val: s.cartons_r, color: colors.accent.red },
@@ -6599,7 +6593,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null); setJoursActifsEdit(affiliations.find(a => a.equipe_joueur_id === j.id)?.jours_actifs || []) }} style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null); setJoursActifsEdit(affiliations.find(a => a.equipe_joueur_id === j.id)?.jours_actifs || []) }} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
                         </div>
                       )}
                     </div>
@@ -6807,7 +6801,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       })
                       .map((j) => {
                         const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-                        const posColor = j.poste?.toLowerCase().includes('gardien') ? colors.accent.amber : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.blue : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
+                        const posColor = j.poste?.toLowerCase().includes('gardien') ? colors.accent.amber : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.info : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
                         const td = { padding: '9px 14px', borderBottom: `1px solid ${colors.border.subtle}` }
                         return (
                           <tr key={j.id} className="effectif-ligne">
@@ -6831,7 +6825,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 ) : (
                                   <span style={{ fontSize: '11px', color: colors.text.faint }}>Sans compte</span>
                                 )}
-                                {j.numero_licence && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Licencié</span>}
+                                {j.numero_licence && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Licencié</span>}
                               </div>
                             </td>
                             <td style={{ ...td, textAlign: 'right' }}>
@@ -6856,7 +6850,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {[
                   { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
-                  { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                  { label: t('stats_pres_defenseurs', lang), color: colors.accent.info, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
                   { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
                   { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                   { label: 'Sans poste', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
@@ -6941,7 +6935,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {[['tableau',t('stats_tab_tableau', lang)],['classement',t('stats_tab_classement', lang)],['graphiques',t('stats_tab_graphiques', lang)],['presence',t('stats_tab_presences', lang)],['mois',t('stats_tab_mois', lang)],['notes',t('stats_tab_notes', lang)]].map(([k, label]) => (
-                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
+                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? `2px solid ${colors.accent.blue}` : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
 
@@ -6986,7 +6980,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   // ligne ~3556) regroupés dans leur ligne correspondante.
                   const LIGNES_POSTE = [
                     { label: 'Gardiens', postes: ['Gardien'], couleur: colors.accent.amber },
-                    { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.blue },
+                    { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.info },
                     { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'], couleur: colors.accent.purpleLight },
                     { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'], couleur: colors.accent.green },
                   ]
@@ -7083,7 +7077,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 {chiffre(s.matchs, colors.text.primary)}
                                 <td style={{ ...tdBase, color: s.minutes > 0 ? colors.text.secondary : colors.text.ghost }}>{s.minutes > 0 ? `${s.minutes}'` : '–'}</td>
                                 {chiffre(s.buts, colors.accent.green, true)}
-                                {chiffre(s.passes_dec, colors.accent.blue, true)}
+                                {chiffre(s.passes_dec, colors.accent.info, true)}
                                 {chiffre(s.clean_sheets, colors.accent.purpleLight, true)}
                                 {chiffre(s.cartons_j, colors.accent.amber, true)}
                                 {chiffre(s.cartons_r, colors.accent.red, true)}
@@ -7134,7 +7128,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id, matchsFiltres), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id, matchIdsFiltresClassement) }))
                   const TRIS = [
                     { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unite: v => v > 1 ? 'buts' : 'but', Icone: IcoBallon },
-                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.blue, unite: v => v > 1 ? 'passes' : 'passe', Icone: IcoCible },
+                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.info, unite: v => v > 1 ? 'passes' : 'passe', Icone: IcoCible },
                     { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unite: v => v > 1 ? 'victoires' : 'victoire', Icone: IcoCoupe },
                     { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unite: () => 'min', Icone: IcoHorloge },
                     { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unite: () => '%', Icone: IcoPresence },
@@ -7273,7 +7267,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const SECTIONS = [
                     { titre: 'Attaque', graphiques: [
                       { title: t('stats_graph_buteurs', lang), key: 'buts', color: colors.accent.green, icone: <IcoBallon /> },
-                      { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.blue, icone: <IcoCible /> },
+                      { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.info, icone: <IcoCible /> },
                     ] },
                     { titre: 'Temps de jeu', graphiques: [
                       { title: t('stats_graph_minutes', lang), key: 'minutes', color: colors.accent.purpleLight, unit: "'", icone: <IcoHorloge />, moyenne: true },
@@ -7397,7 +7391,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   // d'emoji), classement en lignes avec photo, top 10 + « Voir tous ».
                   const STATUTS_PRES = [
                     { key: 'presents', label: t('stats_statut_present', lang), color: colors.accent.green },
-                    { key: 'convoque', label: t('stats_statut_convoqu', lang), color: colors.accent.blue },
+                    { key: 'convoque', label: t('stats_statut_convoqu', lang), color: colors.accent.info },
                     { key: 'absents', label: t('stats_statut_absent', lang), color: colors.accent.red },
                     { key: 'blesses', label: t('stats_statut_blesse', lang), color: colors.accent.orange },
                     { key: 'malade', label: t('stats_statut_malade', lang), color: colors.accent.purple },
@@ -7409,7 +7403,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const couleurTaux = (tx) => tx >= 80 ? colors.accent.green : tx >= 50 ? colors.accent.amber : colors.accent.red
                   const GROUPES_PRES = [
                     { label: t('stats_pres_gardiens', lang), color: colors.accent.amber, match: p => p?.toLowerCase().includes('gardien') },
-                    { label: t('stats_pres_defenseurs', lang), color: colors.accent.blue, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
+                    { label: t('stats_pres_defenseurs', lang), color: colors.accent.info, match: p => p && ['défenseur','defenseur','latéral','lateral'].some(k => p.toLowerCase().includes(k)) },
                     { label: t('stats_pres_milieux', lang), color: colors.accent.purpleLight, match: p => p?.toLowerCase().includes('milieu') },
                     { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                     { label: 'Autres', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
@@ -7951,7 +7945,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             </div>
 
             {permissions?.competition === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -7960,7 +7954,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               {/* Icônes au trait à la place des emojis (même style que la navigation). */}
               {[['causerie', IcoMicro, t('nav_causerie', lang)], ['resultats', IcoBallon, t('comp_resultats', lang)], ['classement', IcoTrophy, t('comp_classement', lang)], ['calendrier', IcoCalendar, t('comp_calendrier', lang)]].map(([k, Icone, label]) => (
-                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? '2px solid #60a5fa' : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}><Icone />{label}</button>
+                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? `2px solid ${colors.accent.blue}` : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}><Icone />{label}</button>
               ))}
             </div>
 
@@ -8638,7 +8632,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     {scannerModalWarning && <p style={{ color: colors.accent.amber, fontSize: '12px', margin: '10px 0 0' }}>{scannerModalWarning}</p>}
                   </div>
 
-                  <div style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', borderRadius: '10px', padding: '10px 14px', marginBottom: '18px', fontSize: '12px', color: colors.text.secondary, lineHeight: 1.5 }}>
+                  <div style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '18px', fontSize: '12px', color: colors.text.secondary, lineHeight: 1.5 }}>
                     <strong style={{ color: colors.accent.blue }}>Après le scan : </strong>
                     vérifiez que les informations détectées sont correctes. Les minutes sont pré-remplies à 90, à corriger selon les remplacements. Les passes décisives ne sont pas lues par le scan, à compléter manuellement. Pensez aussi à ajouter les buts avec leur nature et leur côté ci-dessous : ces infos alimentent les statistiques d'équipe sur les périodes et les zones où l'équipe marque ou encaisse.
                   </div>
@@ -8856,7 +8850,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== MON MATÉRIEL ===== */}
         {activeSection === 'materiel' && (() => {
           const STATUT_MATERIEL = {
-            distribue:        { label: 'Distribué',        color: colors.accent.blue,  desc: 'En ta possession.' },
+            distribue:        { label: 'Distribué',        color: colors.accent.info,  desc: 'En ta possession.' },
             remise_demandee:  { label: 'Remise demandée',  color: colors.accent.amber, desc: 'En attente de validation par le club.' },
             remis:            { label: 'Remis',            color: colors.accent.green, desc: 'Remise validée par le club.' },
             refuse:           { label: 'Refusé',            color: colors.accent.red,   desc: "La demande de remise n'a pas été validée." },
@@ -9124,7 +9118,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const STATUTS_ORDRE = [
                 { key: 'sans_reponse', label: t('ent_en_attente', lang), color: colors.text.faint },
                 { key: 'present', label: t('ent_stat_presents', lang), color: colors.accent.green },
-                { key: 'convoque', label: t('ent_stat_convoques', lang), color: colors.accent.blue },
+                { key: 'convoque', label: t('ent_stat_convoques', lang), color: colors.accent.info },
                 { key: 'absent', label: t('ent_stat_absents', lang), color: colors.accent.red },
                 { key: 'blesse', label: t('ent_stat_blesses', lang), color: colors.accent.orange },
                 { key: 'malade', label: t('ent_stat_malades', lang), color: colors.accent.purple },
@@ -9294,7 +9288,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {sousOngletEnt === 'liste' && (
             <>
             {permissions?.entrainements === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 👁 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -9352,7 +9346,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Planificateur récurrent ── */}
             {showPlanificateur && canEdit('entrainements') && (
-              <div id="ent-form-planificateur" style={{ ...st.card, border: '1px solid #60a5fa30', marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
+              <div id="ent-form-planificateur" style={{ ...st.card, border: `1px solid ${colors.accent.blue}30`, marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
                 <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: colors.accent.blue }}>📅 {t('ent_planifier_saison', lang)}</p>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('ent_choisis_jours', lang)}</p>
 
@@ -9395,7 +9389,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const cur2 = new Date(planSaison.dateDebut)
                   while (cur2 <= end) { if (planSaison.joursActifs.includes(cur2.getDay()) && !existingDates.has(cur2.toISOString().split('T')[0])) newCount++; cur2.setDate(cur2.getDate() + 1) }
                   return (
-                    <div style={{ background: '#60a5fa10', border: '1px solid #60a5fa20', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: colors.accent.blue }}>
+                    <div style={{ background: `${colors.accent.blue}10`, border: `1px solid ${colors.accent.blue}20`, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: colors.accent.blue }}>
                       📊 <strong>{count}</strong> séances au total · <strong>{newCount}</strong> nouvelles à créer ({count - newCount} déjà existantes)
                     </div>
                   )
@@ -9505,7 +9499,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       const nbPresentsSeuls = nbPresents - nbConvoques
                       const segments = [
                         [nbPresentsSeuls, colors.accent.green, 'présent', 'présents'],
-                        [nbConvoquesSeuls, colors.accent.blue, 'convoqué', 'convoqués'],
+                        [nbConvoquesSeuls, colors.accent.info, 'convoqué', 'convoqués'],
                         [nbAbsents, colors.accent.red, 'absent', 'absents'],
                         [nbBlesses, colors.accent.orange, 'blessé', 'blessés'],
                         [nbMalades, colors.accent.purple, 'malade', 'malades'],
@@ -9558,7 +9552,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr)' : 'auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '12px' : '16px' }}>
                           {/* Pavé date */}
                           <div onClick={() => setEntrainementActif(ouvert ? null : e.id)} style={{ width: '54px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', alignSelf: 'start' }}>
-                            <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: estFuture ? colors.black : colors.text.faint, background: estFuture ? colors.accent.blue : colors.background.raised }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
+                            <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: estFuture ? colors.accent.onBrand : colors.text.faint, background: estFuture ? colors.accent.blue : colors.background.raised }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
                             <p style={{ margin: 0, padding: '4px 0 0', fontSize: '20px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{dateObj.getDate()}</p>
                             <p style={{ margin: 0, padding: '2px 0 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateObj.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
                           </div>
@@ -9655,7 +9649,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             </div>
                             {canEdit('entrainements') && (
                               <button onClick={() => importerReponsesSondage(e.id)}
-                                style={{ background: 'transparent', border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
+                                style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
                                 📥 Importer les réponses au sondage
                               </button>
                             )}
@@ -9682,7 +9676,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                       <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         {cfg.label}
                                         {dispoAuto && (
-                                          <span style={{ fontSize: '8px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
+                                          <span style={{ fontSize: '8px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
                                             {t('ent_dispo_auto', lang)}
                                           </span>
                                         )}
@@ -9767,7 +9761,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('eval_titre_joueurs', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>Fiche d'évaluation par saison — début, mi-saison, fin de saison.</p>
             {permissions?.notes === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa30', color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
                 {t('equipe_mode_lecture', lang)}
               </div>
             )}
@@ -9781,7 +9775,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 // note de la fiche d'évaluation (/20).
                 const LIGNES = [
                   { label: 'Gardiens', postes: ['Gardien'], couleur: colors.accent.amber },
-                  { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.blue },
+                  { label: 'Défenseurs', postes: ['Défenseur central', 'Latéral droit', 'Latéral gauche'], couleur: colors.accent.info },
                   { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'], couleur: colors.accent.purpleLight },
                   { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'], couleur: colors.accent.green },
                 ]
@@ -9871,13 +9865,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
               <button
                 onClick={() => setModeSeance('rediger')}
-                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 ✏️ {t('seance_rediger_fiche', lang)}
               </button>
               <button
                 onClick={() => setModeSeance('enregistrer')}
-                style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📥 {t('seance_enregistrer_une', lang)}
               </button>
@@ -9891,14 +9885,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )}
               <button
                 onClick={() => setModeSeance('scanner')}
-                style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 📷 {t('seance_scanner', lang)}
               </button>
               {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
                 <button
                   onClick={() => setModeSeance('club')}
-                  style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.black : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
                 >
                   🏟️ {t('seance_eval_club', lang)}
                 </button>
@@ -10030,8 +10024,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{
                               fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                              background: s.statut === 'analyse' ? colors.accent.green + alpha.subtle : s.statut === 'transfere_coach' ? colors.accent.blue + alpha.subtle : '#f59e0b15',
-                              color: s.statut === 'analyse' ? colors.accent.green : s.statut === 'transfere_coach' ? colors.accent.blue : '#f59e0b',
+                              background: s.statut === 'analyse' ? colors.accent.green + alpha.subtle : s.statut === 'transfere_coach' ? colors.accent.info + alpha.subtle : '#f59e0b15',
+                              color: s.statut === 'analyse' ? colors.accent.green : s.statut === 'transfere_coach' ? colors.accent.info : '#f59e0b',
                             }}>
                               {s.statut === 'analyse' ? `✅ ${t('etat_analyse', lang)}` : s.statut === 'transfere_coach' ? `🎙️ ${t('seance_chez_coach', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
                             </span>
@@ -10083,7 +10077,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
                     { mode: null, label: 'Libre', color: colors.accent.green },
-                    { mode: 'BMF', label: 'BMF', color: colors.accent.blue },
+                    { mode: 'BMF', label: 'BMF', color: colors.accent.info },
                     { mode: 'BEF', label: 'BEF', color: colors.accent.purple },
                     { mode: 'DEF', label: 'DEF', color: colors.accent.orange },
                   ].map(f => (
@@ -10231,7 +10225,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <button
                   onClick={uploaderMaSeance}
                   disabled={uploadingSeanceOuverte}
-                  style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
+                  style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
                 >
                   {uploadingSeanceOuverte ? 'Envoi...' : t('seance_enregistrer_ma', lang)}
                 </button>
@@ -10249,7 +10243,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </span>
                   <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                     <button onClick={() => { setFiche(brouillonFiche.fiche); setSport(brouillonFiche.sport || 'football'); setBrouillonFiche(null) }}
-                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                       Restaurer
                     </button>
                     <button onClick={() => { try { localStorage.removeItem(`df_fiche_brouillon_${userId}`) } catch { /* ignore */ } setBrouillonFiche(null) }}
@@ -10516,7 +10510,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {[
                         { icon: '🎨', label: p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang), action: () => setTactipadModal(i), color: '#a78bfa' },
-                        { icon: '📚', label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i), color: '#60a5fa' },
+                        { icon: '📚', label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i), color: colors.accent.blue },
                         { icon: '💾', label: t('biblio_sauvegarder_procede', lang), action: () => { setShowVisibilityPicker(p); setMetaProc({ ...METAPROC_VIDE, nom: p.titre || '' }) }, color: '#4ade80' },
                       ].map(btn => (
                         <button key={btn.label} type="button" onClick={btn.action} style={{
@@ -10845,8 +10839,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             <span style={{
                               fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
                               background: s.fiche_seance.mode_diplome === 'BMF' ? 'rgba(74,222,128,0.15)' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
-                              color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange,
-                              border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.blue : colors.accent.orange}`,
+                              color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange,
+                              border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange}`,
                             }}>
                               {s.fiche_seance.mode_diplome}
                             </span>
@@ -10892,7 +10886,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </span>
                         )}
                         {s.video_url && (
-                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
+                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
                         )}
                         {s.fichier_url && (
                           <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
@@ -11187,7 +11181,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <IcoCamera /> {t('scanproc_bouton', lang)}
                     </button>
                     <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
-                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
                       + {t('biblio_nouveau_procede', lang)}
                     </button>
                   </>
@@ -11663,7 +11657,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
 
               <button onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()}
-                style={{ width: '100%', background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
+                style={{ width: '100%', background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
                 {savingProcede ? t('biblio_enregistrement_cours', lang) : procedeEnEdition ? t('biblio_mettre_a_jour', lang) : t('biblio_enregistrer', lang)}
               </button>
             </div>
@@ -11736,7 +11730,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         {t('biblio_voir', lang)}
                       </button>
                       <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
-                        style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', width: '32px', height: '32px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}
+                        style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', width: '32px', height: '32px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}
                         title={t('biblio_importer_action', lang)}>
                         +
                       </button>
@@ -11818,7 +11812,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     // Ouverte depuis "Importer un procédé" (dans un bloc précis d'une fiche
                     // en rédaction) : l'action doit remplir CE bloc, pas créer une séance.
                     <button onClick={() => { importerProcedeDansBloc(modalBiblioImport, procedeActif); setProcedeActif(null); setModalBiblioImport(null) }}
-                      style={{ flex: 1, background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                       + {t('biblio_importer_action', lang)}
                     </button>
                   ) : (
@@ -12019,8 +12013,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
                                 style={{
                                   padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                                  background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
-                                  color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red) : colors.text.disabled,
+                                  background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
+                                  color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.info : colors.accent.red) : colors.text.disabled,
                                 }}>
                                 {val === 'aucun' ? `${t('dir_aucun', lang)}` : val === 'lecture' ? `${t('dir_lecture', lang)}` : `${t('dir_edition', lang)}`}
                               </button>
@@ -12031,7 +12025,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
 
                     <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
-                      style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
                       {invitingDirigeant ? 'Envoi...' : `${t('dir_envoyer_invitation', lang)}`}
                     </button>
                   </div>
@@ -12072,10 +12066,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                   style={{
                                     padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                                     background: (d.permissions?.[key] || 'aucun') === val
-                                      ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.blue + alpha.soft : colors.accent.red + alpha.soft)
+                                      ? (val === 'edition' ? colors.accent.green + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft)
                                       : colors.background.raised,
                                     color: (d.permissions?.[key] || 'aucun') === val
-                                      ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.blue : colors.accent.red)
+                                      ? (val === 'edition' ? colors.accent.green : val === 'lecture' ? colors.accent.info : colors.accent.red)
                                       : colors.border.strong,
                                   }}>
                                   {val === 'aucun' ? t('dir_aucun', lang) : val === 'lecture' ? t('dir_lecture', lang) : t('dir_edition', lang)}
@@ -12112,12 +12106,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button onClick={() => setFiltreTypeAnnonce('tous')} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === 'tous' ? colors.accent.blue : colors.background.raised, color: filtreTypeAnnonce === 'tous' ? colors.black : colors.text.faint }}>Toutes</button>
+                        <button onClick={() => setFiltreTypeAnnonce('tous')} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === 'tous' ? colors.accent.blue : colors.background.raised, color: filtreTypeAnnonce === 'tous' ? colors.accent.onBrand : colors.text.faint }}>Toutes</button>
                         {TYPES_ANNONCE.map(ty => (
                           <button key={ty.key} onClick={() => setFiltreTypeAnnonce(ty.key)} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === ty.key ? ty.color : colors.background.raised, color: filtreTypeAnnonce === ty.key ? colors.black : colors.text.faint }}>{ty.label}</button>
                         ))}
                       </div>
-                      <button onClick={() => setShowNouvelleAnnonce(true)} style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => setShowNouvelleAnnonce(true)} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
                         📢 Publier une annonce
                       </button>
                     </div>
@@ -12319,12 +12313,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <label style={st.label}>Régions de diffusion * <span style={{ color: colors.text.disabled, fontWeight: 400, textTransform: 'none' }}>(clique où diffuser)</span></label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           <button onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.length === REGIONS_FRANCE.length ? [] : [...REGIONS_FRANCE] }))}
-                            style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.black : colors.text.faint }}>
+                            style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.onBrand : colors.text.faint }}>
                             🇫🇷 Toute la France
                           </button>
                           {REGIONS_FRANCE.map(r => (
                             <button key={r} onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.includes(r) ? f.regions.filter(x => x !== r) : [...f.regions, r] }))}
-                              style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.includes(r) ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.includes(r) ? colors.black : colors.text.faint }}>
+                              style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.includes(r) ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.includes(r) ? colors.accent.onBrand : colors.text.faint }}>
                               {r}
                             </button>
                           ))}
@@ -12587,7 +12581,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
-                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.black, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
+                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
                       </div>
                     </>
                   )}
@@ -12638,7 +12632,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
-                              style={{ background: colors.accent.blue + alpha.soft, border: '1px solid #60a5fa40', color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                              style={{ background: colors.accent.blue + alpha.soft, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                               ✅ {t('equipe_accepter', lang)}
                             </button>
                             <button onClick={() => gererAffiliation(a.id, 'refuse')}
@@ -12986,7 +12980,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <button
               onClick={() => gererAffiliation(affiliationEnCours.id, 'accepte', joueurLieId, affiliationEnCours.joueur_id)}
               disabled={!joueurLieId}
-              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #60a5fa40', background: joueurLieId ? colors.accent.blue + alpha.soft : colors.background.raised, color: joueurLieId ? colors.accent.blue : colors.text.disabled, fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
+              style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.accent.blue}40`, background: joueurLieId ? colors.accent.blue + alpha.soft : colors.background.raised, color: joueurLieId ? colors.accent.blue : colors.text.disabled, fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
             >
               ✅ {t('liaison_confirmer', lang)}
             </button>
@@ -13064,7 +13058,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ficheApercu.fichier_url ? (
                 <>
                   <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
-                    style={{ background: colors.accent.blue, color: colors.black, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    style={{ background: colors.accent.blue, color: colors.accent.onBrand, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     ⬇️ {t('seance_fichier', lang)}
                   </a>
                   <button onClick={() => partagerFiche(ficheApercu.fichier_url, ficheApercu.theme)}

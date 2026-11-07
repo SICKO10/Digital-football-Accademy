@@ -39,7 +39,7 @@ const OPTIONS_SONDAGE = [
   { val: 'absent', label: 'Absent', color: colors.accent.red },
   { val: 'blesse', label: 'Blessé', color: colors.accent.orange },
   { val: 'malade', label: 'Malade', color: colors.accent.purple },
-  { val: 'convoque', label: 'Convoqué', color: colors.accent.blue },
+  { val: 'convoque', label: 'Convoqué', color: colors.accent.info },
 ]
 
 // Légende des lettres P/A/B/M/C (cf. EvenementJoueur, boutons compacts sans

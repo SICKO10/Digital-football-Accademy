@@ -74,11 +74,11 @@ export default function NotificationBanner({ userId, cibles }) {
   if (!notif) return null
 
   const accent = {
-    info: colors.accent.blue,
+    info: colors.accent.info,
     feature: colors.accent.green,
     maintenance: colors.accent.orange,
     promo: colors.accent.purpleLight,
-  }[notif.type] || colors.accent.blue
+  }[notif.type] || colors.accent.info
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>

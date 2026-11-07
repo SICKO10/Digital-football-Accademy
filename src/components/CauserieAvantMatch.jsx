@@ -754,7 +754,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     const aVenir = fiches.filter(f => !f.date_match || f.date_match >= aujourdhuiIso).sort((a, b) => (a.date_match || '9999').localeCompare(b.date_match || '9999'))
     const passees = fiches.filter(f => f.date_match && f.date_match < aujourdhuiIso).sort((a, b) => b.date_match.localeCompare(a.date_match))
     const prochaineId = aVenir.find(f => f.date_match)?.id
-    const COULEURS_TYPE = { championnat: colors.accent.blue, coupe: colors.accent.amber, amical: colors.accent.orange, tournoi: colors.accent.purpleLight }
+    const COULEURS_TYPE = { championnat: colors.accent.info, coupe: colors.accent.amber, amical: colors.accent.orange, tournoi: colors.accent.purpleLight }
     const etiquette = (texte, couleur) => (
       <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: couleur, background: couleur + '1a', border: `1px solid ${couleur}40`, whiteSpace: 'nowrap' }}>{texte}</span>
     )

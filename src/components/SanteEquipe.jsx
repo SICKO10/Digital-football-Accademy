@@ -34,7 +34,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
   const STATUT_META = {
     en_cours: { label: 'En cours', color: colors.accent.orange },
     en_soin: { label: 'En soin', color: colors.accent.amber },
-    retour_prog: { label: 'Retour programmé', color: colors.accent.blue },
+    retour_prog: { label: 'Retour programmé', color: colors.accent.info },
     gueri: { label: 'Guéri', color: colors.accent.green },
   }
   const GRAVITE_META = {

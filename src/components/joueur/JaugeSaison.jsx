@@ -12,12 +12,16 @@ import TuileChiffre from './TuileChiffre'
 // Tout vient de ce que le dashboard a déjà calculé : `presence` est l'objet
 // tauxPresenceAccueil ({ taux, present, total, serie, buts, passes,
 // minutesJouees, matchsJoues }) et `notes` la liste des notations reçues.
+// `mesures` : jeu de chiffres du joueur Pro (analyses reçues, demandes reçues...),
+// déjà calculés par le parent à partir d'états chargés. Une mesure sans donnée
+// n'est pas passée : la jauge n'affiche jamais un zéro menteur.
 // Aucune requête ici.
-export default function JaugeSaison({ presence, notes = [], isMobile = false, style }) {
+export default function JaugeSaison({ presence, notes = [], mesures = [], isMobile = false, style }) {
   const colors = useColors()
-  if (!presence) return null
+  const mesuresUtiles = mesures.filter(m => m && m.valeur > 0)
+  if (!presence && mesuresUtiles.length === 0) return null
 
-  const { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } = presence
+  const { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } = presence || {}
 
   // Seules les notes que l'éducateur a rendues visibles au joueur comptent
   // dans la moyenne (cf. noteVisible, supabase_notations_visibilite.sql).
@@ -36,7 +40,7 @@ export default function JaugeSaison({ presence, notes = [], isMobile = false, st
     <Carte isMobile={isMobile} style={style}>
       <TitreSection>Ma saison</TitreSection>
 
-      {!saisonCommencee ? (
+      {!presence ? null : !saisonCommencee ? (
         <p style={{ margin: 0, fontSize: fontSize.lg, color: colors.text.secondary }}>
           Ta saison commence. Tes présences et tes statistiques apparaîtront ici dès ta première séance.
         </p>
@@ -44,7 +48,7 @@ export default function JaugeSaison({ presence, notes = [], isMobile = false, st
         <>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.lg, marginBottom: spacing.lg }}>
             <span style={{ fontSize: fontSize.lg, color: colors.text.secondary }}>Présence aux séances</span>
-            <span style={{ fontSize: fontSize['6xl'], fontWeight: 800, lineHeight: 1, color: colors.accent.green, letterSpacing: '-0.5px' }}>
+            <span className="dj-chiffre" style={{ fontSize: fontSize['9xl'], lineHeight: 1, color: colors.accent.green }}>
               {tauxAffiche}<span style={{ fontSize: fontSize.xl, fontWeight: 700 }}> %</span>
             </span>
           </div>
@@ -86,6 +90,21 @@ export default function JaugeSaison({ presence, notes = [], isMobile = false, st
             </p>
           )}
         </>
+      )}
+
+      {mesuresUtiles.length > 0 && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${Math.min(mesuresUtiles.length, 3)}, 1fr)`,
+            gap: spacing.lg,
+            marginTop: presence && saisonCommencee ? spacing['3xl'] : 0,
+          }}
+        >
+          {mesuresUtiles.map(m => (
+            <TuileChiffre key={m.libelle} valeur={m.valeur} libelle={m.libelle} couleur={m.couleur} isMobile={isMobile} />
+          ))}
+        </div>
       )}
     </Carte>
   )

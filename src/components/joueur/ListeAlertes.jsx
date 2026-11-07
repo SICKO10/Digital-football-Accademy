@@ -34,10 +34,14 @@ function LigneAlerte({ couleur, onClick, onValider, children, detail }) {
   return (
     <div
       onClick={onClick}
+      className={onClick ? 'dj-cliquable' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => { if (e.key === 'Enter') onClick() } : undefined}
       style={{
         padding: `${spacing.md} ${spacing.lg}`,
+        border: `1px solid transparent`,
         background: colors.background.raised,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         cursor: onClick ? 'pointer' : undefined,
       }}
     >
@@ -96,7 +100,7 @@ export default function ListeAlertes({
   const jourCourt = d => new Date(`${d}T12:00:00`).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'long' })
 
   return (
-    <Carte isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, ...style }}>
+    <Carte niveau="discret" isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, ...style }}>
       <TitreSection style={{ margin: 0 }}>Alertes</TitreSection>
 
       {convocation && (

@@ -3,7 +3,7 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { supabase } from './supabase'
 import { COACH_ADMIN_EMAILS } from './lib/coachAdmin'
 import InstallAppBanner from './components/InstallAppBanner'
-import { ThemeProvider } from './lib/ThemeProvider'
+import { ThemeProvider, PorteeThemeClub } from './lib/ThemeProvider'
 
 // Chargement à la demande de chaque page — sans ça, Vite regroupait tout
 // (dont les 3 dashboards, plusieurs milliers de lignes chacun) dans un seul
@@ -116,12 +116,12 @@ function App() {
         <Route path="/register-choix" element={<RegisterChoix />} />
         <Route path="/register-recruteur" element={<RegisterRecruteur />} />
         <Route path="/dashboard" element={<SmartDashboard />} />
-        <Route path="/dashboard-joueur" element={<DashboardJoueur />} />
+        <Route path="/dashboard-joueur" element={<PorteeThemeClub accentVert="club"><DashboardJoueur /></PorteeThemeClub>} />
         <Route path="/coach" element={<DashboardCoach />} />
         <Route path="/scout-club" element={<DashboardScoutClub />} />
-        <Route path="/club" element={<DashboardClub />} />
+        <Route path="/club" element={<PorteeThemeClub accentVert="statut"><DashboardClub /></PorteeThemeClub>} />
         <Route path="/recruteur" element={<DashboardRecruteur />} />
-        <Route path="/educateur" element={<DashboardEducateur />} />
+        <Route path="/educateur" element={<PorteeThemeClub accentVert="educateur"><DashboardEducateur /></PorteeThemeClub>} />
         <Route path="/dashboard-dirigeant" element={<DashboardDirigeant />} />
         <Route path="/dashboard-parent" element={<DashboardParent />} />
         <Route path="/upload" element={<Upload />} />

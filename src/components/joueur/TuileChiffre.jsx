@@ -2,7 +2,8 @@ import { useColors } from '../../lib/theme'
 import { alpha, fontSize, radius, spacing } from '../../tokens'
 
 // Tuile d'un seul chiffre + sa légende (présence, analyses restantes,
-// demandes...). Le chiffre est en 28px/800, la légende en 11px : la hiérarchie
+// demandes...). Le chiffre est en 28px (classe .dj-chiffre, Barlow Condensed
+// 800, chiffres de largeur fixe), la légende en 11px : la hiérarchie
 // est dans la taille, pas dans la couleur, pour que plusieurs tuiles côte à
 // côte restent lisibles sans se faire concurrence.
 //
@@ -25,11 +26,10 @@ export default function TuileChiffre({ valeur, libelle, couleur, isMobile = fals
       }}
     >
       <div
+        className="dj-chiffre"
         style={{
           fontSize: fontSize['8xl'],
-          fontWeight: 800,
           lineHeight: 1,
-          letterSpacing: '-0.5px',
           color: couleur || colors.text.primary,
         }}
       >

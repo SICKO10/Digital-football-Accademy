@@ -1,4 +1,5 @@
-import { menuLateralCss } from '../lib/menuLateral'
+import { menuLateralCss, BORDURE_MENU, coqueVars } from '../lib/menuLateral'
+import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
 import { useEffect, useState, Fragment } from 'react'
@@ -30,6 +31,7 @@ import { useColors } from '../lib/theme'
 import { chargerMesRoles } from '../lib/multiRole'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
+import { useDonnerCouleurClub, useClubPalette } from '../lib/clubTheme'
 import StatsEquipe from '../components/StatsEquipe'
 import DemandesClub from '../components/saisons/DemandesClub'
 import ClotureSaisonClub from '../components/saisons/ClotureSaisonClub'
@@ -685,7 +687,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: couleurPrincipale + '12', border: `1px solid ${couleurPrincipale}40`, borderLeft: `4px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '12px 16px' }}>
           <span style={{ color: couleurPrincipale, display: 'flex' }}><IcoHorloge /></span>
           <p style={{ margin: 0, flex: 1, fontSize: '13px', fontWeight: 700 }}>{nbEnAttente} demande{nbEnAttente > 1 ? 's' : ''} d'affiliation en attente</p>
-          <button onClick={() => { setActiveCategorie('sportif'); setActiveTab('educateurs') }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Traiter <IcoChevronD /></button>
+          <button onClick={() => { setActiveCategorie('sportif'); setActiveTab('educateurs') }} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Traiter <IcoChevronD /></button>
         </div>
       )}
 
@@ -1027,7 +1029,7 @@ function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSav
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
           <button onClick={() => onSave(matrice, catAccess)} disabled={saving}
-            style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
+            style={{ background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Enregistrement...' : '✓ Enregistrer'}
           </button>
           <button onClick={onClose} style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.muted, borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -1415,7 +1417,9 @@ export default function DashboardClub() {
     return (PERMISSION_DEFAULTS[section] || []).includes(monRole)
   }
 
-  const couleurPrincipale = club?.couleur_principale || colors.accent.green
+  // Couleur du club, ajustée si besoin pour rester lisible (garde-fou de paletteClub.js).
+  useDonnerCouleurClub(club?.couleur_principale)
+  const couleurPrincipale = useClubPalette().primary
   const couleurSecondaire = club?.couleur_secondaire || colors.accent.cyan
 
   const st = {
@@ -1423,10 +1427,10 @@ export default function DashboardClub() {
     content: { padding: isMobile ? '1rem' : '1.5rem 2rem', width: '100%', boxSizing: 'border-box' },
     tab: (active) => ({
       padding: isMobile ? '8px 14px' : '10px 20px', borderRadius: '8px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-      ...(active ? { background: couleurPrincipale, color: colors.black, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
+      ...(active ? { background: couleurPrincipale, color: colors.accent.onBrand, border: 'none' } : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
     }),
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
-    btnSolid: { background: couleurPrincipale, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
+    btnSolid: { background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
     btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
     input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
     label: { fontSize: '11px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
@@ -3506,16 +3510,6 @@ export default function DashboardClub() {
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
 
-  // Initiales du club pour l'avatar par défaut (même logique que getClubInitials
-  // dans DashboardRecruteur.jsx, dupliquée localement — usage ponctuel ici).
-  const clubInitiales = (() => {
-    const nom = (club?.club || '').trim()
-    if (!nom) return '?'
-    const mots = nom.split(/\s+/).filter(w => !['AS', 'FC', 'OC', 'US', 'SC', 'AC', 'RC', 'ES', 'OGC', 'SM', 'EA'].includes(w))
-    if (mots.length === 0) return nom.slice(0, 2).toUpperCase()
-    return mots.length >= 2 ? (mots[0][0] + mots[1][0]).toUpperCase() : mots[0].slice(0, 2).toUpperCase()
-  })()
-
   // Navigation — sidebar gauche, 3 groupes plats (Vue générale / Sportif /
   // Administratif). Un seul point de vérité par groupe pour l'affichage ET les
   // permissions (canViewSection), à la place de l'ancien système à 2 niveaux
@@ -3561,13 +3555,10 @@ export default function DashboardClub() {
     const { Icon } = item
     return (
       <button key={item.id} id={`nav-${item.id}`} className="df-nav-btn" data-actif={actif}
-        onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}
-        style={{ '--df-accent': couleurPrincipale }}>
+        onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}>
         <span className="df-nav-icone"><Icon /></span>
         <span style={{ flex: 1 }}>{item.label}</span>
-        {item.badge > 0 && (
-          <span className="df-nav-badge" style={{ background: colors.accent.red, color: '#fff' }}>{item.badge}</span>
-        )}
+        {item.badge > 0 && <span className="df-nav-badge">{item.badge}</span>}
       </button>
     )
   }
@@ -3671,50 +3662,39 @@ export default function DashboardClub() {
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         {/* ── SIDEBAR — fixe en desktop, drawer coulissant en mobile ── */}
         {isMobile && sidebarOpen && (
-          <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 90 }} />
+          <div className="df-drawer-backdrop" onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
         )}
-        <div style={{
-          width: '240px', background: colors.background.surface, borderRight: `1px solid ${colors.border.faint}`,
+        <div className="df-menu df-drawer" data-ouvert={isMobile && sidebarOpen} style={{
+          width: '240px',
           display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: '100vh',
           ...(isMobile ? {
             position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px', height: '100%', zIndex: 100,
-            transition: 'left 0.25s ease', overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
+            overflowY: 'auto', paddingTop: 'env(safe-area-inset-top, 0px)',
           } : {
             position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
           }),
         }}>
-          <div style={{ padding: '18px 16px', borderBottom: `1px solid ${colors.border.faint}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              {club?.image_hero_url
-                ? <img src={club.image_hero_url} alt="" style={{ width: '44px', height: '44px', borderRadius: '10px', objectFit: 'cover', border: `2px solid ${couleurPrincipale}66` }} />
-                : club?.avatar_url
-                  ? <img src={club.avatar_url} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${couleurPrincipale}40` }} />
-                  : <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: couleurPrincipale + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 800, color: couleurPrincipale }}>
-                      {clubInitiales}
-                    </div>
-              }
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {club?.club || t('club_mon_club', lang)}
-              </p>
-              <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}
-              </p>
-            </div>
+          <div style={{ padding: '18px 16px 14px', borderBottom: BORDURE_MENU }}>
+            <EnTeteMenu logoUrl={club?.avatar_url} />
+            <p style={{ margin: '12px 0 0', fontWeight: 800, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {club?.club || t('club_mon_club', lang)}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--menu-text-muted, #FFFFFF)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {categories.length} {categories.length !== 1 ? t('club_categorie_plur', lang) : t('club_categorie_sing', lang)} · {educateursAcceptes.length} {educateursAcceptes.length !== 1 ? t('club_educateur_affilie_plur', lang) : t('club_educateur_affilie_sing', lang)}
+            </p>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 8px' }}>
-            <style>{menuLateralCss(colors)}</style>
+            <style>{menuLateralCss}</style>
             {renderNavSection('cat-accueil', t('club_accueil', lang), NAV_GENERAL)}
             {renderNavSection('cat-sportif', t('club_sportif', lang), NAV_SPORTIF)}
             {renderNavSection('cat-administratif', t('club_administratif', lang), NAV_ADMINISTRATIF)}
           </div>
 
           {isMobile && (
-            <div style={{ padding: '14px 16px', borderTop: `1px solid ${colors.border.faint}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+            <div style={{ padding: '14px 16px', borderTop: BORDURE_MENU, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
               {renderControlesUtilitaires()}
-              <button style={{ ...st.btnSecondary, fontSize: '13px', padding: '6px 14px' }} onClick={handleLogout}>
+              <button className="df-menu-contour" style={{ width: 'auto', fontSize: '13px', padding: '6px 14px' }} onClick={handleLogout}>
                 {t('btn_deconnexion', lang)}
               </button>
             </div>
@@ -3723,17 +3703,17 @@ export default function DashboardClub() {
 
         {/* ── COLONNE PRINCIPALE ── */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
-          <div style={{
-            background: colors.background.surface, borderBottom: `1px solid ${colors.border.faint}`,
+          <div className="df-topbar" style={{
+            ...coqueVars(colors, colors.accent.green),
             padding: isMobile ? 'calc(8px + env(safe-area-inset-top, 0px)) 1rem 8px' : '0 1.5rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            height: isMobile ? 'auto' : '56px', minHeight: '56px', gap: '8px',
-            position: 'sticky', top: 0, zIndex: 30,
+            height: isMobile ? 'auto' : '56px', minHeight: '56px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
               {isMobile && (
-                <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: '20px', cursor: 'pointer', padding: '4px 4px 4px 0', flexShrink: 0 }}>
-                  ☰
+                <button className="df-burger" onClick={() => setSidebarOpen(true)} aria-label="Ouvrir le menu">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+                  </svg>
                 </button>
               )}
               <span style={{ fontWeight: 800, fontSize: isMobile ? '14px' : '15px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -3831,7 +3811,7 @@ export default function DashboardClub() {
                     <IcoEclair /> {autoAssignLoading ? t('club_assignation_cours', lang) : t('club_auto_assigner', lang)}
                   </button>
                   <button onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
-                    style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
+                    style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
                     {t('club_ajouter_categorie', lang)}
                   </button>
                 </div>
@@ -4952,7 +4932,7 @@ export default function DashboardClub() {
                 </div>
                 {canEditSection('budget') && (
                 <button onClick={() => setBudgetFormOuvert(v => !v)}
-                  style={{ background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {budgetFormOuvert ? t('btn_annuler', lang) : `+ ${t('club_nouvelle_entree', lang)}`}
                 </button>
                 )}
@@ -5419,7 +5399,7 @@ export default function DashboardClub() {
                       <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: '0 0 8px' }}>Aucun événement à venir</p>
                       <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 24px' }}>Tournois, stages, réunions — centralisez tout ici.</p>
                       {canEditSection('evenements') && (
-                        <button onClick={ouvrirNouvelEvenement} style={{ padding: '11px 24px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.black, fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                        <button onClick={ouvrirNouvelEvenement} style={{ padding: '11px 24px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.accent.onBrand, fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
                           + Créer un événement
                         </button>
                       )}
@@ -5758,7 +5738,7 @@ export default function DashboardClub() {
                     <button
                       onClick={scannerOrganigramme}
                       disabled={orgScanLoading}
-                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: colors.black, padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
+                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
                     >
                       {orgScanLoading ? libelleStatutGroq(orgScanStatus) : 'Analyser'}
                     </button>
@@ -7282,7 +7262,7 @@ export default function DashboardClub() {
               style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', marginBottom: '16px' }} />
 
             <button onClick={soumettreNotationEducateur} disabled={savingEduNote || CRITERES_EDU.flatMap(c => c.criteres).some(c => !eduNoteCriteres[c.key])}
-              style={{ width: '100%', background: couleurPrincipale, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
+              style={{ width: '100%', background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', opacity: CRITERES_EDU.flatMap(c => c.criteres).every(c => eduNoteCriteres[c.key]) ? 1 : 0.4 }}>
               {savingEduNote ? `⏳ ${t('etat_envoi_cours', lang)}` : `✅ ${t('club_soumettre_evaluation', lang)}`}
             </button>
           </div>
