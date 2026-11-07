@@ -372,7 +372,7 @@ Rappel : `/clear` et une session neuve **par bloc**. Si la barre « ctx » dépa
 ---
 
 ### Bloc 8 : vérification finale, thème clair, états vides, mise en ligne
-- Statut : contrôles faits (2026-11-07), commit/push/mise en ligne en attente de ton choix
+- Statut : contrôles faits, commité et poussé (2026-11-07, 2370cd4 + 61163b8), mise en ligne en attente (CLI Vercel absente, projet non lié)
 - Objectif : la passe de contrôle. Thème clair repris écran par écran, tous les
   états vides vérifiés, build propre, commit, puis mise en ligne après ton « ok ».
 - Résultat testable : l'écran joueur est irréprochable dans les deux thèmes, sur
@@ -397,5 +397,5 @@ Rappel : `/clear` et une session neuve **par bloc**. Si la barre « ctx » dépa
     attendre mon « ok » écrit, puis production.
 - Ce que je teste pour valider : l'adresse de test sur téléphone et ordinateur,
   les deux thèmes, les deux comptes, avant de dire oui pour la production.
-- Reste à finir : commit et push (le dépôt mélange aussi le chantier thème club : voir compte rendu), puis vercel-deploy après ton ok. Test visuel clair/sombre, états vides sur vrais comptes : à ta charge, pas de navigateur ici.
+- Reste à finir : (commit et push faits) ; vercel-deploy : installer la CLI, login, projet à viser. Ancien texte : (le dépôt mélange aussi le chantier thème club : voir compte rendu), puis vercel-deploy après ton ok. Test visuel clair/sombre, états vides sur vrais comptes : à ta charge, pas de navigateur ici.
 - Journal : 2026-11-07, sonnet 5.5 (high). Contrôles de code : branche dashboard sans accent= ni ombre colorée (seules restent celles de la branche accueil, hors périmètre), un seul niveau="relief" (ALaUne), aucun emoji, aucun bouton vide. Thème clair : relief = ombre neutre. Build OK, npm test 142/142, eslint propre. Rien commité ni déployé.
