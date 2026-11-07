@@ -5,7 +5,8 @@
 -- À lancer APRÈS avoir créé les comptes (méthode : docs/outils-a-la-carte/
 -- INVENTAIRE.md, section 6). Sans danger si un compte n'existe pas encore : il
 -- est simplement absent du résultat, relancer ce fichier une fois créé.
--- Le résultat liste les comptes modifiés : il doit y en avoir 3.
+-- Le résultat liste les comptes modifiés : 1 au minimum (testfinal@gmail.com,
+-- éducateur de test), jusqu'à 3 quand les autres comptes de test existent.
 
 update public.profiles p
 set modele_outils = true,
@@ -13,7 +14,7 @@ set modele_outils = true,
 from auth.users u
 where u.id = p.id
   and lower(u.email) in (
-    'deabreu.amorim+edu1@gmail.com',
+    'testfinal@gmail.com',
     'deabreu.amorim+club1@gmail.com',
     'deabreu.amorim+edu2@gmail.com'
   )

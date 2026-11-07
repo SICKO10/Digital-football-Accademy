@@ -2,6 +2,9 @@ import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../l
 import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
+import { useOutils } from '../lib/useOutils'
+import OutilNonActive from '../components/outils/OutilNonActive'
+import OutilPayantModale from '../components/outils/OutilPayantModale'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
@@ -930,6 +933,8 @@ function ApercuFicheResponsive({ children }) {
 // identifier au premier coup d'œil, pas juste deux libellés dans une pastille.
 function SousOngletsBar({ items, activeSection, setActiveSection }) {
   const colors = useColors()
+  // Un seul onglet accessible (les autres sont des outils non activés) : pas de barre.
+  if (items.length < 2) return null
   if (items.some(it => it.description)) {
     return (
       <div role="tablist" style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`, gap: 10, marginBottom: 24 }}>
@@ -1185,7 +1190,7 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
   )
 }
 
-function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance }) {
+function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true }) {
   const colors = useColors()
   const { theme } = useTheme()
   const aujourdHui = new Date().toISOString().split('T')[0]
@@ -1406,10 +1411,10 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
           <p style={{ margin: '0 0 4px', fontSize: '13px', color: colors.text.faint }}>{dateDuJour}</p>
           <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Bonjour{prenom ? ` ${prenom}` : ''}</h1>
         </div>
-        <button onClick={onNouvelleSeance}
+        {peutVoir('entrainements') && <button onClick={onNouvelleSeance}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 18px', minHeight: '44px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
           <IcoPlus /> Nouvelle séance
-        </button>
+        </button>}
       </div>
 
       {/* 2. Quatre chiffres clés de même taille. Calculs inchangés (effectif,
@@ -1463,7 +1468,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
           Les raccourcis réutilisent les mêmes mécanismes que le reste de l'app
           (setFicheApercu/setFicheApercuEnHaut ; même garde `if (s)` en cas de
           fiche_id orphelin). Compteurs : réponses au sondage de dispo. */}
-      <div style={{ ...cardSt, borderLeft: `4px solid ${colors.accent.brand}`, marginBottom: '1.25rem' }}>
+      {peutVoir('entrainements') && <div style={{ ...cardSt, borderLeft: `4px solid ${colors.accent.brand}`, marginBottom: '1.25rem' }}>
         {!prochainEnt ? (
           <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucune séance planifiée.</p>
         ) : (() => {
@@ -1489,7 +1494,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
                 {/* Date en grand : le jour en couleur du club. */}
                 <div style={{ width: '64px', flexShrink: 0, textAlign: 'center' }}>
                   <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                  <p style={{ margin: '2px 0', fontSize: '38px', fontWeight: 800, lineHeight: 1, color: colors.accent.brand, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
+                  <p style={{ margin: '2px 0', fontSize: '38px', fontWeight: 800, lineHeight: 1, color: colors.accent.green, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
                   <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
                 </div>
                 <div style={{ minWidth: 0 }}>
@@ -1526,7 +1531,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
             </div>
           )
         })()}
-      </div>
+      </div>}
 
       {/* Composition asymétrique : briefing du coach (colonne large) + club
           (colonne secondaire, toujours visible sur desktop — jamais reléguée
@@ -1576,7 +1581,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               n'existent pas dans ce schéma). Pas de "3 derniers" façon palmarès inversé :
               la version complète (Stats > Joueur du mois) ne le fait pas non plus, et
               afficher publiquement qui a le moins d'étoiles n'apporte rien de bon ici. */}
-          {(() => {
+          {outilActif('suivi_joueurs') && (() => {
             const now = new Date()
             const moisPrecedentDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
             const moisKeyDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -1681,7 +1686,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               { Icon: IcoPlus, label: 'Ajouter un joueur', section: 'equipe' },
               { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
               { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
-            ].map(a => (
+            ].filter(a => peutVoir(a.section)).map(a => (
               <button key={a.section} onClick={() => setActiveSection(a.section)} style={raccourciSt} {...survol}>
                 <span style={{ display: 'inline-flex', color: colors.accent.blue, flexShrink: 0 }}><a.Icon /></span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', lineHeight: 1.25, minWidth: 0 }}>{a.label}</span>
@@ -1791,7 +1796,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/joueur/parent), cf. lib/multiRole
-  const [activeSection, setActiveSection] = useState('accueil')
+  const [activeSectionBrut, setActiveSection] = useState('accueil')
+  // Outils à la carte (comptes `modele_outils` seulement) : une page dont
+  // l'outil n'est pas actif devient 'outil_verrouille' et affiche la carte
+  // « outil non activé ». Autres comptes : activeSection est la valeur brute.
+  const outils = useOutils({ role: 'educateur', userId, modeleOutils: profil?.modele_outils, desactive: !!educateurIdOverride })
+  const activeSection = outils.verrouillee(activeSectionBrut) ? 'outil_verrouille' : activeSectionBrut
   const [loading, setLoading] = useState(true)
   // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
   // demande explicite — auparavant un troisième mode dédié (sidebar réduite
@@ -1809,7 +1819,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
-  const [statsSubTab, setStatsSubTab] = useState('tableau')
+  const [outilPayantOuvert, setOutilPayantOuvert] = useState(null) // { outilId, detail } : fenêtre « outil payant »
+  const [statsSubTabBrut, setStatsSubTab] = useState('tableau')
+  // Sans l'outil Suivi des joueurs, seul l'onglet Présences est ouvert.
+  const ongletsStatsOk = outils.ongletsStats()
+  const statsSubTab = ongletsStatsOk.includes(statsSubTabBrut) ? statsSubTabBrut : ongletsStatsOk[0]
   const [moisPointsSeanceSelectionne, setMoisPointsSeanceSelectionne] = useState(null) // clé 'YYYY-MM' choisie dans l'historique (onglet Mois) — null = mois en cours
   const [biblioVideoTab, setBiblioVideoTab] = useState('df') // 'favoris' | 'df'
   const [statsTri, setStatsTri] = useState('buts') // pour classement
@@ -5809,6 +5823,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     entrainements: 'entrainements', prep_physique: 'prep_physique', notes: 'notes',
   }
   const canView = (sidebarKey) => {
+    if (!outils.menuVisible(sidebarKey)) return false
     if (!permissions) return true
     if (SECTIONS_MASQUEES_DIRIGEANT.includes(sidebarKey)) return false
     const permKey = PERMISSION_PAR_SECTION[sidebarKey]
@@ -6215,6 +6230,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               setSousOngletEnt={setSousOngletEnt}
               setStatsSubTab={setStatsSubTab}
               setCompetitionSubTab={setCompetitionSubTab}
+              peutVoir={outils.menuVisible}
+              outilActif={outils.outilActif}
               lang={lang}
               isMobile={isMobile}
               mesSeancesOuvertes={mesSeancesOuvertes}
@@ -6229,9 +6246,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           </>
         )}
 
+        {outilPayantOuvert && (
+          <OutilPayantModale role="educateur" outilId={outilPayantOuvert.outilId} detail={outilPayantOuvert.detail} onFermer={() => setOutilPayantOuvert(null)} />
+        )}
+
+        {activeSection === 'outil_verrouille' && (
+          <OutilNonActive role="educateur" cle={activeSectionBrut} onRetour={() => setActiveSection('accueil')} />
+        )}
+
         {['equipe', 'stats', 'sante', 'historique'].includes(activeSection) && (
           <SousOngletsBar
-            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: t('nav_stats', lang) }, { key: 'sante', label: t('nav_sante', lang) }, { key: 'historique', label: 'Historique' }].filter(it => canView(it.key))}
+            items={[{ key: 'equipe', label: t('equipe_effectif', lang) }, { key: 'stats', label: ongletsStatsOk.length > 1 ? t('nav_stats', lang) : t('stats_tab_presences', lang) }, { key: 'sante', label: t('nav_sante', lang) }, { key: 'historique', label: 'Historique' }].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
           />
         )}
@@ -6943,7 +6968,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* Sous-onglets */}
             <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {[['tableau',t('stats_tab_tableau', lang)],['classement',t('stats_tab_classement', lang)],['graphiques',t('stats_tab_graphiques', lang)],['presence',t('stats_tab_presences', lang)],['mois',t('stats_tab_mois', lang)],['notes',t('stats_tab_notes', lang)]].map(([k, label]) => (
+              {[['tableau',t('stats_tab_tableau', lang)],['classement',t('stats_tab_classement', lang)],['graphiques',t('stats_tab_graphiques', lang)],['presence',t('stats_tab_presences', lang)],['mois',t('stats_tab_mois', lang)],['notes',t('stats_tab_notes', lang)]].filter(([k]) => ongletsStatsOk.includes(k)).map(([k, label]) => (
                 <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? `2px solid ${colors.accent.blue}` : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
               ))}
             </div>
@@ -6955,7 +6980,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             ) : (
               <>
                 {/* ─ Bilan de l'équipe (vue d'ensemble, avant le détail par joueur) ─ */}
-                {statsSubTab === 'tableau' && (() => {
+                {statsSubTab === 'tableau' && outils.outilActif('stats_collectives') && (() => {
                   const notesEquipeMatch = notationsMatch.filter(n => n.est_note_equipe)
                   const noteEquipe = notesEquipeMatch.length
                     ? { moyenne: (notesEquipeMatch.reduce((s, n) => s + Number(n.note), 0) / notesEquipeMatch.length).toFixed(1), nb: notesEquipeMatch.length }
@@ -7986,7 +8011,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {canEdit('competition') && (
                     <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
                       <BoutonTutoriel onClick={() => setTutoOuvert('resultats')} />
-                      {canEdit('stats') && (
+                      {canEdit('stats') && outils.outilActif('stats_collectives') && (
                         <button onClick={() => setShowScanner(true)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
                           {t('seance_scanner', lang)}
@@ -8616,6 +8641,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
 
                   {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
+                  {outils.outilActif('stats_collectives') && <>
                   <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '14px', marginBottom: '18px', background: colors.background.base }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       {scannerModalImagePreview
@@ -8645,6 +8671,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <strong style={{ color: colors.accent.blue }}>Après le scan : </strong>
                     vérifiez que les informations détectées sont correctes. Les minutes sont pré-remplies à 90, à corriger selon les remplacements. Les passes décisives ne sont pas lues par le scan, à compléter manuellement. Pensez aussi à ajouter les buts avec leur nature et leur côté ci-dessous : ces infos alimentent les statistiques d'équipe sur les périodes et les zones où l'équipe marque ou encaisse.
                   </div>
+                  </>}
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
                     <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
@@ -9530,7 +9557,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'RPE en cours' : 'RPE fermé'}
                               </span>
                             ) : (
-                              <button onClick={() => demanderNoteSeance(e)} disabled={demandeNoteEnCours === e.id}
+                              <button onClick={() => outils.outilActif('suivi_joueurs') ? demanderNoteSeance(e) : setOutilPayantOuvert({ outilId: 'suivi_joueurs', detail: 'Le ressenti RPE de tes joueurs fait partie de l\'outil Suivi des joueurs.' })} disabled={demandeNoteEnCours === e.id}
                                 title="Demander le ressenti RPE aux joueurs présents à cette séance" aria-label="Demander le ressenti RPE"
                                 style={btnIcone(colors.accent.amber)}>
                                 {demandeNoteEnCours === e.id ? '…' : <IcoEtoileTrait />}

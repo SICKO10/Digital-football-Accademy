@@ -120,3 +120,14 @@ test('?couleurClub= : lit %23hex et hex nu, ignore le reste', () => {
   assert.equal(lireSurchargeCouleur('?couleurClub=rouge'), null)
   assert.equal(lireSurchargeCouleur(''), null)
 })
+
+test('défaut en clair : menu sombre, entrée active en vert de marque, textes lisibles', () => {
+  const p = calculerPalette(null, 'claire')
+  assert.equal(p.primary, COULEUR_DEFAUT)
+  assert.equal(p.menuBg, '#07160D')
+  assert.equal(p.menuActiveBg, COULEUR_DEFAUT)
+  assert.ok(contraste(p.menuText, p.menuBg) >= 4.5, 'texte du menu')
+  assert.ok(contraste(p.menuTextMuted, p.menuBg) >= 4.5, 'texte atténué du menu')
+  assert.ok(contraste(p.menuActiveText, p.menuActiveBg) >= 4.5, 'entrée active')
+  assert.ok(contraste(p.primaryText, p.screenBg) >= 4.5, 'texte vert sur fond clair')
+})

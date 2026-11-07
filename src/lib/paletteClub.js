@@ -151,7 +151,10 @@ export function calculerPalette(hex, mode = 'claire') {
   // texte blanc, même atténué, passe 4,5:1) ; en sombre, la couleur du club presque noire.
   const texteMenuOk = rgb => contraste(melanger(blanc, rgb, MENU_TEXTE_ATTENUE), rgb) >= 4.5
   const menuClair = ajusterJusqua(primary, -1, texteMenuOk) || primaryDark
-  const menuBg = sombre ? melanger(primary, [0, 0, 0], 0.1) : menuClair
+  // Sans couleur de club en clair (vert de marque) : menu sombre et entrée active
+  // en vert vif, comme la marque, plutôt qu'un grand aplat de vert foncé.
+  const marqueClaire = !sombre && source === 'defaut'
+  const menuBg = sombre || marqueClaire ? melanger(primary, [0, 0, 0], 0.1) : menuClair
   const menuTextMuted = melanger(blanc, menuBg, MENU_TEXTE_ATTENUE)
 
   return {
@@ -169,8 +172,8 @@ export function calculerPalette(hex, mode = 'claire') {
     menuText: BLANC,
     menuTextMuted: enHex(menuTextMuted),
     menuHover: 'rgba(255,255,255,0.12)',
-    menuActiveBg: BLANC,
-    menuActiveText: enHex(menuClair), // posé sur le bloc blanc de l'entrée active, donc toujours foncé
+    menuActiveBg: marqueClaire ? enHex(primary) : BLANC,
+    menuActiveText: marqueClaire ? ENCRE : enHex(menuClair), // posé sur l'entrée active, donc toujours foncé
     ...neutres,
     ...statuts,
   }

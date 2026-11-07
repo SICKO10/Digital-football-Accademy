@@ -4,7 +4,8 @@
 //
 // Décisions de Kevin (2026-11-07) :
 // - socle éducateur : accueil, profil, effectif, compétition (sans les stats
-//   collectives), calendrier, présences et taux de présence, organisation ;
+//   collectives), calendrier, planification des séances (Planning, onglet
+//   `entrainements`), présences et taux de présence, organisation ;
 // - socle club : accueil, profil, catégories et équipes, éducateurs, staff,
 //   organigramme, inventaire, planning, séances, terrains, déplacements ;
 // - CFF4 et Stages sont des outils payants ; l'éducateur affilié reçoit
@@ -19,7 +20,7 @@ export const ROLES = ['educateur', 'club']
 // d'un menu découpé (à brancher aux blocs 3 et 4).
 export const SOCLE = {
   educateur: {
-    menus: ['accueil', 'profil', 'equipe', 'matchs', 'materiel', 'terrains', 'deplacements'],
+    menus: ['accueil', 'profil', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements'],
     fonctions: ['calendrier', 'presences_joueurs', 'taux_presence'],
   },
   club: {
@@ -51,7 +52,11 @@ const outil = (id, role, nom, promesse, menus, extra = {}) => ({
 export const OUTILS = [
   // Éducateur
   outil('suivi_joueurs', 'educateur', 'Suivi des joueurs', 'Statistiques, santé et historique de chaque joueur de ton équipe.', ['stats', 'sante', 'historique']),
-  outil('seances', 'educateur', 'Séances', 'Prépare tes entraînements et retrouve toutes tes séances.', ['entrainements', 'mes_seances']),
+  // Stats collectives : pas d'entrée de menu à part, ce sont des parties de pages
+  // (onglet Graphiques, Bilan de l'équipe avec buts par quart d'heure et nature
+  // des buts, scan de la feuille de match). Branchées dans DashboardEducateur.
+  outil('stats_collectives', 'educateur', 'Stats collectives', 'Graphiques de l\'équipe, buts par quart d\'heure, nature des buts et scan de la feuille de match.', []),
+  outil('seances', 'educateur', 'Séances', 'Rédige, scanne et imprime tes fiches de séance, et retrouve-les toutes.', ['mes_seances']),
   outil('tactique', 'educateur', 'Tactique', 'Tacticboard animé et bibliothèque de schémas.', ['tactipad', 'bibliotheque']),
   outil('prep_physique', 'educateur', 'Préparation physique', 'Programmes physiques adaptés à l\'âge de tes joueurs.', ['prep_physique']),
   outil('evaluations_video', 'educateur', 'Évaluations et vidéo', 'Rapports, notes, analyse vidéo et clôtures de saison.', ['analyse_video', 'notes', 'clotures_saison']),
@@ -109,7 +114,7 @@ const PRECOCHAGE = {
     q3: {
       seances: ['seances', 'tactique'],
       suivi: ['suivi_joueurs', 'evaluations_video'],
-      matchs: ['tactique'],
+      matchs: ['tactique', 'stats_collectives'],
       organiser: [],
     },
     q2: {

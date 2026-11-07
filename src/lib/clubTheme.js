@@ -48,14 +48,17 @@ export function colorsAvecClub(theme, palette, accentVert) {
   // En clair, la couleur sert aussi de texte sur fond blanc : on prend sa version
   // lisible (primaryText), et le texte posé dessus est recalculé en conséquence.
   const marque = theme === 'claire' ? palette.primaryText : palette.primary
-  const surMarque = contraste(marque, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#16161A'
+  // `brand` ne sert qu'aux fonds (boutons pleins) : sans couleur de club, en clair,
+  // il garde le vert vif de la marque, avec du texte encre dessus.
+  const fondMarque = theme === 'claire' && palette.source === 'defaut' ? palette.primary : marque
+  const surMarque = contraste(fondMarque, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#16161A'
   const accent = {
     ...colors.accent,
     green: marque,
     // Dashboard éducateur : son ancien bleu de marque devient la couleur du club
     // (le bleu d'information reste dans `info`).
     blue: accentVert === 'educateur' ? marque : colors.accent.blue,
-    brand: marque,
+    brand: fondMarque,
     onBrand: surMarque,
     success: palette.success,
   }
