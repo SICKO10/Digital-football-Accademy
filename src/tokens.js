@@ -54,6 +54,12 @@ export const colors = {
     purple: '#a855f7',  // malade, statut secondaire (28 avec #a78bfa)
     purpleLight: '#a78bfa',
     cyan: '#22d3ee',    // couleur secondaire par défaut du thème club
+    // Rôles de couleur pour les dashboards qui prennent la couleur du club (cf.
+    // clubTheme.js) : ici les valeurs par défaut, le club les remplace.
+    brand: '#4ade80',   // couleur de marque / du club
+    onBrand: '#000',    // texte posé sur un fond `brand`
+    success: '#4ade80', // succès, présent, victoire : jamais la couleur du club
+    info: '#60a5fa',    // bleu d'information (convoqué, défenseurs, licencié) : fixe, jamais la couleur du club
   },
 
   // Icônes désactivées/muettes (ex: état vide, verrou, placeholder) — même

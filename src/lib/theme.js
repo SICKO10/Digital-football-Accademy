@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { colors, colorsClaire } from '../tokens'
+import { ClubThemeContext, colorsAvecClub } from './clubTheme'
 
 // Thème clair/sombre des 5 dashboards principaux (éducateur, club, joueur,
 // parent, dirigeant) et des modules qui y sont imbriqués. Les pages
@@ -20,6 +21,9 @@ export const useTheme = () => useContext(ThemeContext)
 // depuis une simple closure JS, chaque fonction composant doit le rappeler.
 export const useColors = () => {
   const { theme } = useContext(ThemeContext)
+  const { portee, palette } = useContext(ClubThemeContext)
+  // Dans les dashboards joueur et club : palette neutre + couleur du club.
+  if (portee) return colorsAvecClub(theme, palette, portee.accentVert)
   return theme === 'claire' ? colorsClaire : colors
 }
 
