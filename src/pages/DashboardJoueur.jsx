@@ -9,7 +9,7 @@ import { useDonnerCouleurClub } from '../lib/clubTheme'
 import EmptyState from '../components/EmptyState'
 import {
   IconHome, IconUser, IconChart, IconMessage, IconPlay,
-  IconGlobe, IconUpload, IconVideoOff, IconLock, IconSearch, IconCard,
+  IconGlobe, IconUpload, IconVideoOff, IconLock, IconSearch,
   IconBadge, IconClipboard, IconShirt, IconNutrition, IconHealth,
   IconDumbbell, IconUsers, IconTactic, IconTrophy, IconBall, IconStar,
   IconCalendar, IconPin, IconTarget, IconBell, IconCheck, IconCheckCircle,
@@ -44,7 +44,6 @@ import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
 import MesSaisonsJoueur from '../components/saisons/MesSaisonsJoueur'
 import MessageFinSaisonJoueur from '../components/saisons/MessageFinSaisonJoueur'
 import { libelleSaison } from '../lib/saison'
-import CarteJoueur from '../components/CarteJoueur'
 import SponsorsBar from '../components/SponsorsBar'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
@@ -3438,7 +3437,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
     { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
     { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
-    { id: 'carte_joueur', label: 'Carte Joueur', icon: <IconCard />, section: t('jsec_profil', lang) },
   ]
 
   // Ids DOM sur les boutons de nav (toujours montés, contrairement au contenu des
@@ -4801,16 +4799,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           </div>
         )}
 
-        {onglet === 'carte_joueur' && (
-          <div style={{ maxWidth: '820px', margin: '0 auto', padding: isMobile ? '20px 16px' : '40px 32px' }}>
-            <EnTetePage isMobile={isMobile} kicker="Ton niveau en un coup d'œil" titre="Carte Joueur" accentMot="Joueur"
-              sousTitre="Ta note globale et tes stats de la saison, calculées automatiquement."
-              style={{ marginBottom: '20px' }} />
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <CarteJoueur userId={userId} />
-            </div>
-          </div>
-        )}
 
         {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={(() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); return a ? statsJoueur[a.id] : null })()} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
