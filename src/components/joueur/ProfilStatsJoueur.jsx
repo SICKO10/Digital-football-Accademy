@@ -43,9 +43,9 @@ function Pastille({ texte, couleur, colors }) {
 // de la saison (minutes, présence, buts, passes décisives, poste, clean sheets
 // pour un gardien, note moyenne, points séance) et les récompenses.
 //
-// Sources : pour un joueur rattaché à une équipe, les chiffres officiels saisis
-// par l'éducateur (`statsEquipe`, calculés par DashboardJoueur) ; sinon les
-// matchs saisis par le joueur lui-même (`matchs`, table stats_match_joueur).
+// `matchs` : liste déjà fusionnée (lib/statsFusion) des matchs saisis par
+// l'éducateur et de ceux saisis par le joueur ; `statsEquipe` : présence, points
+// séance, notes et élus du mois (calculés par DashboardJoueur).
 export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile }) {
   const colors = useColors()
   const saison = saisonActuelle()
@@ -61,12 +61,12 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
   const { date_debut, date_fin } = bornesSaison(saison)
   const matchsSaison = matchs.filter(m => m.date >= date_debut && m.date <= date_fin)
 
-  const officiel = !!statsEquipe && statsEquipe.matchsJoues > 0
-  const nbMatchs = officiel ? statsEquipe.matchsJoues : matchsSaison.length
-  const minutes = officiel ? statsEquipe.minutesJouees : matchsSaison.reduce((s, m) => s + (m.minutes || 0), 0)
-  const buts = officiel ? statsEquipe.buts : matchsSaison.reduce((s, m) => s + (m.buts || 0), 0)
-  const passes = officiel ? statsEquipe.passes : matchsSaison.reduce((s, m) => s + (m.passes_decisives || 0), 0)
-  const cleanSheets = officiel ? statsEquipe.cleanSheets : matchsSaison.filter(m => m.buts_encaisses === 0).length
+  const nbMatchs = matchsSaison.length
+  const parEducateur = matchsSaison.filter(m => m.origine === 'educateur').length
+  const minutes = matchsSaison.reduce((s, m) => s + (m.minutes || 0), 0)
+  const buts = matchsSaison.reduce((s, m) => s + (m.buts || 0), 0)
+  const passes = matchsSaison.reduce((s, m) => s + (m.passes_decisives || 0), 0)
+  const cleanSheets = matchsSaison.filter(m => m.clean_sheet).length
 
   const notes = (statsEquipe?.evals || []).filter(n => n.note != null && n.noteVisible !== false).map(n => Number(n.note))
   const noteMoyenne = notes.length ? (notes.reduce((a, b) => a + b, 0) / notes.length) : null
@@ -77,7 +77,7 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
 
   const tuiles = [
     { valeur: joueurPoste || '—', libelle: 'Poste', petit: true },
-    { valeur: nbMatchs, libelle: 'Matchs joués' },
+    { valeur: nbMatchs, libelle: 'Matchs joués', detail: nbMatchs ? `${parEducateur} saisi${parEducateur > 1 ? 's' : ''} par ton éducateur, ${nbMatchs - parEducateur} par toi` : null },
     { valeur: minutes, libelle: 'Minutes jouées', detail: nbMatchs ? `${Math.round(minutes / nbMatchs)} min par match` : null },
     { valeur: buts, libelle: 'Buts', couleur: colors.accent.green },
     { valeur: passes, libelle: 'Passes décisives', couleur: colors.accent.green },
@@ -98,7 +98,7 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
     <>
       <div style={{ display: 'flex', gap: spacing['4xl'], flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: isMobile ? 'center' : 'flex-start' }}>
         <div style={{ flexShrink: 0 }}>
-          <CarteJoueur userId={userId} saison={saison} />
+          <CarteJoueur userId={userId} saison={saison} stats={{ buts, passesD: passes, cleanSheets, matchs: nbMatchs }} />
         </div>
         <div style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: spacing.xl }}>
           {tuiles.map(t => (

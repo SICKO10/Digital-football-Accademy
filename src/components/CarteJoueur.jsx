@@ -42,7 +42,9 @@ const TITLE_STYLES = {
 // façons de regrouper les mêmes lignes à l'affichage.
 const TYPES_COLLECTIFS = { tournoi_victoire: 'gold', champion: 'national', coupe: 'regional' }
 
-export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
+export default function CarteJoueur({ userId, saison = saisonActuelle(), stats }) {
+  // `stats` (facultatif) : buts, passesD, cleanSheets, matchs déjà fusionnés (éducateur + joueur)
+  // par la page Mes statistiques ; sinon la carte lit seulement les saisies du joueur.
   const [hovered, setHovered] = useState(false)
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
@@ -131,7 +133,8 @@ export default function CarteJoueur({ userId, saison = saisonActuelle() }) {
 
   if (loading || !data) return null
 
-  const { profil, buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct, titresCollectifs, distinctions } = data
+  const { profil, tournoisGagnes, presencePct, titresCollectifs, distinctions } = data
+  const { buts, passesD, cleanSheets, matchs } = stats || data
   const ovr = calculerOVR({ buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct })
   const tier = getTier(ovr)
   const t = TIERS[tier]

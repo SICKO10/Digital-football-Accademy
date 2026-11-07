@@ -4,6 +4,7 @@ import { useColors } from '../lib/theme'
 import { alpha, fontSize, radius, spacing } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
 import { calculerMoyennes } from '../lib/statsRecrutement'
+import { fusionnerMatchs } from '../lib/statsFusion'
 import { IconChart, IconTarget, IconPass, IconRun, IconCheck } from '../components/icones'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
@@ -161,7 +162,9 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
     setForm({ ...FORM_VIDE, date: new Date().toISOString().split('T')[0] })
   }
 
-  const moy = calculerMoyennes(matchs)
+  // Matchs de l'éducateur + matchs saisis par le joueur, sans doublon (lib/statsFusion).
+  const tousMatchs = fusionnerMatchs(matchs, statsEquipe?.matchsOfficiels)
+  const moy = calculerMoyennes(tousMatchs)
   const formulaireValide = !!form.adversaire.trim() && !!form.date
   const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
   const labelStyle = { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: spacing.xs }
@@ -207,7 +210,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
         sousTitre={`${moy.nb_matchs || 0} match${(moy.nb_matchs || 0) > 1 ? 's' : ''} saisi${(moy.nb_matchs || 0) > 1 ? 's' : ''} par toi · ${joueurPoste || poste}. Ta carte, tes chiffres et tes récompenses de la saison.`} />
 
       <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
-        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${matchs.length})` }].map(o => (
+        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${tousMatchs.length})` }].map(o => (
           <button key={o.key} onClick={() => changerVue(o.key)} style={pastille(vue === o.key)}>{o.label}</button>
         ))}
       </div>
@@ -220,7 +223,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
 
       {vue === 'profil' && (
         <>
-          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={matchs} statsEquipe={statsEquipe} isMobile={isMobile} />
+          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} isMobile={isMobile} />
           {matchs.length === 0 ? (
             <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
               <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Complète ton profil avec tes propres matchs</div>
@@ -318,10 +321,10 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
 
       {vue === 'historique' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-          {matchs.length === 0 && (
+          {tousMatchs.length === 0 && (
             <Carte isMobile={isMobile} style={{ textAlign: 'center', color: colors.text.faint, fontSize: fontSize.xl }}>Aucun match enregistré pour le moment.</Carte>
           )}
-          {matchs.map(m => (
+          {tousMatchs.map(m => (
             <Carte key={m.id} isMobile={isMobile} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
               <div>
                 <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl, marginBottom: '3px' }}>
@@ -329,7 +332,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
                   {m.niveau && <span style={{ color: colors.text.disabled, fontWeight: 400, fontSize: fontSize.md, marginLeft: spacing.md }}>{m.niveau}</span>}
                 </div>
                 <div style={{ color: colors.text.faint, fontSize: fontSize.md }}>
-                  {new Date(m.date).toLocaleDateString('fr-FR')} · {m.titulaire ? 'Titulaire' : 'Remplaçant'} · {m.minutes} min
+                  {new Date(m.date).toLocaleDateString('fr-FR')}{m.origine === 'joueur' && ` · ${m.titulaire ? 'Titulaire' : 'Remplaçant'}`} · {m.minutes} min · {m.origine === 'educateur' ? 'Saisi par ton éducateur' : 'Saisi par toi'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: spacing.lg, fontSize: fontSize.lg, flexWrap: 'wrap' }}>

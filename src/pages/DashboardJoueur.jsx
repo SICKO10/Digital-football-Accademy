@@ -1292,7 +1292,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         ? fetchToutesLignesIn(tousEntIds, ids => supabase.from('presences_entrainement').select('joueur_id, statut, point_seance, entrainement_id').in('entrainement_id', ids).order('entrainement_id').order('joueur_id'))
         : Promise.resolve({ data: [] }),
       Promise.all([
-        supabase.from('stats_match').select('buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
+        supabase.from('stats_match').select('match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, victoire').eq('joueur_id', equipeJoueurId),
         // Une ligne par joueur et par match de l'éducateur : ~1000 par saison.
         fetchToutesLignes(() => supabase.from('stats_match').select('joueur_id, buts, passes_dec, minutes, clean_sheet, match_id').eq('educateur_id', educateurId).order('match_id').order('joueur_id')),
         supabase.from('evaluations_joueur').select('*').eq('equipe_joueur_id', equipeJoueurId).eq('educateur_id', educateurId).eq('saison', saisonDeDate(new Date().toISOString())),
@@ -1449,9 +1449,21 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       return { saison: saisonP, mesPoints, max, rang, nbJoueurs: Object.keys(parJoueur).length, enCours, estElu: !enCours && mesPoints > 0 && mesPoints === max }
     })
 
+    // Matchs saisis par l'éducateur (feuille de match), avec leur date : sert à
+    // fusionner ces stats avec celles que le joueur saisit lui-même (Mes statistiques).
+    const matchsOfficiels = (matchsMoi || []).filter(m => (m.minutes || 0) > 0).map(m => {
+      const me = (matchsEquipe || []).find(x => x.id === m.match_id)
+      return me ? {
+        id: m.match_id, date: me.date, adversaire: me.adversaire, niveau: me.competition,
+        minutes: m.minutes || 0, buts: m.buts || 0, passes_decisives: m.passes_dec || 0, clean_sheet: !!m.clean_sheet,
+        cartons_jaunes: m.carton_jaune ? 1 : 0, cartons_rouges: m.carton_rouge ? 1 : 0,
+      } : null
+    }).filter(Boolean)
+
     setStatsJoueur(prev => ({
       ...prev,
       [affiliationId]: {
+        matchsOfficiels,
         elusMois, classementAnnee,
         total, present, points, tauxPresence: total ? Math.round((present / total) * 100) : null,
         buts, passes, matchsJoues, cleanSheets, jaunes, rouges, minutesJouees,
