@@ -188,15 +188,15 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
       {texte}
     </p>
   )
-  const couleurResultat = r => r === 'victoire' ? colors.accent.green : r === 'nul' ? colors.accent.amber : colors.accent.red
-  const couleurNote = noteEquipe ? (noteEquipe.moyenne >= 7 ? colors.accent.green : noteEquipe.moyenne >= 5 ? colors.accent.amber : colors.accent.red) : null
+  const couleurResultat = r => r === 'victoire' ? colors.accent.success : r === 'nul' ? colors.accent.amber : colors.accent.red
+  const couleurNote = noteEquipe ? (noteEquipe.moyenne >= 7 ? colors.accent.success : noteEquipe.moyenne >= 5 ? colors.accent.amber : colors.accent.red) : null
   // Barre V/N/D empilée (proportions), réutilisée pour le bilan global et
   // pour domicile/extérieur.
   const barreVND = (vv, nn, dd, hauteur = 6) => {
     const t = vv + nn + dd
     return (
       <div style={{ display: 'flex', height: hauteur, borderRadius: hauteur, overflow: 'hidden', background: colors.background.base, gap: t ? '2px' : 0 }}>
-        {[[vv, colors.accent.green], [nn, colors.accent.amber], [dd, colors.accent.red]].map(([val, c], i) => val > 0 && <div key={i} style={{ width: `${(val / t) * 100}%`, background: c }} />)}
+        {[[vv, colors.accent.success], [nn, colors.accent.amber], [dd, colors.accent.red]].map(([val, c], i) => val > 0 && <div key={i} style={{ width: `${(val / t) * 100}%`, background: c }} />)}
       </div>
     )
   }
@@ -221,15 +221,15 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
   const analyses = [
     butsAvecMinute.length > 0 && {
       titre: "Par quart d'heure",
-      rendu: cle => <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q[cle] }))} color={cle === 'marques' ? colors.accent.green : colors.accent.red} colors={colors} />,
+      rendu: cle => <GraphiqueLigne data={quartsGraphique.map(q => ({ label: q.label, valeur: q[cle] }))} color={cle === 'marques' ? colors.accent.success : colors.accent.red} colors={colors} />,
     },
     natureGraphique.length > 0 && {
       titre: 'Par nature',
-      rendu: cle => <BarresHorizontales data={natureGraphique.filter(x => x[cle] > 0).map(x => ({ label: x.label, valeur: x[cle] }))} color={cle === 'marques' ? colors.accent.green : colors.accent.red} colors={colors} />,
+      rendu: cle => <BarresHorizontales data={natureGraphique.filter(x => x[cle] > 0).map(x => ({ label: x.label, valeur: x[cle] }))} color={cle === 'marques' ? colors.accent.success : colors.accent.red} colors={colors} />,
     },
     coteGraphique.length > 0 && {
       titre: 'Par côté',
-      rendu: cle => <BarresHorizontales data={coteGraphique.filter(x => x[cle] > 0).map(x => ({ label: x.label, valeur: x[cle] }))} color={cle === 'marques' ? colors.accent.green : colors.accent.red} colors={colors} />,
+      rendu: cle => <BarresHorizontales data={coteGraphique.filter(x => x[cle] > 0).map(x => ({ label: x.label, valeur: x[cle] }))} color={cle === 'marques' ? colors.accent.success : colors.accent.red} colors={colors} />,
     },
   ].filter(Boolean)
 
@@ -270,14 +270,14 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {barreVND(v, n, d)}
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    <strong style={{ color: colors.accent.green }}>{v}V</strong> · <strong style={{ color: colors.accent.amber }}>{n}N</strong> · <strong style={{ color: colors.accent.red }}>{d}D</strong>
+                    <strong style={{ color: colors.accent.success }}>{v}V</strong> · <strong style={{ color: colors.accent.amber }}>{n}N</strong> · <strong style={{ color: colors.accent.red }}>{d}D</strong>
                   </span>
                 </div>
               ),
             })}
             {kpi({ label: 'Buts marqués', valeur: butsP, couleur: colors.accent.green, detail: `${(butsP / total).toFixed(1)} par match` })}
             {kpi({ label: 'Buts encaissés', valeur: butsE, couleur: colors.accent.red, detail: `${(butsE / total).toFixed(1)} par match` })}
-            {kpi({ label: 'Différence', valeur: diff > 0 ? `+${diff}` : diff, couleur: diff > 0 ? colors.accent.green : diff < 0 ? colors.accent.red : colors.text.secondary, detail: `sur ${total} match${total > 1 ? 's' : ''}` })}
+            {kpi({ label: 'Différence', valeur: diff > 0 ? `+${diff}` : diff, couleur: diff > 0 ? colors.accent.success : diff < 0 ? colors.accent.red : colors.text.secondary, detail: `sur ${total} match${total > 1 ? 's' : ''}` })}
             {kpi({ label: 'Clean sheets', valeur: cleanSheets, couleur: colors.accent.purpleLight, detail: `${pct(cleanSheets, total)}% des matchs` })}
           </div>
 
@@ -338,7 +338,7 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                 {eyebrow('Analyse des buts')}
                 <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: colors.text.faint }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: colors.accent.green }} />Marqués</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: colors.accent.success }} />Marqués</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: colors.accent.red }} />Encaissés</span>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1fr)', gap: isMobile ? '18px' : '28px' }}>
                     {['marques', 'encaisses'].map(cle => (
                       <div key={cle} style={{ minWidth: 0 }}>
-                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: cle === 'marques' ? colors.accent.green : colors.accent.red }}>{cle === 'marques' ? 'Marqués' : 'Encaissés'}</p>
+                        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: cle === 'marques' ? colors.accent.success : colors.accent.red }}>{cle === 'marques' ? 'Marqués' : 'Encaissés'}</p>
                         {a.rendu(cle)}
                       </div>
                     ))}

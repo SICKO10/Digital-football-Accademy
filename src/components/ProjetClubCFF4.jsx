@@ -146,7 +146,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
     fontSize: '14px', outline: 'none', boxSizing: 'border-box',
   }
   const btn = {
-    background: '#4ade80', color: '#000', border: 'none',
+    background: colors.accent.green, color: colors.accent.onBrand, border: 'none',
     borderRadius: '8px', padding: '10px 20px', fontWeight: 700,
     fontSize: '14px', cursor: 'pointer',
   }
@@ -163,12 +163,12 @@ export default function ProjetClubCFF4({ userId, clubId }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <div style={{ color: '#4ade80', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>Formation fédérale</div>
+          <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>Formation fédérale</div>
           <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0 }}>Projet Club — CFF4</h1>
           <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Certificat Fédéral de Football 4 · BMF · FFF</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {saved && <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700 }}>Enregistré</span>}
+          {saved && <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700 }}>Enregistré</span>}
           <select value={saison} onChange={e => setSaison(e.target.value)} style={{ ...inp, width: 'auto', padding: '8px 12px' }}>
             {['2024-2025', '2025-2026', '2026-2027', '2027-2028'].map(s => <option key={s}>{s}</option>)}
           </select>
@@ -178,7 +178,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
       {/* Score global */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
-          Score moyen : <span style={{ color: '#4ade80', fontWeight: 800, fontSize: '16px' }}>{scoreTotal}/5</span>
+          Score moyen : <span style={{ color: colors.accent.green, fontWeight: 800, fontSize: '16px' }}>{scoreTotal}/5</span>
         </div>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
           Actions planifiées : <span style={{ color: '#f59e0b', fontWeight: 800 }}>{actions.length}</span>
@@ -191,8 +191,8 @@ export default function ProjetClubCFF4({ userId, clubId }) {
           <button key={e.key} onClick={() => setEtape(e.key)} style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px',
             fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
-            color: etape === e.key ? '#4ade80' : colors.text.faint,
-            borderBottom: etape === e.key ? '2px solid #4ade80' : '2px solid transparent',
+            color: etape === e.key ? colors.accent.green : colors.text.faint,
+            borderBottom: etape === e.key ? `2px solid ${colors.accent.green}` : '2px solid transparent',
           }}>
             {e.label}
           </button>
@@ -340,7 +340,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                 const data = objectifs[key] || { axes: ['', '', '', '', ''] }
                 return (
                   <div key={idx} style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                    <div style={{ color: '#4ade80', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
+                    <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
                       Objectif {idx + 1} — {obj}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -396,7 +396,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                       {MOIS.map(m => (
                         <td key={m} style={{ textAlign: 'center', padding: '6px 8px' }}>
                           {a.mois_calendrier?.includes(m.toLowerCase()) && (
-                            <div style={{ width: '12px', height: '12px', background: '#4ade80', borderRadius: '50%', margin: 'auto' }} />
+                            <div style={{ width: '12px', height: '12px', background: colors.accent.green, borderRadius: '50%', margin: 'auto' }} />
                           )}
                         </td>
                       ))}
@@ -427,8 +427,8 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span style={{
                     fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                    background: a.statut === 'realisee' ? colors.accent.green + '20' : a.statut === 'en_cours' ? colors.accent.amber + '20' : colors.accent.red + '20',
-                    color: a.statut === 'realisee' ? colors.accent.green : a.statut === 'en_cours' ? colors.accent.amber : colors.accent.red,
+                    background: a.statut === 'realisee' ? colors.accent.success + '20' : a.statut === 'en_cours' ? colors.accent.amber + '20' : colors.accent.red + '20',
+                    color: a.statut === 'realisee' ? colors.accent.success : a.statut === 'en_cours' ? colors.accent.amber : colors.accent.red,
                   }}>
                     {a.statut === 'realisee' ? 'Réalisée' : a.statut === 'en_cours' ? 'En cours' : 'Planifiée'}
                   </span>
@@ -508,7 +508,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                           setNewAction({ ...newAction, mois_calendrier: mois })
                         }} style={{
                           padding: '5px 10px', border: 'none', borderRadius: '6px', cursor: 'pointer',
-                          background: newAction.mois_calendrier.includes(m.toLowerCase()) ? '#4ade80' : colors.background.raised,
+                          background: newAction.mois_calendrier.includes(m.toLowerCase()) ? colors.accent.green : colors.background.raised,
                           color: newAction.mois_calendrier.includes(m.toLowerCase()) ? '#000' : colors.text.faint,
                           fontWeight: 700, fontSize: '12px',
                         }}>{m}</button>
@@ -553,11 +553,11 @@ export default function ProjetClubCFF4({ userId, clubId }) {
           {/* Attestation */}
           {actions.length > 0 && (
             <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green}40`, borderRadius: '12px', padding: '20px', marginTop: '8px' }}>
-              <h3 style={{ color: '#4ade80', margin: '0 0 12px', fontSize: '15px' }}>Attestation de stage pédagogique</h3>
+              <h3 style={{ color: colors.accent.green, margin: '0 0 12px', fontSize: '15px' }}>Attestation de stage pédagogique</h3>
               <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '0 0 12px' }}>
                 À faire signer par le président du club après la réalisation de chaque action.
               </p>
-              <button onClick={() => window.print()} style={{ ...btn, background: 'transparent', border: '1px solid #4ade80', color: '#4ade80' }}>
+              <button onClick={() => window.print()} style={{ ...btn, background: 'transparent', border: `1px solid ${colors.accent.green}`, color: colors.accent.green }}>
                 Imprimer l'attestation
               </button>
             </div>
@@ -601,7 +601,7 @@ function RadarChart({ diagnostic, colors }) {
         <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(angles[i])} y2={cy + r * Math.sin(angles[i])} stroke={colors.border.default} strokeWidth="1" />
       ))}
       {/* Data */}
-      <polygon points={dataPolygon} fill="rgba(74,222,128,0.2)" stroke="#4ade80" strokeWidth="2" />
+      <polygon points={dataPolygon} fill={colors.accent.green + "33"} stroke={colors.accent.green} strokeWidth="2" />
       {/* Labels */}
       {axes.map((axe, i) => {
         const a = angles[i]
@@ -619,7 +619,7 @@ function RadarChart({ diagnostic, colors }) {
         const val = diagnostic[axe.key] || 0
         const a = angles[i]
         const rr = (r * val) / 5
-        return <circle key={i} cx={cx + rr * Math.cos(a)} cy={cy + rr * Math.sin(a)} r="4" fill="#4ade80" />
+        return <circle key={i} cx={cx + rr * Math.cos(a)} cy={cy + rr * Math.sin(a)} r="4" fill={colors.accent.green} />
       })}
     </svg>
   )
@@ -684,7 +684,7 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
                   {[true, false].map(v => (
                     <button key={String(v)} onClick={() => setSuivi({ ...suivi, [f.key]: v })} style={{
                       flex: 1, padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '12px',
-                      background: suivi[f.key] === v ? (v ? colors.accent.green : colors.accent.red) : colors.background.raised,
+                      background: suivi[f.key] === v ? (v ? colors.accent.success : colors.accent.red) : colors.background.raised,
                       color: suivi[f.key] === v ? '#000' : colors.text.faint,
                     }}>{v ? 'Oui' : 'Non'}</button>
                   ))}
@@ -705,7 +705,7 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={sauvegarder} style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer' }}>Enregistrer</button>
+            <button onClick={sauvegarder} style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer' }}>Enregistrer</button>
           </div>
         </div>
       )}

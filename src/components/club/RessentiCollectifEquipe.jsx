@@ -29,7 +29,7 @@ export default function RessentiCollectifEquipe({ categorieId }) {
   }
 
   const couleurRpe = (v) => colors.accent[zoneRpe(v)?.couleur] || colors.text.faint
-  const couleurPlaisir = (v) => v >= 4 ? colors.accent.green : v >= 3 ? colors.accent.amber : colors.accent.red
+  const couleurPlaisir = (v) => v >= 4 ? colors.accent.success : v >= 3 ? colors.accent.amber : colors.accent.red
   const valides = (seances || []).filter(s => s.nb_reponses >= MIN_REPONSES)
   const moyenne = (cle) => valides.length ? valides.reduce((a, s) => a + Number(s[cle]), 0) / valides.length : null
 

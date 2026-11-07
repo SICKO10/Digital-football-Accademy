@@ -7,11 +7,11 @@ import { colors, colorsClaire } from '../tokens'
 // `setCouleurClub(hex)` : à appeler quand un dashboard connaît la couleur du club
 // (hex, ou null pour le vert par défaut). `palette` suit aussi le thème clair/sombre.
 // `portee` : null hors des dashboards concernés ; sinon { accentVert } où
-// `accentVert` vaut 'club' (le vert historique devient la couleur du club, cas du
-// dashboard joueur) ou 'statut' (le vert reste le vert de succès, cas du dashboard
-// club qui lit sa couleur dans `couleurPrincipale`) ou 'educateur' (le vert reste
-// le vert de succès et c'est l'ancien bleu de l'éducateur qui devient la couleur
-// du club). Posé par PorteeThemeClub.
+// `accentVert` vaut 'club' (dashboard joueur), 'statut' (dashboard club) ou
+// 'educateur' : dans les trois, `accent.green` (le vert de décor) devient la couleur
+// du club, et les statuts (présent, victoire, ok, validé) passent par `accent.success`,
+// qui reste vert. Dans 'educateur', l'ancien bleu de marque devient aussi la couleur
+// du club (le bleu d'information reste dans `info`). Posé par PorteeThemeClub.
 export const ClubThemeContext = createContext({
   couleurClub: null,
   setCouleurClub: () => {},
@@ -48,7 +48,7 @@ export function colorsAvecClub(theme, palette, accentVert) {
   const surMarque = contraste(marque, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#16161A'
   const accent = {
     ...colors.accent,
-    green: accentVert === 'club' ? marque : colors.accent.green,
+    green: marque,
     // Dashboard éducateur : son ancien bleu de marque devient la couleur du club
     // (le bleu d'information reste dans `info`).
     blue: accentVert === 'educateur' ? marque : colors.accent.blue,

@@ -104,7 +104,7 @@ export default function NotificationBanner({ userId, cibles }) {
         </div>
 
         <button onClick={() => marquerLu(notif.id)}
-          style={{ marginTop: '24px', padding: '12px 32px', background: colors.accent.green, color: colors.background.base, border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+          style={{ marginTop: '24px', padding: '12px 32px', background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
           J'ai compris
         </button>
       </div>

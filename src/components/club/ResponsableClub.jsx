@@ -72,7 +72,7 @@ export default function ResponsableClub({ userId, estCreateur, nomClub, emailAct
           ? 'Tu es le responsable de ce compte. Si tu quittes le club, tu peux demander à transmettre la responsabilité à une autre adresse email.'
           : 'Le transfert de responsabilité est réservé au créateur du compte club. En cas de désaccord interne, contacte le support.'}
       </p>
-      {envoye && <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.accent.green, fontWeight: 600 }}>{envoye}</p>}
+      {envoye && <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.accent.success, fontWeight: 600 }}>{envoye}</p>}
 
       {!mode && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

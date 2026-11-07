@@ -237,7 +237,7 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
 - Journal : 2026-11-07, Sonnet 5.5. Nouveau composant `src/components/ApercuCouleurClub.jsx` (deux miniatures clair et sombre : bout de menu, carte, bouton), calculé par `calculerPalette`, placé dans `ThemeEditor` de DashboardClub, suit la couleur choisie avant enregistrement. Message orange si la couleur est ajustée ou remplacée par le vert (trop pâle, invalide, illisible). Build OK, `npm test` 0 échec, lint sans nouvelle erreur.
 
 ### Bloc 10 : Le vert de décor suit la couleur du club (dashboards club et éducateur)
-- Statut : en cours (demandé par Kevin le 2026-11-07)
+- Statut : fait (à valider visuellement par Kevin)
 - Objectif : pour un club rouge et blanc, plus aucun vert « de décor » (boutons, onglets, titres, icônes, jauges, cases à cocher) dans les dashboards club et éducateur : tout prend la couleur configurée par le club, pour tous les clubs (pas un cas rouge codé en dur), en clair comme en sombre, comme le menu.
 - Restent verts : les statuts (présent, victoire, OUVERT, validé, recettes, taux de présence élevé), le terrain Tactipad et les barres d'évaluation.
 - Résultat testable : avec `?couleurClub=%23C8102E`, parcourir les onglets club et éducateur : aucun vert hors statuts, terrain Tactipad et barres d'évaluation.
@@ -252,5 +252,5 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
   - Exclure Tactipad et les barres d'évaluation (ne pas toucher).
   - Garder la lisibilité du texte posé sur la couleur (`onBrand`).
 - Ce que je teste pour valider : club rouge, puis un club d'une autre couleur : onglets club et éducateur, thèmes clair et sombre.
-- Reste à finir : (rempli en fin de bloc)
-- Journal : (rempli en fin de bloc)
+- Reste à finir : contrôle visuel par Kevin (club rouge `?couleurClub=%23C8102E`, puis un club d'une autre couleur, onglets club et éducateur, clair et sombre). Non touchés volontairement : tutoriels (TutorielsClub/Educateur, mini-visuels d'exemple), GrilleSeance (grille d'évaluation), FloatingHelper, PlanningSemaineWidget (domicile en vert), ProjetSportif (couleurs de zones choisies), vert du PDF de fiche de séance, Tactipad. Les listes de couleurs de catégories (U9, U20, rôles) gardent leurs verts : ce sont des codes de catégorie, pas du décor.
+- Journal : 2026-11-07, Sonnet 5.5. Sauvegarde datée dans `~/Sauvegardes-DigitalFootball/bloc10-2026-11-07/`. `colorsAvecClub` : `accent.green` = couleur du club dans les trois portées (joueur, club, éducateur) ; `accent.success` reste le vert de statut. Classement ligne par ligne : DashboardClub 28 lignes statut + 54 décor, DashboardEducateur 60 statut + 115 décor ; composants partagés suivis : StatsEquipe, TournoiClub, ProjetDetail, ProjetClubCFF4, LigneResultat, ClotureSaisonClub, TachesClub, RessentiCollectifEquipe, ResponsableClub, Newsletter, NotificationBanner, CarteMatchAVenir, AlertesPanel. Verts en dur de décor remplacés par `colors.accent.green`, texte posé sur la couleur du club passé en `colors.accent.onBrand`. Build OK, `npm test` 142 réussis, lint 173 erreurs / 70 avertissements (inchangé). Pas testé à l'écran par Claude (dashboards derrière connexion).

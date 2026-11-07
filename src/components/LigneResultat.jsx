@@ -13,7 +13,7 @@ export default function LigneResultat({ m, nomClub, logoClub, logoAdversaire, en
   const nous = Number(m.score_nous)
   const eux = Number(m.score_eux)
   const resultat = nous > eux ? 'Victoire' : nous === eux ? 'Nul' : 'Défaite'
-  const couleur = nous > eux ? colors.accent.green : nous === eux ? colors.text.secondary : colors.accent.red
+  const couleur = nous > eux ? colors.accent.success : nous === eux ? colors.text.secondary : colors.accent.red
   // Nul : cadre neutre bien visible (le gris translucide se perdait sur fond sombre).
   const cadre = nous === eux ? colors.border.strong : couleur + '55'
 
@@ -52,7 +52,7 @@ export default function LigneResultat({ m, nomClub, logoClub, logoAdversaire, en
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '6px', borderLeft: `1px solid ${colors.border.subtle}` }} onClick={e => e.stopPropagation()}>
             {afficherRapport && (
               <button onClick={onRapport} title={aRapport ? 'Voir le rapport de match' : 'Rapport de match'}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${aRapport ? colors.accent.green + '60' : colors.border.default}`, color: aRapport ? colors.accent.green : colors.text.secondary, borderRadius: '8px', padding: '8px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', minHeight: '36px' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${aRapport ? colors.accent.success + '60' : colors.border.default}`, color: aRapport ? colors.accent.success : colors.text.secondary, borderRadius: '8px', padding: '8px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', minHeight: '36px' }}>
                 <IcoRapport /> Rapport
               </button>
             )}
@@ -69,7 +69,7 @@ export default function LigneResultat({ m, nomClub, logoClub, logoAdversaire, en
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={e => e.stopPropagation()}>
             {afficherRapport && (
               <button onClick={onRapport}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'transparent', border: `1px solid ${aRapport ? colors.accent.green + '60' : colors.border.default}`, color: aRapport ? colors.accent.green : colors.text.secondary, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', minHeight: '32px' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'transparent', border: `1px solid ${aRapport ? colors.accent.success + '60' : colors.border.default}`, color: aRapport ? colors.accent.success : colors.text.secondary, borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', minHeight: '32px' }}>
                 <IcoRapport /> Rapport
               </button>
             )}

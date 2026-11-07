@@ -253,7 +253,7 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
           </div>
           {[
             { label: 'Étapes', value: etapes.length, couleur: colors.text.primary },
-            { label: 'Terminées', value: nbTerminees, couleur: colors.accent.green },
+            { label: 'Terminées', value: nbTerminees, couleur: colors.accent.success },
             { label: 'En cours', value: nbEnCours, couleur: colors.accent.blue },
             { label: 'À faire', value: nbAFaire, couleur: colors.text.faint },
           ].map(kpi => (
@@ -450,7 +450,7 @@ export default function ProjetDetail({ projet, canEdit, onClose, onOuvrirEdition
                                 {actions.length === 0 && <p style={{ color: colors.text.faint, fontSize: '11px', fontStyle: 'italic', margin: '0 0 8px' }}>Aucune action pour l'instant.</p>}
                                 {actions.map(a => (
                                   <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '6px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                    <span onClick={() => canEdit && toggleAction(a)} style={{ cursor: canEdit ? 'pointer' : 'default', fontSize: '14px', color: a.fait ? colors.accent.green : colors.text.faint, marginTop: '1px' }}>{a.fait ? '☑' : '☐'}</span>
+                                    <span onClick={() => canEdit && toggleAction(a)} style={{ cursor: canEdit ? 'pointer' : 'default', fontSize: '14px', color: a.fait ? colors.accent.success : colors.text.faint, marginTop: '1px' }}>{a.fait ? '☑' : '☐'}</span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <div style={{ color: a.fait ? colors.text.faint : colors.text.secondary, fontSize: '12px', textDecoration: a.fait ? 'line-through' : 'none' }}>{a.quoi}</div>
                                       {(a.quand || a.qui) && <div style={{ color: colors.text.faint, fontSize: '10px' }}>{[a.quand, a.qui].filter(Boolean).join(' · ')}</div>}

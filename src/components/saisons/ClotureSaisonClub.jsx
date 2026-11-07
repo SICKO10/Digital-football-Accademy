@@ -119,7 +119,7 @@ export default function ClotureSaisonClub({ clubId, userId, categories, accentCo
                         <span style={{ fontWeight: 700, fontSize: 13 }}>{nomEquipe(equipe)}</span>
                         {equipe.educateur && <span style={{ fontSize: 12, color: colors.text.faint }}> · {equipe.educateur.prenom || ''} {equipe.educateur.nom || ''}</span>}
                       </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: etat === 'cloturee' ? colors.accent.green : etat === 'a_cloturer' ? colors.accent.amber : colors.text.faint }}>{LIBELLE_ETAT_CLOTURE[etat]}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: etat === 'cloturee' ? colors.accent.success : etat === 'a_cloturer' ? colors.accent.amber : colors.text.faint }}>{LIBELLE_ETAT_CLOTURE[etat]}</span>
                     </div>
                   ))}
                 </div>

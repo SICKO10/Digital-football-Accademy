@@ -116,7 +116,7 @@ const EQUIPES = ['A', 'B', 'C', 'D', 'E']
 // couleurPrincipale (identité du club) ni les tokens de thème clair/sombre.
 const getCategoryColor = (nom) => {
   const n = (nom || '').toLowerCase()
-  if (n.includes('u9') || n.includes('u10') || n.includes('u11')) return '#4ade80'
+  if (n.includes('u9') || n.includes('u10') || n.includes('u11')) return colors.accent.green
   if (n.includes('u12') || n.includes('u13')) return '#60a5fa'
   if (n.includes('u14') || n.includes('u15')) return '#f97316'
   if (n.includes('u16') || n.includes('u17')) return '#a78bfa'
@@ -175,7 +175,7 @@ const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label 
 const ROLE_BADGE_STYLE = (role) => {
   if (role === 'president') return { bg: '#f59e0b15', border: '#f59e0b40', color: '#f59e0b' }
   if (['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation'].includes(role)) return { bg: '#60a5fa10', border: '#60a5fa30', color: '#60a5fa' }
-  if (['tresorier', 'comptable'].includes(role)) return { bg: '#4ade8010', border: '#4ade8030', color: '#4ade80' }
+  if (['tresorier', 'comptable'].includes(role)) return { bg: colors.accent.green + '10', border: colors.accent.green + '30', color: colors.accent.green }
   if (['secretaire', 'responsable_communication', 'marketing'].includes(role)) return { bg: '#a78bfa10', border: '#a78bfa30', color: '#a78bfa' }
   return { bg: '#6b728015', border: '#6b728040', color: '#6b7280' }
 }
@@ -184,7 +184,7 @@ const ROLE_BADGE_STYLE = (role) => {
 // ROLE_BADGE_STYLE) — simple hash nom+prénom sur une petite palette, pour
 // distinguer les membres au premier coup d'œil dans une longue liste.
 const PALETTE_AVATAR = [
-  { bg: '#4ade8015', text: '#4ade80' },
+  { bg: colors.accent.green + '15', text: colors.accent.green },
   { bg: '#60a5fa15', text: '#60a5fa' },
   { bg: '#a78bfa15', text: '#a78bfa' },
   { bg: '#f9731615', text: '#f97316' },
@@ -469,7 +469,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       sponsorsData?.forEach(s => {
         const jours = Math.ceil((new Date(s.date_fin) - aujourdhui) / (1000 * 60 * 60 * 24))
         toutes.push({
-          id: `sponsor_${s.id}`, couleur: jours <= 14 ? colors.accent.red : colors.accent.green,
+          id: `sponsor_${s.id}`, couleur: jours <= 14 ? colors.accent.red : colors.accent.success,
           titre: `Fin de contrat sponsor — ${s.entreprise}`,
           sousTitre: `Dans ${jours} jour${jours > 1 ? 's' : ''}`,
           onClick: () => { setActiveCategorie('administratif'); setActiveTab('sponsors') },
@@ -656,7 +656,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   const ligneMatch = (m, avecScore) => {
     const label = catLabel(m)
     const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
-    const couleur = nous > eux ? colors.accent.green : nous < eux ? colors.accent.red : colors.accent.amber
+    const couleur = nous > eux ? colors.accent.success : nous < eux ? colors.accent.red : colors.accent.amber
     return (
       <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${avecScore ? couleur : (m.domicile ? couleurPrincipale : colors.accent.blue)}`, borderRadius: '10px', minWidth: 0 }}>
         {paveDate(m.date)}
@@ -873,7 +873,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
               onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
               style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
             <button onClick={() => sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })} disabled={savingTheme}
-              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.black, fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Sauvegarder
             </button>
           </div>
@@ -1345,7 +1345,7 @@ export default function DashboardClub() {
   const [historiqueEquipementOuvert, setHistoriqueEquipementOuvert] = useState(false)
   const [modalPack, setModalPack] = useState(false)
   const [packEnEdition, setPackEnEdition] = useState(null) // null → nouveau pack, sinon pack existant
-  const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕', categorie_age: 'adulte' })
+  const [packForm, setPackForm] = useState({ nom: '', cible: 'joueur', champs_ids: [], couleur: colors.accent.green, icone: '👕', categorie_age: 'adulte' })
   const [packMenuOuvert, setPackMenuOuvert] = useState(null) // id du pack dont le menu ⋮ est ouvert
   const [nouveauChampNom, setNouveauChampNom] = useState('')
   const [nouveauChampOptions, setNouveauChampOptions] = useState(TAILLES_DISPONIBLES.join(', '))
@@ -1637,7 +1637,7 @@ export default function DashboardClub() {
   // créés, distinct des boutons ci-dessus qui créent les champs eux-mêmes.
   const ouvrirNouveauPack = () => {
     setPackEnEdition(null)
-    setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: '#4ade80', icone: '👕', categorie_age: 'adulte' })
+    setPackForm({ nom: '', cible: 'joueur', champs_ids: [], couleur: colors.accent.green, icone: '👕', categorie_age: 'adulte' })
     setNouveauChampNom('')
     setNouveauChampOptions(TAILLES_DISPONIBLES.join(', '))
     setNouveauChampTailleUnique(false)
@@ -3490,7 +3490,7 @@ export default function DashboardClub() {
             <div style={{ display: 'flex', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden' }}>
               {[['mensuel', 'Mensuel'], ['annuel', 'Annuel']].map(([c, label]) => (
                 <button key={c} type="button" onClick={() => setCycleChoisiProfil(c)}
-                  style={{ padding: '11px 16px', border: 'none', background: cycleChoisiProfil === c ? colors.accent.green : 'transparent', color: cycleChoisiProfil === c ? colors.black : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ padding: '11px 16px', border: 'none', background: cycleChoisiProfil === c ? colors.accent.green : 'transparent', color: cycleChoisiProfil === c ? colors.accent.onBrand : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   {label}
                 </button>
               ))}
@@ -3500,7 +3500,7 @@ export default function DashboardClub() {
           <a href={lien || undefined} target="_blank" rel="noopener noreferrer"
             aria-disabled={!lien}
             onClick={e => { if (!lien) e.preventDefault() }}
-            style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '10px', border: 'none', background: lien ? colors.accent.green : colors.background.raised, color: lien ? colors.black : colors.text.faint, fontWeight: 800, fontSize: '14px', cursor: lien ? 'pointer' : 'not-allowed', textDecoration: 'none', marginBottom: '1.5rem' }}>
+            style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '14px', borderRadius: '10px', border: 'none', background: lien ? colors.accent.green : colors.background.raised, color: lien ? colors.accent.onBrand : colors.text.faint, fontWeight: 800, fontSize: '14px', cursor: lien ? 'pointer' : 'not-allowed', textDecoration: 'none', marginBottom: '1.5rem' }}>
             {p ? `Activer — ${cycleChoisiProfil === 'annuel' ? p.annuelPrix : p.mensuelPrix}` : 'Choisir un palier'}
           </a>
 
@@ -3901,7 +3901,7 @@ export default function DashboardClub() {
                                 </div>
                                 <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>
                                   {sEq.joueurs} joueur{sEq.joueurs > 1 ? 's' : ''}
-                                  {nbMatchs > 0 && <> · <span style={{ color: colors.accent.green, fontWeight: 700 }}>{sEq.v}V</span> <span style={{ color: colors.accent.amber, fontWeight: 700 }}>{sEq.n}N</span> <span style={{ color: colors.accent.red, fontWeight: 700 }}>{sEq.d}D</span></>}
+                                  {nbMatchs > 0 && <> · <span style={{ color: colors.accent.success, fontWeight: 700 }}>{sEq.v}V</span> <span style={{ color: colors.accent.amber, fontWeight: 700 }}>{sEq.n}N</span> <span style={{ color: colors.accent.red, fontWeight: 700 }}>{sEq.d}D</span></>}
                                 </p>
                               </div>
                               <button onClick={() => { setEffectifModal(c.id); chargerClassements() }}
@@ -4193,7 +4193,7 @@ export default function DashboardClub() {
             {club?.quota_equipes != null && (() => {
               const utilise = categories.length
               const restant = club.quota_equipes - utilise
-              const couleurQuota = utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.green
+              const couleurQuota = utilise >= club.quota_equipes ? colors.accent.red : utilise >= club.quota_equipes * 0.8 ? colors.accent.amber : colors.accent.success
               return (
                 <div style={carteEdu}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
@@ -4241,7 +4241,7 @@ export default function DashboardClub() {
                                   <span style={{ fontSize: '12px', color: colors.text.secondary }}>{p.label}</span>
                                   <div style={{ display: 'flex', gap: '6px' }}>
                                     <a href={stripeUrl(p.mensuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
-                                      style={{ background: colors.accent.green, color: colors.black, borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
+                                      style={{ background: colors.accent.green, color: colors.accent.onBrand, borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>
                                       {p.mensuelPrix}
                                     </a>
                                     <a href={stripeUrl(p.annuel, clubId, club?.email)} target="_blank" rel="noopener noreferrer"
@@ -4326,7 +4326,7 @@ export default function DashboardClub() {
                 </button>
               </div>
               {inviteEducateurMessage && (
-                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.green : inviteEducateurMessage.type === 'avertissement' ? colors.accent.amber : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: inviteEducateurMessage.type === 'ok' ? colors.accent.success : inviteEducateurMessage.type === 'avertissement' ? colors.accent.amber : colors.accent.red }}>{inviteEducateurMessage.texte}</p>
               )}
               {invitationsEducateurEnvoyees.length > 0 && (
                 <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -4522,16 +4522,16 @@ export default function DashboardClub() {
                     {nbMatchsJoues > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap: '12px' }}>
                         {kpiSt(t('jp_matchs_joues', lang), nbMatchsJoues, `${matchsCat.length - nbMatchsJoues} à venir`)}
-                        {kpiSt('Bilan', `${tauxV}%`, null, colors.accent.green, (
+                        {kpiSt('Bilan', `${tauxV}%`, null, colors.accent.success, (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', gap: '2px', background: colors.background.base }}>
-                              {[[victoires, colors.accent.green], [nuls, colors.accent.amber], [defaites, colors.accent.red]].map(([v, c], i) => v > 0 && <div key={i} style={{ width: `${(v / nbMatchsJoues) * 100}%`, background: c }} />)}
+                              {[[victoires, colors.accent.success], [nuls, colors.accent.amber], [defaites, colors.accent.red]].map(([v, c], i) => v > 0 && <div key={i} style={{ width: `${(v / nbMatchsJoues) * 100}%`, background: c }} />)}
                             </div>
-                            <span style={{ fontSize: '12px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}><strong style={{ color: colors.accent.green }}>{victoires}V</strong> · <strong style={{ color: colors.accent.amber }}>{nuls}N</strong> · <strong style={{ color: colors.accent.red }}>{defaites}D</strong></span>
+                            <span style={{ fontSize: '12px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}><strong style={{ color: colors.accent.success }}>{victoires}V</strong> · <strong style={{ color: colors.accent.amber }}>{nuls}N</strong> · <strong style={{ color: colors.accent.red }}>{defaites}D</strong></span>
                           </div>
                         ))}
                         {kpiSt(t('jp_clean_sheets', lang), cleanSheets, `${tauxCS}% des matchs`, colors.accent.purpleLight)}
-                        {kpiSt('Présence', totalPresencesEffectif > 0 ? `${tauxPresenceEffectif}%` : '–', totalPresencesEffectif > 0 ? 'aux entraînements' : 'aucune présence saisie', totalPresencesEffectif > 0 ? (tauxPresenceEffectif >= 80 ? colors.accent.green : tauxPresenceEffectif >= 50 ? colors.accent.amber : colors.accent.red) : colors.text.faint)}
+                        {kpiSt('Présence', totalPresencesEffectif > 0 ? `${tauxPresenceEffectif}%` : '–', totalPresencesEffectif > 0 ? 'aux entraînements' : 'aucune présence saisie', totalPresencesEffectif > 0 ? (tauxPresenceEffectif >= 80 ? colors.accent.success : tauxPresenceEffectif >= 50 ? colors.accent.amber : colors.accent.red) : colors.text.faint)}
                       </div>
                     )}
                     {nbMatchsJoues > 0 && (
@@ -4553,7 +4553,7 @@ export default function DashboardClub() {
                             {derniersMatchs.map(m => {
                               const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
                               const label = nous > eux ? 'V' : nous === eux ? 'N' : 'D'
-                              const couleur = label === 'V' ? colors.accent.green : label === 'N' ? colors.accent.amber : colors.accent.red
+                              const couleur = label === 'V' ? colors.accent.success : label === 'N' ? colors.accent.amber : colors.accent.red
                               return (
                                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${couleur}`, borderRadius: '10px' }}>
                                   <span style={{ width: 28, height: 28, borderRadius: '8px', background: couleur + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', color: couleur, flexShrink: 0 }}>{label}</span>
@@ -4797,7 +4797,7 @@ export default function DashboardClub() {
                   <span style={{ fontSize: '20px' }}>💳</span>
                   <h3 style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', margin: 0 }}>{t('club_abonnement_titre', lang)}</h3>
                   {club?.palier && (
-                    <span style={{ padding: '3px 10px', borderRadius: '20px', background: 'rgba(74,222,128,0.1)', border: '1px solid #4ade8030', color: '#4ade80', fontSize: '11px', fontWeight: 700 }}>ACTIF</span>
+                    <span style={{ padding: '3px 10px', borderRadius: '20px', background: colors.accent.green + '1a', border: `1px solid ${colors.accent.green}30`, color: colors.accent.green, fontSize: '11px', fontWeight: 700 }}>ACTIF</span>
                   )}
                 </div>
 
@@ -4952,9 +4952,9 @@ export default function DashboardClub() {
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
                 {[
-                  { label: t('club_recettes', lang), icone: '↑', val: totalRecettes, color: colors.accent.green, bg: '#4ade8010', sign: '+' },
+                  { label: t('club_recettes', lang), icone: '↑', val: totalRecettes, color: colors.accent.success, bg: '#4ade8010', sign: '+' },
                   { label: t('club_depenses', lang), icone: '↓', val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
-                  { label: t('club_solde', lang), icone: '=', val: Math.abs(solde), color: solde >= 0 ? colors.accent.green : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
+                  { label: t('club_solde', lang), icone: '=', val: Math.abs(solde), color: solde >= 0 ? colors.accent.success : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
                 ].map(({ label, icone, val, color, bg, sign }) => (
                   <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 14, padding: '16px 18px', gridColumn: isMobile && label === t('club_solde', lang) ? '1 / -1' : 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -4986,8 +4986,8 @@ export default function DashboardClub() {
                     const segCat = categoriesArr.find(c => c.cat === e.categorie)
                     const couleur = segCat?.color || colors.text.faint
                     return (
-                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: `1px solid ${colors.background.base}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.green : colors.accent.red}` }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: e.type === 'recette' ? colors.accent.green + alpha.subtle : colors.accent.red + alpha.subtle, color: e.type === 'recette' ? colors.accent.green : colors.accent.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, flexShrink: 0 }}>
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: `1px solid ${colors.background.base}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.success : colors.accent.red}` }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: e.type === 'recette' ? colors.accent.success + alpha.subtle : colors.accent.red + alpha.subtle, color: e.type === 'recette' ? colors.accent.success : colors.accent.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, flexShrink: 0 }}>
                           {e.type === 'recette' ? '↑' : '↓'}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -4998,7 +4998,7 @@ export default function DashboardClub() {
                             {e.note ? ` · ${e.note}` : ''}
                           </div>
                         </div>
-                        <span style={{ fontWeight: 800, color: e.type === 'recette' ? colors.accent.green : colors.accent.red, fontSize: 15, flexShrink: 0 }}>
+                        <span style={{ fontWeight: 800, color: e.type === 'recette' ? colors.accent.success : colors.accent.red, fontSize: 15, flexShrink: 0 }}>
                           {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
                         </span>
                         {canEditSection('budget') && (
@@ -5023,7 +5023,7 @@ export default function DashboardClub() {
                       <div style={{ display: 'flex', gap: 6, marginBottom: 12, background: colors.background.base, borderRadius: 10, padding: 3 }}>
                         {['depense', 'recette'].map(bt => (
                           <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
-                            style={{ flex: 1, padding: 8, borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.green : colors.accent.red) : 'transparent', color: budgetForm.type === bt ? (bt === 'recette' ? colors.black : '#fff') : colors.text.faint }}>
+                            style={{ flex: 1, padding: 8, borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.success : colors.accent.red) : 'transparent', color: budgetForm.type === bt ? (bt === 'recette' ? colors.black : '#fff') : colors.text.faint }}>
                             {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
                           </button>
                         ))}
@@ -5046,7 +5046,7 @@ export default function DashboardClub() {
                         <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
                           style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                         <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
-                          style={{ padding: 11, borderRadius: 10, border: 'none', background: budgetForm.type === 'recette' ? colors.accent.green : colors.accent.red, color: budgetForm.type === 'recette' ? colors.black : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
+                          style={{ padding: 11, borderRadius: 10, border: 'none', background: budgetForm.type === 'recette' ? colors.accent.success : colors.accent.red, color: budgetForm.type === 'recette' ? colors.black : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
                           {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
                         </button>
                       </div>
@@ -5061,11 +5061,11 @@ export default function DashboardClub() {
                     ) : (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ color: colors.accent.green, fontSize: 12 }}>{t('club_recettes', lang)}</span>
-                          <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: 12 }}>{Math.round(totalRecettes / (totalRecettes + totalDepenses) * 100)}%</span>
+                          <span style={{ color: colors.accent.success, fontSize: 12 }}>{t('club_recettes', lang)}</span>
+                          <span style={{ color: colors.accent.success, fontWeight: 700, fontSize: 12 }}>{Math.round(totalRecettes / (totalRecettes + totalDepenses) * 100)}%</span>
                         </div>
                         <div style={{ background: colors.background.base, borderRadius: 999, height: 8, marginBottom: 12, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${totalRecettes / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.green, borderRadius: 999 }} />
+                          <div style={{ height: '100%', width: `${totalRecettes / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.success, borderRadius: 999 }} />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ color: colors.accent.red, fontSize: 12 }}>{t('club_depenses', lang)}</span>
@@ -6032,7 +6032,7 @@ export default function DashboardClub() {
                       {parent.email && <a href={`mailto:${parent.email}`} style={{ color: colors.accent.blue, fontSize: '12px', textDecoration: 'none', display: 'block', marginTop: '4px' }}>{parent.email}</a>}
                       {parent.telephone && <div style={{ color: colors.text.faint, fontSize: '12px' }}>{parent.telephone}</div>}
                       {parent.consentement_rgpd && (
-                        <div style={{ color: colors.accent.green, fontSize: '10px', marginTop: '6px' }}>Consentement RGPD donné</div>
+                        <div style={{ color: colors.accent.success, fontSize: '10px', marginTop: '6px' }}>Consentement RGPD donné</div>
                       )}
                     </div>
                   ))}
@@ -6244,7 +6244,7 @@ export default function DashboardClub() {
                       </button>
                     </div>
                     {inviteMessage && (
-                      <p style={{ margin: '8px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? colors.accent.green : colors.accent.red }}>{inviteMessage.texte}</p>
+                      <p style={{ margin: '8px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? colors.accent.success : colors.accent.red }}>{inviteMessage.texte}</p>
                     )}
                   </div>
                 </div>
@@ -6287,7 +6287,7 @@ export default function DashboardClub() {
           const STATUT_DISTRIB = {
             distribue:        { label: 'Distribué',            bg: '#f9731615', color: '#f97316' },
             remise_demandee:  { label: 'Remise demandée',      bg: '#f59e0b15', color: '#f59e0b' },
-            remis:            { label: 'Remis',                bg: '#4ade8015', color: '#4ade80' },
+            remis:            { label: 'Remis',                bg: colors.accent.green + '15', color: colors.accent.green },
             refuse:           { label: 'Refusé',               bg: '#f8717115', color: '#f87171' },
             partiel:          { label: 'Partiellement remis',  bg: '#f59e0b15', color: '#f59e0b' },
           }
@@ -6317,7 +6317,7 @@ export default function DashboardClub() {
                   {[
                     { label: 'Avec un pack', val: nbAvecPack, total: personnesComptes.length, couleur: couleurPrincipale },
                     { label: 'Prêts à remettre', val: nbPrets, couleur: colors.accent.orange },
-                    { label: 'Remis', val: nbRecuperes, couleur: colors.accent.green },
+                    { label: 'Remis', val: nbRecuperes, couleur: colors.accent.success },
                     { label: 'Sans compte lié', val: personnes.length - personnesComptes.length, couleur: colors.text.secondary },
                   ].map(k => (
                     <div key={k.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px' }}>
@@ -6508,7 +6508,7 @@ export default function DashboardClub() {
                                         {commande.statut === 'pret' ? (
                                           <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: colors.accent.orange, background: colors.accent.orange + '1a' }}>Prêt à remettre</span>
                                         ) : (
-                                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: colors.accent.green, background: colors.accent.green + '1a' }}>Remis</span>
+                                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: colors.accent.success, background: colors.accent.success + '1a' }}>Remis</span>
                                         )}
                                         {commande.statut === 'pret' && (
                                           <button onClick={() => marquerEquipementRecupere(commande)} style={{ ...st.btnSecondary, display: 'block', marginTop: '4px', padding: '3px 8px', fontSize: '11px', color: colors.accent.green, borderColor: colors.accent.green + alpha.medium }}>Récupérer</button>
@@ -6729,7 +6729,7 @@ export default function DashboardClub() {
                               <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{lotsSaison.length} distribution{lotsSaison.length > 1 ? 's' : ''}</p>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {nbRemis > 0 && <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{nbRemis} remis</span>}
+                              {nbRemis > 0 && <span style={{ background: colors.accent.success + alpha.subtle, color: colors.accent.success, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{nbRemis} remis</span>}
                               {nbEnAttente > 0 && <span style={{ background: colors.accent.amber + alpha.subtle, color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{nbEnAttente} en attente</span>}
                               <span style={{ color: colors.text.faint, fontSize: '18px', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
                             </div>
@@ -7337,7 +7337,7 @@ export default function DashboardClub() {
                               <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.accent.blue, fontWeight: 700 }}>{j.stats.passes}</td>
                               <td style={{ padding: '10px 12px', textAlign: 'center', color: colors.accent.purpleLight, fontWeight: 700 }}>{j.stats.matchsJoues}</td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: colors.border.strong }}>—</span>}
+                                {j.stats.tauxPresence !== null ? <span style={{ color: j.stats.tauxPresence >= 80 ? colors.accent.success : '#f59e0b', fontSize: '12px' }}>{j.stats.tauxPresence}%</span> : <span style={{ color: colors.border.strong }}>—</span>}
                               </td>
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                                 {j.stats.noteGlobale !== null ? <span style={{ color: '#f59e0b', fontSize: '12px' }}>{j.stats.noteGlobale.toFixed(1)}/10</span> : <span style={{ color: colors.border.strong }}>—</span>}
@@ -7383,7 +7383,7 @@ export default function DashboardClub() {
                               </div>
                               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                                 {j.stats.tauxPresence !== null && (
-                                  <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? colors.accent.green : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
+                                  <span style={{ fontSize: '11px', color: j.stats.tauxPresence >= 80 ? colors.accent.success : '#f59e0b' }}>🏃 {j.stats.tauxPresence}%</span>
                                 )}
                                 {j.stats.pointsSeance > 0 && <span style={{ fontSize: '11px', color: colors.accent.amber }}>⭐ {j.stats.pointsSeance}</span>}
                                 {j.stats.noteGlobale !== null && <span style={{ fontSize: '11px', color: '#f59e0b' }}>📝 {j.stats.noteGlobale.toFixed(1)}/10</span>}
@@ -7472,7 +7472,7 @@ export default function DashboardClub() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {s.presenceMensuelle.map(({ month, taux, present, total }) => {
                       const label = new Date(month + '-02').toLocaleDateString(localeOf(lang), { month: 'short', year: '2-digit' })
-                      const color = taux >= 80 ? colors.accent.green : taux >= 60 ? '#f59e0b' : colors.accent.red
+                      const color = taux >= 80 ? colors.accent.success : taux >= 60 ? '#f59e0b' : colors.accent.red
                       return (
                         <div key={month} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '11px', color: colors.text.faint, width: '44px', flexShrink: 0 }}>{label}</span>

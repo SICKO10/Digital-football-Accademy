@@ -137,7 +137,7 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
     { label: 'Responsabilités', value: responsabilites.length, color: colors.accent.blue, detail: `${responsabilites.filter(r => r.responsable_nom).length} attribuée${responsabilites.filter(r => r.responsable_nom).length > 1 ? 's' : ''}` },
     { label: 'Tâches', value: taches.length, color: colors.text.primary, detail: `${taches.length - terminees} ouverte${taches.length - terminees > 1 ? 's' : ''}` },
     { label: 'En cours', value: enCours, color: colors.accent.blue, detail: enRetard ? `${enRetard} en retard` : 'aucune en retard', alerte: enRetard > 0 },
-    { label: 'Terminées', value: terminees, color: colors.accent.green, detail: taches.length ? `${Math.round(terminees / taches.length * 100)}% des tâches` : '—' },
+    { label: 'Terminées', value: terminees, color: colors.accent.success, detail: taches.length ? `${Math.round(terminees / taches.length * 100)}% des tâches` : '—' },
   ]
 
   const choixResponsable = (modeManuel, setModeManuel, form, setForm) => (

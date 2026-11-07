@@ -228,7 +228,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
     label: { fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', fontWeight: 700 },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' },
-    btnSolid: { background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
+    btnSolid: { background: colors.accent.green, color: colors.accent.onBrand, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
     btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
     btnGhost: { background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, cursor: 'pointer', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' },
   }
@@ -480,7 +480,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
             {matchs.map(m => {
               const joue = m.score_nous !== null && m.score_eux !== null
               const res = !joue ? null : m.score_nous > m.score_eux ? 'V' : m.score_nous < m.score_eux ? 'D' : 'N'
-              const resCouleur = res === 'V' ? colors.accent.green : res === 'D' ? colors.accent.red : colors.accent.amber
+              const resCouleur = res === 'V' ? colors.accent.success : res === 'D' ? colors.accent.red : colors.accent.amber
               return (
                 <div key={m.id} style={{ ...st.card, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                   {res && <div style={{ background: resCouleur + '20', color: resCouleur, border: `1px solid ${resCouleur}40`, borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '13px', flexShrink: 0 }}>{res}</div>}
@@ -583,7 +583,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
               {[
-                { label: 'Victoires', value: stats.victoires, color: colors.accent.green },
+                { label: 'Victoires', value: stats.victoires, color: colors.accent.success },
                 { label: 'Nuls', value: stats.nuls, color: colors.accent.amber },
                 { label: 'Défaites', value: stats.defaites, color: colors.accent.red },
                 { label: 'Buts marqués', value: stats.butsPour, color: colors.accent.green },
