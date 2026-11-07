@@ -20,3 +20,15 @@ test('un match remonté avec le même match_id n\'est pas doublé', () => {
   const r = fusionnerMatchs([{ id: 'x', date: '2026-10-11', match_id: 'm1' }], [{ id: 'm1', date: '2026-10-10' }])
   assert.equal(r.length, 1)
 })
+
+import { choisirEquipePrincipale } from '../src/lib/statsFusion.js'
+
+test('l\'équipe principale est celle qui a le plus de séances enregistrées', () => {
+  const r = choisirEquipePrincipale([
+    { affiliation: { id: 'a' }, stats: { total: 1, matchsJoues: 0 } },
+    { affiliation: { id: 'b' }, stats: { total: 40, matchsJoues: 14 } },
+    { affiliation: { id: 'c' }, stats: null },
+  ])
+  assert.equal(r.affiliation.id, 'b')
+  assert.equal(choisirEquipePrincipale([]), null)
+})

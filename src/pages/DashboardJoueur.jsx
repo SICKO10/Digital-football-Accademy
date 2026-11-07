@@ -51,6 +51,7 @@ import { t, localeOf } from '../lib/translations'
 import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import MesStats from './MesStats'
+import { choisirEquipePrincipale } from '../lib/statsFusion'
 import { getPosteFamille } from '../lib/postes'
 import { statutPresenceEffectif } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
@@ -665,9 +666,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // via le bouton de l'onglet "Mon Équipe" (chargerStatsJoueur est déjà idempotent).
     // Seulement s'il a une affiliation active — une affiliation archivée n'a plus de
     // stats pertinentes à recharger.
-    if (onglet === 'stats' || onglet === 'mes_stats') {
+    if (onglet === 'stats') {
       const a = mesAffiliations.find(af => af.statut === 'accepte')
       if (a) chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id, a.club_categorie_id)
+    }
+    // « Mes statistiques » choisit ensuite l'équipe principale : on charge toutes les affiliations acceptées.
+    if (onglet === 'mes_stats') {
+      mesAffiliations.filter(af => af.statut === 'accepte')
+        .forEach(a => chargerStatsJoueur(a.id, a.equipe_joueur_id, a.educateur_id, a.club_categorie_id))
     }
     if (onglet === 'accueil' || onglet === 'dashboard') {
       // Le calendrier (widget + planning semaine) et les stats agrègent TOUTES
@@ -3421,6 +3427,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // (clip Pro d'abord, sinon le reel Jogabonito).
   const dernierLienVideo = profil?.clip_url || reelJogabonito?.video_url || null
 
+  const equipePrincipaleStats = choisirEquipePrincipale(
+    mesAffiliations.filter(a => a.statut === 'accepte').map(a => ({ affiliation: a, stats: statsJoueur[a.id] }))
+  )
+
   const navItems = [
     { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
     { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
@@ -4800,8 +4810,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
 
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={(() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); return a ? statsJoueur[a.id] : null })()}
-          onOuvrirFiche={() => { const a = mesAffiliations.find(x => x.statut === 'accepte'); if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null}
+          onOuvrirFiche={() => { const a = equipePrincipaleStats?.affiliation; if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
           <div style={{ maxWidth: '960px', margin: '0 auto' }}>

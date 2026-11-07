@@ -13,3 +13,18 @@ export function fusionnerMatchs(manuels = [], officiels = []) {
     ...manuelsGardes.map(m => ({ ...m, origine: 'joueur', clean_sheet: m.buts_encaisses === 0 })),
   ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 }
+
+// Un joueur peut avoir plusieurs affiliations acceptées (plusieurs éducateurs ou
+// équipes). « Mes statistiques » s'appuie sur l'équipe où il a le plus de séances
+// enregistrées (puis le plus de matchs) : c'est son équipe principale. Les autres
+// restent consultables dans « Mon équipe ». `items` : [{ affiliation, stats }].
+export function choisirEquipePrincipale(items = []) {
+  const avecStats = items.filter(i => i && i.stats)
+  if (avecStats.length === 0) return null
+  return avecStats.reduce((meilleur, i) => {
+    const cle = (x) => [(x.stats.total || 0), (x.stats.matchsJoues || 0)]
+    const [ta, ma] = cle(i)
+    const [tb, mb] = cle(meilleur)
+    return ta > tb || (ta === tb && ma > mb) ? i : meilleur
+  })
+}
