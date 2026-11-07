@@ -19,7 +19,9 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 // bascule en thème clair verrait sinon un bandeau resté "câblé sombre".
 // L'ambre reste volontairement fixe (colors.accent.amber) — c'est la couleur
 // de marque du bandeau partenaire, pas celle du club/dashboard courant.
-export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
+// sobre (optionnel) : bandeau blanc à bordure fine, sans halo ni animation
+// (accueil éducateur) ; sans l'option, rendu d'origine.
+export default function SponsorsBar({ clubId, sidebarWidth = 0, sobre = false }) {
   const colors = useColors()
   const isMobile = useWindowWidth() < 640
   // Même seuil que la sidebar des dashboards (position: sticky, colonne
@@ -71,8 +73,9 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
   return (
     <div style={{
       position: 'fixed', left: sidebarPersistante ? sidebarWidth : 0, right: 0, bottom: 0, zIndex: 30,
-      background: `linear-gradient(to right, ${colors.background.sunken}, ${colors.background.surface}, ${colors.background.sunken})`,
-      boxShadow: `0 -1px 0 0 ${amber}${alpha.medium}, 0 -8px 32px rgba(0,0,0,0.45)`,
+      background: sobre ? colors.background.surface : `linear-gradient(to right, ${colors.background.sunken}, ${colors.background.surface}, ${colors.background.sunken})`,
+      boxShadow: sobre ? 'none' : `0 -1px 0 0 ${amber}${alpha.medium}, 0 -8px 32px rgba(0,0,0,0.45)`,
+      borderTop: sobre ? `1px solid ${colors.border.subtle}` : undefined,
       // Sans ça, la barre s'arrête au-dessus de la zone du bandeau
       // d'accueil (home indicator) sur iPhone — le fond blanc par défaut
       // de la page apparaît sous la barre, "autour" de la bannière sponsor.
@@ -94,19 +97,19 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
       `}</style>
 
       {/* Shimmer top-border */}
-      <div style={{
+      {!sobre && <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 1,
         background: `linear-gradient(90deg, transparent 0%, ${amber}00 10%, ${amber}${alpha.medium} 40%, ${amber}e6 50%, ${amber}${alpha.medium} 60%, ${amber}00 90%, transparent 100%)`,
         backgroundSize: '800px 1px',
         animation: 'sb-shimmer 3.5s linear infinite',
-      }} />
+      }} />}
 
       {/* ─── GAUCHE : badge "Partenaire officiel" ─── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: isMobile ? 0 : 180, flexShrink: 0 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: amber, flexShrink: 0, animation: 'sb-pulse-dot 2s ease-in-out infinite' }} />
+        {!sobre && <div style={{ width: 6, height: 6, borderRadius: '50%', background: amber, flexShrink: 0, animation: 'sb-pulse-dot 2s ease-in-out infinite' }} />}
         {!isMobile && (
           <div>
-            <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: amber, lineHeight: 1 }}>
+            <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: sobre ? colors.text.faint : amber, lineHeight: 1 }}>
               Partenaire officiel
             </div>
             <div style={{ fontSize: 9, fontWeight: 500, letterSpacing: '0.04em', color: colors.text.disabled, marginTop: 3 }}>
@@ -126,11 +129,11 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
       }}>
         {sponsor.lien_url ? (
           <a href={sponsor.lien_url} target="_blank" rel="noreferrer" onClick={() => loggerClic('banniere')} className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}>
-            <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} />
+            <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} sobre={sobre} />
           </a>
         ) : (
           <div className="sb-logo-wrap" style={{ display: 'flex', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', minWidth: 0 }}>
-            <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} />
+            <SponsorInner sponsor={sponsor} colors={colors} isMobile={isMobile} sobre={sobre} />
           </div>
         )}
       </div>
@@ -166,7 +169,7 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0 }) {
 
 // Sous-composant : bannière large (prend le pas si renseignée), sinon logo,
 // sinon nom stylisé.
-function SponsorInner({ sponsor, colors, isMobile }) {
+function SponsorInner({ sponsor, colors, isMobile, sobre }) {
   if (sponsor.banniere_url) {
     // 'contain' testé puis abandonné : la bannière source (large, ratio type
     // 1536x270) porte une zone blanche/transparente importante au-dessus de
@@ -187,7 +190,7 @@ function SponsorInner({ sponsor, colors, isMobile }) {
       display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
       padding: isMobile ? '5px 14px' : '6px 20px', borderRadius: 12,
       background: colors.background.raised, border: `1px solid ${colors.border.subtle}`,
-      animation: 'sb-glow 3s ease-in-out infinite',
+      animation: sobre ? undefined : 'sb-glow 3s ease-in-out infinite',
     }}>
       {sponsor.logo_url ? (
         <img className="sb-logo" src={sponsor.logo_url} alt={sponsor.entreprise} style={{

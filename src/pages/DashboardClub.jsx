@@ -50,6 +50,7 @@ import StagesModule from '../components/stages/StagesModule'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
+import ApercuCouleurClub from '../components/ApercuCouleurClub'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -819,6 +820,8 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             Appliquer
           </button>
         </div>
+
+        <ApercuCouleurClub couleur={themeEdit.couleur_principale} />
 
         {/* Photo de fond */}
         <div>

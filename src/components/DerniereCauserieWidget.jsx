@@ -16,7 +16,7 @@ const IcoMicro = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 // comme un raccourci compact d'une ligne (rangée "Actions rapides" de
 // l'accueil éducateur) — styleRaccourci fourni par le parent pour rester
 // identique aux raccourcis voisins. Sans variante : rendu carte d'origine.
-export default function DerniereCauserieWidget({ userId, prochainMatch, onOuvrir, accentColor = '#4ade80', variante = 'carte', styleRaccourci }) {
+export default function DerniereCauserieWidget({ userId, prochainMatch, onOuvrir, accentColor = '#4ade80', variante = 'carte', styleRaccourci, styleAPreparer }) {
   const colors = useColors()
   const [causerie, setCauserie] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -41,10 +41,10 @@ export default function DerniereCauserieWidget({ userId, prochainMatch, onOuvrir
   const clesRenseignees = (causerie?.cles_du_match || []).filter(Boolean)
 
   if (variante === 'raccourci') return (
-    <button onClick={onOuvrir} title={causerie?.objectifs || undefined} style={styleRaccourci}>
+    <button onClick={onOuvrir} title={causerie?.objectifs || undefined} style={causerie ? styleRaccourci : { ...styleRaccourci, ...styleAPreparer }}>
       <span style={{ display: 'inline-flex', color: accentColor, flexShrink: 0 }}><IcoMicro /></span>
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Causerie vs {prochainMatch.adversaire || 'adversaire'}</span>
-      <span style={{ flexShrink: 0, fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', color: causerie ? accentColor : colors.text.faint }}>
+      <span style={{ flexShrink: 0, fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', color: causerie ? colors.accent.success : accentColor }}>
         {causerie ? 'Préparée' : 'À préparer'}
       </span>
     </button>

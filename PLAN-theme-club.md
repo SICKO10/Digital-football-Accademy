@@ -237,7 +237,7 @@ Rappel : `/clear` et une session neuve par bloc. Commande de lancement : `/bloc 
 - Journal : 2026-11-07, Sonnet 5.5. Nouveau composant `src/components/ApercuCouleurClub.jsx` (deux miniatures clair et sombre : bout de menu, carte, bouton), calculé par `calculerPalette`, placé dans `ThemeEditor` de DashboardClub, suit la couleur choisie avant enregistrement. Message orange si la couleur est ajustée ou remplacée par le vert (trop pâle, invalide, illisible). Build OK, `npm test` 0 échec, lint sans nouvelle erreur.
 
 ### Bloc 10 : Le vert de décor suit la couleur du club (dashboards club et éducateur)
-- Statut : à faire (demandé par Kevin le 2026-11-07)
+- Statut : en cours (demandé par Kevin le 2026-11-07)
 - Objectif : pour un club rouge et blanc, plus aucun vert « de décor » (boutons, onglets, titres, icônes, jauges, cases à cocher) dans les dashboards club et éducateur : tout prend la couleur configurée par le club, pour tous les clubs (pas un cas rouge codé en dur), en clair comme en sombre, comme le menu.
 - Restent verts : les statuts (présent, victoire, OUVERT, validé, recettes, taux de présence élevé), le terrain Tactipad et les barres d'évaluation.
 - Résultat testable : avec `?couleurClub=%23C8102E`, parcourir les onglets club et éducateur : aucun vert hors statuts, terrain Tactipad et barres d'évaluation.

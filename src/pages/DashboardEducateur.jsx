@@ -1665,23 +1665,17 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
             )
           })()}
 
-          {/* Actions rapides */}
+          {/* 8. Actions rapides : boutons de même largeur, icônes couleur du
+              club. Seule la causerie peut être « à préparer » (règle déjà
+              connue du widget : pas encore de causerie pour le prochain
+              match) ; sinon aucun bouton n'est surligné. */}
           <p style={eyebrowSt}>Actions rapides</p>
-          {/* V2.1 : raccourcis compacts horizontaux (icône + libellé sur une
-              ligne, hauteur 44px min. pour le tactile) au lieu de grandes
-              cartes verticales. Mêmes actions, mêmes conditions, mêmes
-              destinations. Sur mobile : 2 par ligne, causerie en pleine largeur. */}
           {(() => {
-            const raccourciSt = { display: 'inline-flex', alignItems: 'center', gap: '10px', minHeight: '44px', padding: '10px 14px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', cursor: 'pointer', color: colors.text.primary, fontSize: '13px', fontWeight: 600, fontFamily: 'Inter, sans-serif', textAlign: 'left', minWidth: 0, boxSizing: 'border-box', flex: isMobile ? '1 1 calc(50% - 4px)' : '0 1 auto' }
-            const survol = { onMouseEnter: e => { e.currentTarget.style.borderColor = colors.accent.blue + alpha.medium }, onMouseLeave: e => { e.currentTarget.style.borderColor = colors.border.subtle } }
+            const raccourciSt = { display: 'flex', alignItems: 'center', gap: '10px', minHeight: '48px', padding: '10px 14px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', cursor: 'pointer', color: colors.text.primary, fontSize: '13px', fontWeight: 600, fontFamily: 'Inter, sans-serif', textAlign: 'left', minWidth: 0, boxSizing: 'border-box', width: '100%' }
+            const aPreparerSt = { background: 'var(--club-primary-soft)', border: `1px solid ${colors.accent.blue}` }
+            const survol = { onMouseEnter: e => { e.currentTarget.style.borderColor = colors.accent.blue }, onMouseLeave: e => { e.currentTarget.style.borderColor = colors.border.subtle } }
             return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1.75rem' }}>
-            {/* L'ancien slot conditionnel "Dernier sondage" (identique au
-                contenu du bloc "Prochaine séance" ci-dessus) a été retiré
-                pour éviter la redondance — son info vit maintenant uniquement
-                dans ce bloc dédié. "Ajouter un joueur" devient inconditionnel
-                (c'était déjà une action du dashboard, juste affichée en
-                remplacement avant) plutôt que de laisser un slot vide. */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '1.75rem' }}>
             {[
               { Icon: IcoPlus, label: 'Ajouter un joueur', section: 'equipe' },
               { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
@@ -1689,12 +1683,12 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
             ].map(a => (
               <button key={a.section} onClick={() => setActiveSection(a.section)} style={raccourciSt} {...survol}>
                 <span style={{ display: 'inline-flex', color: colors.accent.blue, flexShrink: 0 }}><a.Icon /></span>
-                <span style={isMobile ? { lineHeight: 1.25, minWidth: 0 } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{a.label}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', lineHeight: 1.25, minWidth: 0 }}>{a.label}</span>
               </button>
             ))}
             {prochainMatch && (
-              <DerniereCauserieWidget userId={userId} prochainMatch={prochainMatch} accentColor={colors.accent.green}
-                variante="raccourci" styleRaccourci={{ ...raccourciSt, flex: isMobile ? '1 1 100%' : '0 1 auto' }}
+              <DerniereCauserieWidget userId={userId} prochainMatch={prochainMatch} accentColor={colors.accent.blue}
+                variante="raccourci" styleRaccourci={raccourciSt} styleAPreparer={aPreparerSt}
                 onOuvrir={() => { setActiveSection('matchs'); setCompetitionSubTab('causerie') }} />
             )}
           </div>
@@ -13349,7 +13343,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       )
     })()}
 
-    {activeSection === 'accueil' && <SponsorsBar clubId={clubAffiliation?.club_id} sidebarWidth={220} />}
+    {activeSection === 'accueil' && <SponsorsBar clubId={clubAffiliation?.club_id} sidebarWidth={220} sobre />}
 
     </>
   )
