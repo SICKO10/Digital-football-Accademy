@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect } from 'react'
+import { memoriserCouleurClub } from './couleurChargement'
 import { calculerPalette, contraste } from './paletteClub'
 import { colors, colorsClaire } from '../tokens'
 
@@ -30,6 +31,8 @@ export function useDonnerCouleurClub(hex) {
   const actif = !!portee
   useEffect(() => {
     if (!actif) return undefined
+    // undefined = profil pas encore chargé : on garde la couleur mémorisée.
+    if (hex !== undefined) memoriserCouleurClub(hex)
     setCouleurClub(hex || null)
     return () => setCouleurClub(null)
   }, [actif, hex, setCouleurClub])

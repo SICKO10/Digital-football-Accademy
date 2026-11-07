@@ -1,4 +1,7 @@
+import { useCouleurChargement } from '../lib/couleurChargement'
+
 function Loader() {
+  const couleur = useCouleurChargement()
   return (
     <div style={{
       minHeight: '100vh',
@@ -23,8 +26,8 @@ function Loader() {
         @keyframes dot2 { 0%,100%{opacity:.15;transform:scale(.7)} 45%{opacity:1;transform:scale(1.2)} }
         @keyframes dot3 { 0%,100%{opacity:.15;transform:scale(.7)} 65%{opacity:1;transform:scale(1.2)} }
         @keyframes glowPulse {
-          0%,100% { filter: drop-shadow(0 0 8px #4ade8050) drop-shadow(0 2px 16px #00000080); }
-          50%      { filter: drop-shadow(0 0 22px #4ade8090) drop-shadow(0 2px 16px #00000080); }
+          0%,100% { filter: drop-shadow(0 0 8px ${couleur}50) drop-shadow(0 2px 16px #00000080); }
+          50%      { filter: drop-shadow(0 0 22px ${couleur}90) drop-shadow(0 2px 16px #00000080); }
         }
       `}</style>
 
@@ -90,7 +93,7 @@ function Loader() {
         <div style={{
           width: '60px',
           height: '8px',
-          background: '#4ade80',
+          background: couleur,
           borderRadius: '50%',
           filter: 'blur(5px)',
           animation: 'shadowAnim 0.85s ease-in-out infinite',
@@ -100,7 +103,7 @@ function Loader() {
       {/* Texte */}
       <div style={{ textAlign: 'center' }}>
         <p style={{
-          color: '#4ade80',
+          color: couleur,
           fontFamily: 'Inter, sans-serif',
           fontSize: '11px',
           fontWeight: 800,
@@ -109,9 +112,9 @@ function Loader() {
           margin: '0 0 14px',
         }}>Digital Football</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4ade80', animation: 'dot1 1.2s ease-in-out infinite' }} />
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4ade80', animation: 'dot2 1.2s ease-in-out infinite' }} />
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4ade80', animation: 'dot3 1.2s ease-in-out infinite' }} />
+          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: couleur, animation: 'dot1 1.2s ease-in-out infinite' }} />
+          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: couleur, animation: 'dot2 1.2s ease-in-out infinite' }} />
+          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: couleur, animation: 'dot3 1.2s ease-in-out infinite' }} />
         </div>
       </div>
     </div>

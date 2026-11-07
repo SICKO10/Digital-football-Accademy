@@ -1,4 +1,5 @@
 import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../lib/menuLateral'
+import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
@@ -2442,6 +2443,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   // Couleur du club d'affiliation (lien accepté) ; sans club = vert par défaut.
   useDonnerCouleurClub(clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null)
+  const couleurChargement = useCouleurChargement()
   const logoClubMenu = clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url : null
   const [cancelling, setCancelling] = useState(false)
   const [cancelDone, setCancelDone] = useState(false)
@@ -5723,7 +5725,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: colors.accent.blue, fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
+      <p style={{ color: couleurChargement, fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
     </div>
   )
 

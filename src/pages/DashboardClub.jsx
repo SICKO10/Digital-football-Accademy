@@ -1,4 +1,5 @@
 import { menuLateralCss, BORDURE_MENU, coqueVars } from '../lib/menuLateral'
+import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
@@ -1422,6 +1423,7 @@ export default function DashboardClub() {
 
   // Couleur du club, ajustée si besoin pour rester lisible (garde-fou de paletteClub.js).
   useDonnerCouleurClub(club?.couleur_principale)
+  const couleurChargement = useCouleurChargement()
   const couleurPrincipale = useClubPalette().primary
   const couleurSecondaire = club?.couleur_secondaire || colors.accent.cyan
 
@@ -3458,7 +3460,7 @@ export default function DashboardClub() {
 
   const handleLogout = async () => { await signOutSafe(); navigate('/') }
 
-  if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: colors.accent.green }}>Chargement...</p></div>
+  if (loading) return <div style={{ ...st.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: couleurChargement }}>Chargement...</p></div>
 
   // ── ABONNEMENT NON ACTIF ──
   // profiles.plan est déjà posé à 'club' dès l'inscription, avant tout

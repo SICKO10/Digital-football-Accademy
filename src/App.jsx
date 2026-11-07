@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 import { COACH_ADMIN_EMAILS } from './lib/coachAdmin'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider, PorteeThemeClub } from './lib/ThemeProvider'
+import { useCouleurChargement } from './lib/couleurChargement'
 
 // Chargement à la demande de chaque page — sans ça, Vite regroupait tout
 // (dont les 3 dashboards, plusieurs milliers de lignes chacun) dans un seul
@@ -48,9 +49,10 @@ const TournoiVote = lazy(() => import('./pages/TournoiVote'))
 const LierTournoi = lazy(() => import('./pages/LierTournoi'))
 
 function ChargementPage() {
+  const couleur = useCouleurChargement()
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
-      <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTopColor: couleur, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
       <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
     </div>
   )

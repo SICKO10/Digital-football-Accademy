@@ -439,7 +439,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [clubIdInventaire, setClubIdInventaire] = useState(null)
   const [clubAffilieInfo, setClubAffilieInfo] = useState(null) // { club, avatar_url, couleur_principale } — logo/nom du club affilié, pour l'en-tête d'accueil
   const [annoncesClub, setAnnoncesClub] = useState([])
-  useDonnerCouleurClub(clubAffilieInfo?.couleur_principale)
+  useDonnerCouleurClub(loading ? undefined : (clubAffilieInfo?.couleur_principale ?? null))
   const [annoncesLuesIds, setAnnoncesLuesIds] = useState(new Set())
   const [champsEquipement, setChampsEquipement] = useState([])
   const [mesTailles, setMesTailles] = useState([])
