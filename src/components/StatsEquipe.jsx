@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { alpha } from '../tokens'
 import { useColors } from '../lib/theme'
+import { resultatMatch } from '../lib/resultatMatch'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { saisonActuelle, filtrerParSaison } from '../lib/saison'
 
@@ -109,7 +110,7 @@ export default function StatsEquipe({ matchs: tousMatchs = [], masquerVND = fals
 
   const avecResultat = matchsJoues.map(m => {
     const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
-    return { ...m, bp, bc, resultat: bp > bc ? 'victoire' : bp < bc ? 'defaite' : 'nul' }
+    return { ...m, bp, bc, resultat: { V: 'victoire', D: 'defaite', N: 'nul' }[resultatMatch(m)] }
   })
 
   const v = avecResultat.filter(m => m.resultat === 'victoire').length

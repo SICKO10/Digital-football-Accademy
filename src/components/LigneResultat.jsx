@@ -1,3 +1,4 @@
+import { resultatMatch, scoreAffiche } from '../lib/resultatMatch'
 import { useColors } from '../lib/theme'
 import EcussonClub from './EcussonClub'
 
@@ -10,12 +11,12 @@ const IcoRapport = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="n
 // match joué, mis en avant. Score affiché nous–eux, comme avant.
 export default function LigneResultat({ m, nomClub, logoClub, logoAdversaire, enVedette, isMobile, locale = 'fr-FR', aRapport, afficherRapport, onOuvrir, onRapport, menu }) {
   const colors = useColors()
-  const nous = Number(m.score_nous)
-  const eux = Number(m.score_eux)
-  const resultat = nous > eux ? 'Victoire' : nous === eux ? 'Nul' : 'Défaite'
-  const couleur = nous > eux ? colors.accent.success : nous === eux ? colors.text.secondary : colors.accent.red
+  const res = resultatMatch(m)
+  const estNul = res === 'N'
+  const resultat = res === 'V' ? 'Victoire' : estNul ? 'Nul' : 'Défaite'
+  const couleur = res === 'V' ? colors.accent.success : estNul ? colors.text.secondary : colors.accent.red
   // Nul : cadre neutre bien visible (le gris translucide se perdait sur fond sombre).
-  const cadre = nous === eux ? colors.border.strong : couleur + '55'
+  const cadre = estNul ? colors.border.strong : couleur + '55'
 
   const date = new Date(`${m.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
   const meta = [m.competition, m.domicile ? 'Domicile' : 'Extérieur', m.lieu].filter(Boolean).join(' · ')
@@ -34,14 +35,14 @@ export default function LigneResultat({ m, nomClub, logoClub, logoAdversaire, en
     <div onClick={onOuvrir} style={{
       cursor: 'pointer', borderRadius: '10px', padding: isMobile ? '12px' : (enVedette ? '18px 20px' : '14px 18px'),
       background: enVedette ? colors.background.raised : colors.background.surface,
-      border: `1px solid ${enVedette || nous === eux ? cadre : colors.border.subtle}`, borderLeft: `4px solid ${nous === eux ? colors.text.muted : couleur}`,
+      border: `1px solid ${enVedette || estNul ? cadre : colors.border.subtle}`, borderLeft: `4px solid ${estNul ? colors.text.muted : couleur}`,
     }}>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr) auto minmax(0,1fr)' : 'minmax(0,1fr) auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '8px' : '18px' }}>
         {equipe(nomClub, logoClub, 'gauche')}
 
         <div style={{ textAlign: 'center', padding: isMobile ? 0 : '0 8px', borderLeft: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, borderRight: isMobile ? 'none' : `1px solid ${colors.border.subtle}`, minWidth: isMobile ? '64px' : '120px' }}>
           <p style={{ margin: 0, fontSize: isMobile ? '22px' : (enVedette ? '34px' : '28px'), fontWeight: 800, color: couleur, fontVariantNumeric: 'tabular-nums', letterSpacing: '1px', lineHeight: 1.1 }}>
-            {m.score_nous} - {m.score_eux}
+            {scoreAffiche(m, ' - ')}
           </p>
           <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '6px', color: couleur, background: couleur + '1f' }}>{resultat}</span>
         </div>

@@ -14,6 +14,7 @@ import {
 } from '../../lib/statsSaison'
 import SelecteurSaison from './SelecteurSaison'
 import StatsEquipe from '../StatsEquipe'
+import { resultatMatch, scoreAffiche } from '../../lib/resultatMatch'
 import HistoriqueIndividuel from './HistoriqueIndividuel'
 
 // Historique collectif d'une saison pour le coach : tout est recalculé depuis
@@ -138,8 +139,8 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     const presMoy = presenceMoyenneEquipe(lignes)
     const critereIndispo = (critere === 'minutes' || critere === 'victoires') && !minutesSaisies(lignes)
     const couleurRes = (m) => {
-      const bp = parseInt(m.score_nous), bc = parseInt(m.score_eux)
-      return bp > bc ? colors.accent.green : bp < bc ? colors.accent.red : colors.accent.amber
+      const res = resultatMatch(m)
+      return res === 'V' ? colors.accent.green : res === 'D' ? colors.accent.red : colors.accent.amber
     }
     const chip = (actif) => ({ padding: '6px 14px', borderRadius: 16, border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontWeight: actif ? 700 : 500, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' })
     contenu = (
@@ -165,7 +166,7 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
                   <span style={{ width: 54, flexShrink: 0, color: colors.text.faint, fontSize: 12 }}>{dateFr(m.date)}</span>
                   <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : 'à'} {m.adversaire || 'Adversaire'}</span>
-                  <span style={{ fontWeight: 800, color: couleurRes(m), fontVariantNumeric: 'tabular-nums' }}>{m.score_nous} - {m.score_eux}</span>
+                  <span style={{ fontWeight: 800, color: couleurRes(m), fontVariantNumeric: 'tabular-nums' }}>{scoreAffiche(m, ' - ')}</span>
                 </div>
               ))}
             </div>

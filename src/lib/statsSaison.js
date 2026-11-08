@@ -3,6 +3,7 @@
 // HistoriqueCollectif : matchs_equipe + stats_match, entrainements +
 // presences_entrainement, blessures.
 import { statutPresenceEffectif, seanceComptable } from './presence.js'
+import { resultatMatch } from './resultatMatch.js'
 
 const matchJoue = (m) => m.score_nous !== null && m.score_nous !== undefined && m.score_nous !== ''
   && m.score_eux !== null && m.score_eux !== undefined && m.score_eux !== ''
@@ -21,7 +22,7 @@ export const statsJoueur = (joueurId, matchs) => {
     clean_sheets: lignes.filter(s => s.clean_sheet).length,
     cartons_j: lignes.filter(s => s.carton_jaune).length,
     cartons_r: lignes.filter(s => s.carton_rouge).length,
-    victoires: joues.filter(s => matchJoue(s._match) && parseInt(s._match.score_nous) > parseInt(s._match.score_eux)).length,
+    victoires: joues.filter(s => matchJoue(s._match) && resultatMatch(s._match) === 'V').length,
   }
 }
 
@@ -139,7 +140,7 @@ const moy2 = (n, total) => (total > 0 ? Number((n / total).toFixed(2)) : null)
 export const bilanSaisonEquipe = ({ matchs, entrainements, blessures, rpes, aujourdHui }) => {
   const joues = (matchs || []).filter(matchJoue).map(m => {
     const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
-    return { ...m, bp, bc, res: bp > bc ? 'v' : bp < bc ? 'd' : 'n' }
+    return { ...m, bp, bc, res: resultatMatch(m).toLowerCase() }
   })
   const total = joues.length
   const v = joues.filter(m => m.res === 'v').length

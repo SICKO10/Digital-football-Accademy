@@ -11,7 +11,7 @@ import { bilanSaisonEquipe } from './statsSaison'
 // Lit les données du coach. Renvoie null si une lecture échoue.
 export const chargerDonneesParcours = async (educateurId) => {
   const [m, e, ej, dem] = await Promise.all([
-    fetchToutesLignes(() => supabase.from('matchs_equipe').select('id, date, club_categorie_id, score_nous, score_eux, competition, buts_detail').eq('educateur_id', educateurId).order('id')),
+    fetchToutesLignes(() => supabase.from('matchs_equipe').select('id, date, club_categorie_id, score_nous, score_eux, tab_nous, tab_eux, competition, buts_detail').eq('educateur_id', educateurId).order('id')),
     fetchToutesLignes(() => supabase.from('entrainements').select('id, date, club_categorie_id, presences_entrainement(statut, present)').eq('educateur_id', educateurId).order('id')),
     fetchToutesLignes(() => supabase.from('equipe_joueurs').select('id, club_categorie_id').eq('educateur_id', educateurId).order('id')),
     fetchToutesLignes(() => supabase.from('seances_notes_demandes').select('id, date_seance, club_categorie_id').eq('educateur_id', educateurId).order('id')),

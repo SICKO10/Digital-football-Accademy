@@ -6,6 +6,7 @@ import { t, localeOf } from '../lib/translations'
 import { colors, alpha } from '../tokens'
 import { BadgeNote } from '../components/Notation'
 import { notifierJoueur } from '../lib/notifications'
+import { resultatMatch, aTirsAuBut } from '../lib/resultatMatch'
 import {
   IconStar, IconCheck, IconCheckCircle, IconClose, IconUsers, IconSearch,
   IconBall, IconTool, IconLock, IconHeart, IconDocument, IconAlert,
@@ -288,8 +289,9 @@ export default function ClubPublic() {
   const matchsJoues = matchs.filter(m => m.score_nous !== null && m.score_nous !== '' && m.score_eux !== null && m.score_eux !== '')
   const statsVND = matchsJoues.reduce((acc, m) => {
     const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
-    if (bp > bc) acc.v++
-    else if (bp < bc) acc.d++
+    const res = resultatMatch(m)
+    if (res === 'V') acc.v++
+    else if (res === 'D') acc.d++
     else acc.n++
     return acc
   }, { v: 0, n: 0, d: 0 })
@@ -655,7 +657,7 @@ export default function ClubPublic() {
               </div>
             ) : matchs.map(m => {
               const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
-              const res = bp > bc ? 'V' : bp < bc ? 'D' : 'N'
+              const res = resultatMatch(m)
               const resColor = res === 'V' ? colors.accent.green : res === 'D' ? colors.accent.red : '#f59e0b'
               return (
                 <div key={m.id} style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -670,7 +672,7 @@ export default function ClubPublic() {
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <span style={{ fontWeight: 800, fontSize: '18px' }}>
-                      {m.domicile ? `${bp} - ${bc}` : `${bc} - ${bp}`}
+                      {m.domicile ? `${bp} - ${bc}` : `${bc} - ${bp}`}{aTirsAuBut(m) && <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.faint }}>{m.domicile ? `${m.tab_nous}-${m.tab_eux}` : `${m.tab_eux}-${m.tab_nous}`} t.a.b.</span>}
                     </span>
                   </div>
                 </div>

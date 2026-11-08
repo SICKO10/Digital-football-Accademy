@@ -86,6 +86,7 @@ import { colors, alpha } from '../tokens'
 import { useColors, useTheme } from '../lib/theme'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
+import { resultatMatch, estCoupe } from '../lib/resultatMatch'
 
 // Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
 // écran comme Loader.jsx/ChargementPage, qui masquerait le reste du dashboard
@@ -1352,9 +1353,9 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
   // bande de score (V2 "centre de commandement", 2026-10-12) ; même calcul
   // exact qu'avant, juste sorti de la fonction anonyme qui l'encapsulait.
   const matchsJoues = matchs.filter(m => matchJoue(m))
-  const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
-  const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
-  const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+  const victoires = matchsJoues.filter(m => resultatMatch(m) === 'V').length
+  const nuls = matchsJoues.filter(m => resultatMatch(m) === 'N').length
+  const defaites = matchsJoues.filter(m => resultatMatch(m) === 'D').length
   const totalMatchsJoues = matchsJoues.length
   const pctBilan = (n) => totalMatchsJoues ? Math.round(n / totalMatchsJoues * 100) : 0
 
@@ -1882,7 +1883,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Matchs
   const [matchs, setMatchs] = useState([])
   const [showAddMatch, setShowAddMatch] = useState(false)
-  const [newMatch, setNewMatch] = useState({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+  const [newMatch, setNewMatch] = useState({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '', tab_nous: '', tab_eux: '' })
   const [savingMatch, setSavingMatch] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [scannerImageBase64, setScannerImageBase64] = useState(null)
@@ -1944,7 +1945,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     document.addEventListener('click', fermerSiClicDehors)
     return () => document.removeEventListener('click', fermerSiClicDehors)
   }, [openMenuId])
-  const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '' })
+  const [scoreJoueForm, setScoreJoueForm] = useState({ score_nous: '', score_eux: '', tab_nous: '', tab_eux: '' })
   const [savingMatchJoue, setSavingMatchJoue] = useState(false)
   const [scannerModalButsDetail, setScannerModalButsDetail] = useState([]) // [{ minute, equipe, nature }] — pour matchs_equipe.buts_detail
   const [scannerModalImageBase64, setScannerModalImageBase64] = useState(null)
@@ -4791,16 +4792,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // reste donc après.
     const snapshot = { ...newMatch }
     setSavingMatch(true)
-    setNewMatch({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '' })
+    setNewMatch({ date: '', heure: '', lieu: '', ville: '', adversaire: '', domicile: true, competition: '', score_nous: '', score_eux: '', tab_nous: '', tab_eux: '' })
     setShowAddMatch(false)
     const [{ data, error }] = await Promise.all([
       supabase.from('matchs_equipe').insert({
-        ...snapshot, educateur_id: userId, club_categorie_id: equipeActive?.id || null, domicile: snapshot.domicile,
+        ...snapshot, educateur_id: userId, club_categorie_id: equipeActive?.id || null, domicile: snapshot.domicile, avecTab: undefined,
         // score_nous/score_eux sont des colonnes integer — une chaîne vide (score pas
         // encore saisi, le cas normal à la création) fait échouer l'insert avec
         // "invalid input syntax for type integer" si on l'envoie telle quelle.
         score_nous: snapshot.score_nous === '' ? null : parseInt(snapshot.score_nous),
         score_eux: snapshot.score_eux === '' ? null : parseInt(snapshot.score_eux),
+        tab_nous: estCoupe(snapshot.competition) && snapshot.tab_nous !== '' ? parseInt(snapshot.tab_nous) : null,
+        tab_eux: estCoupe(snapshot.competition) && snapshot.tab_eux !== '' ? parseInt(snapshot.tab_eux) : null,
       }).select().single(),
       creerDeplacementAutoMatch(snapshot).catch(e => console.error('Erreur création déplacement auto:', e)),
     ])
@@ -4847,7 +4850,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const ouvrirModalMatchJoue = (m) => {
     setModalMatchJoue(m)
-    setScoreJoueForm({ score_nous: m.score_nous || '', score_eux: m.score_eux || '' })
+    setScoreJoueForm({ score_nous: m.score_nous || '', score_eux: m.score_eux || '', tab_nous: m.tab_nous ?? '', tab_eux: m.tab_eux ?? '' })
     setScannerModalImageBase64(null)
     setScannerModalImagePreview(null)
     setScannerModalError(null)
@@ -4869,12 +4872,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const butsDetailSnapshot = scannerModalButsDetail.filter(b => typeof b.minute === 'number' && !isNaN(b.minute))
     setSavingMatchJoue(true)
     setModalMatchJoue(null)
-    setScoreJoueForm({ score_nous: '', score_eux: '' })
+    setScoreJoueForm({ score_nous: '', score_eux: '', tab_nous: '', tab_eux: '' })
     setScannerModalButsDetail([])
     const [{ error }] = await Promise.all([
       supabase.from('matchs_equipe').update({
         score_nous: scoreSnapshot.score_nous === '' ? null : parseInt(scoreSnapshot.score_nous),
         score_eux: scoreSnapshot.score_eux === '' ? null : parseInt(scoreSnapshot.score_eux),
+        tab_nous: estCoupe(matchSnapshot.competition) && scoreSnapshot.tab_nous !== '' ? parseInt(scoreSnapshot.tab_nous) : null,
+        tab_eux: estCoupe(matchSnapshot.competition) && scoreSnapshot.tab_eux !== '' ? parseInt(scoreSnapshot.tab_eux) : null,
         buts_detail: butsDetailSnapshot,
       }).eq('id', matchId),
       sauvegarderStatsMatch(matchId).catch(e => console.error('Erreur sauvegarde stats match:', e)), // upsert stats_match + recharge matchs
@@ -5696,7 +5701,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       cartons_r: allStats.filter(s => s.carton_rouge).length,
       victoires: joues.filter(s => {
         const m = s._match
-        return m && parseInt(m.score_nous) > parseInt(m.score_eux)
+        return m && resultatMatch(m) === 'V'
       }).length,
     }
   }
@@ -8048,6 +8053,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
                         <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={newMatch.score_eux} onChange={e => setNewMatch({ ...newMatch, score_eux: e.target.value })} /></div>
                       </div>
+                      {estCoupe(newMatch.competition) && (
+                        <div>
+                          <label style={{ ...st.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <input type="checkbox" checked={newMatch.tab_nous !== '' || newMatch.tab_eux !== '' || !!newMatch.avecTab} onChange={e => setNewMatch({ ...newMatch, avecTab: e.target.checked, ...(e.target.checked ? {} : { tab_nous: '', tab_eux: '' }) })} />
+                            Tirs au but
+                          </label>
+                          {(newMatch.avecTab || newMatch.tab_nous !== '' || newMatch.tab_eux !== '') && (
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                              <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (nous)</label><input style={st.input} type="number" min="0" value={newMatch.tab_nous} onChange={e => setNewMatch({ ...newMatch, tab_nous: e.target.value })} /></div>
+                              <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                              <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (eux)</label><input style={st.input} type="number" min="0" value={newMatch.tab_eux} onChange={e => setNewMatch({ ...newMatch, tab_eux: e.target.value })} /></div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: colors.text.secondary }}>
@@ -8079,9 +8099,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {(() => {
                   const matchsJoues = matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats))
                   if (matchsJoues.length === 0) return null
-                  const victoires = matchsJoues.filter(m => Number(m.score_nous) > Number(m.score_eux)).length
-                  const nuls = matchsJoues.filter(m => Number(m.score_nous) === Number(m.score_eux)).length
-                  const defaites = matchsJoues.filter(m => Number(m.score_nous) < Number(m.score_eux)).length
+                  const victoires = matchsJoues.filter(m => resultatMatch(m) === 'V').length
+                  const nuls = matchsJoues.filter(m => resultatMatch(m) === 'N').length
+                  const defaites = matchsJoues.filter(m => resultatMatch(m) === 'D').length
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px', marginBottom: '22px' }}>
                       {[
@@ -8678,6 +8698,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
                     <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
                   </div>
+                  {estCoupe(modalMatchJoue?.competition) && (
+                    <div style={{ marginBottom: '18px' }}>
+                      <label style={{ ...st.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input type="checkbox" checked={scoreJoueForm.tab_nous !== '' || scoreJoueForm.tab_eux !== '' || !!scoreJoueForm.avecTab} onChange={e => setScoreJoueForm(f => ({ ...f, avecTab: e.target.checked, ...(e.target.checked ? {} : { tab_nous: '', tab_eux: '' }) }))} />
+                        Tirs au but
+                      </label>
+                      {(scoreJoueForm.avecTab || scoreJoueForm.tab_nous !== '' || scoreJoueForm.tab_eux !== '') && (
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                          <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.tab_nous} onChange={e => setScoreJoueForm(f => ({ ...f, tab_nous: e.target.value }))} /></div>
+                          <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                          <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.tab_eux} onChange={e => setScoreJoueForm(f => ({ ...f, tab_eux: e.target.value }))} /></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* ── Minutes des buts (manuel, ou pré-rempli par le scan IA ci-dessus) ── */}
                   <div style={{ marginBottom: '18px' }}>
