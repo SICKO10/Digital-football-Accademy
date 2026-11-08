@@ -1,11 +1,23 @@
-import { useContext, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { ThemeContext, STOCKAGE_CLE_THEME, useTheme, useColors } from './theme'
 import { ClubThemeContext } from './clubTheme'
 import { calculerPalette, lireSurchargeCouleur, variablesCss } from './paletteClub'
 
+// Le stockage du navigateur peut refuser (navigation privée, stockage bloqué) :
+// on ne plante jamais, on garde alors le choix en mémoire pour la session.
+function lireThemeMemorise() {
+  try {
+    const v = localStorage.getItem(STOCKAGE_CLE_THEME)
+    return v === 'sombre' || v === 'claire' ? v : null
+  } catch { return null }
+}
+function memoriserTheme(valeur) {
+  try { localStorage.setItem(STOCKAGE_CLE_THEME, valeur) } catch { /* stockage indisponible */ }
+}
+
 export function ThemeProvider({ children }) {
   // Clair par défaut tant que la personne n'a jamais touché le bouton soleil/lune.
-  const [theme, setTheme] = useState(() => localStorage.getItem(STOCKAGE_CLE_THEME) || 'claire')
+  const [theme, setTheme] = useState(() => lireThemeMemorise() || 'claire')
   const [couleurClub, setCouleurClub] = useState(null)
   // Réglage de test `?couleurClub=%23FFF59D` : n'existe qu'en mode développement
   // (import.meta.env.DEV vaut false dans le site construit, ce code disparaît).
@@ -13,10 +25,18 @@ export function ThemeProvider({ children }) {
   const couleurEffective = surcharge || couleurClub
   const palette = useMemo(() => calculerPalette(couleurEffective, theme), [couleurEffective, theme])
   const clubTheme = useMemo(() => ({ couleurClub: couleurEffective, setCouleurClub, palette }), [couleurEffective, palette])
+  // Un autre onglet change le thème : celui-ci suit.
+  useEffect(() => {
+    const suivre = e => {
+      if (e.key === STOCKAGE_CLE_THEME && (e.newValue === 'sombre' || e.newValue === 'claire')) setTheme(e.newValue)
+    }
+    window.addEventListener('storage', suivre)
+    return () => window.removeEventListener('storage', suivre)
+  }, [])
   const toggleTheme = () => {
     setTheme(prev => {
       const suivant = prev === 'sombre' ? 'claire' : 'sombre'
-      localStorage.setItem(STOCKAGE_CLE_THEME, suivant)
+      memoriserTheme(suivant)
       return suivant
     })
   }
