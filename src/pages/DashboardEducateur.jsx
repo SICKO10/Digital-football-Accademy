@@ -8726,7 +8726,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       const detected = Object.keys(s).length > 0
                       const val = (field) => s[field] !== undefined ? s[field] : ''
                       return (
-                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? '#0d1a0d' : 'transparent', borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : 'transparent'}` }}>
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? `${colors.accent.green}1f` : 'transparent', borderRadius: '6px', border: `1px solid ${detected ? `${colors.accent.green}55` : 'transparent'}` }}>
                           <span style={{ fontSize: '14px', fontWeight: detected ? 700 : 600, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ""}.
                           </span>
@@ -12954,7 +12954,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         [j.id]: { minutes: 0, buts: 0, passes_dec: 0, clean_sheet: false, carton_jaune: false, carton_rouge: false, ...(prev[j.id] || {}), [field]: val }
                       }))
                       return (
-                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? '#0d1a0d' : colors.background.base, borderRadius: '6px', border: `1px solid ${detected ? '#1a3a1a' : colors.background.surface}`, minWidth: '380px' }}>
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? `${colors.accent.green}1f` : colors.background.base, borderRadius: '6px', border: `1px solid ${detected ? `${colors.accent.green}55` : colors.background.surface}`, minWidth: '380px' }}>
                           <span style={{ fontSize: '12px', fontWeight: detected ? 700 : 500, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ''}.
                           </span>
