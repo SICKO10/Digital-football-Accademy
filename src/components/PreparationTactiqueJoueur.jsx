@@ -261,16 +261,16 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
         <Carte isMobile={isMobile}>
           <h2 style={{ color: colors.text.primary, margin: `0 0 ${spacing['2xl']}`, fontSize: fontSize['4xl'] }}>{schemaActif.nom || 'Sans titre'}</h2>
           {isMobile && (
-            <button onClick={() => setPleinEcran(true)}
+            <button onClick={() => setPleinEcran('lecture')}
               style={{ width: '100%', marginBottom: spacing['2xl'], background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '12px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Plein écran (téléphone en paysage)
+              Plein écran
             </button>
           )}
           <div style={{ overflowX: 'auto' }}>
-            <TactipadViewer schema={schemaActif.schema} width={largeurSchema} />
+            <TactipadViewer schema={schemaActif.schema} width={largeurSchema} onLire={isMobile ? () => setPleinEcran('lecture') : null} />
           </div>
         </Carte>
-        {pleinEcran && <SchemaPleinEcran schema={schemaActif.schema} nom={schemaActif.nom} colors={colors} onFermer={() => setPleinEcran(false)} />}
+        {pleinEcran && <SchemaPleinEcran schema={schemaActif.schema} nom={schemaActif.nom} colors={colors} onFermer={() => setPleinEcran(false)} lectureAuto={pleinEcran === 'lecture'} />}
       </div>
     )
   }

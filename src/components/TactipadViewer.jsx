@@ -12,10 +12,15 @@ const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
 // ObjetNode) en y ajoutant la lecture animée des étapes (sequences), absente
 // de la page de partage public — pas de sauvegarde de durée par étape dans
 // le schéma (Tactipad.jsx ne la persiste pas non plus), 2s par étape par défaut.
-export default function TactipadViewer({ schema, width = 640, apercu = false }) {
+export default function TactipadViewer({ schema, width = 640, apercu = false, onLire = null, lectureAuto = false }) {
   const terrain = schema?.terrain || { sport: 'football', vue: 'complet', fond: 'vert' }
   const sequencesRaw = schema?.sequences?.length ? schema.sequences : [schema?.elements || []]
-  const height = Math.round(width * 10 / 16)
+  // Même proportions que dans l'éditeur : le ratio réel du terrain enregistré
+  // (0.56 sur mobile/tablette, 0.625 ailleurs), 16:10 seulement pour les
+  // schémas plus anciens sans terrain.w/h. Ainsi la mise à l'échelle reste
+  // uniforme et le schéma ne se déforme pas d'un appareil à l'autre.
+  const ratioH = (schema?.terrain?.w && schema?.terrain?.h) ? schema.terrain.h / schema.terrain.w : 0.625
+  const height = Math.round(width * ratioH)
   // Remet à l'échelle si le schéma a été enregistré à une autre largeur/hauteur
   // que celle d'affichage ici (fromH réel via terrain.h, pas un ratio 16:10
   // supposé — l'éditeur utilise aussi un ratio 0.56 sur mobile/tablette), et
@@ -100,9 +105,21 @@ export default function TactipadViewer({ schema, width = 640, apercu = false }) 
     setPlaying(false)
   }
 
+  // Plein écran ouvert par le bouton Lire : l'animation démarre toute seule.
+  useEffect(() => {
+    if (!lectureAuto) return
+    const t = setTimeout(lire, 0)
+    return () => clearTimeout(t)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Comme une vidéo : toucher le terrain lance ou met en pause l'animation.
   // Quand elle est à l'arrêt, un grand bouton lecture s'affiche au centre.
-  const basculer = () => { if (hasAnimation) (playing ? stop() : lire()) }
+  // Avec onLire (téléphone), Lire ouvre d'abord le plein écran au lieu de jouer sur place.
+  const basculer = () => {
+    if (!hasAnimation) return
+    if (onLire && !playing) { onLire(); return }
+    playing ? stop() : lire()
+  }
 
   return (
     <div>

@@ -58,13 +58,13 @@ function Procede({ p, colors, isMobile }) {
       {p.schema_data ? (
         <div>
           <div style={{ overflowX: 'auto' }}>
-            <TactipadViewer schema={p.schema_data} width={largeur} />
+            <TactipadViewer schema={p.schema_data} width={largeur} onLire={isMobile ? () => setPleinEcran('lecture') : null} />
           </div>
           <button onClick={() => setPleinEcran(true)}
             style={{ marginTop: spacing.lg, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '10px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
             Voir en plein écran
           </button>
-          {pleinEcran && <SchemaPleinEcran schema={p.schema_data} nom={p.titre} colors={colors} onFermer={() => setPleinEcran(false)} />}
+          {pleinEcran && <SchemaPleinEcran schema={p.schema_data} nom={p.titre} colors={colors} onFermer={() => setPleinEcran(false)} lectureAuto={pleinEcran === 'lecture'} />}
         </div>
       ) : p.schema_png ? (
         <img src={p.schema_png} alt={`Schéma : ${p.titre || 'exercice'}`} style={{ width: '100%', maxWidth: '640px', borderRadius: radius.base }} />
