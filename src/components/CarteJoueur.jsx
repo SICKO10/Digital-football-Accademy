@@ -17,7 +17,9 @@ function calculerOVR({ buts, passesD, cleanSheets, matchs, tournoisGagnes, prese
   return Math.min(99, Math.round(40 + score * 0.6))
 }
 
-export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, logoClub, largeur = 280 }) {
+export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, logoClub, largeur = 280, profilJoueur }) {
+  // `profilJoueur` (facultatif) : profil déjà chargé par le dashboard (prenom, nom, poste, avatar_url) ;
+  // il prime sur la lecture faite ici, qui peut échouer (droits d'accès, réseau).
   // `stats` (facultatif) : buts, passesD, cleanSheets, matchs (et presencePct) déjà fusionnés (éducateur + joueur)
   // par la page Mes statistiques ; sinon la carte lit seulement les saisies du joueur.
   const [loading, setLoading] = useState(true)
@@ -29,7 +31,7 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, 
     const aujourdHui = new Date().toISOString().split('T')[0]
     const finPeriode = aujourdHui < date_fin ? aujourdHui : date_fin
 
-    const [{ data: profil }, { data: statsRows }, { data: badges }, { data: affiliation }] = await Promise.all([
+    const [{ data: profil, error: errProfil }, { data: statsRows }, { data: badges }, { data: affiliation }] = await Promise.all([
       supabase.from('profiles').select('prenom, nom, poste, categorie, club, avatar_url').eq('id', userId).maybeSingle(),
       supabase.from('stats_match_joueur').select('buts, passes_decisives, buts_encaisses').eq('joueur_id', userId).gte('date', date_debut).lte('date', date_fin),
       supabase.from('joueur_badges').select('*').eq('joueur_id', userId).eq('saison', saison),
@@ -52,6 +54,7 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, 
     //   en "absence" côté taux. Seules les séances où un statut existe
     //   réellement (pointage manuel ou réponse au sondage de présence)
     //   comptent, comme côté DashboardJoueur.jsx.
+    if (errProfil) console.warn('Carte joueur : lecture du profil impossible', errProfil.message)
     let presencePct = 0
     if (affiliation?.educateur_id && affiliation?.equipe_joueur_id) {
       const { data: equipeJoueur } = await supabase.from('equipe_joueurs').select('club_categorie_id').eq('id', affiliation.equipe_joueur_id).maybeSingle()
@@ -95,7 +98,8 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, 
 
   if (loading || !data) return null
 
-  const { profil, tournoisGagnes } = data
+  const { tournoisGagnes } = data
+  const profil = profilJoueur?.prenom || profilJoueur?.nom ? profilJoueur : data.profil
   const presencePct = stats?.presencePct ?? data.presencePct
   const { buts, passesD, cleanSheets, matchs } = stats || data
   const ovr = calculerOVR({ buts, passesD, cleanSheets, matchs, tournoisGagnes, presencePct })

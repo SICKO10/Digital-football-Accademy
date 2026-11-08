@@ -4810,7 +4810,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
 
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url} profilJoueur={profil}
           onOuvrirFiche={() => { const a = equipePrincipaleStats?.affiliation; if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (

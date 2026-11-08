@@ -53,7 +53,7 @@ function Pastille({ texte, couleur, colors }) {
 // `matchs` : liste déjà fusionnée (lib/statsFusion) des matchs saisis par
 // l'éducateur et de ceux saisis par le joueur ; `statsEquipe` : présence, points
 // séance, notes et élus du mois (calculés par DashboardJoueur).
-export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile, onOuvrirFiche, logoClub }) {
+export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile, onOuvrirFiche, logoClub, profilJoueur }) {
   const colors = useColors()
   const saison = saisonActuelle()
   const [badges, setBadges] = useState([])
@@ -105,7 +105,7 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
     <>
       <div style={{ display: 'flex', gap: spacing['4xl'], flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: isMobile ? 'center' : 'flex-start' }}>
         <div style={{ flexShrink: 0 }}>
-          <CarteJoueur userId={userId} saison={saison} logoClub={logoClub} largeur={isMobile ? 260 : 290}
+          <CarteJoueur userId={userId} saison={saison} logoClub={logoClub} profilJoueur={profilJoueur} largeur={isMobile ? 260 : 290}
             stats={{ buts, passesD: passes, cleanSheets, matchs: nbMatchs, minutes, noteMoyenne, presencePct: presence ?? undefined }} />
         </div>
         <div style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: spacing.xl }}>

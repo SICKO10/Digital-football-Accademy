@@ -121,7 +121,7 @@ function Groupe({ titre, aide, children }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub }) {
+export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur }) {
   const colors = useColors()
   const [vue, setVue] = useState('profil') // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
@@ -223,7 +223,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
 
       {vue === 'profil' && (
         <>
-          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} onOuvrirFiche={onOuvrirFiche} logoClub={logoClub} isMobile={isMobile} />
+          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} onOuvrirFiche={onOuvrirFiche} logoClub={logoClub} profilJoueur={profilJoueur} isMobile={isMobile} />
           {matchs.length === 0 ? (
             <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
               <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Complète ton profil avec tes propres matchs</div>
