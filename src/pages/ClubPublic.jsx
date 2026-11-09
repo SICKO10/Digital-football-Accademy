@@ -288,7 +288,6 @@ export default function ClubPublic() {
   // se comptait à tort comme un nul 0-0 dans le total.
   const matchsJoues = matchs.filter(m => m.score_nous !== null && m.score_nous !== '' && m.score_eux !== null && m.score_eux !== '')
   const statsVND = matchsJoues.reduce((acc, m) => {
-    const bp = parseInt(m.score_nous) || 0, bc = parseInt(m.score_eux) || 0
     const res = resultatMatch(m)
     if (res === 'V') acc.v++
     else if (res === 'D') acc.d++

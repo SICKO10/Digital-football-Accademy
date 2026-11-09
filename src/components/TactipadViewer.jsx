@@ -26,10 +26,17 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
   // supposé — l'éditeur utilise aussi un ratio 0.56 sur mobile/tablette), et
   // clampe dans tous les cas (y compris schémas enregistrés avant l'ajout de
   // terrain.w/h, où fromW est undefined) — cf. rescaleElements dans Tactipad.jsx.
-  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, width, schema?.terrain?.h, height))
+  // Le schéma est dessiné à sa taille d'origine (celle de l'éditeur) puis tout
+  // le dessin est agrandi ou réduit d'un bloc (échelle du Stage) : joueurs,
+  // ballon et textes gardent la même taille par rapport au terrain que chez
+  // l'éducateur, quel que soit l'écran. Schémas anciens sans terrain.w : 800.
+  const baseW = schema?.terrain?.w || 800
+  const baseH = Math.round(baseW * ratioH)
+  const echelle = width / baseW
+  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, baseW, schema?.terrain?.h, baseH))
   const hasAnimation = sequences.length > 1
 
-  const svgString = terrainSvgString({ ...terrain, w: width, h: height })
+  const svgString = terrainSvgString({ ...terrain, w: baseW, h: baseH })
   const terrainImg = useSvgImage(svgString)
 
   const [elements, setElements] = useState(sequences[0] || [])
@@ -124,9 +131,9 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
   return (
     <div>
       <div onClick={basculer} style={{ position: 'relative', width, height, cursor: hasAnimation ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent', pointerEvents: apercu ? 'none' : undefined }}>
-      <Stage width={width} height={height} style={{ borderRadius: '12px', overflow: 'hidden' }}>
+      <Stage width={width} height={height} scaleX={echelle} scaleY={echelle} style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <Layer>
-          {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
+          {terrainImg && <KonvaImage image={terrainImg} width={baseW} height={baseH} listening={false} />}
 
           {elements.filter(e => e.type === 'zone-rect').map(e => (
             <Rect key={e.id} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
