@@ -87,6 +87,7 @@ import { useColors, useTheme } from '../lib/theme'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
+import { etatCartons } from '../lib/disciplineCartons'
 
 // Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
 // écran comme Loader.jsx/ChargementPage, qui masquerait le reste du dashboard
@@ -7049,6 +7050,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <td style={{ ...tdBase, color: val > 0 ? couleur : colors.text.ghost, fontWeight: val > 0 && gras ? 700 : 500 }}>{val > 0 ? val : '–'}</td>
                   )
                   const premiereCol = { position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface }
+                  // Cumul de jaunes sur 3 mois : date à laquelle chaque carton cesse de compter.
+                  const aujourdHuiIso = new Date().toLocaleDateString('sv-SE')
+                  const dateCourteCj = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                  const cartonsDuJoueur = (jid) => etatCartons(
+                    matchs.filter(m => (m.stats_match || []).some(s => s.joueur_id === jid && s.carton_jaune)).map(m => m.date),
+                    aujourdHuiIso,
+                  )
                   return (
                   <div style={{ ...st.card, padding: 0, overflow: 'hidden', marginTop: '22px' }}>
                     <style>{`.stats-ligne-joueur:hover td { background: ${colors.background.raised} !important; }`}</style>
@@ -7118,7 +7126,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 {chiffre(s.buts, colors.accent.green, true)}
                                 {chiffre(s.passes_dec, colors.accent.info, true)}
                                 {chiffre(s.clean_sheets, colors.accent.purpleLight, true)}
-                                {chiffre(s.cartons_j, colors.accent.amber, true)}
+                                {(() => {
+                                  const cj = cartonsDuJoueur(j.id)
+                                  const info = cj.detail.map(c => `Jaune du ${dateCourteCj(c.date)} : compte jusqu'au ${dateCourteCj(c.jusqua)}`).join('\n')
+                                  return (
+                                    <td title={info || undefined} style={{ ...tdBase, color: s.cartons_j > 0 ? colors.accent.amber : colors.text.ghost, fontWeight: s.cartons_j > 0 ? 700 : 500 }}>
+                                      {s.cartons_j > 0 ? s.cartons_j : '–'}
+                                      {(cj.etat === 'menace' || cj.etat === 'trois') && (
+                                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: cj.etat === 'trois' ? colors.accent.red : colors.accent.amber }}>
+                                          sort le {dateCourteCj(cj.echeance)}
+                                        </span>
+                                      )}
+                                    </td>
+                                  )
+                                })()}
                                 {chiffre(s.cartons_r, colors.accent.red, true)}
                                 <td style={{ ...tdBase, textAlign: 'left' }}>
                                   {tx !== null ? (

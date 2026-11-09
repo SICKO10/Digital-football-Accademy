@@ -53,16 +53,18 @@ const pertinents = (dates, iso) => {
 // aujourdHui : ISO du jour. Retourne :
 //   etat : 'aucun' | 'menace' | 'trois' | 'fin_menace'
 //   actifs : nombre de cartons pris en compte
+//   detail : ces cartons, [{ date, jusqua }] (jusqua = dernier jour où il compte)
 //   echeance : (menace / trois) date où le plus ancien carton sort de la période
 //   finLe : (fin_menace) date à laquelle la menace a pris fin
 export const etatCartons = (dates, aujourdHui) => {
   const liste = (dates || []).filter(Boolean)
   const actifs = pertinents(liste, aujourdHui)
+  const detail = actifs.map(d => ({ date: d, jusqua: ajouterMois(d, 3) }))
   if (actifs.length >= SEUIL_TROIS) {
-    return { etat: 'trois', actifs: actifs.length, echeance: ajouterMois(actifs[0], 3) }
+    return { etat: 'trois', actifs: actifs.length, detail, echeance: ajouterMois(actifs[0], 3) }
   }
   if (actifs.length === SEUIL_MENACE) {
-    return { etat: 'menace', actifs: actifs.length, echeance: ajouterMois(actifs[0], 3) }
+    return { etat: 'menace', actifs: actifs.length, detail, echeance: ajouterMois(actifs[0], 3) }
   }
   // Menace tombée récemment : le joueur était à 2 avertissements il y a moins de
   // 14 jours et n'y est plus (le plus ancien est sorti de la période).
@@ -70,8 +72,8 @@ export const etatCartons = (dates, aujourdHui) => {
     const avant = pertinents(liste, ajouterJours(aujourdHui, -j))
     if (avant.length === SEUIL_MENACE) {
       const finLe = ajouterJours(ajouterMois(avant[0], 3), 1)
-      if (finLe <= aujourdHui) return { etat: 'fin_menace', actifs: actifs.length, finLe }
+      if (finLe <= aujourdHui) return { etat: 'fin_menace', actifs: actifs.length, detail, finLe }
     }
   }
-  return { etat: 'aucun', actifs: actifs.length }
+  return { etat: 'aucun', actifs: actifs.length, detail }
 }
