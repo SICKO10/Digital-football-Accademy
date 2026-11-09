@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Stage, Layer, Image as KonvaImage, Circle, Rect, RegularPolygon, Arrow, Line, Text } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Circle, Rect, RegularPolygon, Arrow, Line, Text, Group } from 'react-konva'
 import { terrainSvgString, useSvgImage, JoueurNode, ObjetNode, rescaleElements } from './Tactipad'
 import { colors } from '../tokens'
 
@@ -26,17 +26,16 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
   // supposé — l'éditeur utilise aussi un ratio 0.56 sur mobile/tablette), et
   // clampe dans tous les cas (y compris schémas enregistrés avant l'ajout de
   // terrain.w/h, où fromW est undefined) — cf. rescaleElements dans Tactipad.jsx.
-  // Le schéma est dessiné à sa taille d'origine (celle de l'éditeur) puis tout
-  // le dessin est agrandi ou réduit d'un bloc (échelle du Stage) : joueurs,
-  // ballon et textes gardent la même taille par rapport au terrain que chez
-  // l'éducateur, quel que soit l'écran. Schémas anciens sans terrain.w : 800.
-  const baseW = schema?.terrain?.w || 800
-  const baseH = Math.round(baseW * ratioH)
-  const echelle = width / baseW
-  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, baseW, schema?.terrain?.h, baseH))
+  const sequences = sequencesRaw.map(seq => rescaleElements(seq, schema?.terrain?.w, width, schema?.terrain?.h, height))
+  // Taille des joueurs et du matériel : proportionnelle au terrain affiché
+  // (référence : 28 px sur un terrain de 800 px, comme sur ordinateur), bornée
+  // pour rester lisible sur téléphone sans écraser le terrain sur grand écran.
+  // Indépendante de l'écran où le schéma a été créé (un schéma fait sur
+  // téléphone aurait sinon des joueurs énormes une fois agrandi).
+  const tailleJetons = Math.max(0.75, Math.min(1.3, width / 800))
   const hasAnimation = sequences.length > 1
 
-  const svgString = terrainSvgString({ ...terrain, w: baseW, h: baseH })
+  const svgString = terrainSvgString({ ...terrain, w: width, h: height })
   const terrainImg = useSvgImage(svgString)
 
   const [elements, setElements] = useState(sequences[0] || [])
@@ -131,9 +130,9 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
   return (
     <div>
       <div onClick={basculer} style={{ position: 'relative', width, height, cursor: hasAnimation ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent', pointerEvents: apercu ? 'none' : undefined }}>
-      <Stage width={width} height={height} scaleX={echelle} scaleY={echelle} style={{ borderRadius: '12px', overflow: 'hidden' }}>
+      <Stage width={width} height={height} style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <Layer>
-          {terrainImg && <KonvaImage image={terrainImg} width={baseW} height={baseH} listening={false} />}
+          {terrainImg && <KonvaImage image={terrainImg} width={width} height={height} listening={false} />}
 
           {elements.filter(e => e.type === 'zone-rect').map(e => (
             <Rect key={e.id} x={e.x} y={e.y} width={e.width} height={e.height} rotation={e.rotation || 0} fill={e.color + '40'} stroke={e.color} strokeWidth={2} listening={false} />
@@ -170,10 +169,14 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
             <Text key={e.id} x={e.x} y={e.y} text={e.text} fontSize={16} fontStyle="bold" fill={e.color} listening={false} />
           ))}
           {elements.filter(e => e.type === 'objet').map(e => (
-            <ObjetNode key={e.id} el={e} isSelected={false} draggable={false} />
+            <Group key={e.id} x={e.x} y={e.y} scaleX={tailleJetons} scaleY={tailleJetons} listening={false}>
+              <ObjetNode el={{ ...e, x: 0, y: 0 }} isSelected={false} draggable={false} />
+            </Group>
           ))}
           {elements.filter(e => e.type === 'joueur' || e.type === 'joker').map(e => (
-            <JoueurNode key={e.id} el={e} isSelected={false} draggable={false} couleurs={schema?.equipesCouleurs} />
+            <Group key={e.id} x={e.x} y={e.y} scaleX={tailleJetons} scaleY={tailleJetons} listening={false}>
+              <JoueurNode el={{ ...e, x: 0, y: 0 }} isSelected={false} draggable={false} couleurs={schema?.equipesCouleurs} />
+            </Group>
           ))}
         </Layer>
       </Stage>

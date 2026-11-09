@@ -32,7 +32,9 @@ const libelleJour = (dateSeance, locale) => {
 }
 
 function Procede({ p, colors, isMobile }) {
-  const largeur = isMobile ? Math.max(260, Math.min(800, window.innerWidth - 2 * 48)) : 640
+  // Téléphone en paysage : le terrain doit aussi tenir en hauteur.
+  const ratioSchema = (p.schema_data?.terrain?.w && p.schema_data?.terrain?.h) ? p.schema_data.terrain.h / p.schema_data.terrain.w : 0.625
+  const largeur = isMobile ? Math.max(260, Math.min(800, window.innerWidth - 2 * 48, (window.innerHeight - 120) / ratioSchema)) : 640
   const bloc = (titre, texte) => texte ? (
     <div>
       <p style={{ margin: `0 0 ${spacing.xs}`, fontSize: fontSize.base, fontWeight: 700, color: colors.text.faint }}>{titre}</p>

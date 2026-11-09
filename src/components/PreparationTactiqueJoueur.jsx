@@ -251,7 +251,9 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   if (schemaActif) {
     // Le canevas Konva a une largeur fixe : sur téléphone on le cale sur la
     // largeur de l'écran, et le conteneur défile si la fenêtre change ensuite.
-    const largeurSchema = isMobile ? Math.max(260, Math.min(800, window.innerWidth - 2 * 32)) : 800
+    // Téléphone en paysage : le terrain doit aussi tenir en hauteur.
+    const ratioSchema = (schemaActif.schema?.terrain?.w && schemaActif.schema?.terrain?.h) ? schemaActif.schema.terrain.h / schemaActif.schema.terrain.w : 0.625
+    const largeurSchema = isMobile ? Math.max(260, Math.min(800, window.innerWidth - 2 * 32, (window.innerHeight - 120) / ratioSchema)) : 800
     return (
       <div style={cadre}>
         <button onClick={() => setSchemaActif(null)}
