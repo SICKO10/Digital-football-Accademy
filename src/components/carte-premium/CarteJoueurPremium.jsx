@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react'
-import logoDF from './logo-df.png'
 import { useCadrageVisage } from '../../lib/cadrageVisage'
+import { useLogoTransparent } from './logoTransparent'
 
 // Carte joueur premium « collection » : noir charbon, double liseré or, éclairage de
 // stade. Composant de présentation autonome : aucune donnée, aucun thème, aucun appel
@@ -88,14 +88,17 @@ const Silhouette = ({ uid }) => (
 )
 
 export default function CarteJoueurPremium({
-  note, poste, nom, stats = [], photo, drapeau, ecusson, fixe = false, largeur, couleur, theme = 'vert',
+  note, poste, nom, stats = [], photo, drapeau, ecusson, fixe = false, largeur, couleur, theme = 'vert', cadre: cadreFourni,
 }) {
   const uid = useId().replace(/:/g, '')
   const ref = useRef(null)
   const [reflet, setReflet] = useState({ x: 50, y: 30, actif: false })
   const T = THEMES[theme] || THEMES.vert
   // Cadrage automatique sur le visage (null tant que non détecté : cadrage par défaut)
-  const cadre = useCadrageVisage(photo)
+  // (`cadre` peut être fourni par l'appelant, par exemple pour l'export en image)
+  const cadreAuto = useCadrageVisage(cadreFourni === undefined ? photo : null)
+  const cadre = cadreFourni !== undefined ? cadreFourni : cadreAuto
+  const logo = useLogoTransparent()
   const or = couleur || T.plat
 
   const bouger = (e) => {
@@ -127,7 +130,7 @@ export default function CarteJoueurPremium({
       onPointerMove={bouger} onPointerLeave={quitter}
       style={{
         '--u': unite,
-        width: largeur ? `${largeur}px` : '100%', maxWidth: largeur ? undefined : 380, aspectRatio: '2 / 3',
+        width: largeur ? `${largeur}px` : '100%', maxWidth: largeur ? undefined : 380, ...(largeur ? { height: `${largeur * 1.5}px` } : { aspectRatio: '2 / 3' }),
         containerType: largeur ? undefined : 'inline-size', position: 'relative', userSelect: 'none',
         transition: 'transform .25s ease-out, filter .25s ease-out',
         filter: fixe ? 'none' : `drop-shadow(0 ${reflet.actif ? 26 : 16}px ${reflet.actif ? 38 : 26}px rgba(${T.ombre},${reflet.actif ? 0.42 : 0.28}))`,
@@ -198,7 +201,7 @@ export default function CarteJoueurPremium({
           {/* joueur : photo fondue, ou silhouette neutre */}
           {photo ? (
             <g mask={`url(#fondu${uid})`}>
-              <image href={photo} crossOrigin="anonymous" {...(cadre ? { x: cadre.x, y: cadre.y, width: cadre.largeur, height: cadre.hauteur, preserveAspectRatio: 'none' } : { x: 30, y: 70, width: 350, height: 330, preserveAspectRatio: 'xMidYMin slice' })} filter={fixe ? undefined : `url(#grade${uid})`} />
+              <image href={photo} {...(cadre ? { x: cadre.x, y: cadre.y, width: cadre.largeur, height: cadre.hauteur, preserveAspectRatio: 'none' } : { x: 30, y: 70, width: 350, height: 330, preserveAspectRatio: 'xMidYMin slice' })} filter={fixe ? undefined : `url(#grade${uid})`} />
               <rect x="30" y="70" width="350" height="330" fill={`url(#teinte${uid})`} opacity=".42" style={{ mixBlendMode: 'multiply' }} />
             </g>
           ) : (
@@ -221,8 +224,7 @@ export default function CarteJoueurPremium({
       {/* ── Textes et pictos (HTML : bien rendus à l'export) ── */}
       <div style={{ position: 'absolute', inset: 0 }}>
         {/* logo Digital Football */}
-        <img src={logoDF} alt="Digital Football" style={{ position: 'absolute', top: '6.4%', left: '50%', width: u(27), transform: 'translateX(-50%)', mixBlendMode: fixe ? 'normal' : 'screen',
-          WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent)', WebkitMaskComposite: 'source-in', maskImage: 'linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent)', maskComposite: 'intersect' }} />
+        <img src={logo} alt="Digital Football" style={{ position: 'absolute', top: '6.4%', left: '50%', width: u(27), transform: 'translateX(-50%)' }} />
 
         {/* note, poste, drapeau, écusson */}
         <div style={{ position: 'absolute', top: '13%', left: u(8.5), width: u(20), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -270,9 +272,11 @@ export default function CarteJoueurPremium({
         </div>
 
         {/* terrain en bas */}
-        <svg viewBox="0 0 60 38" style={{ position: 'absolute', bottom: '5.2%', left: '50%', width: u(14), transform: 'translateX(-50%)' }} fill="none" stroke={or} strokeWidth="1.6">
-          <rect x="2" y="2" width="56" height="34" /><path d="M30 2v34" /><circle cx="30" cy="19" r="5.4" /><rect x="2" y="11" width="9" height="16" /><rect x="49" y="11" width="9" height="16" />
-        </svg>
+        <div style={{ position: 'absolute', bottom: '5.2%', left: `calc(50% - ${u(7)})`, width: u(14), height: u(8.9) }}>
+          <svg viewBox="0 0 60 38" width="100%" height="100%" fill="none" stroke={or} strokeWidth="1.6">
+            <rect x="2" y="2" width="56" height="34" /><path d="M30 2v34" /><circle cx="30" cy="19" r="5.4" /><rect x="2" y="11" width="9" height="16" /><rect x="49" y="11" width="9" height="16" />
+          </svg>
+        </div>
       </div>
     </div>
   )

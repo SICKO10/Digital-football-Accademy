@@ -3,6 +3,9 @@ import { supabase } from '../supabase'
 import { saisonActuelle, bornesSaison } from '../lib/saison'
 import { getPosteFamille } from '../lib/postes'
 import CarteJoueurPremium from './carte-premium/CarteJoueurPremium'
+import ExportCarte from './carte-premium/ExportCarte'
+import { useCadrageVisage } from '../lib/cadrageVisage'
+import { nomDeFichier } from '../lib/exportCarte'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 
 // ─── OVR CALCULATION ───
@@ -96,6 +99,10 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, 
 
   useEffect(() => { charger() }, [userId, saison])
 
+  const profilEff = profilJoueur?.prenom || profilJoueur?.nom ? profilJoueur : data?.profil
+  // cadrage du visage calculé une fois, partagé par la carte affichée et l'image exportée
+  const cadre = useCadrageVisage(profilEff?.avatar_url)
+
   if (loading || !data) return null
 
   const { tournoisGagnes } = data
@@ -116,11 +123,16 @@ export default function CarteJoueur({ userId, saison = saisonActuelle(), stats, 
     { cle: 'NOTE', icone: 'NOT', valeur: stats?.noteMoyenne != null ? stats.noteMoyenne.toFixed(1).replace('.', ',') : '—' },
   ]
 
+  const carte = {
+    note: ovr, poste: abrev, nom: `${profil.prenom || ''} ${profil.nom || ''}`.trim(),
+    stats: chiffres, photo: profil.avatar_url, drapeau: false,
+    ecusson: logoClub ? <img src={logoClub} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6))' }} /> : undefined,
+  }
+
   return (
-    <CarteJoueurPremium
-      note={ovr} poste={abrev} nom={`${profil.prenom || ''} ${profil.nom || ''}`.trim()}
-      stats={chiffres} photo={profil.avatar_url} drapeau={false} largeur={largeur}
-      ecusson={logoClub ? <img src={logoClub} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.6))' }} /> : undefined}
-    />
+    <div style={{ width: largeur, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CarteJoueurPremium {...carte} cadre={cadre} largeur={largeur} />
+      <ExportCarte carte={{ ...carte, largeur }} cadre={cadre} nomFichier={nomDeFichier(carte.nom)} />
+    </div>
   )
 }
