@@ -81,6 +81,7 @@ export default function ListeAlertes({
   entrainementsSupprimes = [],
   matchSemaine = null,
   matchsHoraireChange = [],
+  cartons = [],
   masquer,
   onOuvrirOnglet,
   lang = 'fr',
@@ -93,7 +94,7 @@ export default function ListeAlertes({
   const rien =
     !convocation && !equipement && !commentaire && !matchSemaine &&
     rdvDuJour.length === 0 && entrainementsNouveaux.length === 0 &&
-    entrainementsSupprimes.length === 0 && matchsHoraireChange.length === 0
+    entrainementsSupprimes.length === 0 && matchsHoraireChange.length === 0 && cartons.length === 0
   if (rien) return null
 
   const jourLong = d => new Date(`${d}T12:00:00`).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })
@@ -102,6 +103,20 @@ export default function ListeAlertes({
   return (
     <Carte niveau="discret" isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, ...style }}>
       <TitreSection style={{ margin: 0 }}>Alertes</TitreSection>
+
+      {cartons.map(c => (
+        <LigneAlerte
+          key={c.id}
+          couleur={c.etat === 'trois' ? colors.accent.red : c.etat === 'menace' ? colors.accent.amber : colors.accent.green}
+          onValider={() => masquer(c.id)}
+          detail={c.etat === 'menace' ? `2 cartons jaunes en moins de 3 mois, le plus ancien sort de la période le ${jourCourt(c.echeance)}`
+            : null}
+        >
+          {c.etat === 'menace' && "Attention : tu es sous la menace d'une suspension au prochain avertissement."}
+          {c.etat === 'trois' && '3 avertissements : suspension potentielle, en attente de confirmation de la commission de discipline.'}
+          {c.etat === 'fin_menace' && "Tu n'es plus sous la menace d'un troisième carton jaune."}
+        </LigneAlerte>
+      ))}
 
       {convocation && (
         <LigneAlerte couleur={colors.accent.green} onValider={() => masquer(`convocation_${convocation.id}`)}>

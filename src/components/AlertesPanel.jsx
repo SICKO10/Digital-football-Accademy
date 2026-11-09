@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { etatCartons } from '../lib/disciplineCartons'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
@@ -117,24 +118,35 @@ export default function AlertesPanel({ educateurId, clubId, joueurs = [], matchs
     charger()
   }, [educateurId, clubId, joueurs, matchs])
 
-  const cartonsParJoueur = {}
+  // Cartons jaunes : règle des 3 mois (disciplineCartons.js). Les cartons restent
+  // dans l'historique, seul le calcul écarte ceux dont la période est écoulée.
+  const datesJaunesParJoueur = {}
   matchs.forEach(m => (m.stats_match || []).forEach(s => {
-    if (s.carton_jaune) cartonsParJoueur[s.joueur_id] = (cartonsParJoueur[s.joueur_id] || 0) + 1
+    if (s.carton_jaune && m.date) (datesJaunesParJoueur[s.joueur_id] ||= []).push(m.date)
   }))
-  const cartonsAlerte = Object.entries(cartonsParJoueur)
-    .filter(([, n]) => n >= 2)
-    .map(([joueurId, n]) => {
+  const aujourdHuiIso = new Date().toLocaleDateString('sv-SE')
+  const dateCourte = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  const cartonsAlerte = Object.entries(datesJaunesParJoueur)
+    .map(([joueurId, dates]) => {
       const j = joueurs.find(j => j.id === joueurId)
-      return { id: joueurId, nom: j ? `${j.prenom} ${j.nom}` : 'Joueur', n }
+      return { id: joueurId, nom: j ? `${j.prenom} ${j.nom}` : 'Joueur', ...etatCartons(dates, aujourdHuiIso) }
     })
+    .filter(c => c.etat !== 'aucun')
+  const TEXTES_CARTON = {
+    menace: c => ({ titre: `Attention : ${c.nom} est sous la menace d'une suspension au prochain avertissement`, sousTitre: `2 cartons jaunes en moins de 3 mois, le plus ancien sort de la période le ${dateCourte(c.echeance)}`, couleur: colors.accent.amber }),
+    trois: c => ({ titre: `${c.nom} : 3 avertissements`, sousTitre: 'Suspension potentielle, en attente de confirmation de la commission de discipline', couleur: colors.accent.red }),
+    fin_menace: c => ({ titre: `${c.nom} n'est plus sous la menace d'un troisième carton jaune`, sousTitre: `Période de 3 mois écoulée depuis le ${dateCourte(c.finLe)}`, couleur: colors.accent.green }),
+  }
 
   const alertes = [
-    ...cartonsAlerte.map(c => ({
-      id: `carton_${c.id}`, Icon: () => <IcoCartons couleur={colors.accent.amber} />, couleur: colors.accent.amber,
-      titre: `${c.nom} — ${c.n} carton${c.n > 1 ? 's' : ''} jaune${c.n > 1 ? 's' : ''}`,
-      sousTitre: c.n === 2 ? 'Prochain jaune = suspension' : 'Suspendu au prochain match',
-      onClick: () => setActiveSection?.('stats'),
-    })),
+    ...cartonsAlerte.map(c => {
+      const t = TEXTES_CARTON[c.etat](c)
+      return {
+        id: `carton_${c.id}_${c.etat}_${c.echeance || c.finLe}`, Icon: () => <IcoCartons couleur={t.couleur} />, couleur: t.couleur,
+        titre: t.titre, sousTitre: t.sousTitre,
+        onClick: () => setActiveSection?.('stats'),
+      }
+    }),
     ...commandesPretes.map(c => ({
       id: `materiel_${c.id}`, Icon: IcoShirt2, couleur: colors.accent.green,
       titre: `Pack prêt — ${c.destinataire_nom || 'joueur'}`,

@@ -1238,9 +1238,9 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
     el.focus({ preventScroll: true })
   }
   // Une formulation par catégorie, fidèle à ce que signale le panneau
-  // (ex. cartons : joueurs à 2 jaunes ou plus), accordée au nombre.
+  // (ex. cartons : cumul de jaunes sur 3 mois), accordée au nombre.
   const PHRASES_ALERTES = {
-    carton: n => `${n} joueur${n > 1 ? 's' : ''} à 2 cartons jaunes ou plus`,
+    carton: n => `${n} alerte${n > 1 ? 's' : ''} cartons jaunes (cumul sur 3 mois)`,
     materiel: n => `${n} pack${n > 1 ? 's' : ''} prêt${n > 1 ? 's' : ''} à récupérer`,
     deplacement: n => `${n} déplacement${n > 1 ? 's' : ''} avec places insuffisantes`,
     evenement: n => `${n} événement${n > 1 ? 's' : ''} club à venir`,
