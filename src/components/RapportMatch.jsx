@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import CompositionTerrain, { ModalSelectionJoueur, FORMATIONS } from './CompositionTerrain'
+import { sansPositions } from '../lib/compositionPositions'
 
 const NATURE_LABELS = {
   cpa: 'CPA',
@@ -216,7 +217,8 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
                 modeEdit
                 affichageNom={affichageNom}
                 onChangerAffichageNom={setAffichageNom}
-                onChangerFormation={setFormation}
+                onChangerFormation={f => { setFormation(f); setTitulaires(prev => sansPositions(prev)) }}
+                onDeplacerTitulaire={(slotIndex, pos) => setTitulaires(prev => { const next = [...prev]; if (next[slotIndex]) next[slotIndex] = { ...next[slotIndex], pos }; return next })}
                 onAssignerTitulaire={slotIndex => setCompoModal({ type: 'titulaire', slotIndex })}
                 onRetirerTitulaire={retirerTitulaireCompo}
                 onAjouterRemplacant={() => setCompoModal({ type: 'remplacant' })}

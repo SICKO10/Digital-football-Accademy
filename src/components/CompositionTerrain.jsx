@@ -138,6 +138,18 @@ export default function CompositionTerrain({
       )}
 
       {modeEdit && (
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap' }}>
+          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Glisse un joueur pour le placer où tu veux.</span>
+          {titulaires.some(j => j?.pos) && (
+            <button onClick={() => onChangerFormation(formation)} style={{
+              padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent',
+              color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            }}>Replacer automatiquement</button>
+          )}
+        </div>
+      )}
+
+      {modeEdit && (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px' }}>
           {[{ val: 'prenom', label: 'Prénom' }, { val: 'nom', label: 'Nom' }].map(o => (
             <button key={o.val} onClick={() => onChangerAffichageNom(o.val)} style={{

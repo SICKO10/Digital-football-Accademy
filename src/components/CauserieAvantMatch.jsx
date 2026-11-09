@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import TacticalBoard from './TacticalBoard'
 import TactipadViewer from './TactipadViewer'
 import CompositionTerrain, { ModalSelectionJoueur } from './CompositionTerrain'
+import { sansPositions } from '../lib/compositionPositions'
 import { useColors } from '../lib/theme'
 import EcussonClub from './EcussonClub'
 
@@ -659,7 +660,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     setSavingCompo(false)
   }
 
-  const changerFormationCompo = (formation) => patchComposition({ formation })
+  // Changer de dispositif remet aussi les joueurs à leur place par défaut (les positions
+  // glissées à la main appartiennent à l'ancien dispositif).
+  const changerFormationCompo = (formation) => patchComposition({ formation, titulaires: sansPositions(ficheCourante?.titulaires) })
 
   const changerAffichageNomCompo = (composition_affichage_nom) => patchComposition({ composition_affichage_nom })
 
