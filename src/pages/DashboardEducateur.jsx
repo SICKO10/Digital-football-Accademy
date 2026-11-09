@@ -1395,7 +1395,7 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
       : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', alignItems: 'start' }}>
       {clubId && <AnnoncesClubWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} onVoirTout={() => setActiveSection('annonces')} />}
       {clubId && <TerrainsLiberesWidget clubId={clubId} userId={userId} accentColor={colors.accent.blue} titre="Créneau libéré cette semaine" />}
-      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} horizontal={!isMobile} />
+      <DeplacementsAssignesWidget userId={userId} equipeActiveId={equipeActiveId} equipeUnique={equipeUnique} accentColor={colors.accent.blue} onOuvrirFiche={ouvrirFicheDeplacement} horizontal={!isMobile} prochainMatch={prochainMatch} />
     </div>
   )
 
