@@ -32,7 +32,7 @@ const positionParDefaut = (li, nLignes, i, n) => ({
 // glisser plutôt qu'un simple clic (qui doit toujours ouvrir la sélection du
 // joueur, comme avant) — évite qu'un tremblement de doigt sur tablette
 // déplace la photo au lieu d'ouvrir la modale.
-const SEUIL_DRAG = 6
+const SEUIL_DRAG = 10
 
 // Tailles en clamp(), mais en cqw (container query units) et non en vw : vw
 // suit la largeur du VIEWPORT, pas celle du terrain — sur tablette le
@@ -48,7 +48,7 @@ const TAILLE_LISTE = 'clamp(34px, 5vw, 40px)' // modale de sélection : overlay 
 
 const AvatarJoueur = ({ joueur, fontSize = '17px' }) =>
   joueur?.avatar_url ? (
-    <img src={joueur.avatar_url} style={{ width: '100%', height: '130%', objectFit: 'cover', objectPosition: 'top' }} alt="" />
+    <img src={joueur.avatar_url} draggable={false} style={{ width: '100%', height: '130%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }} alt="" />
   ) : joueur ? (
     <span style={{ color: '#fff', fontWeight: 900, fontSize }}>{joueur.prenom?.[0]}{joueur.nom?.[0]}</span>
   ) : (
@@ -76,35 +76,59 @@ export default function CompositionTerrain({
 }) {
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
   const pitchRef = useRef(null)
-  const dragInfo = useRef(null) // { slotIndex, startX, startY, moved } — pendant le geste, pas de re-render nécessaire
-  const [dragPos, setDragPos] = useState(null) // { slotIndex, x, y } — position live affichée pendant le glisser
+  // Glisser-déposer : pendant le geste, la pastille est déplacée directement (sans
+  // redessiner tout le terrain à chaque mouvement), donc fluide. Au lâcher, la position
+  // reste affichée (`dernierDepot`) le temps que la sauvegarde revienne : pas de saut
+  // en arrière. Un geste de moins de SEUIL_DRAG pixels reste un clic (choisir le joueur).
+  const dragInfo = useRef(null) // { slotIndex, el, startX, startY, moved, x, y, origine }
+  const [dernierDepot, setDernierDepot] = useState(null) // { slotIndex, x, y }
 
+  const styleRepos = (el, origine) => {
+    el.style.transition = ''; el.style.zIndex = ''; el.style.cursor = ''
+    el.style.transform = 'translate(-50%, -50%)'
+    if (origine) { el.style.left = origine.left; el.style.top = origine.top }
+  }
   const demarrerPointerSlot = (e, slotIndex) => {
-    if (!modeEdit) return
+    if (!modeEdit || e.button > 0) return
+    e.preventDefault() // pas de sélection de texte ni de glisser natif de la photo
     e.currentTarget.setPointerCapture(e.pointerId)
-    dragInfo.current = { slotIndex, startX: e.clientX, startY: e.clientY, moved: false }
+    const el = e.currentTarget
+    dragInfo.current = { slotIndex, el, startX: e.clientX, startY: e.clientY, moved: false, origine: { left: el.style.left, top: el.style.top } }
   }
   const bougerPointerSlot = (e, slotIndex) => {
-    if (!modeEdit || dragInfo.current?.slotIndex !== slotIndex) return
-    const dx = e.clientX - dragInfo.current.startX
-    const dy = e.clientY - dragInfo.current.startY
-    if (!dragInfo.current.moved && Math.hypot(dx, dy) < SEUIL_DRAG) return
-    dragInfo.current.moved = true
+    const d = dragInfo.current
+    if (!modeEdit || d?.slotIndex !== slotIndex) return
+    if (!d.moved && Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < SEUIL_DRAG) return
     const rect = pitchRef.current?.getBoundingClientRect()
     if (!rect) return
-    const x = Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100))
-    const y = Math.min(96, Math.max(4, ((e.clientY - rect.top) / rect.height) * 100))
-    setDragPos({ slotIndex, x, y })
+    d.x = Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100))
+    d.y = Math.min(96, Math.max(4, ((e.clientY - rect.top) / rect.height) * 100))
+    if (!d.moved) {
+      d.moved = true
+      d.el.style.transition = 'none'; d.el.style.zIndex = '5'; d.el.style.cursor = 'grabbing'
+      d.el.style.transform = 'translate(-50%, -50%) scale(1.12)'
+    }
+    d.el.style.left = `${d.x}%`; d.el.style.top = `${d.y}%`
   }
   const finirPointerSlot = (e, slotIndex) => {
-    if (!modeEdit || dragInfo.current?.slotIndex !== slotIndex) return
-    const { moved } = dragInfo.current
+    const d = dragInfo.current
+    if (!modeEdit || d?.slotIndex !== slotIndex) return
     dragInfo.current = null
-    if (moved && dragPos) onDeplacerTitulaire?.(slotIndex, { x: dragPos.x, y: dragPos.y })
-    else if (!moved) onAssignerTitulaire(slotIndex)
-    setDragPos(null)
+    if (!d.moved) { onAssignerTitulaire(slotIndex); return }
+    if (onDeplacerTitulaire && titulaires[slotIndex]) {
+      styleRepos(d.el)
+      setDernierDepot({ slotIndex, x: d.x, y: d.y })
+      onDeplacerTitulaire(slotIndex, { x: d.x, y: d.y })
+    } else {
+      styleRepos(d.el, d.origine) // emplacement vide ou déplacement non géré : retour à sa place
+    }
   }
-  const annulerPointerSlot = () => { dragInfo.current = null; setDragPos(null) }
+  const annulerPointerSlot = () => {
+    const d = dragInfo.current
+    dragInfo.current = null
+    if (d?.moved) styleRepos(d.el, d.origine)
+  }
+  const replacer = (f) => { setDernierDepot(null); onChangerFormation(f) }
 
   // Index de départ de chaque ligne dans le tableau titulaires (ordre naturel
   // gardien → attaque) — calculé une fois, jamais déduit par recherche
@@ -127,7 +151,7 @@ export default function CompositionTerrain({
       {modeEdit && (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
           {Object.keys(FORMATIONS).map(f => (
-            <button key={f} onClick={() => onChangerFormation(f)} style={{
+            <button key={f} onClick={() => replacer(f)} style={{
               padding: '5px 12px', borderRadius: '20px', border: 'none',
               background: formation === f ? '#4ade80' : 'rgba(255,255,255,0.08)',
               color: formation === f ? '#000' : 'rgba(255,255,255,0.4)',
@@ -139,9 +163,9 @@ export default function CompositionTerrain({
 
       {modeEdit && (
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap' }}>
-          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Glisse un joueur pour le placer où tu veux.</span>
+          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Clique sur un joueur pour le changer, maintiens et glisse pour le déplacer.</span>
           {titulaires.some(j => j?.pos) && (
-            <button onClick={() => onChangerFormation(formation)} style={{
+            <button onClick={() => replacer(formation)} style={{
               padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent',
               color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>Replacer automatiquement</button>
@@ -194,8 +218,8 @@ export default function CompositionTerrain({
             Array.from({ length: ligne.n }).map((_, i) => {
               const slotIndex = ligne.debut + i
               const joueur = titulaires[slotIndex] || null
-              const enDrag = dragPos?.slotIndex === slotIndex
-              const pos = enDrag ? dragPos : (joueur?.pos || positionParDefaut(li, lignesAffichees.length, i, ligne.n))
+              const depot = joueur && dernierDepot?.slotIndex === slotIndex ? dernierDepot : null
+              const pos = depot || joueur?.pos || positionParDefaut(li, lignesAffichees.length, i, ligne.n)
               return (
                 <div
                   key={slotIndex}
@@ -206,8 +230,9 @@ export default function CompositionTerrain({
                   style={{
                     position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px, 0.6cqw, 4px)', minWidth: '44px',
-                    touchAction: modeEdit ? 'none' : 'auto', cursor: modeEdit ? (enDrag ? 'grabbing' : 'grab') : 'default',
-                    zIndex: enDrag ? 5 : 1, transition: enDrag ? 'none' : 'left 0.15s ease, top 0.15s ease',
+                    touchAction: modeEdit ? 'none' : 'auto', cursor: modeEdit ? 'grab' : 'default',
+                    userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
+                    zIndex: 1, transition: 'left 0.2s ease, top 0.2s ease, transform 0.12s ease',
                   }}
                 >
                   {/* Ancre de la taille exacte du cercle (pas de la colonne, plus

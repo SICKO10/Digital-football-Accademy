@@ -379,8 +379,9 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
         )}
 
         {slide.type === 'composition' && (
-          <div style={{ width: '100%', maxWidth: maxWidthSchema(1.55, '980px') }}>
-            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} maxLargeur="980px" />
+          // Terrain aussi grand que l'écran le permet (largeur, ou hauteur moins le titre et les remplaçants)
+          <div style={{ width: '100%', maxWidth: 'min(96vw, 1500px, calc((100dvh - 290px) * 1.55))' }}>
+            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} maxLargeur="100%" />
           </div>
         )}
 
