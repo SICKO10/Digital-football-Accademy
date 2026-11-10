@@ -22,14 +22,14 @@ test('compte sans le nouveau modèle : rien n\'est filtré', () => {
 
 test('éducateur sans outil : le socle reste ouvert', () => {
   const compte = edu()
-  for (const cle of ['accueil', 'profil', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements']) {
+  for (const cle of ['accueil', 'profil', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements', 'clotures_saison']) {
     assert.equal(sectionVerrouillee(compte, cle, NOW), false, cle)
   }
 })
 
 test('éducateur sans outil : les pages d\'outils sont verrouillées', () => {
   const compte = edu()
-  for (const cle of ['mes_seances', 'tactipad', 'bibliotheque', 'prep_physique', 'analyse_video', 'notes', 'clotures_saison', 'sante', 'historique', 'projet_sportif', 'projet_club_cff4', 'stages']) {
+  for (const cle of ['mes_seances', 'tactipad', 'bibliotheque', 'prep_physique', 'analyse_video', 'notes', 'sante', 'historique', 'projet_sportif', 'projet_club_cff4', 'stages']) {
     assert.equal(sectionVerrouillee(compte, cle, NOW), true, cle)
   }
 })
@@ -202,4 +202,13 @@ test('Mes outils : un club choisit ses outils, tous inclus', () => {
   assert.equal(etats.length, 6)
   assert.equal(etats.find(e => e.outil.id === 'finances').etat, 'actif')
   assert.equal(etats.find(e => e.outil.id === 'vie_club').etat, 'disponible')
+})
+
+test('la fiche d\'évaluation (notes) vient avec le suivi des joueurs, pas avec l\'analyse vidéo', () => {
+  const suivi = edu([{ outil: 'suivi_joueurs', source: 'achat', fin_le: null }])
+  assert.equal(sectionVerrouillee(suivi, 'notes', NOW), false)
+  assert.equal(sectionVerrouillee(suivi, 'analyse_video', NOW), true)
+  const video = edu([{ outil: 'evaluations_video', source: 'achat', fin_le: null }])
+  assert.equal(sectionVerrouillee(video, 'notes', NOW), true)
+  assert.equal(sectionVerrouillee(video, 'analyse_video', NOW), false)
 })

@@ -1,7 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
-import { trouverOutil, ESSAI_JOURS, lignesStripe, comparerPrix, compositionPaiement } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -113,7 +113,7 @@ export function donneesOutils() {
 
 const actifMaintenant = (ligne, maintenant) => !!ligne && (!ligne.fin_le || new Date(ligne.fin_le).getTime() > maintenant)
 
-export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.now() }) {
+export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.now(), essaisGratuits = ESSAIS_GRATUITS }) {
   return async function handler(req, res) {
     const utilisateur = await authentifier(req, res, verifierJeton)
     if (!utilisateur) return
@@ -141,6 +141,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       const maintenantMs = maintenant()
 
       if (action === 'essai') {
+        if (!essaisGratuits) return res.status(403).json({ error: 'Les essais gratuits sont suspendus pour le moment' })
         if (profil.plan !== 'educateur') return res.status(403).json({ error: 'L\'essai gratuit est réservé aux éducateurs' })
         const outil = trouverOutil('educateur', idOutil)
         if (!outil || !outil.achetable) return res.status(400).json({ error: 'Outil inconnu ou non disponible à l\'essai' })

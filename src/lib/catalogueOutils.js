@@ -21,7 +21,7 @@ export const ROLES = ['educateur', 'club']
 // d'un menu découpé (à brancher aux blocs 3 et 4).
 export const SOCLE = {
   educateur: {
-    menus: ['accueil', 'profil', 'mes_outils', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements'],
+    menus: ['accueil', 'profil', 'mes_outils', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements', 'clotures_saison'],
     fonctions: ['calendrier', 'presences_joueurs', 'taux_presence'],
   },
   club: {
@@ -54,11 +54,15 @@ const outil = (id, role, nom, promesse, menus, extra = {}) => ({
 // Durée de l'essai gratuit d'un outil éducateur, en jours.
 export const ESSAI_JOURS = 14
 
+// Interrupteur des essais gratuits : suspendus pour le moment (décision du
+// 2026-11-10). Passer à true les rallume (bouton « Essayer » et action `essai`).
+export const ESSAIS_GRATUITS = false
+
 const prix = (mensuel, annuel) => ({ prixMensuel: mensuel, prixAnnuel: annuel })
 
 export const OUTILS = [
   // Éducateur
-  outil('suivi_joueurs', 'educateur', 'Suivi des joueurs', 'Statistiques, santé et historique de chaque joueur de ton équipe.', ['stats', 'sante', 'historique'], prix(1, 10)),
+  outil('suivi_joueurs', 'educateur', 'Suivi des joueurs', 'Statistiques, santé, historique et fiche d\'évaluation de chaque joueur de ton équipe.', ['stats', 'sante', 'historique', 'notes'], prix(1, 10)),
   // Stats collectives : pas d'entrée de menu à part, ce sont des parties de pages
   // (onglet Graphiques, Bilan de l'équipe avec buts par quart d'heure et nature
   // des buts, scan de la feuille de match). Branchées dans DashboardEducateur.
@@ -67,7 +71,7 @@ export const OUTILS = [
   outil('tactique', 'educateur', 'Tacticboard', 'Dessine et anime tes schémas tactiques.', ['tactipad'], prix(4, 40)),
   outil('bibliotheque', 'educateur', 'Bibliothèque', 'Ta bibliothèque de schémas, à retrouver et réutiliser.', ['bibliotheque'], prix(4, 40)),
   outil('prep_physique', 'educateur', 'Préparation physique', 'Programmes physiques adaptés à l\'âge de tes joueurs.', ['prep_physique'], prix(2, 20)),
-  outil('evaluations_video', 'educateur', 'Évaluations et vidéo', 'Rapports, notes, analyse vidéo et clôtures de saison.', ['analyse_video', 'notes', 'clotures_saison'], prix(2, 20)),
+  outil('evaluations_video', 'educateur', 'Analyse vidéo', 'Analyse vidéo de tes matchs et de tes joueurs.', ['analyse_video'], prix(2, 20)),
   outil('projet_sportif', 'educateur', 'Projet sportif', 'Écris et suis le projet sportif de ton équipe.', ['projet_sportif'], { ...prix(2, 20), viaClub: 'projet_sportif' }),
   outil('cff4', 'educateur', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4'], { ...prix(2, 20), viaClub: 'cff4' }),
   outil('stages', 'educateur', 'Stages', 'Les stages du club, pour les éducateurs affiliés.', ['stages'], { achetable: false, viaClub: 'stages' }),

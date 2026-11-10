@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { appelerOutils } from '../../lib/outilsApi'
-import { ESSAI_JOURS } from '../../lib/catalogueOutils'
+import { ESSAI_JOURS, ESSAIS_GRATUITS } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 
 const euros = (n) => `${n} €`
@@ -66,7 +66,7 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
         </button>
       )
     }
-    if (etat === 'disponible') {
+    if (etat === 'disponible' && ESSAIS_GRATUITS) {
       return (
         <button disabled={enCours === outil.id} onClick={() => agir(outil.id, 'essai')} style={bouton(true)}>
           {enCours === outil.id ? 'Un instant...' : `Essayer ${ESSAI_JOURS} jours gratuitement`}
@@ -88,7 +88,9 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
       <p style={{ margin: '0 0 20px', fontSize: 14, lineHeight: 1.5, color: colors.text.secondary }}>
         {role === 'club'
           ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu peux en ajouter ou en retirer quand tu veux, sans supplément.'
-          : `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`}
+          : ESSAIS_GRATUITS
+            ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
+            : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin : coche tes outils dans « Payer mes outils », au mois ou à l\'année.'}
       </p>
       {role === 'club' && !peutModifier && (
         <p style={{ margin: '0 0 16px', fontSize: 13, color: colors.text.faint }}>Seul le compte du club peut modifier ces choix.</p>

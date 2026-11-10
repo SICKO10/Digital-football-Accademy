@@ -44,6 +44,7 @@ async function appeler(m, utilisateur, corps) {
     verifierJeton: async (j) => (j === 'jeton' ? { id: utilisateur } : null),
     donnees: m.donnees,
     maintenant: () => NOW,
+    essaisGratuits: true,
   })
   const res = reponse()
   await handler({ method: 'POST', headers: { authorization: 'Bearer jeton' }, body: corps }, res)
@@ -285,4 +286,14 @@ test('payer : retour vers une origine connue, sinon le site de production', asyn
     await payer(m, U.edu, { outils: ['seances'], periodicite: 'mensuel' }, origin)
     assert.equal(m.sessions[0].success_url, `${attendu}/educateur?outils=paye`)
   }
+})
+
+test('essais gratuits suspendus (réglage par défaut) : refus, rien n\'est écrit', async () => {
+  const m = monde()
+  const handler = creerHandler({ verifierJeton: async () => ({ id: U.edu }), donnees: m.donnees, maintenant: () => NOW })
+  const res = reponse()
+  await handler({ method: 'POST', headers: { authorization: 'Bearer jeton' }, body: { action: 'essai', outil: 'tactique' } }, res)
+  assert.equal(res.code, 403)
+  assert.equal(m.lignes.size, 0)
+  assert.equal(m.essais.size, 0)
 })
