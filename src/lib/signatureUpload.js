@@ -28,9 +28,6 @@ export const demanderSignatureUpload = (kind = 'video') => demanderSignature('/a
 export const demanderSignatureImage = ({ usage, clubId, joueurId } = {}) =>
   demanderSignature('/api/upload-image', { usage, clubId, joueurId })
 
-// /api/upload-montage-clip — clips de montage du joueur connecté.
-export const demanderSignatureMontage = (joueurId) => demanderSignature('/api/upload-montage-clip', { joueurId })
-
 // Ajoute au FormData tous les champs signés (folder, public_id, timestamp,
 // allowed_formats, signature, api_key) — en omettre un invaliderait la
 // signature côté Cloudinary.

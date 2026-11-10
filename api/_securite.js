@@ -3,7 +3,7 @@ import { v2 as cloudinary } from 'cloudinary'
 import { createClient } from '@supabase/supabase-js'
 
 // Briques communes aux endpoints de signature Cloudinary (upload-video,
-// upload-image, upload-montage-clip). Préfixe « _ » : Vercel n'expose pas ce
+// upload-image). Préfixe « _ » : Vercel n'expose pas ce
 // fichier comme route.
 
 // Formats image communs : pas de SVG (peut embarquer du script).
