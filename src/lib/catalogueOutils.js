@@ -11,7 +11,8 @@
 // - CFF4 et Stages sont des outils payants ; l'éducateur affilié reçoit
 //   Stages et CFF4 seulement si son club les a souscrits ;
 // - Explorer et Recrutement sont retirés des menus pour le moment.
-// Les prix restent à null tant que la grille n'est pas fournie (bloc 5).
+// Prix en euros par mois et par an. Les outils d'un club n'ont pas de prix : ils sont
+// inclus dans le forfait selon les équipes (`inclus`), le club les choisit librement.
 
 export const ROLES = ['educateur', 'club']
 
@@ -20,12 +21,12 @@ export const ROLES = ['educateur', 'club']
 // d'un menu découpé (à brancher aux blocs 3 et 4).
 export const SOCLE = {
   educateur: {
-    menus: ['accueil', 'profil', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements'],
+    menus: ['accueil', 'profil', 'mes_outils', 'equipe', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements'],
     fonctions: ['calendrier', 'presences_joueurs', 'taux_presence'],
   },
   club: {
     menus: [
-      'accueil', 'profil', 'categories', 'educateurs', 'staff', 'organigramme',
+      'accueil', 'profil', 'mes_outils', 'categories', 'educateurs', 'staff', 'organigramme',
       'inventaire', 'planning', 'seances', 'terrains', 'deplacements',
     ],
     fonctions: [],
@@ -42,6 +43,7 @@ const outil = (id, role, nom, promesse, menus, extra = {}) => ({
   menus,
   prixMensuel: null,
   prixAnnuel: null,
+  inclus: role === 'club',
   cleMensuel: `outil_${role}_${id}_mensuel`,
   cleAnnuel: `outil_${role}_${id}_annuel`,
   achetable: true,
@@ -49,19 +51,25 @@ const outil = (id, role, nom, promesse, menus, extra = {}) => ({
   ...extra,
 })
 
+// Durée de l'essai gratuit d'un outil éducateur, en jours.
+export const ESSAI_JOURS = 14
+
+const prix = (mensuel, annuel) => ({ prixMensuel: mensuel, prixAnnuel: annuel })
+
 export const OUTILS = [
   // Éducateur
-  outil('suivi_joueurs', 'educateur', 'Suivi des joueurs', 'Statistiques, santé et historique de chaque joueur de ton équipe.', ['stats', 'sante', 'historique']),
+  outil('suivi_joueurs', 'educateur', 'Suivi des joueurs', 'Statistiques, santé et historique de chaque joueur de ton équipe.', ['stats', 'sante', 'historique'], prix(1, 10)),
   // Stats collectives : pas d'entrée de menu à part, ce sont des parties de pages
   // (onglet Graphiques, Bilan de l'équipe avec buts par quart d'heure et nature
   // des buts, scan de la feuille de match). Branchées dans DashboardEducateur.
-  outil('stats_collectives', 'educateur', 'Stats collectives', 'Graphiques de l\'équipe, buts par quart d\'heure, nature des buts et scan de la feuille de match.', []),
-  outil('seances', 'educateur', 'Séances', 'Rédige, scanne et imprime tes fiches de séance, et retrouve-les toutes.', ['mes_seances']),
-  outil('tactique', 'educateur', 'Tactique', 'Tacticboard animé et bibliothèque de schémas.', ['tactipad', 'bibliotheque']),
-  outil('prep_physique', 'educateur', 'Préparation physique', 'Programmes physiques adaptés à l\'âge de tes joueurs.', ['prep_physique']),
-  outil('evaluations_video', 'educateur', 'Évaluations et vidéo', 'Rapports, notes, analyse vidéo et clôtures de saison.', ['analyse_video', 'notes', 'clotures_saison']),
-  outil('projet_sportif', 'educateur', 'Projet sportif', 'Écris et suis le projet sportif de ton équipe.', ['projet_sportif'], { viaClub: 'projet_sportif' }),
-  outil('cff4', 'educateur', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4'], { viaClub: 'cff4' }),
+  outil('stats_collectives', 'educateur', 'Stats collectives', 'Graphiques de l\'équipe, buts par quart d\'heure, nature des buts et scan de la feuille de match.', [], prix(1, 10)),
+  outil('seances', 'educateur', 'Séances', 'Rédige, scanne et imprime tes fiches de séance, et retrouve-les toutes.', ['mes_seances'], prix(3, 30)),
+  outil('tactique', 'educateur', 'Tacticboard', 'Dessine et anime tes schémas tactiques.', ['tactipad'], prix(4, 40)),
+  outil('bibliotheque', 'educateur', 'Bibliothèque', 'Ta bibliothèque de schémas, à retrouver et réutiliser.', ['bibliotheque'], prix(4, 40)),
+  outil('prep_physique', 'educateur', 'Préparation physique', 'Programmes physiques adaptés à l\'âge de tes joueurs.', ['prep_physique'], prix(2, 20)),
+  outil('evaluations_video', 'educateur', 'Évaluations et vidéo', 'Rapports, notes, analyse vidéo et clôtures de saison.', ['analyse_video', 'notes', 'clotures_saison'], prix(2, 20)),
+  outil('projet_sportif', 'educateur', 'Projet sportif', 'Écris et suis le projet sportif de ton équipe.', ['projet_sportif'], { ...prix(2, 20), viaClub: 'projet_sportif' }),
+  outil('cff4', 'educateur', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4'], { ...prix(2, 20), viaClub: 'cff4' }),
   outil('stages', 'educateur', 'Stages', 'Les stages du club, pour les éducateurs affiliés.', ['stages'], { achetable: false, viaClub: 'stages' }),
   // Club
   outil('competition', 'club', 'Compétition', 'Classements et tournois du club.', ['classements', 'tournoi']),
@@ -71,6 +79,71 @@ export const OUTILS = [
   outil('stages', 'club', 'Stages', 'Organise les stages et reçois les inscriptions.', ['stages']),
   outil('cff4', 'club', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4']),
 ]
+
+// Forfaits club selon le nombre d'équipes : mêmes montants que les liens de
+// paiement actuels (src/lib/stripeLinks.js, STRIPE_LINKS_CLUB). `palier` est la
+// clé de ces liens et de PALIERS_QUOTA_EQUIPES ; le webhook des outils s'en sert
+// au bloc 7 pour recalculer le quota d'équipes. Annuel = 10 mois.
+const forfait = (palier, equipes, mensuel, annuel) => ({
+  id: palier,
+  palier,
+  equipes,
+  nom: `Forfait club jusqu'à ${equipes} équipes`,
+  prixMensuel: mensuel,
+  prixAnnuel: annuel,
+  cleMensuel: `forfait_club_${palier}_mensuel`,
+  cleAnnuel: `forfait_club_${palier}_annuel`,
+})
+
+export const FORFAITS_CLUB = [
+  forfait('c0', 2, 50, 500),
+  forfait('c100', 4, 100, 1000),
+  forfait('c200', 7, 130, 1300),
+  forfait('c300', 11, 160, 1600),
+  forfait('c400', 15, 190, 1900),
+  forfait('c500', 22, 250, 2500),
+]
+
+// Tout ce qui existe dans Stripe : un produit par outil éducateur achetable et
+// par forfait club, chacun avec un prix mensuel et un prix annuel retrouvés par
+// leur clé de recherche (`lookup_key`). Les outils du club sont inclus dans le
+// forfait : ils n'ont ni produit ni prix. Utilisé par le script de création
+// (scripts/stripe-creer-produits-outils.mjs) et par l'action `verifier-prix`.
+export function lignesStripe() {
+  const produits = [
+    ...outilsAchetables('educateur').map(o => ({ type: 'outil', ...o })),
+    ...FORFAITS_CLUB.map(f => ({ type: 'forfait', ...f })),
+  ]
+  return produits.flatMap(p => {
+    const produitId = p.type === 'outil' ? `outil_educateur_${p.id}` : `forfait_club_${p.palier}`
+    const commun = { produitId, produitNom: p.nom, type: p.type, ref: p.id }
+    return [
+      { ...commun, cle: p.cleMensuel, montant: p.prixMensuel * 100, intervalle: 'month' },
+      { ...commun, cle: p.cleAnnuel, montant: p.prixAnnuel * 100, intervalle: 'year' },
+    ]
+  })
+}
+
+// Compare le catalogue à ce que Stripe renvoie. Fonction pure.
+export function comparerPrix(attendus, trouves) {
+  const parCle = new Map(trouves.map(p => [p.cle, p]))
+  const manquants = []
+  const differents = []
+  for (const a of attendus) {
+    const p = parCle.get(a.cle)
+    if (!p) manquants.push(a.cle)
+    else if (p.montant !== a.montant || p.devise !== 'eur' || p.intervalle !== a.intervalle) differents.push(a.cle)
+  }
+  const modes = new Set(trouves.map(p => p.live))
+  return {
+    ok: manquants.length === 0 && differents.length === 0 && modes.size <= 1,
+    total: attendus.length,
+    conformes: attendus.length - manquants.length - differents.length,
+    manquants,
+    differents,
+    mode: modes.size === 0 ? null : modes.size > 1 ? 'mélangé' : [...modes][0] ? 'live' : 'test',
+  }
+}
 
 export const outilsDuRole = (role) => OUTILS.filter(o => o.role === role)
 export const trouverOutil = (role, id) => OUTILS.find(o => o.role === role && o.id === id) || null
@@ -212,10 +285,45 @@ export function totalComposition(role, ids, periodicite) {
   let total = 0
   for (const id of ids) {
     const o = trouverOutil(role, id)
-    if (!o || !o.achetable || typeof o[champ] !== 'number') return null
+    if (!o || !o.achetable) return null
+    if (o.inclus) continue
+    if (typeof o[champ] !== 'number') return null
     total += o[champ]
   }
   return total
+}
+
+export const PERIODICITES = ['mensuel', 'annuel']
+
+export const trouverForfait = (palier) => FORFAITS_CLUB.find(f => f.palier === palier) || null
+
+// Plus petit forfait qui couvre ce nombre d'équipes (null au-delà du dernier).
+export function forfaitPourEquipes(nbEquipes) {
+  const n = Math.max(1, Number(nbEquipes) || 0)
+  return FORFAITS_CLUB.find(f => f.equipes >= n) || null
+}
+
+// Ce qu'on paie en une fois au premier paiement (bloc 7), pour une seule
+// périodicité : clés de recherche Stripe des lignes et total en euros.
+// Éducateur : ses outils achetables ; club : un forfait, ses outils y sont
+// inclus. Rend { erreur } si la demande n'est pas valable. Fonction pure.
+export function compositionPaiement(role, { outils = [], palier = null, periodicite } = {}, nbEquipes = 0) {
+  if (!PERIODICITES.includes(periodicite)) return { erreur: 'Choisis le paiement mensuel ou annuel' }
+  const annuel = periodicite === 'annuel'
+  if (role === 'club') {
+    const f = trouverForfait(palier)
+    if (!f) return { erreur: 'Forfait inconnu' }
+    if (f.equipes < nbEquipes) return { erreur: `Ton club a ${nbEquipes} équipes : ce forfait en couvre ${f.equipes}` }
+    return { cles: [annuel ? f.cleAnnuel : f.cleMensuel], total: annuel ? f.prixAnnuel : f.prixMensuel, palier: f.palier }
+  }
+  if (role !== 'educateur') return { erreur: 'Paiement réservé aux éducateurs et aux clubs' }
+  if (!Array.isArray(outils) || outils.length === 0) return { erreur: 'Choisis au moins un outil' }
+  if (new Set(outils).size !== outils.length) return { erreur: 'Un outil est en double' }
+  const choisis = outils.map(id => trouverOutil('educateur', id))
+  if (choisis.some(o => !o || !o.achetable || o.inclus)) return { erreur: 'Outil inconnu ou non disponible à l\'achat' }
+  const total = totalComposition('educateur', outils, periodicite)
+  if (total === null) return { erreur: 'Le prix d\'un outil manque' }
+  return { cles: choisis.map(o => (annuel ? o.cleAnnuel : o.cleMensuel)), total, outils: [...outils] }
 }
 
 // Jours entiers restants d'un essai (arrondi au-dessus), 0 si expiré ou absent.
@@ -227,6 +335,6 @@ export function joursRestantsEssai(essaiFin, maintenant = new Date()) {
 
 // Garde-fou de la bascule (bloc 16) : outils achetables sans prix complet.
 export function outilsSansPrix() {
-  return OUTILS.filter(o => o.achetable && (typeof o.prixMensuel !== 'number' || typeof o.prixAnnuel !== 'number'))
+  return OUTILS.filter(o => o.achetable && !o.inclus && (typeof o.prixMensuel !== 'number' || typeof o.prixAnnuel !== 'number'))
     .map(o => `${o.role}/${o.id}`)
 }

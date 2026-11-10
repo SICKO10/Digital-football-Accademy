@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   compteDepuisLignes, outilPourMenu, sectionVerrouillee, ongletsStatsPermis,
-  menuVisible, outilActif, ONGLETS_STATS,
+  menuVisible, outilActif, ONGLETS_STATS, etatsOutils,
 } from '../src/lib/outilsAcces.js'
 
 const NOW = new Date('2026-11-07T12:00:00Z')
@@ -102,4 +102,104 @@ test('les deux outils ensemble ouvrent tous les onglets', () => {
 test('sans outil, Stats collectives est inactive', () => {
   assert.equal(outilActif(edu(), 'stats_collectives', NOW), false)
   assert.equal(outilActif(compteDepuisLignes('educateur', false, []), 'stats_collectives', NOW), true)
+})
+
+// ── Club ──
+const club = (lignes = []) => compteDepuisLignes('club', true, lignes)
+const MENUS_CLUB_SOCLE = [
+  'accueil', 'profil', 'categories', 'educateurs', 'staff', 'organigramme',
+  'inventaire', 'planning', 'seances', 'terrains', 'deplacements',
+]
+
+test('club sans le nouveau modèle : rien n\'est filtré', () => {
+  const compte = compteDepuisLignes('club', false, [])
+  for (const cle of ['budget', 'sponsors', 'stages', 'recrutement', 'classements']) {
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+    assert.equal(sectionVerrouillee(compte, cle, NOW), false, cle)
+  }
+})
+
+test('club sans outil : le socle reste ouvert et visible', () => {
+  const compte = club()
+  for (const cle of MENUS_CLUB_SOCLE) {
+    assert.equal(sectionVerrouillee(compte, cle, NOW), false, cle)
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+  }
+})
+
+test('club sans outil : les pages d\'outils sont verrouillées et cachées du menu', () => {
+  const compte = club()
+  for (const cle of ['classements', 'tournoi', 'projet_sportif', 'budget', 'sponsors', 'evenements', 'taches', 'newsletter', 'stages', 'projet_club_cff4']) {
+    assert.equal(sectionVerrouillee(compte, cle, NOW), true, cle)
+    assert.equal(menuVisible(compte, cle, NOW), false, cle)
+  }
+})
+
+test('club : Recrutement est retiré du menu', () => {
+  assert.equal(menuVisible(club(), 'recrutement', NOW), false)
+  assert.equal(menuVisible(club([{ outil: 'finances', fin_le: null }]), 'recrutement', NOW), false)
+})
+
+test('club : un outil actif ouvre toutes ses pages, pas celles des autres', () => {
+  const compte = club([{ outil: 'finances', fin_le: null }])
+  assert.equal(sectionVerrouillee(compte, 'budget', NOW), false)
+  assert.equal(sectionVerrouillee(compte, 'sponsors', NOW), false)
+  assert.equal(menuVisible(compte, 'sponsors', NOW), true)
+  assert.equal(sectionVerrouillee(compte, 'evenements', NOW), true)
+})
+
+test('club : un outil retiré reste ouvert jusqu\'à la fin de la période payée', () => {
+  const encore = club([{ outil: 'vie_club', fin_le: futur }])
+  const fini = club([{ outil: 'vie_club', fin_le: passe }])
+  assert.equal(sectionVerrouillee(encore, 'newsletter', NOW), false)
+  assert.equal(sectionVerrouillee(fini, 'newsletter', NOW), true)
+})
+
+test('un essai en cours donne accès à l\'outil, un essai fini non', () => {
+  const ok = compteDepuisLignes('educateur', true, [{ outil: 'bibliotheque', source: 'essai', fin_le: futur }])
+  assert.equal(outilActif(ok, 'bibliotheque', NOW), true)
+  const fini = compteDepuisLignes('educateur', true, [{ outil: 'bibliotheque', source: 'essai', fin_le: passe }])
+  assert.equal(outilActif(fini, 'bibliotheque', NOW), false)
+})
+
+test('Mes outils : états d\'un éducateur', () => {
+  const etats = etatsOutils({
+    role: 'educateur',
+    lignes: [
+      { outil: 'seances', source: 'achat', fin_le: null },
+      { outil: 'tactique', source: 'essai', fin_le: '2026-11-17T12:00:00Z' },
+      { outil: 'prep_physique', source: 'achat', fin_le: futur },
+      { outil: 'cff4', source: 'club', fin_le: null },
+    ],
+    essaisUtilises: ['tactique', 'bibliotheque'],
+    maintenant: NOW,
+  })
+  const de = (id) => etats.find(e => e.outil.id === id)
+  assert.equal(de('seances').etat, 'actif')
+  assert.equal(de('tactique').etat, 'essai')
+  assert.equal(de('tactique').joursRestants, 10)
+  assert.equal(de('prep_physique').etat, 'retire')
+  assert.equal(de('cff4').etat, 'club')
+  assert.equal(de('bibliotheque').etat, 'essai_termine')
+  assert.equal(de('suivi_joueurs').etat, 'disponible')
+  assert.equal(de('stages'), undefined)
+})
+
+test('Mes outils : un éducateur qui a payé un outil aussi fourni par son club le garde', () => {
+  const etats = etatsOutils({
+    role: 'educateur',
+    lignes: [{ outil: 'cff4', source: 'achat', fin_le: null }, { outil: 'cff4', source: 'club', fin_le: null }, { outil: 'stages', source: 'club', fin_le: null }],
+    maintenant: NOW,
+  })
+  const cff4 = etats.find(e => e.outil.id === 'cff4')
+  assert.equal(cff4.etat, 'actif')
+  assert.equal(cff4.fourniParLeClub, true)
+  assert.equal(etats.find(e => e.outil.id === 'stages').etat, 'club')
+})
+
+test('Mes outils : un club choisit ses outils, tous inclus', () => {
+  const etats = etatsOutils({ role: 'club', lignes: [{ outil: 'finances', source: 'forfait', fin_le: null }], maintenant: NOW })
+  assert.equal(etats.length, 6)
+  assert.equal(etats.find(e => e.outil.id === 'finances').etat, 'actif')
+  assert.equal(etats.find(e => e.outil.id === 'vie_club').etat, 'disponible')
 })

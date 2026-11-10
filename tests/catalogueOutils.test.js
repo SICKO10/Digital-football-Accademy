@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   OUTILS, SOCLE, outilsVisibles, menuFiltre, totalComposition,
-  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil,
+  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole,
 } from '../src/lib/catalogueOutils.js'
 
 const NOW = new Date('2026-11-10T12:00:00Z')
@@ -76,16 +76,23 @@ test('Stages éducateur non achetable seul', () => {
   assert.equal(trouverOutil('educateur', 'stages').achetable, false)
 })
 
-test('total : null tant qu\'un prix manque, somme sinon', () => {
-  assert.equal(totalComposition('educateur', ['seances'], 'mensuel'), null)
-  const o = trouverOutil('educateur', 'seances')
-  const ancien = o.prixMensuel
-  o.prixMensuel = 3
-  trouverOutil('educateur', 'tactique').prixMensuel = 4
+test('total : somme des prix, null pour un outil non achetable, 0 pour un outil club inclus', () => {
   assert.equal(totalComposition('educateur', ['seances', 'tactique'], 'mensuel'), 7)
+  assert.equal(totalComposition('educateur', ['seances', 'tactique', 'bibliotheque'], 'annuel'), 110)
   assert.equal(totalComposition('educateur', ['stages'], 'mensuel'), null)
-  o.prixMensuel = ancien
-  trouverOutil('educateur', 'tactique').prixMensuel = null
+  assert.equal(totalComposition('club', ['competition', 'finances'], 'mensuel'), 0)
+})
+
+test('grille de prix éducateur : tous les outils achetables ont un prix, ceux du club sont inclus', () => {
+  assert.deepEqual(outilsSansPrix(), [])
+  const grille = Object.fromEntries(outilsDuRole('educateur').map(o => [o.id, [o.prixMensuel, o.prixAnnuel]]))
+  assert.deepEqual(grille.suivi_joueurs, [1, 10])
+  assert.deepEqual(grille.seances, [3, 30])
+  assert.deepEqual(grille.tactique, [4, 40])
+  assert.deepEqual(grille.bibliotheque, [4, 40])
+  assert.deepEqual(grille.cff4, [2, 20])
+  assert.deepEqual(grille.stages, [null, null])
+  assert.ok(outilsDuRole('club').every(o => o.inclus && o.prixMensuel === null))
 })
 
 test('jours restants d\'essai', () => {
@@ -104,4 +111,21 @@ test('pré-cochage : réponses, club et exclusion des outils fournis', () => {
 // Garde-fou de la bascule live (bloc 16) : lancer avec BASCULE_LIVE=1.
 test('bascule : tous les outils achetables ont un prix', { skip: !process.env.BASCULE_LIVE }, () => {
   assert.deepEqual(outilsSansPrix(), [])
+})
+
+test('lignesStripe : 9 outils éducateur et 6 forfaits club, clés uniques, jamais d\'outil club', async () => {
+  const { lignesStripe, FORFAITS_CLUB } = await import('../src/lib/catalogueOutils.js')
+  const l = lignesStripe()
+  assert.equal(l.length, (9 + FORFAITS_CLUB.length) * 2)
+  assert.equal(new Set(l.map(x => x.cle)).size, l.length)
+  assert.ok(l.every(x => x.montant > 0 && Number.isInteger(x.montant)))
+  assert.ok(!l.some(x => x.cle.startsWith('outil_club_')))
+  assert.ok(!l.some(x => x.cle.includes('stages') && x.type === 'outil'))
+})
+
+test('forfaits club : annuel = 10 mensualités, mêmes montants que les liens de paiement', async () => {
+  const { FORFAITS_CLUB } = await import('../src/lib/catalogueOutils.js')
+  for (const f of FORFAITS_CLUB) assert.equal(f.prixAnnuel, f.prixMensuel * 10)
+  assert.deepEqual(FORFAITS_CLUB.map(f => f.prixMensuel), [50, 100, 130, 160, 190, 250])
+  assert.deepEqual(FORFAITS_CLUB.map(f => f.equipes), [2, 4, 7, 11, 15, 22])
 })

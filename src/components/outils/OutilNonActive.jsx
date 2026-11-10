@@ -2,11 +2,12 @@ import { useColors } from '../../lib/theme'
 import { infosOutilPourMenu, infosOutil } from '../../lib/outilsAcces'
 
 // Carte affichée à la place d'une page dont l'outil n'est pas actif sur le
-// compte. Aucun bouton d'achat ici tant que le paiement n'est pas branché
-// (blocs 5 à 7) : seul un bouton de sortie est proposé.
+// compte. Le bouton vers « Mes outils » (essai gratuit ou choix des outils du club)
+// n'apparaît que si le dashboard fournit `onMesOutils`; le paiement viendra
+// aux blocs 6 à 8.
 // `cle` : entrée de menu d'une page verrouillée ; `outilId` : outil nommé par un
 // bouton d'une page ouverte (avec `detail`, la fonction précise et `enModale`).
-export default function OutilNonActive({ role, cle, outilId, detail, libelleBouton = 'Retour à l\'accueil', enModale = false, onRetour }) {
+export default function OutilNonActive({ role, cle, outilId, detail, libelleBouton = 'Retour à l\'accueil', enModale = false, onRetour, onMesOutils }) {
   const colors = useColors()
   const outil = outilId ? infosOutil(role, outilId) : infosOutilPourMenu(role, cle)
   if (!outil) return null
@@ -28,10 +29,21 @@ export default function OutilNonActive({ role, cle, outilId, detail, libelleBout
           ? (viaClub ? 'Cet outil n\'est pas actif sur ton compte. Il est aussi fourni par ton club quand il l\'a souscrit.' : 'Cet outil n\'est pas actif sur ton compte.')
           : 'Cet outil est fourni par ton club quand il l\'a souscrit.'}
       </p>
-      <button onClick={onRetour} style={{
-        background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: 10,
-        padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-      }}>{libelleBouton}</button>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {onMesOutils && (
+          <button onClick={onMesOutils} style={{
+            background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: 10,
+            padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          }}>{role === 'club' ? 'Ajouter dans Mes outils' : 'Voir dans Mes outils'}</button>
+        )}
+        <button onClick={onRetour} style={onMesOutils ? {
+          background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: 10,
+          padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        } : {
+          background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: 10,
+          padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        }}>{libelleBouton}</button>
+      </div>
     </div>
   )
 }

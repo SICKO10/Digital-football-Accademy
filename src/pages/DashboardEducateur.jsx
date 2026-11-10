@@ -4,6 +4,9 @@ import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useOutils } from '../lib/useOutils'
 import OutilNonActive from '../components/outils/OutilNonActive'
+import MesOutils from '../components/outils/MesOutils'
+import EncartFinEssai from '../components/outils/EncartFinEssai'
+import { retourPaiementOutils } from '../lib/outilsApi'
 import OutilPayantModale from '../components/outils/OutilPayantModale'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
@@ -1798,7 +1801,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [userId, setUserId] = useState(null)
   const [profil, setProfil] = useState(null)
   const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/joueur/parent), cf. lib/multiRole
-  const [activeSectionBrut, setActiveSection] = useState('accueil')
+  // Retour de la page de paiement Stripe des outils : on rouvre Mes outils.
+  const [activeSectionBrut, setActiveSection] = useState(() => (retourPaiementOutils() ? 'mes_outils' : 'accueil'))
   // Outils à la carte (comptes `modele_outils` seulement) : une page dont
   // l'outil n'est pas actif devient 'outil_verrouille' et affiche la carte
   // « outil non activé ». Autres comptes : activeSection est la valeur brute.
@@ -5794,6 +5798,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       { key: 'equipe', label: 'Mon équipe', icon: <IcoUsers />, subKeys: ['equipe', 'stats', 'sante', 'historique'] },
       { key: 'matchs', label: t('nav_competition', lang), icon: <IcoTrophy /> },
       { key: 'organisation', label: t('nav_organisation', lang), icon: <IcoBox />, subKeys: ['materiel', 'terrains', 'deplacements'] },
+      ...(outils.actif ? [{ key: 'mes_outils', label: 'Mes outils', icon: <IcoLayout /> }] : []),
       // Stages du club : éducateur affilié accepté uniquement (droit appliqué
       // en base par peut_gerer_stages) ; jamais pour un dirigeant délégué,
       // qui agit sous son propre compte et n'a pas ce droit.
@@ -6221,6 +6226,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 </button>
               </div>
             )}
+            <EncartFinEssai outils={outils} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
               prenom={profil?.prenom}
@@ -6257,8 +6263,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         )}
 
         {activeSection === 'outil_verrouille' && (
-          <OutilNonActive role="educateur" cle={activeSectionBrut} onRetour={() => setActiveSection('accueil')} />
+          <OutilNonActive role="educateur" cle={activeSectionBrut} onRetour={() => setActiveSection('accueil')} onMesOutils={outils.actif ? () => setActiveSection('mes_outils') : undefined} />
         )}
+
+        {activeSection === 'mes_outils' && outils.actif && <MesOutils role="educateur" outils={outils} />}
 
         {['equipe', 'stats', 'sante', 'historique'].includes(activeSection) && (
           <SousOngletsBar

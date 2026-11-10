@@ -1,8 +1,13 @@
 import { menuLateralCss, BORDURE_MENU, coqueVars } from '../lib/menuLateral'
+import { resultatMatch, scoreAffiche } from '../lib/resultatMatch'
 import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
+import { useOutils } from '../lib/useOutils'
+import OutilNonActive from '../components/outils/OutilNonActive'
+import MesOutils from '../components/outils/MesOutils'
+import PaiementForfaitClub from '../components/outils/PaiementForfaitClub'
 import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
@@ -395,7 +400,7 @@ const recrutementActif = (email) => email === 'asclubtest@gmail.com'
 // Volontairement absent : les créneaux terrain libérés ont déjà
 // TerrainsLiberesWidget juste au-dessus dans AccueilClub — les répéter ici
 // ferait cohabiter deux implémentations du même signal.
-function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActiveTab }) {
+function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActiveTab, peutVoir = () => true }) {
   const colors = useColors()
   const { masquees, masquer } = useAlertesMasquees()
   const [alertes, setAlertes] = useState([])
@@ -470,7 +475,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       sponsorsData?.forEach(s => {
         const jours = Math.ceil((new Date(s.date_fin) - aujourdhui) / (1000 * 60 * 60 * 24))
         toutes.push({
-          id: `sponsor_${s.id}`, couleur: jours <= 14 ? colors.accent.red : colors.accent.success,
+          id: `sponsor_${s.id}`, menu: 'sponsors', couleur: jours <= 14 ? colors.accent.red : colors.accent.success,
           titre: `Fin de contrat sponsor — ${s.entreprise}`,
           sousTitre: `Dans ${jours} jour${jours > 1 ? 's' : ''}`,
           onClick: () => { setActiveCategorie('administratif'); setActiveTab('sponsors') },
@@ -480,7 +485,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
       projets?.forEach(p => {
         const titre = p.nom || p.titre || 'Projet'
         toutes.push({
-          id: `projet_${p.id}`, couleur: colors.accent.blue,
+          id: `projet_${p.id}`, menu: 'evenements', couleur: colors.accent.blue,
           titre: `Projet en cours — ${titre}`,
           sousTitre: 'Voir le détail',
           onClick: () => setPopup({ titre, description: p.objectif }),
@@ -489,7 +494,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
 
       evenements?.forEach(e => {
         toutes.push({
-          id: `evenement_${e.id}`, couleur: colors.accent.purpleLight,
+          id: `evenement_${e.id}`, menu: 'evenements', couleur: colors.accent.purpleLight,
           titre: e.titre,
           sousTitre: new Date(`${e.date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
           onClick: () => setPopup({ titre: e.titre, description: e.description, date: e.date, heure: e.heure, lieu: e.lieu }),
@@ -502,7 +507,9 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
     charger()
   }, [clubId, educateursAcceptes])
 
-  const alertesVisibles = alertes.filter(a => !masquees.has(a.id))
+  // `menu` : entrée de menu dont dépend l'alerte (outil payant), filtrée au rendu
+  // pour suivre le chargement des outils du club.
+  const alertesVisibles = alertes.filter(a => !masquees.has(a.id) && (!a.menu || peutVoir(a.menu)))
 
   if (loading) return null
 
@@ -557,7 +564,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email, peutVoir = () => true }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -656,8 +663,8 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   }
   const ligneMatch = (m, avecScore) => {
     const label = catLabel(m)
-    const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
-    const couleur = nous > eux ? colors.accent.success : nous < eux ? colors.accent.red : colors.accent.amber
+    const res = resultatMatch(m)
+    const couleur = res === 'V' ? colors.accent.success : res === 'D' ? colors.accent.red : colors.accent.amber
     return (
       <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${avecScore ? couleur : (m.domicile ? couleurPrincipale : colors.accent.blue)}`, borderRadius: '10px', minWidth: 0 }}>
         {paveDate(m.date)}
@@ -668,7 +675,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
           </p>
         </div>
         {avecScore ? (
-          <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{m.score_nous} - {m.score_eux}</span>
+          <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{scoreAffiche(m, ' - ')}</span>
         ) : (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap', flexShrink: 0, background: m.domicile ? couleurPrincipale + '1a' : colors.accent.blue + '1a', color: m.domicile ? couleurPrincipale : colors.accent.blue }}>
             {m.domicile ? t('comp_domicile', lang) : t('club_deplacement', lang)}
@@ -738,12 +745,12 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
         {/* Colonne latérale */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
           <div style={carte}>
-            <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} />
+            <AlertesClub clubId={clubId} educateursAcceptes={educateursAcceptes} setActiveCategorie={setActiveCategorie} setActiveTab={setActiveTab} peutVoir={peutVoir} />
           </div>
           <div style={carte}>
             <p style={{ ...eyebrow, marginBottom: '10px' }}>{t('club_actions_rapides', lang)}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {ACTIONS.map(a => (
+              {ACTIONS.filter(a => peutVoir(a.tab)).map(a => (
                 <button key={a.label} onClick={() => { setActiveCategorie(a.categorie); setActiveTab(a.tab) }}
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', background: 'transparent', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}
                   onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
@@ -1149,7 +1156,13 @@ export default function DashboardClub() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
-  const [activeTab, setActiveTab] = useState('accueil')
+  const [activeTabBrut, setActiveTab] = useState('accueil')
+  // Outils à la carte (comptes `modele_outils` seulement) : les outils sont ceux
+  // du compte club (clubId), que le président ou un membre du staff soit
+  // connecté. Une page dont l'outil n'est pas actif devient 'outil_verrouille'
+  // et affiche la carte « outil non activé ». Autres clubs : valeur brute.
+  const outils = useOutils({ role: 'club', userId: clubId, modeleOutils: club?.modele_outils })
+  const activeTab = outils.verrouillee(activeTabBrut) ? 'outil_verrouille' : activeTabBrut
   // Tutoriel de la page courante (cf. components/tutoriels/TutorielsClub) :
   // ouvert par le bouton « Tutoriel » de la barre du haut, ou tout seul à la
   // première visite de la page (une fois par compte, cf. lib/tutoriels).
@@ -2888,7 +2901,7 @@ export default function DashboardClub() {
       : { data: [] }
     const photoProfil = Object.fromEntries((profilsPhotos || []).map(p => [p.id, p.avatar_url]))
     const [{ data: statsMatch }, { data: presences }, { data: notes }, { data: dispos }, { data: entrainementsClub }] = await Promise.all([
-      fetchToutesLignesIn(joueurIds, ids => supabase.from('stats_match').select('joueur_id, match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux)').in('joueur_id', ids).order('match_id').order('joueur_id')),
+      fetchToutesLignesIn(joueurIds, ids => supabase.from('stats_match').select('joueur_id, match_id, buts, passes_dec, minutes, clean_sheet, carton_jaune, carton_rouge, matchs_equipe(score_nous, score_eux, tab_nous, tab_eux)').in('joueur_id', ids).order('match_id').order('joueur_id')),
       fetchToutesLignesIn(joueurIds, ids => supabase.from('presences_entrainement').select('entrainement_id, joueur_id, statut, present, point_seance').in('joueur_id', ids).order('entrainement_id').order('joueur_id')),
       // Moyenne des notes de match de chaque joueur (sur 10), comme le classement « Note » de l'éducateur.
       supabase.rpc('notes_moyennes_equipe_club', { p_club_id: clubId }),
@@ -2931,7 +2944,7 @@ export default function DashboardClub() {
       const smJoues = sm.filter(r => (r.minutes || 0) > 0)
       const victoires = smJoues.filter(r => {
         const me = r.matchs_equipe
-        return me && me.score_nous !== '' && me.score_nous !== null && parseInt(me.score_nous) > parseInt(me.score_eux)
+        return me && resultatMatch(me) === 'V'
       }).length
 
       // Présence par mois (pour les barres horizontales de la fiche individuelle)
@@ -3471,6 +3484,11 @@ export default function DashboardClub() {
   // au président ET au staff : club est toujours le profil du COMPTE club
   // lui-même (cf. init() plus haut), jamais celui du membre staff connecté.
   if (!club?.abonnement_actif) {
+    // Nouveau modèle (outils à la carte) : forfait payé par la session Stripe
+    // des outils, plus par les anciens liens de paiement.
+    if (club?.modele_outils) {
+      return <PaiementForfaitClub clubId={clubId} nomClub={club?.club} nbEquipes={categories.length} peutPayer={monRole === 'president'} onDeconnexion={handleLogout} />
+    }
     const palierActif = palierChoisiProfil || ''
     const p = STRIPE_LINKS_CLUB[palierActif]
     const lien = p ? stripeUrl(p[cycleChoisiProfil], clubId, club?.email) : null
@@ -3535,7 +3553,7 @@ export default function DashboardClub() {
     ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
     ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
     ...(canViewSection('stages') ? [{ id: 'stages', label: 'Stages', Icon: IcoCalendar }] : []),
-  ]
+  ].filter(item => outils.menuVisible(item.id))
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
     { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
@@ -3548,7 +3566,8 @@ export default function DashboardClub() {
     { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
-  ].filter(item => canViewSection(item.id))
+    ...(outils.actif ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
+  ].filter(item => canViewSection(item.id) && outils.menuVisible(item.id))
 
   const sportifVisible = NAV_SPORTIF.length > 0
   const administratifVisible = NAV_ADMINISTRATIF.length > 0
@@ -3722,7 +3741,7 @@ export default function DashboardClub() {
                 </button>
               )}
               <span style={{ fontWeight: 800, fontSize: isMobile ? '14px' : '15px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {TITRES_SECTION[activeTab]}
+                {activeTab === 'outil_verrouille' ? '' : TITRES_SECTION[activeTab]}
               </span>
               {PAGES_TUTORIEL_CLUB.includes(activeTab) && (
                 <BoutonTutoriel onClick={() => setTutoOuvert(activeTab)} style={isMobile ? { padding: '6px 10px', minHeight: '32px', fontSize: '12px' } : { padding: '6px 12px', minHeight: '34px' }} />
@@ -3769,6 +3788,7 @@ export default function DashboardClub() {
             isMobile={isMobile}
             couleurPrincipale={couleurPrincipale}
             email={club?.email}
+            peutVoir={outils.menuVisible}
           />
         )}
         {activeTab === 'accueil' && clubId && monUserId && clubId === monUserId && (
@@ -3793,8 +3813,8 @@ export default function DashboardClub() {
           matchsClub.forEach(m => {
             const id = equipeDe(m)
             if (!statsEquipe[id] || m.score_nous === '' || m.score_nous == null || m.score_eux === '' || m.score_eux == null) return
-            const a = parseInt(m.score_nous), b = parseInt(m.score_eux)
-            if (a > b) statsEquipe[id].v++; else if (a < b) statsEquipe[id].d++; else statsEquipe[id].n++
+            const res = resultatMatch(m)
+            if (res === 'V') statsEquipe[id].v++; else if (res === 'D') statsEquipe[id].d++; else statsEquipe[id].n++
           })
           const photoEducateur = (id) => educateursAcceptes.find(e => e.educateur_id === id)?.educateur
           const nbSansEducateur = categories.filter(c => !c.educateur_id).length
@@ -4496,10 +4516,10 @@ export default function DashboardClub() {
                 const nbMatchsJoues = matchsAvecScore.length
                 let victoires = 0, nuls = 0, defaites = 0, cleanSheets = 0
                 matchsAvecScore.forEach(m => {
-                  const nous = parseInt(m.score_nous) || 0
                   const eux = parseInt(m.score_eux) || 0
-                  if (nous > eux) victoires++
-                  else if (nous < eux) defaites++
+                  const res = resultatMatch(m)
+                  if (res === 'V') victoires++
+                  else if (res === 'D') defaites++
                   else nuls++
                   if (eux === 0) cleanSheets++
                 })
@@ -4553,8 +4573,7 @@ export default function DashboardClub() {
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {derniersMatchs.map(m => {
-                              const nous = parseInt(m.score_nous), eux = parseInt(m.score_eux)
-                              const label = nous > eux ? 'V' : nous === eux ? 'N' : 'D'
+                              const label = resultatMatch(m)
                               const couleur = label === 'V' ? colors.accent.success : label === 'N' ? colors.accent.amber : colors.accent.red
                               return (
                                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${couleur}`, borderRadius: '10px' }}>
@@ -4563,7 +4582,7 @@ export default function DashboardClub() {
                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : '@'} {m.adversaire}</p>
                                     <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '11px' }}>{new Date(m.date).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}{m.competition ? ` · ${m.competition}` : ''}</p>
                                   </div>
-                                  <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{m.score_nous} - {m.score_eux}</span>
+                                  <span style={{ fontSize: '16px', fontWeight: 800, color: couleur, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{scoreAffiche(m, ' - ')}</span>
                                 </div>
                               )
                             })}
@@ -6815,6 +6834,12 @@ export default function DashboardClub() {
         {activeTab === 'projet_club_cff4' && canViewSection('projet_club_cff4') && (
           <ProjetClubCFF4 userId={moi?.id} clubId={clubId} />
         )}
+
+        {activeTab === 'outil_verrouille' && (
+          <OutilNonActive role="club" cle={activeTabBrut} onRetour={() => setActiveTab('accueil')} onMesOutils={outils.actif && monRole === 'president' ? () => setActiveTab('mes_outils') : undefined} />
+        )}
+
+        {activeTab === 'mes_outils' && outils.actif && <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'} />}
       </div>
           </div>
         </div>

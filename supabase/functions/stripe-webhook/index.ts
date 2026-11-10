@@ -1,5 +1,6 @@
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { porteLaMarqueOutils, factureDesOutils } from './offreOutils.js'
 
 // Montants (centimes) des 3 produits joueur — voir DashboardJoueur.jsx STRIPE_LINKS.
 const MONTANT_MENSUEL = 1000   // 10€/mois
@@ -224,6 +225,9 @@ Deno.serve(async (req) => {
       // ── Premier paiement (abonnement ou analyse à l'unité) ──────────────
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+        // Outils à la carte : traités par stripe-webhook-outils, pas ici (ce
+        // webhook reconnaît les produits par leur montant et se tromperait).
+        if (porteLaMarqueOutils(session)) break
         const email = session.customer_details?.email ?? null
         const stripeCustomerId = typeof session.customer === 'string' ? session.customer : null
         // montant = ce qui a réellement été encaissé (après code promo), utilisé
@@ -315,6 +319,7 @@ Deno.serve(async (req) => {
       // ── Chaque échéance payée (1er paiement inclus + tous les renouvellements) ──
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice
+        if (await factureDesOutils(invoice, (id: string) => stripe.subscriptions.retrieve(id))) break
         const stripeCustomerId = typeof invoice.customer === 'string' ? invoice.customer : null
         // Même logique que checkout.session.completed ci-dessus : montant =
         // réellement encaissé (journalisation), montantBrut = invoice.subtotal
@@ -373,6 +378,7 @@ Deno.serve(async (req) => {
       // ── Résiliation / échec de paiement définitif ──────────────────────
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
+        if (porteLaMarqueOutils(subscription)) break
         const stripeCustomerId = typeof subscription.customer === 'string' ? subscription.customer : null
         const profileId = await trouverProfilId({ stripeCustomerId })
         if (!profileId) { console.error('[stripe-webhook] customer.subscription.deleted: profil introuvable', { stripeCustomerId }); break }

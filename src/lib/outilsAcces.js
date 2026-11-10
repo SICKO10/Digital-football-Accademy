@@ -3,7 +3,7 @@
 // Un compte qui n'est pas au nouveau modèle (modeleOutils faux) ne voit
 // jamais rien de filtré : chaque fonction répond « autorisé ».
 
-import { SOCLE, OUTILS, outilsVisibles, trouverOutil } from './catalogueOutils.js'
+import { SOCLE, OUTILS, outilsVisibles, outilsDuRole, trouverOutil, joursRestantsEssai } from './catalogueOutils.js'
 
 // Onglets de « Mon équipe > Statistiques » dans l'ordre de la page. La
 // présence (et le taux de présence qu'elle contient) reste dans le socle ;
@@ -21,6 +21,7 @@ export function compteDepuisLignes(role, modeleOutils, lignes = []) {
   const clubOutils = []
   for (const l of lignes) {
     if (l.source === 'club') { clubOutils.push(l.outil); continue }
+    if (l.source === 'essai') { droits.push({ outil: l.outil, statut: 'essai', essaiFin: l.fin_le }); continue }
     droits.push(l.fin_le
       ? { outil: l.outil, statut: 'retire', periodeFin: l.fin_le }
       : { outil: l.outil, statut: 'actif' })
@@ -65,10 +66,12 @@ export function ongletsStatsPermis(compte, maintenant = new Date()) {
 }
 
 // Entrée de menu à afficher ? Même règle que la page, avec en plus le retrait
-// d'Explorer et de Recrutement pour les comptes du nouveau modèle.
+// d'Explorer (éducateur) et de Recrutement (éducateur et club) pour les comptes
+// du nouveau modèle.
 export function menuVisible(compte, cle, maintenant = new Date()) {
   if (!compte?.modeleOutils) return true
-  if (compte.role === 'educateur' && (cle === 'explorer' || cle === 'recrutement')) return false
+  if (cle === 'recrutement') return false
+  if (compte.role === 'educateur' && cle === 'explorer') return false
   return !sectionVerrouillee(compte, cle, maintenant)
 }
 
@@ -83,6 +86,33 @@ export function infosOutilPourMenu(role, cle) {
 export function infosOutil(role, id) {
   const o = trouverOutil(role, id)
   return o ? { id: o.id, nom: o.nom, promesse: o.promesse, viaClub: o.viaClub, achetable: o.achetable } : null
+}
+
+// État de chaque outil pour l'écran « Mes outils ». `lignes` : réponse de
+// `outils_actifs` ; `essaisUtilises` : ids des outils dont l'essai a déjà servi.
+// États : 'actif' (payé, ou inclus dans le forfait du club), 'essai' (avec
+// `joursRestants`), 'retire' et 'offre' (actifs jusqu'à `finLe`), 'club' (fourni
+// par le club), 'essai_termine' (essai fini, à garder ou non), 'disponible'.
+// Un outil non achetable et non fourni par le club n'apparaît pas.
+export function etatsOutils({ role, lignes = [], essaisUtilises = [], maintenant = new Date() }) {
+  const liste = []
+  for (const o of outilsDuRole(role)) {
+    const propre = lignes.find(l => l.outil === o.id && l.source !== 'club')
+    const fourniParLeClub = role === 'educateur' && !!o.viaClub
+      && lignes.some(l => l.source === 'club' && l.outil === o.viaClub)
+    let etat
+    let finLe = null
+    if (propre) {
+      finLe = propre.fin_le
+      if (propre.source === 'essai') etat = 'essai'
+      else if (propre.source === 'offre') etat = 'offre'
+      else etat = propre.fin_le ? 'retire' : 'actif'
+    } else if (fourniParLeClub) etat = 'club'
+    else if (!o.achetable) continue
+    else etat = essaisUtilises.includes(o.id) ? 'essai_termine' : 'disponible'
+    liste.push({ outil: o, etat, finLe, fourniParLeClub, joursRestants: etat === 'essai' ? joursRestantsEssai(finLe, maintenant) : 0 })
+  }
+  return liste
 }
 
 export { trouverOutil }
