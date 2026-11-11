@@ -213,7 +213,10 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
             console.error('outils payer : clé Stripe absente (STRIPE_OUTILS_SECRET_KEY et STRIPE_SECRET_KEY)')
             return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : cle_stripe)' })
           }
-          throw err
+          // Détail visible pendant les tests des paiements (comptes du nouveau modèle seulement, clé masquée).
+          console.error('outils payer', err.code || err.type, err.message)
+          const resume = `${err.code || err.type || 'erreur'} : ${String(err.message || '').replace(/[rs]k_(live|test)_\S+/g, '[clé]').slice(0, 220)}`
+          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${resume})` })
         }
       }
 
