@@ -238,7 +238,7 @@ export default function Offres() {
       <div style={{ textAlign: 'center', padding: '3rem 1.5rem 1rem' }}>
         <div style={st.eyebrow}>TARIFS</div>
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>Une offre pour chaque profil</h1>
-        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur, recruteur ou club, choisis la formule qui te correspond.</p>
+        <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur ou club, choisis la formule qui te correspond.</p>
         <CycleToggle cycle={cycle} setCycle={setCycle} />
       </div>
 
@@ -331,21 +331,11 @@ export default function Offres() {
         </div>
       </section>
 
-      {/* ── RECRUTEURS ── */}
-      <section style={st.sectionOuter(colors.background.base)}>
-        <div style={st.sectionInner}>
-          <div style={st.eyebrow}>SCOUTS / RECRUTEURS</div>
-          <h2 style={st.titre}>Trouve tes prochains talents</h2>
-          <p style={st.sousTitre}>Recherche par profil, messagerie directe avec les joueurs et statistiques automatisées.</p>
-          <OffrePro titre="Scout / Recruteur" color={colors.accent.orange} profilId="scout" cycle={cycle} features={[
-            'Accès à la base de joueurs',
-            'Trouver des joueurs par profil (poste, niveau, région…)',
-            'Messagerie directe avec les joueurs',
-            'Scout Center',
-            'Stats automatisées des joueurs affiliés',
-          ]} />
-        </div>
-      </section>
+      {/* ── RECRUTEURS : section retirée de la page pour le moment (même choix que
+          Home.jsx). Le profil recruteur reste fonctionnel (route /recruteur,
+          inscription /register?profil=scout). Pour la remettre, réinsérer ici :
+          <section> « Trouve tes prochains talents » avec <OffrePro profilId="scout" …/>
+          (voir l'historique git de ce fichier avant ce retrait). ── */}
 
       {/* ── CLUBS — hero ── */}
       <section style={{ background: 'linear-gradient(135deg, #0d1f0d 0%, #0a0a0a 60%)', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid #1a2a1a' }}>
