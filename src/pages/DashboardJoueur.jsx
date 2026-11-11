@@ -3684,6 +3684,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 dégradé affichait le nom technique du plan en badge ; la carte
                 montre catégorie et club pour un affilié, région pour un joueur
                 indépendant, et le badge Pro seulement quand il est mérité. */}
+            <BandeauClub club={clubAffilieInfo} couleur={colors.accent.brand} isMobile={isMobile} />
             <EnTeteJoueur
               profil={profil}
               clubAffilieInfo={clubAffilieInfo}
@@ -3701,7 +3702,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 affilié ; analyse, visibilité recruteurs, publication pour les
                 autres). Rien à mettre en avant : le bloc disparaît. */}
             <ALaUne
-            <BandeauClub club={clubAffilieInfo} couleur={colors.accent.brand} isMobile={isMobile} />
               choix={aLaUneChoix}
               isMobile={isMobile}
               lang={lang}
