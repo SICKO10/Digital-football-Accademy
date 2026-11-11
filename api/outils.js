@@ -181,8 +181,13 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           const attendus = new Map(lignesStripe().map(l => [l.cle, l.montant]))
           const prix = new Map((await donnees.prixStripe(compo.cles)).map(p => [p.cle, p]))
           if (compo.cles.some(c => prix.get(c)?.montant !== attendus.get(c))) {
-            console.error('outils payer : prix Stripe absent ou différent du catalogue', compo.cles)
-            return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : prix)' })
+            const manquants = compo.cles.filter(c => !prix.has(c))
+            const differents = compo.cles.filter(c => prix.has(c) && prix.get(c).montant !== attendus.get(c))
+            const mode = prix.size === 0 ? 'aucun tarif trouvé' : [...prix.values()].some(p => p.live) ? 'réel' : 'test'
+            console.error('outils payer : prix Stripe absent ou différent du catalogue', { manquants, differents, mode })
+            // Détail volontairement visible pendant les tests des paiements : il ne contient que des noms de tarifs.
+            const detail = [manquants.length && `manquant : ${manquants.join(', ')}`, differents.length && `montant différent : ${differents.join(', ')}`, `mode : ${mode}`].filter(Boolean).join(' ; ')
+            return res.status(503).json({ error: `Paiement indisponible pour le moment, réessaie plus tard (code : prix ; ${detail})` })
           }
           const client = await donnees.clientStripe({ compteId: utilisateur.id, email: profil.email })
           if (await donnees.abonnementEnCours(client)) {
