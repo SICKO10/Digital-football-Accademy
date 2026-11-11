@@ -47,7 +47,8 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
   const actifs = etats.filter(e => ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
   const autres = etats.filter(e => !ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
 
-  const titreSection = { margin: '0 0 12px', fontSize: 18, fontWeight: 800, color: colors.text.primary }
+  // Intertitre au format des sections du dashboard éducateur.
+  const titreSection = { margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
   const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 
   const badge = ({ etat, finLe, joursRestants, fourniParLeClub }) => {
@@ -99,8 +100,13 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: colors.text.primary }}>Mes outils</h1>
-        <p style={{ margin: 0, maxWidth: 620, fontSize: 14, lineHeight: 1.55, color: colors.text.secondary }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '10px', color: colors.text.primary }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.accent.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
+          </svg>
+          Mes outils
+        </h1>
+        <p style={{ margin: 0, maxWidth: 620, fontSize: '13px', lineHeight: 1.55, color: colors.text.faint }}>
           {role === 'club'
             ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu en ajoutes ou en retires quand tu veux, sans supplément.'
             : ESSAIS_GRATUITS
@@ -119,7 +125,7 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
       {outils.pret && role === 'club' && (
         <section aria-labelledby="titre-club">
           <h2 id="titre-club" style={titreSection}>
-            Sur ton dashboard <span style={{ fontSize: 14, fontWeight: 600, color: colors.text.faint }}>{nbClub} sur {etats.length}</span>
+            Sur ton dashboard <span style={{ fontWeight: 700, color: colors.text.faint }}>· {nbClub} sur {etats.length}</span>
           </h2>
           <div style={grille}>
             {etats.map(e => (

@@ -67,8 +67,8 @@ export function PaiementOutils({ payables }) {
     <section aria-labelledby="titre-boutique" style={{ marginBottom: 32, fontFamily: police }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
-          <h2 id="titre-boutique" style={{ margin: 0, fontSize: 18, fontWeight: 800, color: colors.text.primary }}>Ajouter des outils</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: colors.text.secondary }}>Un seul paiement pour tous tes outils, sans engagement.</p>
+          <h2 id="titre-boutique" style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Ajouter des outils</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>Un seul paiement pour tous tes outils, sans engagement.</p>
         </div>
         <div role="radiogroup" aria-label="Périodicité" style={{ display: 'inline-flex', padding: 3, gap: 2, background: colors.background.raised, borderRadius: 999 }}>
           {PERIODES.map(([val, label]) => (
