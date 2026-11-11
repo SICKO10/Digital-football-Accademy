@@ -11,6 +11,7 @@ const U = {
   scoutActif: id(1), scoutInactif: id(2), joueur: id(3),
   eduPayant: id(10), eduClub: id(11), eduSansAcces: id(12),
   dirigeantOk: id(20), dirigeantKo: id(21),
+  eduModeleSeances: id(40), eduModeleSansOutil: id(41), dirigeantModele: id(42),
   club: id(30), directeurSportif: id(31), secretaire: id(32),
 }
 const JETONS = Object.fromEntries(Object.entries(U).map(([n, uid]) => [`jeton-${n}`, { id: uid }]))
@@ -24,7 +25,10 @@ function donneesTest({ panne = false } = {}) {
     [U.eduClub]: { plan: 'educateur', abonnement_actif: false },
     [U.eduSansAcces]: { plan: 'educateur', abonnement_actif: false },
     [U.club]: { plan: 'club', abonnement_actif: true },
+    [U.eduModeleSeances]: { plan: 'educateur', abonnement_actif: true, modele_outils: true },
+    [U.eduModeleSansOutil]: { plan: 'educateur', abonnement_actif: true, modele_outils: true },
   }
+  const outils = { [U.eduModeleSeances]: ['seances'] }
   const g = (f) => async (...a) => { if (panne) throw new Error('panne'); return f(...a) }
   return {
     profil: g((uid) => profils[uid] || null),
@@ -33,7 +37,8 @@ function donneesTest({ panne = false } = {}) {
     affiliationEducateur: g(() => null),
     affiliationEducateurAcceptee: g((uid) => uid === U.eduClub),
     parentAccepte: g(() => false),
-    delegationDirigeant: g((uid) => ({ [U.dirigeantOk]: { educateur_id: U.eduPayant }, [U.dirigeantKo]: { educateur_id: U.eduSansAcces } }[uid] || null)),
+    delegationDirigeant: g((uid) => ({ [U.dirigeantOk]: { educateur_id: U.eduPayant }, [U.dirigeantKo]: { educateur_id: U.eduSansAcces }, [U.dirigeantModele]: { educateur_id: U.eduModeleSeances } }[uid] || null)),
+    aOutil: g((uid, outil) => (outils[uid] || []).includes(outil)),
   }
 }
 
@@ -143,6 +148,18 @@ test('outils éducateur (analyse vidéo, séance) : abonné, affilié club ou di
     }
   }
 })
+test('nouveau modèle : l’outil du catalogue est exigé (séance = seances, analyse vidéo = evaluations_video)', async () => {
+  assert.equal((await appeler({ qui: 'eduModeleSeances', action: 'seance_ia' })).res.statut, 200)
+  assert.equal((await appeler({ qui: 'dirigeantModele', action: 'seance_ia' })).res.statut, 200)
+  for (const [qui, action] of [['eduModeleSeances', 'analyse_video'], ['eduModeleSansOutil', 'seance_ia'], ['eduModeleSansOutil', 'analyse_video'], ['dirigeantModele', 'analyse_video']]) {
+    const { res, appels } = await appeler({ qui, action })
+    assert.equal(res.statut, 403, `${qui} ${action}`)
+    assert.equal(appels.length, 0)
+  }
+  // comptes hors du nouveau modèle : inchangés, l'outil n'est pas regardé
+  assert.equal((await appeler({ qui: 'eduPayant', action: 'analyse_video' })).res.statut, 200)
+})
+
 test('import planning : club ou staff avec droit « terrains » sur CE club', async () => {
   assert.equal((await appeler({ qui: 'club', action: 'import_planning' })).res.statut, 200)
   assert.equal((await appeler({ qui: 'directeurSportif', action: 'import_planning' })).res.statut, 200)

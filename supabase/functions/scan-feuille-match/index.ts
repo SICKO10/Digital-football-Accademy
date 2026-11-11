@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { verifierOutil } from '../_shared/verrouOutils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -106,6 +107,8 @@ async function appellerGemini(imageBase64, mimeType, apiKey, tentative = 1) {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const refus = await verifierOutil(req, ['stats_collectives'], corsHeaders)
+  if (refus) return refus
 
   try {
     const { imageBase64, mimeType } = await req.json()

@@ -92,6 +92,7 @@ Instructions:
   // ── AnalyseVideo.jsx (dashboard éducateur) ──
   analyse_video: {
     profil: 'educateur',
+    outil: 'evaluations_video',
     valider: (e) => ({
       joueur: joueurObserve(e.joueur, 'nomClub'),
       transcription: texte(e.transcription, { max: MAX_TRANSCRIPTION, requis: true, nom: 'transcription' }),
@@ -182,6 +183,7 @@ Règles :
   // ── DashboardEducateur.jsx (génération de séance) ──
   seance_ia: {
     profil: 'educateur',
+    outil: 'seances',
     valider: (e) => ({
       objectif: texte(e.objectif, { max: 500, requis: true, nom: 'objectif' }),
       duree: entier(e.duree, { min: 10, max: 300, nom: 'durée', defaut: 60 }),

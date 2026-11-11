@@ -59,7 +59,7 @@ export async function appelerGroqReel({ messages, params }) {
 async function autoriser({ action, donnees, userId, entrees }) {
   switch (ACTIONS[action].profil) {
     case 'recruteur': return estRecruteurActif({ donnees, userId })
-    case 'educateur': return peutUtiliserOutilsEducateur({ donnees, userId })
+    case 'educateur': return peutUtiliserOutilsEducateur({ donnees, userId, outil: ACTIONS[action].outil })
     // Import du planning : même droit que l'édition de la section « terrains »
     // (PlanningTerrains rendu en mode dirigeant avec readOnly = !canEditSection('terrains')).
     case 'club_terrains': return estUuid(entrees.clubId) && peutEditerPourClub({ donnees, userId, clubId: entrees.clubId, section: 'terrains' })

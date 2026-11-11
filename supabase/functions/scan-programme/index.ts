@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { verifierOutil } from '../_shared/verrouOutils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,8 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const refus = await verifierOutil(req, ['prep_physique'], corsHeaders)
+  if (refus) return refus
 
   try {
     const { imageBase64, mimeType } = await req.json()

@@ -16,13 +16,14 @@ export function donneesSupabase() {
   }
   const db = () => clientServiceSupabase()
   return {
-    profil: (id) => lire(db().from('profiles').select('plan, abonnement_actif, educateurs_editent_projet_sportif').eq('id', id).maybeSingle()),
+    profil: (id) => lire(db().from('profiles').select('plan, abonnement_actif, educateurs_editent_projet_sportif, modele_outils').eq('id', id).maybeSingle()),
     staffClub: (userId, clubId) => lire(db().from('staff_club').select('role').eq('user_id', userId).eq('club_id', clubId).maybeSingle()),
     permissionRole: (clubId, role, section) => lire(db().from('role_permissions').select('can_view, can_edit').eq('club_id', clubId).eq('role', role).eq('section', section).maybeSingle()),
     affiliationEducateur: (userId, clubId) => lire(db().from('club_educateurs').select('peut_editer_projet_sportif').eq('educateur_id', userId).eq('club_id', clubId).eq('statut', 'accepte').maybeSingle()),
     affiliationEducateurAcceptee: async (userId) => !!(await lire(db().from('club_educateurs').select('id').eq('educateur_id', userId).eq('statut', 'accepte').limit(1).maybeSingle())),
     parentAccepte: async (parentId, joueurId) => !!(await lire(db().from('parents_acces').select('id').eq('parent_id', parentId).eq('joueur_id', joueurId).eq('statut', 'accepte').maybeSingle())),
     delegationDirigeant: (dirigeantId) => lire(db().from('dirigeant_acces').select('educateur_id').eq('dirigeant_id', dirigeantId).eq('statut', 'accepte').maybeSingle()),
+    aOutil: async (compteId, outil) => !!(await lire(db().rpc('a_outil', { p_compte: compteId, p_outil: outil }))),
   }
 }
 
@@ -71,10 +72,27 @@ async function educateurEligible({ donnees, educateurId }) {
   return donnees.affiliationEducateurAcceptee(educateurId)
 }
 
-export async function peutUtiliserOutilsEducateur({ donnees, userId }) {
-  if (await educateurEligible({ donnees, educateurId: userId })) return true
+//
+// `outil` (catalogue, ex. 'seances') : un compte au nouveau modèle
+// (modele_outils) doit en plus détenir cet outil, comme le verrou de la base
+// (supabase_outils_verrou.sql). Les autres comptes ne changent pas.
+export async function peutUtiliserOutilsEducateur({ donnees, userId, outil = null }) {
+  if (await educateurAutorise({ donnees, educateurId: userId, outil })) return true
   const delegation = await donnees.delegationDirigeant(userId)
-  return !!(delegation?.educateur_id && await educateurEligible({ donnees, educateurId: delegation.educateur_id }))
+  return !!(delegation?.educateur_id && await educateurAutorise({ donnees, educateurId: delegation.educateur_id, outil }))
+}
+
+async function educateurAutorise({ donnees, educateurId, outil }) {
+  return await educateurEligible({ donnees, educateurId }) && outilOuvert({ donnees, compteId: educateurId, outil })
+}
+
+// Vrai si l'outil est ouvert pour ce compte : pas d'outil demandé, compte
+// hors du nouveau modèle, ou outil détenu (achat, offre, forfait, club).
+export async function outilOuvert({ donnees, compteId, outil }) {
+  if (!outil) return true
+  const p = await donnees.profil(compteId)
+  if (!p?.modele_outils) return true
+  return donnees.aOutil(compteId, outil)
 }
 
 export const estUuid = (v) => typeof v === 'string' && /^[0-9a-f-]{8,64}$/i.test(v)
