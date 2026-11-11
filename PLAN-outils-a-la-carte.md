@@ -202,7 +202,7 @@ Rappel : `/clear` et une session neuve par bloc.
 
 
 ### Bloc 7 : premier paiement et webhook des outils
-- Statut : code fait, fonction webhook déployée ; en attente de tes manipulations (GUIDE-STRIPE-OUTILS-TEST.md, étapes 1 à 13) et de ton « ok push » pour le test de bout en bout
+- Statut : fait et testé en live (2026-11-11) : paiement réel de 1 € d'un outil (activation par le webhook), puis paiements à 0 € avec un code promo à 100 % : palier éducateur jusqu'à 3 outils et forfait club, tout fonctionne d'après Kevin. En attente de la validation de Kevin ; remarque de Kevin à traiter : le club voit toutes les rubriques et ne peut pas choisir celles de ses éducateurs (outils du club pour ses éducateurs : bloc 10).
 - Objectif : payer une composition (forfait club et outils, ou outils seuls pour un éducateur) en une fois, et voir les outils s'activer.
 - Résultat testable : depuis Mes outils, l'éducateur de test coche 2 outils, paie en mensuel avec la carte test, revient sur la plateforme : les 2 outils sont actifs. Pareil pour le club avec forfait.
 - Modèle : opus · Effort : high · Coût estimé : élevé
