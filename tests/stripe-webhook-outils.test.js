@@ -1,8 +1,8 @@
 // Tests de la logique du webhook des outils (Stripe et base simulés).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { lireCleStripe, lireAbonnement, traiterEvenement } from '../supabase/functions/stripe-webhook-outils/logique.js'
-import { lignesStripe } from '../src/lib/catalogueOutils.js'
+import { lireCleStripe, lireAbonnement, traiterEvenement, OUTILS_DU_PACK } from '../supabase/functions/stripe-webhook-outils/logique.js'
+import { lignesStripe, outilsDuPack } from '../src/lib/catalogueOutils.js'
 
 const COMPTE = '00000000-0000-0000-0000-000000000001'
 const journalMuet = { error: () => {} }
@@ -48,7 +48,7 @@ test('chaque clé de recherche du catalogue est reconnue', () => {
     assert.equal(lu.type, l.type)
     assert.equal(lu.periodicite, l.intervalle === 'year' ? 'annuel' : 'mensuel')
     if (lu.type === 'outil') assert.equal(lu.outil, l.ref)
-    else assert.equal(lu.palier, l.ref)
+    else if (lu.type === 'forfait') assert.equal(lu.palier, l.ref)
   }
   assert.equal(lireCleStripe('outil_club_finances_mensuel'), null)
   assert.equal(lireCleStripe('forfait_club_c999_mensuel'), null)
@@ -135,4 +135,14 @@ test('une panne de la base remonte en erreur (Stripe relivrera)', async () => {
     appliquer: async () => { throw new Error('base indisponible') },
   }
   await assert.rejects(traiterEvenement(evenement(), deps), /base indisponible/)
+})
+
+test('offre tous les outils : une seule ligne Stripe active les 9 outils, liste identique au catalogue', async () => {
+  assert.deepEqual([...OUTILS_DU_PACK].sort(), [...outilsDuPack()].sort())
+  const b = base(abonnement([item('pack_educateur_annuel', 'si_pack')]))
+  const r = await traiterEvenement(evenement(), b.deps)
+  assert.equal(r.statut, 'applique')
+  assert.equal(b.appels[0].lignes.length, 9)
+  assert.ok(b.appels[0].lignes.every(l => l.periodicite === 'annuel' && l.item === 'si_pack'))
+  assert.equal(b.appels[0].palier, null)
 })

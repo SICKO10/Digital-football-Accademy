@@ -166,7 +166,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         const role = profil.plan
         if (role !== 'educateur' && role !== 'club') return res.status(403).json({ error: 'Paiement réservé aux éducateurs et aux clubs' })
         const nbEquipes = role === 'club' ? await donnees.nbEquipes(utilisateur.id) : 0
-        const compo = compositionPaiement(role, { outils: corps.outils, palier: corps.palier, periodicite: corps.periodicite }, nbEquipes)
+        const compo = compositionPaiement(role, { outils: corps.outils, palier: corps.palier, pack: corps.pack === true, periodicite: corps.periodicite }, nbEquipes)
         if (compo.erreur) return res.status(400).json({ error: compo.erreur })
         if (role === 'educateur') {
           for (const id of compo.outils) {

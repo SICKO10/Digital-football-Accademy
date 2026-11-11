@@ -7,6 +7,10 @@
 // de l'événement : un événement relivré tard applique l'état actuel.
 
 const PALIERS = ['c0', 'c100', 'c200', 'c300', 'c400', 'c500']
+// Outils compris dans l'offre « tous les outils éducateur » (copie de
+// outilsDuPack() du catalogue, la fonction ne peut pas l'importer : un test
+// vérifie que les deux listes restent identiques).
+export const OUTILS_DU_PACK = ['suivi_joueurs', 'stats_collectives', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video', 'projet_sportif', 'cff4']
 const PAIEMENT_OK = ['paid', 'no_payment_required']
 const ABONNEMENT_ACTIF = ['active', 'trialing']
 
@@ -15,12 +19,15 @@ export function lireCleStripe(cle) {
   if (typeof cle !== 'string') return null
   const o = /^outil_educateur_([a-z0-9_]{2,40})_(mensuel|annuel)$/.exec(cle)
   if (o) return { type: 'outil', outil: o[1], periodicite: o[2] }
+  const pk = /^pack_educateur_(mensuel|annuel)$/.exec(cle)
+  if (pk) return { type: 'pack', periodicite: pk[1] }
   const f = /^forfait_club_(c\d+)_(mensuel|annuel)$/.exec(cle)
   if (f && PALIERS.includes(f[1])) return { type: 'forfait', palier: f[1], periodicite: f[2] }
   return null
 }
 
-// Lignes d'un abonnement Stripe : outils éducateur, forfait club, inconnues.
+// Lignes d'un abonnement Stripe : outils éducateur (le pack en donne neuf, sur
+// la même ligne Stripe), forfait club, inconnues.
 export function lireAbonnement(abonnement) {
   const lignes = []
   const inconnues = []
@@ -28,6 +35,7 @@ export function lireAbonnement(abonnement) {
   for (const item of abonnement?.items?.data || []) {
     const l = lireCleStripe(item.price?.lookup_key)
     if (l?.type === 'outil') lignes.push({ outil: l.outil, periodicite: l.periodicite, item: item.id })
+    else if (l?.type === 'pack') for (const outil of OUTILS_DU_PACK) lignes.push({ outil, periodicite: l.periodicite, item: item.id })
     else if (l?.type === 'forfait' && !forfait) forfait = { palier: l.palier, periodicite: l.periodicite }
     else inconnues.push(item.price?.lookup_key || item.price?.id || item.id)
   }

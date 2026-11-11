@@ -116,11 +116,28 @@ test('bascule : tous les outils achetables ont un prix', { skip: !process.env.BA
 test('lignesStripe : 9 outils éducateur et 6 forfaits club, clés uniques, jamais d\'outil club', async () => {
   const { lignesStripe, FORFAITS_CLUB } = await import('../src/lib/catalogueOutils.js')
   const l = lignesStripe()
-  assert.equal(l.length, (9 + FORFAITS_CLUB.length) * 2)
+  assert.equal(l.length, (9 + FORFAITS_CLUB.length + 1) * 2) // 9 outils, les forfaits club et l'offre « tous les outils »
   assert.equal(new Set(l.map(x => x.cle)).size, l.length)
   assert.ok(l.every(x => x.montant > 0 && Number.isInteger(x.montant)))
   assert.ok(!l.some(x => x.cle.startsWith('outil_club_')))
   assert.ok(!l.some(x => x.cle.includes('stages') && x.type === 'outil'))
+})
+
+test('offre tous les outils : 15 € par mois, 150 € par an, moins cher que les 9 outils séparés', async () => {
+  const { PACK_EDUCATEUR, outilsDuPack, totalComposition, compositionPaiement } = await import('../src/lib/catalogueOutils.js')
+  assert.equal(PACK_EDUCATEUR.prixMensuel, 15)
+  assert.equal(PACK_EDUCATEUR.prixAnnuel, 150)
+  assert.equal(outilsDuPack().length, 9)
+  assert.ok(!outilsDuPack().includes('stages'))
+  assert.ok(totalComposition('educateur', outilsDuPack(), 'mensuel') > 15)
+  assert.ok(totalComposition('educateur', outilsDuPack(), 'annuel') > 150)
+  const c = compositionPaiement('educateur', { pack: true, periodicite: 'annuel' })
+  assert.deepEqual(c.cles, ['pack_educateur_annuel'])
+  assert.equal(c.total, 150)
+  assert.deepEqual(c.outils, outilsDuPack())
+  assert.deepEqual(compositionPaiement('educateur', { pack: true, periodicite: 'mensuel' }).cles, ['pack_educateur_mensuel'])
+  assert.ok(compositionPaiement('educateur', { pack: true, periodicite: 'trimestriel' }).erreur)
+  assert.ok(compositionPaiement('club', { pack: true, periodicite: 'mensuel', palier: 'zz' }).erreur)
 })
 
 test('forfaits club : annuel = 10 mensualités, mêmes montants que les liens de paiement', async () => {

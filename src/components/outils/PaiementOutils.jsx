@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useColors } from '../../lib/theme'
-import { totalComposition } from '../../lib/catalogueOutils'
+import { totalComposition, PACK_EDUCATEUR, outilsDuPack } from '../../lib/catalogueOutils'
 import { payerOutils, retourPaiementOutils, effacerRetourPaiement } from '../../lib/outilsApi'
 
 // Premier paiement de l'éducateur (bloc 7) : il coche ses outils, choisit
@@ -20,16 +20,23 @@ export function PaiementOutils({ outils }) {
   const parDefaut = payables.filter(e => e.etat === 'essai' || e.etat === 'essai_termine').map(e => e.outil.id)
   const [coches, setCoches] = useState(null)
   const [periodicite, setPeriodicite] = useState('mensuel')
+  const [pack, setPack] = useState(false)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
 
   if (!outils.pret || aUnAbonnement(outils) || payables.length === 0) return null
 
-  const choisis = (coches ?? parDefaut).filter(id => payables.some(e => e.outil.id === id))
+  const choisis = pack
+    ? payables.map(e => e.outil.id)
+    : (coches ?? parDefaut).filter(id => payables.some(e => e.outil.id === id))
   const basculer = (id) => setCoches(choisis.includes(id) ? choisis.filter(x => x !== id) : [...choisis, id])
-  const total = choisis.length ? totalComposition('educateur', choisis, periodicite) : 0
+  const annuel = periodicite === 'annuel'
+  const prixPack = annuel ? PACK_EDUCATEUR.prixAnnuel : PACK_EDUCATEUR.prixMensuel
+  // Ce que coûteraient tous les outils pris un par un, pour montrer l'économie du pack.
+  const prixSepares = totalComposition('educateur', outilsDuPack(), periodicite)
+  const total = pack ? prixPack : choisis.length ? totalComposition('educateur', choisis, periodicite) : 0
   const totalMensuel = totalComposition('educateur', choisis, 'mensuel')
-  const economie = periodicite === 'annuel' && total ? totalMensuel * 12 - total : 0
+  const economie = pack ? prixSepares - prixPack : annuel && total ? totalMensuel * 12 - total : 0
   const unite = PERIODES.find(p => p[0] === periodicite)[2]
   const avecEssai = choisis.some(id => payables.find(e => e.outil.id === id)?.etat === 'essai')
 
@@ -37,7 +44,7 @@ export function PaiementOutils({ outils }) {
     setEnvoi(true)
     setErreur('')
     try {
-      await payerOutils({ outils: choisis, periodicite })
+      await payerOutils(pack ? { pack: true, periodicite } : { outils: choisis, periodicite })
     } catch (e) {
       setErreur(e.message)
       setEnvoi(false)
@@ -62,10 +69,22 @@ export function PaiementOutils({ outils }) {
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+      <button type="button" role="switch" aria-checked={pack} onClick={() => setPack(!pack)} style={{
+        display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: police, marginBottom: 12,
+        padding: '12px 14px', borderRadius: 12, color: colors.text.primary,
+        background: pack ? colors.accent.brand + '22' : 'transparent',
+        border: `${pack ? 2 : 1}px solid ${pack ? colors.accent.brand : colors.border.default}`,
+      }}>
+        <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{PACK_EDUCATEUR.nom}{pack ? ' (choisi)' : ''}</span>
+        <span style={{ display: 'block', fontSize: 13, color: colors.text.secondary, marginTop: 2 }}>
+          {PACK_EDUCATEUR.prixMensuel} € par mois ou {PACK_EDUCATEUR.prixAnnuel} € par an pour les {outilsDuPack().length} outils, au lieu de {prixSepares} € {unite} un par un.
+        </span>
+      </button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, opacity: pack ? 0.6 : 1 }}>
         {payables.map(({ outil, etat }) => (
           <label key={outil.id} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 36, fontSize: 14, color: colors.text.primary, cursor: 'pointer' }}>
-            <input type="checkbox" checked={choisis.includes(outil.id)} onChange={() => basculer(outil.id)} style={{ width: 18, height: 18, accentColor: colors.accent.brand, flexShrink: 0 }} />
+            <input type="checkbox" disabled={pack} checked={choisis.includes(outil.id)} onChange={() => basculer(outil.id)} style={{ width: 18, height: 18, accentColor: colors.accent.brand, flexShrink: 0 }} />
             <span style={{ flex: 1, minWidth: 0 }}>
               {outil.nom}
               {etat === 'essai' && <span style={{ color: colors.text.faint, fontSize: 12 }}> (en essai)</span>}
@@ -81,19 +100,19 @@ export function PaiementOutils({ outils }) {
       <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 12 }}>
         <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: colors.text.primary }}>
           Total : {total} € {unite}
-          {economie > 0 && <span style={{ fontSize: 13, fontWeight: 600, color: colors.accent.success }}> (tu économises {economie} € sur l'année)</span>}
+          {economie > 0 && <span style={{ fontSize: 13, fontWeight: 600, color: colors.accent.success }}> (tu économises {economie} € {pack && !annuel ? 'par mois' : 'sur l\'année'})</span>}
         </p>
         <p style={{ margin: '4px 0 12px', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
-          Paiement sécurisé par Stripe. Tu paies {total} € aujourd'hui, puis {periodicite === 'annuel' ? 'chaque année' : 'chaque mois'} à la même date.
-          {avecEssai && ' Pour un outil en essai, l\'abonnement remplace l\'essai dès aujourd\'hui.'}
+          Sans engagement : tu arrêtes quand tu veux, l'abonnement s'arrête à la fin de la période déjà payée. Paiement sécurisé par Stripe. Tu paies {total} € aujourd'hui, puis {annuel ? 'chaque année' : 'chaque mois'} à la même date.
+          {avecEssai && !pack && ' Pour un outil en essai, l\'abonnement remplace l\'essai dès aujourd\'hui.'}
         </p>
         {erreur && <p role="alert" style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
-        <button type="button" disabled={envoi || choisis.length === 0} onClick={payer} style={{
-          background: choisis.length ? colors.accent.brand : colors.background.raised, color: choisis.length ? colors.accent.onBrand : colors.text.faint,
+        <button type="button" disabled={envoi || (!pack && choisis.length === 0)} onClick={payer} style={{
+          background: total ? colors.accent.brand : colors.background.raised, color: total ? colors.accent.onBrand : colors.text.faint,
           border: 'none', borderRadius: 10, padding: '11px 18px', fontSize: 14, fontWeight: 800, fontFamily: police,
-          cursor: envoi || !choisis.length ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
+          cursor: envoi || !total ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
         }}>
-          {envoi ? 'Ouverture du paiement...' : choisis.length ? `Payer ${total} € ${unite}` : 'Coche au moins un outil'}
+          {envoi ? 'Ouverture du paiement...' : total ? `Payer ${total} € ${unite}` : 'Coche au moins un outil'}
         </button>
       </div>
     </div>

@@ -152,7 +152,7 @@ test('verifier-prix : tout est conforme en mode test', async () => {
   const res = await appelerPrix(U.edu, { stripe: tousLesPrix() })
   assert.equal(res.code, 200)
   assert.equal(res.corps.ok, true)
-  assert.equal(res.corps.total, 30)
+  assert.equal(res.corps.total, 32)
   assert.equal(res.corps.mode, 'test')
 })
 
@@ -212,6 +212,22 @@ test('payer : éducateur, deux outils en mensuel, une session à deux lignes', a
   assert.equal(s.cancel_url, 'https://digitalfootball.academy/educateur?outils=annule')
   // Rien n'est activé avant le webhook.
   assert.equal(m.lignes.size, 0)
+})
+
+test('payer : offre tous les outils, une seule ligne Stripe', async () => {
+  const m = mondePaiement()
+  const res = await payer(m, U.edu, { pack: true, periodicite: 'annuel' }, 'https://digitalfootball.academy')
+  assert.equal(res.code, 200)
+  assert.deepEqual(m.sessions[0].line_items, [{ price: 'price_pack_educateur_annuel', quantity: 1 }])
+  assert.deepEqual(m.sessions[0].metadata, { offre: 'outils', compte_id: U.edu, role: 'educateur' })
+})
+
+test('payer : offre tous les outils refusée si un outil est déjà payé, et pour un club', async () => {
+  const m = mondePaiement()
+  m.lignes.set(`${U.edu}|seances`, { source: 'achat', fin_le: null })
+  assert.equal((await payer(m, U.edu, { pack: true, periodicite: 'mensuel' })).code, 409)
+  assert.equal((await payer(mondePaiement(), U.club, { pack: true, periodicite: 'mensuel' })).code, 400)
+  assert.equal(m.sessions.length, 0)
 })
 
 test('payer : club, forfait annuel selon ses équipes', async () => {

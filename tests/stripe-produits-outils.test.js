@@ -24,16 +24,16 @@ function fauxStripe() {
 
 const muet = () => {}
 
-test('création : 30 prix, 15 produits, puis relance sans rien recréer', async () => {
+test('création : 32 prix, 16 produits, puis relance sans rien recréer', async () => {
   const s = fauxStripe()
   const un = await creer(s, muet)
-  assert.equal(un.crees, 30)
-  assert.equal(s.produits.size, 15)
+  assert.equal(un.crees, 32)
+  assert.equal(s.produits.size, 16)
   const deux = await creer(s, muet)
   assert.equal(deux.crees, 0)
-  assert.equal(deux.existants, 30)
+  assert.equal(deux.existants, 32)
   assert.deepEqual(deux.differents, [])
-  assert.equal(s.prix.size, 30)
+  assert.equal(s.prix.size, 32)
 })
 
 test('un prix existant différent est signalé, jamais modifié', async () => {
@@ -42,6 +42,6 @@ test('un prix existant différent est signalé, jamais modifié', async () => {
   s.prix.set(l.cle, { unit_amount: 999, currency: 'eur', recurring: { interval: l.intervalle } })
   const bilan = await creer(s, muet)
   assert.equal(bilan.differents.length, 1)
-  assert.equal(bilan.crees, 29)
+  assert.equal(bilan.crees, 31)
   assert.equal(s.prix.get(l.cle).unit_amount, 999)
 })
