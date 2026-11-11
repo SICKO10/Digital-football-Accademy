@@ -1163,7 +1163,9 @@ export default function DashboardClub() {
   // connecté. Une page dont l'outil n'est pas actif devient 'outil_verrouille'
   // et affiche la carte « outil non activé ». Autres clubs : valeur brute.
   const outils = useOutils({ role: 'club', userId: clubId, modeleOutils: club?.modele_outils })
-  const activeTab = outils.verrouillee(activeTabBrut) ? 'outil_verrouille' : activeTabBrut
+  // « Événements & Projets » reste ouverte si seul le projet club CFF4 est actif :
+  // il en est un sous-onglet.
+  const activeTab = outils.verrouillee(activeTabBrut) && !(activeTabBrut === 'evenements' && !outils.verrouillee('projet_club_cff4')) ? 'outil_verrouille' : activeTabBrut
   // Tutoriel de la page courante (cf. components/tutoriels/TutorielsClub) :
   // ouvert par le bouton « Tutoriel » de la barre du haut, ou tout seul à la
   // première visite de la page (une fois par compte, cf. lib/tutoriels).
@@ -1399,7 +1401,7 @@ export default function DashboardClub() {
   // événements (cf. ajouterReferent), en plus du responsable existant
   // (sélectionné parmi le staff, inchangé).
   const [saisieReferentProjet, setSaisieReferentProjet] = useState({ prenom: '', nom: '' })
-  const [sousVueEvenements, setSousVueEvenements] = useState('evenements') // 'evenements' | 'projets'
+  const [sousVueEvenements, setSousVueEvenements] = useState('evenements') // 'evenements' | 'projets' | 'cff4'
 
   // Budget
   const [budgetEntries, setBudgetEntries] = useState([])
@@ -3555,12 +3557,15 @@ export default function DashboardClub() {
     ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
     ...(canViewSection('stages') ? [{ id: 'stages', label: 'Stages', Icon: IcoCalendar }] : []),
   ].filter(item => outils.menuVisible(item.id))
+  // « Événements & Projets » réunit les événements, les projets et le projet club
+  // CFF4 : le menu s'affiche dès que l'un des trois est accessible.
+  const peutEvenements = canViewSection('evenements') && outils.menuVisible('evenements')
+  const peutCff4 = canViewSection('projet_club_cff4') && outils.menuVisible('projet_club_cff4')
   const NAV_ADMINISTRATIF = [
     { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
     { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
     { id: 'budget', label: t('club_tab_budget', lang), Icon: IcoWallet },
     { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
-    { id: 'projet_club_cff4', label: 'Projet Club — CFF4', Icon: IcoBuilding },
     { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
     { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
     { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
@@ -3568,7 +3573,7 @@ export default function DashboardClub() {
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
     ...(outils.actif ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
-  ].filter(item => canViewSection(item.id) && outils.menuVisible(item.id))
+  ].filter(item => (item.id === 'evenements' ? peutEvenements || peutCff4 : canViewSection(item.id) && outils.menuVisible(item.id)))
 
   const sportifVisible = NAV_SPORTIF.length > 0
   const administratifVisible = NAV_ADMINISTRATIF.length > 0
@@ -3617,8 +3622,7 @@ export default function DashboardClub() {
     { rubrique: 'projet_sportif', title: "Projet Sportif", message: "Définis les principes de jeu du club par phase, et choisis si tes éducateurs peuvent les modifier." },
     { rubrique: 'tournoi', title: "Tournois", message: "Suis les tournois auxquels tes équipes participent, ou organise le tien : planning, résultats et classement." },
     { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes." },
-    { rubrique: 'evenements', title: "Événements & Projets", message: "Organise tournois, soirées et réunions, et pilote les projets du club : référents, participants, matériel et missions." },
-    { rubrique: 'projet_club_cff4', title: "Projet Club — CFF4", message: "Construis le projet club pas à pas, selon le guide de certification FFF (CFF4)." },
+    { rubrique: 'evenements', title: "Événements & Projets", message: "Organise tournois, soirées et réunions, pilote les projets du club (référents, participants, matériel, missions) et construis le projet club selon le guide de certification FFF (CFF4)." },
     { rubrique: 'taches', title: "Tâches & Responsabilités", message: "Note qui fait quoi au club et suis les tâches ponctuelles avec leur statut." },
     { rubrique: 'organigramme', title: "Organigramme", message: "Présente les membres du club et leur rôle." },
     { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
@@ -5119,7 +5123,7 @@ export default function DashboardClub() {
         })()}
 
         {/* ── ÉVÉNEMENTS & PROJETS ── */}
-        {activeTab === 'evenements' && canViewSection('evenements') && (() => {
+        {activeTab === 'evenements' && (peutEvenements || peutCff4) && (() => {
           const aujourdHuiStr = new Date().toISOString().split('T')[0]
           const evenementsAVenir = evenementsClub.filter(ev => ev.date >= aujourdHuiStr).sort((a, b) => a.date.localeCompare(b.date))
           const evenementsParMois = evenementsAVenir.reduce((acc, ev) => {
@@ -5136,6 +5140,13 @@ export default function DashboardClub() {
 
           const projetsParStatut = (statut) => projetsClub.filter(p => p.statut === statut)
 
+          // Sous-onglets accessibles ; si celui choisi ne l'est pas, on prend le premier.
+          const sousVues = [
+            ...(peutEvenements ? [['evenements', 'Événements'], ['projets', 'Projets']] : []),
+            ...(peutCff4 ? [['cff4', 'Projet Club CFF4']] : []),
+          ]
+          const vue = sousVues.some(([val]) => val === sousVueEvenements) ? sousVueEvenements : sousVues[0][0]
+
           return (
             <div>
               {/* V2 : en-tête avec onglets compacts et action principale ; liste
@@ -5143,28 +5154,32 @@ export default function DashboardClub() {
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
                 <div>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Événements & Projets</h1>
-                  <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{evenementsAVenir.length} événement{evenementsAVenir.length > 1 ? 's' : ''} à venir · {projetsClub.filter(p => p.statut !== 'termine').length} projet{projetsClub.filter(p => p.statut !== 'termine').length > 1 ? 's' : ''} en cours ou en attente</p>
+                  {peutEvenements && (
+                    <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{evenementsAVenir.length} événement{evenementsAVenir.length > 1 ? 's' : ''} à venir · {projetsClub.filter(p => p.statut !== 'termine').length} projet{projetsClub.filter(p => p.statut !== 'termine').length > 1 ? 's' : ''} en cours ou en attente</p>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
-                    {[['evenements', 'Événements'], ['projets', 'Projets']].map(([val, label]) => (
-                      <button key={val} onClick={() => setSousVueEvenements(val)}
-                        style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: sousVueEvenements === val ? colors.background.raised : 'transparent', color: sousVueEvenements === val ? colors.text.primary : colors.text.faint, fontWeight: sousVueEvenements === val ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  {canEditSection('evenements') && sousVueEvenements === 'evenements' && !showEvenementForm && (
+                  {sousVues.length > 1 && (
+                    <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+                      {sousVues.map(([val, label]) => (
+                        <button key={val} onClick={() => setSousVueEvenements(val)}
+                          style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: vue === val ? colors.background.raised : 'transparent', color: vue === val ? colors.text.primary : colors.text.faint, fontWeight: vue === val ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {canEditSection('evenements') && vue === 'evenements' && !showEvenementForm && (
                     <button onClick={ouvrirNouvelEvenement} style={st.btnSolid}>+ Nouvel événement</button>
                   )}
-                  {canEditSection('evenements') && sousVueEvenements === 'projets' && !showProjetForm && (
+                  {canEditSection('evenements') && vue === 'projets' && !showProjetForm && (
                     <button onClick={ouvrirNouveauProjet} style={st.btnSolid}>+ Nouveau projet</button>
                   )}
                 </div>
               </div>
 
               {/* ═══ ÉVÉNEMENTS ═══ */}
-              {sousVueEvenements === 'evenements' && (
+              {vue === 'evenements' && (
                 <div>
 
                   {showEvenementForm && canEditSection('evenements') && (
@@ -5492,7 +5507,9 @@ export default function DashboardClub() {
               )}
 
               {/* ═══ PROJETS ═══ */}
-              {sousVueEvenements === 'projets' && (
+              {vue === 'cff4' && <ProjetClubCFF4 userId={moi?.id} clubId={clubId} />}
+
+              {vue === 'projets' && (
                 <div>
 
                   {showProjetForm && canEditSection('evenements') && (
@@ -6830,10 +6847,6 @@ export default function DashboardClub() {
             couleurPrincipale={couleurPrincipale}
             readOnly={!canEditSection('taches')}
           />
-        )}
-
-        {activeTab === 'projet_club_cff4' && canViewSection('projet_club_cff4') && (
-          <ProjetClubCFF4 userId={moi?.id} clubId={clubId} />
         )}
 
         {activeTab === 'outil_verrouille' && (
