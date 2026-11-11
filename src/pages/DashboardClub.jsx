@@ -565,7 +565,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
   )
 }
 
-function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email, peutVoir = () => true }) {
+function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email, peutVoir = () => true, slogan = '', imageFond = null, imageLogo = null }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -688,9 +688,21 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      <div>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>{t('club_accueil', lang)}</h1>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0', textTransform: 'capitalize' }}>{new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      {/* En-tête personnalisé : photo de fond, logo grand format et slogan du club. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '16px',
+        ...(imageFond ? {
+          borderRadius: '16px', padding: isMobile ? '24px 16px' : '32px 28px', minHeight: isMobile ? '120px' : '150px',
+          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.75), rgba(0,0,0,0.25)), url("${imageFond}")`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        } : {}),
+      }}>
+        {imageLogo && <img src={imageLogo} alt="" style={{ width: isMobile ? '56px' : '84px', height: isMobile ? '56px' : '84px', objectFit: 'cover', borderRadius: '14px', flexShrink: 0 }} />}
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: imageFond ? '#fff' : undefined }}>{t('club_accueil', lang)}</h1>
+          <p style={{ color: imageFond ? 'rgba(255,255,255,0.8)' : colors.text.faint, fontSize: '13px', margin: '4px 0 0', textTransform: 'capitalize' }}>{new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          {slogan && <p style={{ color: imageFond ? '#fff' : couleurPrincipale, fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>{slogan}</p>}
+        </div>
       </div>
 
       {nbEnAttente > 0 && (
@@ -777,8 +789,49 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
 const PRESETS_PRINCIPALE = [colors.accent.green, colors.accent.orange, colors.accent.blue, '#f43f5e', colors.accent.amber, colors.accent.purpleLight, colors.accent.cyan, '#ffffff']
 const PRESETS_SECONDAIRE = [colors.accent.cyan, colors.accent.green, '#818cf8', colors.accent.orange, '#ec4899', '#34d399', colors.accent.amber, '#94a3b8']
 
+// Une couleur au choix : sélecteur libre (toutes les couleurs possibles), code
+// hexadécimal à saisir ou à coller, et pastilles toutes prêtes. Le bouton
+// « Appliquer » ne s'active que si la couleur choisie diffère de celle du club.
+function ChoixCouleur({ titre, champ, defaut, presets, club, themeEdit, setThemeEdit, sauvegarderTheme, savingTheme, labelStyle }) {
+  const colors = useColors()
+  const valeur = themeEdit[champ]
+  const enregistree = club?.[champ] || defaut
+  const [saisie, setSaisie] = useState(null)
+  const texte = saisie ?? valeur
+  const modifiee = valeur.toLowerCase() !== enregistree.toLowerCase()
+  const choisir = (couleur) => { setSaisie(null); setThemeEdit(p => ({ ...p, [champ]: couleur })) }
+  const saisir = (brut) => {
+    const t = brut.startsWith('#') ? brut : `#${brut}`
+    setSaisie(t)
+    if (/^#[0-9a-f]{6}$/i.test(t)) setThemeEdit(p => ({ ...p, [champ]: t.toLowerCase() }))
+  }
+  return (
+    <div>
+      <label style={labelStyle}>{titre}</label>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
+        <input type="color" value={valeur} aria-label={`${titre} : choisir une couleur libre`} onChange={e => choisir(e.target.value)}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, cursor: 'pointer', background: 'none', padding: 0 }} />
+        <input type="text" value={texte} maxLength={7} spellCheck={false} aria-label={`${titre} : code hexadécimal`} onChange={e => saisir(e.target.value.trim())} onBlur={() => setSaisie(null)}
+          style={{ width: '96px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '13px', fontFamily: 'monospace', outline: 'none' }} />
+        <span style={{ fontSize: '12px', color: colors.text.faint }}>Toutes les couleurs sont possibles</span>
+      </div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {presets.map(c => (
+          <div key={c} onClick={() => choisir(c)} title={c}
+            style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: valeur.toLowerCase() === c.toLowerCase() ? '2px solid white' : '2px solid transparent', outline: `1px solid ${colors.border.default}` }} />
+        ))}
+      </div>
+      <button onClick={() => sauvegarderTheme({ [champ]: valeur })} disabled={savingTheme || !modifiee}
+        style={{ marginTop: '10px', background: modifiee ? valeur : colors.background.raised, border: modifiee ? 'none' : `1px solid ${colors.border.strong}`, borderRadius: '8px', color: modifiee ? '#fff' : colors.text.faint, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: modifiee ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif', textShadow: modifiee ? '0 1px 2px rgba(0,0,0,0.45)' : 'none' }}>
+        {savingTheme ? 'Enregistrement...' : modifiee ? 'Appliquer cette couleur' : 'Couleur appliquée'}
+      </button>
+    </div>
+  )
+}
+
 function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
   const colors = useColors()
+  const [messageSlogan, setMessageSlogan] = useState('')
   const label = { color: colors.text.faint, fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.faint, padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
 
@@ -790,45 +843,11 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
-        {/* Couleur principale */}
-        <div>
-          <label style={label}>Couleur principale</label>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input type="color" value={themeEdit.couleur_principale}
-              onChange={e => setThemeEdit(p => ({ ...p, couleur_principale: e.target.value }))}
-              style={{ width: '44px', height: '44px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {PRESETS_PRINCIPALE.map(c => (
-                <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_principale: c })); sauvegarderTheme({ couleur_principale: c }) }}
-                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_principale || colors.accent.green) === c ? '2px solid white' : '2px solid transparent' }} />
-              ))}
-            </div>
-          </div>
-          <button onClick={() => sauvegarderTheme({ couleur_principale: themeEdit.couleur_principale })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.faint, padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Appliquer
-          </button>
-        </div>
-
-        {/* Couleur secondaire */}
-        <div>
-          <label style={label}>Couleur secondaire</label>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input type="color" value={themeEdit.couleur_secondaire}
-              onChange={e => setThemeEdit(p => ({ ...p, couleur_secondaire: e.target.value }))}
-              style={{ width: '44px', height: '44px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'none', padding: 0 }} />
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {PRESETS_SECONDAIRE.map(c => (
-                <div key={c} onClick={() => { setThemeEdit(p => ({ ...p, couleur_secondaire: c })); sauvegarderTheme({ couleur_secondaire: c }) }}
-                  style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: (club?.couleur_secondaire || colors.accent.cyan) === c ? '2px solid white' : '2px solid transparent' }} />
-              ))}
-            </div>
-          </div>
-          <button onClick={() => sauvegarderTheme({ couleur_secondaire: themeEdit.couleur_secondaire })} disabled={savingTheme}
-            style={{ marginTop: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.text.faint, padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Appliquer
-          </button>
-        </div>
+        {/* Couleurs : choix libre, code hexadécimal ou pastilles */}
+        <ChoixCouleur titre="Couleur principale" champ="couleur_principale" defaut={colors.accent.green} presets={PRESETS_PRINCIPALE}
+          club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme} savingTheme={savingTheme} labelStyle={label} />
+        <ChoixCouleur titre="Couleur secondaire" champ="couleur_secondaire" defaut={colors.accent.cyan} presets={PRESETS_SECONDAIRE}
+          club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme} savingTheme={savingTheme} labelStyle={label} />
 
         <ApercuCouleurClub couleur={themeEdit.couleur_principale} />
 
@@ -881,11 +900,16 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
             <input type="text" placeholder="Ex: Ensemble, on va plus loin" value={themeEdit.slogan}
               onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
               style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
-            <button onClick={() => sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })} disabled={savingTheme}
-              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, fontWeight: 700, padding: '10px 18px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              Sauvegarder
+            <button onClick={async () => {
+              setMessageSlogan('')
+              const ok = await sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })
+              if (ok) setMessageSlogan(themeEdit.slogan.trim() ? 'Slogan enregistré, il s\'affiche sur ton Accueil.' : 'Slogan supprimé.')
+            }} disabled={savingTheme}
+              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, fontWeight: 700, padding: '10px 18px', cursor: savingTheme ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              {savingTheme ? 'Enregistrement...' : 'Sauvegarder'}
             </button>
           </div>
+          {messageSlogan && <p role="status" style={{ margin: '8px 0 0', fontSize: '13px', fontWeight: 600, color: colors.accent.success }}>{messageSlogan}</p>}
         </div>
       </div>
     </div>
@@ -3342,16 +3366,20 @@ export default function DashboardClub() {
   // Sauvegarde un ou plusieurs champs de thème (couleurs, slogan, images) —
   // optimistic sur `club` (source de vérité pour la couleur affichée partout),
   // sans attendre la réponse Supabase.
+  // Rend true si la base a bien enregistré. Sans `.select()`, un refus de
+  // sécurité (RLS) rendrait « succès » avec 0 ligne modifiée : on le détecte.
   const sauvegarderTheme = async (champs) => {
     const avant = club
     setClub(prev => ({ ...prev, ...champs }))
     setSavingTheme(true)
-    const { error } = await supabase.from('profiles').update(champs).eq('id', clubId)
+    const { data, error } = await supabase.from('profiles').update(champs).eq('id', clubId).select('id')
     setSavingTheme(false)
-    if (error) {
+    if (error || !data?.length) {
       setClub(avant)
-      alert('Erreur : ' + error.message)
+      alert('Erreur : ' + (error?.message || 'la modification n\'a pas été enregistrée (droits insuffisants)'))
+      return false
     }
+    return true
   }
 
   // Upload photo de fond / photo hero — même flux signé Cloudinary que
@@ -3704,7 +3732,7 @@ export default function DashboardClub() {
           }),
         }}>
           <div style={{ padding: '18px 16px 14px', borderBottom: BORDURE_MENU }}>
-            <EnTeteMenu logoUrl={club?.avatar_url} />
+            <EnTeteMenu logoUrl={club?.image_hero_url || club?.avatar_url} />
             <p style={{ margin: '12px 0 0', fontWeight: 800, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {club?.club || t('club_mon_club', lang)}
             </p>
@@ -3794,6 +3822,9 @@ export default function DashboardClub() {
             couleurPrincipale={couleurPrincipale}
             email={club?.email}
             peutVoir={outils.menuVisible}
+            slogan={club?.slogan || ''}
+            imageFond={club?.image_fond_url || null}
+            imageLogo={club?.image_hero_url || null}
           />
         )}
         {activeTab === 'accueil' && clubId && monUserId && clubId === monUserId && (

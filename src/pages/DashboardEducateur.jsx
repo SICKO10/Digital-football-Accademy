@@ -1,6 +1,7 @@
 import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../lib/menuLateral'
 import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
+import BandeauClub from '../components/BandeauClub'
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { useOutils } from '../lib/useOutils'
 import OutilNonActive from '../components/outils/OutilNonActive'
@@ -1196,7 +1197,7 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
   )
 }
 
-function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true }) {
+function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
   const colors = useColors()
   const { theme } = useTheme()
   const aujourdHui = new Date().toISOString().split('T')[0]
@@ -1410,6 +1411,8 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
         @media (max-width: 1200px) { .df-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 480px) { .df-kpi-grid { grid-template-columns: 1fr; } }
       `}</style>
+
+      <BandeauClub club={clubInfo} couleur={colors.accent.brand} isMobile={isMobile} />
 
       {/* 1. En-tête : date du jour, salutation, une seule action principale. */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -2146,7 +2149,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data, error } = await supabase
       .from('club_educateurs')
-      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, couleur_principale, image_fond_url, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
+      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, couleur_principale, image_fond_url, image_hero_url, slogan, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -2465,7 +2468,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Couleur du club d'affiliation (lien accepté) ; sans club = vert par défaut.
   useDonnerCouleurClub(clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null)
   const couleurChargement = useCouleurChargement()
-  const logoClubMenu = clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url : null
+  const logoClubMenu = clubAffiliation?.statut === 'accepte' ? (clubAffiliation.club?.image_hero_url || clubAffiliation.club?.avatar_url) : null
   const [cancelling, setCancelling] = useState(false)
   const [cancelDone, setCancelDone] = useState(false)
   const [annoncesClub, setAnnoncesClub] = useState([])
@@ -6231,6 +6234,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <EncartOutilsClub outils={outils} userId={userId} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
+              clubInfo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club : null}
               prenom={profil?.prenom}
               userId={userId}
               equipeActiveId={equipeActive?.id}

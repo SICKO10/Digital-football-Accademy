@@ -38,6 +38,7 @@ import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../l
 import EnTeteMenu from '../components/EnTeteMenu'
 import { ecranJoueurCss, choisirALaUne, vignetteVideo } from '../lib/ecranJoueur'
 import SeanceDuJourJoueur from '../components/SeanceDuJourJoueur'
+import BandeauClub from '../components/BandeauClub'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
@@ -998,7 +999,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const { data: ce } = await supabase.from('club_educateurs').select('club_id').eq('educateur_id', a.educateur_id).eq('statut', 'accepte').maybeSingle()
     if (!ce?.club_id) { setClubIdInventaire(null); setClubAffilieInfo(null); setChampsEquipement([]); setMesTailles([]); setEquipementPret(null); setEquipementCommande(null); setPackAttribue(null); return null }
     setClubIdInventaire(ce.club_id)
-    supabase.from('profiles_public').select('club, avatar_url, couleur_principale').eq('id', ce.club_id).maybeSingle().then(({ data }) => setClubAffilieInfo(data || null))
+    supabase.from('profiles_public').select('club, avatar_url, couleur_principale, image_fond_url, image_hero_url, slogan').eq('id', ce.club_id).maybeSingle().then(({ data }) => setClubAffilieInfo(data || null))
     const [{ data: attribution }, { data: tailles }, { data: commande }] = await Promise.all([
       supabase.from('equipement_attributions').select('*, pack:pack_id(*)').eq('club_id', ce.club_id).eq('user_id', uid).maybeSingle(),
       supabase.from('equipement_tailles').select('*').eq('user_id', uid),
@@ -3519,7 +3520,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         }),
       }}>
         <div style={{ padding: '22px 16px 18px', borderBottom: BORDURE_MENU, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <EnTeteMenu logoUrl={clubAffilieInfo?.avatar_url} />
+          <EnTeteMenu logoUrl={clubAffilieInfo?.image_hero_url || clubAffilieInfo?.avatar_url} />
           {isMobile && (
             <button onClick={() => setSidebarOpen(false)} aria-label="Fermer le menu" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}><IconClose size={20} /></button>
           )}
@@ -3700,6 +3701,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 affilié ; analyse, visibilité recruteurs, publication pour les
                 autres). Rien à mettre en avant : le bloc disparaît. */}
             <ALaUne
+            <BandeauClub club={clubAffilieInfo} couleur={colors.accent.brand} isMobile={isMobile} />
               choix={aLaUneChoix}
               isMobile={isMobile}
               lang={lang}
