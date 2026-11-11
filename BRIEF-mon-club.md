@@ -10,6 +10,7 @@ Trois endroits séparés aujourd'hui : « Personnaliser » (couleurs, photo, log
 ## Décisions de Kevin
 - Tous les clubs ont accès à cet endroit, y compris les 6 clubs à l'ancien modèle.
 - **Pour les clubs de l'ancien modèle, rien ne change par défaut** : tous leurs outils restent affichés comme aujourd'hui. Ils ajoutent ou retirent des outils eux-mêmes, seulement s'ils le souhaitent.
+- **Deux modes pour les éducateurs, au choix du club (2026-11-11)** : soit le même dashboard pour tous, soit un dashboard individualisé éducateur par éducateur. Le club peut passer de l'un à l'autre à tout moment.
 - Conséquence : pour ces clubs, l'interrupteur ne règle que l'affichage du menu (aucun verrou d'accès ni facturation, le verrou du bloc 15 ne concerne que le nouveau modèle). Aucune donnée n'est supprimée.
 
 ## Direction proposée (à valider au brainstorm)
@@ -17,10 +18,10 @@ Trois endroits séparés aujourd'hui : « Personnaliser » (couleurs, photo, log
 2. Un interrupteur agit tout de suite, avec « Annuler ». Désactiver un outil ne supprime jamais de données.
 3. Chaque changement prévient les éducateurs concernés avec la date d'effet (existe déjà pour les retraits).
 4. [IDÉE] Modèles de départ (Club compétition, Formation, Minimal) qui pré-règlent tout, puis on ajuste.
-5. [IDÉE] Exceptions par éducateur en plus du réglage commun.
+5. Choix du mode en haut de l'étape 3 : « Le même pour tous » (par défaut) ou « Individualisé ». En mode individualisé, chaque éducateur part du réglage commun et le club ajuste ce qu'il veut ; l'éducateur ajusté est repéré dans la liste. Règle : le réglage individuel passe avant le réglage commun. Revenir à « même pour tous » ne supprime pas les réglages individuels (ils sont mis de côté et reviennent si on repasse en individualisé). Un nouvel éducateur reçoit le réglage commun.
 
 ## Questions encore ouvertes
-1. Les éducateurs sont-ils réglés tous ensemble, par équipe, ou un par un ? (recommandé : tous ensemble, plus des exceptions individuelles)
+1. (Tranchée : deux modes, même pour tous ou individualisé.) Reste à décider si un réglage par équipe est utile en plus.
 2. Qui peut modifier : seulement le président, ou aussi d'autres rôles ?
 3. Où vivent les « Droits des éducateurs » (permissions par rôle) : fusionnés dans cette page, ou gardés à part ?
 4. Un éducateur d'un club à l'ancien modèle suit-il les choix du club, ou garde-t-il son menu complet ?
