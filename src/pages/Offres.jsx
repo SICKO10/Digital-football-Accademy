@@ -99,24 +99,28 @@ function OffresEducateur({ color, cycle }) {
 
 // Toggle global Mensuel/Annuel — pilote l'affichage de toutes les sections Pro
 // (Joueur/Éducateur/Recruteur) en même temps.
-function CycleToggle({ cycle, setCycle }) {
+function CycleToggle({ cycle, setCycle, libelle, badge = true, marge = '2.5rem' }) {
   const btnStyle = (actif) => ({
     background: actif ? colors.accent.green : 'transparent',
-    color: actif ? colors.black : colors.text.dim,
-    border: 'none', borderRadius: '26px', padding: '9px 20px', fontSize: '13px', fontWeight: 700,
-    cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '6px',
+    color: actif ? colors.black : '#e4e4e7',
+    border: 'none', borderRadius: '999px', padding: '12px 30px', minHeight: '46px', fontSize: '15px', fontWeight: 800,
+    cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '8px',
+    boxShadow: actif ? '0 0 0 3px rgba(74,222,128,0.22)' : 'none', transition: 'background .15s, box-shadow .15s',
   })
   return (
-    <div style={{ display: 'inline-flex', background: '#111', borderRadius: '30px', padding: '4px', marginBottom: '2.5rem' }}>
-      <button onClick={() => setCycle('mensuel')} style={btnStyle(cycle === 'mensuel')}>Mensuel</button>
-      <button onClick={() => setCycle('annuel')} style={btnStyle(cycle === 'annuel')}>
-        Annuel
-        {cycle !== 'annuel' && (
-          <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px' }}>
-            2 mois offerts
-          </span>
-        )}
-      </button>
+    <div style={{ marginBottom: marge }}>
+      {libelle && <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: colors.text.secondary }}>{libelle}</p>}
+      <div role="radiogroup" aria-label="Rythme de paiement" style={{ display: 'inline-flex', background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '999px', padding: '5px', boxShadow: '0 8px 30px rgba(0,0,0,0.45)' }}>
+        <button type="button" role="radio" aria-checked={cycle === 'mensuel'} onClick={() => setCycle('mensuel')} style={btnStyle(cycle === 'mensuel')}>Mensuel</button>
+        <button type="button" role="radio" aria-checked={cycle === 'annuel'} onClick={() => setCycle('annuel')} style={btnStyle(cycle === 'annuel')}>
+          Annuel
+          {badge && cycle !== 'annuel' && (
+            <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, fontSize: '11px', fontWeight: 800, padding: '3px 9px', borderRadius: '20px' }}>
+              2 mois offerts
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   )
 }
@@ -243,7 +247,7 @@ export default function Offres() {
         <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur ou club, choisis la formule qui te correspond.</p>
         <ChoixUnivers />
         <div style={{ marginTop: '2.5rem' }}>
-          <CycleToggle cycle={cycle} setCycle={setCycle} />
+          <CycleToggle cycle={cycle} setCycle={setCycle} libelle="Choisis ton rythme de paiement" />
         </div>
       </div>
 
@@ -253,6 +257,7 @@ export default function Offres() {
       <section style={{ ...st.sectionOuter(colors.background.base), paddingTop: '1rem' }}>
         <div style={st.sectionInner}>
 
+          <div style={{ textAlign: 'center' }}><CycleToggle cycle={cycle} setCycle={setCycle} marge="1.75rem" /></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', maxWidth: '700px', margin: '0 auto' }}>
             {/* Starter — toujours visible, hors du toggle mensuel/annuel */}
             <div style={st.card(colors.text.muted, false)}>
@@ -318,6 +323,7 @@ export default function Offres() {
         titre="Gère ton équipe comme un pro" texte="Garde le socle gratuit et ajoute seulement les outils dont tu as besoin : séances, tactique, suivi des joueurs, analyse vidéo." fondSuite="#0d0d0d" />
       <section style={{ ...st.sectionOuter('#0d0d0d'), paddingTop: '1rem' }}>
         <div style={st.sectionInner}>
+          <div style={{ textAlign: 'center' }}><CycleToggle cycle={cycle} setCycle={setCycle} badge={false} marge="1.75rem" /></div>
           <OffresEducateur color={colors.accent.blue} cycle={cycle} />
         </div>
       </section>
