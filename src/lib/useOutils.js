@@ -14,6 +14,8 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
   const [essaisUtilises, setEssaisUtilises] = useState([])
   const [masques, setMasques] = useState([])
   const [ouverts, setOuverts] = useState([])
+  const [masquesClub, setMasquesClub] = useState([])
+  const [masquesClubLus, setMasquesClubLus] = useState(false)
   const [pret, setPret] = useState(false)
 
   const [version, setVersion] = useState(0)
@@ -46,7 +48,26 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
     return () => { annule = true }
   }, [actif, userId, role, version])
 
-  const compte = useMemo(() => compteDepuisLignes(role, actif, lignes, masques), [role, actif, lignes, masques])
+  // Club : outils retirés de son propre menu depuis Mon club. Lus pour tous les
+  // clubs (ancien modèle compris) ; sans ligne, tout reste affiché.
+  const lireMasquesClub = role === 'club' && !desactive && !!userId
+  useEffect(() => {
+    if (!lireMasquesClub) return undefined
+    let annule = false
+    supabase.from('mon_club_affichage').select('outil').eq('club_id', userId).eq('cible', 'club').eq('visible', false)
+      .then(({ data, error }) => {
+        if (annule) return
+        if (error) console.error('mon_club_affichage', error.message)
+        setMasquesClub((data || []).map(l => l.outil))
+        setMasquesClubLus(true)
+      })
+    return () => { annule = true }
+  }, [lireMasquesClub, userId, version])
+
+  const compte = useMemo(
+    () => compteDepuisLignes(role, actif, lignes, masques, lireMasquesClub ? masquesClub : []),
+    [role, actif, lignes, masques, masquesClub, lireMasquesClub],
+  )
 
   const etats = useMemo(
     () => (actif ? etatsOutils({ role, lignes, essaisUtilises, masques }) : []),
@@ -59,10 +80,12 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
     lignes,
     etats,
     ouverts,
+    masquesClub,
+    masquesClubLus,
     recharger,
     verrouillee: (cle) => actif && pret && sectionVerrouillee(compte, cle),
     menuVisible: (cle) => menuVisible(compte, cle),
     outilActif: (outilId) => outilActif(compte, outilId),
     ongletsStats: () => ongletsStatsPermis(compte),
-  }), [actif, pret, lignes, etats, ouverts, recharger, compte])
+  }), [actif, pret, lignes, etats, ouverts, masquesClub, masquesClubLus, recharger, compte])
 }

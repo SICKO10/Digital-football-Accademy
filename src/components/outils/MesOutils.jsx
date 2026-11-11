@@ -6,6 +6,7 @@ import { outilsPourEducateurs } from '../../lib/outilsAcces'
 import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
+import Interrupteur from './Interrupteur'
 import MonAbonnement from './MonAbonnement'
 
 const euros = (n) => `${n} €`
@@ -89,17 +90,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId })
   }
 
   const commutateur = ({ actif, libelle, id, onClick, desactive = false }) => (
-    <button
-      type="button" role="switch" aria-checked={actif} aria-label={libelle}
-      disabled={enCours === id || desactive} onClick={onClick}
-      style={{
-        flexShrink: 0, width: 46, height: 26, borderRadius: 999, border: 'none', padding: 3, cursor: desactive ? 'default' : 'pointer',
-        background: actif ? colors.accent.brand : colors.border.strong, opacity: enCours === id || desactive ? 0.6 : 1,
-        display: 'flex', justifyContent: actif ? 'flex-end' : 'flex-start', transition: 'background .15s',
-      }}
-    >
-      <span style={{ width: 20, height: 20, borderRadius: 999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
-    </button>
+    <Interrupteur actif={actif} libelle={libelle} onClick={onClick} occupe={enCours === id} desactive={desactive} />
   )
 
   const interrupteur = (e) => {

@@ -262,3 +262,51 @@ test('club : outils ouvrables aux éducateurs, possédés et ouverts', () => {
   assert.deepEqual(liste.map(l => l.outil.id), ['projet_sportif', 'stages', 'cff4'])
   assert.deepEqual(liste.map(l => [l.possede, l.ouvert]), [[false, false], [false, false], [true, true]])
 })
+
+test('club ancien modèle : sans réglage, tous les menus restent affichés', () => {
+  const compte = compteDepuisLignes('club', false, [], [], [])
+  for (const cle of ['budget', 'sponsors', 'evenements', 'newsletter', 'stages', 'classements', 'projet_club_cff4']) {
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+  }
+})
+
+test('club ancien modèle : masquer un outil retire ses menus, pas les autres', () => {
+  const compte = compteDepuisLignes('club', false, [], [], ['finances', 'vie_club'])
+  for (const cle of ['budget', 'sponsors', 'evenements', 'taches', 'newsletter']) {
+    assert.equal(menuVisible(compte, cle, NOW), false, cle)
+  }
+  for (const cle of ['stages', 'classements', 'tournoi', 'projet_sportif', 'projet_club_cff4']) {
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+  }
+  // la page reste ouverte : seul le menu change
+  assert.equal(sectionVerrouillee(compte, 'budget', NOW), false)
+})
+
+test('club : le socle et Mon club ne se masquent jamais', () => {
+  const compte = compteDepuisLignes('club', false, [], [], ['finances', 'competition', 'vie_club', 'stages', 'cff4', 'projet_sportif'])
+  for (const cle of ['accueil', 'profil', 'categories', 'staff', 'planning', 'mon_club', 'mes_outils']) {
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+  }
+})
+
+test('masquage du club : ne touche pas un éducateur', () => {
+  const compte = compteDepuisLignes('educateur', false, [], [], ['finances'])
+  assert.equal(menuVisible(compte, 'budget', NOW), true)
+})
+
+test('club nouveau modèle : le masquage s\'ajoute au verrouillage', () => {
+  const lignes = [{ outil: 'finances', source: 'forfait', fin_le: null }, { outil: 'stages', source: 'forfait', fin_le: null }]
+  const compte = compteDepuisLignes('club', true, lignes, [], ['finances'])
+  assert.equal(menuVisible(compte, 'budget', NOW), false)
+  assert.equal(menuVisible(compte, 'stages', NOW), true)
+  assert.equal(menuVisible(compte, 'newsletter', NOW), false)
+})
+
+test('chaque outil du club a un thème connu et une explication', async () => {
+  const { OUTILS, THEMES_CLUB } = await import('../src/lib/catalogueOutils.js')
+  const themes = THEMES_CLUB.map(t => t.id)
+  for (const o of OUTILS.filter(x => x.role === 'club')) {
+    assert.ok(themes.includes(o.theme), `${o.id} : thème`)
+    assert.ok(o.explication && !/[—–]/.test(o.explication), `${o.id} : explication`)
+  }
+})

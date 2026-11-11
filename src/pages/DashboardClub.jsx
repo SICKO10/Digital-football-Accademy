@@ -4,6 +4,7 @@ import { useCouleurChargement } from '../lib/couleurChargement'
 import EnTeteMenu from '../components/EnTeteMenu'
 import { demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
 import { PERMISSION_DEFAULTS } from '../lib/permissionsClub'
+import { ROLES_STAFF } from '../lib/rolesClub'
 import { useOutils } from '../lib/useOutils'
 import OutilNonActive from '../components/outils/OutilNonActive'
 import MesOutils from '../components/outils/MesOutils'
@@ -59,7 +60,7 @@ import StagesModule from '../components/stages/StagesModule'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
-import ApercuCouleurClub from '../components/ApercuCouleurClub'
+import MonClub from '../components/monclub/MonClub'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -134,48 +135,7 @@ const getCategoryColor = (nom) => {
   return '#888'
 }
 
-const ROLES_STAFF = [
-  { val: 'president', label: 'Président' },
-  { val: 'directeur_sportif', label: 'Directeur sportif' },
-  { val: 'responsable_formation', label: 'Responsable Formation' },
-  { val: 'responsable_ecole_foot', label: 'Responsable École de Foot' },
-  { val: 'responsable_preformation', label: 'Responsable Préformation' },
-  { val: 'entraineur', label: 'Entraîneur' },
-  { val: 'educateur', label: 'Éducateur' },
-  { val: 'marketing', label: 'Marketing' },
-  { val: 'secretaire', label: 'Secrétaire' },
-  { val: 'tresorier', label: 'Trésorier' },
-  { val: 'responsable_communication', label: 'Responsable Communication' },
-  { val: 'coach_adjoint', label: 'Coach adjoint' },
-  { val: 'kine', label: 'Kinésithérapeute' },
-  { val: 'intendant', label: 'Intendant' },
-  { val: 'preparateur_physique', label: 'Préparateur physique' },
-  { val: 'comptable', label: 'Comptable' },
-  { val: 'responsable_buvette', label: 'Responsable Buvette' },
-  { val: 'responsable_securite', label: 'Responsable Sécurité' },
-  { val: 'responsable_equipements', label: 'Responsable Équipements' },
-  { val: 'responsable_arbitre', label: 'Responsable Arbitre' },
-]
 
-// Catégories d'équipes concernées par l'accès délégué par rôle (cf.
-// role_categories_access) — réutilise la liste réelle des catégories que le
-// club peut créer (src/lib/categories.js), pas une liste inventée : cocher
-// une catégorie qui ne peut jamais exister côté équipes serait inutile.
-const ACCES_CATEGORIES_DEFAUT = {
-  responsable_formation: ['U15', 'U16', 'U17', 'U18', 'U19', 'U20', 'Seniors'],
-  responsable_ecole_foot: ['U7', 'U8', 'U9', 'U10'],
-  responsable_preformation: ['U11', 'U12', 'U13', 'U14'],
-}
-// Rôles avec accès complet aux catégories par défaut (hors président, qui a
-// déjà tout et n'apparaît pas dans la matrice configurable).
-const ROLES_ACCES_COMPLET_DEFAUT = ['directeur_sportif', 'secretaire']
-// 'entraineur'/'educateur' sont volontairement absents de cette matrice : leur
-// périmètre (leur propre équipe) est déjà déterminé par l'affectation
-// educateur_id existante sur chaque catégorie, pas par cette liste.
-// 'responsable_buvette'/'responsable_securite'/'responsable_equipements' :
-// rôles événementiels/club entier, sans lien avec une équipe précise — un
-// accès "par catégorie" n'a pas de sens pour eux.
-const ROLES_HORS_ACCES_CATEGORIES = ['entraineur', 'educateur', 'responsable_buvette', 'responsable_securite', 'responsable_equipements']
 const ROLE_STAFF_LABEL = (role) => ROLES_STAFF.find(r => r.val === role)?.label || role
 
 // Style de badge par famille de rôle (cf. ROLES_STAFF) — président en doré,
@@ -254,10 +214,6 @@ const construireArbreOrganigramme = (membres) => {
   return roots
 }
 
-// Sections pilotables par la matrice de permissions (role_permissions). 'terrains'
-// est séparé de 'sportif' bien que sous le même onglet Sportif dans la nav, pour
-// permettre de déléguer le planning des terrains indépendamment du reste (équipes,
-// classements, recrutement, éducateurs, qui restent groupés sous 'sportif').
 // Trois listes de tailles séparées (plutôt qu'une seule liste fourre-tout
 // enfant+adulte+pointures) : un vêtement enfant et un vêtement adulte n'ont
 // pas les mêmes options, et une pointure (chaussures/chaussettes) n'a rien à
@@ -299,23 +255,6 @@ const optionsPourSuggestion = (suggestion, categorieAge) => {
   return { taille_unique: false, options: categorieAge === 'enfant' ? TAILLES_ENFANT : TAILLES_ADULTE }
 }
 
-const PERMISSION_SECTIONS = [
-  { id: 'sportif', label: 'Sportif' },
-  { id: 'seances', label: 'Planifier séance' },
-  { id: 'terrains', label: 'Planning terrains' },
-  { id: 'deplacements', label: 'Déplacements' },
-  { id: 'budget', label: 'Budget' },
-  { id: 'sponsors', label: 'Sponsors' },
-  { id: 'profil', label: 'Profil club' },
-  { id: 'evenements', label: 'Événements & Projets' },
-  { id: 'stages', label: 'Stages' },
-  { id: 'organigramme', label: 'Organigramme' },
-  { id: 'staff', label: 'Staff' },
-  { id: 'inventaire', label: 'Inventaire' },
-  { id: 'newsletter', label: 'Newsletter' },
-  { id: 'taches', label: 'Tâches & Responsabilités' },
-  { id: 'projet_club_cff4', label: 'Projet Club — CFF4' },
-]
 
 // PERMISSION_DEFAULTS : déplacée dans src/lib/permissionsClub.js (partagée
 // avec le serveur, cf. api/upload-image.js) — contenu inchangé.
@@ -784,302 +723,6 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   )
 }
 
-// ── Personnalisation visuelle du club (couleurs, photo de fond, logo hero, slogan) ──
-// Edite une copie locale des couleurs/slogan (themeEdit), appliquée immédiatement
-// sur le hero banner et la nav via sauvegarderTheme (optimistic sur `club`, parent).
-// Les uploads (fond/hero) se sauvegardent directement au choix du fichier — pas de
-// bouton "Appliquer" séparé pour ceux-là.
-const PRESETS_PRINCIPALE = [colors.accent.green, colors.accent.orange, colors.accent.blue, '#f43f5e', colors.accent.amber, colors.accent.purpleLight, colors.accent.cyan, '#ffffff']
-const PRESETS_SECONDAIRE = [colors.accent.cyan, colors.accent.green, '#818cf8', colors.accent.orange, '#ec4899', '#34d399', colors.accent.amber, '#94a3b8']
-
-// Une couleur au choix : sélecteur libre (toutes les couleurs possibles), code
-// hexadécimal à saisir ou à coller, et pastilles toutes prêtes. Le bouton
-// « Appliquer » ne s'active que si la couleur choisie diffère de celle du club.
-function ChoixCouleur({ titre, champ, defaut, presets, club, themeEdit, setThemeEdit, sauvegarderTheme, savingTheme, labelStyle }) {
-  const colors = useColors()
-  const valeur = themeEdit[champ]
-  const enregistree = club?.[champ] || defaut
-  const [saisie, setSaisie] = useState(null)
-  const texte = saisie ?? valeur
-  const modifiee = valeur.toLowerCase() !== enregistree.toLowerCase()
-  const choisir = (couleur) => { setSaisie(null); setThemeEdit(p => ({ ...p, [champ]: couleur })) }
-  const saisir = (brut) => {
-    const t = brut.startsWith('#') ? brut : `#${brut}`
-    setSaisie(t)
-    if (/^#[0-9a-f]{6}$/i.test(t)) setThemeEdit(p => ({ ...p, [champ]: t.toLowerCase() }))
-  }
-  return (
-    <div>
-      <label style={labelStyle}>{titre}</label>
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
-        <input type="color" value={valeur} aria-label={`${titre} : choisir une couleur libre`} onChange={e => choisir(e.target.value)}
-          style={{ width: '44px', height: '44px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, cursor: 'pointer', background: 'none', padding: 0 }} />
-        <input type="text" value={texte} maxLength={7} spellCheck={false} aria-label={`${titre} : code hexadécimal`} onChange={e => saisir(e.target.value.trim())} onBlur={() => setSaisie(null)}
-          style={{ width: '96px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '13px', fontFamily: 'monospace', outline: 'none' }} />
-        <span style={{ fontSize: '12px', color: colors.text.faint }}>Toutes les couleurs sont possibles</span>
-      </div>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {presets.map(c => (
-          <div key={c} onClick={() => choisir(c)} title={c}
-            style={{ width: '26px', height: '26px', borderRadius: '6px', background: c, cursor: 'pointer', border: valeur.toLowerCase() === c.toLowerCase() ? '2px solid white' : '2px solid transparent', outline: `1px solid ${colors.border.default}` }} />
-        ))}
-      </div>
-      <button onClick={() => sauvegarderTheme({ [champ]: valeur })} disabled={savingTheme || !modifiee}
-        style={{ marginTop: '10px', background: modifiee ? valeur : colors.background.raised, border: modifiee ? 'none' : `1px solid ${colors.border.strong}`, borderRadius: '8px', color: modifiee ? '#fff' : colors.text.faint, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: modifiee ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif', textShadow: modifiee ? '0 1px 2px rgba(0,0,0,0.45)' : 'none' }}>
-        {savingTheme ? 'Enregistrement...' : modifiee ? 'Appliquer cette couleur' : 'Couleur appliquée'}
-      </button>
-    </div>
-  )
-}
-
-function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, onClose }) {
-  const colors = useColors()
-  const [messageSlogan, setMessageSlogan] = useState('')
-  const label = { color: colors.text.faint, fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
-  const btnFichier = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.faint, padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-
-  return (
-    <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '20px', marginBottom: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-        <h3 style={{ margin: 0, color: colors.text.primary, fontSize: '15px', fontWeight: 700 }}>Personnalisation du dashboard</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>×</button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
-        {/* Couleurs : choix libre, code hexadécimal ou pastilles */}
-        <ChoixCouleur titre="Couleur principale" champ="couleur_principale" defaut={colors.accent.green} presets={PRESETS_PRINCIPALE}
-          club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme} savingTheme={savingTheme} labelStyle={label} />
-        <ChoixCouleur titre="Couleur secondaire" champ="couleur_secondaire" defaut={colors.accent.cyan} presets={PRESETS_SECONDAIRE}
-          club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme} savingTheme={savingTheme} labelStyle={label} />
-
-        <ApercuCouleurClub couleur={themeEdit.couleur_principale} couleur2={themeEdit.couleur_secondaire} />
-
-        {/* Photo de fond */}
-        <div>
-          <label style={label}>Photo de fond (stade, terrain, vestiaire…)</label>
-          {club?.image_fond_url && (
-            <img src={club.image_fond_url} alt="Fond" style={{ width: '100%', maxWidth: '280px', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px', display: 'block' }} />
-          )}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <label style={btnFichier}>
-              {themeUploading === 'image_fond_url' ? '⏳ Upload...' : '📷 Choisir une photo'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!themeUploading}
-                onChange={e => e.target.files[0] && uploaderImageTheme(e.target.files[0], 'image_fond_url')} />
-            </label>
-            {club?.image_fond_url && (
-              <button onClick={() => sauvegarderTheme({ image_fond_url: null })}
-                style={{ background: 'none', border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Supprimer
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Photo hero / logo grand format */}
-        <div>
-          <label style={label}>Photo / logo du club (grand format, remplace l'avatar dans l'en-tête)</label>
-          {club?.image_hero_url && (
-            <img src={club.image_hero_url} alt="Hero" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '8px', display: 'block' }} />
-          )}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <label style={btnFichier}>
-              {themeUploading === 'image_hero_url' ? '⏳ Upload...' : '🖼️ Choisir logo / photo'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!themeUploading}
-                onChange={e => e.target.files[0] && uploaderImageTheme(e.target.files[0], 'image_hero_url')} />
-            </label>
-            {club?.image_hero_url && (
-              <button onClick={() => sauvegarderTheme({ image_hero_url: null })}
-                style={{ background: 'none', border: `1px solid ${colors.border.strong}`, borderRadius: '6px', color: colors.accent.red, padding: '6px 10px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                Supprimer
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Slogan */}
-        <div style={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
-          <label style={label}>Slogan du club</label>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <input type="text" placeholder="Ex: Ensemble, on va plus loin" value={themeEdit.slogan}
-              onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))}
-              style={{ flex: 1, minWidth: '200px', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 14px', fontSize: '14px', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
-            <button onClick={async () => {
-              setMessageSlogan('')
-              const ok = await sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })
-              if (ok) setMessageSlogan(themeEdit.slogan.trim() ? 'Slogan enregistré, il s\'affiche sur ton Accueil.' : 'Slogan supprimé.')
-            }} disabled={savingTheme}
-              style={{ background: club?.couleur_principale || colors.accent.green, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, fontWeight: 700, padding: '10px 18px', cursor: savingTheme ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {savingTheme ? 'Enregistrement...' : 'Sauvegarder'}
-            </button>
-          </div>
-          {messageSlogan && <p role="status" style={{ margin: '8px 0 0', fontSize: '13px', fontWeight: 600, color: colors.accent.success }}>{messageSlogan}</p>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Matrice de permissions par rôle (Staff → "Gérer les permissions") ────────
-// Grille : colonnes = PERMISSION_SECTIONS, lignes = ROLES_STAFF (hors président,
-// qui a tout et n'apparaît pas ici). Édite une copie locale, ne touche la base
-// qu'au clic sur "Enregistrer" via onSave (upsert complet de la matrice).
-function PermissionsModal({ rolePermissions, roleCategoriesAccess, saving, onSave, onClose, couleurPrincipale = colors.accent.green }) {
-  const colors = useColors()
-  const rolesConfigurables = ROLES_STAFF.filter(r => r.val !== 'president')
-  // Sous-liste pour l'accès par catégorie : 'entraineur'/'educateur' en sont
-  // exclus (cf. ROLES_HORS_ACCES_CATEGORIES, leur périmètre vient de
-  // l'affectation educateur_id existante, pas de cette matrice).
-  const rolesCategorisables = rolesConfigurables.filter(r => !ROLES_HORS_ACCES_CATEGORIES.includes(r.val))
-
-  const initMatrice = () => {
-    const m = {}
-    for (const role of rolesConfigurables) {
-      m[role.val] = {}
-      for (const section of PERMISSION_SECTIONS) {
-        const row = rolePermissions.find(p => p.role === role.val && p.section === section.id)
-        m[role.val][section.id] = row
-          ? { can_view: row.can_view, can_edit: row.can_edit }
-          : { can_view: (PERMISSION_DEFAULTS[section.id] || []).includes(role.val), can_edit: (PERMISSION_DEFAULTS[section.id] || []).includes(role.val) }
-      }
-    }
-    return m
-  }
-
-  const [matrice, setMatrice] = useState(initMatrice)
-
-  const toggle = (role, section, cle) => {
-    setMatrice(prev => {
-      const cell = prev[role][section]
-      const next = { ...cell, [cle]: !cell[cle] }
-      // Voir désactivé ⇒ Modifier n'a plus de sens ; Modifier activé ⇒ Voir est requis.
-      if (cle === 'can_view' && !next.can_view) next.can_edit = false
-      if (cle === 'can_edit' && next.can_edit) next.can_view = true
-      return { ...prev, [role]: { ...prev[role], [section]: next } }
-    })
-  }
-
-  const initCatAccess = () => {
-    const m = {}
-    for (const role of rolesCategorisables) {
-      const row = roleCategoriesAccess.find(r => r.role === role.val)
-      if (row) {
-        m[role.val] = { acces_complet: row.acces_complet, categories: row.categories || [] }
-      } else {
-        m[role.val] = {
-          acces_complet: ROLES_ACCES_COMPLET_DEFAUT.includes(role.val),
-          categories: ACCES_CATEGORIES_DEFAUT[role.val] || [],
-        }
-      }
-    }
-    return m
-  }
-
-  const [catAccess, setCatAccess] = useState(initCatAccess)
-
-  const toggleAccesComplet = (role) => {
-    setCatAccess(prev => ({ ...prev, [role]: { ...prev[role], acces_complet: !prev[role].acces_complet } }))
-  }
-  const toggleCategorie = (role, categorie) => {
-    setCatAccess(prev => {
-      const cats = prev[role].categories
-      const next = cats.includes(categorie) ? cats.filter(c => c !== categorie) : [...cats, categorie]
-      return { ...prev, [role]: { ...prev[role], categories: next } }
-    })
-  }
-
-  const cellBtn = (active, label, color) => ({
-    padding: '3px 9px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-    background: active ? `${color}20` : colors.background.raised, color: active ? color : colors.text.disabled,
-  })
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🔐 Permissions par rôle</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
-        </div>
-        <p style={{ margin: '0 0 18px', fontSize: '12px', color: colors.text.dim }}>
-          Le Président voit et modifie tout, ce n'est pas configurable. Pour les autres rôles : « Voir » affiche l'onglet, « Modifier » autorise les actions d'écriture (ajout/suppression) dans cet onglet.
-        </p>
-
-        <div style={{ overflow: 'auto', maxHeight: '46vh', border: `1px solid ${colors.border.subtle}`, borderRadius: '10px' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '640px' }}>
-            <thead>
-              <tr>
-                <th style={{ position: 'sticky', top: 0, left: 0, zIndex: 3, background: colors.background.base, textAlign: 'left', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: `1px 0 0 ${colors.border.subtle}` }}>Rôle</th>
-                {PERMISSION_SECTIONS.map(s => (
-                  <th key={s.id} style={{ position: 'sticky', top: 0, zIndex: 2, background: colors.background.base, textAlign: 'center', padding: '8px 10px', fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{s.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rolesConfigurables.map(role => (
-                <tr key={role.val} style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
-                  <td style={{ position: 'sticky', left: 0, zIndex: 1, background: colors.background.base, padding: '10px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap', boxShadow: `1px 0 0 ${colors.border.subtle}` }}>{role.label}</td>
-                  {PERMISSION_SECTIONS.map(section => {
-                    const cell = matrice[role.val][section.id]
-                    return (
-                      <td key={section.id} style={{ padding: '10px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                          <button onClick={() => toggle(role.val, section.id, 'can_view')} style={cellBtn(cell.can_view, 'Voir', colors.accent.blue)}>👁 Voir</button>
-                          <button onClick={() => toggle(role.val, section.id, 'can_edit')} style={cellBtn(cell.can_edit, 'Modifier', couleurPrincipale)}>✏️ Modifier</button>
-                        </div>
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p style={{ margin: '24px 0 4px', fontWeight: 800, fontSize: '14px' }}>⚽ Accès par catégorie d'équipe</p>
-        <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.dim }}>
-          Pour les rôles sans accès complet, limite les catégories d'équipes visibles (ex : U15 à U20 pour un Responsable Formation).
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {rolesCategorisables.map(role => {
-            const cfg = catAccess[role.val]
-            return (
-              <div key={role.val} style={{ background: colors.background.raised, borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700 }}>{role.label}</span>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.dim, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={cfg.acces_complet} onChange={() => toggleAccesComplet(role.val)} />
-                    Accès complet (toutes catégories)
-                  </label>
-                </div>
-                {!cfg.acces_complet && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                    {CATEGORIES_STANDARD.map(cat => (
-                      <button key={cat} onClick={() => toggleCategorie(role.val, cat)}
-                        style={cellBtn(cfg.categories.includes(cat), cat, colors.accent.green)}>
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => onSave(matrice, catAccess)} disabled={saving}
-            style={{ background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
-            {saving ? 'Enregistrement...' : '✓ Enregistrer'}
-          </button>
-          <button onClick={onClose} style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.muted, borderRadius: 10, padding: '10px 22px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Annuler
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Carte d'un membre de l'organigramme + ses subordonnés, en arbre récursif. Composant
 // à part (comme StatCard/AccueilClub/PermissionsModal ci-dessus) plutôt que
 // défini à l'intérieur de DashboardClub : une fonction composant redéfinie à chaque
@@ -1254,7 +897,7 @@ export default function DashboardClub() {
   // Permissions par rôle (section Staff → "Gérer les permissions")
   const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
   const [roleCategoriesAccess, setRoleCategoriesAccess] = useState([]) // [{ role, categories, acces_complet }]
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
+  const [monClubEtape, setMonClubEtape] = useState('identite')
   const [savingPermissions, setSavingPermissions] = useState(false)
 
   // Catégories & équipes
@@ -1314,7 +957,6 @@ export default function DashboardClub() {
   // Thème visuel du club (couleurs, photo de fond, logo/photo hero, slogan)
   // — persisté sur profiles (pas de table clubs dans ce projet), affiché sur
   // le hero banner et repris sur la nav + les stats de l'Accueil.
-  const [showThemeEditor, setShowThemeEditor] = useState(false)
   const [themeEdit, setThemeEdit] = useState({ couleur_principale: colors.accent.green, couleur_secondaire: colors.accent.cyan, slogan: '' })
   const [savingTheme, setSavingTheme] = useState(false)
   const [themeUploading, setThemeUploading] = useState(null) // 'image_fond_url' | 'image_hero_url' | null
@@ -1510,6 +1152,7 @@ export default function DashboardClub() {
     if (canViewSection('terrains')) idsSportif.push('terrains')
     if (canViewSection('stages')) idsSportif.push('stages')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
+    if (canEditSection('mon_club')) idsAdministratif.push('mon_club')
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
@@ -2639,8 +2282,9 @@ export default function DashboardClub() {
   // Sauvegarde toute la matrice en une fois (upsert ligne par ligne, clé (club_id, role, section)),
   // et si fourni, la config d'accès par catégorie (clé (club_id, role)) en une seconde passe.
   // Le président n'a jamais de ligne : il garde tout, en dur, quoi qu'il arrive (cf. canViewSection).
+  // Rend true si la base a tout enregistré, false sinon (l'état local est alors restauré).
   const sauvegarderPermissions = async (matrice, catMatrice) => {
-    if (!clubId) return
+    if (!clubId) return false
     const rows = []
     for (const role of Object.keys(matrice)) {
       if (role === 'president') continue
@@ -2651,14 +2295,12 @@ export default function DashboardClub() {
     const catRows = catMatrice ? Object.keys(catMatrice).map(role => ({
       club_id: clubId, role, acces_complet: catMatrice[role].acces_complet, categories: catMatrice[role].categories,
     })) : []
-    // Optimistic : on connaît déjà exactement ce que seront les matrices, donc la
-    // modale se ferme et l'état local se met à jour tout de suite, sans
-    // attendre la réponse Supabase.
+    // Optimistic : on connaît déjà exactement ce que seront les matrices, donc
+    // l'état local se met à jour tout de suite, sans attendre la réponse Supabase.
     const avant = rolePermissions
     const avantCat = roleCategoriesAccess
     setRolePermissions(rows)
     if (catMatrice) setRoleCategoriesAccess(catRows)
-    setShowPermissionsModal(false)
     setSavingPermissions(true)
     const [{ error }, { error: errorCat }] = await Promise.all([
       supabase.from('role_permissions').upsert(rows, { onConflict: 'club_id,role,section' }),
@@ -2669,8 +2311,9 @@ export default function DashboardClub() {
       alert('Erreur : ' + (error?.message || errorCat?.message))
       setRolePermissions(avant)
       setRoleCategoriesAccess(avantCat)
-      setShowPermissionsModal(true)
+      return false
     }
+    return true
   }
 
   const rechercherUtilisateurs = async (query) => {
@@ -3605,6 +3248,7 @@ export default function DashboardClub() {
     { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
     { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
     { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
+    ...(canEditSection('mon_club') ? [{ id: 'mon_club', label: 'Mon club', Icon: IcoStar }] : []),
     ...(outils.actif ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
   ].filter(item => (item.id === 'evenements' ? peutEvenements || peutCff4 : canViewSection(item.id) && outils.menuVisible(item.id)))
 
@@ -3694,10 +3338,10 @@ export default function DashboardClub() {
           👁️ {t('club_vue_parent', lang)}
         </button>
       )}
-      {monRole === 'president' && (
-        <button onClick={() => setShowThemeEditor(v => !v)}
+      {canEditSection('mon_club') && (
+        <button onClick={() => { setMonClubEtape('identite'); setActiveCategorie('administratif'); setActiveTab('mon_club') }}
           style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.secondary, padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          {showThemeEditor ? 'Fermer' : 'Personnaliser'}
+          Personnaliser
         </button>
       )}
     </>
@@ -3801,14 +3445,6 @@ export default function DashboardClub() {
           </div>
 
           <div style={st.content}>
-            {showThemeEditor && monRole === 'president' && (
-              <ThemeEditor
-                club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
-                sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
-                savingTheme={savingTheme} themeUploading={themeUploading}
-                isMobile={isMobile} onClose={() => setShowThemeEditor(false)}
-              />
-            )}
 
         {/* ── ACCUEIL ── */}
         {activeTab === 'accueil' && (
@@ -6050,9 +5686,9 @@ export default function DashboardClub() {
                 <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{staffMembers.length + 1} membre{staffMembers.length ? 's' : ''} ont accès au dashboard du club.</p>
               </div>
               {monRole === 'president' && (
-                <button onClick={() => setShowPermissionsModal(true)}
+                <button onClick={() => { setMonClubEtape('bureau'); setActiveCategorie('administratif'); setActiveTab('mon_club') }}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  <IcoDroitsClub /> Permissions par rôle
+                  <IcoDroitsClub /> Accès du bureau
                 </button>
               )}
             </div>
@@ -6716,6 +6352,17 @@ export default function DashboardClub() {
           <OutilNonActive role="club" cle={activeTabBrut} onRetour={() => setActiveTab('accueil')} onMesOutils={outils.actif && monRole === 'president' ? () => setActiveTab('mes_outils') : undefined} />
         )}
 
+        {activeTab === 'mon_club' && canEditSection('mon_club') && (
+          <MonClub club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
+            sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
+            savingTheme={savingTheme} themeUploading={themeUploading}
+            isMobile={isMobile} couleurPrincipale={couleurPrincipale}
+            outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId}
+            etape={monClubEtape} setEtape={setMonClubEtape} estPresident={monRole === 'president'}
+            rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
+            savingPermissions={savingPermissions} sauvegarderPermissions={sauvegarderPermissions} />
+        )}
+
         {activeTab === 'mes_outils' && outils.actif && <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'} />}
       </div>
           </div>
@@ -7111,18 +6758,6 @@ export default function DashboardClub() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal gestion des permissions par rôle */}
-      {showPermissionsModal && (
-        <PermissionsModal
-          rolePermissions={rolePermissions}
-          roleCategoriesAccess={roleCategoriesAccess}
-          saving={savingPermissions}
-          onSave={sauvegarderPermissions}
-          onClose={() => setShowPermissionsModal(false)}
-          couleurPrincipale={couleurPrincipale}
-        />
       )}
 
       {/* Modal notation éducateur */}

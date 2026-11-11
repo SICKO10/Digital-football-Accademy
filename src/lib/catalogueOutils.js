@@ -16,6 +16,17 @@
 
 export const ROLES = ['educateur', 'club']
 
+// Thèmes de l'étape « Outils du club » de Mon club, dans l'ordre d'affichage.
+// Un thème sans outil n'est pas affiché. `theme` et `explication` (ce que
+// l'interrupteur allume ou éteint dans le menu) ne servent qu'à cet écran.
+export const THEMES_CLUB = [
+  { id: 'entrainement', titre: 'Entraînement' },
+  { id: 'match', titre: 'Match' },
+  { id: 'effectif', titre: 'Effectif' },
+  { id: 'communication', titre: 'Communication' },
+  { id: 'gestion', titre: 'Gestion' },
+]
+
 // Ce qui reste gratuit. Les clés sont celles des menus des dashboards.
 // `fonctions` : parties de page gratuites à l'intérieur d'un menu payant ou
 // d'un menu découpé (à brancher aux blocs 3 et 4).
@@ -76,12 +87,12 @@ export const OUTILS = [
   outil('cff4', 'educateur', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4'], { ...prix(2, 20), viaClub: 'cff4' }),
   outil('stages', 'educateur', 'Stages', 'Les stages du club, pour les éducateurs affiliés.', ['stages'], { achetable: false, viaClub: 'stages' }),
   // Club
-  outil('competition', 'club', 'Compétition', 'Classements et tournois du club.', ['classements', 'tournoi']),
-  outil('projet_sportif', 'club', 'Projet sportif', 'Le projet sportif du club, partagé avec ses éducateurs.', ['projet_sportif']),
-  outil('finances', 'club', 'Finances et partenaires', 'Budget et sponsors du club.', ['budget', 'sponsors']),
-  outil('vie_club', 'club', 'Vie du club', 'Événements, tâches et newsletter.', ['evenements', 'taches', 'newsletter']),
-  outil('stages', 'club', 'Stages', 'Organise les stages et reçois les inscriptions.', ['stages']),
-  outil('cff4', 'club', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4']),
+  outil('competition', 'club', 'Compétition', 'Classements et tournois du club.', ['classements', 'tournoi'], { theme: 'match', explication: 'Menus Classements et Tournois.' }),
+  outil('projet_sportif', 'club', 'Projet sportif', 'Le projet sportif du club, partagé avec ses éducateurs.', ['projet_sportif'], { theme: 'entrainement', explication: 'Menu Projet Sportif.' }),
+  outil('finances', 'club', 'Finances et partenaires', 'Budget et sponsors du club.', ['budget', 'sponsors'], { theme: 'gestion', explication: 'Menus Budget et Sponsors.' }),
+  outil('vie_club', 'club', 'Vie du club', 'Événements, tâches et newsletter.', ['evenements', 'taches', 'newsletter'], { theme: 'communication', explication: 'Menus Événements, Tâches et Newsletter.' }),
+  outil('stages', 'club', 'Stages', 'Organise les stages et reçois les inscriptions.', ['stages'], { theme: 'entrainement', explication: 'Menu Stages.' }),
+  outil('cff4', 'club', 'Projet Club CFF4', 'Le parcours CFF4 du club, étape par étape.', ['projet_club_cff4'], { theme: 'gestion', explication: 'Projet club CFF4, dans Événements & Projets.' }),
 ]
 
 // Forfaits club selon le nombre d'équipes : mêmes montants que les liens de

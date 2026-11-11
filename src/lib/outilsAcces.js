@@ -18,7 +18,9 @@ const ONGLETS_STATS_COLLECTIFS = ['graphiques']
 // les autres sont ses propres droits (fin_le vide = abonnement en cours).
 // `masques` : ids des outils que l'éducateur a retirés de son menu (outils du
 // club seulement : un outil qu'il paie lui-même reste affiché).
-export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = []) {
+// `masquesClub` : ids des outils que le club a retirés de son propre menu (Mon
+// club, étape Outils du club) ; vaut pour tous les clubs, ancien modèle compris.
+export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = [], masquesClub = []) {
   const droits = []
   const clubOutils = []
   for (const l of lignes) {
@@ -28,7 +30,7 @@ export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = []
       ? { outil: l.outil, statut: 'retire', periodeFin: l.fin_le }
       : { outil: l.outil, statut: 'actif' })
   }
-  return { role, modeleOutils: !!modeleOutils, droits, clubOutils, masques }
+  return { role, modeleOutils: !!modeleOutils, droits, clubOutils, masques, masquesClub }
 }
 
 // L'outil qui débloque cette entrée de menu (null si elle est dans le socle
@@ -76,11 +78,21 @@ function menuMasque(compte, cle, maintenant) {
   return !compte.droits.some(d => d.outil === o.id && droitActif(d, maintenant))
 }
 
+// Vrai quand le club a retiré de son menu l'outil qui porte cette entrée. Ne
+// touche que l'affichage : la page et les données restent là.
+function menuMasqueParLeClub(compte, cle) {
+  if (compte?.role !== 'club' || !compte.masquesClub?.length) return false
+  const o = outilPourMenu('club', cle)
+  return !!o && compte.masquesClub.includes(o.id)
+}
+
 // Entrée de menu à afficher ? Même règle que la page, avec en plus le retrait
 // d'Explorer (éducateur) et de Recrutement (éducateur et club) pour les comptes
 // du nouveau modèle, et les outils du club que l'éducateur a masqués (la page
-// reste ouverte, seule l'entrée de menu disparaît).
+// reste ouverte, seule l'entrée de menu disparaît). Un club peut aussi masquer
+// lui-même ses outils, quel que soit son modèle.
 export function menuVisible(compte, cle, maintenant = new Date()) {
+  if (menuMasqueParLeClub(compte, cle)) return false
   if (!compte?.modeleOutils) return true
   if (cle === 'recrutement') return false
   if (compte.role === 'educateur' && cle === 'explorer') return false
