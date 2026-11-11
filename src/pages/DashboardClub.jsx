@@ -568,6 +568,7 @@ function AlertesClub({ clubId, educateursAcceptes, setActiveCategorie, setActive
 
 function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAttente, joueursClub, matchsClub, evenementsClub, setActiveCategorie, setActiveTab, lang, isMobile, couleurPrincipale = colors.accent.green, email, peutVoir = () => true, slogan = '', imageFond = null, imageLogo = null }) {
   const colors = useColors()
+  const palette = useClubPalette()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   const totalLicencies = joueursClub.length
@@ -642,7 +643,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
     { Icone: IcoBuilding, label: t('club_administratif', lang), categorie: 'administratif', tab: 'sponsors' },
   ]
   const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px', minWidth: 0 }
-  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: palette.secondaryChoisie ? palette.secondaryText : colors.text.secondary }
   const kpi = (Icone, label, valeur, detail, alerte) => (
     <div key={label} style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -702,7 +703,7 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: imageFond ? '#fff' : undefined }}>{t('club_accueil', lang)}</h1>
           <p style={{ color: imageFond ? 'rgba(255,255,255,0.8)' : colors.text.faint, fontSize: '13px', margin: '4px 0 0', textTransform: 'capitalize' }}>{new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          {slogan && <p style={{ color: imageFond ? '#fff' : couleurPrincipale, fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>{slogan}</p>}
+          {slogan && <p style={{ color: imageFond ? '#fff' : (palette.secondaryChoisie ? palette.secondaryText : couleurPrincipale), fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>{slogan}</p>}
         </div>
       </div>
 
@@ -850,7 +851,7 @@ function ThemeEditor({ club, themeEdit, setThemeEdit, sauvegarderTheme, uploader
         <ChoixCouleur titre="Couleur secondaire" champ="couleur_secondaire" defaut={colors.accent.cyan} presets={PRESETS_SECONDAIRE}
           club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme} savingTheme={savingTheme} labelStyle={label} />
 
-        <ApercuCouleurClub couleur={themeEdit.couleur_principale} />
+        <ApercuCouleurClub couleur={themeEdit.couleur_principale} couleur2={themeEdit.couleur_secondaire} />
 
         {/* Photo de fond */}
         <div>
@@ -1464,7 +1465,7 @@ export default function DashboardClub() {
   }
 
   // Couleur du club, ajustée si besoin pour rester lisible (garde-fou de paletteClub.js).
-  useDonnerCouleurClub(club?.couleur_principale)
+  useDonnerCouleurClub(club?.couleur_principale, club?.couleur_secondaire)
   const couleurChargement = useCouleurChargement()
   const couleurPrincipale = useClubPalette().primary
   const couleurSecondaire = club?.couleur_secondaire || colors.accent.cyan

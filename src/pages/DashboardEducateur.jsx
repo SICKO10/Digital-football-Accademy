@@ -2149,7 +2149,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const chargerClubAffiliation = async (uid) => {
     const { data, error } = await supabase
       .from('club_educateurs')
-      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, couleur_principale, image_fond_url, image_hero_url, slogan, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
+      .select('*, club:profiles_public!club_educateurs_club_id_fkey(club, prenom, nom, avatar_url, couleur_principale, couleur_secondaire, image_fond_url, image_hero_url, slogan, ville, educateurs_editent_projet_sportif, educateurs_editent_planification)')
       .eq('educateur_id', uid)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -2466,7 +2466,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   // Couleur du club d'affiliation (lien accepté) ; sans club = vert par défaut.
-  useDonnerCouleurClub(clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null)
+  useDonnerCouleurClub(
+    clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null,
+    clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_secondaire : null,
+  )
   const couleurChargement = useCouleurChargement()
   const logoClubMenu = clubAffiliation?.statut === 'accepte' ? (clubAffiliation.club?.image_hero_url || clubAffiliation.club?.avatar_url) : null
   const [cancelling, setCancelling] = useState(false)

@@ -131,3 +131,19 @@ test('défaut en clair : menu sombre, entrée active en vert de marque, textes l
   assert.ok(contraste(p.menuActiveText, p.menuActiveBg) >= 4.5, 'entrée active')
   assert.ok(contraste(p.primaryText, p.screenBg) >= 4.5, 'texte vert sur fond clair')
 })
+
+test('couleur secondaire : choisie, lisible partout ; absente ou par défaut, on garde la principale', () => {
+  for (const mode of ['claire', 'sombre']) {
+    for (const hex2 of ['#F59E0B', '#7C3AED', '#E11D48', '#FDE047', '#0F172A']) {
+      const p = calculerPalette('#B8141F', mode, hex2)
+      assert.equal(p.secondaryChoisie, true, `${hex2} ${mode}`)
+      assert.ok(contraste(p.secondaryText, p.cardBg) >= 4.5, `${hex2} ${mode} sur carte`)
+      assert.ok(contraste(p.secondaryText, p.screenBg) >= 4.5, `${hex2} ${mode} sur écran`)
+    }
+    for (const hex2 of [undefined, null, '', 'rouge', '#22d3ee', '#22D3EE', '#FFFFFF']) {
+      const p = calculerPalette('#B8141F', mode, hex2)
+      assert.equal(p.secondaryChoisie, false, String(hex2))
+      assert.equal(p.secondaryText, p.primaryText)
+    }
+  }
+})

@@ -4,6 +4,9 @@
 // Fichier pur (aucun React) : testé par tests/paletteClub.test.js.
 
 export const COULEUR_DEFAUT = '#4ADE80'
+// Valeur enregistrée en base pour tous les clubs qui n'ont jamais touché à la
+// couleur secondaire : elle ne compte pas comme un choix du club.
+export const SECONDAIRE_DEFAUT = '#22D3EE'
 
 // Couleurs de statut : constantes, jamais dérivées de la couleur du club.
 export const STATUTS_CLAIR = { success: '#16A34A', warning: '#F97316', danger: '#EF4444' }
@@ -95,9 +98,10 @@ function estTropPale(rgb) {
 /**
  * @param {string|null|undefined} hex couleur principale du club
  * @param {'claire'|'sombre'} mode
+ * @param {string|null|undefined} hex2 couleur secondaire du club (optionnelle)
  * @returns palette complète (voir `variablesCss` pour les noms CSS)
  */
-export function calculerPalette(hex, mode = 'claire') {
+export function calculerPalette(hex, mode = 'claire', hex2 = null) {
   const sombre = mode === 'sombre'
   const neutres = sombre ? NEUTRES_SOMBRE : NEUTRES_CLAIR
   const statuts = sombre ? STATUTS_SOMBRE : STATUTS_CLAIR
@@ -147,6 +151,14 @@ export function calculerPalette(hex, mode = 'claire') {
   // Fond léger teinté (badges, survols doux).
   const primarySoft = melanger(primary, sombre ? carte : blanc, sombre ? 0.18 : 0.1)
 
+  // Couleur secondaire : sert aux accents de rappel (slogan, petits titres). Seule une
+  // couleur choisie par le club compte ; sinon on reste sur la couleur principale.
+  // Même garde-fou de lisibilité que le texte coloré principal.
+  const demande2 = lireHex(hex2)
+  const choisie2 = !!demande2 && enHex(demande2) !== SECONDAIRE_DEFAUT && !estTropPale(demande2)
+  const secondaryText = choisie2 ? (ajusterJusqua(demande2, sombre ? 1 : -1, lisible) || primaryText) : primaryText
+  const secondarySoft = melanger(secondaryText, sombre ? carte : blanc, sombre ? 0.18 : 0.1)
+
   // Menu : plein couleur du club en clair (assombri juste ce qu'il faut pour que le
   // texte blanc, même atténué, passe 4,5:1) ; en sombre, la couleur du club presque noire.
   const texteMenuOk = rgb => contraste(melanger(blanc, rgb, MENU_TEXTE_ATTENUE), rgb) >= 4.5
@@ -168,6 +180,9 @@ export function calculerPalette(hex, mode = 'claire') {
     primaryText: enHex(primaryText),
     primaryDark: enHex(primaryDark),
     primarySoft: enHex(primarySoft),
+    secondaryChoisie: choisie2,
+    secondaryText: enHex(secondaryText),
+    secondarySoft: enHex(secondarySoft),
     menuBg: enHex(menuBg),
     menuText: BLANC,
     menuTextMuted: enHex(menuTextMuted),
@@ -187,6 +202,8 @@ export function variablesCss(p) {
     '--club-primary-soft': p.primarySoft,
     '--club-on-primary': p.onPrimary,
     '--club-primary-text': p.primaryText,
+    '--club-secondary-text': p.secondaryText,
+    '--club-secondary-soft': p.secondarySoft,
     '--menu-bg': p.menuBg,
     '--menu-text': p.menuText,
     '--menu-text-muted': p.menuTextMuted,

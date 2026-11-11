@@ -16,6 +16,7 @@ import { colors, colorsClaire } from '../tokens'
 export const ClubThemeContext = createContext({
   couleurClub: null,
   setCouleurClub: () => {},
+  setCouleurClub2: () => {},
   palette: calculerPalette(null, 'claire'),
   portee: null,
 })
@@ -26,8 +27,9 @@ export const useClubPalette = () => useContext(ClubThemeContext).palette
 
 // Donne au thème la couleur du club (hex, ou null = vert par défaut). À appeler
 // dans un dashboard placé sous PorteeThemeClub ; remet le vert en quittant la page.
-export function useDonnerCouleurClub(hex) {
-  const { portee, setCouleurClub } = useContext(ClubThemeContext)
+// `hex2` : couleur secondaire du club (accents de rappel), facultative.
+export function useDonnerCouleurClub(hex, hex2) {
+  const { portee, setCouleurClub, setCouleurClub2 } = useContext(ClubThemeContext)
   const actif = !!portee
   useEffect(() => {
     if (!actif) return undefined
@@ -36,6 +38,11 @@ export function useDonnerCouleurClub(hex) {
     setCouleurClub(hex || null)
     return () => setCouleurClub(null)
   }, [actif, hex, setCouleurClub])
+  useEffect(() => {
+    if (!actif) return undefined
+    setCouleurClub2(hex2 || null)
+    return () => setCouleurClub2(null)
+  }, [actif, hex2, setCouleurClub2])
 }
 
 // Couleurs du dashboard pour une palette de club. Les statuts (succès, attention,

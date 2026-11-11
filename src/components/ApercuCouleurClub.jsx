@@ -22,6 +22,7 @@ function Miniature({ palette, titre }) {
             <div style={{ color: palette.text, fontSize: '10px', fontWeight: 700 }}>Prochain match</div>
             <div style={{ color: palette.primaryText, fontSize: '9px', marginTop: '2px' }}>Samedi 15h</div>
           </div>
+          <div style={{ color: palette.secondaryText, fontSize: '9px', fontWeight: 800 }}>Ensemble, on va plus loin</div>
           <div style={{ background: palette.primary, color: palette.onPrimary, borderRadius: '5px', fontSize: '9px', fontWeight: 700, padding: '5px 8px', alignSelf: 'flex-start' }}>Voir la convocation</div>
         </div>
       </div>
@@ -30,9 +31,9 @@ function Miniature({ palette, titre }) {
 }
 
 // Aperçu « comme vos joueurs et éducateurs la verront », mis à jour avant tout enregistrement.
-export default function ApercuCouleurClub({ couleur }) {
-  const claire = useMemo(() => calculerPalette(couleur, 'claire'), [couleur])
-  const sombre = useMemo(() => calculerPalette(couleur, 'sombre'), [couleur])
+export default function ApercuCouleurClub({ couleur, couleur2 }) {
+  const claire = useMemo(() => calculerPalette(couleur, 'claire', couleur2), [couleur, couleur2])
+  const sombre = useMemo(() => calculerPalette(couleur, 'sombre', couleur2), [couleur, couleur2])
 
   const message = MESSAGES[claire.raison]
     || (claire.ajustee || sombre.ajustee ? 'Couleur ajustée pour rester lisible : elle est légèrement éclaircie ou assombrie selon le thème.' : null)

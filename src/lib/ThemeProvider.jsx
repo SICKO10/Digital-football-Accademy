@@ -19,12 +19,13 @@ export function ThemeProvider({ children }) {
   // Clair par défaut tant que la personne n'a jamais touché le bouton soleil/lune.
   const [theme, setTheme] = useState(() => lireThemeMemorise() || 'claire')
   const [couleurClub, setCouleurClub] = useState(null)
+  const [couleurClub2, setCouleurClub2] = useState(null)
   // Réglage de test `?couleurClub=%23FFF59D` : n'existe qu'en mode développement
   // (import.meta.env.DEV vaut false dans le site construit, ce code disparaît).
   const [surcharge] = useState(() => (import.meta.env.DEV ? lireSurchargeCouleur(window.location.search) : null))
   const couleurEffective = surcharge || couleurClub
-  const palette = useMemo(() => calculerPalette(couleurEffective, theme), [couleurEffective, theme])
-  const clubTheme = useMemo(() => ({ couleurClub: couleurEffective, setCouleurClub, palette }), [couleurEffective, palette])
+  const palette = useMemo(() => calculerPalette(couleurEffective, theme, couleurClub2), [couleurEffective, theme, couleurClub2])
+  const clubTheme = useMemo(() => ({ couleurClub: couleurEffective, setCouleurClub, setCouleurClub2, palette }), [couleurEffective, palette])
   // Un autre onglet change le thème : celui-ci suit.
   useEffect(() => {
     const suivre = e => {
