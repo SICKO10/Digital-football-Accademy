@@ -235,7 +235,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Reste à finir : retirer l'ancien paiement par outil à l'unité (même écran) ; retirer le détail d'erreur affiché pendant les tests ; décision à prendre plus tard sur les éducateurs affiliés (outils reçus du club, `viaClub`) dans le décompte des paliers.
 
 ### Bloc 8 : ajouter, retirer, résilier, factures et carte
-- Statut : code fait et testé hors ligne (2026-11-11) ; SQL exécuté par Kevin et vérifié (5 colonnes vraies, 2026-11-11) ; réglages Stripe faits par Kevin (5 événements sur le webhook « Outils à la carte », portail client : factures, informations client, carte, résiliation en fin de période, changement d'offre et de quantité désactivés) ; en attente de la mise en ligne et des tests réels (GUIDE-OUTILS-BLOC8.md)
+- Statut : code fait et testé hors ligne (2026-11-11) ; SQL exécuté par Kevin et vérifié (5 colonnes vraies, 2026-11-11) ; réglages Stripe faits par Kevin (5 événements sur le webhook « Outils à la carte », portail client : factures, informations client, carte, résiliation en fin de période, changement d'offre et de quantité désactivés) ; mis en ligne le 2026-11-11 (webhook redéployé, répond 400 sans signature ; commit 907a650 poussé, écran publié sur digitalfootball.academy) ; en attente des tests réels de Kevin, étapes 7 à 17 de GUIDE-OUTILS-BLOC8.md
 - Objectif : modifier sa composition à tout moment selon les règles du brief.
 - Résultat testable : ajouter un outil facture le prorata et l'active ; retirer un outil le garde jusqu'à la date affichée, sans remboursement ; « Résilier tout » ramène l'éducateur au socle (le club en accès limité) à la fin de période ; « Factures et carte » ouvre le portail Stripe.
 - Modèle : opus · Effort : high · Coût estimé : élevé
