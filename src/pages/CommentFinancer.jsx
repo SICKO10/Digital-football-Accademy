@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CONTACT_EMAIL } from '../lib/stripeLinks'
+import { promosActives, coutPremiereAnnee, PROMO_FIN } from '../lib/promo'
 
 const PALIERS = [
   { label: 'Jusqu\'à 2 équipes',  equipes: 2,  mois: 50,  an: 500  },
@@ -119,13 +120,25 @@ function hexToRgb(hex) {
   return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)].join(',')
 }
 
+// Prix après remise, virgule française : 130 à -70 % -> "39".
+const prixRemise = (prix, pourcent) => String(Math.round(prix * (100 - pourcent)) / 100).replace('.', ',')
+
 export default function CommentFinancer() {
   const navigate = useNavigate()
   const [palierIdx, setPalierIdx] = useState(2)
   const [joueurs, setJoueurs]     = useState(20)
   const [activeStrat, setActiveStrat] = useState(null)
 
-  const palier = PALIERS[palierIdx]
+  // Case « promotion » : les promos viennent de lib/promo.js (mensuelle et/ou annuelle).
+  // Cochée, tous les calculs de la page partent du coût de la 1re année avec la promo
+  // du rythme choisi, à la place du tarif annuel. Plusieurs promos en même temps : choix du rythme.
+  const promos = promosActives()
+  const [promo, setPromo] = useState(false)
+  const [modePromo, setModePromo] = useState(null)
+  const base = PALIERS[palierIdx]
+  const promoChoisie = promo ? (promos.find(p => p.mode === modePromo) || promos[0] || null) : null
+  const anPromo = promoChoisie ? coutPremiereAnnee(base, promoChoisie.mode) : null
+  const palier = promoChoisie ? { ...base, an: anPromo } : base
   const total  = palier.equipes * (joueurs + 1)
   const parLicencie     = (palier.an / total).toFixed(2)
   const parLicencieMois = (palier.an / total / 12).toFixed(2)
@@ -197,6 +210,39 @@ export default function CommentFinancer() {
                   <span style={{ color: '#2a2a2a', fontSize: 10 }}>30</span>
                 </div>
               </div>
+              {promos.length > 0 && (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, cursor: 'pointer', background: promo ? 'rgba(74,222,128,0.08)' : 'transparent', border: `1px solid ${promo ? '#4ade80' : '#2a2a2a'}` }}>
+                    <input type="checkbox" checked={promo} onChange={e => setPromo(e.target.checked)} style={{ width: 20, height: 20, accentColor: '#4ade80', flexShrink: 0, cursor: 'pointer' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
+                      Avec la promotion de lancement {promos.length === 1 && <span style={{ color: '#f87171' }}>-{promos[0].pourcent} %</span>}
+                      <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#777' }}>
+                        {promos.length === 1 ? `Paiement ${promos[0].mode}, ` : ''}jusqu'au {PROMO_FIN.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                      </span>
+                    </span>
+                  </label>
+                  {promo && promos.length > 1 && (
+                    <div role="radiogroup" aria-label="Promotion appliquée" style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      {promos.map(p => (
+                        <button key={p.mode} type="button" role="radio" aria-checked={promoChoisie?.mode === p.mode} onClick={() => setModePromo(p.mode)} style={{
+                          flex: 1, padding: '9px 10px', borderRadius: 9, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                          border: `1px solid ${promoChoisie?.mode === p.mode ? '#4ade80' : '#2a2a2a'}`,
+                          background: promoChoisie?.mode === p.mode ? 'rgba(74,222,128,0.08)' : 'transparent',
+                          color: promoChoisie?.mode === p.mode ? '#4ade80' : '#888',
+                        }}>Paiement {p.mode} <span style={{ color: '#f87171' }}>-{p.pourcent} %</span></button>
+                      ))}
+                    </div>
+                  )}
+                  {promoChoisie && (
+                    <p style={{ margin: '10px 2px 0', fontSize: 11, lineHeight: 1.6, color: '#888' }}>
+                      {promoChoisie.mode === 'mensuel'
+                        ? <>Calcul en mensuel : {(promoChoisie.mois ?? 1) > 1 ? `les ${promoChoisie.mois} premiers mois` : '1er mois'} à {prixRemise(base.mois, promoChoisie.pourcent)}€ puis {base.mois}€/mois, soit <strong style={{ color: '#fff' }}>{anPromo}€</strong> la 1re année ({base.mois * 12}€ sans promo). L'abonnement annuel reste à {base.an}€.</>
+                        : <>Calcul en annuel : {base.an}€ moins {promoChoisie.pourcent} %, soit <strong style={{ color: '#fff' }}>{anPromo}€</strong> la 1re année. En mensuel, 12 mensualités coûtent {base.mois * 12}€.</>}
+                      {' '}Code {promoChoisie.code} au paiement.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ background: '#0a0a0a', borderRadius: 14, padding: 22, border: '1px solid #1a1a1a', textAlign: 'center' }}>
@@ -209,8 +255,10 @@ export default function CommentFinancer() {
                 {[
                   { val: total, label: 'Personnes couvertes', color: '#fff' },
                   { val: palier.equipes, label: 'Équipes', color: '#fff' },
-                  { val: `${palier.an}€`, label: 'Coût annuel', color: '#f59e0b' },
-                  { val: `${palier.mois}€/mois`, label: 'Soit par mois', color: '#60a5fa' },
+                  { val: `${palier.an}€`, label: promoChoisie ? 'Coût 1re année (promo)' : 'Coût annuel', color: '#f59e0b' },
+                  promoChoisie?.mode === 'annuel'
+                    ? { val: `${Math.round(palier.an / 12)}€/mois`, label: 'Soit par mois (promo annuelle)', color: '#60a5fa' }
+                    : { val: `${palier.mois}€/mois`, label: promoChoisie ? `dont 1er mois à ${prixRemise(palier.mois, promoChoisie.pourcent)}€` : 'Soit par mois', color: '#60a5fa' },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0a0a0a', borderRadius: 10, padding: '12px 14px', border: '1px solid #1a1a1a' }}>
                     <div style={{ color: s.color, fontSize: 18, fontWeight: 900 }}>{s.val}</div>

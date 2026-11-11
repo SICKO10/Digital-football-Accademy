@@ -1,6 +1,6 @@
 import { colors } from '../../tokens'
 import { STRIPE_LINKS_CLUB } from '../../lib/stripeLinks'
-import { promoActive, prixPromo, prixDepuisTexte, PROMO_POURCENT, PROMO_CODE, PROMO_FIN } from '../../lib/promo'
+import { promosActives, coutPremiereAnnee, prixDepuisTexte, PROMO_FIN } from '../../lib/promo'
 import { PHOTOS, TRAITEMENT_PHOTO, POLICE_TITRE } from '../../lib/photosOffres'
 import { IconTool, IconBall, IconChart, IconBolt, IconCheck } from '../icones'
 
@@ -131,7 +131,10 @@ export function SemaineClub() {
 // Cartes de tarifs par nombre d'équipes. `naviguer(palier, cycle)` ouvre l'inscription.
 // `suite` : contenu affiché sous les cartes (guide de financement, formulaire de contact).
 export function TarifsClub({ naviguer, suite }) {
-  const promo = promoActive()
+  // Promos en cours (mensuelle et/ou annuelle), déclarées dans lib/promo.js.
+  const promos = promosActives()
+  const pm = promos.find(p => p.mode === 'mensuel')
+  const pa = promos.find(p => p.mode === 'annuel')
   return (
     <section id="tarifs-club" style={{ position: 'relative', overflow: 'hidden', fontFamily: police, padding: 'clamp(56px, 8vw, 96px) 24px' }}>
       <style>{CSS}</style>
@@ -145,11 +148,18 @@ export function TarifsClub({ naviguer, suite }) {
         <p style={{ margin: '0 0 40px', textAlign: 'center' }}>
           <span className="oc-chip">Tous les outils du club sont inclus dans chaque palier</span>
         </p>
-        {promo && (
+        {promos.length > 0 && (
           <p style={{ margin: '-24px 0 40px', textAlign: 'center' }}>
-            <span className="oc-chip" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              <span style={{ color: '#f87171', fontWeight: 800 }}>-{PROMO_POURCENT} %</span>
-              Offre de lancement : le 1er mois en mensuel, code {PROMO_CODE}, jusqu'au {PROMO_FIN.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+            <span className="oc-chip" style={{ color: 'rgba(255,255,255,0.85)', display: 'inline-block', textAlign: 'center', lineHeight: 1.6 }}>
+              Offre de lancement :{' '}
+              {promos.map((p, i) => (
+                <span key={p.mode}>
+                  {i > 0 && ' · '}
+                  <span style={{ color: '#f87171', fontWeight: 800 }}>-{p.pourcent} %</span>{' '}
+                  {p.mode === 'mensuel' ? `${(p.mois ?? 1) > 1 ? `sur les ${p.mois} premiers mois` : 'sur le 1er mois'} en mensuel` : 'en annuel'}
+                </span>
+              ))}
+              {', code '}{[...new Set(promos.map(p => p.code))].join(' ou ')}{', jusqu\'au '}{PROMO_FIN.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
             </span>
           </p>
         )}
@@ -158,7 +168,9 @@ export function TarifsClub({ naviguer, suite }) {
           {Object.entries(STRIPE_LINKS_CLUB).map(([cle, p]) => {
             const mensuel = prixDepuisTexte(p.mensuelPrix)
             const annuel = prixDepuisTexte(p.annuelPrix)
-            const economie = Math.round(mensuel * 12 - annuel)
+            const annuelPromo = pa ? coutPremiereAnnee({ mois: mensuel, an: annuel }, 'annuel') : annuel
+            const economie = Math.round(mensuel * 12 - annuelPromo)
+            const prixRemise = (prix, pourcent) => String(Math.round(prix * (100 - pourcent)) / 100).replace('.', ',')
             const nb = (p.label.match(/\d+/) || [])[0]
             return (
               <div key={cle} className="oc-palier">
@@ -168,18 +180,20 @@ export function TarifsClub({ naviguer, suite }) {
                   {nb ? <>{nb} <span style={{ fontSize: 18, fontWeight: 700, color: colors.text.secondary }}>équipes</span></> : p.label}
                 </p>
                 <p style={{ position: 'relative', margin: '0 0 2px', fontSize: 34, fontWeight: 900, letterSpacing: '-1px', color: colors.accent.green, lineHeight: 1.1 }}>
-                  {annuel} €<span style={{ fontSize: 14, fontWeight: 600, letterSpacing: 0, color: colors.text.faint }}> par an</span>
+                  {annuelPromo} €<span style={{ fontSize: 14, fontWeight: 600, letterSpacing: 0, color: colors.text.faint }}> par an</span>
+                  {pa && <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0, textDecoration: 'line-through', color: colors.text.faint, marginLeft: 8 }}>{annuel} €</span>}
+                  {pa && <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: 0, color: '#f87171', marginLeft: 8 }}>-{pa.pourcent} %</span>}
                 </p>
                 <p style={{ position: 'relative', margin: '0 0 20px', fontSize: 12, color: colors.text.faint, minHeight: 18 }}>
                   {economie > 0 ? `${economie} € de moins que 12 mensualités` : ''}
                 </p>
                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
                   <button className="oc-btn" onClick={() => naviguer(cle, 'annuel')} style={{ border: 'none', background: colors.accent.green, color: colors.background.base }}>
-                    Commencer à {annuel} €/an
+                    Commencer à {annuelPromo} €/an
                   </button>
                   <button className="oc-btn" onClick={() => naviguer(cle, 'mensuel')} style={{ border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(10,10,10,0.85)', color: '#fff', fontWeight: 700 }}>
-                    {promo
-                      ? <>{prixPromo(mensuel)} € le 1er mois <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, marginLeft: 6 }}>{mensuel} €</span> <span style={{ color: '#f87171', fontWeight: 800, marginLeft: 6 }}>-{PROMO_POURCENT} %</span></>
+                    {pm
+                      ? <>{prixRemise(mensuel, pm.pourcent)} € {(pm.mois ?? 1) > 1 ? `les ${pm.mois} premiers mois` : 'le 1er mois'} <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, marginLeft: 6 }}>{mensuel} €</span> <span style={{ color: '#f87171', fontWeight: 800, marginLeft: 6 }}>-{pm.pourcent} %</span></>
                       : `ou ${mensuel} €/mois`}
                   </button>
                 </div>
