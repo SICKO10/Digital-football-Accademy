@@ -21,17 +21,17 @@ export const prixDepuisTexte = (texte) => parseFloat(String(texte).replace(',', 
 // Promotions par rythme de paiement : un seul endroit à modifier pour lancer ou
 // arrêter une promo. `mensuel` : remise sur les `mois` premiers mensualités ;
 // `annuel` : remise sur l'abonnement annuel. null = pas de promo pour ce rythme.
-// Exemple de promo annuelle : annuel: { pourcent: 20 }. `code` : code Stripe propre
-// à cette promo (par défaut PROMO_CODE). Même date de fin pour toutes (PROMO_FIN).
+// Exemple de promo annuelle : annuel: { pourcent: 20 }. `code` : code Stripe de
+// cette promo (la promo mensuelle reprend PROMO_CODE ; pour une promo annuelle, le renseigner). Même date de fin pour toutes (PROMO_FIN).
 // Lus par la page « Comment financer » (case promotion) et par les cartes club de /offres.
 export const PROMOS = {
   mensuel: { pourcent: PROMO_POURCENT, mois: 1 },
   annuel: null,
 }
 
-// Promotions en cours : [{ mode, pourcent, mois?, code }]. Vide une fois la date passée.
+// Promotions en cours : [{ mode, pourcent, mois?, code? }]. Vide une fois la date passée.
 export const promosActives = () => (promoActive()
-  ? Object.entries(PROMOS).filter(([, p]) => p).map(([mode, p]) => ({ mode, ...p, code: p.code || PROMO_CODE }))
+  ? Object.entries(PROMOS).filter(([, p]) => p).map(([mode, p]) => ({ mode, ...p, code: p.code || (mode === 'mensuel' ? PROMO_CODE : undefined) }))
   : [])
 
 const arrondi = (n) => Math.round(n * 100) / 100

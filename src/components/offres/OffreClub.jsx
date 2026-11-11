@@ -135,6 +135,7 @@ export function TarifsClub({ naviguer, suite }) {
   const promos = promosActives()
   const pm = promos.find(p => p.mode === 'mensuel')
   const pa = promos.find(p => p.mode === 'annuel')
+  const codes = [...new Set(promos.map(p => p.code).filter(Boolean))]
   return (
     <section id="tarifs-club" style={{ position: 'relative', overflow: 'hidden', fontFamily: police, padding: 'clamp(56px, 8vw, 96px) 24px' }}>
       <style>{CSS}</style>
@@ -159,7 +160,7 @@ export function TarifsClub({ naviguer, suite }) {
                   {p.mode === 'mensuel' ? `${(p.mois ?? 1) > 1 ? `sur les ${p.mois} premiers mois` : 'sur le 1er mois'} en mensuel` : 'en annuel'}
                 </span>
               ))}
-              {', code '}{[...new Set(promos.map(p => p.code))].join(' ou ')}{', jusqu\'au '}{PROMO_FIN.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+              {codes.length > 0 && `, code ${codes.join(' ou ')}`}{', jusqu\'au '}{PROMO_FIN.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
             </span>
           </p>
         )}
