@@ -28,6 +28,7 @@ import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
 const BudgetPrevisionnel = lazy(() => import('../components/club/BudgetPrevisionnel'))
+const BudgetReel = lazy(() => import('../components/club/BudgetReel'))
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { TutorielClub, PAGES_TUTORIEL_CLUB } from '../components/tutoriels/TutorielsClub'
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
@@ -4970,208 +4971,17 @@ export default function DashboardClub() {
             </div>
             {budgetVue === 'previsionnel' ? (
               <Suspense fallback={null}><BudgetPrevisionnel clubId={clubId} categories={categories} joueurs={joueursClub} canEdit={canEditSection('budget')} /></Suspense>
-            ) : (() => {
-          const maintenant = new Date()
-          const entriesFiltrees = budgetEntries.filter(e => {
-            if (budgetPeriode === 'tout') return true
-            const d = new Date(e.date)
-            if (budgetPeriode === 'mois') return d.getMonth() === maintenant.getMonth() && d.getFullYear() === maintenant.getFullYear()
-            if (budgetPeriode === 'saison') {
-              const saison = maintenant.getMonth() >= 6
-                ? { start: new Date(maintenant.getFullYear(), 6, 1), end: new Date(maintenant.getFullYear() + 1, 5, 30) }
-                : { start: new Date(maintenant.getFullYear() - 1, 6, 1), end: new Date(maintenant.getFullYear(), 5, 30) }
-              return d >= saison.start && d <= saison.end
-            }
-            return true
-          })
-
-          const totalRecettes = entriesFiltrees.filter(e => e.type === 'recette').reduce((s, e) => s + parseFloat(e.montant), 0)
-          const totalDepenses = entriesFiltrees.filter(e => e.type === 'depense').reduce((s, e) => s + parseFloat(e.montant), 0)
-          const solde = totalRecettes - totalDepenses
-
-          const categoriesDepense = entriesFiltrees
-            .filter(e => e.type === 'depense')
-            .reduce((acc, e) => { acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant); return acc }, {})
-          const categoriesDepenseArr = Object.entries(categoriesDepense)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, montant], i) => ({ cat, montant, pct: totalDepenses > 0 ? (montant / totalDepenses) * 100 : 0, color: [colors.accent.red, colors.accent.orange, '#f59e0b', '#fb923c', colors.accent.amber, '#fca5a5', '#fed7aa', '#fde68a', '#fef3c7'][i % 9] }))
-
-          const categoriesRecette = entriesFiltrees
-            .filter(e => e.type === 'recette')
-            .reduce((acc, e) => { acc[e.categorie] = (acc[e.categorie] || 0) + parseFloat(e.montant); return acc }, {})
-          const categoriesRecetteArr = Object.entries(categoriesRecette)
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat, montant], i) => ({ cat, montant, pct: totalRecettes > 0 ? (montant / totalRecettes) * 100 : 0, color: COULEURS_BUDGET[i % COULEURS_BUDGET.length] }))
-
-          return (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
-                <div>
-                  <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>{t('club_budget_titre', lang)}</h1>
-                  <p style={{ color: colors.text.faint, fontSize: 13, margin: '4px 0 0' }}>{t('club_budget_desc', lang)}</p>
-                </div>
-                {canEditSection('budget') && (
-                <button onClick={() => setBudgetFormOuvert(v => !v)}
-                  style={{ background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {budgetFormOuvert ? t('btn_annuler', lang) : `+ ${t('club_nouvelle_entree', lang)}`}
-                </button>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: 2, marginBottom: 18, background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: 3, maxWidth: '100%', width: 'fit-content', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                {[['mois', t('club_ce_mois', lang)], ['saison', t('club_cette_saison', lang)], ['tout', t('club_tout', lang)]].map(([val, label]) => (
-                  <button key={val} onClick={() => setBudgetPeriode(val)}
-                    style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: budgetPeriode === val ? colors.background.raised : 'transparent', color: budgetPeriode === val ? colors.text.primary : colors.text.faint, fontWeight: budgetPeriode === val ? 700 : 500, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-                {[
-                  { label: t('club_recettes', lang), icone: '↑', val: totalRecettes, color: colors.accent.success, bg: '#4ade8010', sign: '+' },
-                  { label: t('club_depenses', lang), icone: '↓', val: totalDepenses, color: colors.accent.red, bg: '#ef444410', sign: '−' },
-                  { label: t('club_solde', lang), icone: '=', val: Math.abs(solde), color: solde >= 0 ? colors.accent.success : colors.accent.red, bg: solde >= 0 ? '#4ade8010' : '#ef444410', sign: solde >= 0 ? '+' : '−' },
-                ].map(({ label, icone, val, color, bg, sign }) => (
-                  <div key={label} style={{ background: bg, border: `1px solid ${color}25`, borderRadius: 14, padding: '16px 18px', gridColumn: isMobile && label === t('club_solde', lang) ? '1 / -1' : 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <span style={{ width: 20, height: 20, borderRadius: 6, background: color + '22', color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{icone}</span>
-                      <p style={{ margin: 0, fontSize: 11, color: colors.text.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</p>
-                    </div>
-                    <p style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums' }}>
-                      {sign}{val.toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 20, alignItems: 'start' }}>
-
-                {/* Colonne gauche — historique */}
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: colors.text.faint }}>{t('jcoach_historique', lang)}</span>
-                    <span style={{ color: colors.text.faint, fontSize: 12 }}>{entriesFiltrees.length}</span>
-                  </div>
-                  {entriesFiltrees.length === 0 ? (
-                    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-                      <p style={{ color: colors.text.secondary, fontWeight: 600, margin: 0, fontSize: 14 }}>{t('club_aucune_entree_periode', lang)}</p>
-                      <p style={{ color: colors.text.faint, margin: '6px 0 0', fontSize: 12 }}>{budgetPeriode !== 'tout' ? 'Essaie « Cette saison » ou « Tout », ou ajoute une entrée.' : 'Enregistre les cotisations, subventions, achats et frais du club pour suivre le solde.'}</p>
-                    </div>
-                  ) : entriesFiltrees.map(e => {
-                    const categoriesArr = e.type === 'depense' ? categoriesDepenseArr : categoriesRecetteArr
-                    const segCat = categoriesArr.find(c => c.cat === e.categorie)
-                    const couleur = segCat?.color || colors.text.faint
-                    return (
-                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: `1px solid ${colors.background.base}`, borderLeft: `3px solid ${e.type === 'recette' ? colors.accent.success : colors.accent.red}` }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: e.type === 'recette' ? colors.accent.success + alpha.subtle : colors.accent.red + alpha.subtle, color: e.type === 'recette' ? colors.accent.success : colors.accent.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, flexShrink: 0 }}>
-                          {e.type === 'recette' ? '↑' : '↓'}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{e.libelle}</div>
-                          <div style={{ marginTop: 2, fontSize: 11, color: colors.text.faint }}>
-                            <span style={{ color: couleur }}>{e.categorie}</span>
-                            {' · '}{new Date(e.date).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short', year: 'numeric' })}
-                            {e.note ? ` · ${e.note}` : ''}
-                          </div>
-                        </div>
-                        <span style={{ fontWeight: 800, color: e.type === 'recette' ? colors.accent.success : colors.accent.red, fontSize: 15, flexShrink: 0 }}>
-                          {e.type === 'recette' ? '+' : '−'}{parseFloat(e.montant).toLocaleString(localeOf(lang), { minimumFractionDigits: 2 })} €
-                        </span>
-                        {canEditSection('budget') && (
-                          <button onClick={() => supprimerEntreeBudget(e.id)}
-                            style={{ background: 'transparent', border: 'none', color: colors.border.default, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, flexShrink: 0, transition: 'color 0.15s', display: 'flex' }}
-                            onMouseEnter={ev => { ev.currentTarget.style.color = colors.accent.red }}
-                            onMouseLeave={ev => { ev.currentTarget.style.color = colors.border.default }}
-                            title={t('btn_supprimer', lang)}><IcoCorbeilleClub /></button>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Colonne droite — formulaire + répartition */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                  {budgetFormOuvert && canEditSection('budget') && (
-                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20 }}>
-                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('club_nouvelle_entree', lang)}</p>
-
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 12, background: colors.background.base, borderRadius: 10, padding: 3 }}>
-                        {['depense', 'recette'].map(bt => (
-                          <button key={bt} onClick={() => setBudgetForm(f => ({ ...f, type: bt, categorie: '' }))}
-                            style={{ flex: 1, padding: 8, borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: budgetForm.type === bt ? (bt === 'recette' ? colors.accent.success : colors.accent.red) : 'transparent', color: budgetForm.type === bt ? (bt === 'recette' ? colors.black : '#fff') : colors.text.faint }}>
-                            {bt === 'recette' ? `↑ ${t('club_recette', lang)}` : `↓ ${t('club_depense', lang)}`}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <select value={budgetForm.categorie} onChange={e => setBudgetForm(f => ({ ...f, categorie: e.target.value }))}
-                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: budgetForm.categorie ? colors.text.primary : colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
-                          <option value="">{t('club_choisir_pts', lang)}</option>
-                          {(budgetForm.type === 'recette' ? CATEGORIES_RECETTE : CATEGORIES_DEPENSE).map(c => (
-                            <option key={c.label} value={c.label}>{c.label}</option>
-                          ))}
-                        </select>
-                        <input type="number" min="0" step="0.01" placeholder={t('club_montant', lang)} value={budgetForm.montant} onChange={e => setBudgetForm(f => ({ ...f, montant: e.target.value }))}
-                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                        <input type="text" placeholder={t('club_description_placeholder', lang)} value={budgetForm.libelle} onChange={e => setBudgetForm(f => ({ ...f, libelle: e.target.value }))}
-                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                        <input type="date" value={budgetForm.date} onChange={e => setBudgetForm(f => ({ ...f, date: e.target.value }))}
-                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                        <input type="text" placeholder={t('club_note_optionnel_placeholder', lang)} value={budgetForm.note} onChange={e => setBudgetForm(f => ({ ...f, note: e.target.value }))}
-                          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 9, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                        <button onClick={ajouterEntreeBudget} disabled={budgetSaving || !budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie}
-                          style={{ padding: 11, borderRadius: 10, border: 'none', background: budgetForm.type === 'recette' ? colors.accent.success : colors.accent.red, color: budgetForm.type === 'recette' ? colors.black : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (!budgetForm.libelle.trim() || !budgetForm.montant || !budgetForm.categorie) ? 0.4 : 1 }}>
-                          {budgetSaving ? t('jp_enregistrement', lang) : t('club_enregistrer', lang)}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Répartition */}
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20 }}>
-                    <p style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: '0 0 14px' }}>{t('club_repartition', lang)}</p>
-                    {totalRecettes + totalDepenses === 0 ? (
-                      <p style={{ color: colors.border.strong, fontSize: 12, textAlign: 'center', padding: '20px 0', margin: 0 }}>{t('club_aucune_donnee', lang)}</p>
-                    ) : (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ color: colors.accent.success, fontSize: 12 }}>{t('club_recettes', lang)}</span>
-                          <span style={{ color: colors.accent.success, fontWeight: 700, fontSize: 12 }}>{Math.round(totalRecettes / (totalRecettes + totalDepenses) * 100)}%</span>
-                        </div>
-                        <div style={{ background: colors.background.base, borderRadius: 999, height: 8, marginBottom: 12, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${totalRecettes / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.success, borderRadius: 999 }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <span style={{ color: colors.accent.red, fontSize: 12 }}>{t('club_depenses', lang)}</span>
-                          <span style={{ color: colors.accent.red, fontWeight: 700, fontSize: 12 }}>{Math.round(totalDepenses / (totalRecettes + totalDepenses) * 100)}%</span>
-                        </div>
-                        <div style={{ background: colors.background.base, borderRadius: 999, height: 8, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${totalDepenses / (totalRecettes + totalDepenses) * 100}%`, background: colors.accent.red, borderRadius: 999 }} />
-                        </div>
-                        {[['Principales recettes', categoriesRecetteArr, totalRecettes], ['Principales dépenses', categoriesDepenseArr, totalDepenses]].map(([titre, arr]) => arr.length > 0 && (
-                          <div key={titre} style={{ marginTop: 18 }}>
-                            <p style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', margin: '0 0 8px' }}>{titre}</p>
-                            {arr.slice(0, 5).map(c => (
-                              <div key={c.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                <span style={{ width: 8, height: 8, borderRadius: 2, background: c.color, flexShrink: 0 }} />
-                                <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.cat}</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{c.montant.toLocaleString(localeOf(lang), { maximumFractionDigits: 0 })} €</span>
-                                <span style={{ fontSize: 11, color: colors.text.faint, width: 34, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Math.round(c.pct)}%</span>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
+            ) : (
+              <Suspense fallback={null}>
+                <BudgetReel
+                  entries={budgetEntries} periode={budgetPeriode} setPeriode={setBudgetPeriode}
+                  formOuvert={budgetFormOuvert} setFormOuvert={setBudgetFormOuvert} form={budgetForm} setForm={setBudgetForm}
+                  saving={budgetSaving} onAjouter={ajouterEntreeBudget} onSupprimer={supprimerEntreeBudget}
+                  canEdit={canEditSection('budget')} lang={lang} couleurPrincipale={couleurPrincipale}
+                  categoriesDepense={CATEGORIES_DEPENSE} categoriesRecette={CATEGORIES_RECETTE} couleursBudget={COULEURS_BUDGET}
+                />
+              </Suspense>
+            )}
           </div>
         )}
 
