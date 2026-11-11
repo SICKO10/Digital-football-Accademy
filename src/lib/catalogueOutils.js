@@ -114,7 +114,8 @@ export const FORFAITS_CLUB = [
 export const PACK_EDUCATEUR = {
   id: 'pack_educateur',
   nom: 'Tous les outils éducateur',
-  prixMensuel: 15,
+  // 18 € par mois : une saison dure 10 mois, donc 10 mensualités (180 €) coûtent plus que l'année (150 €).
+  prixMensuel: 18,
   prixAnnuel: 150,
   cleMensuel: 'pack_educateur_mensuel',
   cleAnnuel: 'pack_educateur_annuel',

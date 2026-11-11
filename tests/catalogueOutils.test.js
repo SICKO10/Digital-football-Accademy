@@ -123,13 +123,14 @@ test('lignesStripe : 9 outils éducateur et 6 forfaits club, clés uniques, jama
   assert.ok(!l.some(x => x.cle.includes('stages') && x.type === 'outil'))
 })
 
-test('offre tous les outils : 15 € par mois, 150 € par an, moins cher que les 9 outils séparés', async () => {
+test('offre tous les outils : 18 € par mois, 150 € par an (moins cher que 10 mensualités), moins cher que les 9 outils séparés', async () => {
   const { PACK_EDUCATEUR, outilsDuPack, totalComposition, compositionPaiement } = await import('../src/lib/catalogueOutils.js')
-  assert.equal(PACK_EDUCATEUR.prixMensuel, 15)
+  assert.equal(PACK_EDUCATEUR.prixMensuel, 18)
+  assert.ok(PACK_EDUCATEUR.prixMensuel * 10 > PACK_EDUCATEUR.prixAnnuel)
   assert.equal(PACK_EDUCATEUR.prixAnnuel, 150)
   assert.equal(outilsDuPack().length, 9)
   assert.ok(!outilsDuPack().includes('stages'))
-  assert.ok(totalComposition('educateur', outilsDuPack(), 'mensuel') > 15)
+  assert.ok(totalComposition('educateur', outilsDuPack(), 'mensuel') > 18)
   assert.ok(totalComposition('educateur', outilsDuPack(), 'annuel') > 150)
   const c = compositionPaiement('educateur', { pack: true, periodicite: 'annuel' })
   assert.deepEqual(c.cles, ['pack_educateur_annuel'])
