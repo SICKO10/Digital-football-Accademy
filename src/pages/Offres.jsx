@@ -6,6 +6,7 @@ import { colors, alpha } from '../tokens'
 import BandeauPromo from '../components/BandeauPromo'
 import { promoActive, prixPromo, prixDepuisTexte } from '../lib/promo'
 import { IconCheck, IconTool, IconBall, IconChart, IconBolt } from '../components/icones'
+import { PALIERS_EDUCATEUR, outilsDuPack } from '../lib/catalogueOutils'
 
 const st = {
   // Fond pleine largeur (alterné par section) + wrapper interne limité en largeur —
@@ -52,38 +53,43 @@ function Feature({ children }) {
   return <div style={st.feature}><span style={{ color: colors.accent.green, flexShrink: 0, display: 'inline-flex', verticalAlign: 'middle' }}><IconCheck size={14} /></span> {children}</div>
 }
 
-// Une seule card à la fois (mensuelle ou annuelle selon `cycle`, piloté par le
-// toggle global de la page) — avant, les deux étaient affichées côte à côte
-// en permanence.
-function OffrePro({ titre, color, features, profilId, cycle }) {
+// Offres éducateur : trois paliers (3 outils, 6 outils, tous les outils), prix et
+// outils lus dans le catalogue. Une seule périodicité à la fois, pilotée par le
+// toggle global de la page. Les boutons mènent à l'inscription par paliers.
+function OffresEducateur({ color, cycle }) {
   const navigate = useNavigate()
   const isAnnuel = cycle === 'annuel'
+  const nbOutils = outilsDuPack().length
+  const detail = (p) => (p.max >= nbOutils ? `Les ${nbOutils} outils éducateur` : `Jusqu'à ${p.max} outils au choix parmi les ${nbOutils}`)
+  const titre = (p) => (p.max >= nbOutils ? 'Tous les outils' : `${p.max} outils`)
   return (
-    <div style={{ maxWidth: '340px', margin: '0 auto' }}>
-      <div style={{ ...st.card(color, true), ...(isAnnuel ? recommandeStyle(color) : {}) }}>
-        {isAnnuel && <BadgeRecommande color={color} />}
-        <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>{titre}</h3>
-        {isAnnuel ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px' }}>
-              <p style={{ fontSize: '11px', color, fontWeight: 700, margin: 0 }}>ANNUEL</p>
-              <span style={{ background: `${color}20`, color, fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>2 mois offerts</span>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', alignItems: 'stretch', maxWidth: '960px', margin: '0 auto' }}>
+      {PALIERS_EDUCATEUR.map((p, i) => {
+        const recommande = i === PALIERS_EDUCATEUR.length - 1
+        const prix = isAnnuel ? p.prixAnnuel : p.prixMensuel
+        const economie = p.prixMensuel * 12 - p.prixAnnuel
+        return (
+          <div key={p.id} style={{ ...st.card(color, recommande), ...(recommande ? recommandeStyle(color) : {}) }}>
+            {recommande && <BadgeRecommande color={color} />}
+            <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px' }}>{titre(p)}</h3>
+            <p style={{ fontSize: '11px', color: isAnnuel ? color : colors.text.dim, fontWeight: 700, margin: '0 0 10px' }}>{isAnnuel ? 'ANNUEL' : 'MENSUEL'}</p>
+            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 0.25rem' }}>
+              {prix}€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>{isAnnuel ? '/an' : '/mois'}</span>
+            </p>
+            <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 1.5rem', minHeight: '18px' }}>
+              {isAnnuel ? `${economie} € de moins que 12 mensualités` : `${p.prixAnnuel} € par an en annuel`}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
+              <Feature>{detail(p)}</Feature>
+              <Feature>Le socle gratuit reste inclus</Feature>
+              <Feature>Sans engagement</Feature>
             </div>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}>100€<span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 400 }}>/an</span></p>
-          </>
-        ) : (
-          <>
-            <p style={{ fontSize: '11px', color: colors.text.dim, fontWeight: 700, margin: '0 0 10px' }}>MENSUEL</p>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 1.5rem' }}><PrixMensuel prix={10} /></p>
-          </>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '1.75rem' }}>
-          {features.map(f => <Feature key={f}>{f}</Feature>)}
-        </div>
-        <button onClick={() => navigate(`/register?profil=${profilId}&cycle=${cycle}`)} style={st.cta(isAnnuel ? color : null, isAnnuel)}>
-          {isAnnuel ? 'Commencer à 100€/an' : promoActive() ? `Commencer à ${prixPromo(10)}€ le 1er mois` : 'Commencer à 10€/mois'}
-        </button>
-      </div>
+            <button onClick={() => navigate('/register?composer=1')} style={st.cta(recommande ? color : null, recommande)}>
+              Commencer à {prix}€{isAnnuel ? '/an' : '/mois'}
+            </button>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -314,27 +320,15 @@ export default function Offres() {
         <div style={st.sectionInner}>
           <div style={st.eyebrow}>ÉDUCATEURS</div>
           <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
-          <p style={st.sousTitre}>Effectif, présences, analyses, séances et statistiques, tout au même endroit.</p>
-          <OffrePro titre="Éducateur" color={colors.accent.blue} profilId="educateur" cycle={cycle} features={[
-            'Gestion de l\'effectif',
-            'Suivi des présences',
-            'Analyse joueurs',
-            'Préparation de séance',
-            'Tacticboard',
-            'Bibliothèque de séances',
-            'Stats équipe automatisées',
-            'Causerie avant-match interactive',
-            'Convocations officielles',
-            'Scout Center',
-            'Création d\'espace dirigeant (inviter un dirigeant, directeur sportif, secrétaire…)',
-          ]} />
+          <p style={st.sousTitre}>Garde le socle gratuit et ajoute seulement les outils dont tu as besoin : séances, tactique, suivi des joueurs, analyse vidéo.</p>
+          <OffresEducateur color={colors.accent.blue} cycle={cycle} />
         </div>
       </section>
 
       {/* ── RECRUTEURS : section retirée de la page pour le moment (même choix que
           Home.jsx). Le profil recruteur reste fonctionnel (route /recruteur,
           inscription /register?profil=scout). Pour la remettre, réinsérer ici :
-          <section> « Trouve tes prochains talents » avec <OffrePro profilId="scout" …/>
+          <section> « Trouve tes prochains talents » avec une offre recruteur
           (voir l'historique git de ce fichier avant ce retrait). ── */}
 
       {/* ── CLUBS — hero ── */}
