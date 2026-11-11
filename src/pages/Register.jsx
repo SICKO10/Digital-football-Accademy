@@ -6,6 +6,8 @@ import { t } from '../lib/translations'
 import { STRIPE_LINKS, STRIPE_LINKS_EDU, STRIPE_LINKS_RECRUTEUR, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, stripeUrl } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 import { promoActive, prixPromo, prixDepuisTexte } from '../lib/promo'
+import { emailDejaUtilise } from '../lib/inscription'
+import InscriptionComposee from '../components/outils/InscriptionComposee'
 
 const PILLS = ['Joueurs actifs', 'Clubs actifs', 'Éducateurs actifs']
 
@@ -15,16 +17,6 @@ const PILLS = ['Joueurs actifs', 'Clubs actifs', 'Éducateurs actifs']
 // (cadenas), à la place des emoji par feature utilisés avant.
 const IcoCheck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
 const IcoLock = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-
-// Détecte un signUp() qui échoue parce que l'email a déjà un compte — deux
-// signaux possibles côté Supabase : soit une erreur explicite ("User already
-// registered", selon la version/config du projet), soit — quand "Confirm
-// email" est activé — un succès silencieux avec data.user.identities vide,
-// mécanisme volontaire de Supabase pour empêcher l'énumération d'emails.
-function emailDejaUtilise(error, data) {
-  if (error) return /already registered|already exists|already been registered/i.test(error.message)
-  return !!data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0
-}
 
 // Un même email n'a qu'un seul compte (profiles.plan est une valeur unique) —
 // un rôle supplémentaire (éducateur, parent, staff club...) se greffe sur ce
@@ -289,6 +281,12 @@ export default function Register() {
       ))}
     </div>
   )
+
+  // Composition de l'offre en trois questions (outils à la carte, éducateur et club) :
+  // adresse cachée /register?composer=1 jusqu'à la bascule. Un lien ?profil=... garde le parcours habituel.
+  if (searchParams.get('composer') === '1' && !profilPresélectionné) {
+    return <InscriptionComposee navigate={navigate} redirectApres={redirectApres} refParrainId={refParrainId} />
+  }
 
   // ── Étape 1 : choix du profil, en split-screen (fond uni, pas de photo) ──
   if (etape === 1) {

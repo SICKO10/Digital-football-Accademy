@@ -217,6 +217,12 @@ export const QUESTIONS = [
   },
 ]
 
+// Type de compte créé d'après la réponse à la question 1 (null tant qu'elle manque).
+export const roleDepuisReponses = (reponses = {}) => {
+  if (reponses.q1 === 'dirigeant_club') return 'club'
+  return reponses.q1 === 'educateur_independant' || reponses.q1 === 'educateur_club' ? 'educateur' : null
+}
+
 const PRECOCHAGE = {
   educateur: {
     q3: {

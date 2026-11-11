@@ -6,6 +6,12 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
 //
+// - `composer` (bloc 11) : à la fin de l'inscription composée (`/register?composer=1`),
+//   le compte tout neuf passe au nouveau modèle (`modele_outils`, que le navigateur ne
+//   peut pas écrire). Éducateur : son accès gratuit (le socle) s'ouvre tout de suite,
+//   ses outils payants viennent ensuite par `payer`. Club : les outils choisis sont
+//   posés (inclus au forfait), l'accès s'ouvre au paiement du forfait. Refusé pour un
+//   compte qui a déjà eu un abonnement.
 // - `essai` : un éducateur du nouveau modèle lance l'essai gratuit de 14 jours
 //   d'un outil, une seule fois par outil. Sans carte bancaire.
 // - `choisir_club` : un club du nouveau modèle ajoute ou retire un de ses outils.
@@ -43,7 +49,7 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
+const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -135,7 +141,12 @@ export function donneesOutils() {
     return data
   }
   return {
-    profil: (id) => lire(db().from('profiles').select('plan, modele_outils, abonnement_actif, email').eq('id', id).maybeSingle()),
+    profil: (id) => lire(db().from('profiles').select('plan, modele_outils, abonnement_actif, abonnement_debut, email').eq('id', id).maybeSingle()),
+    // Passe un compte neuf au nouveau modèle ; l'éducateur obtient en plus l'accès gratuit au socle.
+    activerModele: async (id, { ouvrirAcces }) => {
+      const { error } = await db().from('profiles').update({ modele_outils: true, ...(ouvrirAcces ? { abonnement_actif: true } : {}) }).eq('id', id)
+      if (error) throw error
+    },
     nbEquipes: async (clubId) => {
       const { count, error } = await db().from('club_categories').select('id', { count: 'exact', head: true }).eq('club_id', clubId)
       if (error) throw error
@@ -394,6 +405,20 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       }
 
       const profil = await donnees.profil(utilisateur.id)
+
+      if (action === 'composer') {
+        if (profil?.plan !== 'educateur' && profil?.plan !== 'club') return res.status(403).json({ error: 'Réservé aux éducateurs et aux clubs' })
+        if (profil.modele_outils) return res.status(200).json({ ok: true })
+        // Seul un compte qui n'a jamais eu d'abonnement peut passer au nouveau modèle de lui-même.
+        if (profil.abonnement_actif || profil.abonnement_debut) return res.status(409).json({ error: 'Ce compte a déjà un abonnement' })
+        const choisis = Array.isArray(corps.outils) ? corps.outils : []
+        const outilsClub = profil.plan === 'club' ? choisis.map(o => trouverOutil('club', o)) : []
+        if (outilsClub.some(o => !o) || new Set(choisis).size !== choisis.length) return res.status(400).json({ error: 'Outil inconnu ou en double' })
+        await donnees.activerModele(utilisateur.id, { ouvrirAcces: profil.plan === 'educateur' })
+        for (const o of outilsClub) await donnees.poserLigne({ compte_id: utilisateur.id, outil: o.id, source: 'forfait', fin_le: null })
+        return res.status(200).json({ ok: true })
+      }
+
       if (!profil?.modele_outils) return res.status(403).json({ error: 'Ce compte n\'utilise pas encore les outils à la carte' })
       const maintenantMs = maintenant()
 

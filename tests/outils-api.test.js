@@ -5,7 +5,7 @@ import { creerHandler } from '../api/outils.js'
 import { lignesStripe } from '../src/lib/catalogueOutils.js'
 
 const id = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
-const U = { edu: id(1), eduAncien: id(2), eduAffilie: id(3), eduAffilie2: id(4), club: id(10), clubImpaye: id(11), joueur: id(20) }
+const U = { edu: id(1), eduAncien: id(2), eduAffilie: id(3), eduAffilie2: id(4), club: id(10), clubImpaye: id(11), joueur: id(20), eduNeuf: id(30), clubNeuf: id(31), eduDejaPaye: id(32) }
 const NOW = Date.parse('2026-11-09T12:00:00Z')
 
 function monde({ panneLigne = false } = {}) {
@@ -15,6 +15,9 @@ function monde({ panneLigne = false } = {}) {
     [U.club]: { plan: 'club', modele_outils: true, abonnement_actif: true },
     [U.clubImpaye]: { plan: 'club', modele_outils: true, abonnement_actif: false },
     [U.joueur]: { plan: 'joueur_starter', modele_outils: true, abonnement_actif: false },
+    [U.eduNeuf]: { plan: 'educateur', modele_outils: false, abonnement_actif: false, abonnement_debut: null },
+    [U.clubNeuf]: { plan: 'club', modele_outils: false, abonnement_actif: false, abonnement_debut: null },
+    [U.eduDejaPaye]: { plan: 'educateur', modele_outils: false, abonnement_actif: false, abonnement_debut: '2026-01-01T00:00:00Z' },
   }
   const lignes = new Map()
   const essais = new Set()
@@ -23,7 +26,7 @@ function monde({ panneLigne = false } = {}) {
   let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais, ouverts, notifs,
+    lignes, essais, ouverts, notifs, profils,
     pannerNotifications: () => { panneNotif = true },
     donnees: {
       ouvert: async (c, o) => ouverts.has(cle(c, o)),
@@ -32,6 +35,7 @@ function monde({ panneLigne = false } = {}) {
       educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
       notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
       profil: async (cid) => profils[cid] || null,
+      activerModele: async (cid, { ouvrirAcces }) => { profils[cid] = { ...profils[cid], modele_outils: true, ...(ouvrirAcces ? { abonnement_actif: true } : {}) } },
       ligne: async (c, o) => lignes.get(cle(c, o)) || null,
       marquerEssai: async (c, o) => { if (essais.has(cle(c, o))) return false; essais.add(cle(c, o)); return true },
       oublierEssai: async (c, o) => { essais.delete(cle(c, o)) },
@@ -412,4 +416,37 @@ test('essais gratuits suspendus (réglage par défaut) : refus, rien n\'est écr
   assert.equal(res.code, 403)
   assert.equal(m.lignes.size, 0)
   assert.equal(m.essais.size, 0)
+})
+
+test('composer : un éducateur neuf passe au nouveau modèle et son socle gratuit s\'ouvre', async () => {
+  const m = monde()
+  const res = await appeler(m, U.eduNeuf, { action: 'composer', outils: [] })
+  assert.equal(res.code, 200)
+  assert.equal(m.profils[U.eduNeuf].modele_outils, true)
+  assert.equal(m.profils[U.eduNeuf].abonnement_actif, true)
+  assert.equal(m.lignes.size, 0)
+  // Rejoué : rien ne change.
+  assert.equal((await appeler(m, U.eduNeuf, { action: 'composer', outils: [] })).code, 200)
+})
+
+test('composer : un club neuf reçoit ses outils choisis mais son accès attend le paiement', async () => {
+  const m = monde()
+  const res = await appeler(m, U.clubNeuf, { action: 'composer', outils: ['competition', 'vie_club'] })
+  assert.equal(res.code, 200)
+  assert.equal(m.profils[U.clubNeuf].modele_outils, true)
+  assert.equal(m.profils[U.clubNeuf].abonnement_actif, false)
+  assert.deepEqual(m.lignes.get(`${U.clubNeuf}|competition`), { source: 'forfait', fin_le: null })
+  assert.deepEqual(m.lignes.get(`${U.clubNeuf}|vie_club`), { source: 'forfait', fin_le: null })
+})
+
+test('composer : refus pour un outil inconnu ou en double, un compte qui a déjà payé, un joueur', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.clubNeuf, { action: 'composer', outils: ['nimporte'] })).code, 400)
+  assert.equal((await appeler(m, U.clubNeuf, { action: 'composer', outils: ['vie_club', 'vie_club'] })).code, 400)
+  assert.equal((await appeler(m, U.eduDejaPaye, { action: 'composer', outils: [] })).code, 409)
+  assert.equal((await appeler(m, U.eduAncien, { action: 'composer', outils: [] })).code, 409)
+  assert.equal((await appeler(m, U.joueur, { action: 'composer', outils: [] })).code, 403)
+  assert.equal(m.profils[U.clubNeuf].modele_outils, false)
+  assert.equal(m.profils[U.eduDejaPaye].modele_outils, false)
+  assert.equal(m.lignes.size, 0)
 })

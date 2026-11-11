@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   OUTILS, SOCLE, outilsVisibles, menuFiltre, totalComposition,
-  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour,
+  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour, roleDepuisReponses,
 } from '../src/lib/catalogueOutils.js'
 
 const NOW = new Date('2026-11-10T12:00:00Z')
@@ -164,4 +164,12 @@ test('outils ouvrables aux éducateurs : seulement ceux qui ont un équivalent �
   assert.deepEqual(outilsOuvrables().map(o => o.id), ['projet_sportif', 'stages', 'cff4'])
   for (const o of outilsOuvrables()) assert.equal(outilEducateurPour(o.id).viaClub, o.id)
   assert.equal(outilEducateurPour('finances'), null)
+})
+
+test('roleDepuisReponses : éducateur, club, ou rien tant que la question 1 manque', () => {
+  assert.equal(roleDepuisReponses({ q1: 'educateur_independant' }), 'educateur')
+  assert.equal(roleDepuisReponses({ q1: 'educateur_club' }), 'educateur')
+  assert.equal(roleDepuisReponses({ q1: 'dirigeant_club' }), 'club')
+  assert.equal(roleDepuisReponses({}), null)
+  assert.equal(roleDepuisReponses(), null)
 })
