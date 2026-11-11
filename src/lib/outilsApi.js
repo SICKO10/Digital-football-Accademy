@@ -30,6 +30,19 @@ export function retourPaiementOutils() {
   return v === 'paye' || v === 'annule' ? v : null
 }
 
+// Retour du portail client Stripe (?outils=portail).
+export function retourDuPortail() {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('outils') === 'portail'
+}
+
+// Portail client Stripe : carte bancaire, factures, adresse de facturation.
+export async function ouvrirPortail() {
+  const { url } = await appelerOutils('portail')
+  if (!url) throw new Error('Portail indisponible pour le moment, réessaie plus tard')
+  window.location.assign(url)
+}
+
 export function effacerRetourPaiement() {
   const url = new URL(window.location.href)
   url.searchParams.delete('outils')

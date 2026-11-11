@@ -360,6 +360,51 @@ export function compositionPaiement(role, { outils = [], palier = null, pack = f
   }
 }
 
+// Tarif payé, retrouvé par sa clé de recherche Stripe (écran « Mon abonnement »).
+// Rend { type: 'palier' | 'forfait', nom, prix, periodicite, palier | forfait } ou null.
+export function tarifParCle(cle) {
+  const annuel = /_annuel$/.test(cle || '')
+  const periodicite = annuel ? 'annuel' : 'mensuel'
+  const p = PALIERS_EDUCATEUR.find(x => x.cleMensuel === cle || x.cleAnnuel === cle)
+  if (p) return { type: 'palier', nom: p.nom, prix: annuel ? p.prixAnnuel : p.prixMensuel, periodicite, palier: p }
+  const f = FORFAITS_CLUB.find(x => x.cleMensuel === cle || x.cleAnnuel === cle)
+  if (f) return { type: 'forfait', nom: f.nom, prix: annuel ? f.prixAnnuel : f.prixMensuel, periodicite, forfait: f }
+  return null
+}
+
+// Rang d'un tarif dans sa gamme (paliers éducateur ou forfaits club), pour
+// savoir si un changement monte ou descend. 0 pour un ancien tarif à l'unité.
+function rangTarif(cle) {
+  const iP = PALIERS_EDUCATEUR.findIndex(p => p.cleMensuel === cle || p.cleAnnuel === cle)
+  if (iP >= 0) return iP + 1
+  const iF = FORFAITS_CLUB.findIndex(f => f.cleMensuel === cle || f.cleAnnuel === cle)
+  return iF >= 0 ? iF + 1 : 0
+}
+
+// Modification d'un abonnement en cours (bloc 8), même périodicité.
+// `cleActuelle` : clé de recherche du tarif payé aujourd'hui ; `outilsActuels` :
+// outils de l'éducateur sur cet abonnement ; `demande` : comme pour le paiement
+// ({ outils } ou { pack } pour l'éducateur, { palier } pour le club).
+// Rend { cle, total, sens: 'hausse' | 'baisse' | 'meme', outils?, palier? } ou { erreur }.
+// hausse : la différence est facturée tout de suite ; baisse : le nouveau prix
+// s'applique à l'échéance ; meme : seul le choix des outils change. Fonction pure.
+export function planModification(role, { cleActuelle, outilsActuels = [] }, demande = {}, nbEquipes = 0) {
+  const periodicite = /_annuel$/.test(cleActuelle || '') ? 'annuel' : 'mensuel'
+  const compo = compositionPaiement(role, { ...demande, periodicite }, nbEquipes)
+  if (compo.erreur) return compo
+  const cle = compo.cles[0]
+  const avant = rangTarif(cleActuelle)
+  const apres = rangTarif(cle)
+  const sens = apres > avant ? 'hausse' : apres < avant ? 'baisse' : 'meme'
+  if (role === 'club') {
+    if (sens === 'meme') return { erreur: 'C\'est déjà ton forfait' }
+    return { cle, total: compo.total, sens, palier: compo.palier }
+  }
+  const memes = compo.outils.length === outilsActuels.length && compo.outils.every(o => outilsActuels.includes(o))
+  if (sens === 'meme' && memes) return { erreur: 'Rien à changer : ce sont déjà tes outils' }
+  return { cle, total: compo.total, sens, outils: compo.outils }
+}
+
 // Jours entiers restants d'un essai (arrondi au-dessus), 0 si expiré ou absent.
 export function joursRestantsEssai(essaiFin, maintenant = new Date()) {
   const reste = ts(essaiFin) - ts(maintenant)

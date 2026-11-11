@@ -8,6 +8,7 @@ import { useOutils } from '../lib/useOutils'
 import OutilNonActive from '../components/outils/OutilNonActive'
 import MesOutils from '../components/outils/MesOutils'
 import PaiementForfaitClub from '../components/outils/PaiementForfaitClub'
+import { retourDuPortail } from '../lib/outilsApi'
 import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
@@ -1156,7 +1157,7 @@ export default function DashboardClub() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
-  const [activeTabBrut, setActiveTab] = useState('accueil')
+  const [activeTabBrut, setActiveTab] = useState(() => (retourDuPortail() ? 'mes_outils' : 'accueil'))
   // Outils à la carte (comptes `modele_outils` seulement) : les outils sont ceux
   // du compte club (clubId), que le président ou un membre du staff soit
   // connecté. Une page dont l'outil n'est pas actif devient 'outil_verrouille'

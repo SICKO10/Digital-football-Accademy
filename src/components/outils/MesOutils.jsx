@@ -4,6 +4,7 @@ import { appelerOutils } from '../../lib/outilsApi'
 import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
+import MonAbonnement from './MonAbonnement'
 
 const euros = (n) => `${n} €`
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -12,10 +13,11 @@ const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeri
 const ETATS_PAYABLES = ['disponible', 'essai', 'essai_termine', 'offre']
 const ETATS_ACTIFS = ['actif', 'retire', 'club', 'essai', 'offre']
 
-// Page « Mes outils ». Éducateur : ses outils actifs en haut, puis la boutique
-// (pack ou outils à la carte, bloc 7) tant qu'aucun abonnement n'est en cours ;
-// ensuite, les autres outils avec leur prix (ajout sur abonnement : bloc 8).
-// Club : une carte par outil avec un interrupteur, tout est inclus dans le forfait.
+// Page « Mes outils ». Éducateur : son abonnement (MonAbonnement, bloc 8) et ses
+// outils actifs en haut, puis la boutique (premier paiement, bloc 7) tant
+// qu'aucun abonnement n'est en cours ; ensuite, les autres outils.
+// Club : son abonnement (compte du club seulement), puis une carte par outil
+// avec un interrupteur, tout est inclus dans le forfait.
 // `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit.
 export default function MesOutils({ role, outils, peutModifier = true }) {
   const colors = useColors()
@@ -62,6 +64,7 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
 
   const prix = (e) => {
     if (e.etat === 'club') return 'Inclus par ton club'
+    if (abonnement) return 'À ajouter avec « Modifier mes outils »'
     return `Dans les paliers à partir de ${euros(PALIERS_EDUCATEUR[0].prixMensuel)} par mois`
   }
 
@@ -122,6 +125,8 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
 
+      {outils.pret && role === 'club' && peutModifier && <MonAbonnement role="club" outils={outils} />}
+
       {outils.pret && role === 'club' && (
         <section aria-labelledby="titre-club">
           <h2 id="titre-club" style={titreSection}>
@@ -144,6 +149,7 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
 
       {outils.pret && role === 'educateur' && (
         <>
+          {abonnement && <MonAbonnement role="educateur" outils={outils} />}
           {actifs.length > 0 && (
             <section aria-labelledby="titre-actifs" style={{ marginBottom: 32 }}>
               <h2 id="titre-actifs" style={titreSection}>Tes outils actifs</h2>

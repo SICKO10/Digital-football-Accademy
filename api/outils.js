@@ -1,7 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
-import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -14,6 +14,16 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 //   périodicité (éducateur : ses outils ; club : son forfait selon ses équipes).
 //   Crée une session Stripe Checkout et rend son adresse. Les outils s'activent
 //   à la réception du paiement par le webhook `stripe-webhook-outils`, jamais ici.
+// - `abonnement` : état de l'abonnement des outils lu chez Stripe (tarif,
+//   échéance, résiliation prévue, paiement en retard), pour l'écran Mes outils.
+// - `modifier` (bloc 8) : change les outils de l'éducateur ou le forfait du club
+//   sur l'abonnement en cours, même périodicité. Palier ou forfait supérieur :
+//   la différence est facturée tout de suite et rien ne change si elle n'est pas
+//   payée ; inférieur : le nouveau prix s'applique à l'échéance, sans
+//   remboursement. Les outils s'activent ou s'éteignent par le webhook.
+// - `resilier` / `reprendre` : fin de l'abonnement à l'échéance, ou annulation
+//   de cette fin tant qu'elle n'est pas arrivée.
+// - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
 //   STRIPE_OUTILS_SECRET_KEY, ou à défaut STRIPE_SECRET_KEY (clé live de la plateforme).
@@ -24,7 +34,8 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['essai', 'choisir_club', 'payer', 'verifier-prix']
+const ACTIONS = ['essai', 'choisir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'portail', 'verifier-prix']
+const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
 // sinon le site de production.
@@ -34,6 +45,25 @@ export const origineRetour = (origine) => (typeof origine === 'string' && ORIGIN
 
 // Abonnement des outils déjà en cours : le premier paiement n'en crée pas un second.
 const STATUTS_EN_COURS = ['active', 'trialing', 'past_due', 'unpaid']
+
+// Abonnement Stripe réduit à ce dont les actions ont besoin. La fin de période
+// est sur l'abonnement (anciennes versions d'API) ou sur ses lignes (récentes).
+export function normaliserAbonnement(s) {
+  const items = s.items?.data || []
+  const fin = s.current_period_end ?? items[0]?.current_period_end
+  return {
+    id: s.id,
+    statut: s.status,
+    metadata: s.metadata || {},
+    items: items.map(i => ({ id: i.id, cle: i.price?.lookup_key || null })),
+    finPeriode: fin ? new Date(fin * 1000).toISOString() : null,
+    resiliation: !!s.cancel_at_period_end || !!s.cancel_at,
+  }
+}
+
+// Détail d'une erreur Stripe montré au client pendant les tests des paiements
+// (clé masquée). À ramener à un message simple avant la bascule (bloc 16).
+const detailTest = (err) => `${err.code || err.type || 'erreur'} : ${String(err.message || '').replace(/[rs]k_(live|test)_\S+/g, '[clé]').slice(0, 220)}`
 
 function stripeOutils() {
   // Clé dédiée si elle existe, sinon la clé Stripe déjà utilisée par la plateforme.
@@ -104,6 +134,21 @@ export function donneesOutils() {
       const { data } = await stripeOutils().subscriptions.list({ customer: client, status: 'all', limit: 100 })
       return data.some(s => s.metadata?.offre === 'outils' && STATUTS_EN_COURS.includes(s.status))
     },
+    // Client Stripe du compte, sans en créer (null s'il n'a jamais payé).
+    trouverClient: async (compteId) => {
+      const { data } = await stripeOutils().customers.search({ query: `metadata['compte_id']:'${compteId}'`, limit: 1 })
+      return data[0]?.id || null
+    },
+    abonnementOutils: async (client) => {
+      const { data } = await stripeOutils().subscriptions.list({ customer: client, status: 'all', limit: 100 })
+      const s = data.find(a => a.metadata?.offre === 'outils' && STATUTS_EN_COURS.includes(a.status))
+      return s ? normaliserAbonnement(s) : null
+    },
+    modifierAbonnement: async (id, params) => { await stripeOutils().subscriptions.update(id, params) },
+    sessionPortail: async (params) => {
+      const session = await stripeOutils().billingPortal.sessions.create(params)
+      return { url: session.url }
+    },
     creerSessionPaiement: async (params) => {
       const session = await stripeOutils().checkout.sessions.create(params)
       return { url: session.url }
@@ -114,6 +159,62 @@ export function donneesOutils() {
 const actifMaintenant = (ligne, maintenant) => !!ligne && (!ligne.fin_le || new Date(ligne.fin_le).getTime() > maintenant)
 
 export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.now(), essaisGratuits = ESSAIS_GRATUITS }) {
+  // Actions sur l'abonnement en cours (bloc 8). Rien n'est écrit dans la base
+  // ici : le webhook applique ce que Stripe a réellement enregistré.
+  async function gererAbonnement({ action, role, corps, compteId, req, res }) {
+    const page = role === 'club' ? '/club' : '/educateur'
+    const client = await donnees.trouverClient(compteId)
+    if (action === 'portail') {
+      if (!client) return res.status(404).json({ error: 'Aucun abonnement à gérer pour le moment' })
+      const { url } = await donnees.sessionPortail({ customer: client, locale: 'fr', return_url: `${origineRetour(req.headers?.origin)}${page}?outils=portail` })
+      return res.status(200).json({ url })
+    }
+    const abo = client ? await donnees.abonnementOutils(client) : null
+    const nbEquipes = role === 'club' ? await donnees.nbEquipes(compteId) : 0
+    if (action === 'abonnement') {
+      if (!abo) return res.status(200).json({ abonnement: null, nbEquipes })
+      const { statut, finPeriode, resiliation } = abo
+      const outils = String(abo.metadata.outils || '').split(',').filter(Boolean)
+      return res.status(200).json({ abonnement: { statut, finPeriode, resiliation, cle: abo.items[0]?.cle || null, outils }, nbEquipes })
+    }
+    if (!abo) return res.status(404).json({ error: 'Aucun abonnement en cours' })
+
+    if (action === 'resilier' || action === 'reprendre') {
+      const resilier = action === 'resilier'
+      if (abo.resiliation === resilier) {
+        return res.status(409).json({ error: resilier ? 'Ton abonnement est déjà résilié' : 'Ton abonnement n\'est pas résilié' })
+      }
+      await donnees.modifierAbonnement(abo.id, { cancel_at_period_end: resilier })
+      return res.status(200).json({ ok: true, fin_le: abo.finPeriode })
+    }
+
+    // modifier
+    if (abo.resiliation) return res.status(409).json({ error: 'Ton abonnement est résilié : reprends-le avant de changer d\'offre' })
+    if (abo.statut !== 'active') return res.status(409).json({ error: 'Ton dernier paiement n\'est pas passé : mets à jour ta carte dans « Factures et carte » avant de changer d\'offre' })
+    if (abo.items.length !== 1) return res.status(409).json({ error: 'Ton abonnement ne peut pas être modifié ici : écris-nous' })
+    const [item] = abo.items
+    const outilsActuels = String(abo.metadata.outils || '').split(',').filter(Boolean)
+    const plan = planModification(role, { cleActuelle: item.cle, outilsActuels }, { outils: corps.outils, pack: corps.pack === true, palier: corps.palier }, nbEquipes)
+    if (plan.erreur) return res.status(400).json({ error: plan.erreur })
+
+    const params = { proration_behavior: plan.sens === 'hausse' ? 'always_invoice' : 'none' }
+    if (plan.cle !== item.cle) {
+      // Garde-fou : le montant du nouveau tarif Stripe doit être celui du catalogue.
+      const attendu = lignesStripe().find(l => l.cle === plan.cle)?.montant
+      const [prix] = await donnees.prixStripe([plan.cle])
+      if (!prix || prix.montant !== attendu) {
+        console.error('outils modifier : prix Stripe absent ou différent du catalogue', plan.cle)
+        return res.status(503).json({ error: `Changement indisponible pour le moment, réessaie plus tard (code : prix ; ${plan.cle})` })
+      }
+      params.items = [{ id: item.id, price: prix.id }]
+    }
+    // La différence est payée avec la carte enregistrée ; si elle est refusée, Stripe ne change rien.
+    if (plan.sens === 'hausse') params.payment_behavior = 'error_if_incomplete'
+    if (role === 'educateur') params.metadata = { outils: plan.outils.join(',') }
+    await donnees.modifierAbonnement(abo.id, params)
+    return res.status(200).json({ ok: true, sens: plan.sens, total: plan.total, fin_le: abo.finPeriode })
+  }
+
   return async function handler(req, res) {
     const utilisateur = await authentifier(req, res, verifierJeton)
     if (!utilisateur) return
@@ -191,7 +292,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           }
           const client = await donnees.clientStripe({ compteId: utilisateur.id, email: profil.email })
           if (await donnees.abonnementEnCours(client)) {
-            return res.status(409).json({ error: 'Tu as déjà un abonnement en cours. L\'ajout d\'outils à cet abonnement arrive bientôt.' })
+            return res.status(409).json({ error: 'Tu as déjà un abonnement en cours : change ton offre depuis « Mon abonnement ».' })
           }
           const base = origineRetour(req.headers?.origin)
           const page = role === 'club' ? '/club' : '/educateur'
@@ -218,8 +319,23 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           }
           // Détail visible pendant les tests des paiements (comptes du nouveau modèle seulement, clé masquée).
           console.error('outils payer', err.code || err.type, err.message)
-          const resume = `${err.code || err.type || 'erreur'} : ${String(err.message || '').replace(/[rs]k_(live|test)_\S+/g, '[clé]').slice(0, 220)}`
-          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${resume})` })
+          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${detailTest(err)})` })
+        }
+      }
+
+      if (ACTIONS_ABONNEMENT.includes(action)) {
+        const role = profil.plan
+        if (role !== 'educateur' && role !== 'club') return res.status(403).json({ error: 'Réservé aux éducateurs et aux clubs' })
+        try {
+          return await gererAbonnement({ action, role, corps, compteId: utilisateur.id, req, res })
+        } catch (err) {
+          if (err.message === 'config_stripe_absente') return res.status(503).json({ error: 'Service indisponible pour le moment, réessaie plus tard (code : cle_stripe)' })
+          // Paiement de la différence refusé : Stripe n'a rien changé (error_if_incomplete).
+          if (err.type === 'StripeCardError' || err.statusCode === 402) {
+            return res.status(402).json({ error: 'Le paiement de la différence n\'est pas passé, rien n\'a changé. Vérifie ta carte dans « Factures et carte ».' })
+          }
+          console.error('outils', action, err.code || err.type, err.message)
+          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${detailTest(err)})` })
         }
       }
 
