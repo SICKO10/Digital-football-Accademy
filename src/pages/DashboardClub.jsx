@@ -4956,13 +4956,17 @@ export default function DashboardClub() {
         {/* ── BUDGET (président + secrétaire) ── */}
         {activeTab === 'budget' && canViewSection('budget') && (
           <div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-              {[{ id: 'previsionnel', label: 'Prévisionnel' }, { id: 'reel', label: 'Suivi réel' }].map(v => (
-                <button key={v.id} onClick={() => setBudgetVue(v.id)}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${budgetVue === v.id ? couleurPrincipale : colors.border.default}`, background: budgetVue === v.id ? couleurPrincipale + '20' : colors.background.surface, color: budgetVue === v.id ? couleurPrincipale : colors.text.faint, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {v.label}
-                </button>
-              ))}
+            {/* Prévisionnel / Suivi réel : même style que les pastilles d'équipe du budget prévisionnel. */}
+            <div role="tablist" aria-label="Vue du budget" style={{ display: 'inline-flex', gap: 4, padding: 4, marginBottom: 20, borderRadius: 999, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
+              {[{ id: 'previsionnel', label: 'Prévisionnel' }, { id: 'reel', label: 'Suivi réel' }].map(v => {
+                const actif = budgetVue === v.id
+                return (
+                  <button key={v.id} role="tab" aria-selected={actif} onClick={() => setBudgetVue(v.id)}
+                    style={{ padding: '9px 24px', minHeight: 40, borderRadius: 999, border: 'none', background: actif ? colors.accent.green : 'transparent', color: actif ? (colors.accent.onBrand || '#000') : colors.text.secondary, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background .12s' }}>
+                    {v.label}
+                  </button>
+                )
+              })}
             </div>
             {budgetVue === 'previsionnel' ? (
               <Suspense fallback={null}><BudgetPrevisionnel clubId={clubId} categories={categories} joueurs={joueursClub} canEdit={canEditSection('budget')} /></Suspense>
