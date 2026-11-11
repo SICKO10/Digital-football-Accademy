@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { CONTACT_EMAIL } from '../lib/stripeLinks'
+import { CONTACT_EMAIL, CALENDLY_URL } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 import BandeauPromo from '../components/BandeauPromo'
-import { HeroClub, SemaineClub, TarifsClub } from '../components/offres/OffreClub'
+import { HeroClub, SemaineClub, BesoinsClub, TarifsClub, BlocGuide, BlocContact, BoutonsContact } from '../components/offres/OffreClub'
+import { ChoixUnivers, BandeauUnivers } from '../components/offres/Univers'
+import { PHOTOS, POLICE_TITRE } from '../lib/photosOffres'
 import { promoActive, prixPromo } from '../lib/promo'
-import { IconCheck, IconTool, IconBall, IconChart, IconBolt } from '../components/icones'
+import { IconCheck } from '../components/icones'
 import { PALIERS_EDUCATEUR, outilsDuPack } from '../lib/catalogueOutils'
 
 const st = {
@@ -178,14 +180,7 @@ function FormulaireClub() {
 
   if (!ouvert) {
     return (
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <button onClick={() => setOuvert('demarrage')} style={{ ...st.cta(colors.accent.purpleLight, true), width: 'auto', flex: 'none', padding: '13px 24px' }}>
-          Planifier mon démarrage
-        </button>
-        <button onClick={() => setOuvert('question')} style={{ ...st.cta(null, false), width: 'auto', flex: 'none', padding: '13px 24px' }}>
-          Poser une question
-        </button>
-      </div>
+      <BoutonsContact calendlyUrl={CALENDLY_URL} onDemarrage={() => setOuvert('demarrage')} onQuestion={() => setOuvert('question')} />
     )
   }
 
@@ -244,17 +239,19 @@ export default function Offres() {
 
       <div style={{ textAlign: 'center', padding: '3rem 1.5rem 1rem' }}>
         <div style={st.eyebrow}>TARIFS</div>
-        <h1 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>Une offre pour chaque profil</h1>
+        <h1 style={{ fontFamily: POLICE_TITRE, textTransform: 'uppercase', fontSize: 'clamp(44px, 8vw, 76px)', fontWeight: 800, lineHeight: 1, marginBottom: '0.75rem', letterSpacing: '0.5px' }}>Une offre pour chaque profil</h1>
         <p style={{ color: colors.text.dim, fontSize: '15px', maxWidth: '480px', margin: '0 auto 2rem' }}>Joueur, éducateur ou club, choisis la formule qui te correspond.</p>
-        <CycleToggle cycle={cycle} setCycle={setCycle} />
+        <ChoixUnivers />
+        <div style={{ marginTop: '2.5rem' }}>
+          <CycleToggle cycle={cycle} setCycle={setCycle} />
+        </div>
       </div>
 
       {/* ── JOUEURS ── */}
-      <section style={st.sectionOuter(colors.background.base)}>
+      <BandeauUnivers id="joueurs" photo={PHOTOS.joueur} position="center 42%" couleur={colors.accent.green} eyebrow="Joueurs"
+        titre={"Je m'analyse. Je me dépasse.\nJe progresse. Je performe."} texte="Du compte gratuit à l'accompagnement complet : analyses vidéo, retours d'un expert et statistiques pour voir où tu en es et ce qui te fait avancer." fondSuite={colors.background.base} />
+      <section style={{ ...st.sectionOuter(colors.background.base), paddingTop: '1rem' }}>
         <div style={st.sectionInner}>
-          <div style={st.eyebrow}>JOUEURS</div>
-          <h2 style={st.titre}>Progresse et fais-toi remarquer</h2>
-          <p style={st.sousTitre}>Du compte gratuit à l'accompagnement complet avec analyses vidéo d'experts.</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', maxWidth: '700px', margin: '0 auto' }}>
             {/* Starter — toujours visible, hors du toggle mensuel/annuel */}
@@ -317,11 +314,10 @@ export default function Offres() {
       </section>
 
       {/* ── ÉDUCATEURS ── */}
-      <section style={st.sectionOuter('#0d0d0d')}>
+      <BandeauUnivers id="educateurs" photo={PHOTOS.educateur} position="center 6%" cote="droite" couleur={colors.accent.blue} eyebrow="Éducateurs"
+        titre="Gère ton équipe comme un pro" texte="Garde le socle gratuit et ajoute seulement les outils dont tu as besoin : séances, tactique, suivi des joueurs, analyse vidéo." fondSuite="#0d0d0d" />
+      <section style={{ ...st.sectionOuter('#0d0d0d'), paddingTop: '1rem' }}>
         <div style={st.sectionInner}>
-          <div style={st.eyebrow}>ÉDUCATEURS</div>
-          <h2 style={st.titre}>Gère ton équipe comme un pro</h2>
-          <p style={st.sousTitre}>Garde le socle gratuit et ajoute seulement les outils dont tu as besoin : séances, tactique, suivi des joueurs, analyse vidéo.</p>
           <OffresEducateur color={colors.accent.blue} cycle={cycle} />
         </div>
       </section>
@@ -340,50 +336,18 @@ export default function Offres() {
       <SemaineClub />
 
       {/* ── CLUBS — fonctionnalités ── */}
-      <section style={st.sectionOuter('#0d0d0d')}>
-        <div style={st.sectionInner}>
-          <h3 style={{ fontSize: 28, fontWeight: 800, marginBottom: '3rem', textAlign: 'center', color: colors.text.primary }}>Tout ce dont votre club a besoin</h3>
-          {[
-            { Icon: IconTool, categorie: 'Administration', color: colors.accent.purpleLight, items: ["Vue d'ensemble du club en temps réel", 'Organigramme complet (joueurs, éducateurs, parents)', 'Gestion du budget du club', 'Gestion des sponsors', 'Inventaire matériel', "Création d'événements et de projets"] },
-            { Icon: IconBall, categorie: 'Équipes & Joueurs', color: colors.accent.green, items: ['Gestion multi-équipes centralisée', 'Stats individuelles de chaque joueur', 'Stats collectives de chaque équipe', 'Organisation équipement éducateurs & joueurs', 'Planning interactif (matchs, entraînements, événements)', 'Gestion des accès staff configurable'] },
-            { Icon: IconChart, categorie: 'Dashboards inclus', color: colors.accent.blue, items: ['Dashboard éducateur complet (tous outils)', 'Dashboard joueur gratuit pour tous', 'Dashboard dirigeant en accès gratuit', 'Dashboard parents', 'Interface scout & recrutement intégrée'] },
-            { Icon: IconBolt, categorie: 'Intelligence artificielle', color: colors.accent.orange, items: ['Organisation des déplacements par IA', 'Import de planning terrain par IA (à partir de votre fichier existant)'] },
-          ].map(cat => (
-            <div key={cat.categorie} style={{ marginBottom: '2.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                <span style={{ color: cat.color, display: 'inline-flex' }}><cat.Icon size={22} /></span>
-                <h4 style={{ fontSize: '18px', fontWeight: 700, color: cat.color, margin: 0 }}>{cat.categorie}</h4>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
-                {cat.items.map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', background: colors.background.surface, border: `1px solid ${cat.color}20`, borderRadius: '10px' }}>
-                    <span style={{ color: cat.color, fontSize: '14px', fontWeight: 700, flexShrink: 0, display: 'inline-flex', marginTop: '3px' }}><IconCheck size={14} /></span>
-                    <span style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.5 }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <BesoinsClub />
 
       {/* ── CLUBS — tarifs ── */}
       <TarifsClub
         naviguer={(palier, cycleChoisi) => navigate(`/register?profil=club&palier=${palier}&cycle=${cycleChoisi}`)}
         suite={(
           <>
-          <div onClick={() => navigate('/comment-financer')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: `${colors.accent.green}0d`, border: `1px solid ${colors.accent.green}30`, borderRadius: 12, padding: '14px 20px', marginBottom: '2rem', cursor: 'pointer' }}>
-            <span style={{ fontSize: 13, color: colors.text.secondary }}>Pas sûr de comment financer l'abonnement pour votre club ?</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: colors.accent.green, whiteSpace: 'nowrap' }}>Voir le guide →</span>
-          </div>
-
-          <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.purpleLight}25`, borderRadius: 16, padding: '1.75rem' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: colors.accent.purpleLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '1rem' }}>Prendre contact</p>
-            <blockquote style={{ margin: '0 0 1.5rem', padding: '1rem 1.25rem', background: '#a78bfa10', border: '1px solid #a78bfa30', borderRadius: 10, fontSize: 13, color: '#c4b5fd', fontStyle: 'italic', lineHeight: 1.6 }}>
-              « Une question avant de vous lancer, ou besoin d'organiser votre démarrage ? Notre équipe est là. »
-            </blockquote>
+          <BlocGuide onClick={() => navigate('/comment-financer')} />
+          <div style={{ height: 22 }} />
+          <BlocContact>
             <FormulaireClub />
-          </div>
+          </BlocContact>
           </>
         )}
       />

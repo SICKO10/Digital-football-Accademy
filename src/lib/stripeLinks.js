@@ -75,3 +75,7 @@ export const stripeUrl = (base, uid, email) => {
   const qs = params.toString()
   return qs ? `${base}?${qs}` : base
 }
+
+// Prise de rendez-vous du club (page Offres, bloc « Prendre contact »). Tant que
+// ce lien est vide, le bouton ouvre le formulaire de disponibilités à la place.
+export const CALENDLY_URL = ''
