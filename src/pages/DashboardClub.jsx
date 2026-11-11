@@ -645,9 +645,9 @@ function AccueilClub({ clubId, categories, educateursAcceptes, educateursEnAtten
   const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px', minWidth: 0 }
   const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: palette.secondaryChoisie ? palette.secondaryText : colors.text.secondary }
   const kpi = (Icone, label, valeur, detail, alerte) => (
-    <div key={label} style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div key={label} style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '8px', ...(palette.secondaryChoisie ? { borderTop: `3px solid ${palette.secondaryText}` } : {}) }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: couleurPrincipale + '1f', color: couleurPrincipale }}><Icone /></span>
+        <span style={{ width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: palette.secondaryChoisie ? palette.secondarySoft : couleurPrincipale + '1f', color: palette.secondaryChoisie ? palette.secondaryText : couleurPrincipale }}><Icone /></span>
         <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{label}</span>
       </div>
       <p style={{ margin: 0, fontSize: '30px', fontWeight: 800, lineHeight: 1, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{valeur}</p>
@@ -1467,7 +1467,8 @@ export default function DashboardClub() {
   // Couleur du club, ajustée si besoin pour rester lisible (garde-fou de paletteClub.js).
   useDonnerCouleurClub(club?.couleur_principale, club?.couleur_secondaire)
   const couleurChargement = useCouleurChargement()
-  const couleurPrincipale = useClubPalette().primary
+  const palette = useClubPalette()
+  const couleurPrincipale = palette.primary
   const couleurSecondaire = club?.couleur_secondaire || colors.accent.cyan
 
   const st = {
@@ -1479,7 +1480,7 @@ export default function DashboardClub() {
     }),
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem' },
     btnSolid: { background: couleurPrincipale, color: colors.accent.onBrand, border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
-    btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
+    btnSecondary: { background: 'transparent', border: `1px solid ${palette.secondaryChoisie ? palette.secondaryText : colors.border.strong}`, color: palette.secondaryChoisie ? palette.secondaryText : colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
     input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
     label: { fontSize: '11px', color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
   }

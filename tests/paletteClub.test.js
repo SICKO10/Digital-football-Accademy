@@ -147,3 +147,19 @@ test('couleur secondaire : choisie, lisible partout ; absente ou par défaut, on
     }
   }
 })
+
+test('couleur secondaire dans le menu : trait et anneau avec 3:1 minimum, absents sans choix', () => {
+  for (const mode of ['claire', 'sombre']) {
+    for (const hex of ['#B8141F', '#1D4ED8', '#0F172A', null]) {
+      for (const hex2 of ['#F59E0B', '#7C3AED', '#E11D48', '#FDE047', '#0F172A']) {
+        const p = calculerPalette(hex, mode, hex2)
+        assert.ok(contraste(p.secondarySurActif, p.menuActiveBg) >= 3, `${hex}/${hex2} ${mode} trait sur entrée active`)
+        assert.ok(contraste(p.secondarySurMenu, p.menuBg) >= 3, `${hex}/${hex2} ${mode} anneau sur menu`)
+      }
+      const sans = calculerPalette(hex, mode, null)
+      assert.equal(sans.secondarySurActif, null)
+      assert.equal(sans.secondarySurMenu, null)
+      assert.equal(variablesCss(sans)['--club-secondary-sur-menu'], 'transparent')
+    }
+  }
+})

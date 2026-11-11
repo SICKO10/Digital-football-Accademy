@@ -23,14 +23,14 @@ export const menuLateralCss = `
   .df-nav-btn:focus-visible, .df-menu-contour:focus-visible, .df-menu-pastille button:focus-visible, .df-menu-chip:focus-visible { outline: 2px solid var(--menu-text, #FFFFFF); outline-offset: -2px; }
   .df-nav-btn[data-locked="true"] { opacity: 0.55; }
   .df-nav-btn[data-compact="true"] { justify-content: center; padding: 10px 0; }
-  .df-nav-btn[data-actif="true"] { background: var(--menu-active-bg, #FFFFFF); color: var(--menu-active-text, #1F7A4D); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+  .df-nav-btn[data-actif="true"] { background: var(--menu-active-bg, #FFFFFF); color: var(--menu-active-text, #1F7A4D); font-weight: 700; box-shadow: inset 4px 0 0 var(--club-secondary-sur-actif, transparent), 0 1px 2px rgba(0,0,0,0.12); }
   .df-nav-btn[data-actif="true"] .df-nav-icone { opacity: 1; }
   .df-nav-btn .df-nav-badge { min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--menu-active-bg, #FFFFFF); color: var(--menu-active-text, #1F7A4D); font-size: 10px; font-weight: 800; }
   .df-nav-btn[data-actif="true"] .df-nav-badge { background: var(--menu-active-text, #1F7A4D); color: var(--menu-active-bg, #FFFFFF); }
   .df-nav-section { display: flex; align-items: center; gap: 8px; margin: 0; padding: 20px 12px 7px; color: var(--menu-text, #FFFFFF); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
   .df-nav-section::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.22); }
   .df-menu-entete { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .df-menu-logo { width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--menu-active-text, #1F7A4D); font-size: 13px; font-weight: 800; letter-spacing: -0.5px; }
+  .df-menu-logo { width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 0 2px var(--club-secondary-sur-menu, transparent); color: var(--menu-active-text, #1F7A4D); font-size: 13px; font-weight: 800; letter-spacing: -0.5px; }
   .df-menu-logo img { width: 100%; height: 100%; object-fit: cover; }
   .df-menu-titre { font-size: 15px; font-weight: 800; letter-spacing: -0.4px; white-space: nowrap; color: var(--menu-text, #FFFFFF); }
   .df-menu-pastille { display: inline-flex; align-items: center; border-radius: 20px; border: 1px solid rgba(255,255,255,0.7); color: var(--menu-text, #FFFFFF); background: transparent; }

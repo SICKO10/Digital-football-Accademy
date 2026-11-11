@@ -169,6 +169,18 @@ export function calculerPalette(hex, mode = 'claire', hex2 = null) {
   const menuBg = sombre || marqueClaire ? melanger(primary, [0, 0, 0], 0.1) : menuClair
   const menuTextMuted = melanger(blanc, menuBg, MENU_TEXTE_ATTENUE)
 
+  // Accents de la couleur secondaire dans le menu : un trait sur l'entrée active
+  // (posé sur menuActiveBg) et un anneau autour du logo (posé sur menuBg), chacun avec
+  // 3:1 de contraste minimum (éléments graphiques). Sans choix du club : rien.
+  const contrastee = fondRgb => {
+    if (!choisie2) return null
+    const sens = contraste(fondRgb, blanc) >= contraste(fondRgb, lireHex(ENCRE)) ? 1 : -1
+    return ajusterJusqua(demande2, sens, rgb => contraste(rgb, fondRgb) >= 3)
+      || (sens === 1 ? blanc : lireHex(ENCRE))
+  }
+  const secondarySurActif = contrastee(marqueClaire ? primary : blanc)
+  const secondarySurMenu = contrastee(menuBg)
+
   return {
     mode,
     source,        // 'club' ou 'defaut'
@@ -183,6 +195,8 @@ export function calculerPalette(hex, mode = 'claire', hex2 = null) {
     secondaryChoisie: choisie2,
     secondaryText: enHex(secondaryText),
     secondarySoft: enHex(secondarySoft),
+    secondarySurActif: secondarySurActif ? enHex(secondarySurActif) : null,
+    secondarySurMenu: secondarySurMenu ? enHex(secondarySurMenu) : null,
     menuBg: enHex(menuBg),
     menuText: BLANC,
     menuTextMuted: enHex(menuTextMuted),
@@ -204,6 +218,8 @@ export function variablesCss(p) {
     '--club-primary-text': p.primaryText,
     '--club-secondary-text': p.secondaryText,
     '--club-secondary-soft': p.secondarySoft,
+    '--club-secondary-sur-actif': p.secondarySurActif || 'transparent',
+    '--club-secondary-sur-menu': p.secondarySurMenu || 'transparent',
     '--menu-bg': p.menuBg,
     '--menu-text': p.menuText,
     '--menu-text-muted': p.menuTextMuted,
