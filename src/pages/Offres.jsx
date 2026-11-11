@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { STRIPE_LINKS_CLUB, CONTACT_EMAIL } from '../lib/stripeLinks'
+import { CONTACT_EMAIL } from '../lib/stripeLinks'
 import { colors, alpha } from '../tokens'
 import BandeauPromo from '../components/BandeauPromo'
-import { promoActive, prixPromo, prixDepuisTexte } from '../lib/promo'
+import { HeroClub, SemaineClub, TarifsClub } from '../components/offres/OffreClub'
+import { promoActive, prixPromo } from '../lib/promo'
 import { IconCheck, IconTool, IconBall, IconChart, IconBolt } from '../components/icones'
 import { PALIERS_EDUCATEUR, outilsDuPack } from '../lib/catalogueOutils'
 
@@ -331,22 +332,12 @@ export default function Offres() {
           <section> « Trouve tes prochains talents » avec une offre recruteur
           (voir l'historique git de ce fichier avant ce retrait). ── */}
 
-      {/* ── CLUBS — hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #0d1f0d 0%, #0a0a0a 60%)', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid #1a2a1a' }}>
-        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-          <span style={st.eyebrow}>Offre Club</span>
-          <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, color: colors.text.primary, lineHeight: 1.1, marginBottom: '20px' }}>
-            Gérez votre club.<br /><span style={{ color: colors.accent.green }}>Développez vos joueurs.</span>
-          </h2>
-          <p style={{ color: colors.text.dim, fontSize: '17px', lineHeight: 1.7, marginBottom: '40px' }}>
-            Connectez tous les acteurs de votre club (éducateurs, joueurs, dirigeants, parents) dans un écosystème unique.
-          </p>
-          <button onClick={() => document.getElementById('tarifs-club').scrollIntoView({ behavior: 'smooth' })}
-            style={{ padding: '16px 40px', borderRadius: '12px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 800, fontSize: '16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Voir les tarifs →
-          </button>
-        </div>
-      </section>
+      {/* ── CLUBS : présentation, semaine type, fonctionnalités, tarifs ── */}
+      <HeroClub
+        onTarifs={() => document.getElementById('tarifs-club').scrollIntoView({ behavior: 'smooth' })}
+        onVie={() => document.getElementById('vie-club').scrollIntoView({ behavior: 'smooth' })}
+      />
+      <SemaineClub />
 
       {/* ── CLUBS — fonctionnalités ── */}
       <section style={st.sectionOuter('#0d0d0d')}>
@@ -377,35 +368,10 @@ export default function Offres() {
       </section>
 
       {/* ── CLUBS — tarifs ── */}
-      <section id="tarifs-club" style={st.sectionOuter(colors.background.base)}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <h3 style={{ fontSize: 26, fontWeight: 800, marginBottom: '0.5rem', textAlign: 'center', color: colors.text.primary }}>Un tarif selon la taille de votre club</h3>
-          <p style={{ color: colors.text.dim, fontSize: 13, textAlign: 'center', marginBottom: '2.5rem' }}>Choisissez le palier adapté au nombre d'équipes de votre club, paiement sécurisé, accès immédiat.</p>
-
-          <div style={{ marginBottom: '2.5rem' }}>
-            {Object.entries(STRIPE_LINKS_CLUB).map(([key, p]) => (
-              <div key={key} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
-                padding: '18px 24px', marginBottom: '10px', borderRadius: '12px',
-                background: colors.background.surface, border: `1px solid ${colors.border.faint}`,
-              }}>
-                <span style={{ fontWeight: 800, color: colors.text.primary, fontSize: '15px' }}>{p.label}</span>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=mensuel`)}
-                    style={{ padding: '10px 18px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.accent.green, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                    {promoActive()
-                      ? <>{prixPromo(prixDepuisTexte(p.mensuelPrix))}€ le 1er mois <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, marginLeft: '6px' }}>{p.mensuelPrix.replace('/mois', '')}</span></>
-                      : p.mensuelPrix}
-                  </button>
-                  <button onClick={() => navigate(`/register?profil=club&palier=${key}&cycle=annuel`)}
-                    style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                    {p.annuelPrix}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
+      <TarifsClub
+        naviguer={(palier, cycleChoisi) => navigate(`/register?profil=club&palier=${palier}&cycle=${cycleChoisi}`)}
+        suite={(
+          <>
           <div onClick={() => navigate('/comment-financer')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: `${colors.accent.green}0d`, border: `1px solid ${colors.accent.green}30`, borderRadius: 12, padding: '14px 20px', marginBottom: '2rem', cursor: 'pointer' }}>
             <span style={{ fontSize: 13, color: colors.text.secondary }}>Pas sûr de comment financer l'abonnement pour votre club ?</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: colors.accent.green, whiteSpace: 'nowrap' }}>Voir le guide →</span>
@@ -418,8 +384,9 @@ export default function Offres() {
             </blockquote>
             <FormulaireClub />
           </div>
-        </div>
-      </section>
+          </>
+        )}
+      />
 
       <div style={{ textAlign: 'center', padding: '2rem 1.5rem 4rem' }}>
         <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.dim, border: '1px solid #2a2a2a', padding: '12px 28px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déjà un compte ? Se connecter</button>
