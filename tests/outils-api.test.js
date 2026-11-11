@@ -206,6 +206,7 @@ test('payer : éducateur, deux outils en mensuel, une seule ligne : le palier ju
   // Les outils choisis partent avec le paiement : le webhook les active.
   assert.deepEqual(s.metadata, { offre: 'outils', compte_id: U.edu, role: 'educateur', outils: 'seances,tactique' })
   assert.deepEqual(s.subscription_data.metadata, s.metadata)
+  assert.equal(s.allow_promotion_codes, true)
   assert.equal(s.success_url, 'https://digitalfootball.academy/educateur?outils=paye')
   assert.equal(s.cancel_url, 'https://digitalfootball.academy/educateur?outils=annule')
   // Rien n'est activé avant le webhook.

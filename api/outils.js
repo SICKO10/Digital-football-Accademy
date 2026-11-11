@@ -205,6 +205,8 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
             metadata: meta,
             subscription_data: { metadata: meta },
             locale: 'fr',
+            // Champ « code promo » sur la page de paiement : les codes sont créés dans Stripe par l'administrateur.
+            allow_promotion_codes: true,
             success_url: `${base}${page}?outils=paye`,
             cancel_url: `${base}${page}?outils=annule`,
           })
