@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useColors } from '../../lib/theme'
+import { useClubPalette } from '../../lib/clubTheme'
+import { contraste } from '../../lib/paletteClub'
 
 // Fenêtre de tutoriel pas à pas : une illustration (maquette de l'écran
 // concerné), un titre, un texte et éventuellement une liste de points par
@@ -8,7 +10,12 @@ import { useColors } from '../../lib/theme'
 // Échap pour fermer.
 export default function TutorielModal({ titre, etapes, accent, onFermer }) {
   const colors = useColors()
-  const couleur = accent || colors.accent.blue
+  const palette = useClubPalette()
+  // Couleur secondaire du club quand il en a choisi une, sinon l'accent donné par la page.
+  const couleur = palette.secondaryChoisie ? palette.secondaryText : (accent || colors.accent.blue)
+  const texteSurCouleur = palette.secondaryChoisie
+    ? (contraste(couleur, '#FFFFFF') >= contraste(couleur, '#16161A') ? '#FFFFFF' : '#16161A')
+    : colors.black
   const [idx, setIdx] = useState(0)
   const etape = etapes[idx]
   const derniere = idx === etapes.length - 1
@@ -75,7 +82,7 @@ export default function TutorielModal({ titre, etapes, accent, onFermer }) {
             ))}
           </div>
           <button onClick={() => (derniere ? onFermer() : setIdx(i => i + 1))}
-            style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: couleur, color: colors.black, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: couleur, color: texteSurCouleur, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
             {derniere ? "C'est compris" : 'Suivant'}
           </button>
         </div>
