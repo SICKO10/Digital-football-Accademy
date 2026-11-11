@@ -1,6 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
+import { lireOffre, planOffre, notificationOffre } from '../src/lib/offresOutils.js'
 import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
@@ -38,6 +39,13 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 //   (le tarif actuel jusqu'à l'échéance, puis l'autre périodicité) ; `annuler`
 //   supprime le changement programmé. Pendant qu'un changement est programmé,
 //   `modifier` le refait sur le nouveau tarif et `resilier` l'annule.
+// - `offrir` (bloc 12) : réservée aux administrateurs. Offre un outil pour une durée
+//   choisie à un compte (par son adresse email) ou à tous les comptes d'un rôle
+//   (`cible: 'groupe'`), limités aux comptes du nouveau modèle. Ignore la règle « un
+//   essai par outil » (l'essai gratuit n'est pas marqué utilisé). Un compte qui a déjà
+//   l'outil pour au moins aussi longtemps est laissé tel quel. `apercu: true` compte
+//   sans rien écrire ; un envoi à un groupe exige `confirme: true` et `attendu` (le
+//   nombre vu à l'aperçu). Les comptes reçoivent une notification dans la cloche.
 // - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
@@ -49,7 +57,7 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
+const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -122,9 +130,6 @@ export function phasesPeriodicite(phase, prixId, periodicite, metadata) {
   ]
 }
 
-// Détail d'une erreur Stripe montré au client pendant les tests des paiements
-// (clé masquée). À ramener à un message simple avant la bascule (bloc 16).
-const detailTest = (err) => `${err.code || err.type || 'erreur'} : ${String(err.message || '').replace(/[rs]k_(live|test)_\S+/g, '[clé]').slice(0, 220)}`
 
 function stripeOutils() {
   // Clé dédiée si elle existe, sinon la clé Stripe déjà utilisée par la plateforme.
@@ -195,6 +200,29 @@ export function donneesOutils() {
     notifier: async (lignes) => {
       const { error } = await db().from('notifications').insert(lignes)
       if (error) throw error
+    },
+    // Offres de l'administrateur (bloc 12). Seuls les comptes du nouveau modèle sont visés.
+    compteParEmail: (email) => lire(db().from('profiles').select('id, plan, modele_outils, abonnement_actif').ilike('email', email).limit(1).maybeSingle()),
+    comptesDuRole: async (role) => {
+      const comptes = []
+      for (let debut = 0; ; debut += 1000) {
+        const page = await lire(db().from('profiles').select('id, abonnement_actif').eq('plan', role).eq('modele_outils', true).order('id').range(debut, debut + 999))
+        comptes.push(...(page || []))
+        if (!page || page.length < 1000) return comptes
+      }
+    },
+    lignesOutil: async (ids, outil) => {
+      const lignes = []
+      for (let i = 0; i < ids.length; i += 200) {
+        lignes.push(...(await lire(db().from('outils_comptes').select('compte_id, source, fin_le').eq('outil', outil).in('compte_id', ids.slice(i, i + 200))) || []))
+      }
+      return lignes
+    },
+    poserOffres: async (lignes) => {
+      for (let i = 0; i < lignes.length; i += 200) {
+        const { error } = await db().from('outils_comptes').upsert(lignes.slice(i, i + 200), { onConflict: 'compte_id,outil' })
+        if (error) throw error
+      }
     },
     estAdmin: async (id) => !!(await lire(db().from('admins_coach').select('user_id').eq('user_id', id).maybeSingle())),
     // Prix actifs de Stripe pour ces clés de recherche (10 clés par appel au maximum).
@@ -301,7 +329,10 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       console.error(`outils ${action} : prix Stripe absent ou différent du catalogue`, cle)
       return null
     }
-    const indisponible = (cle) => res.status(503).json({ error: `Changement indisponible pour le moment, réessaie plus tard (code : prix ; ${cle})` })
+    const indisponible = (cle) => {
+      console.error('outils abonnement : prix Stripe absent ou différent du catalogue', cle)
+      return res.status(503).json({ error: 'Changement indisponible pour le moment, réessaie plus tard (code : prix)' })
+    }
     const programmer = (prixId, periodicite, metadata) => donnees.programmerEcheancier({ abonnementId: abo.id, compteId, prixId, periodicite, metadata })
 
     if (action === 'resilier' || action === 'reprendre') {
@@ -404,6 +435,50 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         }
       }
 
+      if (action === 'offrir') {
+        if (!(await donnees.estAdmin(utilisateur.id))) return res.status(403).json({ error: 'Réservé aux administrateurs' })
+        const offre = lireOffre(corps)
+        if (offre.erreur) return res.status(400).json({ error: offre.erreur })
+        const groupe = corps.cible === 'groupe'
+        let comptes
+        if (groupe) {
+          comptes = await donnees.comptesDuRole(offre.role)
+        } else {
+          const email = typeof corps.email === 'string' ? corps.email.trim() : ''
+          if (!/^[^\s@%_]+@[^\s@%_]+\.[^\s@%_]+$/.test(email)) return res.status(400).json({ error: 'Adresse email invalide' })
+          const compte = await donnees.compteParEmail(email)
+          if (!compte) return res.status(404).json({ error: 'Aucun compte avec cette adresse' })
+          if (compte.plan !== offre.role) return res.status(400).json({ error: `Ce compte n'est pas ${offre.role === 'club' ? 'un club' : 'un éducateur'}` })
+          if (!compte.modele_outils) return res.status(400).json({ error: 'Ce compte n\'utilise pas encore les outils à la carte' })
+          comptes = [compte]
+        }
+        const lignes = comptes.length > 0 ? await donnees.lignesOutil(comptes.map(c => c.id), offre.outil.id) : []
+        const plan = planOffre({ role: offre.role, comptes, lignes, jours: offre.jours, maintenantMs: maintenant() })
+        const bilan = { total: plan.total, a_offrir: plan.aOffrir.length, deja: plan.deja, sans_forfait: plan.sansForfait, fin_le: plan.finLe }
+        if (corps.apercu === true) return res.status(200).json({ ok: true, apercu: true, ...bilan })
+        if (groupe && (corps.confirme !== true || corps.attendu !== plan.aOffrir.length)) {
+          return res.status(409).json({ error: 'Le nombre de comptes concernés a changé ou n\'a pas été confirmé : refais l\'aperçu' })
+        }
+        if (plan.aOffrir.length > 0) {
+          await donnees.poserOffres(plan.aOffrir.map(id => ({
+            compte_id: id, outil: offre.outil.id, source: 'offre', fin_le: plan.finLe,
+            periodicite: null, stripe_subscription_id: null, stripe_item_id: null, maj_le: new Date(maintenant()).toISOString(),
+          })))
+        }
+        // La notification est secondaire : l'offre est déjà posée, on compte ce qui est parti.
+        let notifies = 0
+        if (plan.aOffrir.length > 0) {
+          try {
+            const modele = notificationOffre({ role: offre.role, outil: offre.outil, jours: offre.jours, finLe: plan.finLe })
+            await donnees.notifier(plan.aOffrir.map(id => ({ user_id: id, ...modele })))
+            notifies = plan.aOffrir.length
+          } catch (err) {
+            console.error('outils offrir : notifications', err.message)
+          }
+        }
+        return res.status(200).json({ ok: true, ...bilan, offerts: plan.aOffrir.length, notifies })
+      }
+
       const profil = await donnees.profil(utilisateur.id)
 
       if (action === 'composer') {
@@ -467,9 +542,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
             const differents = compo.cles.filter(c => prix.has(c) && prix.get(c).montant !== attendus.get(c))
             const mode = prix.size === 0 ? 'aucun tarif trouvé' : [...prix.values()].some(p => p.live) ? 'réel' : 'test'
             console.error('outils payer : prix Stripe absent ou différent du catalogue', { manquants, differents, mode })
-            // Détail volontairement visible pendant les tests des paiements : il ne contient que des noms de tarifs.
-            const detail = [manquants.length && `manquant : ${manquants.join(', ')}`, differents.length && `montant différent : ${differents.join(', ')}`, `mode : ${mode}`].filter(Boolean).join(' ; ')
-            return res.status(503).json({ error: `Paiement indisponible pour le moment, réessaie plus tard (code : prix ; ${detail})` })
+            return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : prix)' })
           }
           const client = await donnees.clientStripe({ compteId: utilisateur.id, email: profil.email })
           if (await donnees.abonnementEnCours(client)) {
@@ -498,9 +571,8 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
             console.error('outils payer : clé Stripe absente (STRIPE_OUTILS_SECRET_KEY et STRIPE_SECRET_KEY)')
             return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : cle_stripe)' })
           }
-          // Détail visible pendant les tests des paiements (comptes du nouveau modèle seulement, clé masquée).
           console.error('outils payer', err.code || err.type, err.message)
-          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${detailTest(err)})` })
+          return res.status(500).json({ error: 'Erreur serveur, réessaie dans un instant' })
         }
       }
 
@@ -516,7 +588,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
             return res.status(402).json({ error: 'Le paiement de la différence n\'est pas passé, rien n\'a changé. Vérifie ta carte dans « Factures et carte ».' })
           }
           console.error('outils', action, err.code || err.type, err.message)
-          return res.status(500).json({ error: `Erreur serveur, réessaie dans un instant (${detailTest(err)})` })
+          return res.status(500).json({ error: 'Erreur serveur, réessaie dans un instant' })
         }
       }
 

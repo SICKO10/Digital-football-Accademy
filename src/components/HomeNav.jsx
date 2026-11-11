@@ -65,6 +65,7 @@ export default function HomeNav({ lang, setLang, navigate }) {
   const LIENS = [
     { href: '#comment', label: t('home_comment_marche', lang) },
     { href: '/offres', label: t('home_offres', lang) },
+    { href: '/tarifs', label: t('home_tarifs', lang) },
     { href: '/comment-financer', label: t('home_financement', lang) },
     { href: '/jogabonito', label: 'Jogabonito' },
   ]

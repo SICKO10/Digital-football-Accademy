@@ -14,6 +14,7 @@ import { useCouleurChargement } from './lib/couleurChargement'
 // imposer même le petit coût d'un aller-retour réseau supplémentaire.
 import Home from './pages/Home'
 const Offres = lazy(() => import('./pages/Offres'))
+const Tarifs = lazy(() => import('./pages/Tarifs'))
 const RegisterChoix = lazy(() => import('./pages/RegisterChoix'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -113,6 +114,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/offres" element={<Offres />} />
+        <Route path="/tarifs" element={<Tarifs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-choix" element={<RegisterChoix />} />

@@ -12,7 +12,6 @@ import CarteOutil from './CarteOutil'
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
 
 const aUnAbonnement = (outils) => outils.lignes.some(l => l.source === 'achat')
-const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 
 export function PaiementOutils({ payables }) {
   const colors = useColors()
@@ -55,9 +54,9 @@ export function PaiementOutils({ payables }) {
     }
   }
 
-  const badge = ({ etat, finLe, joursRestants }) => {
+  const badge = ({ etat, joursRestants }) => {
     if (etat === 'essai') return { texte: `En essai : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.info }
-    if (etat === 'offre') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
+    if (etat === 'offre') return { texte: `Offert : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.success }
     if (etat === 'essai_termine') return { texte: 'Essai terminé', couleur: colors.accent.amber }
     return null
   }

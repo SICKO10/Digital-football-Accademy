@@ -1,6 +1,14 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { colors } from '../tokens'
 import { CONTACT_EMAIL, STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES } from '../lib/stripeLinks'
+import { FORFAITS_CLUB, PALIERS_EDUCATEUR } from '../lib/catalogueOutils'
+
+// Outils à la carte publiés à la bascule (bloc 16). Les comptes éducateur et club créés
+// avant gardent l'ancien modèle : leur version (celle d'avant) reste consultable avec
+// /cgv?version=2026-10-08, sans les textes des outils à la carte.
+const ANCIENNE_VERSION = '2026-10-08'
+const DATE_BASCULE = '11/11/2026'
+const euros = (n) => `${n},00 €`
 
 const Section = ({ titre, children }) => (
   <div style={{ marginBottom: '2.5rem' }}>
@@ -19,6 +27,8 @@ const P = ({ children }) => <p style={{ margin: '0 0 0.75rem' }}>{children}</p>
 
 function CGV() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const NOUVEAU_MODELE = searchParams.get('version') !== ANCIENNE_VERSION
 
   const thStyle = { background: colors.background.raised, color: colors.accent.green, padding: '8px 12px', fontSize: '12px', fontWeight: '700', textAlign: 'left', border: `1px solid ${colors.border.default}` }
   const tdStyle = { color: colors.text.faint, padding: '8px 12px', fontSize: '12px', border: `1px solid ${colors.border.subtle}` }
@@ -42,7 +52,11 @@ function CGV() {
           <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
             Conditions Générales de Vente
           </h1>
-          <p style={{ color: colors.text.faint, fontSize: '14px' }}>digitalfootball.academy — version en vigueur au 08/10/2026</p>
+          <p style={{ color: colors.text.faint, fontSize: '14px' }}>
+            {NOUVEAU_MODELE
+              ? `digitalfootball.academy · version en vigueur au ${DATE_BASCULE}`
+              : `digitalfootball.academy · version du 08/10/2026, applicable aux comptes éducateur et club créés avant le ${DATE_BASCULE}`}
+          </p>
         </div>
 
         <Section titre="Article 1 — Éditeur de la plateforme">
@@ -60,8 +74,15 @@ function CGV() {
 
         <Section titre="Article 2 — Objet et champ d'application">
           <P>Les présentes CGV régissent les relations contractuelles entre JANUARIO CAPITAL (« l'Éditeur ») et toute personne souscrivant un abonnement sur Digital Football.</P>
-          <P>Digital Football propose : l'analyse vidéo personnalisée avec retour vocal expert, un feed social pour les clips des joueurs, et une mise en relation joueurs / clubs / agents / recruteurs.</P>
+          <P>
+            {NOUVEAU_MODELE
+              ? 'Digital Football propose : l\'analyse vidéo personnalisée avec retour vocal expert, un feed social pour les clips des joueurs, une mise en relation joueurs / clubs / agents / recruteurs, et des outils de gestion pour les éducateurs et les clubs (séances, tacticboard, bibliothèque, suivi des joueurs, statistiques collectives, préparation physique, évaluations et vidéo, projet sportif, projet club, stages).'
+              : 'Digital Football propose : l\'analyse vidéo personnalisée avec retour vocal expert, un feed social pour les clips des joueurs, et une mise en relation joueurs / clubs / agents / recruteurs.'}
+          </P>
           <P>Tout accès à la plateforme implique l'acceptation sans réserve des présentes CGV.</P>
+          {NOUVEAU_MODELE && (
+            <P>Les comptes éducateur et club créés avant le {DATE_BASCULE} conservent leurs conditions d'abonnement : ils restent régis par la <a href={`/cgv?version=${ANCIENNE_VERSION}`} onClick={(e) => { e.preventDefault(); navigate(`/cgv?version=${ANCIENNE_VERSION}`) }} style={{ color: colors.accent.green }}>version du 08/10/2026</a> des présentes CGV.</P>
+          )}
         </Section>
 
         <Section titre="Article 3 — Offres et tarifs">
@@ -73,10 +94,31 @@ function CGV() {
           <P><strong style={{ color: 'white' }}>Annuel : 100,00 € / an TTC</strong> — 3 analyses vidéo incluses immédiatement. Analyses supplémentaires : 60,00 € l'unité.</P>
 
           <SousTitre>3.3 Abonnement Éducateur</SousTitre>
-          <P>
-            Mensuel : 10,00 € / mois TTC — Annuel : 100,00 € / an TTC<br />
-            Inclut : gestion des catégories, suivi joueurs, modules santé / nutrition / planification / statistiques.
-          </P>
+          {NOUVEAU_MODELE ? (
+            <>
+              <P>L'éducateur dispose d'un socle gratuit. Il compose ensuite ses outils et paie selon leur nombre. Prix TTC :</P>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
+                <thead>
+                  <tr><th style={thStyle}>Palier</th><th style={thStyle}>Mensuel TTC</th><th style={thStyle}>Annuel TTC</th></tr>
+                </thead>
+                <tbody>
+                  {PALIERS_EDUCATEUR.map((p, i) => (
+                    <tr key={p.id}>
+                      <td style={tdStyle}>{['De 1 à 3 outils', 'De 4 à 6 outils', 'De 7 à 9 outils (tous les outils)'][i]}</td>
+                      <td style={tdStyle}>{euros(p.prixMensuel)}</td>
+                      <td style={tdStyle}>{euros(p.prixAnnuel)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <P>Le palier dépend du nombre d'outils choisis : un paiement pour 1 ou 2 outils reste au tarif du premier palier. À partir de 7 outils, le palier « tous les outils » donne accès aux 9 outils achetables. Les outils fournis par un club (article 3.9) ne comptent pas dans le palier.</P>
+            </>
+          ) : (
+            <P>
+              Mensuel : 10,00 € / mois TTC — Annuel : 100,00 € / an TTC<br />
+              Inclut : gestion des catégories, suivi joueurs, modules santé / nutrition / planification / statistiques.
+            </P>
+          )}
 
           <SousTitre>3.4 Abonnement Recruteur</SousTitre>
           <P>
@@ -85,6 +127,7 @@ function CGV() {
           </P>
 
           <SousTitre>3.5 Abonnement Club</SousTitre>
+          {NOUVEAU_MODELE && <P>Le forfait du club dépend de son nombre d'équipes (prix TTC ci-dessous). Il couvre tous les outils du club, sans supplément : le club choisit les outils qu'il ouvre et peut en ajouter ou en retirer quand il le souhaite.</P>}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
             <thead>
               <tr>
@@ -95,7 +138,14 @@ function CGV() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(STRIPE_LINKS_CLUB).map(([palier, infos]) => (
+              {NOUVEAU_MODELE ? FORFAITS_CLUB.map(f => (
+                <tr key={f.id}>
+                  <td style={tdStyle}>{f.id}</td>
+                  <td style={tdStyle}>{`Jusqu'à ${f.equipes} équipes`}</td>
+                  <td style={tdStyle}>{euros(f.prixMensuel)}</td>
+                  <td style={tdStyle}>{euros(f.prixAnnuel)}</td>
+                </tr>
+              )) : Object.entries(STRIPE_LINKS_CLUB).map(([palier, infos]) => (
                 <tr key={palier}>
                   <td style={tdStyle}>{palier}</td>
                   <td style={tdStyle}>{infos.label || `Jusqu'à ${PALIERS_QUOTA_EQUIPES[palier]} équipes`}</td>
@@ -114,6 +164,16 @@ function CGV() {
 
           <SousTitre>3.8 Modification des tarifs</SousTitre>
           <P>Toute modification est communiquée 30 jours à l'avance par email. Le Client peut résilier sans frais dans ce délai.</P>
+
+          {NOUVEAU_MODELE && (
+            <>
+              <SousTitre>3.9 Outils fournis par le club</SousTitre>
+              <P>Un club abonné peut ouvrir ses outils aux éducateurs affiliés à son club, sans frais pour ces éducateurs. Ces outils cessent d'être accessibles à l'éducateur dès que le club les ferme, les retire ou met fin à son abonnement (à la fin de la période payée). L'éducateur qui s'inscrit via l'invitation d'un club en est informé à l'inscription.</P>
+
+              <SousTitre>3.10 Offres promotionnelles et accès offerts</SousTitre>
+              <P>L'Éditeur peut, de temps à autre, offrir l'accès à un ou plusieurs outils pour une durée limitée et sans carte bancaire, à un compte ou à une catégorie de comptes (opération marketing). À la date de fin indiquée, l'accès s'arrête de lui-même, sans engagement ni facturation. Ces offres sont ponctuelles et ne créent aucun droit à leur renouvellement. Un outil déjà payé puis retiré, encore accessible jusqu'à la fin de sa période, est prolongé si l'offre va plus loin.</P>
+            </>
+          )}
         </Section>
 
         <Section titre="Article 4 — Modalités de souscription">
@@ -125,20 +185,37 @@ function CGV() {
         </Section>
 
         <Section titre="Article 5 — Paiement">
-          <P>Paiements sécurisés via Stripe Inc. Aucune donnée bancaire stockée. Prélèvement automatique à la date anniversaire. Accès suspendu en cas d'échec de paiement. Prix en euros TTC.</P>
+          <P>Paiements sécurisés via Stripe Inc. Aucune donnée bancaire stockée. Prélèvement automatique à la date anniversaire. {NOUVEAU_MODELE ? 'En cas d\'échec de paiement, un avertissement est affiché dans « Mes outils » ; faute de régularisation, l\'accès aux outils est suspendu. Les factures sont disponibles dans « Mes outils », rubrique « Factures et carte ». ' : 'Accès suspendu en cas d\'échec de paiement. '}Prix en euros TTC.</P>
         </Section>
 
         <Section titre="Article 6 — Durée et renouvellement">
-          <P>Abonnements renouvelables tacitement (mensuel ou annuel). Désactivation possible depuis les paramètres ou via {CONTACT_EMAIL}, 48h avant échéance.</P>
+          {NOUVEAU_MODELE ? (
+            <>
+              <P>6.1 Les abonnements se renouvellent tacitement (mensuel ou annuel). La résiliation se fait en ligne depuis « Mes outils » ou par email à {CONTACT_EMAIL}. Elle prend effet à la fin de la période déjà payée : l'accès reste ouvert jusqu'à cette date. Le Client peut revenir sur sa résiliation tant que cette date n'est pas atteinte.</P>
+              <P>6.2 L'éducateur qui résilie revient au socle gratuit à la fin de la période payée. Le club qui résilie passe en accès limité à la fin de la période payée.</P>
+              <P>6.3 Le Client peut passer du paiement mensuel au paiement annuel (ou l'inverse). Le changement prend effet à la prochaine échéance, avec les mêmes outils, et peut être annulé jusque-là. La date du changement est affichée avant confirmation.</P>
+              <SousTitre>Modifier ses outils en cours d'abonnement</SousTitre>
+              <P>6.4 Ajouter un outil ou passer à un palier ou à un forfait supérieur : la différence de prix est facturée immédiatement, au prorata de la période restante, et le changement s'applique dès le paiement confirmé. Si le paiement est refusé, rien ne change.</P>
+              <P>6.5 Retirer un outil, ou passer à un palier ou à un forfait inférieur : le nouveau prix s'applique à la prochaine échéance, sans remboursement ni avoir. Dans un même palier, remplacer un outil par un autre n'a pas d'incidence sur le prix.</P>
+              <P>6.6 Retirer le dernier outil d'un éducateur revient à résilier : l'abonnement prend fin à la fin de la période payée.</P>
+            </>
+          ) : (
+            <P>Abonnements renouvelables tacitement (mensuel ou annuel). Désactivation possible depuis les paramètres ou via {CONTACT_EMAIL}, 48h avant échéance.</P>
+          )}
         </Section>
 
         <Section titre="Article 7 — Droit de rétractation">
           <P>En application de l'article L.221-28 du Code de la consommation, le Client ayant demandé l'exécution immédiate du service perd son droit de rétractation dès sa première connexion ou utilisation de la plateforme.</P>
           <P>En l'absence de toute connexion après souscription, le Client dispose de 14 jours pour se rétracter via {CONTACT_EMAIL}.</P>
+          {NOUVEAU_MODELE && (
+            <P>
+              Clients professionnels (club, association, société, éducateur exerçant à titre indépendant) : le Client qui souscrit pour les besoins de son activité déclare agir à titre professionnel. Il ne bénéficie pas du droit de rétractation prévu ci-dessus, sauf disposition légale impérative contraire. Il s'engage à fournir des informations exactes sur sa structure (dénomination, représentant, adresse de facturation) et à disposer du pouvoir d'engager celle-ci. Les outils ouverts par un club à ses éducateurs le sont sous sa seule responsabilité.
+            </P>
+          )}
         </Section>
 
         <Section titre="Article 8 — Remboursement">
-          <P>Hors rétractation valide, aucun remboursement partiel en cas de résiliation en cours de période. Analyses à l'unité non utilisées dans 12 mois : perdues. En cas d'indisponibilité technique imputable à l'Éditeur dépassant 72h, un avoir peut être accordé sur demande.</P>
+          <P>Hors rétractation valide, aucun remboursement partiel en cas de résiliation en cours de période{NOUVEAU_MODELE ? ', de retrait d\'un outil ou de baisse de palier : l\'accès reste ouvert jusqu\'à la fin de la période payée' : ''}. Analyses à l'unité non utilisées dans 12 mois : perdues. En cas d'indisponibilité technique imputable à l'Éditeur dépassant 72h, un avoir peut être accordé sur demande.</P>
         </Section>
 
         <Section titre="Article 9 — Obligations du Client">

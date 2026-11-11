@@ -5,8 +5,8 @@ import { emailDejaUtilise } from '../../lib/inscription'
 import { appelerOutils, payerOutils } from '../../lib/outilsApi'
 import ComposerOffre from './ComposerOffre'
 
-// Inscription éducateur ou club avec composition de l'offre (bloc 11), derrière
-// l'adresse cachée `/register?composer=1` jusqu'à la bascule. Deux étapes :
+// Inscription éducateur ou club avec composition de l'offre (bloc 11) : seul parcours
+// d'inscription des éducateurs et des clubs depuis la bascule (bloc 16). Deux étapes :
 // 1. ComposerOffre : trois questions, outils, total ;
 // 2. le compte : création, passage au nouveau modèle (action serveur `composer`),
 //    puis paiement chez Stripe ou dashboard gratuit.
@@ -14,7 +14,7 @@ import ComposerOffre from './ComposerOffre'
 const police = 'Inter, sans-serif'
 const parPeriode = (periodicite) => (periodicite === 'annuel' ? 'par an' : 'par mois')
 
-export default function InscriptionComposee({ navigate, redirectApres, refParrainId }) {
+export default function InscriptionComposee({ navigate, redirectApres, refParrainId, retourProfils }) {
   const [composition, setComposition] = useState(null)
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
@@ -42,7 +42,7 @@ export default function InscriptionComposee({ navigate, redirectApres, refParrai
         <div style={{ background: colors.background.surface, borderRadius: 16, padding: '28px 20px', boxSizing: 'border-box' }}>{contenu}</div>
         <p style={{ textAlign: 'center', fontSize: 13, color: colors.text.disabled, margin: '20px 0 0', lineHeight: 1.8 }}>
           Tu es joueur ou recruteur ?{' '}
-          <button type="button" onClick={() => navigate('/register')} style={{ ...lien, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: police, fontSize: 13, padding: 0 }}>Inscription habituelle</button>
+          <button type="button" onClick={retourProfils || (() => navigate('/register'))} style={{ ...lien, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: police, fontSize: 13, padding: 0 }}>Inscription habituelle</button>
           <br />
           Déjà un compte ?{' '}
           <button type="button" onClick={() => navigate('/login')} style={{ ...lien, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: police, fontSize: 13, padding: 0 }}>Se connecter</button>

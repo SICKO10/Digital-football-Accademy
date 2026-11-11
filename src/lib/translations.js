@@ -1112,6 +1112,7 @@ export const T = {
   // ── Home (landing page) ────────────────────────────────────────────────────────
   home_comment_marche:      { fr: 'Comment ça marche',         en: 'How it works',           pt: 'Como funciona',         es: 'Cómo funciona',          it: 'Come funziona',         de: 'So funktioniert es'   },
   home_offres:              { fr: 'Offres',                    en: 'Plans',                  pt: 'Planos',                es: 'Planes',                 it: 'Piani',                 de: 'Angebote'             },
+  home_tarifs:              { fr: 'Tarifs',                    en: 'Pricing',                pt: 'Preços',                es: 'Precios',                it: 'Prezzi',                de: 'Preise'               },
   home_financement:         { fr: 'Financement',               en: 'Funding',                pt: 'Financiamento',         es: 'Financiación',           it: 'Finanziamento',         de: 'Finanzierung'         },
   home_commencer:           { fr: 'Commencer',                 en: 'Get started',            pt: 'Começar',               es: 'Empezar',                it: 'Inizia',                de: 'Loslegen'             },
   home_badge_plateforme:    { fr: "L'ÉCOSYSTÈME DU FOOTBALL AMATEUR & SEMI-PRO", en: 'THE ECOSYSTEM FOR AMATEUR & SEMI-PRO FOOTBALL', pt: 'O ECOSSISTEMA DO FUTEBOL AMADOR E SEMIPROFISSIONAL', es: 'EL ECOSISTEMA DEL FÚTBOL AMATEUR Y SEMIPROFESIONAL', it: "L'ECOSISTEMA DEL CALCIO AMATORIALE E SEMI-PRO", de: 'DAS ÖKOSYSTEM FÜR AMATEUR- UND SEMIPROFI-FUSSBALL' },

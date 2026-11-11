@@ -104,7 +104,7 @@ export function infosOutil(role, id) {
 // État de chaque outil pour l'écran « Mes outils ». `lignes` : réponse de
 // `outils_actifs` ; `essaisUtilises` : ids des outils dont l'essai a déjà servi.
 // États : 'actif' (payé, ou inclus dans le forfait du club), 'essai' (avec
-// `joursRestants`), 'retire' et 'offre' (actifs jusqu'à `finLe`), 'club' (fourni
+// `joursRestants`), 'retire' et 'offre' (actifs jusqu'à `finLe` ; l'offre rend aussi `joursRestants`), 'club' (fourni
 // par le club), 'essai_termine' (essai fini, à garder ou non), 'disponible'.
 // Un outil non achetable et non fourni par le club n'apparaît pas.
 // `masque` : l'éducateur a retiré cet outil du club de son menu (état 'club').
@@ -124,7 +124,7 @@ export function etatsOutils({ role, lignes = [], essaisUtilises = [], masques = 
     } else if (fourniParLeClub) etat = 'club'
     else if (!o.achetable) continue
     else etat = essaisUtilises.includes(o.id) ? 'essai_termine' : 'disponible'
-    liste.push({ outil: o, etat, finLe, fourniParLeClub, masque: etat === 'club' && masques.includes(o.id), joursRestants: etat === 'essai' ? joursRestantsEssai(finLe, maintenant) : 0 })
+    liste.push({ outil: o, etat, finLe, fourniParLeClub, masque: etat === 'club' && masques.includes(o.id), joursRestants: etat === 'essai' || etat === 'offre' ? joursRestantsEssai(finLe, maintenant) : 0 })
   }
   return liste
 }

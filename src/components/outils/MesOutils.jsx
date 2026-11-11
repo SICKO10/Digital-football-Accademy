@@ -63,7 +63,8 @@ export default function MesOutils({ role, outils, peutModifier = true, userId })
   const badge = ({ etat, finLe, joursRestants, fourniParLeClub }) => {
     if (etat === 'actif') return { texte: fourniParLeClub ? 'Actif, aussi fourni par ton club' : 'Actif', couleur: colors.accent.success }
     if (etat === 'essai') return { texte: `Essai : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.info }
-    if (etat === 'retire' || etat === 'offre') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
+    if (etat === 'offre') return { texte: `Offert : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.success }
+    if (etat === 'retire') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
     if (etat === 'club') return { texte: 'Fourni par ton club', couleur: colors.accent.info }
     if (etat === 'essai_termine') return { texte: 'Essai terminé', couleur: colors.accent.amber }
     return null

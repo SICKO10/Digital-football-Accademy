@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { colors, alpha } from '../../tokens'
 import {
-  QUESTIONS, FORFAITS_CLUB, outilsAchetables, outilsPrecoches, roleDepuisReponses, compositionPaiement, forfaitPourEquipes,
+  QUESTIONS, outilsAchetables, outilsPrecoches, roleDepuisReponses, compositionPaiement, forfaitPourEquipes,
   PALIERS_EDUCATEUR, outilsDuPack,
 } from '../../lib/catalogueOutils'
 import { CONTACT_EMAIL } from '../../lib/stripeLinks'
+import { MAX_EQUIPES } from '../../lib/simulateurTarifs'
+import { CarteChoix, PasEquipes } from './ElementsOffre'
 
 // Composition de l'offre à l'inscription (bloc 11) : trois questions pré-cochent
 // les outils, le total suit en direct, puis `onContinuer` reçoit le choix.
@@ -12,21 +14,7 @@ import { CONTACT_EMAIL } from '../../lib/stripeLinks'
 // suit le thème du dashboard et rendrait des cartes claires dans cette page).
 // Le prix vient toujours de compositionPaiement et du catalogue, jamais d'ici.
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
-const MAX_EQUIPES = FORFAITS_CLUB[FORFAITS_CLUB.length - 1].equipes
 const police = 'Inter, sans-serif'
-
-const Coche = ({ coche }) => (
-  <span aria-hidden="true" style={{
-    flexShrink: 0, width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    background: coche ? colors.accent.green : 'transparent', border: coche ? 'none' : `1.5px solid ${colors.border.strong}`,
-  }}>
-    {coche && (
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M2.5 6.2 5 8.6l4.5-5" stroke={colors.black} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    )}
-  </span>
-)
 
 function Question({ question, valeur, onChoix }) {
   return (
@@ -46,23 +34,6 @@ function Question({ question, valeur, onChoix }) {
         })}
       </div>
     </fieldset>
-  )
-}
-
-function CarteChoix({ nom, promesse, coche, onSelection }) {
-  return (
-    <button type="button" role="checkbox" aria-checked={coche} onClick={onSelection} style={{
-      display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left', boxSizing: 'border-box', width: '100%',
-      padding: 14, borderRadius: 14, cursor: 'pointer', fontFamily: police, color: colors.text.primary,
-      background: coche ? colors.accent.green + alpha.subtle : colors.background.base,
-      border: `${coche ? 2 : 1}px solid ${coche ? colors.accent.green : colors.border.default}`,
-    }}>
-      <span style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>{nom}</span>
-        <Coche coche={coche} />
-      </span>
-      <span style={{ fontSize: 12, lineHeight: 1.5, color: colors.text.secondary }}>{promesse}</span>
-    </button>
   )
 }
 
@@ -150,11 +121,7 @@ export default function ComposerOffre({ onContinuer, initial = {} }) {
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>Combien d'équipes dans ton club ?</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: colors.text.faint }}>Le forfait dépend du nombre d'équipes.</p>
               </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <button type="button" aria-label="Une équipe de moins" disabled={nbEquipes <= 1} onClick={() => setNbEquipes(n => Math.max(1, n - 1))} style={boutonPas(nbEquipes <= 1)}>-</button>
-                <span aria-live="polite" style={{ minWidth: 32, textAlign: 'center', fontSize: 18, fontWeight: 800 }}>{nbEquipes}</span>
-                <button type="button" aria-label="Une équipe de plus" disabled={nbEquipes > MAX_EQUIPES} onClick={() => setNbEquipes(n => n + 1)} style={boutonPas(nbEquipes > MAX_EQUIPES)}>+</button>
-              </div>
+              <PasEquipes valeur={nbEquipes} onChange={setNbEquipes} />
             </div>
           )}
 
@@ -209,9 +176,3 @@ export default function ComposerOffre({ onContinuer, initial = {} }) {
     </div>
   )
 }
-
-const boutonPas = (desactive) => ({
-  width: 44, height: 44, borderRadius: 12, fontSize: 20, fontWeight: 800, fontFamily: police,
-  background: colors.background.raised, color: desactive ? colors.text.disabled : colors.text.primary,
-  border: `1px solid ${colors.border.default}`, cursor: desactive ? 'not-allowed' : 'pointer',
-})

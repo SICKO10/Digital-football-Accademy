@@ -249,7 +249,7 @@ export default function Register() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {PROFILS.map(p => (
         <button key={p.id}
-          onClick={() => { setProfil(p); setCycle('mensuel'); setEtape(2) }}
+          onClick={() => { setProfil(p); setCycle('mensuel'); setEtape(2); window.scrollTo(0, 0) }}
           style={{
             background: colors.background.surface, border: '1px solid #1a1a1a',
             borderRadius: '14px', padding: '16px 18px',
@@ -282,10 +282,12 @@ export default function Register() {
     </div>
   )
 
-  // Composition de l'offre en trois questions (outils à la carte, éducateur et club) :
-  // adresse cachée /register?composer=1 jusqu'à la bascule. Un lien ?profil=... garde le parcours habituel.
-  if (searchParams.get('composer') === '1' && !profilPresélectionné) {
-    return <InscriptionComposee navigate={navigate} redirectApres={redirectApres} refParrainId={refParrainId} />
+  // Composition de l'offre en trois questions (outils à la carte) : seul parcours d'inscription
+  // des éducateurs et des clubs depuis la bascule (bloc 16), y compris les liens ?profil=educateur|club.
+  // Les comptes inscrits avant restent à l'ancien modèle (rien ne change pour eux).
+  if (searchParams.get('composer') === '1' || ['educateur', 'club'].includes(profilChoisi?.id)) {
+    const retourProfils = () => { setProfil(null); setEtape(1); navigate('/register') }
+    return <InscriptionComposee navigate={navigate} redirectApres={redirectApres} refParrainId={refParrainId} retourProfils={retourProfils} />
   }
 
   // ── Étape 1 : choix du profil, en split-screen (fond uni, pas de photo) ──

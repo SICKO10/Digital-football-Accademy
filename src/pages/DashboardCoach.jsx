@@ -24,6 +24,7 @@ import CoachSessions from './coach/CoachSessions'
 import ClubRequests from './coach/ClubRequests'
 import Support from './coach/Support'
 import StripeLinks from './coach/StripeLinks'
+import OffresOutils from './coach/OffresOutils'
 import ClubsAgents from './coach/ClubsAgents'
 import Communication from './coach/Communication'
 import Bibliotheque from './coach/Bibliotheque'
@@ -427,7 +428,10 @@ function DashboardCoachInner() {
   const NAV_OUTILS = [
     { id: 'support', label: 'Support Chat', Icon: IcoMessage, badge: tickets.filter(t => t.statut === 'ouvert').length },
     { id: 'recruteurs', label: 'Clubs / Agents', Icon: IcoBriefcase, badge: 0 },
-    ...(isAdminClubs ? [{ id: 'clubs_admin', label: 'Stripe Club', Icon: IcoLink, badge: 0 }] : []),
+    ...(isAdminClubs ? [
+      { id: 'clubs_admin', label: 'Stripe Club', Icon: IcoLink, badge: 0 },
+      { id: 'offres_outils', label: 'Offres Outils', Icon: IcoShare, badge: 0 },
+    ] : []),
   ]
 
   const TITRES_SECTION = Object.fromEntries(
@@ -624,6 +628,8 @@ function DashboardCoachInner() {
           )}
 
           {activeSection === 'clubs_admin' && isAdminClubs && <StripeLinks />}
+
+          {activeSection === 'offres_outils' && isAdminClubs && <OffresOutils />}
 
           {activeSection === 'demandes_club' && isAdminClubs && (
             <ClubRequests
