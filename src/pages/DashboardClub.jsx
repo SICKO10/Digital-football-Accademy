@@ -9,7 +9,7 @@ import OutilNonActive from '../components/outils/OutilNonActive'
 import MesOutils from '../components/outils/MesOutils'
 import PaiementForfaitClub from '../components/outils/PaiementForfaitClub'
 import { retourDuPortail } from '../lib/outilsApi'
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState, Fragment, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe } from '../supabase'
 import MoteurRecrutement from './MoteurRecrutement'
@@ -27,6 +27,7 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
+const BudgetPrevisionnel = lazy(() => import('../components/club/BudgetPrevisionnel'))
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { TutorielClub, PAGES_TUTORIEL_CLUB } from '../components/tutoriels/TutorielsClub'
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
@@ -1434,6 +1435,7 @@ export default function DashboardClub() {
     type: 'depense', categorie: '', libelle: '', montant: '', date: new Date().toISOString().split('T')[0], note: '',
   })
   const [budgetFormOuvert, setBudgetFormOuvert] = useState(false)
+  const [budgetVue, setBudgetVue] = useState('previsionnel') // 'previsionnel' | 'reel' (journal historique, alimenté par les tournois)
   const [budgetSaving, setBudgetSaving] = useState(false)
 
   const chargerLigueUrl = async (categorieId) => {
@@ -4950,7 +4952,19 @@ export default function DashboardClub() {
         })()}
 
         {/* ── BUDGET (président + secrétaire) ── */}
-        {activeTab === 'budget' && canViewSection('budget') && (() => {
+        {activeTab === 'budget' && canViewSection('budget') && (
+          <div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+              {[{ id: 'previsionnel', label: 'Prévisionnel' }, { id: 'reel', label: 'Suivi réel' }].map(v => (
+                <button key={v.id} onClick={() => setBudgetVue(v.id)}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${budgetVue === v.id ? couleurPrincipale : colors.border.default}`, background: budgetVue === v.id ? couleurPrincipale + '20' : colors.background.surface, color: budgetVue === v.id ? couleurPrincipale : colors.text.faint, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            {budgetVue === 'previsionnel' ? (
+              <Suspense fallback={null}><BudgetPrevisionnel clubId={clubId} categories={categories} joueurs={joueursClub} canEdit={canEditSection('budget')} /></Suspense>
+            ) : (() => {
           const maintenant = new Date()
           const entriesFiltrees = budgetEntries.filter(e => {
             if (budgetPeriode === 'tout') return true
@@ -5152,6 +5166,8 @@ export default function DashboardClub() {
             </div>
           )
         })()}
+          </div>
+        )}
 
         {/* ── ÉVÉNEMENTS & PROJETS ── */}
         {activeTab === 'evenements' && (peutEvenements || peutCff4) && (() => {
