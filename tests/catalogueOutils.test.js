@@ -113,31 +113,43 @@ test('bascule : tous les outils achetables ont un prix', { skip: !process.env.BA
   assert.deepEqual(outilsSansPrix(), [])
 })
 
-test('lignesStripe : 9 outils éducateur et 6 forfaits club, clés uniques, jamais d\'outil club', async () => {
+test('lignesStripe : 3 paliers éducateur et 6 forfaits club, clés uniques, plus de prix à l\'unité', async () => {
   const { lignesStripe, FORFAITS_CLUB } = await import('../src/lib/catalogueOutils.js')
   const l = lignesStripe()
-  assert.equal(l.length, (9 + FORFAITS_CLUB.length + 1) * 2) // 9 outils, les forfaits club et l'offre « tous les outils »
+  assert.equal(l.length, (3 + FORFAITS_CLUB.length) * 2)
   assert.equal(new Set(l.map(x => x.cle)).size, l.length)
   assert.ok(l.every(x => x.montant > 0 && Number.isInteger(x.montant)))
-  assert.ok(!l.some(x => x.cle.startsWith('outil_club_')))
-  assert.ok(!l.some(x => x.cle.includes('stages') && x.type === 'outil'))
+  assert.ok(!l.some(x => x.cle.startsWith('outil_')))
+  assert.deepEqual(l.filter(x => x.type === 'pack').map(x => [x.cle, x.montant / 100]), [
+    ['pack_educateur_3_mensuel', 10], ['pack_educateur_3_annuel', 80],
+    ['pack_educateur_6_mensuel', 15], ['pack_educateur_6_annuel', 120],
+    ['pack_educateur_mensuel', 18], ['pack_educateur_annuel', 150],
+  ])
 })
 
-test('offre tous les outils : 18 € par mois, 150 € par an (moins cher que 10 mensualités), moins cher que les 9 outils séparés', async () => {
-  const { PACK_EDUCATEUR, outilsDuPack, totalComposition, compositionPaiement } = await import('../src/lib/catalogueOutils.js')
-  assert.equal(PACK_EDUCATEUR.prixMensuel, 18)
-  assert.ok(PACK_EDUCATEUR.prixMensuel * 10 > PACK_EDUCATEUR.prixAnnuel)
-  assert.equal(PACK_EDUCATEUR.prixAnnuel, 150)
+test('paliers éducateur : 10, 15 et 18 euros, frais Stripe sous 4 % dès 10 euros, annuel moins cher que 10 mensualités', async () => {
+  const { PALIERS_EDUCATEUR, palierPourNombre, outilsDuPack } = await import('../src/lib/catalogueOutils.js')
+  assert.deepEqual(PALIERS_EDUCATEUR.map(p => [p.max, p.prixMensuel, p.prixAnnuel]), [[3, 10, 80], [6, 15, 120], [9, 18, 150]])
+  for (const p of PALIERS_EDUCATEUR) assert.ok(p.prixMensuel * 10 > p.prixAnnuel, `palier ${p.max}`)
   assert.equal(outilsDuPack().length, 9)
   assert.ok(!outilsDuPack().includes('stages'))
-  assert.ok(totalComposition('educateur', outilsDuPack(), 'mensuel') > 18)
-  assert.ok(totalComposition('educateur', outilsDuPack(), 'annuel') > 150)
-  const c = compositionPaiement('educateur', { pack: true, periodicite: 'annuel' })
-  assert.deepEqual(c.cles, ['pack_educateur_annuel'])
-  assert.equal(c.total, 150)
-  assert.deepEqual(c.outils, outilsDuPack())
+  assert.deepEqual([0, 1, 3, 4, 6, 7, 9, 10].map(n => palierPourNombre(n)?.max ?? null), [null, 3, 3, 6, 6, 9, 9, null])
+})
+
+test('composition de paiement éducateur : le palier suit le nombre d\'outils, le palier 9 donne tous les outils', async () => {
+  const { compositionPaiement, outilsDuPack } = await import('../src/lib/catalogueOutils.js')
+  const tous = outilsDuPack()
+  const c3 = compositionPaiement('educateur', { outils: ['seances'], periodicite: 'mensuel' })
+  assert.deepEqual([c3.cles, c3.total, c3.outils], [['pack_educateur_3_mensuel'], 10, ['seances']])
+  const c6 = compositionPaiement('educateur', { outils: tous.slice(0, 5), periodicite: 'annuel' })
+  assert.deepEqual([c6.cles, c6.total], [['pack_educateur_6_annuel'], 120])
+  const c9 = compositionPaiement('educateur', { outils: tous.slice(0, 8), periodicite: 'annuel' })
+  assert.deepEqual([c9.cles, c9.total, c9.outils], [['pack_educateur_annuel'], 150, tous])
   assert.deepEqual(compositionPaiement('educateur', { pack: true, periodicite: 'mensuel' }).cles, ['pack_educateur_mensuel'])
   assert.ok(compositionPaiement('educateur', { pack: true, periodicite: 'trimestriel' }).erreur)
+  assert.ok(compositionPaiement('educateur', { outils: [], periodicite: 'mensuel' }).erreur)
+  assert.ok(compositionPaiement('educateur', { outils: ['stages'], periodicite: 'mensuel' }).erreur)
+  assert.ok(compositionPaiement('educateur', { outils: ['seances', 'seances'], periodicite: 'mensuel' }).erreur)
   assert.ok(compositionPaiement('club', { pack: true, periodicite: 'mensuel', palier: 'zz' }).erreur)
 })
 

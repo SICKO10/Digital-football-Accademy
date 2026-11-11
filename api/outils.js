@@ -195,7 +195,8 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           }
           const base = origineRetour(req.headers?.origin)
           const page = role === 'club' ? '/club' : '/educateur'
-          const meta = { offre: 'outils', compte_id: utilisateur.id, role }
+          // Les outils choisis voyagent avec le paiement : le webhook les active (palier jusqu'à 3 ou 6 outils).
+          const meta = { offre: 'outils', compte_id: utilisateur.id, role, ...(role === 'educateur' ? { outils: compo.outils.join(',') } : {}) }
           const session = await donnees.creerSessionPaiement({
             mode: 'subscription',
             customer: client,

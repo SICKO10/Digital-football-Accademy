@@ -108,35 +108,41 @@ export const FORFAITS_CLUB = [
   forfait('c500', 22, 250, 2500),
 ]
 
-// Offre « tous les outils éducateur » : un seul produit Stripe à deux prix, qui
-// donne les 9 outils achetables (moins cher que de les prendre un par un).
-// Les outils fournis par le club (Stages) n'en font pas partie.
-export const PACK_EDUCATEUR = {
-  id: 'pack_educateur',
-  nom: 'Tous les outils éducateur',
+// Paliers de l'éducateur (décision du 2026-11-11, remplace les prix à l'unité) :
+// il choisit ses outils et paie selon leur nombre, le socle gratuit en plus.
+// À partir de 7 outils, le palier « tous les outils » les donne les 9
+// (les outils fournis par le club, comme Stages, n'en font pas partie).
+// Un palier = un tarif Stripe mensuel et un annuel, retrouvés par leur clé de
+// recherche ; les outils choisis voyagent dans les métadonnées du paiement.
+const palier = (id, max, nom, mensuel, annuel, cle) => ({
+  id, max, nom, prixMensuel: mensuel, prixAnnuel: annuel, cleMensuel: `${cle}_mensuel`, cleAnnuel: `${cle}_annuel`,
+})
+export const PALIERS_EDUCATEUR = [
+  palier('3', 3, 'Outils éducateur : jusqu\'à 3 outils', 10, 80, 'pack_educateur_3'),
+  palier('6', 6, 'Outils éducateur : jusqu\'à 6 outils', 15, 120, 'pack_educateur_6'),
   // 18 € par mois : une saison dure 10 mois, donc 10 mensualités (180 €) coûtent plus que l'année (150 €).
-  prixMensuel: 18,
-  prixAnnuel: 150,
-  cleMensuel: 'pack_educateur_mensuel',
-  cleAnnuel: 'pack_educateur_annuel',
-}
+  palier('9', 9, 'Tous les outils éducateur', 18, 150, 'pack_educateur'),
+]
+export const PACK_EDUCATEUR = PALIERS_EDUCATEUR[2]
 
-// Identifiants des outils compris dans le pack.
+// Identifiants des outils compris dans le palier « tous les outils ».
 export const outilsDuPack = () => outilsAchetables('educateur').filter(o => !o.inclus).map(o => o.id)
 
-// Tout ce qui existe dans Stripe : un produit par outil éducateur achetable et
-// par forfait club, plus l'offre « tous les outils », chacun avec un prix mensuel et un prix annuel retrouvés par
+// Palier qui couvre ce nombre d'outils (null pour 0 ou plus de 9).
+export const palierPourNombre = (n) => (n >= 1 ? PALIERS_EDUCATEUR.find(p => n <= p.max) || null : null)
+
+// Tout ce qui existe dans Stripe : un produit par palier éducateur et par
+// forfait club, chacun avec un prix mensuel et un prix annuel retrouvés par
 // leur clé de recherche (`lookup_key`). Les outils du club sont inclus dans le
 // forfait : ils n'ont ni produit ni prix. Utilisé par le script de création
 // (scripts/stripe-creer-produits-outils.mjs) et par l'action `verifier-prix`.
 export function lignesStripe() {
   const produits = [
-    ...outilsAchetables('educateur').map(o => ({ type: 'outil', ...o })),
+    ...PALIERS_EDUCATEUR.map(p => ({ type: 'pack', ...p })),
     ...FORFAITS_CLUB.map(f => ({ type: 'forfait', ...f })),
-    { type: 'pack', ...PACK_EDUCATEUR },
   ]
   return produits.flatMap(p => {
-    const produitId = p.type === 'outil' ? `outil_educateur_${p.id}` : p.type === 'pack' ? p.id : `forfait_club_${p.palier}`
+    const produitId = p.type === 'pack' ? (p.id === '9' ? 'pack_educateur' : `pack_educateur_${p.id}`) : `forfait_club_${p.palier}`
     const commun = { produitId, produitNom: p.nom, type: p.type, ref: p.id }
     return [
       { ...commun, cle: p.cleMensuel, montant: p.prixMensuel * 100, intervalle: 'month' },
@@ -326,8 +332,8 @@ export function forfaitPourEquipes(nbEquipes) {
 
 // Ce qu'on paie en une fois au premier paiement (bloc 7), pour une seule
 // périodicité : clés de recherche Stripe des lignes et total en euros.
-// Éducateur : ses outils achetables ; club : un forfait, ses outils y sont
-// inclus. Rend { erreur } si la demande n'est pas valable. Fonction pure.
+// Éducateur : le palier qui couvre le nombre d'outils choisis ; club : un
+// forfait, ses outils y sont inclus. Rend { erreur } si la demande n'est pas valable. Fonction pure.
 export function compositionPaiement(role, { outils = [], palier = null, pack = false, periodicite } = {}, nbEquipes = 0) {
   if (!PERIODICITES.includes(periodicite)) return { erreur: 'Choisis le paiement mensuel ou annuel' }
   const annuel = periodicite === 'annuel'
@@ -338,21 +344,20 @@ export function compositionPaiement(role, { outils = [], palier = null, pack = f
     return { cles: [annuel ? f.cleAnnuel : f.cleMensuel], total: annuel ? f.prixAnnuel : f.prixMensuel, palier: f.palier }
   }
   if (role !== 'educateur') return { erreur: 'Paiement réservé aux éducateurs et aux clubs' }
-  if (pack) {
-    return {
-      cles: [annuel ? PACK_EDUCATEUR.cleAnnuel : PACK_EDUCATEUR.cleMensuel],
-      total: annuel ? PACK_EDUCATEUR.prixAnnuel : PACK_EDUCATEUR.prixMensuel,
-      outils: outilsDuPack(),
-      pack: true,
-    }
-  }
-  if (!Array.isArray(outils) || outils.length === 0) return { erreur: 'Choisis au moins un outil' }
-  if (new Set(outils).size !== outils.length) return { erreur: 'Un outil est en double' }
-  const choisis = outils.map(id => trouverOutil('educateur', id))
+  const demandes = pack ? outilsDuPack() : outils
+  if (!Array.isArray(demandes) || demandes.length === 0) return { erreur: 'Choisis au moins un outil' }
+  if (new Set(demandes).size !== demandes.length) return { erreur: 'Un outil est en double' }
+  const choisis = demandes.map(id => trouverOutil('educateur', id))
   if (choisis.some(o => !o || !o.achetable || o.inclus)) return { erreur: 'Outil inconnu ou non disponible à l\'achat' }
-  const total = totalComposition('educateur', outils, periodicite)
-  if (total === null) return { erreur: 'Le prix d\'un outil manque' }
-  return { cles: choisis.map(o => (annuel ? o.cleAnnuel : o.cleMensuel)), total, outils: [...outils] }
+  const p = palierPourNombre(demandes.length)
+  if (!p) return { erreur: 'Choisis au plus 9 outils' }
+  // Le palier « tous les outils » donne les 9, même si moins ont été cochés.
+  return {
+    cles: [annuel ? p.cleAnnuel : p.cleMensuel],
+    total: annuel ? p.prixAnnuel : p.prixMensuel,
+    outils: p.max === 9 ? outilsDuPack() : [...demandes],
+    paliersOutils: p.id,
+  }
 }
 
 // Jours entiers restants d'un essai (arrondi au-dessus), 0 si expiré ou absent.

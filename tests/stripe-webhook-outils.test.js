@@ -139,10 +139,30 @@ test('une panne de la base remonte en erreur (Stripe relivrera)', async () => {
 
 test('offre tous les outils : une seule ligne Stripe active les 9 outils, liste identique au catalogue', async () => {
   assert.deepEqual([...OUTILS_DU_PACK].sort(), [...outilsDuPack()].sort())
-  const b = base(abonnement([item('pack_educateur_annuel', 'si_pack')]))
+  const b = base(abonnement([item('pack_educateur_annuel', 'si_pack')], { metadata: { offre: 'outils', compte_id: COMPTE } }))
   const r = await traiterEvenement(evenement(), b.deps)
   assert.equal(r.statut, 'applique')
   assert.equal(b.appels[0].lignes.length, 9)
   assert.ok(b.appels[0].lignes.every(l => l.periodicite === 'annuel' && l.item === 'si_pack'))
   assert.equal(b.appels[0].palier, null)
+})
+
+test('paliers 3 et 6 : les outils choisis, lus dans les métadonnées, sont activés (jamais plus que le palier)', async () => {
+  const b = base(abonnement([item('pack_educateur_3_mensuel', 'si_p3')], { metadata: { offre: 'outils', compte_id: COMPTE, outils: 'seances, tactique' } }))
+  assert.equal((await traiterEvenement(evenement(), b.deps)).statut, 'applique')
+  assert.deepEqual(b.appels[0].lignes, [
+    { outil: 'seances', periodicite: 'mensuel', item: 'si_p3' },
+    { outil: 'tactique', periodicite: 'mensuel', item: 'si_p3' },
+  ])
+  const six = base(abonnement([item('pack_educateur_6_annuel', 'si_p6')], { metadata: { offre: 'outils', compte_id: COMPTE, outils: 'seances,tactique,cff4,suivi_joueurs' } }))
+  await traiterEvenement(evenement(), six.deps)
+  assert.equal(six.appels[0].lignes.length, 4)
+})
+
+test('paliers 3 et 6 : choix absent, trop long ou inconnu : erreur (Stripe relivrera), rien d\'écrit', async () => {
+  for (const [cle, outils] of [['pack_educateur_3_mensuel', undefined], ['pack_educateur_3_mensuel', 'seances,tactique,cff4,suivi_joueurs'], ['pack_educateur_6_mensuel', 'seances,pirate'], ['pack_educateur_3_mensuel', 'stages']]) {
+    const b = base(abonnement([item(cle, 'si_x')], { metadata: { offre: 'outils', compte_id: COMPTE, ...(outils ? { outils } : {}) } }))
+    await assert.rejects(traiterEvenement(evenement(), b.deps), /outils_palier_invalides/, `${cle} ${outils}`)
+    assert.equal(b.appels.length, 0)
+  }
 })

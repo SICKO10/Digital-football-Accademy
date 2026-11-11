@@ -152,7 +152,7 @@ test('verifier-prix : tout est conforme en mode test', async () => {
   const res = await appelerPrix(U.edu, { stripe: tousLesPrix() })
   assert.equal(res.code, 200)
   assert.equal(res.corps.ok, true)
-  assert.equal(res.corps.total, 32)
+  assert.equal(res.corps.total, 18)
   assert.equal(res.corps.mode, 'test')
 })
 
@@ -193,7 +193,7 @@ const payer = (m, utilisateur, params, origin) => {
   return handler({ method: 'POST', headers: { authorization: 'Bearer jeton', origin }, body: { action: 'payer', ...params } }, res).then(() => res)
 }
 
-test('payer : éducateur, deux outils en mensuel, une session à deux lignes', async () => {
+test('payer : éducateur, deux outils en mensuel, une seule ligne : le palier jusqu\'à 3 outils', async () => {
   const m = mondePaiement()
   const res = await payer(m, U.edu, { outils: ['seances', 'tactique'], periodicite: 'mensuel' }, 'https://digitalfootball.academy')
   assert.equal(res.code, 200)
@@ -202,11 +202,9 @@ test('payer : éducateur, deux outils en mensuel, une session à deux lignes', a
   assert.equal(s.mode, 'subscription')
   assert.equal(s.customer, 'cus_test')
   assert.equal(s.client_reference_id, U.edu)
-  assert.deepEqual(s.line_items, [
-    { price: 'price_outil_educateur_seances_mensuel', quantity: 1 },
-    { price: 'price_outil_educateur_tactique_mensuel', quantity: 1 },
-  ])
-  assert.deepEqual(s.metadata, { offre: 'outils', compte_id: U.edu, role: 'educateur' })
+  assert.deepEqual(s.line_items, [{ price: 'price_pack_educateur_3_mensuel', quantity: 1 }])
+  // Les outils choisis partent avec le paiement : le webhook les active.
+  assert.deepEqual(s.metadata, { offre: 'outils', compte_id: U.edu, role: 'educateur', outils: 'seances,tactique' })
   assert.deepEqual(s.subscription_data.metadata, s.metadata)
   assert.equal(s.success_url, 'https://digitalfootball.academy/educateur?outils=paye')
   assert.equal(s.cancel_url, 'https://digitalfootball.academy/educateur?outils=annule')
@@ -214,12 +212,25 @@ test('payer : éducateur, deux outils en mensuel, une session à deux lignes', a
   assert.equal(m.lignes.size, 0)
 })
 
-test('payer : offre tous les outils, une seule ligne Stripe', async () => {
+test('payer : le palier suit le nombre d\'outils (3, 6, puis tous les outils dès 7)', async () => {
+  const tous = ['suivi_joueurs', 'stats_collectives', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video', 'projet_sportif', 'cff4']
+  for (const [n, prix, annuel] of [[1, 'pack_educateur_3_mensuel'], [3, 'pack_educateur_3_mensuel'], [4, 'pack_educateur_6_mensuel'], [6, 'pack_educateur_6_mensuel'], [7, 'pack_educateur_mensuel'], [9, 'pack_educateur_mensuel'], [5, 'pack_educateur_6_annuel', true], [8, 'pack_educateur_annuel', true]]) {
+    const m = mondePaiement()
+    const res = await payer(m, U.edu, { outils: tous.slice(0, n), periodicite: annuel ? 'annuel' : 'mensuel' })
+    assert.equal(res.code, 200, `${n} outils`)
+    assert.deepEqual(m.sessions[0].line_items, [{ price: `price_${prix}`, quantity: 1 }], `${n} outils`)
+    // À partir de 7 outils, le palier donne les 9.
+    assert.equal(m.sessions[0].metadata.outils, (n >= 7 ? tous : tous.slice(0, n)).join(','), `${n} outils`)
+  }
+})
+
+test('payer : offre tous les outils demandée directement (pack), et plus de 9 outils refusé', async () => {
   const m = mondePaiement()
-  const res = await payer(m, U.edu, { pack: true, periodicite: 'annuel' }, 'https://digitalfootball.academy')
+  const res = await payer(m, U.edu, { pack: true, periodicite: 'annuel' })
   assert.equal(res.code, 200)
   assert.deepEqual(m.sessions[0].line_items, [{ price: 'price_pack_educateur_annuel', quantity: 1 }])
-  assert.deepEqual(m.sessions[0].metadata, { offre: 'outils', compte_id: U.edu, role: 'educateur' })
+  const trop = await payer(mondePaiement(), U.edu, { outils: ['seances', 'seances'], periodicite: 'mensuel' })
+  assert.equal(trop.code, 400)
 })
 
 test('payer : offre tous les outils refusée si un outil est déjà payé, et pour un club', async () => {
@@ -281,8 +292,8 @@ test('payer : un abonnement déjà en cours bloque un second premier paiement', 
 })
 
 test('payer : prix absent ou différent dans Stripe, clé absente : 503, aucune session', async () => {
-  const sansSeances = tousLesPrix().filter(p => p.cle !== 'outil_educateur_seances_mensuel')
-  const fausse = tousLesPrix().map(p => (p.cle === 'outil_educateur_seances_mensuel' ? { ...p, montant: 100 } : p))
+  const sansSeances = tousLesPrix().filter(p => p.cle !== 'pack_educateur_3_mensuel')
+  const fausse = tousLesPrix().map(p => (p.cle === 'pack_educateur_3_mensuel' ? { ...p, montant: 100 } : p))
   for (const opts of [{ prix: sansSeances }, { prix: fausse }, { panneConfig: true }]) {
     const m = mondePaiement(opts)
     const res = await payer(m, U.edu, { outils: ['seances'], periodicite: 'mensuel' })

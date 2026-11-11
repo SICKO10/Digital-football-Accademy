@@ -19,11 +19,20 @@ export function lireCleStripe(cle) {
   if (typeof cle !== 'string') return null
   const o = /^outil_educateur_([a-z0-9_]{2,40})_(mensuel|annuel)$/.exec(cle)
   if (o) return { type: 'outil', outil: o[1], periodicite: o[2] }
-  const pk = /^pack_educateur_(mensuel|annuel)$/.exec(cle)
-  if (pk) return { type: 'pack', periodicite: pk[1] }
+  const pk = /^pack_educateur_(?:(3|6)_)?(mensuel|annuel)$/.exec(cle)
+  if (pk) return { type: 'pack', taille: Number(pk[1] || 9), periodicite: pk[2] }
   const f = /^forfait_club_(c\d+)_(mensuel|annuel)$/.exec(cle)
   if (f && PALIERS.includes(f[1])) return { type: 'forfait', palier: f[1], periodicite: f[2] }
   return null
+}
+
+// Outils d'un palier : le palier 9 donne tous les outils ; les paliers 3 et 6 donnent
+// ceux choisis au paiement (métadonnées `outils`), validés un par un.
+function outilsDuPalier(taille, brut) {
+  if (taille === 9) return OUTILS_DU_PACK
+  const choisis = [...new Set(String(brut || '').split(',').map(o => o.trim()).filter(Boolean))]
+  if (!choisis.length || choisis.length > taille || choisis.some(o => !OUTILS_DU_PACK.includes(o))) throw new Error('outils_palier_invalides')
+  return choisis
 }
 
 // Lignes d'un abonnement Stripe : outils éducateur (le pack en donne neuf, sur
@@ -35,7 +44,7 @@ export function lireAbonnement(abonnement) {
   for (const item of abonnement?.items?.data || []) {
     const l = lireCleStripe(item.price?.lookup_key)
     if (l?.type === 'outil') lignes.push({ outil: l.outil, periodicite: l.periodicite, item: item.id })
-    else if (l?.type === 'pack') for (const outil of OUTILS_DU_PACK) lignes.push({ outil, periodicite: l.periodicite, item: item.id })
+    else if (l?.type === 'pack') for (const outil of outilsDuPalier(l.taille, abonnement?.metadata?.outils)) lignes.push({ outil, periodicite: l.periodicite, item: item.id })
     else if (l?.type === 'forfait' && !forfait) forfait = { palier: l.palier, periodicite: l.periodicite }
     else inconnues.push(item.price?.lookup_key || item.price?.id || item.id)
   }
