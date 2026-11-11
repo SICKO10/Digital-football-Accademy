@@ -372,6 +372,15 @@ export function tarifParCle(cle) {
   return null
 }
 
+// Même palier ou même forfait dans l'autre périodicité (bloc 9), pour passer
+// de mensuel à annuel ou l'inverse à l'échéance. null pour un ancien tarif à l'unité.
+export function clePourPeriodicite(cle, periodicite) {
+  const t = tarifParCle(cle)
+  if (!t || !PERIODICITES.includes(periodicite)) return null
+  const x = t.palier || t.forfait
+  return periodicite === 'annuel' ? x.cleAnnuel : x.cleMensuel
+}
+
 // Rang d'un tarif dans sa gamme (paliers éducateur ou forfaits club), pour
 // savoir si un changement monte ou descend. 0 pour un ancien tarif à l'unité.
 function rangTarif(cle) {

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { appelerOutils, ouvrirPortail, retourDuPortail, effacerRetourPaiement } from '../../lib/outilsApi'
-import { FORFAITS_CLUB, PALIERS_EDUCATEUR, outilsDuPack, planModification, tarifParCle, trouverOutil } from '../../lib/catalogueOutils'
+import { FORFAITS_CLUB, PALIERS_EDUCATEUR, clePourPeriodicite, outilsDuPack, planModification, tarifParCle, trouverOutil } from '../../lib/catalogueOutils'
 import CarteOutil from './CarteOutil'
 
 // Bloc « Mon abonnement » de Mes outils (bloc 8), pour un compte qui a un
 // abonnement des outils en cours : tarif et échéance lus chez Stripe, changer
-// ses outils (éducateur) ou son forfait (club), résilier ou reprendre, factures
-// et carte (portail Stripe). Rien n'est écrit ici : le serveur modifie Stripe,
+// ses outils (éducateur) ou son forfait (club), passer de mensuel à annuel ou
+// l'inverse à l'échéance (bloc 9), résilier ou reprendre, factures et carte
+// (portail Stripe). Rien n'est écrit ici : le serveur modifie Stripe,
 // le webhook met la base à jour, puis on recharge les outils.
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 const unite = (periodicite) => (periodicite === 'annuel' ? 'par an' : 'par mois')
@@ -50,8 +51,9 @@ export default function MonAbonnement({ role, outils }) {
     setErreur('')
     setMessage('')
     try {
-      await appelerOutils(action, params)
+      const r = await appelerOutils(action, params)
       setMessage(texte)
+      if (r?.avertissement) setErreur(r.avertissement)
       setMode(null)
       setChoix(null)
       setAttente(4)
@@ -91,6 +93,10 @@ export default function MonAbonnement({ role, outils }) {
   const fin = abo.finPeriode ? dateFr(abo.finPeriode) : ''
   const enRetard = abo.statut === 'past_due' || abo.statut === 'unpaid'
   const educateur = role === 'educateur'
+  // Changement de périodicité : programmé (lu chez Stripe) ou proposé.
+  const programme = abo.changement ? tarifParCle(abo.changement.cle) : null
+  const autrePeriodicite = tarifParCle(clePourPeriodicite(abo.cle, tarif?.periodicite === 'annuel' ? 'mensuel' : 'annuel'))
+  const economie = autrePeriodicite?.periodicite === 'annuel' ? tarif.prix * 12 - autrePeriodicite.prix : 0
 
   // Changement prévu, calculé comme le fera le serveur.
   const demande = educateur ? { outils: choix ?? abo.outils } : { palier: choix }
@@ -108,13 +114,16 @@ export default function MonAbonnement({ role, outils }) {
     if (plan.erreur && educateur && choisis.length >= 7) return `À partir de 7 outils, ton palier donne les ${outilsDuPack().length} : rien ne change.`
     if (plan.erreur) return plan.erreur
     const prix = `${nouveau.prix} € ${unite(nouveau.periodicite)}`
+    // Passage de périodicité programmé : à l'échéance, c'est le nouveau tarif dans l'autre périodicité.
+    const suite = programme && tarifParCle(clePourPeriodicite(plan.cle, programme.periodicite))
+    const prixSuite = suite ? `${suite.prix} € ${unite(suite.periodicite)}` : prix
     const parties = []
     if (plan.sens === 'hausse') {
-      parties.push(`Tu passes à « ${nouveau.nom} » : ${prix}. Tu paies aujourd'hui, avec ta carte enregistrée, la différence pour les jours restants jusqu'au ${fin}, puis ${prix}.`)
+      parties.push(`Tu passes à « ${nouveau.nom} » : ${prix}. Tu paies aujourd'hui, avec ta carte enregistrée, la différence pour les jours restants jusqu'au ${fin}, puis ${prixSuite}.`)
       if (ajoutes.length) parties.push(`${liste(ajoutes)} : ${ajoutes.length > 1 ? 'actifs' : 'actif'} dès le paiement validé.`)
       if (retires.length) parties.push(`${liste(retires)} : ${retires.length > 1 ? 'arrêtés' : 'arrêté'} tout de suite.`)
     } else if (plan.sens === 'baisse') {
-      parties.push(`Ton prix passe à ${prix} à partir du ${fin}, sans remboursement de la période en cours.`)
+      parties.push(`Ton prix passe à ${prixSuite} à partir du ${fin}, sans remboursement de la période en cours.`)
       if (ajoutes.length) parties.push(`${liste(ajoutes)} : ${ajoutes.length > 1 ? 'actifs' : 'actif'} tout de suite.`)
       if (retires.length) parties.push(`${liste(retires)} : ${retires.length > 1 ? 'restent actifs' : 'reste actif'} jusqu'au ${fin}.`)
     } else {
@@ -123,6 +132,7 @@ export default function MonAbonnement({ role, outils }) {
       if (retires.length && ajoutes.length) parties.push(`${liste(retires)} : ${retires.length > 1 ? 'arrêtés' : 'arrêté'} tout de suite, ${ajoutes.length > 1 ? 'les nouveaux prennent leur place' : 'le nouveau prend sa place'}.`)
       else if (retires.length) parties.push(`${liste(retires)} : ${retires.length > 1 ? 'arrêtés' : 'arrêté'} tout de suite. Tu peux ${retires.length > 1 ? 'les' : 'le'} reprendre quand tu veux, sans supplément.`)
     }
+    if (suite) parties.push(`Ton passage au paiement ${programme.periodicite} le ${dateFr(abo.changement.date)} est gardé${plan.sens === 'meme' ? ` : ${prixSuite}` : ''}.`)
     return parties.join(' ')
   }
 
@@ -153,6 +163,16 @@ export default function MonAbonnement({ role, outils }) {
         ) : (
           <p style={texte}>Prochaine échéance le {fin}. Sans engagement.</p>
         )}
+        {programme && (
+          <p style={{ ...texte, marginTop: 8, color: colors.text.primary, fontWeight: 600 }}>
+            Passage au paiement {programme.periodicite} le {dateFr(abo.changement.date)} : {programme.prix} € {unite(programme.periodicite)}, {educateur ? 'mêmes outils' : 'même forfait'}.
+            {mode === null && (
+              <button type="button" disabled={envoi} style={{ ...lien, padding: '0 0 0 8px' }} onClick={() => agir('periodicite', { annuler: true }, `Changement annulé : tu restes en paiement ${tarif?.periodicite}.`)}>
+                Annuler ce changement
+              </button>
+            )}
+          </p>
+        )}
         {enRetard && (
           <p role="alert" style={{ ...texte, marginTop: 8, color: colors.accent.red, fontWeight: 600 }}>
             Ton dernier paiement n'est pas passé. Stripe va réessayer : mets à jour ta carte dans « Factures et carte » pour garder {educateur ? 'tes outils' : 'l\'accès de ton club'}.
@@ -172,6 +192,11 @@ export default function MonAbonnement({ role, outils }) {
                 {educateur ? 'Modifier mes outils' : 'Changer de forfait'}
               </button>
             )}
+            {!abo.resiliation && !programme && autrePeriodicite && (
+              <button type="button" disabled={envoi || enRetard} style={bouton(false)} onClick={() => { setMode('periodicite'); setMessage('') }}>
+                Passer au paiement {autrePeriodicite.periodicite}
+              </button>
+            )}
             <button type="button" disabled={envoi} style={bouton(false)} onClick={portail}>Factures et carte</button>
             {!abo.resiliation && (
               <button type="button" disabled={envoi} style={lien} onClick={() => { setMode('resilier'); setMessage('') }}>Résilier</button>
@@ -184,12 +209,29 @@ export default function MonAbonnement({ role, outils }) {
             <p style={{ ...texte, color: colors.text.primary }}>
               {educateur ? 'Tes outils restent actifs' : 'Ton club garde l\'accès complet'} jusqu'au {fin}, sans nouveau prélèvement.
               Ensuite, {educateur ? 'ton compte revient au socle gratuit' : 'ton club passe en accès limité'}. Tes données sont conservées et réapparaissent si tu reprends.
+              {programme && ` Le passage au paiement ${programme.periodicite} prévu est annulé.`}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
               <button type="button" disabled={envoi} style={{ ...bouton(true), background: colors.accent.red }} onClick={() => agir('resilier', {}, `Résiliation enregistrée : fin le ${fin}.`)}>
                 {envoi ? 'Un instant...' : 'Confirmer la résiliation'}
               </button>
               <button type="button" disabled={envoi} style={bouton(false)} onClick={() => setMode(null)}>Garder mon abonnement</button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'periodicite' && autrePeriodicite && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border.subtle}` }}>
+            <p style={{ ...texte, color: colors.text.primary }}>
+              À partir du {fin}, tu paieras {autrePeriodicite.prix} € {unite(autrePeriodicite.periodicite)} au lieu de {tarif.prix} € {unite(tarif.periodicite)}, {educateur ? 'avec les mêmes outils' : 'avec le même forfait'}.
+              {economie > 0 && ` Sur 12 mois, tu économises ${economie} €.`}
+              {' '}Rien ne change d'ici là, et tu peux annuler ce changement jusqu'au {fin}.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+              <button type="button" disabled={envoi} style={bouton(true)} onClick={() => agir('periodicite', { periodicite: autrePeriodicite.periodicite }, `Changement programmé : paiement ${autrePeriodicite.periodicite} à partir du ${fin}.`)}>
+                {envoi ? 'Un instant...' : `Passer au paiement ${autrePeriodicite.periodicite}`}
+              </button>
+              <button type="button" disabled={envoi} style={bouton(false)} onClick={() => setMode(null)}>Annuler</button>
             </div>
           </div>
         )}

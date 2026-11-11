@@ -1,9 +1,10 @@
 // Tests du bloc 8 : modifier, résilier, reprendre un abonnement des outils et
-// ouvrir le portail Stripe (api/outils.js), plus le calcul pur du changement.
+// ouvrir le portail Stripe (api/outils.js), plus le calcul pur du changement ;
+// bloc 9 : changer de périodicité à l'échéance.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { creerHandler, normaliserAbonnement } from '../api/outils.js'
-import { planModification, tarifParCle, lignesStripe } from '../src/lib/catalogueOutils.js'
+import { creerHandler, normaliserAbonnement, normaliserEcheancier, changementProgramme, phasesPeriodicite } from '../api/outils.js'
+import { planModification, tarifParCle, lignesStripe, clePourPeriodicite } from '../src/lib/catalogueOutils.js'
 
 const id = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
 const U = { edu: id(1), club: id(10), joueur: id(20) }
@@ -11,8 +12,8 @@ const FIN = '2026-12-11T12:00:00.000Z'
 const TOUS = ['suivi_joueurs', 'stats_collectives', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video', 'projet_sportif', 'cff4']
 
 // Stripe simulé : un client, au plus un abonnement des outils.
-function monde({ cle = 'pack_educateur_3_mensuel', outils = 'seances,tactique', statut = 'active', resiliation = false, client = 'cus_1', abonnement = true, equipes = 3, refusCarte = false } = {}) {
-  const m = { modifs: [], portails: [] }
+function monde({ cle = 'pack_educateur_3_mensuel', outils = 'seances,tactique', statut = 'active', resiliation = false, client = 'cus_1', abonnement = true, equipes = 3, refusCarte = false, echeancier = null, refusEcheancier = false } = {}) {
+  const m = { modifs: [], portails: [], programmes: [], liberes: [], journal: [] }
   m.donnees = {
     profil: async (c) => ({
       [U.edu]: { plan: 'educateur', modele_outils: true },
@@ -22,13 +23,21 @@ function monde({ cle = 'pack_educateur_3_mensuel', outils = 'seances,tactique', 
     nbEquipes: async () => equipes,
     trouverClient: async () => client,
     abonnementOutils: async () => (abonnement
-      ? { id: 'sub_1', statut: statut, metadata: { offre: 'outils', ...(outils ? { outils } : {}) }, items: [{ id: 'si_1', cle }], finPeriode: FIN, resiliation }
+      ? { id: 'sub_1', statut: statut, metadata: { offre: 'outils', ...(outils ? { outils } : {}) }, items: [{ id: 'si_1', cle }], finPeriode: FIN, resiliation, echeancier: echeancier ? 'sub_sched_1' : null }
       : null),
     prixStripe: async (cles) => lignesStripe().filter(l => cles.includes(l.cle)).map(l => ({ id: `price_${l.cle}`, cle: l.cle, montant: l.montant })),
     modifierAbonnement: async (sid, params) => {
+      m.journal.push('modifier')
       if (refusCarte) { const e = new Error('Your card was declined.'); e.type = 'StripeCardError'; e.statusCode = 402; throw e }
       m.modifs.push({ sid, params })
     },
+    lireEcheancier: async (eid) => ({ id: eid, ...echeancier }),
+    programmerEcheancier: async (p) => {
+      m.journal.push('programmer')
+      if (refusEcheancier) throw new Error('schedule refusé')
+      m.programmes.push(p)
+    },
+    libererEcheancier: async (eid) => { m.journal.push('liberer'); m.liberes.push(eid) },
     sessionPortail: async (params) => { m.portails.push(params); return { url: 'https://billing.stripe.com/p/session/test' } },
   }
   return m
@@ -84,7 +93,7 @@ test('normaliserAbonnement : fin de période lue sur l\'abonnement ou sur sa lig
 test('abonnement : rend l\'état lu chez Stripe, ou rien sans abonnement', async () => {
   const res = await appeler(monde(), U.edu, { action: 'abonnement' })
   assert.equal(res.code, 200)
-  assert.deepEqual(res.corps.abonnement, { statut: 'active', finPeriode: FIN, resiliation: false, cle: 'pack_educateur_3_mensuel', outils: ['seances', 'tactique'] })
+  assert.deepEqual(res.corps.abonnement, { statut: 'active', finPeriode: FIN, resiliation: false, cle: 'pack_educateur_3_mensuel', outils: ['seances', 'tactique'], changement: null })
   assert.deepEqual((await appeler(monde({ client: null }), U.edu, { action: 'abonnement' })).corps.abonnement, null)
   assert.equal((await appeler(monde(), U.club, { action: 'abonnement' })).corps.nbEquipes, 3)
   assert.equal((await appeler(monde(), U.joueur, { action: 'abonnement' })).code, 403)
@@ -181,4 +190,115 @@ test('portail : adresse du portail Stripe avec retour vers Mes outils', async ()
   assert.equal(res.corps.url, 'https://billing.stripe.com/p/session/test')
   assert.deepEqual(m.portails[0], { customer: 'cus_1', locale: 'fr', return_url: 'https://digitalfootball.academy/club?outils=portail' })
   assert.equal((await appeler(monde({ client: null }), U.edu, { action: 'portail' })).code, 404)
+})
+
+// Bloc 9 : passer de mensuel à annuel (ou l'inverse) à l'échéance.
+const DEBUT_SUITE = Date.parse(FIN) / 1000
+const programme = (cle) => ({ nous: true, phases: [{ debut: DEBUT_SUITE - 2592000, fin: DEBUT_SUITE, cles: ['pack_educateur_3_mensuel'] }, { debut: DEBUT_SUITE, fin: null, cles: [cle] }] })
+
+test('clePourPeriodicite : même palier ou forfait dans l\'autre périodicité', () => {
+  assert.equal(clePourPeriodicite('pack_educateur_3_mensuel', 'annuel'), 'pack_educateur_3_annuel')
+  assert.equal(clePourPeriodicite('pack_educateur_annuel', 'mensuel'), 'pack_educateur_mensuel')
+  assert.equal(clePourPeriodicite('forfait_club_c200_mensuel', 'annuel'), 'forfait_club_c200_annuel')
+  assert.equal(clePourPeriodicite('outil_educateur_seances_mensuel', 'annuel'), null)
+  assert.equal(clePourPeriodicite('pack_educateur_3_mensuel', 'trimestriel'), null)
+})
+
+test('changementProgramme et normaliserEcheancier : la phase à venir, lue chez Stripe', () => {
+  const ech = normaliserEcheancier({
+    id: 'sub_sched_1', metadata: { offre: 'outils' },
+    phases: [{ start_date: 1, end_date: DEBUT_SUITE, items: [{ price: { lookup_key: 'pack_educateur_3_mensuel' } }] }, { start_date: DEBUT_SUITE, end_date: DEBUT_SUITE + 31536000, items: [{ price: { lookup_key: 'pack_educateur_3_annuel' } }] }],
+  })
+  assert.equal(ech.nous, true)
+  assert.deepEqual(changementProgramme(ech, Date.parse('2026-11-20T00:00:00Z')), { cle: 'pack_educateur_3_annuel', periodicite: 'annuel', date: FIN })
+  // L'échéance est passée : plus rien de programmé.
+  assert.equal(changementProgramme(ech, Date.parse(FIN) + 1000), null)
+  assert.equal(normaliserEcheancier({ id: 'x', phases: [] }).nous, false)
+})
+
+test('phasesPeriodicite : phase actuelle gardée jusqu\'à l\'échéance, puis une période du nouveau tarif', () => {
+  const meta = { offre: 'outils', compte_id: U.edu, outils: 'seances,tactique' }
+  const phases = phasesPeriodicite({ start_date: 100, end_date: 200, items: [{ price: 'price_m', quantity: 1 }], discounts: [{ coupon: null, discount: 'di_1', promotion_code: null }] }, 'price_a', 'annuel', meta)
+  assert.deepEqual(phases[0], { metadata: meta, proration_behavior: 'none', discounts: [{ discount: 'di_1' }], items: [{ price: 'price_m', quantity: 1 }], start_date: 100, end_date: 200 })
+  assert.deepEqual(phases[1], { metadata: meta, proration_behavior: 'none', discounts: [{ discount: 'di_1' }], items: [{ price: 'price_a', quantity: 1 }], duration: { interval: 'year', interval_count: 1 } })
+  const sansReduction = phasesPeriodicite({ start_date: 100, end_date: 200, items: [{ price: { id: 'price_a' } }] }, 'price_m', 'mensuel', meta)
+  assert.equal(sansReduction[0].discounts, undefined)
+  assert.equal(sansReduction[0].items[0].price, 'price_a')
+  assert.deepEqual(sansReduction[1].duration, { interval: 'month', interval_count: 1 })
+})
+
+test('periodicite : passage en annuel programmé à l\'échéance, mêmes outils', async () => {
+  const m = monde()
+  const res = await appeler(m, U.edu, { action: 'periodicite', periodicite: 'annuel' })
+  assert.equal(res.code, 200)
+  assert.deepEqual(res.corps, { ok: true, cle: 'pack_educateur_3_annuel', total: 80, date: FIN })
+  assert.equal(m.programmes.length, 1)
+  const [p] = m.programmes
+  assert.deepEqual([p.abonnementId, p.compteId, p.prixId, p.periodicite, p.metadata.outils], ['sub_1', U.edu, 'price_pack_educateur_3_annuel', 'annuel', 'seances,tactique'])
+  assert.equal(m.modifs.length, 0)
+  // Club annuel vers mensuel, même forfait.
+  const c = monde({ cle: 'forfait_club_c100_annuel', outils: null })
+  assert.equal((await appeler(c, U.club, { action: 'periodicite', periodicite: 'mensuel' })).corps.cle, 'forfait_club_c100_mensuel')
+})
+
+test('periodicite : refusée si déjà la bonne, déjà programmée, résilié, en retard, ancien tarif', async () => {
+  assert.equal((await appeler(monde(), U.edu, { action: 'periodicite', periodicite: 'mensuel' })).code, 400)
+  assert.equal((await appeler(monde(), U.edu, { action: 'periodicite' })).code, 400)
+  assert.equal((await appeler(monde({ echeancier: programme('pack_educateur_3_annuel') }), U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 409)
+  assert.equal((await appeler(monde({ resiliation: true }), U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 409)
+  assert.equal((await appeler(monde({ statut: 'past_due' }), U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 409)
+  assert.equal((await appeler(monde({ cle: 'outil_educateur_seances_mensuel' }), U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 409)
+  // Échéancier posé à la main dans Stripe : on n'y touche pas.
+  const manuel = monde({ echeancier: { nous: false, phases: [] } })
+  assert.equal((await appeler(manuel, U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 409)
+  assert.equal(manuel.liberes.length + manuel.programmes.length, 0)
+  assert.equal((await appeler(monde({ abonnement: false }), U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 404)
+})
+
+test('periodicite : tarif Stripe absent : 503, rien de programmé', async () => {
+  const m = monde()
+  m.donnees.prixStripe = async () => []
+  assert.equal((await appeler(m, U.edu, { action: 'periodicite', periodicite: 'annuel' })).code, 503)
+  assert.equal(m.programmes.length, 0)
+})
+
+test('periodicite : annuler le changement programmé', async () => {
+  const m = monde({ echeancier: programme('pack_educateur_3_annuel') })
+  const lu = await appeler(m, U.edu, { action: 'abonnement' })
+  assert.deepEqual(lu.corps.abonnement.changement, { cle: 'pack_educateur_3_annuel', periodicite: 'annuel', date: FIN })
+  assert.equal((await appeler(m, U.edu, { action: 'periodicite', annuler: true })).code, 200)
+  assert.deepEqual(m.liberes, ['sub_sched_1'])
+  assert.equal((await appeler(monde(), U.edu, { action: 'periodicite', annuler: true })).code, 409)
+})
+
+test('modifier pendant un changement programmé : le passage en annuel suit la nouvelle offre', async () => {
+  const m = monde({ echeancier: programme('pack_educateur_3_annuel') })
+  const res = await appeler(m, U.edu, { action: 'modifier', outils: TOUS.slice(0, 4) })
+  assert.equal(res.code, 200)
+  assert.deepEqual(m.journal, ['liberer', 'modifier', 'programmer'])
+  const [p] = m.programmes
+  assert.deepEqual([p.prixId, p.periodicite, p.metadata.outils], ['price_pack_educateur_6_annuel', 'annuel', TOUS.slice(0, 4).join(',')])
+  assert.equal(res.corps.avertissement, undefined)
+})
+
+test('modifier pendant un changement programmé : paiement refusé, le changement est remis tel quel', async () => {
+  const m = monde({ echeancier: programme('pack_educateur_3_annuel'), refusCarte: true })
+  assert.equal((await appeler(m, U.edu, { action: 'modifier', outils: TOUS.slice(0, 4) })).code, 402)
+  assert.deepEqual(m.journal, ['liberer', 'modifier', 'programmer'])
+  assert.deepEqual([m.programmes[0].prixId, m.programmes[0].metadata.outils], ['price_pack_educateur_3_annuel', 'seances,tactique'])
+})
+
+test('modifier pendant un changement programmé : reprogrammation impossible, modification gardée et avertissement', async () => {
+  const m = monde({ echeancier: programme('pack_educateur_3_annuel'), refusEcheancier: true })
+  const res = await appeler(m, U.edu, { action: 'modifier', outils: ['seances', 'cff4'] })
+  assert.equal(res.code, 200)
+  assert.equal(m.modifs.length, 1)
+  assert.match(res.corps.avertissement, /programme-le à nouveau/)
+})
+
+test('resilier pendant un changement programmé : le changement est retiré avant la résiliation', async () => {
+  const m = monde({ echeancier: programme('pack_educateur_3_annuel') })
+  assert.equal((await appeler(m, U.edu, { action: 'resilier' })).code, 200)
+  assert.deepEqual(m.journal, ['liberer', 'modifier'])
+  assert.deepEqual(m.modifs[0].params, { cancel_at_period_end: true })
 })

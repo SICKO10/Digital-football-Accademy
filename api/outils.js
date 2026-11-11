@@ -1,7 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
-import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -23,6 +23,11 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 //   remboursement. Les outils s'activent ou s'éteignent par le webhook.
 // - `resilier` / `reprendre` : fin de l'abonnement à l'échéance, ou annulation
 //   de cette fin tant qu'elle n'est pas arrivée.
+// - `periodicite` (bloc 9) : passer de mensuel à annuel, ou l'inverse, à la
+//   prochaine échéance, avec les mêmes outils. Échéancier Stripe à deux phases
+//   (le tarif actuel jusqu'à l'échéance, puis l'autre périodicité) ; `annuler`
+//   supprime le changement programmé. Pendant qu'un changement est programmé,
+//   `modifier` le refait sur le nouveau tarif et `resilier` l'annule.
 // - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
@@ -34,8 +39,8 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['essai', 'choisir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'portail', 'verifier-prix']
-const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'portail']
+const ACTIONS = ['essai', 'choisir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
+const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
 // sinon le site de production.
@@ -58,7 +63,53 @@ export function normaliserAbonnement(s) {
     items: items.map(i => ({ id: i.id, cle: i.price?.lookup_key || null })),
     finPeriode: fin ? new Date(fin * 1000).toISOString() : null,
     resiliation: !!s.cancel_at_period_end || !!s.cancel_at,
+    echeancier: (typeof s.schedule === 'string' ? s.schedule : s.schedule?.id) || null,
   }
+}
+
+// Échéancier Stripe réduit : phases (début, fin en secondes, clés de recherche
+// des tarifs) et marque `offre: outils` posée par l'action `periodicite`.
+export function normaliserEcheancier(e) {
+  return {
+    id: e.id,
+    nous: e.metadata?.offre === 'outils',
+    phases: (e.phases || []).map(p => ({ debut: p.start_date, fin: p.end_date, cles: (p.items || []).map(i => i.price?.lookup_key || null) })),
+  }
+}
+
+// Changement programmé : la première phase qui n'a pas encore commencé.
+// Rend { cle, periodicite, date } ou null.
+export function changementProgramme(echeancier, maintenantMs) {
+  const p = echeancier?.phases.find(x => x.debut * 1000 > maintenantMs)
+  const t = p ? tarifParCle(p.cles[0]) : null
+  return t ? { cle: p.cles[0], periodicite: t.periodicite, date: new Date(p.debut * 1000).toISOString() } : null
+}
+
+// Phases de l'échéancier : la phase en cours telle que Stripe l'a créée depuis
+// l'abonnement (mêmes tarifs, mêmes réductions, jusqu'à l'échéance), puis une
+// période du nouveau tarif ; ensuite l'abonnement continue seul sur ce tarif.
+// Les métadonnées de l'abonnement (outils choisis) sont reprises sur les deux phases.
+export function phasesPeriodicite(phase, prixId, periodicite, metadata) {
+  const reductions = (phase.discounts || []).map(d => {
+    const ref = (x) => (typeof x === 'string' ? x : x?.id)
+    if (d.discount) return { discount: ref(d.discount) }
+    if (d.promotion_code) return { promotion_code: ref(d.promotion_code) }
+    return { coupon: ref(d.coupon) }
+  })
+  const commun = { metadata, proration_behavior: 'none', ...(reductions.length ? { discounts: reductions } : {}) }
+  return [
+    {
+      ...commun,
+      items: phase.items.map(i => ({ price: typeof i.price === 'string' ? i.price : i.price.id, quantity: i.quantity ?? 1 })),
+      start_date: phase.start_date,
+      end_date: phase.end_date,
+    },
+    {
+      ...commun,
+      items: [{ price: prixId, quantity: 1 }],
+      duration: { interval: periodicite === 'annuel' ? 'year' : 'month', interval_count: 1 },
+    },
+  ]
 }
 
 // Détail d'une erreur Stripe montré au client pendant les tests des paiements
@@ -145,6 +196,26 @@ export function donneesOutils() {
       return s ? normaliserAbonnement(s) : null
     },
     modifierAbonnement: async (id, params) => { await stripeOutils().subscriptions.update(id, params) },
+    lireEcheancier: async (id) => normaliserEcheancier(await stripeOutils().subscriptionSchedules.retrieve(id, { expand: ['phases.items.price'] })),
+    // Échéancier créé depuis l'abonnement puis complété d'une seconde phase.
+    // S'il ne peut pas être complété, il est retiré : l'abonnement reste tel quel.
+    programmerEcheancier: async ({ abonnementId, compteId, prixId, periodicite, metadata }) => {
+      const stripe = stripeOutils()
+      const e = await stripe.subscriptionSchedules.create({ from_subscription: abonnementId })
+      try {
+        await stripe.subscriptionSchedules.update(e.id, {
+          end_behavior: 'release',
+          proration_behavior: 'none',
+          metadata: { offre: 'outils', compte_id: compteId },
+          phases: phasesPeriodicite(e.phases[0], prixId, periodicite, metadata),
+        })
+      } catch (err) {
+        await stripe.subscriptionSchedules.release(e.id).catch(() => {})
+        throw err
+      }
+    },
+    // L'abonnement quitte l'échéancier et garde son tarif actuel.
+    libererEcheancier: async (id) => { await stripeOutils().subscriptionSchedules.release(id) },
     sessionPortail: async (params) => {
       const session = await stripeOutils().billingPortal.sessions.create(params)
       return { url: session.url }
@@ -171,48 +242,106 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
     }
     const abo = client ? await donnees.abonnementOutils(client) : null
     const nbEquipes = role === 'club' ? await donnees.nbEquipes(compteId) : 0
+    // Changement de périodicité programmé (bloc 9), lu sur l'échéancier de l'abonnement.
+    const ech = abo?.echeancier ? await donnees.lireEcheancier(abo.echeancier) : null
+    const changement = ech?.nous ? changementProgramme(ech, maintenant()) : null
     if (action === 'abonnement') {
       if (!abo) return res.status(200).json({ abonnement: null, nbEquipes })
       const { statut, finPeriode, resiliation } = abo
       const outils = String(abo.metadata.outils || '').split(',').filter(Boolean)
-      return res.status(200).json({ abonnement: { statut, finPeriode, resiliation, cle: abo.items[0]?.cle || null, outils }, nbEquipes })
+      return res.status(200).json({ abonnement: { statut, finPeriode, resiliation, cle: abo.items[0]?.cle || null, outils, changement }, nbEquipes })
     }
     if (!abo) return res.status(404).json({ error: 'Aucun abonnement en cours' })
+    // Échéancier posé à la main dans Stripe : on n'y touche pas d'ici.
+    if (ech && !ech.nous) return res.status(409).json({ error: 'Ton abonnement ne peut pas être modifié ici : écris-nous' })
+
+    // Garde-fou : le montant du tarif Stripe doit être celui du catalogue.
+    const prixVerifie = async (cle) => {
+      const attendu = lignesStripe().find(l => l.cle === cle)?.montant
+      const [prix] = await donnees.prixStripe([cle])
+      if (prix && prix.montant === attendu) return prix
+      console.error(`outils ${action} : prix Stripe absent ou différent du catalogue`, cle)
+      return null
+    }
+    const indisponible = (cle) => res.status(503).json({ error: `Changement indisponible pour le moment, réessaie plus tard (code : prix ; ${cle})` })
+    const programmer = (prixId, periodicite, metadata) => donnees.programmerEcheancier({ abonnementId: abo.id, compteId, prixId, periodicite, metadata })
 
     if (action === 'resilier' || action === 'reprendre') {
       const resilier = action === 'resilier'
       if (abo.resiliation === resilier) {
         return res.status(409).json({ error: resilier ? 'Ton abonnement est déjà résilié' : 'Ton abonnement n\'est pas résilié' })
       }
+      // L'abonnement s'arrête à l'échéance : le changement de périodicité prévu n'a plus lieu d'être.
+      if (resilier && ech) await donnees.libererEcheancier(ech.id)
       await donnees.modifierAbonnement(abo.id, { cancel_at_period_end: resilier })
       return res.status(200).json({ ok: true, fin_le: abo.finPeriode })
+    }
+
+    const [item] = abo.items
+    if (action === 'periodicite') {
+      if (corps.annuler === true) {
+        if (!changement) return res.status(409).json({ error: 'Aucun changement de périodicité n\'est programmé' })
+        await donnees.libererEcheancier(ech.id)
+        return res.status(200).json({ ok: true })
+      }
+      if (!PERIODICITES.includes(corps.periodicite)) return res.status(400).json({ error: 'Choisis le paiement mensuel ou annuel' })
+      if (changement) return res.status(409).json({ error: 'Un changement de périodicité est déjà programmé : annule-le d\'abord' })
+      if (abo.resiliation) return res.status(409).json({ error: 'Ton abonnement est résilié : reprends-le avant de changer de périodicité' })
+      if (abo.statut !== 'active') return res.status(409).json({ error: 'Ton dernier paiement n\'est pas passé : mets à jour ta carte dans « Factures et carte » avant de changer de périodicité' })
+      const tarif = abo.items.length === 1 ? tarifParCle(item.cle) : null
+      if (!tarif || ech) return res.status(409).json({ error: 'Ton abonnement ne peut pas être modifié ici : écris-nous' })
+      if (tarif.periodicite === corps.periodicite) return res.status(400).json({ error: `Tu paies déjà en ${corps.periodicite}` })
+      const cle = clePourPeriodicite(item.cle, corps.periodicite)
+      const prix = await prixVerifie(cle)
+      if (!prix) return indisponible(cle)
+      await programmer(prix.id, corps.periodicite, abo.metadata)
+      return res.status(200).json({ ok: true, cle, total: tarifParCle(cle).prix, date: abo.finPeriode })
     }
 
     // modifier
     if (abo.resiliation) return res.status(409).json({ error: 'Ton abonnement est résilié : reprends-le avant de changer d\'offre' })
     if (abo.statut !== 'active') return res.status(409).json({ error: 'Ton dernier paiement n\'est pas passé : mets à jour ta carte dans « Factures et carte » avant de changer d\'offre' })
     if (abo.items.length !== 1) return res.status(409).json({ error: 'Ton abonnement ne peut pas être modifié ici : écris-nous' })
-    const [item] = abo.items
     const outilsActuels = String(abo.metadata.outils || '').split(',').filter(Boolean)
     const plan = planModification(role, { cleActuelle: item.cle, outilsActuels }, { outils: corps.outils, pack: corps.pack === true, palier: corps.palier }, nbEquipes)
     if (plan.erreur) return res.status(400).json({ error: plan.erreur })
 
     const params = { proration_behavior: plan.sens === 'hausse' ? 'always_invoice' : 'none' }
     if (plan.cle !== item.cle) {
-      // Garde-fou : le montant du nouveau tarif Stripe doit être celui du catalogue.
-      const attendu = lignesStripe().find(l => l.cle === plan.cle)?.montant
-      const [prix] = await donnees.prixStripe([plan.cle])
-      if (!prix || prix.montant !== attendu) {
-        console.error('outils modifier : prix Stripe absent ou différent du catalogue', plan.cle)
-        return res.status(503).json({ error: `Changement indisponible pour le moment, réessaie plus tard (code : prix ; ${plan.cle})` })
-      }
+      const prix = await prixVerifie(plan.cle)
+      if (!prix) return indisponible(plan.cle)
       params.items = [{ id: item.id, price: prix.id }]
     }
+    // Changement de périodicité programmé : il suit la nouvelle offre (même palier ou forfait, autre périodicité).
+    const cleSuite = changement && clePourPeriodicite(plan.cle, changement.periodicite)
+    const prixSuite = cleSuite ? await prixVerifie(cleSuite) : null
+    if (cleSuite && !prixSuite) return indisponible(cleSuite)
     // La différence est payée avec la carte enregistrée ; si elle est refusée, Stripe ne change rien.
     if (plan.sens === 'hausse') params.payment_behavior = 'error_if_incomplete'
     if (role === 'educateur') params.metadata = { outils: plan.outils.join(',') }
-    await donnees.modifierAbonnement(abo.id, params)
-    return res.status(200).json({ ok: true, sens: plan.sens, total: plan.total, fin_le: abo.finPeriode })
+
+    // L'abonnement quitte l'échéancier le temps du changement, puis il est reprogrammé.
+    if (ech) await donnees.libererEcheancier(ech.id)
+    try {
+      await donnees.modifierAbonnement(abo.id, params)
+    } catch (err) {
+      // Rien n'a changé : le changement de périodicité est remis tel qu'il était.
+      if (changement) {
+        const prix = await prixVerifie(changement.cle).catch(() => null)
+        if (prix) await programmer(prix.id, changement.periodicite, abo.metadata).catch(e => console.error('outils modifier : changement de périodicité non remis', e.message))
+      }
+      throw err
+    }
+    let avertissement
+    if (prixSuite) {
+      try {
+        await programmer(prixSuite.id, changement.periodicite, { ...abo.metadata, ...params.metadata })
+      } catch (err) {
+        console.error('outils modifier : changement de périodicité non reprogrammé', err.code || err.type, err.message)
+        avertissement = `Ton passage au paiement ${changement.periodicite} n'a pas pu suivre ce changement : programme-le à nouveau.`
+      }
+    }
+    return res.status(200).json({ ok: true, sens: plan.sens, total: plan.total, fin_le: abo.finPeriode, ...(avertissement ? { avertissement } : {}) })
   }
 
   return async function handler(req, res) {
