@@ -182,7 +182,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           const prix = new Map((await donnees.prixStripe(compo.cles)).map(p => [p.cle, p]))
           if (compo.cles.some(c => prix.get(c)?.montant !== attendus.get(c))) {
             console.error('outils payer : prix Stripe absent ou différent du catalogue', compo.cles)
-            return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard' })
+            return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : prix)' })
           }
           const client = await donnees.clientStripe({ compteId: utilisateur.id, email: profil.email })
           if (await donnees.abonnementEnCours(client)) {
@@ -204,7 +204,10 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           })
           return res.status(200).json({ url: session.url })
         } catch (err) {
-          if (err.message === 'config_stripe_absente') return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard' })
+          if (err.message === 'config_stripe_absente') {
+            console.error('outils payer : clé Stripe absente (STRIPE_OUTILS_SECRET_KEY et STRIPE_SECRET_KEY)')
+            return res.status(503).json({ error: 'Paiement indisponible pour le moment, réessaie plus tard (code : cle_stripe)' })
+          }
           throw err
         }
       }
