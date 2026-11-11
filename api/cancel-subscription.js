@@ -57,9 +57,30 @@ export default async function handler(req, res) {
 
   try {
     // Annulation en fin de période (l'accès reste actif jusqu'à la prochaine date de renouvellement)
-    await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
-    })
+    try {
+      await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+      })
+    } catch (err) {
+      // L'identifiant enregistré peut être périmé ou venir d'un autre mode Stripe
+      // (test / live) : on retrouve alors l'abonnement actif via le customer.
+      if (err?.code !== 'resource_missing') throw err
+      subscriptionId = null
+      if (!customerId && profil.email) {
+        const customers = await stripe.customers.list({ email: profil.email, limit: 1 })
+        customerId = customers.data[0]?.id || null
+      }
+      if (customerId) {
+        const subs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 1 })
+        subscriptionId = subs.data[0]?.id || null
+      }
+      if (!subscriptionId) {
+        console.error(`Résiliation impossible pour ${profil.email} : abonnement ${profil.stripe_subscription_id} introuvable chez Stripe`)
+        return res.status(404).json({ error: "Nous ne retrouvons pas votre abonnement. Contactez le support, nous le résilions pour vous." })
+      }
+      await stripe.subscriptions.update(subscriptionId, { cancel_at_period_end: true })
+      profil.stripe_subscription_id = null // force la mise à jour de l'identifiant en base ci-dessous
+    }
     // Persiste les ids retrouvés pour que la prochaine lecture n'ait plus
     // besoin du fallback ci-dessus.
     const aMettreAJour = {}
@@ -72,7 +93,8 @@ export default async function handler(req, res) {
     console.log(`Résiliation programmée pour ${profil.email} (sub: ${subscriptionId})`)
     return res.status(200).json({ success: true, message: 'Résiliation programmée à la fin de la période' })
   } catch (err) {
+    // Le détail technique reste dans les journaux, le client voit un message simple.
     console.error('Erreur Stripe résiliation:', err.message)
-    return res.status(500).json({ error: err.message })
+    return res.status(500).json({ error: "La résiliation n'a pas pu aboutir. Réessayez ou contactez le support." })
   }
 }
