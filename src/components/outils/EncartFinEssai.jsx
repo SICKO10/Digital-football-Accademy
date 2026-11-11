@@ -19,7 +19,7 @@ export default function EncartFinEssai({ outils, onVoirMesOutils }) {
       </p>
       {termines.map(({ outil }) => (
         <p key={outil.id} style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: colors.text.primary }}>
-          <strong>{outil.nom}</strong> : ton essai gratuit est terminé. Pour le garder, c'est {outil.prixMensuel} € par mois ou {outil.prixAnnuel} € par an.
+          <strong>{outil.nom}</strong> : ton essai gratuit est terminé. Pour le garder, choisis un palier dans Mes outils.
         </p>
       ))}
       <button onClick={onVoirMesOutils} style={{

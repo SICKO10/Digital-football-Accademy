@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { appelerOutils } from '../../lib/outilsApi'
-import { ESSAI_JOURS, ESSAIS_GRATUITS } from '../../lib/catalogueOutils'
+import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
 
@@ -61,7 +61,7 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
 
   const prix = (e) => {
     if (e.etat === 'club') return 'Inclus par ton club'
-    return `${euros(e.outil.prixMensuel)} par mois ou ${euros(e.outil.prixAnnuel)} par an`
+    return `Dans les paliers à partir de ${euros(PALIERS_EDUCATEUR[0].prixMensuel)} par mois`
   }
 
   const essai = (e) => {

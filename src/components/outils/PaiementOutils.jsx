@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useColors } from '../../lib/theme'
-import { totalComposition, PACK_EDUCATEUR, outilsDuPack } from '../../lib/catalogueOutils'
+import { PALIERS_EDUCATEUR, PACK_EDUCATEUR, palierPourNombre, outilsDuPack } from '../../lib/catalogueOutils'
 import { payerOutils, retourPaiementOutils, effacerRetourPaiement } from '../../lib/outilsApi'
 import CarteOutil from './CarteOutil'
 
-// Boutique de l'éducateur (premier paiement, bloc 7) : il choisit le pack ou
-// sélectionne ses outils, mensuel ou annuel, voit le total et part payer chez
-// Stripe. `payables` : états des outils qu'il peut payer, calculés par MesOutils,
+// Boutique de l'éducateur (premier paiement, bloc 7 bis) : il choisit « tous les
+// outils » ou sélectionne les siens, mensuel ou annuel. Le prix dépend du nombre
+// d'outils choisis (paliers de 3, 6 et 9 outils) ; il voit le total et part payer
+// chez Stripe. `payables` : états des outils qu'il peut payer, calculés par MesOutils,
 // qui masque la boutique dès qu'un abonnement est en cours (ajout : bloc 8).
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
 
@@ -27,12 +28,19 @@ export function PaiementOutils({ payables }) {
     : (coches ?? parDefaut).filter(id => payables.some(e => e.outil.id === id))
   const basculer = (id) => setCoches(choisis.includes(id) ? choisis.filter(x => x !== id) : [...choisis, id])
   const annuel = periodicite === 'annuel'
-  const prixPack = annuel ? PACK_EDUCATEUR.prixAnnuel : PACK_EDUCATEUR.prixMensuel
-  // Ce que coûteraient tous les outils pris un par un, pour montrer l'économie du pack.
-  const prixSepares = totalComposition('educateur', outilsDuPack(), periodicite)
-  const total = pack ? prixPack : choisis.length ? totalComposition('educateur', choisis, periodicite) : 0
-  const totalMensuel = totalComposition('educateur', choisis, 'mensuel')
-  const economie = pack ? prixSepares - prixPack : annuel && total ? totalMensuel * 12 - total : 0
+  const palier = pack ? PACK_EDUCATEUR : palierPourNombre(choisis.length)
+  const prixDe = (p) => (annuel ? p.prixAnnuel : p.prixMensuel)
+  const total = palier ? prixDe(palier) : 0
+  // Économie de l'annuel par rapport à 12 mensualités du même palier.
+  const economie = annuel && palier ? palier.prixMensuel * 12 - palier.prixAnnuel : 0
+  const nbTous = outilsDuPack().length
+  const reste = palier && !pack ? palier.max - choisis.length : 0
+  const palierSuivant = palier && PALIERS_EDUCATEUR[PALIERS_EDUCATEUR.indexOf(palier) + 1]
+  // Aide sous la grille : combien d'outils de plus sans supplément, ou ce que coûte le palier suivant.
+  const aide = pack || choisis.length === 0 ? null
+    : palier.max === nbTous ? `Ce palier donne les ${nbTous} outils.`
+      : reste > 0 ? `Tu peux ajouter ${reste} ${reste > 1 ? 'outils' : 'outil'} sans supplément.`
+        : `Un outil de plus passe à ${prixDe(palierSuivant)} € ${PERIODES.find(p => p[0] === periodicite)[2]}.`
   const unite = PERIODES.find(p => p[0] === periodicite)[2]
   const avecEssai = choisis.some(id => payables.find(e => e.outil.id === id)?.etat === 'essai')
 
@@ -87,12 +95,12 @@ export function PaiementOutils({ payables }) {
           </span>
           <span style={{ display: 'block', fontSize: 17, fontWeight: 800 }}>{PACK_EDUCATEUR.nom}</span>
           <span style={{ display: 'block', fontSize: 13, lineHeight: 1.5, color: colors.text.secondary, marginTop: 4 }}>
-            Les {outilsDuPack().length} outils réunis, au lieu de {prixSepares} € {unite} en les prenant un par un.
+            Les {nbTous} outils réunis, au meilleur prix.
           </span>
         </span>
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <span style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>
-            {prixPack} €<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}> {unite}</span>
+            {prixDe(PACK_EDUCATEUR)} €<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}> {unite}</span>
           </span>
           <span style={{
             fontSize: 13, fontWeight: 800, borderRadius: 999, padding: '7px 14px',
@@ -105,6 +113,21 @@ export function PaiementOutils({ payables }) {
       <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: colors.text.faint }}>
         {pack ? 'Tous ces outils sont compris dans le pack' : 'Ou choisis seulement ceux dont tu as besoin'}
       </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0 0 12px' }}>
+        {PALIERS_EDUCATEUR.map((p, i) => {
+          const debut = i === 0 ? 1 : PALIERS_EDUCATEUR[i - 1].max + 1
+          const courant = palier?.id === p.id
+          return (
+            <span key={p.id} style={{
+              fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999,
+              color: courant ? colors.accent.onBrand : colors.text.secondary,
+              background: courant ? colors.accent.brand : colors.background.raised,
+            }}>
+              {debut === p.max ? debut : `${debut} à ${p.max}`} outils : {prixDe(p)} € {unite}
+            </span>
+          )
+        })}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12, marginBottom: 18 }}>
         {payables.map(e => (
           <CarteOutil
@@ -112,7 +135,6 @@ export function PaiementOutils({ payables }) {
             nom={e.outil.nom}
             promesse={e.outil.promesse}
             badge={badge(e)}
-            pied={`${annuel ? e.outil.prixAnnuel : e.outil.prixMensuel} € ${unite}`}
             coche={choisis.includes(e.outil.id)}
             desactive={pack}
             onSelection={() => basculer(e.outil.id)}
@@ -124,14 +146,14 @@ export function PaiementOutils({ payables }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
           <div>
             <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}>
-              {pack ? PACK_EDUCATEUR.nom : `${choisis.length} ${choisis.length > 1 ? 'outils choisis' : 'outil choisi'}`}
+              {pack ? PACK_EDUCATEUR.nom : `${choisis.length} ${choisis.length > 1 ? 'outils choisis' : 'outil choisi'}`}{palier && !pack ? ` : palier jusqu'à ${palier.max} outils` : ''}
             </p>
             <p style={{ margin: '2px 0 0', fontSize: 22, fontWeight: 900, color: colors.text.primary }}>
               {total} €<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}> {unite}</span>
             </p>
             {economie > 0 && (
               <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: colors.accent.success }}>
-                Tu économises {economie} € {pack && !annuel ? 'par mois' : 'sur l\'année'}
+                Tu économises {economie} € sur l'année par rapport au mensuel
               </p>
             )}
           </div>
@@ -143,6 +165,7 @@ export function PaiementOutils({ payables }) {
             {envoi ? 'Ouverture du paiement...' : total ? `Payer ${total} € ${unite}` : 'Choisis au moins un outil'}
           </button>
         </div>
+        {aide && <p style={{ margin: '10px 0 0', fontSize: 13, fontWeight: 600, color: colors.accent.brand }}>{aide}</p>}
         {erreur && <p role="alert" style={{ margin: '12px 0 0', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
         <p style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
           Sans engagement : tu arrêtes quand tu veux, l'abonnement s'arrête à la fin de la période déjà payée. Paiement sécurisé par Stripe. Tu paies {total} € aujourd'hui, puis {annuel ? 'chaque année' : 'chaque mois'} à la même date.
