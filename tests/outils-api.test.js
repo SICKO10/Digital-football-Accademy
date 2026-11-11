@@ -5,7 +5,7 @@ import { creerHandler } from '../api/outils.js'
 import { lignesStripe } from '../src/lib/catalogueOutils.js'
 
 const id = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`
-const U = { edu: id(1), eduAncien: id(2), club: id(10), clubImpaye: id(11), joueur: id(20) }
+const U = { edu: id(1), eduAncien: id(2), eduAffilie: id(3), eduAffilie2: id(4), club: id(10), clubImpaye: id(11), joueur: id(20) }
 const NOW = Date.parse('2026-11-09T12:00:00Z')
 
 function monde({ panneLigne = false } = {}) {
@@ -18,10 +18,19 @@ function monde({ panneLigne = false } = {}) {
   }
   const lignes = new Map()
   const essais = new Set()
+  const ouverts = new Set()
+  const notifs = []
+  let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais,
+    lignes, essais, ouverts, notifs,
+    pannerNotifications: () => { panneNotif = true },
     donnees: {
+      ouvert: async (c, o) => ouverts.has(cle(c, o)),
+      ouvrirOutil: async (c, o) => { ouverts.add(cle(c, o)) },
+      fermerOutil: async (c, o) => { ouverts.delete(cle(c, o)) },
+      educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
+      notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
       profil: async (cid) => profils[cid] || null,
       ligne: async (c, o) => lignes.get(cle(c, o)) || null,
       marquerEssai: async (c, o) => { if (essais.has(cle(c, o))) return false; essais.add(cle(c, o)); return true },
@@ -129,6 +138,85 @@ test('club : retirer ne touche pas un outil qui ne vient pas du forfait', async 
   m.lignes.set(`${U.club}|vie_club`, { source: 'offre', fin_le: '2027-01-01T00:00:00Z' })
   await appeler(m, U.club, { action: 'choisir_club', outil: 'vie_club', actif: false })
   assert.equal(m.lignes.size, 1)
+})
+
+// Bloc 10 : le club ouvre ses outils à ses éducateurs affiliés.
+const clubAvec = (m, outil) => m.lignes.set(`${U.club}|${outil}`, { source: 'forfait', fin_le: null })
+
+test('ouvrir_club : le club ouvre un outil qu\'il a, sans prévenir personne', async () => {
+  const m = monde()
+  clubAvec(m, 'projet_sportif')
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })).code, 200)
+  assert.ok(m.ouverts.has(`${U.club}|projet_sportif`))
+  assert.equal(m.notifs.length, 0)
+})
+
+test('ouvrir_club : refus pour un outil que le club n\'a pas, sans équivalent éducateur, inconnu ou sans choix', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: true })).code, 409)
+  clubAvec(m, 'finances')
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'finances', ouvert: true })).code, 400)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'seances', ouvert: true })).code, 400)
+  clubAvec(m, 'cff4')
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4' })).code, 400)
+  assert.equal(m.ouverts.size, 0)
+})
+
+test('ouvrir_club : réservé au club du nouveau modèle, abonnement actif', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.edu, { action: 'ouvrir_club', outil: 'cff4', ouvert: true })).code, 403)
+  assert.equal((await appeler(m, U.clubImpaye, { action: 'ouvrir_club', outil: 'cff4', ouvert: true })).code, 403)
+  assert.equal((await appeler(m, U.eduAncien, { action: 'ouvrir_club', outil: 'cff4', ouvert: true })).code, 403)
+  assert.equal(m.ouverts.size, 0)
+})
+
+test('ouvrir_club : fermer un outil ouvert prévient les éducateurs, et note celui qui le paie déjà', async () => {
+  const m = monde()
+  clubAvec(m, 'cff4')
+  m.ouverts.add(`${U.club}|cff4`)
+  m.lignes.set(`${U.eduAffilie2}|cff4`, { source: 'achat', fin_le: null })
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: false })).code, 200)
+  assert.equal(m.ouverts.size, 0)
+  assert.equal(m.notifs.length, 2)
+  const sans = m.notifs.find(n => n.user_id === U.eduAffilie)
+  const avec = m.notifs.find(n => n.user_id === U.eduAffilie2)
+  assert.equal(sans.type, 'outil_club_retire')
+  assert.equal(sans.contenu, 'Ton club ne te fournit plus l\'outil Projet Club CFF4 depuis aujourd\'hui.')
+  assert.match(avec.contenu, /Tu le gardes grâce à ton propre abonnement/)
+})
+
+test('ouvrir_club : fermer un outil qui n\'était pas ouvert ne prévient personne', async () => {
+  const m = monde()
+  clubAvec(m, 'cff4')
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: false })).code, 200)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('ouvrir_club : une panne de notification ne bloque pas le club', async () => {
+  const m = monde()
+  clubAvec(m, 'cff4')
+  m.ouverts.add(`${U.club}|cff4`)
+  m.pannerNotifications()
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: false })).code, 200)
+  assert.equal(m.ouverts.size, 0)
+})
+
+test('club : retirer un outil ouvert aux éducateurs le ferme et prévient', async () => {
+  const m = monde()
+  clubAvec(m, 'stages')
+  m.ouverts.add(`${U.club}|stages`)
+  assert.equal((await appeler(m, U.club, { action: 'choisir_club', outil: 'stages', actif: false })).code, 200)
+  assert.equal(m.lignes.size, 0)
+  assert.equal(m.ouverts.size, 0)
+  assert.equal(m.notifs.length, 2)
+  assert.match(m.notifs[0].contenu, /Stages/)
+})
+
+test('club : retirer un outil non ouvert ne prévient personne', async () => {
+  const m = monde()
+  clubAvec(m, 'stages')
+  await appeler(m, U.club, { action: 'choisir_club', outil: 'stages', actif: false })
+  assert.equal(m.notifs.length, 0)
 })
 
 // verifier-prix : réservé aux administrateurs, compare catalogue et Stripe.

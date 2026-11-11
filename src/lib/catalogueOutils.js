@@ -176,6 +176,14 @@ export const outilsDuRole = (role) => OUTILS.filter(o => o.role === role)
 export const trouverOutil = (role, id) => OUTILS.find(o => o.role === role && o.id === id) || null
 export const outilsAchetables = (role) => outilsDuRole(role).filter(o => o.achetable)
 
+// Outil éducateur reçu via l'outil club indiqué (null si le club ne peut pas
+// l'ouvrir à ses éducateurs).
+export const outilEducateurPour = (clubOutilId) => OUTILS.find(o => o.role === 'educateur' && o.viaClub === clubOutilId) || null
+
+// Outils du club que le club peut ouvrir à ses éducateurs affiliés : ceux qui
+// ont un équivalent côté éducateur.
+export const outilsOuvrables = () => outilsDuRole('club').filter(o => outilEducateurPour(o.id))
+
 // Trois questions à l'inscription (bloc 11).
 export const QUESTIONS = [
   {

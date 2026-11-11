@@ -12,6 +12,8 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
   const actif = !!modeleOutils && !desactive
   const [lignes, setLignes] = useState([])
   const [essaisUtilises, setEssaisUtilises] = useState([])
+  const [masques, setMasques] = useState([])
+  const [ouverts, setOuverts] = useState([])
   const [pret, setPret] = useState(false)
 
   const [version, setVersion] = useState(0)
@@ -24,22 +26,31 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
     const essais = role === 'educateur'
       ? supabase.from('outils_essais_utilises').select('outil').eq('compte_id', userId)
       : Promise.resolve({ data: [] })
-    Promise.all([supabase.rpc('outils_actifs', { p_compte: userId }), essais]).then(([actifs, utilises]) => {
+    // Éducateur : outils du club qu'il a masqués de son menu. Club : outils
+    // qu'il ouvre à ses éducateurs affiliés.
+    const choix = role === 'educateur'
+      ? supabase.from('outils_affichage_educateur').select('outil').eq('educateur_id', userId).eq('visible', false)
+      : supabase.from('outils_club_ouverts').select('outil').eq('club_id', userId)
+    Promise.all([supabase.rpc('outils_actifs', { p_compte: userId }), essais, choix]).then(([actifs, utilises, lus]) => {
       if (annule) return
       if (actifs.error) console.error('outils_actifs', actifs.error.message)
       if (utilises.error) console.error('outils_essais_utilises', utilises.error.message)
+      if (lus.error) console.error('outils choix', lus.error.message)
+      const ids = (lus.data || []).map(c => c.outil)
       setLignes(actifs.data || [])
       setEssaisUtilises((utilises.data || []).map(e => e.outil))
+      setMasques(role === 'educateur' ? ids : [])
+      setOuverts(role === 'club' ? ids : [])
       setPret(true)
     })
     return () => { annule = true }
   }, [actif, userId, role, version])
 
-  const compte = useMemo(() => compteDepuisLignes(role, actif, lignes), [role, actif, lignes])
+  const compte = useMemo(() => compteDepuisLignes(role, actif, lignes, masques), [role, actif, lignes, masques])
 
   const etats = useMemo(
-    () => (actif ? etatsOutils({ role, lignes, essaisUtilises }) : []),
-    [actif, role, lignes, essaisUtilises],
+    () => (actif ? etatsOutils({ role, lignes, essaisUtilises, masques }) : []),
+    [actif, role, lignes, essaisUtilises, masques],
   )
 
   return useMemo(() => ({
@@ -47,10 +58,11 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
     pret,
     lignes,
     etats,
+    ouverts,
     recharger,
     verrouillee: (cle) => actif && pret && sectionVerrouillee(compte, cle),
     menuVisible: (cle) => menuVisible(compte, cle),
     outilActif: (outilId) => outilActif(compte, outilId),
     ongletsStats: () => ongletsStatsPermis(compte),
-  }), [actif, pret, lignes, etats, recharger, compte])
+  }), [actif, pret, lignes, etats, ouverts, recharger, compte])
 }

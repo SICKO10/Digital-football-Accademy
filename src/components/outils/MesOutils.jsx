@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useColors } from '../../lib/theme'
+import { supabase } from '../../supabase'
 import { appelerOutils } from '../../lib/outilsApi'
+import { outilsPourEducateurs } from '../../lib/outilsAcces'
 import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
@@ -18,8 +20,12 @@ const ETATS_ACTIFS = ['actif', 'retire', 'club', 'essai', 'offre']
 // qu'aucun abonnement n'est en cours ; ensuite, les autres outils.
 // Club : son abonnement (compte du club seulement), puis une carte par outil
 // avec un interrupteur, tout est inclus dans le forfait.
-// `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit.
-export default function MesOutils({ role, outils, peutModifier = true }) {
+// Côté club, une seconde section ouvre certains outils aux éducateurs affiliés
+// (bloc 10). Côté éducateur affilié, les outils fournis par le club forment une
+// section à part, avec un choix « afficher sur mon dashboard ».
+// `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit ;
+// `userId` : compte de l'éducateur (affichage des outils du club).
+export default function MesOutils({ role, outils, peutModifier = true, userId }) {
   const colors = useColors()
   const [enCours, setEnCours] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -46,7 +52,8 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
   const boutique = role === 'educateur' && outils.pret && !abonnement && payables.length > 0
   const dansBoutique = (e) => boutique && payables.includes(e)
   // Un outil en essai ou offert apparaît dans la boutique (pour le garder), pas en double ici.
-  const actifs = etats.filter(e => ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
+  const duClub = etats.filter(e => e.etat === 'club')
+  const actifs = etats.filter(e => ETATS_ACTIFS.includes(e.etat) && e.etat !== 'club' && !dansBoutique(e))
   const autres = etats.filter(e => !ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
 
   // Intertitre au format des sections du dashboard éducateur.
@@ -80,22 +87,44 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
     )
   }
 
+  const commutateur = ({ actif, libelle, id, onClick, desactive = false }) => (
+    <button
+      type="button" role="switch" aria-checked={actif} aria-label={libelle}
+      disabled={enCours === id || desactive} onClick={onClick}
+      style={{
+        flexShrink: 0, width: 46, height: 26, borderRadius: 999, border: 'none', padding: 3, cursor: desactive ? 'default' : 'pointer',
+        background: actif ? colors.accent.brand : colors.border.strong, opacity: enCours === id || desactive ? 0.6 : 1,
+        display: 'flex', justifyContent: actif ? 'flex-end' : 'flex-start', transition: 'background .15s',
+      }}
+    >
+      <span style={{ width: 20, height: 20, borderRadius: 999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
+    </button>
+  )
+
   const interrupteur = (e) => {
-    const actif = e.etat === 'actif'
     if (!peutModifier) return null
-    return (
-      <button
-        type="button" role="switch" aria-checked={actif} aria-label={`${e.outil.nom} sur mon dashboard`}
-        disabled={enCours === e.outil.id} onClick={() => agir(e.outil.id, 'choisir_club', { actif: !actif })}
-        style={{
-          flexShrink: 0, width: 46, height: 26, borderRadius: 999, border: 'none', padding: 3, cursor: 'pointer',
-          background: actif ? colors.accent.brand : colors.border.strong, opacity: enCours === e.outil.id ? 0.6 : 1,
-          display: 'flex', justifyContent: actif ? 'flex-end' : 'flex-start', transition: 'background .15s',
-        }}
-      >
-        <span style={{ width: 20, height: 20, borderRadius: 999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
-      </button>
-    )
+    const actif = e.etat === 'actif'
+    return commutateur({
+      actif, id: e.outil.id, libelle: `${e.outil.nom} sur mon dashboard`,
+      onClick: () => agir(e.outil.id, 'choisir_club', { actif: !actif }),
+    })
+  }
+
+  // Club : ouvrir un de ses outils à ses éducateurs affiliés (action serveur,
+  // qui prévient les éducateurs quand l'outil est fermé).
+  const pourEducateurs = outilsPourEducateurs({ etats, ouverts: outils.ouverts })
+
+  // Éducateur affilié : afficher ou masquer un outil fourni par le club (son
+  // choix, écrit directement : la règle d'accès ne laisse écrire que ses lignes).
+  const afficher = async (outilId, visible) => {
+    if (!userId) return
+    setEnCours(outilId)
+    setErreur('')
+    const { error } = await supabase.from('outils_affichage_educateur')
+      .upsert({ educateur_id: userId, outil: outilId, visible, maj_le: new Date().toISOString() }, { onConflict: 'educateur_id,outil' })
+    setEnCours(null)
+    if (error) { setErreur('Ton choix n\'a pas été enregistré, réessaie dans un instant'); return }
+    outils.recharger()
   }
 
   const nbClub = etats.filter(e => e.etat === 'actif').length
@@ -147,6 +176,30 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
         </section>
       )}
 
+      {outils.pret && role === 'club' && peutModifier && (
+        <section aria-labelledby="titre-educateurs" style={{ marginTop: 32 }}>
+          <h2 id="titre-educateurs" style={titreSection}>Outils pour mes éducateurs</h2>
+          <p style={{ margin: '0 0 14px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
+            Tes éducateurs affiliés reçoivent gratuitement les outils que tu leur ouvres, et choisissent ceux qu'ils affichent. Si tu fermes un outil, ils le perdent tout de suite et sont prévenus.
+          </p>
+          <div style={grille}>
+            {pourEducateurs.map(({ outil, possede, ouvert }) => (
+              <CarteOutil
+                key={outil.id}
+                nom={outil.nom}
+                promesse={outil.promesse}
+                pied={possede ? (ouvert ? 'Ouvert à tes éducateurs' : 'Fermé pour tes éducateurs') : 'Active d\'abord cet outil sur ton dashboard'}
+                action={commutateur({
+                  actif: ouvert, id: `ouvert_${outil.id}`, desactive: !possede && !ouvert,
+                  libelle: `${outil.nom} pour mes éducateurs`,
+                  onClick: () => agir(`ouvert_${outil.id}`, 'ouvrir_club', { outil: outil.id, ouvert: !ouvert }),
+                })}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {outils.pret && role === 'educateur' && (
         <>
           {abonnement && <MonAbonnement role="educateur" outils={outils} />}
@@ -155,6 +208,23 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
               <h2 id="titre-actifs" style={titreSection}>Tes outils actifs</h2>
               <div style={grille}>
                 {actifs.map(e => <CarteOutil key={e.outil.id} nom={e.outil.nom} promesse={e.outil.promesse} badge={badge(e)} />)}
+              </div>
+            </section>
+          )}
+          {duClub.length > 0 && (
+            <section aria-labelledby="titre-club-educ" style={{ marginBottom: 32 }}>
+              <h2 id="titre-club-educ" style={titreSection}>Fournis par ton club</h2>
+              <div style={grille}>
+                {duClub.map(e => (
+                  <CarteOutil
+                    key={e.outil.id} nom={e.outil.nom} promesse={e.outil.promesse} badge={badge(e)}
+                    pied={e.masque ? 'Masqué sur ton dashboard' : 'Affiché sur ton dashboard'}
+                    action={commutateur({
+                      actif: !e.masque, id: e.outil.id, libelle: `${e.outil.nom} sur mon dashboard`,
+                      onClick: () => afficher(e.outil.id, e.masque),
+                    })}
+                  />
+                ))}
               </div>
             </section>
           )}

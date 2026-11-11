@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   compteDepuisLignes, outilPourMenu, sectionVerrouillee, ongletsStatsPermis,
-  menuVisible, outilActif, ONGLETS_STATS, etatsOutils,
+  menuVisible, outilActif, ONGLETS_STATS, etatsOutils, doublonsClub, outilsPourEducateurs,
 } from '../src/lib/outilsAcces.js'
 
 const NOW = new Date('2026-11-07T12:00:00Z')
@@ -211,4 +211,54 @@ test('la fiche d\'évaluation (notes) vient avec le suivi des joueurs, pas avec 
   const video = edu([{ outil: 'evaluations_video', source: 'achat', fin_le: null }])
   assert.equal(sectionVerrouillee(video, 'notes', NOW), true)
   assert.equal(sectionVerrouillee(video, 'analyse_video', NOW), false)
+})
+
+// Bloc 10 : outils du club pour les éducateurs affiliés.
+const duClub = [{ outil: 'projet_sportif', source: 'club', fin_le: null }]
+
+test('éducateur affilié : un outil du club masqué disparaît du menu, la page reste ouverte', () => {
+  const compte = compteDepuisLignes('educateur', true, duClub, ['projet_sportif'])
+  assert.equal(menuVisible(compte, 'projet_sportif', NOW), false)
+  assert.equal(sectionVerrouillee(compte, 'projet_sportif', NOW), false)
+  assert.equal(outilActif(compte, 'projet_sportif', NOW), true)
+})
+
+test('éducateur affilié : un outil du club non masqué reste dans le menu', () => {
+  assert.equal(menuVisible(compteDepuisLignes('educateur', true, duClub, []), 'projet_sportif', NOW), true)
+  assert.equal(menuVisible(compteDepuisLignes('educateur', true, duClub, ['cff4']), 'projet_sportif', NOW), true)
+})
+
+test('éducateur affilié : masquer ne cache pas un outil qu\'il paie lui-même', () => {
+  const compte = compteDepuisLignes('educateur', true, [...duClub, { outil: 'projet_sportif', source: 'achat', fin_le: null }], ['projet_sportif'])
+  assert.equal(menuVisible(compte, 'projet_sportif', NOW), true)
+})
+
+test('masquer ne touche pas un outil qui ne vient pas du club', () => {
+  const compte = compteDepuisLignes('educateur', true, [{ outil: 'seances', source: 'achat', fin_le: null }], ['seances'])
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), true)
+})
+
+test('masque : repéré dans les états seulement pour un outil fourni par le club', () => {
+  const etats = etatsOutils({ role: 'educateur', lignes: duClub, masques: ['projet_sportif', 'seances'], maintenant: NOW })
+  assert.equal(etats.find(e => e.outil.id === 'projet_sportif').masque, true)
+  assert.equal(etats.find(e => e.outil.id === 'seances').masque, false)
+  assert.equal(etats.find(e => e.outil.id === 'cff4').masque, false)
+})
+
+test('doublon : outil payé et fourni par le club ; pas de doublon si l\'outil est déjà retiré', () => {
+  const lignes = [
+    { outil: 'projet_sportif', source: 'achat', fin_le: null }, { outil: 'projet_sportif', source: 'club', fin_le: null },
+    { outil: 'cff4', source: 'achat', fin_le: futur }, { outil: 'cff4', source: 'club', fin_le: null },
+    { outil: 'seances', source: 'achat', fin_le: null },
+  ]
+  const doublons = doublonsClub(etatsOutils({ role: 'educateur', lignes, maintenant: NOW }))
+  assert.deepEqual(doublons.map(d => d.outil.id), ['projet_sportif'])
+  assert.deepEqual(doublonsClub(etatsOutils({ role: 'educateur', lignes: duClub, maintenant: NOW })), [])
+})
+
+test('club : outils ouvrables aux éducateurs, possédés et ouverts', () => {
+  const etats = etatsOutils({ role: 'club', lignes: [{ outil: 'cff4', source: 'forfait', fin_le: null }, { outil: 'finances', source: 'forfait', fin_le: null }], maintenant: NOW })
+  const liste = outilsPourEducateurs({ etats, ouverts: ['cff4'] })
+  assert.deepEqual(liste.map(l => l.outil.id), ['projet_sportif', 'stages', 'cff4'])
+  assert.deepEqual(liste.map(l => [l.possede, l.ouvert]), [[false, false], [false, false], [true, true]])
 })

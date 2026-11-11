@@ -6,6 +6,7 @@ import { useOutils } from '../lib/useOutils'
 import OutilNonActive from '../components/outils/OutilNonActive'
 import MesOutils from '../components/outils/MesOutils'
 import EncartFinEssai from '../components/outils/EncartFinEssai'
+import EncartOutilsClub from '../components/outils/EncartOutilsClub'
 import { retourPaiementOutils, retourDuPortail } from '../lib/outilsApi'
 import OutilPayantModale from '../components/outils/OutilPayantModale'
 import { useState, useEffect, useLayoutEffect, useRef, Fragment, lazy, Suspense } from 'react'
@@ -6227,6 +6228,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
             )}
             <EncartFinEssai outils={outils} onVoirMesOutils={() => setActiveSection('mes_outils')} />
+            <EncartOutilsClub outils={outils} userId={userId} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
               clubId={clubAffiliation?.club_id}
               prenom={profil?.prenom}
@@ -6266,7 +6268,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           <OutilNonActive role="educateur" cle={activeSectionBrut} onRetour={() => setActiveSection('accueil')} onMesOutils={outils.actif ? () => setActiveSection('mes_outils') : undefined} />
         )}
 
-        {activeSection === 'mes_outils' && outils.actif && <MesOutils role="educateur" outils={outils} />}
+        {activeSection === 'mes_outils' && outils.actif && <MesOutils role="educateur" outils={outils} userId={userId} />}
 
         {['equipe', 'stats', 'sante', 'historique'].includes(activeSection) && (
           <SousOngletsBar

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   OUTILS, SOCLE, outilsVisibles, menuFiltre, totalComposition,
-  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole,
+  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour,
 } from '../src/lib/catalogueOutils.js'
 
 const NOW = new Date('2026-11-10T12:00:00Z')
@@ -158,4 +158,10 @@ test('forfaits club : annuel = 10 mensualités, mêmes montants que les liens de
   for (const f of FORFAITS_CLUB) assert.equal(f.prixAnnuel, f.prixMensuel * 10)
   assert.deepEqual(FORFAITS_CLUB.map(f => f.prixMensuel), [50, 100, 130, 160, 190, 250])
   assert.deepEqual(FORFAITS_CLUB.map(f => f.equipes), [2, 4, 7, 11, 15, 22])
+})
+
+test('outils ouvrables aux éducateurs : seulement ceux qui ont un équivalent éducateur, relié dans les deux sens', () => {
+  assert.deepEqual(outilsOuvrables().map(o => o.id), ['projet_sportif', 'stages', 'cff4'])
+  for (const o of outilsOuvrables()) assert.equal(outilEducateurPour(o.id).viaClub, o.id)
+  assert.equal(outilEducateurPour('finances'), null)
 })

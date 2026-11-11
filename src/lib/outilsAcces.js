@@ -3,7 +3,7 @@
 // Un compte qui n'est pas au nouveau modèle (modeleOutils faux) ne voit
 // jamais rien de filtré : chaque fonction répond « autorisé ».
 
-import { SOCLE, OUTILS, outilsVisibles, outilsDuRole, trouverOutil, joursRestantsEssai } from './catalogueOutils.js'
+import { SOCLE, OUTILS, outilsVisibles, outilsDuRole, trouverOutil, joursRestantsEssai, droitActif, outilsOuvrables } from './catalogueOutils.js'
 
 // Onglets de « Mon équipe > Statistiques » dans l'ordre de la page. La
 // présence (et le taux de présence qu'elle contient) reste dans le socle ;
@@ -16,7 +16,9 @@ const ONGLETS_STATS_COLLECTIFS = ['graphiques']
 // Lignes de la fonction base `outils_actifs(compte)` : { outil, source, fin_le }.
 // Les lignes « club » sont les outils du club reçus par l'éducateur affilié ;
 // les autres sont ses propres droits (fin_le vide = abonnement en cours).
-export function compteDepuisLignes(role, modeleOutils, lignes = []) {
+// `masques` : ids des outils que l'éducateur a retirés de son menu (outils du
+// club seulement : un outil qu'il paie lui-même reste affiché).
+export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = []) {
   const droits = []
   const clubOutils = []
   for (const l of lignes) {
@@ -26,7 +28,7 @@ export function compteDepuisLignes(role, modeleOutils, lignes = []) {
       ? { outil: l.outil, statut: 'retire', periodeFin: l.fin_le }
       : { outil: l.outil, statut: 'actif' })
   }
-  return { role, modeleOutils: !!modeleOutils, droits, clubOutils }
+  return { role, modeleOutils: !!modeleOutils, droits, clubOutils, masques }
 }
 
 // L'outil qui débloque cette entrée de menu (null si elle est dans le socle
@@ -65,13 +67,24 @@ export function ongletsStatsPermis(compte, maintenant = new Date()) {
   })
 }
 
+// Vrai quand l'éducateur a masqué cet outil du club et ne le paie pas lui-même.
+function menuMasque(compte, cle, maintenant) {
+  if (compte.role !== 'educateur' || !compte.masques?.length) return false
+  const o = outilPourMenu('educateur', cle)
+  if (!o || !o.viaClub || !compte.masques.includes(o.id)) return false
+  if (!compte.clubOutils?.includes(o.viaClub)) return false
+  return !compte.droits.some(d => d.outil === o.id && droitActif(d, maintenant))
+}
+
 // Entrée de menu à afficher ? Même règle que la page, avec en plus le retrait
 // d'Explorer (éducateur) et de Recrutement (éducateur et club) pour les comptes
-// du nouveau modèle.
+// du nouveau modèle, et les outils du club que l'éducateur a masqués (la page
+// reste ouverte, seule l'entrée de menu disparaît).
 export function menuVisible(compte, cle, maintenant = new Date()) {
   if (!compte?.modeleOutils) return true
   if (cle === 'recrutement') return false
   if (compte.role === 'educateur' && cle === 'explorer') return false
+  if (menuMasque(compte, cle, maintenant)) return false
   return !sectionVerrouillee(compte, cle, maintenant)
 }
 
@@ -94,7 +107,8 @@ export function infosOutil(role, id) {
 // `joursRestants`), 'retire' et 'offre' (actifs jusqu'à `finLe`), 'club' (fourni
 // par le club), 'essai_termine' (essai fini, à garder ou non), 'disponible'.
 // Un outil non achetable et non fourni par le club n'apparaît pas.
-export function etatsOutils({ role, lignes = [], essaisUtilises = [], maintenant = new Date() }) {
+// `masque` : l'éducateur a retiré cet outil du club de son menu (état 'club').
+export function etatsOutils({ role, lignes = [], essaisUtilises = [], masques = [], maintenant = new Date() }) {
   const liste = []
   for (const o of outilsDuRole(role)) {
     const propre = lignes.find(l => l.outil === o.id && l.source !== 'club')
@@ -110,9 +124,23 @@ export function etatsOutils({ role, lignes = [], essaisUtilises = [], maintenant
     } else if (fourniParLeClub) etat = 'club'
     else if (!o.achetable) continue
     else etat = essaisUtilises.includes(o.id) ? 'essai_termine' : 'disponible'
-    liste.push({ outil: o, etat, finLe, fourniParLeClub, joursRestants: etat === 'essai' ? joursRestantsEssai(finLe, maintenant) : 0 })
+    liste.push({ outil: o, etat, finLe, fourniParLeClub, masque: etat === 'club' && masques.includes(o.id), joursRestants: etat === 'essai' ? joursRestantsEssai(finLe, maintenant) : 0 })
   }
   return liste
+}
+
+// Outils que l'éducateur paie alors que son club les lui fournit aussi : il
+// peut retirer le sien. Calculé à la lecture, il disparaît dès que c'est fait.
+export const doublonsClub = (etats) => etats.filter(e => e.etat === 'actif' && e.fourniParLeClub)
+
+// Côté club : les outils qu'il peut ouvrir à ses éducateurs. `possede` : l'outil
+// est actif chez le club (condition pour l'ouvrir) ; `ouvert` : choix du club.
+export function outilsPourEducateurs({ etats = [], ouverts = [] }) {
+  return outilsOuvrables().map(o => ({
+    outil: o,
+    possede: etats.some(e => e.outil.id === o.id && e.etat === 'actif'),
+    ouvert: ouverts.includes(o.id),
+  }))
 }
 
 export { trouverOutil }

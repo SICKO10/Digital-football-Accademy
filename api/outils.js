@@ -1,7 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
-import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -10,6 +10,10 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 //   d'un outil, une seule fois par outil. Sans carte bancaire.
 // - `choisir_club` : un club du nouveau modèle ajoute ou retire un de ses outils.
 //   Les outils du club sont inclus dans son forfait (source `forfait`), sans prix.
+// - `ouvrir_club` (bloc 10) : le club ouvre (ou ferme) un de ses outils à ses
+//   éducateurs affiliés, qui le reçoivent sans payer. Fermer, ou retirer l'outil
+//   du club, prévient ses éducateurs (table `notifications`) : ils le perdent
+//   tout de suite, comme le club.
 // - `payer` : premier paiement d'une composition, en une fois et pour une seule
 //   périodicité (éducateur : ses outils ; club : son forfait selon ses équipes).
 //   Crée une session Stripe Checkout et rend son adresse. Les outils s'activent
@@ -39,7 +43,7 @@ import { trouverOutil, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix,
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['essai', 'choisir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
+const ACTIONS = ['essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -156,6 +160,29 @@ export function donneesOutils() {
     },
     supprimerLigne: async (compte, outil) => {
       const { error } = await db().from('outils_comptes').delete().eq('compte_id', compte).eq('outil', outil)
+      if (error) throw error
+    },
+    // Outils du club ouverts à ses éducateurs (bloc 10).
+    ouvert: async (club, outil) => !!(await lire(db().from('outils_club_ouverts').select('outil').eq('club_id', club).eq('outil', outil).maybeSingle())),
+    ouvrirOutil: async (club, outil) => {
+      const { error } = await db().from('outils_club_ouverts').upsert({ club_id: club, outil }, { onConflict: 'club_id,outil' })
+      if (error) throw error
+    },
+    fermerOutil: async (club, outil) => {
+      const { error } = await db().from('outils_club_ouverts').delete().eq('club_id', club).eq('outil', outil)
+      if (error) throw error
+    },
+    // Éducateurs affiliés acceptés du club, au nouveau modèle (les autres ne voient pas les outils).
+    educateursDuClub: async (club) => {
+      const lies = await lire(db().from('club_educateurs').select('educateur_id').eq('club_id', club).eq('statut', 'accepte'))
+      const ids = [...new Set((lies || []).map(l => l.educateur_id).filter(Boolean))]
+      if (ids.length === 0) return []
+      const profils = await lire(db().from('profiles').select('id').in('id', ids).eq('modele_outils', true))
+      return (profils || []).map(p => p.id)
+    },
+    // Notifications de la cloche (table `notifications`) : { user_id, type, titre, contenu, lien }.
+    notifier: async (lignes) => {
+      const { error } = await db().from('notifications').insert(lignes)
       if (error) throw error
     },
     estAdmin: async (id) => !!(await lire(db().from('admins_coach').select('user_id').eq('user_id', id).maybeSingle())),
@@ -468,6 +495,46 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         }
       }
 
+      // Les éducateurs affiliés perdent l'outil du club : ils sont prévenus, sans bloquer l'action du club.
+      const prevenirRetrait = async (outilClub) => {
+        const outilEdu = outilEducateurPour(outilClub.id)
+        try {
+          const ids = await donnees.educateursDuClub(utilisateur.id)
+          const lignes = []
+          for (const id of ids) {
+            const propre = actifMaintenant(await donnees.ligne(id, outilEdu.id), maintenantMs)
+            lignes.push({
+              user_id: id,
+              type: 'outil_club_retire',
+              titre: 'Outil retiré par ton club',
+              contenu: `Ton club ne te fournit plus l'outil ${outilEdu.nom} depuis aujourd'hui.${propre ? ' Tu le gardes grâce à ton propre abonnement.' : ''}`,
+              lien: '/educateur',
+            })
+          }
+          if (lignes.length > 0) await donnees.notifier(lignes)
+        } catch (err) {
+          console.error('outils : prévenir les éducateurs', err.message)
+        }
+      }
+
+      if (action === 'ouvrir_club') {
+        if (profil.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club choisit les outils de ses éducateurs' })
+        if (!profil.abonnement_actif) return res.status(403).json({ error: 'L\'abonnement du club n\'est pas actif' })
+        const outilClub = trouverOutil('club', idOutil)
+        if (!outilClub || !outilEducateurPour(outilClub.id)) return res.status(400).json({ error: 'Cet outil ne peut pas être ouvert aux éducateurs' })
+        if (typeof corps.ouvert !== 'boolean') return res.status(400).json({ error: 'Choix manquant' })
+        if (corps.ouvert) {
+          if (!actifMaintenant(await donnees.ligne(utilisateur.id, outilClub.id), maintenantMs)) {
+            return res.status(409).json({ error: 'Active d\'abord cet outil sur le dashboard du club' })
+          }
+          await donnees.ouvrirOutil(utilisateur.id, outilClub.id)
+        } else if (await donnees.ouvert(utilisateur.id, outilClub.id)) {
+          await donnees.fermerOutil(utilisateur.id, outilClub.id)
+          await prevenirRetrait(outilClub)
+        }
+        return res.status(200).json({ ok: true })
+      }
+
       // choisir_club
       if (profil.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club choisit les outils du club' })
       if (!profil.abonnement_actif) return res.status(403).json({ error: 'L\'abonnement du club n\'est pas actif' })
@@ -479,6 +546,11 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         if (!ligne) await donnees.poserLigne({ compte_id: utilisateur.id, outil: outil.id, source: 'forfait', fin_le: null })
       } else if (ligne?.source === 'forfait') {
         await donnees.supprimerLigne(utilisateur.id, outil.id)
+        // Un outil ouvert aux éducateurs est fermé avec lui : il faudra le rouvrir si le club le reprend.
+        if (outilEducateurPour(outil.id) && await donnees.ouvert(utilisateur.id, outil.id)) {
+          await donnees.fermerOutil(utilisateur.id, outil.id)
+          await prevenirRetrait(outil)
+        }
       }
       return res.status(200).json({ ok: true })
     } catch (err) {
