@@ -399,7 +399,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Journal : 2026-11-11, Opus 5.5. Écart au plan : le plan prévoyait la bascule de tous les comptes ; Kevin a choisi les nouveaux inscrits seulement. Comptage avant décision : 6 clubs (6 abonnements actifs), 18 éducateurs (1 au nouveau modèle, 13 abonnements actifs). Pas de SQL : un compte passe au nouveau modèle par l'action `composer` de l'inscription composée, déjà en place (refusée à un compte qui a déjà eu un abonnement). Pas de script Stripe ni de changement de clés : déjà en live depuis le bloc 7. Fait : `Register.jsx` (la carte Éducateur ou Club et les liens `?profil=educateur|club` ouvrent la composition ; `?composer=1` garde le même effet ; retour au choix des profils sans rester bloqué), `InscriptionComposee.jsx` (bouton « Inscription habituelle » qui revient vraiment au choix), `Tarifs.jsx` (plus de `noindex`), lien « Tarifs » dans le menu de l'accueil (6 langues), `CGV.jsx` (nouvelle version en vigueur au 11/11/2026 ; l'ancienne reste consultable sur `/cgv?version=2026-10-08`, avec une clause qui dit que les comptes créés avant gardent leurs conditions ; aucun email de préavis puisque rien ne change pour eux), `api/outils.js` (plus de détail technique des erreurs Stripe affiché au client, il reste dans les journaux Vercel). Tests : `npm test` 342 (341 réussis, 1 ignoré), lint propre, build ok ; navigateur (site construit, Chromium, téléphone 390 px) : 11 contrôles réussis (liens éducateur et club vers la composition, joueur inchangé, retour aux profils, `/tarifs` indexable, CGV nouvelle et ancienne version, lien du menu), aucune erreur JavaScript. Poussé avec les blocs 12, 13 et 14 (accord de Kevin : « on pousse tout »).
 
 ### Bloc 17 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait côté code (2026-11-11, Sonnet 5.5) ; liste de contrôle en production à cocher par Kevin
 - Objectif : tout le parcours vérifié en production, code mort retiré.
 - Résultat testable : une liste de contrôle cochée (inscription, essai, ajout, retrait, résiliation, club vers éducateur, offre admin, tarifs) ; `npm test` et `npm run build` verts.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -412,8 +412,22 @@ Rappel : `/clear` et une session neuve par bloc.
   - Liste de contrôle en production avec les comptes de test.
   - Mettre à jour la mémoire du projet (règles Stripe, webhook) et ce plan.
 - Ce que je teste pour valider : je refais la liste de contrôle sur téléphone.
-- Reste à finir :
-- Journal :
+- Décisions de Kevin (2026-11-11) : garder tous les anciens boutons et liens de paiement (les anciens comptes en dépendent) ; la liste de contrôle est faite par Kevin lui-même.
+- Reste à finir : (1) Kevin : cocher la liste de contrôle ci-dessous sur téléphone, et finir les tests réels du bloc 16 ; (2) Kevin : désactiver `TEST100` et les codes promo à 100 % dans Stripe si ce n'est pas fait ; (3) retrait de `STRIPE_LINKS_EDU` et `STRIPE_LINKS_CLUB` et des anciens boutons : à rouvrir seulement quand plus aucun ancien compte ne les utilise (bascule avec préavis de 30 jours, article 15 des CGV) ; (4) un club du nouveau modèle qui invite un éducateur : l'éducateur reste à l'ancien modèle, à vérifier au test (voir bloc 16, point 5) ; (5) page /offres : fichiers de l'autre chantier toujours non commités (`Offres.jsx`, `OffreClub.jsx`, `Univers.jsx`, `photosOffres.js`, `public/offres/`, `DashboardJoueur.jsx`, et `CALENDLY_URL` ajouté dans `stripeLinks.js`).
+- Liste de contrôle (à faire par Kevin, sur téléphone, en carte de test `4242 4242 4242 4242` tant que le paiement réel n'est pas voulu) :
+  1. Inscription éducateur depuis `/register` (carte Éducateur) : composition des outils, puis arrivée sur le dashboard.
+  2. Essai gratuit 14 jours d'un outil : l'outil s'ouvre, les autres restent fermés.
+  3. Ajouter un outil : paiement, outil actif.
+  4. Retirer un outil : disparaît de l'abonnement, accès jusqu'à la fin de la période payée.
+  5. Résilier : message clair, accès jusqu'à la fin de période.
+  6. Inscription club depuis `/offres` (bouton d'un palier) jusqu'à la page de paiement.
+  7. Club vers éducateur : le club fournit un outil à un éducateur invité, l'éducateur le voit.
+  8. Offre d'essai depuis l'espace administrateur (compte coach admin).
+  9. Page `/tarifs` : simulateur, prix cohérents avec Mes outils.
+  10. CGV : nouvelle version sur `/cgv`, ancienne sur `/cgv?version=2026-10-08`.
+  11. Un joueur s'inscrit et paie toujours avec son ancien lien ; un ancien éducateur ou club voit toujours son ancien bouton de paiement.
+  12. Thème clair et sombre sur les écrans ci-dessus.
+- Journal : 2026-11-11, Sonnet 5.5. Fait : page brouillon `/register-choix` retirée (page, route dans `App.jsx` ; une copie est dans la corbeille ; ses textes `regchoix_*` restent car `Register.jsx` les utilise). Tests : `npm test` 342 (341 réussis, 1 ignoré), build ok, lint : 235 problèmes déjà présents avant, aucun dans les fichiers touchés. Constat avant de toucher au code : (1) l'étape « retirer les anciens boutons passer Pro et STRIPE_LINKS_EDU / STRIPE_LINKS_CLUB » est en conflit avec la décision du bloc 16 : 6 clubs et 17 éducateurs restent à l'ancien modèle et en dépendent (DashboardEducateur.jsx lignes ~5779 et ~12689, DashboardClub.jsx, Register.jsx, CGV.jsx, RegisterRecruteur.jsx, ClubRequests.jsx) ; `STRIPE_LINKS_CLUB` sert aussi à la page /offres en cours de refonte dans une autre session (fichiers non commités). (2) La liste de contrôle en production suppose les tests réels du bloc 16 faits par Kevin et des comptes de test, qui n'existent plus. Aucun fichier de code modifié.
 
 ## Idées écartées ou pour plus tard
 - [IDÉE] Packs à prix réduit : écartée pour le lancement (brief).

@@ -15,7 +15,6 @@ import { useCouleurChargement } from './lib/couleurChargement'
 import Home from './pages/Home'
 const Offres = lazy(() => import('./pages/Offres'))
 const Tarifs = lazy(() => import('./pages/Tarifs'))
-const RegisterChoix = lazy(() => import('./pages/RegisterChoix'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const RegisterRecruteur = lazy(() => import('./pages/RegisterRecruteur'))
@@ -117,7 +116,6 @@ function App() {
         <Route path="/tarifs" element={<Tarifs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/register-choix" element={<RegisterChoix />} />
         <Route path="/register-recruteur" element={<RegisterRecruteur />} />
         <Route path="/dashboard" element={<SmartDashboard />} />
         <Route path="/dashboard-joueur" element={<PorteeThemeClub accentVert="club"><DashboardJoueur /></PorteeThemeClub>} />

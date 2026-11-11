@@ -1632,7 +1632,7 @@ export const T = {
   categorie_feminin:            { fr: 'Féminin',                   en: 'Female',                     pt: 'Feminino',                       es: 'Femenino',                       it: 'Femminile',                      de: 'Weiblich'                       },
   toutes_categories:            { fr: 'Toutes catégories',         en: 'All categories',             pt: 'Todas as categorias',            es: 'Todas las categorías',           it: 'Tutte le categorie',             de: 'Alle Kategorien'                },
 
-  // ── RegisterChoix.jsx (brouillon — inscription par choix de profil, non liée au funnel principal) ──
+  // ── Textes d'inscription par profil (utilisés par Register.jsx) ──
   regchoix_quel_profil:         { fr: 'Quel est ton profil ?',     en: "What's your profile?",       pt: 'Qual é o teu perfil?',    es: '¿Cuál es tu perfil?',      it: 'Qual è il tuo profilo?',   de: 'Was ist dein Profil?'  },
   regchoix_inscription_prefix:  { fr: 'Inscription —',             en: 'Sign up —',                   pt: 'Registo —',               es: 'Registro —',               it: 'Registrazione —',          de: 'Registrierung —'       },
   regchoix_starter_titre:       { fr: 'Joueur Starter',            en: 'Starter Player',              pt: 'Jogador Starter',         es: 'Jugador Starter',          it: 'Giocatore Starter',        de: 'Starter-Spieler'       },
