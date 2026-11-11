@@ -1,30 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { totalComposition, PACK_EDUCATEUR, outilsDuPack } from '../../lib/catalogueOutils'
 import { payerOutils, retourPaiementOutils, effacerRetourPaiement } from '../../lib/outilsApi'
+import CarteOutil from './CarteOutil'
 
-// Premier paiement de l'éducateur (bloc 7) : il coche ses outils, choisit
-// mensuel ou annuel, voit le total et part payer chez Stripe. Masqué dès qu'un
-// abonnement est en cours : l'ajout d'un outil à cet abonnement vient au bloc 8.
-const ETATS_PAYABLES = ['disponible', 'essai', 'essai_termine', 'offre']
+// Boutique de l'éducateur (premier paiement, bloc 7) : il choisit le pack ou
+// sélectionne ses outils, mensuel ou annuel, voit le total et part payer chez
+// Stripe. `payables` : états des outils qu'il peut payer, calculés par MesOutils,
+// qui masque la boutique dès qu'un abonnement est en cours (ajout : bloc 8).
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
 
 const aUnAbonnement = (outils) => outils.lignes.some(l => l.source === 'achat')
+const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 
-export function PaiementOutils({ outils }) {
+export function PaiementOutils({ payables }) {
   const colors = useColors()
-  const payables = useMemo(
-    () => outils.etats.filter(e => ETATS_PAYABLES.includes(e.etat) && e.outil.achetable && !e.outil.inclus),
-    [outils.etats],
-  )
   const parDefaut = payables.filter(e => e.etat === 'essai' || e.etat === 'essai_termine').map(e => e.outil.id)
   const [coches, setCoches] = useState(null)
   const [periodicite, setPeriodicite] = useState('mensuel')
   const [pack, setPack] = useState(false)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
-
-  if (!outils.pret || aUnAbonnement(outils) || payables.length === 0) return null
 
   const choisis = pack
     ? payables.map(e => e.outil.id)
@@ -51,71 +47,109 @@ export function PaiementOutils({ outils }) {
     }
   }
 
+  const badge = ({ etat, finLe, joursRestants }) => {
+    if (etat === 'essai') return { texte: `En essai : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.info }
+    if (etat === 'offre') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
+    if (etat === 'essai_termine') return { texte: 'Essai terminé', couleur: colors.accent.amber }
+    return null
+  }
+
   const police = 'Inter, sans-serif'
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.brand}`, borderRadius: 14, padding: '16px 18px', marginBottom: 16, fontFamily: police }}>
-      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: colors.text.primary }}>Payer mes outils</p>
-      <p style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.5, color: colors.text.secondary }}>
-        Coche les outils à garder. Un seul paiement pour tous, au mois ou à l'année.
-      </p>
-
-      <div role="radiogroup" aria-label="Périodicité" style={{ display: 'inline-flex', border: `1px solid ${colors.border.default}`, borderRadius: 10, overflow: 'hidden', marginBottom: 12 }}>
-        {PERIODES.map(([val, label]) => (
-          <button key={val} type="button" role="radio" aria-checked={periodicite === val} onClick={() => setPeriodicite(val)} style={{
-            padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: police,
-            background: periodicite === val ? colors.accent.brand : 'transparent',
-            color: periodicite === val ? colors.accent.onBrand : colors.text.secondary,
-          }}>{label}</button>
-        ))}
+    <section aria-labelledby="titre-boutique" style={{ marginBottom: 32, fontFamily: police }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div>
+          <h2 id="titre-boutique" style={{ margin: 0, fontSize: 18, fontWeight: 800, color: colors.text.primary }}>Ajouter des outils</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: colors.text.secondary }}>Un seul paiement pour tous tes outils, sans engagement.</p>
+        </div>
+        <div role="radiogroup" aria-label="Périodicité" style={{ display: 'inline-flex', padding: 3, gap: 2, background: colors.background.raised, borderRadius: 999 }}>
+          {PERIODES.map(([val, label]) => (
+            <button key={val} type="button" role="radio" aria-checked={periodicite === val} onClick={() => setPeriodicite(val)} style={{
+              padding: '8px 18px', border: 'none', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: police,
+              background: periodicite === val ? colors.background.surface : 'transparent',
+              color: periodicite === val ? colors.text.primary : colors.text.secondary,
+              boxShadow: periodicite === val ? '0 1px 3px rgba(0,0,0,0.25)' : 'none',
+            }}>{label}</button>
+          ))}
+        </div>
       </div>
 
       <button type="button" role="switch" aria-checked={pack} onClick={() => setPack(!pack)} style={{
-        display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: police, marginBottom: 12,
-        padding: '12px 14px', borderRadius: 12, color: colors.text.primary,
-        background: pack ? colors.accent.brand + '22' : 'transparent',
-        border: `${pack ? 2 : 1}px solid ${pack ? colors.accent.brand : colors.border.default}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+        width: '100%', boxSizing: 'border-box', textAlign: 'left', cursor: 'pointer', fontFamily: police, marginBottom: 18,
+        padding: '18px 20px', borderRadius: 16, color: colors.text.primary,
+        background: `linear-gradient(135deg, ${colors.accent.brand}26, ${colors.accent.brand}08)`,
+        border: `2px solid ${pack ? colors.accent.brand : colors.accent.brand + '55'}`,
       }}>
-        <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{PACK_EDUCATEUR.nom}{pack ? ' (choisi)' : ''}</span>
-        <span style={{ display: 'block', fontSize: 13, color: colors.text.secondary, marginTop: 2 }}>
-          {PACK_EDUCATEUR.prixMensuel} € par mois ou {PACK_EDUCATEUR.prixAnnuel} € par an pour les {outilsDuPack().length} outils, au lieu de {prixSepares} € {unite} un par un.
+        <span style={{ flex: '1 1 260px', minWidth: 0 }}>
+          <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase', color: colors.accent.brand, marginBottom: 6 }}>
+            Le plus avantageux
+          </span>
+          <span style={{ display: 'block', fontSize: 17, fontWeight: 800 }}>{PACK_EDUCATEUR.nom}</span>
+          <span style={{ display: 'block', fontSize: 13, lineHeight: 1.5, color: colors.text.secondary, marginTop: 4 }}>
+            Les {outilsDuPack().length} outils réunis, au lieu de {prixSepares} € {unite} en les prenant un par un.
+          </span>
+        </span>
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <span style={{ fontSize: 26, fontWeight: 900, lineHeight: 1 }}>
+            {prixPack} €<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}> {unite}</span>
+          </span>
+          <span style={{
+            fontSize: 13, fontWeight: 800, borderRadius: 999, padding: '7px 14px',
+            background: pack ? colors.accent.brand : 'transparent', color: pack ? colors.accent.onBrand : colors.accent.brand,
+            border: `1.5px solid ${colors.accent.brand}`,
+          }}>{pack ? 'Pack choisi' : 'Choisir le pack'}</span>
         </span>
       </button>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, opacity: pack ? 0.6 : 1 }}>
-        {payables.map(({ outil, etat }) => (
-          <label key={outil.id} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 36, fontSize: 14, color: colors.text.primary, cursor: 'pointer' }}>
-            <input type="checkbox" disabled={pack} checked={choisis.includes(outil.id)} onChange={() => basculer(outil.id)} style={{ width: 18, height: 18, accentColor: colors.accent.brand, flexShrink: 0 }} />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              {outil.nom}
-              {etat === 'essai' && <span style={{ color: colors.text.faint, fontSize: 12 }}> (en essai)</span>}
-              {etat === 'essai_termine' && <span style={{ color: colors.text.faint, fontSize: 12 }}> (essai terminé)</span>}
-            </span>
-            <span style={{ color: colors.text.secondary, fontSize: 13, whiteSpace: 'nowrap' }}>
-              {periodicite === 'annuel' ? outil.prixAnnuel : outil.prixMensuel} € {unite}
-            </span>
-          </label>
+      <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: colors.text.faint }}>
+        {pack ? 'Tous ces outils sont compris dans le pack' : 'Ou choisis seulement ceux dont tu as besoin'}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12, marginBottom: 18 }}>
+        {payables.map(e => (
+          <CarteOutil
+            key={e.outil.id}
+            nom={e.outil.nom}
+            promesse={e.outil.promesse}
+            badge={badge(e)}
+            pied={`${annuel ? e.outil.prixAnnuel : e.outil.prixMensuel} € ${unite}`}
+            coche={choisis.includes(e.outil.id)}
+            desactive={pack}
+            onSelection={() => basculer(e.outil.id)}
+          />
         ))}
       </div>
 
-      <div style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 12 }}>
-        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: colors.text.primary }}>
-          Total : {total} € {unite}
-          {economie > 0 && <span style={{ fontSize: 13, fontWeight: 600, color: colors.accent.success }}> (tu économises {economie} € {pack && !annuel ? 'par mois' : 'sur l\'année'})</span>}
-        </p>
-        <p style={{ margin: '4px 0 12px', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
+      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: '16px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}>
+              {pack ? PACK_EDUCATEUR.nom : `${choisis.length} ${choisis.length > 1 ? 'outils choisis' : 'outil choisi'}`}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 22, fontWeight: 900, color: colors.text.primary }}>
+              {total} €<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}> {unite}</span>
+            </p>
+            {economie > 0 && (
+              <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 700, color: colors.accent.success }}>
+                Tu économises {economie} € {pack && !annuel ? 'par mois' : 'sur l\'année'}
+              </p>
+            )}
+          </div>
+          <button type="button" disabled={envoi || (!pack && choisis.length === 0)} onClick={payer} style={{
+            background: total ? colors.accent.brand : colors.background.raised, color: total ? colors.accent.onBrand : colors.text.faint,
+            border: 'none', borderRadius: 12, padding: '13px 22px', fontSize: 15, fontWeight: 800, fontFamily: police,
+            cursor: envoi || !total ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
+          }}>
+            {envoi ? 'Ouverture du paiement...' : total ? `Payer ${total} € ${unite}` : 'Choisis au moins un outil'}
+          </button>
+        </div>
+        {erreur && <p role="alert" style={{ margin: '12px 0 0', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
+        <p style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
           Sans engagement : tu arrêtes quand tu veux, l'abonnement s'arrête à la fin de la période déjà payée. Paiement sécurisé par Stripe. Tu paies {total} € aujourd'hui, puis {annuel ? 'chaque année' : 'chaque mois'} à la même date.
           {avecEssai && !pack && ' Pour un outil en essai, l\'abonnement remplace l\'essai dès aujourd\'hui.'}
         </p>
-        {erreur && <p role="alert" style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
-        <button type="button" disabled={envoi || (!pack && choisis.length === 0)} onClick={payer} style={{
-          background: total ? colors.accent.brand : colors.background.raised, color: total ? colors.accent.onBrand : colors.text.faint,
-          border: 'none', borderRadius: 10, padding: '11px 18px', fontSize: 14, fontWeight: 800, fontFamily: police,
-          cursor: envoi || !total ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
-        }}>
-          {envoi ? 'Ouverture du paiement...' : total ? `Payer ${total} € ${unite}` : 'Coche au moins un outil'}
-        </button>
       </div>
-    </div>
+    </section>
   )
 }
 

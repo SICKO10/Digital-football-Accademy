@@ -1,17 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { appelerOutils } from '../../lib/outilsApi'
 import { ESSAI_JOURS, ESSAIS_GRATUITS } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
+import CarteOutil from './CarteOutil'
 
 const euros = (n) => `${n} €`
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-// Page « Mes outils ». Éducateur : outils actifs, en essai (jours restants),
-// disponibles avec leur prix, et essai gratuit de 14 jours. Club : cases à
-// cocher, tous les outils sont inclus dans le forfait. Premier paiement des
-// outils de l'éducateur : encadré « Payer mes outils » (bloc 7) ; ajout et
-// retrait sur un abonnement en cours : bloc 8.
+// Outils que l'éducateur peut payer dans la boutique (premier paiement).
+const ETATS_PAYABLES = ['disponible', 'essai', 'essai_termine', 'offre']
+const ETATS_ACTIFS = ['actif', 'retire', 'club', 'essai', 'offre']
+
+// Page « Mes outils ». Éducateur : ses outils actifs en haut, puis la boutique
+// (pack ou outils à la carte, bloc 7) tant qu'aucun abonnement n'est en cours ;
+// ensuite, les autres outils avec leur prix (ajout sur abonnement : bloc 8).
+// Club : une carte par outil avec un interrupteur, tout est inclus dans le forfait.
 // `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit.
 export default function MesOutils({ role, outils, peutModifier = true }) {
   const colors = useColors()
@@ -32,94 +36,131 @@ export default function MesOutils({ role, outils, peutModifier = true }) {
   }
 
   const etats = outils.etats
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '16px 18px', fontFamily: 'Inter, sans-serif' }
-  const bouton = (principal) => ({
-    background: principal ? colors.accent.brand : 'transparent', color: principal ? colors.accent.onBrand : colors.text.primary,
-    border: principal ? 'none' : `1px solid ${colors.border.default}`, borderRadius: 10, padding: '9px 16px',
-    fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-  })
-  const pastille = (couleur) => ({
-    display: 'inline-block', fontSize: 11, fontWeight: 700, color: couleur, border: `1px solid ${couleur}`,
-    borderRadius: 999, padding: '2px 10px', marginLeft: 8, verticalAlign: 'middle',
-  })
+  const abonnement = outils.lignes.some(l => l.source === 'achat')
+  const payables = useMemo(
+    () => etats.filter(e => ETATS_PAYABLES.includes(e.etat) && e.outil.achetable && !e.outil.inclus),
+    [etats],
+  )
+  const boutique = role === 'educateur' && outils.pret && !abonnement && payables.length > 0
+  const dansBoutique = (e) => boutique && payables.includes(e)
+  // Un outil en essai ou offert apparaît dans la boutique (pour le garder), pas en double ici.
+  const actifs = etats.filter(e => ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
+  const autres = etats.filter(e => !ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
 
-  const ligneStatut = ({ etat, finLe, joursRestants, fourniParLeClub }) => {
-    if (role === 'club') {
-      return etat === 'actif' ? <span style={pastille(colors.accent.success)}>Actif</span> : null
-    }
-    if (etat === 'actif') return <span style={pastille(colors.accent.success)}>Actif{fourniParLeClub ? ', aussi fourni par ton club' : ''}</span>
-    if (etat === 'essai') return <span style={pastille(colors.accent.info)}>Essai : {joursRestants} {joursRestants > 1 ? 'jours restants' : 'jour restant'}</span>
-    if (etat === 'retire' || etat === 'offre') return <span style={pastille(colors.accent.amber)}>Actif jusqu'au {dateFr(finLe)}</span>
-    if (etat === 'club') return <span style={pastille(colors.accent.info)}>Fourni par ton club</span>
-    if (etat === 'essai_termine') return <span style={pastille(colors.accent.amber)}>Essai terminé</span>
-    return null
-  }
+  const titreSection = { margin: '0 0 12px', fontSize: 18, fontWeight: 800, color: colors.text.primary }
+  const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 
-  const action = (e) => {
-    const { outil, etat } = e
-    if (role === 'club') {
-      if (!peutModifier) return null
-      const actif = etat === 'actif'
-      return (
-        <button disabled={enCours === outil.id} onClick={() => agir(outil.id, 'choisir_club', { actif: !actif })} style={bouton(!actif)}>
-          {enCours === outil.id ? 'Un instant...' : actif ? 'Retirer de mon dashboard' : 'Ajouter à mon dashboard'}
-        </button>
-      )
-    }
-    if (etat === 'disponible' && ESSAIS_GRATUITS) {
-      return (
-        <button disabled={enCours === outil.id} onClick={() => agir(outil.id, 'essai')} style={bouton(true)}>
-          {enCours === outil.id ? 'Un instant...' : `Essayer ${ESSAI_JOURS} jours gratuitement`}
-        </button>
-      )
-    }
+  const badge = ({ etat, finLe, joursRestants, fourniParLeClub }) => {
+    if (etat === 'actif') return { texte: fourniParLeClub ? 'Actif, aussi fourni par ton club' : 'Actif', couleur: colors.accent.success }
+    if (etat === 'essai') return { texte: `Essai : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.info }
+    if (etat === 'retire' || etat === 'offre') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
+    if (etat === 'club') return { texte: 'Fourni par ton club', couleur: colors.accent.info }
+    if (etat === 'essai_termine') return { texte: 'Essai terminé', couleur: colors.accent.amber }
     return null
   }
 
   const prix = (e) => {
-    if (role === 'club') return <span style={{ color: colors.text.faint }}>Inclus dans ton forfait</span>
-    if (e.etat === 'club') return <span style={{ color: colors.text.faint }}>Inclus par ton club</span>
-    return <span style={{ color: colors.text.secondary }}>{euros(e.outil.prixMensuel)} par mois ou {euros(e.outil.prixAnnuel)} par an</span>
+    if (e.etat === 'club') return 'Inclus par ton club'
+    return `${euros(e.outil.prixMensuel)} par mois ou ${euros(e.outil.prixAnnuel)} par an`
   }
 
+  const essai = (e) => {
+    if (e.etat !== 'disponible' || !ESSAIS_GRATUITS) return null
+    return (
+      <button type="button" disabled={enCours === e.outil.id} onClick={() => agir(e.outil.id, 'essai')} style={{
+        alignSelf: 'flex-start', background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: 10,
+        padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+      }}>
+        {enCours === e.outil.id ? 'Un instant...' : `Essayer ${ESSAI_JOURS} jours gratuitement`}
+      </button>
+    )
+  }
+
+  const interrupteur = (e) => {
+    const actif = e.etat === 'actif'
+    if (!peutModifier) return null
+    return (
+      <button
+        type="button" role="switch" aria-checked={actif} aria-label={`${e.outil.nom} sur mon dashboard`}
+        disabled={enCours === e.outil.id} onClick={() => agir(e.outil.id, 'choisir_club', { actif: !actif })}
+        style={{
+          flexShrink: 0, width: 46, height: 26, borderRadius: 999, border: 'none', padding: 3, cursor: 'pointer',
+          background: actif ? colors.accent.brand : colors.border.strong, opacity: enCours === e.outil.id ? 0.6 : 1,
+          display: 'flex', justifyContent: actif ? 'flex-end' : 'flex-start', transition: 'background .15s',
+        }}
+      >
+        <span style={{ width: 20, height: 20, borderRadius: 999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
+      </button>
+    )
+  }
+
+  const nbClub = etats.filter(e => e.etat === 'actif').length
+
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-      <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 800, color: colors.text.primary }}>Mes outils</h1>
-      <p style={{ margin: '0 0 20px', fontSize: 14, lineHeight: 1.5, color: colors.text.secondary }}>
-        {role === 'club'
-          ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu peux en ajouter ou en retirer quand tu veux, sans supplément.'
-          : ESSAIS_GRATUITS
-            ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
-            : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin : coche tes outils dans « Payer mes outils », au mois ou à l\'année.'}
-      </p>
-      {role === 'club' && !peutModifier && (
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: colors.text.faint }}>Seul le compte du club peut modifier ces choix.</p>
-      )}
+    <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+      <header style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: colors.text.primary }}>Mes outils</h1>
+        <p style={{ margin: 0, maxWidth: 620, fontSize: 14, lineHeight: 1.55, color: colors.text.secondary }}>
+          {role === 'club'
+            ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu en ajoutes ou en retires quand tu veux, sans supplément.'
+            : ESSAIS_GRATUITS
+              ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
+              : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin, au mois ou à l\'année.'}
+        </p>
+        {role === 'club' && !peutModifier && (
+          <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.faint }}>Seul le compte du club peut modifier ces choix.</p>
+        )}
+      </header>
+
       {role === 'educateur' && <RetourPaiement outils={outils} />}
-      {role === 'educateur' && <PaiementOutils outils={outils} />}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {etats.map(e => (
-          <div key={e.outil.id} style={carte}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: colors.text.primary }}>
-                  {e.outil.nom}{ligneStatut(e)}
-                </p>
-                <p style={{ margin: '6px 0 8px', fontSize: 13, lineHeight: 1.5, color: colors.text.secondary }}>{e.outil.promesse}</p>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{prix(e)}</p>
-                {role === 'educateur' && e.etat === 'essai_termine' && (
-                  <p style={{ margin: '8px 0 0', fontSize: 13, color: colors.text.secondary }}>
-                    Ton essai est terminé. Pour garder cet outil, coche-le dans « Payer mes outils ».
-                  </p>
-                )}
-              </div>
-              <div style={{ flexShrink: 0 }}>{action(e)}</div>
-            </div>
+
+      {outils.pret && role === 'club' && (
+        <section aria-labelledby="titre-club">
+          <h2 id="titre-club" style={titreSection}>
+            Sur ton dashboard <span style={{ fontSize: 14, fontWeight: 600, color: colors.text.faint }}>{nbClub} sur {etats.length}</span>
+          </h2>
+          <div style={grille}>
+            {etats.map(e => (
+              <CarteOutil
+                key={e.outil.id}
+                nom={e.outil.nom}
+                promesse={e.outil.promesse}
+                badge={!peutModifier && e.etat === 'actif' ? badge(e) : null}
+                pied="Inclus dans ton forfait"
+                action={interrupteur(e)}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </section>
+      )}
+
+      {outils.pret && role === 'educateur' && (
+        <>
+          {actifs.length > 0 && (
+            <section aria-labelledby="titre-actifs" style={{ marginBottom: 32 }}>
+              <h2 id="titre-actifs" style={titreSection}>Tes outils actifs</h2>
+              <div style={grille}>
+                {actifs.map(e => <CarteOutil key={e.outil.id} nom={e.outil.nom} promesse={e.outil.promesse} badge={badge(e)} />)}
+              </div>
+            </section>
+          )}
+          {boutique && <PaiementOutils payables={payables} />}
+          {autres.length > 0 && (
+            <section aria-labelledby="titre-autres">
+              <h2 id="titre-autres" style={titreSection}>Autres outils</h2>
+              <div style={grille}>
+                {autres.map(e => (
+                  <CarteOutil key={e.outil.id} nom={e.outil.nom} promesse={e.outil.promesse} badge={badge(e)} pied={prix(e)}>
+                    {essai(e)}
+                  </CarteOutil>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
     </div>
   )
 }
