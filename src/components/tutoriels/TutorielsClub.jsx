@@ -159,7 +159,7 @@ const TUTORIELS = {
     etapes: [
       {
         titre: 'Ajoute ton staff',
-        texte: 'Directeur sportif, secrétaire, trésorier… partage la gestion du club. Clique sur « Ajouter au staff ».',
+        texte: 'Dans Mon club, étape « Staff » : directeur sportif, secrétaire, trésorier… partage la gestion du club. Clique sur « Ajouter au staff ».',
         points: [
           'Choisis le rôle attribué.',
           'S’il a déjà un compte : recherche-le dans « Compte existant ».',

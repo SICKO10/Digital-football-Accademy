@@ -61,13 +61,15 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import MonClub from '../components/monclub/MonClub'
+import SousOngletsGroupe from '../components/club/SousOngletsGroupe'
+import { GROUPES_CLUB, sousOngletsAccessibles, entreeDeLOnglet, etapeMonClubDeLOnglet, monClubVisible, etapesMonClubVisibles } from '../lib/menuClubGroupes'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
   { q: "Comment affilier un éducateur à mon club ?", a: "Dans Sportif → Éducateurs, recherche-le par nom ou envoie une invitation par email. Il doit accepter pour rejoindre officiellement le club." },
-  { q: "Comment gérer le planning des terrains ?", a: "Dans Sportif → Planning des terrains, importe ton fichier Excel/CSV ou saisis les créneaux manuellement pour chaque catégorie." },
+  { q: "Comment gérer le planning des terrains ?", a: "Dans Sportif → Organisation → Planning des terrains, importe ton fichier Excel/CSV ou saisis les créneaux manuellement pour chaque catégorie." },
   { q: "Comment mettre en place le projet sportif du club ?", a: "Dans Sportif → Projet Sportif, choisis le pôle (la tranche d'âge) puis avance onglet par onglet : Principes de jeu (tes principes écrits pour chaque phase : organisation offensive et défensive, transitions, coups de pied arrêtés), Zones de terrain (dessine les zones et explique-les), Planification annuelle, puis Règles du jeu. Tes joueurs retrouvent ensuite ce projet dans leur Préparation tactique. Dans Sportif → Éducateurs, tu choisis aussi si chaque éducateur peut le modifier ou seulement le lire." },
-  { q: "Pourquoi bien régler Staff Permission ?", a: "Dans Administratif → Staff Permission, tu invites les membres du club par email, tu leur donnes un rôle (directeur sportif, secrétaire, trésorier...) et tu choisis, rubrique par rubrique, ce qu'ils peuvent voir ou modifier. C'est ce qui protège les données sensibles du club : le budget, les sponsors ou les déplacements ne sont pas faits pour tout le monde. Sans réglage de ta part, seul le président a accès aux rubriques récentes (Événements, Organigramme, Inventaire, Newsletter...). Donne à chacun uniquement ce dont il a besoin." },
+  { q: "Pourquoi bien régler l'Accès du bureau ?", a: "Dans Administratif → Mon club → Staff, tu invites les membres du club par email et tu leur donnes un rôle (directeur sportif, secrétaire, trésorier...). Dans l'étape Accès du bureau, tu choisis, rubrique par rubrique, ce qu'ils peuvent voir ou modifier. C'est ce qui protège les données sensibles du club : le budget, les sponsors ou les déplacements ne sont pas faits pour tout le monde. Sans réglage de ta part, seul le président a accès aux rubriques récentes (Événements, Organigramme, Inventaire, Newsletter...). Donne à chacun uniquement ce dont il a besoin." },
 ];
 
 
@@ -77,14 +79,12 @@ const IcoHome      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoUsers     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IcoTrophy    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
 const IcoCalendar  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-const IcoBus       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
 const IcoCarteBadge = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><line x1="14" y1="10" x2="19" y2="10"/><line x1="14" y1="14" x2="19" y2="14"/></svg>
 const IcoBallon    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7l3.5 2.5-1.3 4.1h-4.4L8.5 9.5z"/><path d="M12 2v5M8.5 9.5L4 8M15.5 9.5L20 8M9.8 13.6l-2.3 4.6M14.2 13.6l2.3 4.6"/></svg>
 const IcoHorloge   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IcoTerrain   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><circle cx="12" cy="12" r="3"/></svg>
-const IcoLink      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
 const IcoStar      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcoWallet    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6.5v11M15 9.5c0-1.4-1.5-2.3-3-2.3s-3 .9-3 2.3 1.5 1.8 3 2.3 3 .9 3 2.3-1.5 2.3-3 2.3-3-.9-3-2.3"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
@@ -827,7 +827,14 @@ export default function DashboardClub() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
-  const [activeTabBrut, setActiveTab] = useState(() => (retourDuPortail() ? 'mes_outils' : 'accueil'))
+  const [activeTabBrut, setActiveTabEtat] = useState(() => (retourDuPortail() ? 'mes_outils' : 'accueil'))
+  // Staff et Organigramme sont des étapes de Mon club : les anciens liens qui les ouvrent
+  // (raccourcis, tutoriels) arrivent sur Mon club, à la bonne étape.
+  const setActiveTab = (id) => {
+    const etape = etapeMonClubDeLOnglet(id)
+    if (etape) setMonClubEtape(etape)
+    setActiveTabEtat(etape ? 'mon_club' : id)
+  }
   // Outils à la carte (comptes `modele_outils` seulement) : les outils sont ceux
   // du compte club (clubId), que le président ou un membre du staff soit
   // connecté. Une page dont l'outil n'est pas actif devient 'outil_verrouille'
@@ -1151,8 +1158,8 @@ export default function DashboardClub() {
     if (canViewSection('seances')) idsSportif.push('seances')
     if (canViewSection('terrains')) idsSportif.push('terrains')
     if (canViewSection('stages')) idsSportif.push('stages')
-    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'organigramme', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'staff'].filter(canViewSection)
-    if (canEditSection('mon_club')) idsAdministratif.push('mon_club')
+    const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4'].filter(canViewSection)
+    if (monClubVisible({ peutReglages: canEditSection('mon_club'), estPresident: monRole === 'president', peutStaff: canViewSection('staff'), peutOrganigramme: canViewSection('organigramme') })) idsAdministratif.push('mon_club')
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
@@ -3219,50 +3226,66 @@ export default function DashboardClub() {
   const NAV_GENERAL = [
     { id: 'accueil', label: t('club_accueil', lang), Icon: IcoHome },
   ]
+  // Entrées regroupées (Finance, Organisation, Événements sportifs) : chaque sous-onglet garde
+  // sa permission et son règlement par les outils du club ; l'entrée apparaît dès que l'un
+  // d'eux est accessible et s'ouvre sur le premier (cf. src/lib/menuClubGroupes.js).
+  const ongletAccessible = (id) => canViewSection(id === 'tournoi' ? 'sportif' : id) && outils.menuVisible(id)
+  const ICONES_GROUPES = { finance: IcoWallet, organisation: IcoBox, evenements_sportifs: IcoTrophy }
+  const LIBELLES_SOUS_ONGLETS = {
+    budget: t('club_tab_budget', lang), sponsors: t('club_tab_sponsors', lang), deplacements: t('nav_deplacements', lang),
+    seances: 'Planifier séance', terrains: 'Planning des terrains', inventaire: 'Inventaire', stages: 'Stages', tournoi: 'Tournois',
+  }
+  const entreeGroupe = (id) => {
+    const groupe = GROUPES_CLUB.find(g => g.id === id)
+    const sousOnglets = sousOngletsAccessibles(groupe, ongletAccessible)
+    return sousOnglets.length ? [{ id, label: groupe.label, Icon: ICONES_GROUPES[id], subKeys: sousOnglets }] : []
+  }
   const NAV_SPORTIF = [
     ...(canViewSection('sportif') ? [
       { id: 'categories', label: t('club_tab_categories', lang), Icon: IcoClipboard },
       { id: 'planning', label: 'Planning', Icon: IcoCalendar },
       { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
-      { id: 'tournoi', label: 'Tournois', Icon: IcoTrophy },
       { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
       ...(recrutementActif(club?.email) ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length + nbDemandesSaison },
     ] : []),
-    ...(canViewSection('terrains') ? [{ id: 'terrains', label: 'Planning des terrains', Icon: IcoTerrain }] : []),
-    ...(canViewSection('seances') ? [{ id: 'seances', label: 'Planifier séance', Icon: IcoCalendar }] : []),
-    ...(canViewSection('stages') ? [{ id: 'stages', label: 'Stages', Icon: IcoCalendar }] : []),
-  ].filter(item => outils.menuVisible(item.id))
+  ].filter(item => outils.menuVisible(item.id)).concat(entreeGroupe('organisation'), entreeGroupe('evenements_sportifs'))
   // « Événements & Projets » réunit les événements, les projets et le projet club
   // CFF4 : le menu s'affiche dès que l'un des trois est accessible.
   const peutEvenements = canViewSection('evenements') && outils.menuVisible('evenements')
   const peutCff4 = canViewSection('projet_club_cff4') && outils.menuVisible('projet_club_cff4')
+  // Staff et Organigramme sont des étapes de Mon club, chacune avec sa propre permission.
+  const droitsMonClub = {
+    peutReglages: canEditSection('mon_club'), estPresident: monRole === 'president',
+    peutStaff: ongletAccessible('staff'), peutOrganigramme: ongletAccessible('organigramme'),
+  }
   const NAV_ADMINISTRATIF = [
-    { id: 'deplacements', label: t('nav_deplacements', lang), Icon: IcoBus },
-    { id: 'sponsors', label: t('club_tab_sponsors', lang), Icon: IcoLink },
-    { id: 'budget', label: t('club_tab_budget', lang), Icon: IcoWallet },
-    { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
-    { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
-    { id: 'inventaire', label: 'Inventaire', Icon: IcoBox },
-    { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
-    { id: 'organigramme', label: t('club_tab_organigramme', lang), Icon: IcoCarteBadge },
-    { id: 'staff', label: t('club_tab_staff', lang), Icon: IcoUsers },
-    { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
-    ...(canEditSection('mon_club') ? [{ id: 'mon_club', label: 'Mon club', Icon: IcoStar }] : []),
-    ...(outils.actif ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
-  ].filter(item => (item.id === 'evenements' ? peutEvenements || peutCff4 : canViewSection(item.id) && outils.menuVisible(item.id)))
+    ...entreeGroupe('finance'),
+    ...[
+      { id: 'evenements', label: 'Événements & Projets', Icon: IcoCalendar },
+      { id: 'taches', label: 'Tâches & Responsabilités', Icon: IcoClipboard },
+      { id: 'newsletter', label: 'Newsletter', Icon: IcoMegaphone },
+      { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
+    ].filter(item => (item.id === 'evenements' ? peutEvenements || peutCff4 : canViewSection(item.id) && outils.menuVisible(item.id))),
+    ...(monClubVisible(droitsMonClub) ? [{ id: 'mon_club', label: 'Mon club', Icon: IcoStar }] : []),
+    ...(outils.actif && canViewSection('mes_outils') && outils.menuVisible('mes_outils') ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
+  ]
 
   const sportifVisible = NAV_SPORTIF.length > 0
   const administratifVisible = NAV_ADMINISTRATIF.length > 0
 
-  const TITRES_SECTION = Object.fromEntries([...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF].map(item => [item.id, item.label]))
+  const TOUTES_ENTREES = [...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF]
+  const TITRES_SECTION = Object.fromEntries(TOUTES_ENTREES.flatMap(item => [item.id, ...(item.subKeys || [])].map(id => [id, item.label])))
+  const entreeActive = TOUTES_ENTREES.find(item => item.subKeys?.includes(activeTab))
+  // Le tutoriel suit l'écran affiché : Staff et Organigramme gardent le leur dans Mon club.
+  const pageTuto = activeTab === 'mon_club' && monClubVisible(droitsMonClub) && etapeMonClubDeLOnglet(monClubEtape) ? monClubEtape : activeTab
 
   const renderNavItem = (item) => {
-    const actif = activeTab === item.id
+    const actif = item.subKeys ? item.subKeys.includes(activeTab) : activeTab === item.id
     const { Icon } = item
     return (
       <button key={item.id} id={`nav-${item.id}`} className="df-nav-btn" data-actif={actif}
-        onClick={() => { setActiveTab(item.id); if (isMobile) setSidebarOpen(false) }}>
+        onClick={() => { setActiveTab(item.subKeys ? item.subKeys[0] : item.id); if (isMobile) setSidebarOpen(false) }}>
         <span className="df-nav-icone"><Icon /></span>
         <span style={{ flex: 1 }}>{item.label}</span>
         {item.badge > 0 && <span className="df-nav-badge">{item.badge}</span>}
@@ -3280,13 +3303,16 @@ export default function DashboardClub() {
   // Parcours d'onboarding (guide "Cedinho") : une étape par rubrique clé,
   // ciblant son bouton de nav (id nav-<rubrique>) — les rubriques masquées
   // par les permissions du staff sont retirées du parcours.
-  const rubriquesVisibles = new Set([...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF].map(item => item.id))
+  const rubriquesVisibles = new Set([
+    ...TOUTES_ENTREES.flatMap(item => item.subKeys || [item.id]),
+    ...etapesMonClubVisibles(droitsMonClub).filter(id => id === 'staff' || id === 'organigramme'),
+  ])
   const clubOnboardingSteps = [
     { title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer toutes les rubriques de l'espace club, dans l'ordre où les mettre en place.", targetId: null, position: "center" },
     { rubrique: 'profil', title: "Profil du club", message: "Commence ici : logo, couleurs et infos du club. Ils apparaissent ensuite dans l'espace de tes éducateurs et de tes joueurs." },
     { rubrique: 'categories', title: "Catégories & Équipes", message: "Crée tes catégories et tes équipes (U11 A, U13 B…) et désigne l'éducateur responsable de chacune." },
     { rubrique: 'educateurs', title: "Éducateurs", message: "Invite tes éducateurs par email ou partage-leur le code club : ils rejoignent le club depuis leur dashboard." },
-    { rubrique: 'staff', title: "Ajoute ton staff", message: "Directeur sportif, secrétaire, trésorier : invite-les par email et choisis ce que chacun peut voir et modifier." },
+    { rubrique: 'staff', title: "Ajoute ton staff", message: "Dans Mon club, étape Staff : invite ton directeur sportif, ton secrétaire, ton trésorier par email. Leurs accès se règlent dans l'étape Accès du bureau." },
     { rubrique: 'terrains', title: "Planning des terrains", message: "Répartis les créneaux de tes terrains entre les équipes pour les entraînements et les matchs." },
     { rubrique: 'deplacements', title: "Déplacements", message: "Organise les trajets des matchs à l'extérieur et répartis les joueurs dans les mini-bus." },
     { rubrique: 'classements', title: "Stat équipe", message: "Choisis une équipe : bilan, derniers résultats, classement officiel et classement des joueurs (buteurs, passeurs, présence)." },
@@ -3301,11 +3327,11 @@ export default function DashboardClub() {
     { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes." },
     { rubrique: 'evenements', title: "Événements & Projets", message: "Organise tournois, soirées et réunions, pilote les projets du club (référents, participants, matériel, missions) et construis le projet club selon le guide de certification FFF (CFF4)." },
     { rubrique: 'taches', title: "Tâches & Responsabilités", message: "Note qui fait quoi au club et suis les tâches ponctuelles avec leur statut." },
-    { rubrique: 'organigramme', title: "Organigramme", message: "Présente les membres du club et leur rôle." },
+    { rubrique: 'organigramme', title: "Organigramme", message: "Dans Mon club, étape Organigramme : présente les membres du club et leur rôle." },
     { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
   ]
     .filter(step => !step.rubrique || rubriquesVisibles.has(step.rubrique))
-    .map((step, i) => ({ id: i + 1, position: "bottom", targetId: step.rubrique ? `nav-${step.rubrique}` : null, ...step }))
+    .map((step, i) => ({ id: i + 1, position: "bottom", targetId: step.rubrique ? `nav-${entreeDeLOnglet(step.rubrique)}` : null, ...step }))
 
   // Contrôles utilitaires du header (langue/vue educateur-joueur/thème/personnaliser/
   // déconnexion) — un seul bloc JSX réutilisé desktop (header sticky) + mobile
@@ -3347,15 +3373,455 @@ export default function DashboardClub() {
     </>
   )
 
+  // Staff et Organigramme sont des étapes de Mon club : leurs écrans restent ici, ils lui sont passés.
+  // Organigramme V2 : arbre hiérarchique + import Excel/scan IA.
+  const ecranOrganigramme = () => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+
+            {/* ── HEADER ACTIONS ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h1 style={{ margin: 0, color: colors.text.primary, fontSize: '24px', fontWeight: 800 }}>Organigramme</h1>
+                <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''} dans la hiérarchie · {educateursAffilies.filter(e => e.statut === 'accepte').length} éducateurs · {parentsClub.length} parents · {joueursInventaire.length} joueurs</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {canEditSection('organigramme') && (
+                  <>
+                    <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
+                    <button
+                      onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
+                      style={{ background: orgImportMode === 'excel' ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.secondary, padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+                    >
+                      Importer Excel
+                    </button>
+                    <button
+                      onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
+                      style={{ background: orgImportMode === 'scan' ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.secondary, padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+                    >
+                      Scanner un document
+                    </button>
+                  </>
+                )}
+                {organigramme.length > 0 && (
+                  <>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
+                      <input
+                        type="text"
+                        placeholder="Rechercher un membre..."
+                        value={orgSearchQuery}
+                        onChange={e => setOrgSearchQuery(e.target.value)}
+                        style={{ padding: '9px 14px 9px 36px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.base, color: colors.text.primary, fontSize: '13px', width: '220px', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
+                        setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
+                      }}
+                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, padding: '9px 14px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      {orgExpandedNodes.size > 0 ? 'Tout réduire' : 'Tout développer'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {orgImportMode === 'excel' && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${colors.accent.amber}`, borderRadius: '12px', padding: '18px 20px' }}>
+                <h3 style={{ margin: '0 0 10px', color: colors.text.primary, fontSize: '15px' }}>Import depuis Excel / CSV</h3>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
+                  Utilise le template avec les colonnes : <strong style={{ color: colors.text.primary }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button onClick={telechargerTemplateOrganigramme} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    Télécharger le template
+                  </button>
+                  <label style={{ background: colors.accent.amber, borderRadius: '8px', color: colors.black, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                    Choisir un fichier
+                    <input type="file" accept=".xlsx,.xls,.csv" onChange={importerOrganigrammeExcel} style={{ display: 'none' }} />
+                  </label>
+                  {orgImportLoading && <span style={{ color: colors.text.faint, fontSize: '13px' }}>Import en cours…</span>}
+                </div>
+                <p style={{ color: colors.accent.amber, fontSize: '12px', margin: '10px 0 0' }}>Attention : l'import remplace l'organigramme actuel.</p>
+              </div>
+            )}
+
+            {orgImportMode === 'scan' && (
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '18px 20px' }}>
+                <h3 style={{ margin: '0 0 10px', color: colors.text.primary, fontSize: '15px' }}>Scanner un organigramme</h3>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
+                  Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    {orgScanFile ? orgScanFile.name : 'Choisir une image'}
+                    <input type="file" accept="image/*" onChange={e => setOrgScanFile(e.target.files[0])} style={{ display: 'none' }} />
+                  </label>
+                  {orgScanFile && (
+                    <button
+                      onClick={scannerOrganigramme}
+                      disabled={orgScanLoading}
+                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
+                    >
+                      {orgScanLoading ? libelleStatutGroq(orgScanStatus) : 'Analyser'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── FILTRES DÉPARTEMENTS ── */}
+            {organigramme.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[...new Set(organigramme.map(m => m.departement || 'Autre'))].map(dept => {
+                  const c = getDeptColor(dept, colors)
+                  const actif = orgFiltreDepart === dept
+                  return (
+                    <button key={dept} onClick={() => setOrgFiltreDepart(actif ? null : dept)}
+                      style={{ fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '20px', border: `1px solid ${actif ? c.border : colors.border.default}`, color: actif ? c.text : colors.text.faint, background: actif ? c.bg : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.dot, display: 'inline-block', flexShrink: 0 }} />
+                      {dept}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* ── CONTENU — 2 colonnes ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', alignItems: 'start' }}>
+
+              {/* Colonne gauche — arbre hiérarchique */}
+              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }}>
+                <p style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 18px' }}>Hiérarchie du club</p>
+                {organigramme.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: colors.text.dim }}>
+                    <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: colors.text.dim }}>Aucun membre dans l'organigramme</p>
+                    <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
+                      {construireArbreOrganigramme(orgFiltreDepart ? organigramme.filter(m => (m.departement || 'Autre') === orgFiltreDepart) : organigramme).map((root, i) => (
+                        <OrgNode
+                          key={root.id || i} node={root} depth={0}
+                          expandedNodes={orgExpandedNodes} onToggle={toggleOrgNode} searchQuery={orgSearchQuery}
+                          canEdit={canEditSection('organigramme')} onEdit={ouvrirModalOrganigramme} onDelete={supprimerMembreOrganigramme}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Colonne droite — stats + éducateurs + parents */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(() => {
+                  const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
+                  const membresDirection = organigramme.filter(m => (m.departement || 'Autre') === 'Direction').length
+                  const q = parentsSearchQuery.trim().toLowerCase()
+                  const parentsFiltres = !q ? parentsClub : parentsClub.filter(p => [
+                    p.prenom, p.nom, p.profession, p.joueur?.prenom, p.joueur?.nom, p.joueur?.categorie, p.joueur?.niveau_equipe,
+                  ].some(v => v?.toLowerCase().includes(q)))
+
+                  return (
+                    <>
+                      {/* Stats rapides */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        {[
+                          { label: 'Direction', value: membresDirection, color: colors.text.primary },
+                          { label: 'Éducateurs', value: educateursAcceptes.length, color: colors.accent.blue },
+                          { label: 'Parents', value: parentsClub.length, color: colors.accent.amber },
+                        ].map(s => (
+                          <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px' }}>
+                            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.3 }}>{s.label}</div>
+                            <div style={{ fontSize: '24px', fontWeight: 800, color: s.color, marginTop: '6px', lineHeight: 1 }}>{s.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Éducateurs */}
+                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', overflow: 'hidden' }}>
+                        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                          <span style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Éducateurs · {educateursAcceptes.length}</span>
+                        </div>
+                        {educateursAcceptes.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun éducateur affilié pour l'instant.</p>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1px', background: colors.border.subtle }}>
+                            {educateursAcceptes.map(e => (
+                              <div key={e.id} onClick={() => setEducateurOrgDetail(e)}
+                                style={{ background: colors.background.surface, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: colors.accent.blue + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '12px', flexShrink: 0, overflow: 'hidden' }}>
+                                  {e.educateur?.avatar_url
+                                    ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>{`${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.toLowerCase()}</div>
+                                  <div style={{ color: colors.accent.blue, fontSize: '11px', fontWeight: 600 }}>
+                                    {categories.find(c => c.educateur_id === e.educateur_id)?.nom || 'Éducateur'}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Parents — liste compacte scrollable */}
+                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Parents · {parentsClub.length}</span>
+                          {parentsClub.length > 0 && (
+                            <input placeholder="Rechercher..." value={parentsSearchQuery} onChange={e => setParentsSearchQuery(e.target.value)}
+                              style={{ padding: '5px 10px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontSize: '12px', width: '130px', outline: 'none' }} />
+                          )}
+                        </div>
+                        {parentsClub.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent enregistré pour l'instant.</p>
+                        ) : parentsFiltres.length === 0 ? (
+                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent ne correspond à cette recherche.</p>
+                        ) : (
+                          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            {parentsFiltres.map(p => (
+                              <div key={p.id} onClick={() => setParentDetail(p)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 18px', borderBottom: `1px solid ${colors.border.subtle}`, cursor: 'pointer' }}>
+                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: colors.accent.green + '15', color: colors.accent.green, fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {p.prenom?.[0]}{p.nom?.[0]}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.prenom} {p.nom}</div>
+                                  {p.profession && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{p.profession}</div>}
+                                </div>
+                                {p.joueur && <span style={{ fontSize: '11px', fontWeight: 600, flexShrink: 0, padding: '2px 8px', borderRadius: '6px', color: colors.text.secondary, background: colors.background.raised }}>Parent de {p.joueur.prenom}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
+
+            {/* ── Modale détail éducateur (organigramme) ── */}
+            {educateurOrgDetail && (() => {
+              const cat = categories.find(c => c.educateur_id === educateurOrgDetail.educateur_id)
+              return (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                  <div style={{ ...st.card, width: '100%', maxWidth: '400px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{educateurOrgDetail.educateur?.prenom} {educateurOrgDetail.educateur?.nom}</p>
+                      <button onClick={() => setEducateurOrgDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { label: 'Email', val: educateurOrgDetail.educateur?.email },
+                        { label: 'Téléphone', val: educateurOrgDetail.educateur?.telephone ? (
+                          <a href={`tel:${educateurOrgDetail.educateur.telephone}`} style={{ color: colors.accent.blue, textDecoration: 'none', fontWeight: 600 }}>{educateurOrgDetail.educateur.telephone}</a>
+                        ) : null },
+                        { label: 'Catégorie gérée', val: cat ? `${cat.nom} — Équipe ${cat.equipe}` : null },
+                        { label: 'Affilié depuis', val: educateurOrgDetail.created_at ? new Date(educateurOrgDetail.created_at).toLocaleDateString('fr-FR') : null },
+                      ].map(({ label, val }) => val && (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${colors.border.default}` }}>
+                          <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+                          <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* ── Joueurs par catégorie ── */}
+            <div style={{ marginTop: '8px' }}>
+              <p style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 4px' }}>Joueurs · {joueursInventaire.length}</p>
+              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 14px' }}>Effectif du club groupé par catégorie — clique sur un joueur pour voir sa fiche et ses parents rattachés.</p>
+              {joueursInventaire.length === 0 ? (
+                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun joueur pour l'instant.</p>
+              ) : (() => {
+                const parCategorie = joueursInventaire.reduce((acc, j) => {
+                  const cat = resoudreCategorie(j) || 'Sans catégorie'
+                  ;(acc[cat] ||= []).push({ ...j, categorieResolue: cat })
+                  return acc
+                }, {})
+                return Object.entries(parCategorie).sort(([a], [b]) => a.localeCompare(b)).map(([categorie, joueurs]) => {
+                  const ouverte = !categoriesJoueursFermees.has(categorie)
+                  return (
+                    <div key={categorie} style={{ marginBottom: '10px' }}>
+                      <div
+                        onClick={() => setCategoriesJoueursFermees(prev => {
+                          const next = new Set(prev)
+                          if (next.has(categorie)) next.delete(categorie); else next.add(categorie)
+                          return next
+                        })}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', padding: '9px 14px', borderRadius: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, cursor: 'pointer' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: getCategoryColor(categorie) }} />
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>{labelCategorie(categorie)}</span>
+                        <span style={{ color: colors.text.faint, fontSize: '12px', flex: 1 }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''}</span>
+                        <span style={{ color: colors.text.faint, display: 'flex' }}><IcoChevronBasClub ouvert={ouverte} /></span>
+                      </div>
+                      {ouverte && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '8px', marginBottom: '18px' }}>
+                          {joueurs.map(j => (
+                            <div key={j.id}
+                              onClick={() => setJoueurOrgDetail(j)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '9px 12px', cursor: 'pointer', minWidth: 0 }}>
+                              <PhotoPersonne personne={j} taille={32} />
+                              <div style={{ minWidth: 0 }}>
+                                <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                <p style={{ color: colors.text.faint, fontSize: '11px', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+  )
+
+  // Staff : visible/éditable selon la matrice de permissions ; « Accès du bureau » reste réservé au président.
+  const ecranStaff = () => {
+          // Un rôle délégué (can_edit sur 'staff', pas le propriétaire réel du compte club)
+          // ne doit jamais pouvoir s'assigner ou assigner à quelqu'un d'autre le rôle
+          // 'président', qui donnerait un accès total non restreint.
+          const rolesAssignables = monRole === 'president' ? ROLES_STAFF : ROLES_STAFF.filter(r => r.val !== 'president')
+          // V2 : membres d'abord (photo, rôle), panneau latéral unique pour
+          // ajouter un compte existant ou inviter par email.
+          const eyebrowSf = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+          const carteSf = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px' }
+          const nomPropre = (p, n) => `${p || ''} ${n || ''}`.trim().toLowerCase()
+          return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Staff & permissions</h1>
+                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{staffMembers.length + 1} membre{staffMembers.length ? 's' : ''} ont accès au dashboard du club.</p>
+              </div>
+              {monRole === 'president' && (
+                <button onClick={() => { setMonClubEtape('bureau'); setActiveCategorie('administratif'); setActiveTab('mon_club') }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <IcoDroitsClub /> Accès du bureau
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile || !canEditSection('staff') ? '1fr' : 'minmax(0,1fr) 340px', gap: '20px', alignItems: 'start' }}>
+              {/* Membres */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                <p style={{ ...eyebrowSf, marginBottom: '4px' }}>{t('club_membres_staff_titre', lang)} · {staffMembers.length + 1}</p>
+                <div style={{ ...carteSf, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {club?.avatar_url
+                    ? <img src={club.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    : <span style={{ width: 40, height: 40, borderRadius: '50%', background: couleurPrincipale + '22', color: couleurPrincipale, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 }}>{(club?.club || club?.prenom || '?')[0]}</span>}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{club?.club || club?.prenom} <span style={{ fontSize: '11px', fontWeight: 600, color: colors.text.faint }}>· {t('club_vous', lang).replace(/[()]/g, '')}</span></p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>Compte du club · accès complet</p>
+                  </div>
+                  <span style={{ background: ROLE_BADGE_STYLE('president').bg, color: ROLE_BADGE_STYLE('president').color, padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{t('club_president_badge', lang)}</span>
+                </div>
+                {staffMembers.map(m => {
+                  const badgeC = ROLE_BADGE_STYLE(m.role)
+                  return (
+                    <div key={m.id} style={{ ...carteSf, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                      <PhotoPersonne personne={m.membre} taille={40} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomPropre(m.membre?.prenom, m.membre?.nom)}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{ROLE_STAFF_LABEL(m.role)}</p>
+                      </div>
+                      {canEditSection('staff') ? (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <select style={{ ...st.input, width: 'auto', padding: '7px 10px', fontSize: '12px' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
+                            {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                          </select>
+                          <button onClick={() => retirerStaff(m.id)} title={t('club_retirer', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: `1px solid ${colors.accent.red}40`, background: 'transparent', color: colors.accent.red, cursor: 'pointer' }}><IcoSortieClub /></button>
+                        </div>
+                      ) : (
+                        <span style={{ background: badgeC.bg, color: badgeC.color, padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{ROLE_STAFF_LABEL(m.role)}</span>
+                      )}
+                    </div>
+                  )
+                })}
+                {staffMembers.length === 0 && (
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>Ajoute un directeur sportif, un secrétaire ou un trésorier pour partager la gestion du club.</p>
+                )}
+              </div>
+
+              {/* Ajouter / inviter */}
+              {canEditSection('staff') && (
+                <div style={{ ...carteSf, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <p style={eyebrowSf}>Ajouter au staff</p>
+                  <div>
+                    <label style={st.label}>Rôle attribué</label>
+                    <select style={st.input} value={roleAAssigner} onChange={e => setRoleAAssigner(e.target.value)}>
+                      {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={st.label}>Compte existant</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
+                      <input style={{ ...st.input, paddingLeft: '38px' }} placeholder={t('club_rechercher_membre_placeholder', lang)} value={searchStaff} onChange={e => rechercherUtilisateurs(e.target.value)} />
+                    </div>
+                    {resultatsStaff.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                        {resultatsStaff.map(u => {
+                          const dejaMembre = staffMembers.some(m => m.user_id === u.id)
+                          return (
+                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, borderRadius: '8px', padding: '8px 10px' }}>
+                              <PhotoPersonne personne={u} taille={28} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{u.prenom} {u.nom}</p>
+                                {u.plan && <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{u.plan}</p>}
+                              </div>
+                              <button onClick={() => ajouterStaff(u.id)} disabled={dejaMembre || addingStaffId === u.id}
+                                style={{ ...st.btnSolid, opacity: dejaMembre ? 0.4 : 1, fontSize: '12px', padding: '6px 12px' }}>
+                                {dejaMembre ? t('club_deja_staff', lang) : addingStaffId === u.id ? '...' : 'Ajouter'}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ height: 1, background: colors.border.subtle }} />
+                  <div>
+                    <label style={st.label}>Inviter par email</label>
+                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint, lineHeight: 1.5 }}>Pour une personne sans compte : elle reçoit un email pour créer son mot de passe et rejoindre le staff en tant que {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input style={{ ...st.input, flex: 1, minWidth: 0 }} type="email" placeholder="email@exemple.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterStaff()} />
+                      <button onClick={inviterStaff} disabled={invitingStaff || !inviteEmail.trim()} style={{ ...st.btnSolid, display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px', opacity: invitingStaff || !inviteEmail.trim() ? 0.5 : 1 }}>
+                        <IcoMail /> {invitingStaff ? '...' : t('club_inviter', lang)}
+                      </button>
+                    </div>
+                    {inviteMessage && (
+                      <p style={{ margin: '8px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? colors.accent.success : colors.accent.red }}>{inviteMessage.texte}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          )
+  }
+
   return (
     <div style={st.page}>
       {(() => {
         // Ouverture automatique : jamais par-dessus le guide d'accueil (tant
         // qu'il n'est pas terminé) ni pour une page non autorisée.
-        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(activeTab) ? 'sportif' : activeTab
-        const auto = moi?.id && PAGES_TUTORIEL_CLUB.includes(activeTab) && canViewSection(permission)
-          && tutorielDejaVu(`onboarding_${clubId}`, clubId) && !tutorielDejaVu(`club_${activeTab}`, moi.id)
-        const page = tutoOuvert || (auto ? activeTab : null)
+        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(pageTuto) ? 'sportif' : pageTuto
+        const auto = moi?.id && PAGES_TUTORIEL_CLUB.includes(pageTuto) && canViewSection(permission)
+          && tutorielDejaVu(`onboarding_${clubId}`, clubId) && !tutorielDejaVu(`club_${pageTuto}`, moi.id)
+        const page = tutoOuvert || (auto ? pageTuto : null)
         if (!page) return null
         const fermer = () => { marquerTutorielVu(`club_${page}`, moi?.id); setTutoOuvert(null); setTutoMaj(n => n + 1) }
         return <TutorielClub page={page} accent={couleurPrincipale} onFermer={fermer} />
@@ -3425,8 +3891,8 @@ export default function DashboardClub() {
               <span style={{ fontWeight: 800, fontSize: isMobile ? '14px' : '15px', color: colors.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {activeTab === 'outil_verrouille' ? '' : TITRES_SECTION[activeTab]}
               </span>
-              {PAGES_TUTORIEL_CLUB.includes(activeTab) && (
-                <BoutonTutoriel onClick={() => setTutoOuvert(activeTab)} style={isMobile ? { padding: '6px 10px', minHeight: '32px', fontSize: '12px' } : { padding: '6px 12px', minHeight: '34px' }} />
+              {PAGES_TUTORIEL_CLUB.includes(pageTuto) && (
+                <BoutonTutoriel onClick={() => setTutoOuvert(pageTuto)} style={isMobile ? { padding: '6px 10px', minHeight: '32px', fontSize: '12px' } : { padding: '6px 12px', minHeight: '34px' }} />
               )}
             </div>
             {!isMobile ? (
@@ -3470,6 +3936,10 @@ export default function DashboardClub() {
         )}
         {activeTab === 'accueil' && clubId && monUserId && clubId === monUserId && (
           <ClotureSaisonClub clubId={clubId} userId={monUserId} categories={categories} accentColor={couleurPrincipale} />
+        )}
+
+        {entreeActive && (
+          <SousOngletsGroupe items={entreeActive.subKeys.map(id => ({ id, label: LIBELLES_SOUS_ONGLETS[id] }))} actif={activeTab} onChoisir={setActiveTab} />
         )}
 
         {/* ── CATÉGORIES ── */}
@@ -5190,319 +5660,7 @@ export default function DashboardClub() {
           )
         })()}
 
-        {/* ── ORGANIGRAMME V2 : arbre hiérarchique + import Excel/scan IA ── */}
-        {activeTab === 'organigramme' && canViewSection('organigramme') && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
 
-            {/* ── HEADER ACTIONS ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h1 style={{ margin: 0, color: colors.text.primary, fontSize: '24px', fontWeight: 800 }}>Organigramme</h1>
-                <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>{organigramme.length} membre{organigramme.length > 1 ? 's' : ''} dans la hiérarchie · {educateursAffilies.filter(e => e.statut === 'accepte').length} éducateurs · {parentsClub.length} parents · {joueursInventaire.length} joueurs</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {canEditSection('organigramme') && (
-                  <>
-                    <button onClick={() => ouvrirModalOrganigramme(null)} style={st.btnSolid}>+ Ajouter un membre</button>
-                    <button
-                      onClick={() => setOrgImportMode(orgImportMode === 'excel' ? null : 'excel')}
-                      style={{ background: orgImportMode === 'excel' ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.secondary, padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
-                    >
-                      Importer Excel
-                    </button>
-                    <button
-                      onClick={() => setOrgImportMode(orgImportMode === 'scan' ? null : 'scan')}
-                      style={{ background: orgImportMode === 'scan' ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.secondary, padding: '9px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
-                    >
-                      Scanner un document
-                    </button>
-                  </>
-                )}
-                {organigramme.length > 0 && (
-                  <>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
-                      <input
-                        type="text"
-                        placeholder="Rechercher un membre..."
-                        value={orgSearchQuery}
-                        onChange={e => setOrgSearchQuery(e.target.value)}
-                        style={{ padding: '9px 14px 9px 36px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.base, color: colors.text.primary, fontSize: '13px', width: '220px', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        const all = new Set(organigramme.map(m => `${m.nom} ${m.prenom}`.trim()))
-                        setOrgExpandedNodes(orgExpandedNodes.size > 0 ? new Set() : all)
-                      }}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, padding: '9px 14px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      {orgExpandedNodes.size > 0 ? 'Tout réduire' : 'Tout développer'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {orgImportMode === 'excel' && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${colors.accent.amber}`, borderRadius: '12px', padding: '18px 20px' }}>
-                <h3 style={{ margin: '0 0 10px', color: colors.text.primary, fontSize: '15px' }}>Import depuis Excel / CSV</h3>
-                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
-                  Utilise le template avec les colonnes : <strong style={{ color: colors.text.primary }}>Nom, Prénom, Rôle, Département, Supérieur, Email, Téléphone</strong>
-                </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button onClick={telechargerTemplateOrganigramme} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
-                    Télécharger le template
-                  </button>
-                  <label style={{ background: colors.accent.amber, borderRadius: '8px', color: colors.black, padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                    Choisir un fichier
-                    <input type="file" accept=".xlsx,.xls,.csv" onChange={importerOrganigrammeExcel} style={{ display: 'none' }} />
-                  </label>
-                  {orgImportLoading && <span style={{ color: colors.text.faint, fontSize: '13px' }}>Import en cours…</span>}
-                </div>
-                <p style={{ color: colors.accent.amber, fontSize: '12px', margin: '10px 0 0' }}>Attention : l'import remplace l'organigramme actuel.</p>
-              </div>
-            )}
-
-            {orgImportMode === 'scan' && (
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `4px solid ${couleurPrincipale}`, borderRadius: '12px', padding: '18px 20px' }}>
-                <h3 style={{ margin: '0 0 10px', color: colors.text.primary, fontSize: '15px' }}>Scanner un organigramme</h3>
-                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 14px' }}>
-                  Photo d'un organigramme papier existant. L'IA extrait automatiquement les membres et la hiérarchie.
-                </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <label style={{ background: couleurPrincipale + '15', border: `1px solid ${couleurPrincipale}`, borderRadius: '8px', color: couleurPrincipale, padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
-                    {orgScanFile ? orgScanFile.name : 'Choisir une image'}
-                    <input type="file" accept="image/*" onChange={e => setOrgScanFile(e.target.files[0])} style={{ display: 'none' }} />
-                  </label>
-                  {orgScanFile && (
-                    <button
-                      onClick={scannerOrganigramme}
-                      disabled={orgScanLoading}
-                      style={{ background: couleurPrincipale, border: 'none', borderRadius: '8px', color: colors.accent.onBrand, padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: orgScanLoading ? 'wait' : 'pointer', opacity: orgScanLoading ? 0.7 : 1 }}
-                    >
-                      {orgScanLoading ? libelleStatutGroq(orgScanStatus) : 'Analyser'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── FILTRES DÉPARTEMENTS ── */}
-            {organigramme.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[...new Set(organigramme.map(m => m.departement || 'Autre'))].map(dept => {
-                  const c = getDeptColor(dept, colors)
-                  const actif = orgFiltreDepart === dept
-                  return (
-                    <button key={dept} onClick={() => setOrgFiltreDepart(actif ? null : dept)}
-                      style={{ fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '20px', border: `1px solid ${actif ? c.border : colors.border.default}`, color: actif ? c.text : colors.text.faint, background: actif ? c.bg : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: c.dot, display: 'inline-block', flexShrink: 0 }} />
-                      {dept}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* ── CONTENU — 2 colonnes ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', alignItems: 'start' }}>
-
-              {/* Colonne gauche — arbre hiérarchique */}
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }}>
-                <p style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 18px' }}>Hiérarchie du club</p>
-                {organigramme.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: colors.text.dim }}>
-                    <p style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 8px', color: colors.text.dim }}>Aucun membre dans l'organigramme</p>
-                    <p style={{ fontSize: '13px', margin: 0 }}>Ajoute un membre, importe un fichier Excel, ou scanne un document existant pour démarrer.</p>
-                  </div>
-                ) : (
-                  <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
-                      {construireArbreOrganigramme(orgFiltreDepart ? organigramme.filter(m => (m.departement || 'Autre') === orgFiltreDepart) : organigramme).map((root, i) => (
-                        <OrgNode
-                          key={root.id || i} node={root} depth={0}
-                          expandedNodes={orgExpandedNodes} onToggle={toggleOrgNode} searchQuery={orgSearchQuery}
-                          canEdit={canEditSection('organigramme')} onEdit={ouvrirModalOrganigramme} onDelete={supprimerMembreOrganigramme}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Colonne droite — stats + éducateurs + parents */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {(() => {
-                  const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
-                  const membresDirection = organigramme.filter(m => (m.departement || 'Autre') === 'Direction').length
-                  const q = parentsSearchQuery.trim().toLowerCase()
-                  const parentsFiltres = !q ? parentsClub : parentsClub.filter(p => [
-                    p.prenom, p.nom, p.profession, p.joueur?.prenom, p.joueur?.nom, p.joueur?.categorie, p.joueur?.niveau_equipe,
-                  ].some(v => v?.toLowerCase().includes(q)))
-
-                  return (
-                    <>
-                      {/* Stats rapides */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                        {[
-                          { label: 'Direction', value: membresDirection, color: colors.text.primary },
-                          { label: 'Éducateurs', value: educateursAcceptes.length, color: colors.accent.blue },
-                          { label: 'Parents', value: parentsClub.length, color: colors.accent.amber },
-                        ].map(s => (
-                          <div key={s.label} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px 16px' }}>
-                            <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.3 }}>{s.label}</div>
-                            <div style={{ fontSize: '24px', fontWeight: 800, color: s.color, marginTop: '6px', lineHeight: 1 }}>{s.value}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Éducateurs */}
-                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', overflow: 'hidden' }}>
-                        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                          <span style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Éducateurs · {educateursAcceptes.length}</span>
-                        </div>
-                        {educateursAcceptes.length === 0 ? (
-                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun éducateur affilié pour l'instant.</p>
-                        ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1px', background: colors.border.subtle }}>
-                            {educateursAcceptes.map(e => (
-                              <div key={e.id} onClick={() => setEducateurOrgDetail(e)}
-                                style={{ background: colors.background.surface, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: colors.accent.blue + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, fontWeight: 700, fontSize: '12px', flexShrink: 0, overflow: 'hidden' }}>
-                                  {e.educateur?.avatar_url
-                                    ? <img src={e.educateur.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    : `${e.educateur?.prenom?.[0] || ''}${e.educateur?.nom?.[0] || ''}`}
-                                </div>
-                                <div style={{ minWidth: 0 }}>
-                                  <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>{`${e.educateur?.prenom || ''} ${e.educateur?.nom || ''}`.toLowerCase()}</div>
-                                  <div style={{ color: colors.accent.blue, fontSize: '11px', fontWeight: 600 }}>
-                                    {categories.find(c => c.educateur_id === e.educateur_id)?.nom || 'Éducateur'}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Parents — liste compacte scrollable */}
-                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <span style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Parents · {parentsClub.length}</span>
-                          {parentsClub.length > 0 && (
-                            <input placeholder="Rechercher..." value={parentsSearchQuery} onChange={e => setParentsSearchQuery(e.target.value)}
-                              style={{ padding: '5px 10px', borderRadius: '8px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontSize: '12px', width: '130px', outline: 'none' }} />
-                          )}
-                        </div>
-                        {parentsClub.length === 0 ? (
-                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent enregistré pour l'instant.</p>
-                        ) : parentsFiltres.length === 0 ? (
-                          <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic', padding: '14px 18px', margin: 0 }}>Aucun parent ne correspond à cette recherche.</p>
-                        ) : (
-                          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                            {parentsFiltres.map(p => (
-                              <div key={p.id} onClick={() => setParentDetail(p)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 18px', borderBottom: `1px solid ${colors.border.subtle}`, cursor: 'pointer' }}>
-                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: colors.accent.green + '15', color: colors.accent.green, fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {p.prenom?.[0]}{p.nom?.[0]}
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.prenom} {p.nom}</div>
-                                  {p.profession && <div style={{ color: colors.text.faint, fontSize: '11px' }}>{p.profession}</div>}
-                                </div>
-                                {p.joueur && <span style={{ fontSize: '11px', fontWeight: 600, flexShrink: 0, padding: '2px 8px', borderRadius: '6px', color: colors.text.secondary, background: colors.background.raised }}>Parent de {p.joueur.prenom}</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )
-                })()}
-              </div>
-            </div>
-
-            {/* ── Modale détail éducateur (organigramme) ── */}
-            {educateurOrgDetail && (() => {
-              const cat = categories.find(c => c.educateur_id === educateurOrgDetail.educateur_id)
-              return (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                  <div style={{ ...st.card, width: '100%', maxWidth: '400px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{educateurOrgDetail.educateur?.prenom} {educateurOrgDetail.educateur?.nom}</p>
-                      <button onClick={() => setEducateurOrgDetail(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {[
-                        { label: 'Email', val: educateurOrgDetail.educateur?.email },
-                        { label: 'Téléphone', val: educateurOrgDetail.educateur?.telephone ? (
-                          <a href={`tel:${educateurOrgDetail.educateur.telephone}`} style={{ color: colors.accent.blue, textDecoration: 'none', fontWeight: 600 }}>{educateurOrgDetail.educateur.telephone}</a>
-                        ) : null },
-                        { label: 'Catégorie gérée', val: cat ? `${cat.nom} — Équipe ${cat.equipe}` : null },
-                        { label: 'Affilié depuis', val: educateurOrgDetail.created_at ? new Date(educateurOrgDetail.created_at).toLocaleDateString('fr-FR') : null },
-                      ].map(({ label, val }) => val && (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${colors.border.default}` }}>
-                          <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
-                          <span style={{ color: colors.text.secondary, fontSize: '13px', fontWeight: 600 }}>{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* ── Joueurs par catégorie ── */}
-            <div style={{ marginTop: '8px' }}>
-              <p style={{ color: colors.text.secondary, fontWeight: 800, fontSize: '11px', letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 4px' }}>Joueurs · {joueursInventaire.length}</p>
-              <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 14px' }}>Effectif du club groupé par catégorie — clique sur un joueur pour voir sa fiche et ses parents rattachés.</p>
-              {joueursInventaire.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun joueur pour l'instant.</p>
-              ) : (() => {
-                const parCategorie = joueursInventaire.reduce((acc, j) => {
-                  const cat = resoudreCategorie(j) || 'Sans catégorie'
-                  ;(acc[cat] ||= []).push({ ...j, categorieResolue: cat })
-                  return acc
-                }, {})
-                return Object.entries(parCategorie).sort(([a], [b]) => a.localeCompare(b)).map(([categorie, joueurs]) => {
-                  const ouverte = !categoriesJoueursFermees.has(categorie)
-                  return (
-                    <div key={categorie} style={{ marginBottom: '10px' }}>
-                      <div
-                        onClick={() => setCategoriesJoueursFermees(prev => {
-                          const next = new Set(prev)
-                          if (next.has(categorie)) next.delete(categorie); else next.add(categorie)
-                          return next
-                        })}
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', padding: '9px 14px', borderRadius: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, cursor: 'pointer' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: getCategoryColor(categorie) }} />
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>{labelCategorie(categorie)}</span>
-                        <span style={{ color: colors.text.faint, fontSize: '12px', flex: 1 }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''}</span>
-                        <span style={{ color: colors.text.faint, display: 'flex' }}><IcoChevronBasClub ouvert={ouverte} /></span>
-                      </div>
-                      {ouverte && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '8px', marginBottom: '18px' }}>
-                          {joueurs.map(j => (
-                            <div key={j.id}
-                              onClick={() => setJoueurOrgDetail(j)}
-                              style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '9px 12px', cursor: 'pointer', minWidth: 0 }}>
-                              <PhotoPersonne personne={j} taille={32} />
-                              <div style={{ minWidth: 0 }}>
-                                <p style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                <p style={{ color: colors.text.faint, fontSize: '11px', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              })()}
-            </div>
-          </div>
-        )}
 
         {/* ── Modale détail parent ── */}
         {parentDetail && (
@@ -5666,131 +5824,6 @@ export default function DashboardClub() {
             </div>
           </div>
         )}
-
-        {/* ── STAFF (visible/éditable selon la matrice de permissions ; "Gérer les permissions" reste réservé au président) ── */}
-        {activeTab === 'staff' && canViewSection('staff') && (() => {
-          // Un rôle délégué (can_edit sur 'staff', pas le propriétaire réel du compte club)
-          // ne doit jamais pouvoir s'assigner ou assigner à quelqu'un d'autre le rôle
-          // 'président', qui donnerait un accès total non restreint.
-          const rolesAssignables = monRole === 'president' ? ROLES_STAFF : ROLES_STAFF.filter(r => r.val !== 'president')
-          // V2 : membres d'abord (photo, rôle), panneau latéral unique pour
-          // ajouter un compte existant ou inviter par email.
-          const eyebrowSf = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-          const carteSf = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px' : '18px 20px' }
-          const nomPropre = (p, n) => `${p || ''} ${n || ''}`.trim().toLowerCase()
-          return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-              <div>
-                <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Staff & permissions</h1>
-                <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{staffMembers.length + 1} membre{staffMembers.length ? 's' : ''} ont accès au dashboard du club.</p>
-              </div>
-              {monRole === 'president' && (
-                <button onClick={() => { setMonClubEtape('bureau'); setActiveCategorie('administratif'); setActiveTab('mon_club') }}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  <IcoDroitsClub /> Accès du bureau
-                </button>
-              )}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile || !canEditSection('staff') ? '1fr' : 'minmax(0,1fr) 340px', gap: '20px', alignItems: 'start' }}>
-              {/* Membres */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
-                <p style={{ ...eyebrowSf, marginBottom: '4px' }}>{t('club_membres_staff_titre', lang)} · {staffMembers.length + 1}</p>
-                <div style={{ ...carteSf, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {club?.avatar_url
-                    ? <img src={club.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    : <span style={{ width: 40, height: 40, borderRadius: '50%', background: couleurPrincipale + '22', color: couleurPrincipale, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 }}>{(club?.club || club?.prenom || '?')[0]}</span>}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{club?.club || club?.prenom} <span style={{ fontSize: '11px', fontWeight: 600, color: colors.text.faint }}>· {t('club_vous', lang).replace(/[()]/g, '')}</span></p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>Compte du club · accès complet</p>
-                  </div>
-                  <span style={{ background: ROLE_BADGE_STYLE('president').bg, color: ROLE_BADGE_STYLE('president').color, padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{t('club_president_badge', lang)}</span>
-                </div>
-                {staffMembers.map(m => {
-                  const badgeC = ROLE_BADGE_STYLE(m.role)
-                  return (
-                    <div key={m.id} style={{ ...carteSf, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                      <PhotoPersonne personne={m.membre} taille={40} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomPropre(m.membre?.prenom, m.membre?.nom)}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{ROLE_STAFF_LABEL(m.role)}</p>
-                      </div>
-                      {canEditSection('staff') ? (
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <select style={{ ...st.input, width: 'auto', padding: '7px 10px', fontSize: '12px' }} value={m.role} onChange={e => modifierRoleStaff(m.id, e.target.value)}>
-                            {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
-                          </select>
-                          <button onClick={() => retirerStaff(m.id)} title={t('club_retirer', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: `1px solid ${colors.accent.red}40`, background: 'transparent', color: colors.accent.red, cursor: 'pointer' }}><IcoSortieClub /></button>
-                        </div>
-                      ) : (
-                        <span style={{ background: badgeC.bg, color: badgeC.color, padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{ROLE_STAFF_LABEL(m.role)}</span>
-                      )}
-                    </div>
-                  )
-                })}
-                {staffMembers.length === 0 && (
-                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>Ajoute un directeur sportif, un secrétaire ou un trésorier pour partager la gestion du club.</p>
-                )}
-              </div>
-
-              {/* Ajouter / inviter */}
-              {canEditSection('staff') && (
-                <div style={{ ...carteSf, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <p style={eyebrowSf}>Ajouter au staff</p>
-                  <div>
-                    <label style={st.label}>Rôle attribué</label>
-                    <select style={st.input} value={roleAAssigner} onChange={e => setRoleAAssigner(e.target.value)}>
-                      {rolesAssignables.map(r => <option key={r.val} value={r.val}>{r.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={st.label}>Compte existant</label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
-                      <input style={{ ...st.input, paddingLeft: '38px' }} placeholder={t('club_rechercher_membre_placeholder', lang)} value={searchStaff} onChange={e => rechercherUtilisateurs(e.target.value)} />
-                    </div>
-                    {resultatsStaff.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                        {resultatsStaff.map(u => {
-                          const dejaMembre = staffMembers.some(m => m.user_id === u.id)
-                          return (
-                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, borderRadius: '8px', padding: '8px 10px' }}>
-                              <PhotoPersonne personne={u} taille={28} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{u.prenom} {u.nom}</p>
-                                {u.plan && <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{u.plan}</p>}
-                              </div>
-                              <button onClick={() => ajouterStaff(u.id)} disabled={dejaMembre || addingStaffId === u.id}
-                                style={{ ...st.btnSolid, opacity: dejaMembre ? 0.4 : 1, fontSize: '12px', padding: '6px 12px' }}>
-                                {dejaMembre ? t('club_deja_staff', lang) : addingStaffId === u.id ? '...' : 'Ajouter'}
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ height: 1, background: colors.border.subtle }} />
-                  <div>
-                    <label style={st.label}>Inviter par email</label>
-                    <p style={{ margin: '0 0 8px', fontSize: '11px', color: colors.text.faint, lineHeight: 1.5 }}>Pour une personne sans compte : elle reçoit un email pour créer son mot de passe et rejoindre le staff en tant que {ROLE_STAFF_LABEL(roleAAssigner)}.</p>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input style={{ ...st.input, flex: 1, minWidth: 0 }} type="email" placeholder="email@exemple.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterStaff()} />
-                      <button onClick={inviterStaff} disabled={invitingStaff || !inviteEmail.trim()} style={{ ...st.btnSolid, display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px', opacity: invitingStaff || !inviteEmail.trim() ? 0.5 : 1 }}>
-                        <IcoMail /> {invitingStaff ? '...' : t('club_inviter', lang)}
-                      </button>
-                    </div>
-                    {inviteMessage && (
-                      <p style={{ margin: '8px 0 0', fontSize: '12px', color: inviteMessage.type === 'ok' ? colors.accent.success : colors.accent.red }}>{inviteMessage.texte}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          )
-        })()}
 
         {activeTab === 'inventaire' && canViewSection('inventaire') && (() => {
           // id doit être le compte plateforme réel (profiles.id = equipe_joueurs.joueur_id),
@@ -6352,13 +6385,14 @@ export default function DashboardClub() {
           <OutilNonActive role="club" cle={activeTabBrut} onRetour={() => setActiveTab('accueil')} onMesOutils={outils.actif && monRole === 'president' ? () => setActiveTab('mes_outils') : undefined} />
         )}
 
-        {activeTab === 'mon_club' && canEditSection('mon_club') && (
+        {activeTab === 'mon_club' && monClubVisible(droitsMonClub) && (
           <MonClub club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
             sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
             savingTheme={savingTheme} themeUploading={themeUploading}
             isMobile={isMobile} couleurPrincipale={couleurPrincipale}
             outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId} educateurs={educateursAcceptes}
-            etape={monClubEtape} setEtape={setMonClubEtape} estPresident={monRole === 'president'}
+            etape={monClubEtape} setEtape={setMonClubEtape} droits={droitsMonClub}
+            ecrans={{ staff: ecranStaff, organigramme: ecranOrganigramme }}
             rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
             savingPermissions={savingPermissions} sauvegarderPermissions={sauvegarderPermissions} />
         )}
