@@ -3,6 +3,7 @@ import EtapeIdentite from './EtapeIdentite'
 import EtapeAccesBureau from './EtapeAccesBureau'
 import EtapeOutils from './EtapeOutils'
 import EtapeEducateurs from './EtapeEducateurs'
+import EtapeJournal from './EtapeJournal'
 
 // Une étape pas encore faite reste masquée en production ; en local on voit sa place.
 const ETAPES = [
@@ -10,6 +11,7 @@ const ETAPES = [
   { id: 'outils', titre: 'Outils du club', fait: true },
   { id: 'educateurs', titre: 'Dashboard de mes éducateurs', fait: true },
   { id: 'bureau', titre: 'Accès du bureau', fait: true, presidentSeul: true },
+  { id: 'journal', titre: 'Journal des changements', fait: true },
 ]
 
 // etape / setEtape viennent du dashboard : le lien « Permissions par rôle » du Staff
@@ -55,6 +57,7 @@ export default function MonClub({
       )}
       {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
       {courante.id === 'educateurs' && <EtapeEducateurs clubId={clubId} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
+      {courante.id === 'journal' && <EtapeJournal clubId={clubId} educateurs={educateurs} estCompteClub={estCompteClub} />}
       {courante.id === 'bureau' && estPresident && (
         <EtapeAccesBureau rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
           saving={savingPermissions} onSave={sauvegarderPermissions} couleurPrincipale={couleurPrincipale} isMobile={isMobile} />

@@ -2,6 +2,7 @@ import { supabase } from '../../supabase'
 import { OUTILS } from '../../lib/catalogueOutils'
 import { affichageDepuisLignes } from '../../lib/outilsAcces'
 import { appelerOutils } from '../../lib/outilsApi'
+import { planRetablir } from '../../lib/journalMonClub'
 
 // Lectures et écritures de Mon club partagées par les étapes Outils du club et
 // Dashboard de mes éducateurs, et par les modèles de départ. Elles ne touchent
@@ -65,8 +66,9 @@ export const DELAI_PREVENIR = 9000
 
 // Envoie aux éducateurs ce qui a vraiment changé dans leur menu depuis `avant`
 // ({ mode, lignes }), relu en base : un changement annulé, ou remis comme avant,
-// n'envoie rien. `liste` : [{ id, nom }].
-export async function prevenirEducateurs(clubId, avant, liste) {
+// n'envoie rien. `liste` : [{ id, nom }]. `retablitId` : ligne du journal que ce
+// changement rétablit (le serveur la relie à la nouvelle ligne).
+export async function prevenirEducateurs(clubId, avant, liste, retablitId) {
   const { reglages, lus } = await lireReglages(clubId)
   const echec = reglages.error || lus.error
   if (echec) throw new Error(echec.message)
@@ -83,5 +85,28 @@ export async function prevenirEducateurs(clubId, avant, liste) {
     }
     if (retires.length || reaffiches.length) changements.push({ educateur_id: educ.id, retires, reaffiches })
   }
-  if (changements.length) await appelerOutils('prevenir_menu', { changements })
+  if (changements.length) await appelerOutils('prevenir_menu', { changements, ...(retablitId ? { retablit_id: retablitId } : {}) })
+}
+
+// « Rétablir » une ligne du journal : remet le menu comme avant ce changement,
+// prévient les éducateurs tout de suite et journalise le rétablissement. Rend
+// 'deja' si le menu était déjà revenu, 'ok' sinon ; une erreur dit pourquoi
+// c'est impossible tel quel.
+export async function retablirEntree(clubId, entree, liste) {
+  const { reglages, lus } = await lireReglages(clubId)
+  const echec = reglages.error || lus.error
+  if (echec) throw new Error(echec.message)
+  const mode = modeDepuis(reglages)
+  const lignes = lus.data || []
+  const plan = planRetablir(entree, mode, lignes, liste)
+  if (plan.erreur) throw new Error(plan.erreur)
+  if (plan.deja) return 'deja'
+  for (const e of plan.ecritures) await ecrireLigne(clubId, e.cible, e.educateurId, entree.outil, e.valeur)
+  try {
+    await prevenirEducateurs(clubId, { mode, lignes }, liste, entree.id)
+  } catch (e) {
+    console.error('Mon club : rétablissement non annoncé', e.message)
+    throw new Error('Le menu est rétabli, mais vos éducateurs n\'ont pas pu être prévenus.', { cause: e })
+  }
+  return 'ok'
 }

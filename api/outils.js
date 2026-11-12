@@ -52,7 +52,10 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 //   retirés, réaffichés). Le serveur relit les réglages en base, ne garde que ce
 //   qui est vrai, saute les outils que l'éducateur paie lui-même, et écrit une
 //   seule notification par éducateur (cloche seulement, aucun email). Ouvert aux
-//   clubs des deux modèles.
+//   clubs des deux modèles. Il écrit aussi le journal des changements (bloc 10,
+//   table `mon_club_journal`) : une ligne par outil et par sens, avec les éducateurs
+//   concernés ; `retablit_id` marque un « Rétablir ». Une panne du journal ne bloque
+//   pas l'envoi.
 // - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
@@ -214,6 +217,12 @@ export function donneesOutils() {
       const lignes = await lire(db().from('mon_club_affichage').select('cible, educateur_id, outil, visible').eq('club_id', club).in('cible', ['educateurs', 'educateur']))
       return { mode: reglages?.mode_educateurs || 'commun', lignes: lignes || [] }
     },
+    // Journal des changements de Mon club (table `mon_club_journal`) : écriture par le serveur seulement.
+    journaliser: async (lignes) => {
+      const { error } = await db().from('mon_club_journal').insert(lignes)
+      if (error) throw error
+    },
+    entreeJournal: (club, id) => lire(db().from('mon_club_journal').select('id, outil, action').eq('club_id', club).eq('id', id).maybeSingle()),
     // Notifications de la cloche (table `notifications`) : { user_id, type, titre, contenu, lien }.
     notifier: async (lignes) => {
       const { error } = await db().from('notifications').insert(lignes)
@@ -444,6 +453,13 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
     const date = new Date(maintenantMs).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
     const noms = (liste) => liste.map(o => o.nom).join(', ')
     const lignes = []
+    // Ce que la base confirme, par outil et sens : les éducateurs concernés (pour le journal).
+    const confirmes = new Map()
+    const noter = (action, outil, educateurId) => {
+      const cle = `${action}|${outil}`
+      if (!confirmes.has(cle)) confirmes.set(cle, { action, outil, ids: new Set() })
+      confirmes.get(cle).ids.add(educateurId)
+    }
     for (const d of demandes) {
       if (!d || !affilies.includes(d.educateur_id)) continue
       const affichage = affichageDepuisLignes(reglage.mode, reglage.lignes, d.educateur_id)
@@ -451,11 +467,13 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       const retires = []
       for (const o of outilsMenu(d.retires)) {
         if (visible(o)) continue
+        noter('retire', o.id, d.educateur_id)
         // Un outil payé par l'éducateur reste dans son menu : rien à lui annoncer.
         if (actifMaintenant(await donnees.ligne(d.educateur_id, o.id), maintenantMs)) continue
         retires.push(o)
       }
       const reaffiches = outilsMenu(d.reaffiches).filter(visible)
+      for (const o of reaffiches) noter('reaffiche', o.id, d.educateur_id)
       if (retires.length === 0 && reaffiches.length === 0) continue
       const phrases = []
       if (retires.length > 0) phrases.push(`Votre club a retiré ${noms(retires)} de votre menu le ${date}.`)
@@ -463,7 +481,29 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       lignes.push({ user_id: d.educateur_id, type: 'menu_club_modifie', titre: 'Menu modifié par votre club', contenu: phrases.join(' '), lien: '/educateur' })
     }
     if (lignes.length > 0) await donnees.notifier(lignes)
+    // Le journal ne bloque jamais l'envoi : s'il échoue, les éducateurs sont déjà prévenus.
+    try {
+      await journaliserMenu({ clubId, auteurId: clubId, confirmes, affilies, retablitId: corps.retablit_id })
+    } catch (err) {
+      console.error('outils prevenir_menu : journal non écrit', err.code || err.message)
+    }
     return res.status(200).json({ ok: true, notifies: lignes.length })
+  }
+
+  // Une ligne de journal par outil et par sens (retiré ou réaffiché) : qui, quoi, pour quels éducateurs.
+  // C'est le club qui décide : un outil payé par l'éducateur y figure aussi, même s'il reste dans son menu.
+  async function journaliserMenu({ clubId, auteurId, confirmes, affilies, retablitId }) {
+    if (confirmes.size === 0) return
+    const origine = typeof retablitId === 'string' ? await donnees.entreeJournal(clubId, retablitId) : null
+    const lignes = [...confirmes.values()].map(c => {
+      const ids = [...c.ids]
+      return {
+        club_id: clubId, auteur_id: auteurId, action: c.action, outil: c.outil, educateur_ids: ids,
+        tous: affilies.length > 0 && affilies.every(id => c.ids.has(id)),
+        retablit_id: origine && origine.outil === c.outil && origine.action !== c.action ? origine.id : null,
+      }
+    })
+    await donnees.journaliser(lignes)
   }
 
   return async function handler(req, res) {

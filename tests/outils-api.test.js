@@ -23,12 +23,15 @@ function monde({ panneLigne = false } = {}) {
   const essais = new Set()
   const ouverts = new Set()
   const notifs = []
+  const journal = []
+  let panneJournal = false
   const menu = { mode: 'commun', lignes: [] }
   let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais, ouverts, notifs, profils, menu,
+    lignes, essais, ouverts, notifs, profils, menu, journal,
     pannerNotifications: () => { panneNotif = true },
+    pannerJournal: () => { panneJournal = true },
     donnees: {
       ouvert: async (c, o) => ouverts.has(cle(c, o)),
       ouvrirOutil: async (c, o) => { ouverts.add(cle(c, o)) },
@@ -36,6 +39,8 @@ function monde({ panneLigne = false } = {}) {
       educateursAffilies: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
       reglageMenuEducateurs: async () => menu,
       educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
+      journaliser: async (l) => { if (panneJournal) throw new Error('panne'); journal.push(...l.map((x, i) => ({ id: `j${journal.length + i + 1}`, ...x }))) },
+      entreeJournal: async (c, jid) => journal.find(x => x.id === jid && x.club_id === c) || null,
       notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
       profil: async (cid) => profils[cid] || null,
       activerModele: async (cid, { ouvrirAcces }) => { profils[cid] = { ...profils[cid], modele_outils: true, ...(ouvrirAcces ? { abonnement_actif: true } : {}) } },
@@ -524,4 +529,84 @@ test('prevenir_menu : réservé au club (les deux modèles), changements valides
   m.profils[U.club] = { plan: 'club', modele_outils: false, abonnement_actif: true }
   assert.equal((await prevenir(m, U.club, un)).code, 200)
   assert.equal(m.notifs.length, 1)
+})
+
+
+// Mon club, bloc 10 : journal des changements, écrit par la même action.
+test('journal : un retrait pour tous les éducateurs donne une ligne « tous », avec l\'auteur lu dans le jeton', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  await prevenir(m, U.club, [
+    { educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] },
+    { educateur_id: U.eduAffilie2, retires: ['seances'], reaffiches: [] },
+  ])
+  assert.equal(m.journal.length, 1)
+  assert.equal(m.journal[0].action, 'retire')
+  assert.equal(m.journal[0].outil, 'seances')
+  assert.equal(m.journal[0].tous, true)
+  assert.deepEqual(m.journal[0].educateur_ids.sort(), [U.eduAffilie, U.eduAffilie2].sort())
+  assert.equal(m.journal[0].club_id, U.club)
+  assert.equal(m.journal[0].auteur_id, U.club)
+  assert.equal(m.journal[0].retablit_id, null)
+})
+
+test('journal : un seul éducateur, un retrait et un réaffichage = deux lignes, pas « tous »', async () => {
+  const m = monde()
+  m.menu.mode = 'individualise'
+  m.menu.lignes.push({ cible: 'educateur', educateur_id: U.eduAffilie, outil: 'seances', visible: false })
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: ['stages'] }])
+  assert.deepEqual(m.journal.map(j => [j.action, j.outil, j.tous]).sort(), [['reaffiche', 'stages', false], ['retire', 'seances', false]])
+})
+
+test('journal : ce que la base ne confirme pas, un éducateur étranger ou un outil sans menu n\'y entre pas', async () => {
+  const m = monde()
+  retirePourTous(m, 'stats_collectives')
+  await prevenir(m, U.club, [
+    { educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] },
+    { educateur_id: U.edu, retires: ['seances'], reaffiches: [] },
+    { educateur_id: U.eduAffilie, retires: ['stats_collectives'], reaffiches: [] },
+  ])
+  assert.equal(m.journal.length, 0)
+})
+
+test('journal : un outil payé par l\'éducateur reste dans le journal (décision du club), sans notification', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  m.lignes.set(`${U.eduAffilie}|seances`, { source: 'abonnement', fin_le: null })
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }])
+  assert.equal(m.notifs.length, 0)
+  assert.equal(m.journal.length, 1)
+})
+
+test('journal : un « Rétablir » pointe vers la ligne d\'origine, seulement pour le même outil et le sens opposé', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }])
+  const origine = m.journal[0].id
+  m.menu.lignes.length = 0
+  const res = await appeler(m, U.club, { action: 'prevenir_menu', retablit_id: origine, changements: [{ educateur_id: U.eduAffilie, retires: [], reaffiches: ['seances', 'stages'] }] })
+  assert.equal(res.code, 200)
+  assert.equal(m.notifs.length, 2)
+  const retabli = m.journal.filter(j => j.action === 'reaffiche')
+  assert.deepEqual(retabli.map(j => [j.outil, j.retablit_id]).sort(), [['seances', origine], ['stages', null]])
+})
+
+test('journal : un retablit_id d\'un autre club ou inconnu est ignoré', async () => {
+  const m = monde()
+  m.journal.push({ id: 'etranger', club_id: id(99), outil: 'seances', action: 'retire' })
+  const res = await appeler(m, U.club, { action: 'prevenir_menu', retablit_id: 'etranger', changements: [{ educateur_id: U.eduAffilie, retires: [], reaffiches: ['seances'] }] })
+  assert.equal(res.code, 200)
+  assert.equal(m.journal.find(j => j.id !== 'etranger').retablit_id, null)
+  await appeler(m, U.club, { action: 'prevenir_menu', retablit_id: 42, changements: [{ educateur_id: U.eduAffilie, retires: [], reaffiches: ['tactique'] }] })
+  assert.equal(m.journal.length, 3)
+})
+
+test('journal : une panne du journal ne bloque pas l\'envoi des notifications', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  m.pannerJournal()
+  const res = await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }])
+  assert.equal(res.code, 200)
+  assert.equal(m.notifs.length, 1)
+  assert.equal(m.journal.length, 0)
 })
