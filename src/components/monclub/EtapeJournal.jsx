@@ -68,7 +68,7 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
       <EnteteEtape icone={ICONES.journal} titre="Journal des changements"
-        texte={`Les changements du menu de vos éducateurs, du plus récent au plus ancien. « Rétablir » remet le menu comme avant ce changement et prévient vos éducateurs, rien n'est effacé. Les ${LIMITE} derniers changements sont affichés.`}>
+        texte={`Les changements du menu de vos éducateurs, du plus récent au plus ancien. «\u00a0Rétablir\u00a0» remet le menu comme avant ce changement et prévient vos éducateurs, rien n'est effacé. Les ${LIMITE} derniers changements sont affichés.`}>
         {pret && (
           <button type="button" onClick={recharger} disabled={!!enCours} className="mc-btn" style={st.bouton(false, !!enCours)}>
             <Icone d={ICONES.actualiser} size={15} /> Actualiser

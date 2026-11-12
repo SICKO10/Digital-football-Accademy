@@ -99,8 +99,8 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
       <EnteteEtape icone={ICONES.bureau} titre="Accès du bureau"
-        texte="Le président voit et modifie tout, ce n'est pas réglable. Pour les autres rôles : « Voir » affiche l'onglet, « Modifier » autorise les ajouts et suppressions dans cet onglet." />
-      <Encart>« Mon club » : le rôle coché voit les étapes Identité, Outils du club et Dashboard de mes éducateurs. Cette étape-ci, Accès du bureau, reste réservée au président.</Encart>
+        texte="Le président voit et modifie tout, ce n'est pas réglable. Pour les autres rôles : «&nbsp;Voir&nbsp;» affiche l'onglet, «&nbsp;Modifier&nbsp;» autorise les ajouts et suppressions dans cet onglet." />
+      <Encart>«&nbsp;Mon club&nbsp;» : le rôle coché voit les étapes Identité, Outils du club et Dashboard de mes éducateurs. Cette étape-ci, Accès du bureau, reste réservée au président.</Encart>
 
       <section style={{ ...st.carte, padding: isMobile ? 14 : 22, marginBottom: 20 }} aria-labelledby="mc-matrice">
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>

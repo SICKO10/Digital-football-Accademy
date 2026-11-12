@@ -186,7 +186,7 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
           const actif = ouvert?.modele.id === m.id
           return (
             <button key={m.id} type="button" disabled={occupe} aria-expanded={actif} onClick={() => choisir(m)} className="mc-btn mc-carte"
-              style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: occupe ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', border: `2px solid ${actif ? st.marque : colors.border.default}`, background: actif ? st.marque + '16' : colors.background.surface, color: colors.text.primary }}>
+              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: occupe ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', border: `2px solid ${actif ? st.marque : colors.border.default}`, background: actif ? st.marque + '16' : colors.background.surface, color: colors.text.primary }}>
               <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{m.nom}</span>
               <span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: 1.45, color: colors.text.faint }}>{m.pour}</span>
             </button>
