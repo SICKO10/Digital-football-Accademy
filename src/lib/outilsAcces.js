@@ -20,7 +20,9 @@ const ONGLETS_STATS_COLLECTIFS = ['graphiques']
 // club seulement : un outil qu'il paie lui-même reste affiché).
 // `masquesClub` : ids des outils que le club a retirés de son propre menu (Mon
 // club, étape Outils du club) ; vaut pour tous les clubs, ancien modèle compris.
-export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = [], masquesClub = []) {
+// `affichageClub` (éducateur affilié) : ce que son club affiche ou masque dans
+// son menu, voir affichageDepuisLignes ; null = aucun réglage.
+export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = [], masquesClub = [], affichageClub = null) {
   const droits = []
   const clubOutils = []
   for (const l of lignes) {
@@ -30,7 +32,24 @@ export function compteDepuisLignes(role, modeleOutils, lignes = [], masques = []
       ? { outil: l.outil, statut: 'retire', periodeFin: l.fin_le }
       : { outil: l.outil, statut: 'actif' })
   }
-  return { role, modeleOutils: !!modeleOutils, droits, clubOutils, masques, masquesClub }
+  return { role, modeleOutils: !!modeleOutils, droits, clubOutils, masques, masquesClub, affichageClub }
+}
+
+// Réglage « Dashboard de mes éducateurs » du club, vu par un éducateur, à
+// partir de mon_club_reglages (mode) et mon_club_affichage (lignes lisibles
+// par lui : cible 'educateurs' et ses lignes 'educateur'). Les ids sont ceux
+// des outils éducateur du catalogue. { outil: visible } par cible ; en mode
+// 'commun', les lignes individuelles sont mises de côté (ignorées, pas effacées).
+export function affichageDepuisLignes(mode, lignes = [], educateurId = null) {
+  const commun = {}
+  const individuel = {}
+  for (const l of lignes) {
+    if (l.cible === 'educateurs') commun[l.outil] = !!l.visible
+    else if (l.cible === 'educateur' && l.educateur_id === educateurId) individuel[l.outil] = !!l.visible
+  }
+  const individualise = mode === 'individualise'
+  if (!Object.keys(commun).length && !(individualise && Object.keys(individuel).length)) return null
+  return { mode: individualise ? 'individualise' : 'commun', commun, individuel: individualise ? individuel : {} }
 }
 
 // L'outil qui débloque cette entrée de menu (null si elle est dans le socle
@@ -86,13 +105,36 @@ function menuMasqueParLeClub(compte, cle) {
   return !!o && compte.masquesClub.includes(o.id)
 }
 
+// Entrées éducateur que le club ne masque jamais : « stats » porte aussi la
+// présence, gratuite (socle).
+const JAMAIS_MASQUE_PAR_LE_CLUB = ['stats']
+
+// Vrai quand le club a masqué cet outil dans le menu de l'éducateur affilié.
+// Priorité : réglage individuel (mode individualisé), sinon réglage commun,
+// sinon affiché. Un outil que l'éducateur paie lui-même (abonnement, essai ou
+// période en cours) reste toujours affiché. Ne touche que le menu : la page
+// reste ouverte. Vaut aussi pour l'ancien modèle, où l'éducateur n'a pas de
+// droits propres : il suit simplement le club.
+function menuMasqueParSonClub(compte, cle, maintenant) {
+  if (compte?.role !== 'educateur' || !compte.affichageClub) return false
+  if (JAMAIS_MASQUE_PAR_LE_CLUB.includes(cle)) return false
+  const o = outilPourMenu('educateur', cle)
+  if (!o) return false
+  if (compte.droits?.some(d => d.outil === o.id && droitActif(d, maintenant))) return false
+  const { commun, individuel } = compte.affichageClub
+  const visible = o.id in individuel ? individuel[o.id] : commun[o.id]
+  return visible === false
+}
+
 // Entrée de menu à afficher ? Même règle que la page, avec en plus le retrait
 // d'Explorer (éducateur) et de Recrutement (éducateur et club) pour les comptes
 // du nouveau modèle, et les outils du club que l'éducateur a masqués (la page
 // reste ouverte, seule l'entrée de menu disparaît). Un club peut aussi masquer
-// lui-même ses outils, quel que soit son modèle.
+// lui-même ses outils, et ceux du menu de ses éducateurs, quel que soit son
+// modèle ; l'éducateur peut masquer en plus, jamais réafficher.
 export function menuVisible(compte, cle, maintenant = new Date()) {
   if (menuMasqueParLeClub(compte, cle)) return false
+  if (menuMasqueParSonClub(compte, cle, maintenant)) return false
   if (!compte?.modeleOutils) return true
   if (cle === 'recrutement') return false
   if (compte.role === 'educateur' && cle === 'explorer') return false

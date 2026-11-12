@@ -1,26 +1,14 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useColors } from '../../lib/theme'
-import { supabase } from '../../supabase'
+import { ecrireAffichageClub } from './ecritures'
 import { appelerOutils } from '../../lib/outilsApi'
 import { OUTILS, THEMES_CLUB } from '../../lib/catalogueOutils'
 import CarteOutil from '../outils/CarteOutil'
 import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
+import ModelesDepart from './ModelesDepart'
 
 const OUTILS_CLUB = OUTILS.filter(o => o.role === 'club')
-
-// Écrit le choix d'affichage du menu du club (cible « club ») pour un club de
-// l'ancien modèle : une ligne seulement quand l'outil est masqué, aucune quand
-// il est affiché (c'est le défaut). Rien d'autre n'est touché : ni les pages
-// ni les données.
-async function ecrireAffichageClub(clubId, outilId, visible) {
-  const { error: errSuppression } = await supabase.from('mon_club_affichage')
-    .delete().eq('club_id', clubId).eq('cible', 'club').eq('outil', outilId)
-  if (errSuppression) throw new Error(errSuppression.message)
-  if (visible) return
-  const { error } = await supabase.from('mon_club_affichage').insert({ club_id: clubId, cible: 'club', outil: outilId, visible: false })
-  if (error) throw new Error(error.message)
-}
 
 // Étape 2 de Mon club : tous les outils du club rangés par thème, un
 // interrupteur et une ligne d'explication par outil.
@@ -30,8 +18,9 @@ async function ecrireAffichageClub(clubId, outilId, visible) {
 //   choisir_club, outils inclus dans le forfait). Seul le compte du club peut
 //   l'utiliser, comme dans Mes outils.
 // `outils` : résultat de useOutils ; `clubId` : compte du club ; `estCompteClub` :
-// la personne connectée est le compte du club lui-même.
-export default function EtapeOutils({ outils, clubId, estCompteClub }) {
+// la personne connectée est le compte du club lui-même ; `educateurs` : éducateurs
+// affiliés acceptés (lignes de club_educateurs), pour les modèles de départ.
+export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs, couleurPrincipale }) {
   const colors = useColors()
   const nouveauModele = outils.actif
   const [enCours, setEnCours] = useState(null)
@@ -76,6 +65,11 @@ export default function EtapeOutils({ outils, clubId, estCompteClub }) {
     }
   }
 
+  const listeEducateurs = useMemo(() => (educateurs || []).map(e => ({
+    id: e.educateur_id,
+    nom: [e.educateur?.prenom, e.educateur?.nom].filter(Boolean).join(' ') || e.educateur?.email || 'Éducateur',
+  })), [educateurs])
+
   const parTheme = useMemo(
     () => THEMES_CLUB.map(t => ({ ...t, outils: OUTILS_CLUB.filter(o => o.theme === t.id) })).filter(t => t.outils.length > 0),
     [],
@@ -97,6 +91,11 @@ export default function EtapeOutils({ outils, clubId, estCompteClub }) {
       )}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des outils...</p>}
+
+      {pret && peutAgir && (
+        <ModelesDepart clubId={clubId} educateurs={listeEducateurs} nouveauModele={nouveauModele} clubAffiche={allume}
+          appliquerClub={appliquer} couleur={couleurPrincipale} />
+      )}
 
       {pret && parTheme.map(t => (
         <section key={t.id} aria-labelledby={`theme-${t.id}`} style={{ marginBottom: 28 }}>

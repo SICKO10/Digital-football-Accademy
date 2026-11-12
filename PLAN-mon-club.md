@@ -134,7 +134,7 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
 
 
 ### Bloc 5 : règle d'affichage du menu éducateur
-- Statut : à faire
+- Statut : fait (en attente de ta validation)
 - Objectif : une seule règle, testée, qui décide de chaque entrée du menu d'un éducateur affilié.
 - Résultat testable : une suite de tests couvre tous les cas (ancien et nouveau modèle, mode commun et individualisé, outil payé par l'éducateur, masquage par l'éducateur lui-même, nouvel éducateur) ; sans aucun réglage, aucun menu ne change (comparaison avant/après sur les comptes de test).
 - Modèle : opus · Effort : high · Coût estimé : élevé
@@ -148,11 +148,11 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Garder `outils_affichage_educateur` en plus (l'éducateur peut cacher ce que le club affiche, pas l'inverse).
   - Tests unitaires de chaque cas ; vérification sur les comptes de test sans réglage.
 - Ce que je teste pour valider : me connecter avec un éducateur de chaque club de test et constater que son menu est identique à avant.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) test connecté par Kevin avec un éducateur de chaque club de test : pas de compte de test ni de session éducateur ici, la lecture réelle en base (règles d'accès) n'est vérifiée que par lecture du SQL ; sans ligne en base, la règle ne change rien, prouvé par test ; (2) pour le bloc 6 : les lignes `educateurs` et `educateur` portent les ids des outils **éducateur** du catalogue ; ne pas proposer « Stats collectives » (aucune entrée de menu) ; masquer « Suivi des joueurs » retire Santé, Historique et Fiche d'évaluation mais garde Statistiques (la présence gratuite y vit) ; (3) quand le club a masqué quelque chose, l'entrée peut s'afficher une fraction de seconde au chargement avant de disparaître (même comportement que le masquage côté club) ; (4) un dirigeant délégué qui ouvre le dashboard d'un éducateur ne voit pas les réglages du club appliqués (rien n'est lu dans ce cas, comme avant) : à prévoir au bloc 8 pour « Voir comme un éducateur » ; (5) rien commité ni poussé.
+- Journal : 2026-11-12, Opus 5.5. `outilsAcces.js` : `affichageDepuisLignes(mode, lignes, educateurId)` (commun, individuel ; en mode commun les lignes individuelles sont ignorées sans être effacées ; aucune ligne = null) et nouvelle branche `menuMasqueParSonClub` dans `menuVisible`, appliquée avant le test du modèle : vaut donc pour l'ancien modèle aussi. Priorité : individuel (mode individualisé) > commun > affiché. Jamais masqué : un outil payé par l'éducateur (abonnement, essai ou période en cours), le socle, et Statistiques. Le masquage de l'éducateur lui-même (`outils_affichage_educateur`) reste en plus. `useOutils` : nouveau paramètre `clubId`, lit `mon_club_reglages` et `mon_club_affichage` (filtrés sur le club d'affiliation acceptée) ; nouveau modèle : réglages appliqués seulement une fois les droits lus, pour ne jamais cacher un outil payé. `DashboardEducateur.jsx` : déclaration de `clubAffiliation` remontée au-dessus de `useOutils` pour lui passer le club. Décision : ancien modèle, l'éducateur n'a pas de droit par outil, il suit donc le club sans exception (conforme au brief). Pas de drapeau « actif » : c'est le mode du club qui met de côté les réglages individuels (choix du bloc 3). Tests : 10 nouveaux (371, 370 passés, 1 ignoré), dont la comparaison menu avant/après sans réglage sur 24 entrées, ancien et nouveau modèle ; build OK ; lint : aucune nouvelle erreur (23 déjà présentes dans `DashboardEducateur.jsx` avant le bloc).
 
 ### Bloc 6 : étape Dashboard de mes éducateurs
-- Statut : à faire
+- Statut : fait (en attente de ta validation)
 - Objectif : le club règle le menu de ses éducateurs, pour tous ou un par un.
 - Résultat testable : choix du mode en haut (« Le même pour tous » par défaut) ; même grille de cartes ; en « Individualisé », liste des éducateurs avec pastille pour ceux ajustés ; repasser en « même pour tous » met les réglages individuels de côté et les retrouve en revenant ; bandeau « Annuler ».
 - Modèle : sonnet · Effort : high · Coût estimé : élevé
@@ -166,11 +166,11 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Bascule de mode sans effacement (drapeau du bloc 3) ; nouvel éducateur = réglage commun.
   - Outils payés par l'éducateur : carte grisée « payé par l'éducateur, toujours affiché ».
 - Ce que je teste pour valider : masquer un outil pour tous, vérifier sur les 2 éducateurs ; passer en individualisé, réafficher pour l'un seulement ; revenir en commun puis en individualisé et retrouver l'ajustement.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) test connecté par Kevin sur le club de test avec 2 éducateurs : pas de session club ici, l'écriture réelle en base (règles d'accès) n'est vérifiée que par lecture du SQL et avec un faux serveur qui garde les écritures en mémoire ; (2) la carte « payé par l'éducateur, toujours affiché » n'est pas faite : le club ne peut pas lire ce que chaque éducateur paie, donc une phrase en haut de l'écran l'explique et la règle du bloc 5 garde l'outil affiché côté éducateur ; (3) pas de rangement par thème (les outils éducateur n'ont pas de thème dans le catalogue) : une grille simple de 9 outils ; (4) l'étape suit le même réglage commun pour un éducateur qui arrive plus tard, sans rien à faire ; (5) rien commité ni poussé.
+- Journal : 2026-11-12, Sonnet 5.5. Nouveau `monclub/EtapeEducateurs.jsx` (réutilise `CarteOutil`, `Interrupteur`, `BandeauAnnuler`), branché dans `MonClub.jsx` (étape 3 visible en production) ; `DashboardClub.jsx` lui passe les éducateurs acceptés. Choix du mode « Le même pour tous » / « Individualisé » (écrit `mon_club_reglages`). Commun : une ligne « educateurs » seulement quand l'outil est masqué. Individualisé : onglets par éducateur avec pastille « Ajusté », l'état de départ est le réglage commun ; si on remet la valeur du commun, la ligne individuelle est supprimée (la pastille reste juste). Repasser en commun garde les lignes individuelles (phrase « N éducateurs ont un réglage gardé de côté ») et elles reviennent en repassant en individualisé. Bandeau Annuler après chaque changement, y compris le changement de mode. Outils proposés : les 9 outils éducateur qui ont une entrée de menu (pas Stats collectives, conformément à la note du bloc 5). Vérifié avec un faux serveur dans Chrome : masquer Séances pour tous, passer en individualisé, réafficher pour Léa seulement (Karim reste masqué), revenir en commun, repasser en individualisé et retrouver l'ajustement, annuler. Build OK, lint propre sur le dossier monclub.
 
 ### Bloc 7 : prévenir les éducateurs
-- Statut : à faire
+- Statut : fait (en attente de ta validation)
 - Objectif : chaque changement du club côté éducateurs leur arrive dans la cloche avec sa date d'effet.
 - Résultat testable : un masquage ou un réaffichage crée une notification « Votre club a retiré X de votre menu le JJ/MM » ; pas de notification si le changement est annulé dans les secondes du bandeau ; plusieurs changements rapprochés regroupés en une seule notification.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -183,11 +183,11 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Envoi différé de quelques secondes pour respecter « Annuler », regroupement des changements.
   - Aucun email : cloche seulement (règles d'envoi d'emails inchangées).
 - Ce que je teste pour valider : masquer un outil pour un éducateur de test, voir sa notification ; masquer puis annuler, ne rien recevoir.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) test connecté par Kevin sur le club de test (masquer, voir la notification dans la cloche de l'éducateur ; masquer puis annuler, rien) : pas de session club ici, l'écran n'a pas été joué dans un navigateur, seule l'action serveur est prouvée par tests ; (2) la table `notifications` n'a aucune contrainte sur `type` dans les SQL du dépôt (le type `menu_club_modifie` est libre, comme `outil_club_retire`), mais la base réelle n'a pas été interrogée : si l'envoi échoue, le message d'erreur s'affiche sous le réglage ; (3) si le club ferme l'onglet ou le navigateur pendant les 9 secondes d'attente, les éducateurs ne sont pas prévenus (changer de page dans l'appli envoie tout de suite) ; (4) la cloche des éducateurs affiche le texte tel quel, pas de vérification visuelle côté éducateur ; (5) rien commité ni poussé.
+- Journal : 2026-11-12, Sonnet 5.5. Nouvelle action `prevenir_menu` dans `api/outils.js` (placée avant le contrôle « nouveau modèle » : les clubs de l'ancien modèle sont prévenus aussi). Le club envoie, par éducateur, les outils retirés et réaffichés ; le serveur relit mode et réglages en base avec la même règle que l'appli de l'éducateur (`affichageDepuisLignes`), ne garde que ce que la base confirme, saute les outils que l'éducateur paie lui-même, ignore les éducateurs d'un autre club et les outils sans entrée de menu, et écrit une seule notification par éducateur (type `menu_club_modifie`, « Votre club a retiré X de votre menu le JJ/MM. » et/ou « Votre club a réaffiché X dans votre menu le JJ/MM. »). Cloche seulement, aucun email. Côté écran (`EtapeEducateurs.jsx`) : l'état avant le premier changement est gardé, puis 9 secondes après le dernier changement (un peu plus que le bandeau Annuler de 8 s) l'écran relit la base, compare avant/après pour chaque éducateur et envoie la différence : un changement annulé ou remis comme avant n'envoie rien, plusieurs changements rapprochés font un seul envoi. Le changement de mode (commun/individualisé) est compté aussi. Quitter la page envoie le lot en attente. Tests : 7 nouveaux dans `tests/outils-api.test.js` (378 au total, 377 passés, 1 ignoré) ; build OK ; lint propre sur `monclub` et `api/outils.js`. Décision : choix de la date en heure de Paris.
 
 ### Bloc 8 : « Voir comme un éducateur » [IDÉE 2]
-- Statut : à faire
+- Statut : fait (en attente de ta validation)
 - Objectif : le club voit le menu réel d'un éducateur, aux couleurs du club, avant de valider.
 - Résultat testable : bouton dans l'étape 3 ; choix « un éducateur type » ou un éducateur précis ; aperçu du menu en lecture seule, avec les entrées qui changeraient signalées ; fonctionne sur mobile.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -200,11 +200,12 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Mise en évidence avant/après (texte et contour, pas seulement la couleur).
   - Aucune connexion « à la place de » l'éducateur : aperçu calculé, pas d'accès à ses données.
 - Ce que je teste pour valider : comparer l'aperçu avec le vrai menu d'un éducateur de test.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) test connecté par Kevin sur le club de test (bouton « Voir comme un éducateur » dans l'étape 3, comparer avec le vrai menu d'un éducateur de test) : l'écran n'a pas été ouvert dans un navigateur ici, seule la règle est prouvée par tests ; (2) l'aperçu ne connaît ni les outils que l'éducateur paie lui-même (ils restent affichés chez lui), ni les entrées qui dépendent de son compte (Stages, Explorer, Mes outils, Recrutement) : une phrase le dit à l'écran ; (3) la liste des entrées est une copie du menu de `DashboardEducateur.jsx` (`src/lib/menuEducateur.js`) : à garder alignée si ce menu change ; (4) le bloc 5 notait qu'un dirigeant délégué ne voit pas les réglages du club : non traité ici, l'aperçu est un écran du club, pas une connexion à la place de l'éducateur ; (5) rien commité ni poussé.
+- Journal : 2026-11-12, Sonnet 5.5. Nouveau `src/lib/menuEducateur.js` : `apercuMenuEducateur(mode, lignes, educateurId)` calcule le menu par la même règle `menuVisible` que l'appli de l'éducateur, avec et sans les réglages du club. Nouveau composant `monclub/ApercuMenuEducateur.jsx` : choix « Éducateur type » (réglage commun) ou un éducateur précis, menu en lecture seule aux couleurs du club, entrées retirées barrées avec la mention « Retiré » et contour en pointillés (pas seulement la couleur), compteur annoncé. Bouton dans `EtapeEducateurs.jsx`, l'aperçu suit en direct les réglages en cours (mode individualisé : la ligne de l'éducateur passe avant le commun). Aucune donnée de l'éducateur lue. Tests : 4 nouveaux dans `tests/menuEducateur.test.js` (382 au total, 381 passés, 1 ignoré) ; build OK ; lint propre.
+
 
 ### Bloc 9 : modèles de départ [IDÉE 1]
-- Statut : à faire
+- Statut : fait (en attente de ta validation)
 - Objectif : un clic pré-règle les étapes 2 et 3, puis on ajuste.
 - Résultat testable : trois modèles proposés en haut de l'étape 2 (noms validés par Kevin) ; un clic montre ce qui va changer, « Appliquer » le fait, « Annuler » revient en arrière ; aucun modèle n'achète ni n'active un outil payant (il ne fait qu'afficher ou masquer).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -217,8 +218,10 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Les écrire dans le catalogue (données, pas de SQL).
   - Écran de confirmation avec l'aperçu du bloc 8.
 - Ce que je teste pour valider : appliquer « Minimal » sur le club de test, regarder le menu d'un éducateur, annuler.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) test connecté par Kevin sur le club de test (appliquer « Minimal », regarder le menu d'un éducateur, annuler) : l'écran n'a pas été joué dans un navigateur ici, seuls la règle (tests) et le build sont prouvés ; (2) nouveau modèle : un modèle qui retire un outil du club le désactive pour de bon (action `choisir_club`) et le ferme aux éducateurs, l'annulation le réactive mais ne le rouvre pas : l'écran de confirmation le dit ; (3) les modèles passent le menu éducateur en « même pour tous » (réglages individuels gardés de côté, restaurés par Annuler) ; (4) l'aperçu intégré montre le menu de l'éducateur type après modèle, sans comparer avec l'état actuel ; (5) rien commité ni poussé.
+- Journal : 2026-11-12, Sonnet 5.5. Contenu des modèles validé par Kevin (Club compétition, École de foot / formation, Minimal) plus un quatrième « Tout afficher » (décision de Claude, accord de Kevin : remet tout à zéro sans dépendre du bandeau Annuler de 8 s). Nouveau `src/lib/modelesDepart.js` (données + `planModele`, calcul de ce qui change) et `monclub/ModelesDepart.jsx` en haut de l'étape 2 : un clic ouvre l'écran de confirmation (nombre d'outils retirés en gras, liste par groupe, avertissements, aperçu du bloc 8), « Appliquer » écrit, bandeau « Annuler » restaure outils du club, mode et lignes communes. Éducateurs prévenus par la cloche comme au bloc 7 (9 s, rien si annulé). Écritures communes sorties dans `monclub/ecritures.js`, `EtapeOutils` et `EtapeEducateurs` les réutilisent. Réservé à qui peut régler les outils (compte du club en nouveau modèle). Tests : 6 nouveaux (388 au total, 387 passés, 1 ignoré) ; build OK ; lint propre.
+
+
 
 ### Bloc 10 (optionnel) : journal des changements [IDÉE 3]
 - Statut : à faire
@@ -238,7 +241,7 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
 - Journal : 2026-11-11, Opus 5.5. Créé `supabase_mon_club.sql`, `supabase_mon_club_verification.sql`, `supabase_mon_club_ANNULATION_NE_PAS_EXECUTER.sql`. Structure, à utiliser aux blocs 4 à 6 : `mon_club_reglages` (`club_id` clé, `mode_educateurs` `commun` ou `individualise` ; pas de ligne = `commun`) et `mon_club_affichage` (`club_id`, `cible` `club` / `educateurs` / `educateur`, `educateur_id` rempli seulement pour `educateur`, `outil` identifiant du catalogue, `visible` vrai ou faux ; pas de ligne = affiché ; upsert sur `club_id, cible, educateur_id, outil`). `maj_le` et `maj_par` remplis par la base. Écart : pas de drapeau « actif » ; c'est le mode qui met de côté les réglages individuels (en `commun`, l'appli ignore les lignes `educateur`, qui restent en base) : une seule source de vérité. Accès : écriture par le compte club, le staff `president` ou un rôle ayant « Mon club » (Voir et Modifier) ; cible `educateur` acceptée seulement pour un éducateur affilié accepté ; lecture par le club et tout son staff, et par l'éducateur affilié (mode, commun et ses propres lignes, jamais celles des autres). Garde-fous : Postgres 15 ou plus, fonctions d'outils à la carte présentes, arrêt si déjà exécuté. Test réel dans un Postgres 16 en mémoire (PGlite) avec copie minimale des tables et les vraies fonctions d'outils à la carte : 43 vérifications OK (droits de chaque rôle, éducateur en attente, autre club, visiteur, upsert sans doublon, auteur non falsifiable, retour au mode commun sans perte, annulation puis ré-exécution). Base Supabase réelle non touchée.
 
 ### Bloc 11 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait (en attente de ta validation), non commité
 - Objectif : tout le parcours marche sur les comptes réels de test, et l'ancien code mort est retiré.
 - Résultat testable : compte rendu avec captures du parcours complet (4 étapes, 2 modèles, 2 modes) ; anciens panneaux supprimés de `DashboardClub.jsx` ; tests, lint, build verts ; un club réel de l'ancien modèle vérifié en lecture : rien n'a changé.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -252,5 +255,5 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
   - Mettre à jour les tutoriels club qui parlent de « Personnaliser » ou « Droits des éducateurs » (`TutorielsClub.jsx`).
   - Commit et push après « ok » de Kevin.
 - Ce que je teste pour valider : le parcours de bout en bout sur mon propre compte club.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) parcours complet à jouer par Kevin sur son compte club (4 étapes, clair/sombre, mobile) : aucune session club ici, rien n'a été ouvert dans un navigateur ; (2) vérification en lecture d'un club réel ancien modèle non faite ici (pas d'accès à la base) ; (3) commit et push après ton « ok » ; (4) bloc 10 (journal) toujours optionnel, non fait ; (5) lint : 17 problèmes déjà présents avant le chantier dans `DashboardClub.jsx` (dont `sportifVisible` et `administratifVisible` inutilisés), non touchés.
+- Journal : 2026-11-12, Sonnet 5.5. Les anciens panneaux de `DashboardClub.jsx` étaient déjà remplacés par des liens vers Mon club (« Personnaliser », « Accès du bureau ») : rien de plus à retirer. `TutorielsClub.jsx` : étape « Logo, couleurs et slogan » et étape « Ce que chacun peut faire » (Staff) pointent maintenant vers Mon club ; « Droits des éducateurs » de Projet sportif laissé tel quel (encart conservé). Vérifs : `npm test` 387 OK, 1 ignoré, 0 échec ; `npm run build` OK.

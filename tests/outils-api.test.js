@@ -23,15 +23,18 @@ function monde({ panneLigne = false } = {}) {
   const essais = new Set()
   const ouverts = new Set()
   const notifs = []
+  const menu = { mode: 'commun', lignes: [] }
   let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais, ouverts, notifs, profils,
+    lignes, essais, ouverts, notifs, profils, menu,
     pannerNotifications: () => { panneNotif = true },
     donnees: {
       ouvert: async (c, o) => ouverts.has(cle(c, o)),
       ouvrirOutil: async (c, o) => { ouverts.add(cle(c, o)) },
       fermerOutil: async (c, o) => { ouverts.delete(cle(c, o)) },
+      educateursAffilies: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
+      reglageMenuEducateurs: async () => menu,
       educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
       notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
       profil: async (cid) => profils[cid] || null,
@@ -449,4 +452,76 @@ test('composer : refus pour un outil inconnu ou en double, un compte qui a déj�
   assert.equal(m.profils[U.clubNeuf].modele_outils, false)
   assert.equal(m.profils[U.eduDejaPaye].modele_outils, false)
   assert.equal(m.lignes.size, 0)
+})
+
+// Mon club, bloc 7 : prévenir les éducateurs d'un changement de menu.
+const retirePourTous = (m, outil) => m.menu.lignes.push({ cible: 'educateurs', educateur_id: null, outil, visible: false })
+const prevenir = (m, utilisateur, changements) => appeler(m, utilisateur, { action: 'prevenir_menu', changements })
+
+test('prevenir_menu : un outil retiré par le club prévient l\'éducateur, une seule notification, avec la date', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances'); retirePourTous(m, 'tactique')
+  const res = await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances', 'tactique'], reaffiches: [] }])
+  assert.equal(res.code, 200)
+  assert.equal(m.notifs.length, 1)
+  assert.equal(m.notifs[0].user_id, U.eduAffilie)
+  assert.equal(m.notifs[0].type, 'menu_club_modifie')
+  assert.equal(m.notifs[0].contenu, 'Votre club a retiré Séances, Tacticboard de votre menu le 09/11.')
+})
+
+test('prevenir_menu : réaffichage, et retrait + réaffichage dans la même notification', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: ['stages'] }])
+  assert.equal(m.notifs[0].contenu, 'Votre club a retiré Séances de votre menu le 09/11. Votre club a réaffiché Stages dans votre menu le 09/11.')
+})
+
+test('prevenir_menu : ce que la base ne confirme pas n\'est pas annoncé (changement annulé)', async () => {
+  const m = monde()
+  const res = await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }])
+  assert.equal(res.code, 200)
+  assert.equal(res.corps.notifies, 0)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('prevenir_menu : mode commun, un réglage individuel mis de côté ne compte pas ; individualisé, il compte', async () => {
+  const m = monde()
+  m.menu.lignes.push({ cible: 'educateur', educateur_id: U.eduAffilie, outil: 'seances', visible: false })
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }])
+  assert.equal(m.notifs.length, 0)
+  m.menu.mode = 'individualise'
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }, { educateur_id: U.eduAffilie2, retires: ['seances'], reaffiches: [] }])
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie])
+})
+
+test('prevenir_menu : un outil que l\'éducateur paie lui-même reste dans son menu, rien à lui annoncer', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  m.lignes.set(`${U.eduAffilie}|seances`, { source: 'abonnement', fin_le: null })
+  await prevenir(m, U.club, [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }, { educateur_id: U.eduAffilie2, retires: ['seances'], reaffiches: [] }])
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie2])
+})
+
+test('prevenir_menu : éducateur d\'un autre club, outil sans entrée de menu ou inconnu : ignorés', async () => {
+  const m = monde()
+  retirePourTous(m, 'stats_collectives'); retirePourTous(m, 'inconnu')
+  await prevenir(m, U.club, [
+    { educateur_id: U.edu, retires: ['seances'], reaffiches: [] },
+    { educateur_id: U.eduAffilie, retires: ['stats_collectives', 'inconnu'], reaffiches: [] },
+  ])
+  assert.equal(m.notifs.length, 0)
+})
+
+test('prevenir_menu : réservé au club (les deux modèles), changements valides', async () => {
+  const m = monde()
+  retirePourTous(m, 'seances')
+  const un = [{ educateur_id: U.eduAffilie, retires: ['seances'], reaffiches: [] }]
+  assert.equal((await prevenir(m, U.edu, un)).code, 403)
+  assert.equal((await prevenir(m, U.joueur, un)).code, 403)
+  assert.equal((await appeler(m, U.club, { action: 'prevenir_menu' })).code, 400)
+  assert.equal((await prevenir(m, U.club, Array(201).fill(un[0]))).code, 400)
+  assert.equal(m.notifs.length, 0)
+  m.profils[U.club] = { plan: 'club', modele_outils: false, abonnement_actif: true }
+  assert.equal((await prevenir(m, U.club, un)).code, 200)
+  assert.equal(m.notifs.length, 1)
 })

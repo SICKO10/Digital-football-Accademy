@@ -6357,7 +6357,7 @@ export default function DashboardClub() {
             sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
             savingTheme={savingTheme} themeUploading={themeUploading}
             isMobile={isMobile} couleurPrincipale={couleurPrincipale}
-            outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId}
+            outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId} educateurs={educateursAcceptes}
             etape={monClubEtape} setEtape={setMonClubEtape} estPresident={monRole === 'president'}
             rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
             savingPermissions={savingPermissions} sauvegarderPermissions={sauvegarderPermissions} />

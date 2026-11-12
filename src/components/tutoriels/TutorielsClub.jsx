@@ -71,7 +71,7 @@ const TUTORIELS = {
       },
       {
         titre: 'Logo, couleurs et slogan',
-        texte: 'Le bouton « Personnaliser » en haut de l’écran (compte président) ouvre la personnalisation du dashboard.',
+        texte: 'Le bouton « Personnaliser » en haut de l’écran ouvre la page « Mon club », étape « Identité ».',
         points: [
           'Couleur principale et couleur secondaire du club.',
           'Photo de fond (stade, terrain, vestiaire…) et logo du club en grand format.',
@@ -169,7 +169,7 @@ const TUTORIELS = {
       },
       {
         titre: 'Ce que chacun peut faire',
-        texte: 'Pour chaque rôle, choisis rubrique par rubrique ce qu’il peut voir et ce qu’il peut modifier, et à quelles catégories d’équipe il a accès.',
+        texte: 'Dans « Mon club », étape « Accès du bureau » (bouton « Accès du bureau » ici), choisis pour chaque rôle, rubrique par rubrique, ce qu’il peut voir et ce qu’il peut modifier, et à quelles catégories d’équipe il a accès.',
         astuce: 'Un membre du staff ne voit dans son menu que les rubriques autorisées.',
         visuel: <Liste titre="Permissions — Trésorier" lignes={[['Budget', <Statut key="b" couleur={c.accent.green}>Voir · Modifier</Statut>], ['Sponsors', <Statut key="s" couleur={c.accent.blue}>Voir</Statut>], ['Sportif', <Statut key="p" couleur={c.text.faint}>Aucun accès</Statut>]]} />,
       },

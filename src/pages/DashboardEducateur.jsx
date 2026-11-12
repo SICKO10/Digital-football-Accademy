@@ -1807,10 +1807,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [mesRoles, setMesRoles] = useState(null) // autres rôles de ce compte (club/joueur/parent), cf. lib/multiRole
   // Retour de la page de paiement Stripe des outils : on rouvre Mes outils.
   const [activeSectionBrut, setActiveSection] = useState(() => (retourPaiementOutils() || retourDuPortail() ? 'mes_outils' : 'accueil'))
+  const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   // Outils à la carte (comptes `modele_outils` seulement) : une page dont
   // l'outil n'est pas actif devient 'outil_verrouille' et affiche la carte
   // « outil non activé ». Autres comptes : activeSection est la valeur brute.
-  const outils = useOutils({ role: 'educateur', userId, modeleOutils: profil?.modele_outils, desactive: !!educateurIdOverride })
+  // Le menu suit aussi les réglages Mon club du club d'affiliation acceptée
+  // (tous modèles ; sans réglage, rien ne change).
+  const outils = useOutils({ role: 'educateur', userId, modeleOutils: profil?.modele_outils, desactive: !!educateurIdOverride, clubId: clubAffiliation?.statut === 'accepte' ? clubAffiliation.club_id : null })
   const activeSection = outils.verrouillee(activeSectionBrut) ? 'outil_verrouille' : activeSectionBrut
   const [loading, setLoading] = useState(true)
   // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
@@ -2464,7 +2467,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [notesEdu, setNotesEdu] = useState([])
   const [affiliations, setAffiliations] = useState([])
 
-  const [clubAffiliation, setClubAffiliation] = useState(null) // liaison actuelle avec un club
   // Couleur du club d'affiliation (lien accepté) ; sans club = vert par défaut.
   useDonnerCouleurClub(
     clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale : null,

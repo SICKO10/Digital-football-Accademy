@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { supabase } from '../supabase'
 import {
-  compteDepuisLignes, sectionVerrouillee, menuVisible, outilActif, ongletsStatsPermis, etatsOutils,
+  compteDepuisLignes, affichageDepuisLignes, sectionVerrouillee, menuVisible, outilActif, ongletsStatsPermis, etatsOutils,
 } from './outilsAcces'
 
 // Lit les outils actifs d'un compte (fonction base `outils_actifs`) et rend les
 // réponses prêtes à l'emploi pour un dashboard.
-// `modeleOutils` faux (ou `desactive`, ex. un dirigeant qui consulte le
-// dashboard d'un éducateur) : rien n'est lu, rien n'est filtré.
-export function useOutils({ role, userId, modeleOutils, desactive = false }) {
+// `modeleOutils` faux : aucun outil n'est lu ni verrouillé ; seuls les réglages
+// d'affichage de Mon club s'appliquent (tous modèles). `desactive` (ex. un
+// dirigeant qui consulte le dashboard d'un éducateur) : rien n'est lu, rien
+// n'est filtré.
+// `clubId` (éducateur) : club d'affiliation acceptée, dont on lit les réglages.
+export function useOutils({ role, userId, modeleOutils, desactive = false, clubId = null }) {
   const actif = !!modeleOutils && !desactive
   const [lignes, setLignes] = useState([])
   const [essaisUtilises, setEssaisUtilises] = useState([])
@@ -16,6 +19,7 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
   const [ouverts, setOuverts] = useState([])
   const [masquesClub, setMasquesClub] = useState([])
   const [masquesClubLus, setMasquesClubLus] = useState(false)
+  const [affichageClub, setAffichageClub] = useState(null)
   const [pret, setPret] = useState(false)
 
   const [version, setVersion] = useState(0)
@@ -64,9 +68,31 @@ export function useOutils({ role, userId, modeleOutils, desactive = false }) {
     return () => { annule = true }
   }, [lireMasquesClub, userId, version])
 
+  // Éducateur affilié : ce que son club affiche ou masque dans son menu (mode
+  // et lignes 'educateurs' / 'educateur'). Lu pour tous les modèles ; sans
+  // ligne, rien ne change.
+  const lireAffichageClub = role === 'educateur' && !desactive && !!userId && !!clubId
+  useEffect(() => {
+    if (!lireAffichageClub) return undefined
+    let annule = false
+    Promise.all([
+      supabase.from('mon_club_reglages').select('mode_educateurs').eq('club_id', clubId).maybeSingle(),
+      supabase.from('mon_club_affichage').select('cible, educateur_id, outil, visible').eq('club_id', clubId).in('cible', ['educateurs', 'educateur']),
+    ]).then(([reglages, lus]) => {
+      if (annule) return
+      if (reglages.error) console.error('mon_club_reglages', reglages.error.message)
+      if (lus.error) console.error('mon_club_affichage', lus.error.message)
+      setAffichageClub(affichageDepuisLignes(reglages.data?.mode_educateurs, lus.data || [], userId))
+    })
+    return () => { annule = true }
+  }, [lireAffichageClub, clubId, userId, version])
+
+  // Nouveau modèle : on attend les droits avant d'appliquer les réglages du
+  // club, pour ne pas cacher un instant un outil que l'éducateur paie.
+  const affichageApplique = lireAffichageClub && (!actif || pret) ? affichageClub : null
   const compte = useMemo(
-    () => compteDepuisLignes(role, actif, lignes, masques, lireMasquesClub ? masquesClub : []),
-    [role, actif, lignes, masques, masquesClub, lireMasquesClub],
+    () => compteDepuisLignes(role, actif, lignes, masques, lireMasquesClub ? masquesClub : [], affichageApplique),
+    [role, actif, lignes, masques, masquesClub, lireMasquesClub, affichageApplique],
   )
 
   const etats = useMemo(

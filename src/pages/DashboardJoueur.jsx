@@ -1,4 +1,6 @@
 import { demanderSignatureUpload, demanderSignatureImage, ajouterChampsSignes } from '../lib/signatureUpload'
+import { resultatMatch, scoreAffiche } from '../lib/resultatMatch'
+import { etatCartons } from '../lib/disciplineCartons'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, signOutSafe } from '../supabase'
@@ -36,9 +38,9 @@ import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
 import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../lib/menuLateral'
 import EnTeteMenu from '../components/EnTeteMenu'
+import BandeauClub from '../components/BandeauClub'
 import { ecranJoueurCss, choisirALaUne, vignetteVideo } from '../lib/ecranJoueur'
 import SeanceDuJourJoueur from '../components/SeanceDuJourJoueur'
-import BandeauClub from '../components/BandeauClub'
 import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { useAlertesMasquees } from '../hooks/useAlertesMasquees'
 import HistoriqueSaisons from '../components/saisons/HistoriqueSaisons'
@@ -1281,7 +1283,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // plus cette colonne (widget "prochains matchs" laissé tel quel, redondant
     // avec l'onglet Compétition qui lui est déjà scopé via matchs_equipe).
     const qEffectif = scopeEquipe(supabase.from('equipe_joueurs').select('id, prenom, nom').eq('educateur_id', educateurId))
-    const qMatchsEquipe = () => scopeEquipe(supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, domicile, competition, score_nous, score_eux, buts_detail').eq('educateur_id', educateurId)).order('id')
+    const qMatchsEquipe = () => scopeEquipe(supabase.from('matchs_equipe').select('id, date, heure, lieu, adversaire, domicile, competition, score_nous, score_eux, tab_nous, tab_eux, buts_detail').eq('educateur_id', educateurId)).order('id')
     const [
       { data: toutesPresences },
       [
@@ -1340,6 +1342,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     const jaunes = matchsMoi?.filter(m => m.carton_jaune).length || 0
     const rouges = matchsMoi?.filter(m => m.carton_rouge).length || 0
     const minutesJouees = matchsMoi?.reduce((s, m) => s + (m.minutes || 0), 0) || 0
+
+    // Dates des matchs où le joueur a reçu un jaune (cumul sur 3 mois, cf. disciplineCartons.js)
+    const dateMatchParId = {}
+    matchsEquipe?.forEach(m => { dateMatchParId[m.id] = m.date })
+    const datesJaunes = (matchsMoi || []).filter(m => m.carton_jaune).map(m => dateMatchParId[m.match_id]).filter(Boolean)
 
     // --- Présence par mois (inclut aussi les points de séance du mois) ---
     const byMonth = {}
@@ -1400,9 +1407,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           return { nom: j ? `${j.prenom} ${j.nom}` : '?', val, isMe: id === equipeJoueurId }
         })
     }
-    // Map match_id → victoire (score_nous > score_eux)
+    // Map match_id → victoire (résultat du match, tirs au but compris)
     const victoireMap = {}
-    matchsEquipe?.forEach(m => { victoireMap[m.id] = parseInt(m.score_nous) > parseInt(m.score_eux) })
+    matchsEquipe?.forEach(m => { victoireMap[m.id] = resultatMatch(m) === 'V' })
 
     const leaderButs = buildLeader(tousMatchs, r => r.buts || 0)
     const leaderPasses = buildLeader(tousMatchs, r => r.passes_dec || 0)
@@ -1473,6 +1480,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         elusMois, classementAnnee,
         total, present, points, tauxPresence: total ? Math.round((present / total) * 100) : null,
         buts, passes, matchsJoues, cleanSheets, jaunes, rouges, minutesJouees,
+        etatCartons: etatCartons(datesJaunes, new Date().toLocaleDateString('sv-SE')),
         presenceMensuelle,
         rankButs, rankPasses, rankMatchs, rankClean, rankPoints,
         evaluations: evaluations || [],
@@ -1948,8 +1956,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       acc.joues += 1
       acc.pour += nous
       acc.contre += eux
-      if (nous > eux) acc.v += 1
-      else if (nous === eux) acc.n += 1
+      const res = resultatMatch(r)
+      if (res === 'V') acc.v += 1
+      else if (res === 'N') acc.n += 1
       else acc.d += 1
       return acc
     }, { joues: 0, v: 0, n: 0, d: 0, pour: 0, contre: 0 })
@@ -2126,9 +2135,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {moisResultats.length === 0 ? (
             <EmptyState compact title="Aucun résultat ce mois-ci" />
           ) : moisResultats.map(r => {
-            const nous = Number(r.score_nous)
-            const eux = Number(r.score_eux)
-            const couleur = nous > eux ? colors.accent.success : nous === eux ? colors.accent.amber : colors.accent.red
+            const res = resultatMatch(r)
+            const couleur = res === 'V' ? colors.accent.success : res === 'N' ? colors.accent.amber : colors.accent.red
             return ligneMatch(
               r.id,
               r.adversaire,
@@ -2136,10 +2144,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               new Date(r.date + 'T12:00:00').toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' }),
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing.base, flexShrink: 0 }}>
                 <span style={{ fontSize: fontSize['3xl'], fontWeight: 800, color: colors.text.primary, whiteSpace: 'nowrap' }}>
-                  {r.score_nous} - {r.score_eux}
+                  {scoreAffiche(r, ' - ')}
                 </span>
                 <span style={stylePastille(couleur)}>
-                  {nous > eux ? 'V' : nous === eux ? 'N' : 'D'}
+                  {res}
                 </span>
               </div>,
             )
@@ -2236,6 +2244,14 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const prochainMatchSemaine = matchsAVenir.filter(m => m.date <= dimancheCourant).sort((a, b) => a.date.localeCompare(b.date))[0]
   const showProchainMatchSemaine = prochainMatchSemaine && !alertesMasquees.has(`match_semaine_${lundiCourant}_${prochainMatchSemaine.id}`)
   const matchsHoraireChange = matchsAVenir.filter(m => modifieDepuisCreation(m) && !alertesMasquees.has(`match_horaire_${m.id}_${m.updated_at}`))
+  // Cumul de cartons jaunes (3 mois) : une alerte par équipe, qui change d'identifiant
+  // quand l'état change pour réapparaître même si l'ancienne a été validée.
+  const alertesCartons = mesAffiliations
+    .filter(a => a.statut === 'accepte')
+    .map(a => ({ a, e: statsJoueur[a.id]?.etatCartons }))
+    .filter(({ e }) => e && e.etat !== 'aucun')
+    .map(({ a, e }) => ({ ...e, id: `carton_${a.id}_${e.etat}_${e.echeance || e.finLe}` }))
+    .filter(c => !alertesMasquees.has(c.id))
 
   if (estAffilie) {
     const affiliation = mesAffiliations.find(a => a.statut === 'accepte')
@@ -2478,6 +2494,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 entrainementsSupprimes={entrainementsSupprimesAlerte}
                 matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
                 matchsHoraireChange={matchsHoraireChange}
+                cartons={alertesCartons}
                 masquer={masquerAlerte}
                 onOuvrirOnglet={setOnglet}
                 lang={lang}
@@ -3728,6 +3745,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               entrainementsSupprimes={entrainementsSupprimesAlerte}
               matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
               matchsHoraireChange={matchsHoraireChange}
+                cartons={alertesCartons}
               masquer={masquerAlerte}
               onOuvrirOnglet={setOnglet}
               lang={lang}

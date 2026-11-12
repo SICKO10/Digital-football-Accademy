@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   compteDepuisLignes, outilPourMenu, sectionVerrouillee, ongletsStatsPermis,
-  menuVisible, outilActif, ONGLETS_STATS, etatsOutils, doublonsClub, outilsPourEducateurs,
+  menuVisible, outilActif, ONGLETS_STATS, etatsOutils, doublonsClub, outilsPourEducateurs, affichageDepuisLignes,
 } from '../src/lib/outilsAcces.js'
 
 const NOW = new Date('2026-11-07T12:00:00Z')
@@ -309,4 +309,99 @@ test('chaque outil du club a un thème connu et une explication', async () => {
     assert.ok(themes.includes(o.theme), `${o.id} : thème`)
     assert.ok(o.explication && !/[—–]/.test(o.explication), `${o.id} : explication`)
   }
+})
+
+// ── Mon club : menu de l'éducateur réglé par son club (bloc 5) ──────────────
+
+const MOI = 'edu-1'
+const commun = (outil, visible) => ({ cible: 'educateurs', educateur_id: null, outil, visible })
+const perso = (outil, visible, educateur_id = MOI) => ({ cible: 'educateur', educateur_id, outil, visible })
+const MENUS_EDUCATEUR = [
+  'accueil', 'profil', 'mes_outils', 'equipe', 'stats', 'sante', 'historique', 'matchs', 'entrainements',
+  'mes_seances', 'materiel', 'terrains', 'deplacements', 'clotures_saison', 'prep_physique', 'tactipad',
+  'bibliotheque', 'projet_sportif', 'projet_club_cff4', 'stages', 'analyse_video', 'notes', 'explorer', 'recrutement',
+]
+const eduClub = ({ modele = false, lignes = [], masques = [], mode = 'commun', reglages = [] } = {}) =>
+  compteDepuisLignes('educateur', modele, lignes, masques, [], affichageDepuisLignes(mode, reglages, MOI))
+const fourniParClub = [{ outil: 'projet_sportif', source: 'club', fin_le: null }]
+
+test('Mon club : sans aucun réglage, aucun menu éducateur ne change (ancien et nouveau modèle)', () => {
+  assert.equal(affichageDepuisLignes(undefined, [], MOI), null)
+  assert.equal(affichageDepuisLignes('individualise', [], MOI), null)
+  for (const modele of [false, true]) {
+    for (const lignes of [[], fourniParClub, [{ outil: 'tactique', source: 'achat', fin_le: null }]]) {
+      const avant = compteDepuisLignes('educateur', modele, lignes)
+      const apres = eduClub({ modele, lignes })
+      for (const cle of MENUS_EDUCATEUR) assert.equal(menuVisible(apres, cle, NOW), menuVisible(avant, cle, NOW), `${modele} ${cle}`)
+    }
+  }
+})
+
+test('Mon club, ancien modèle : le réglage commun masque l\'entrée, la page reste ouverte', () => {
+  const compte = eduClub({ reglages: [commun('seances', false), commun('tactique', true)] })
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), false)
+  assert.equal(sectionVerrouillee(compte, 'mes_seances', NOW), false)
+  assert.equal(menuVisible(compte, 'tactipad', NOW), true)
+  assert.equal(menuVisible(compte, 'bibliotheque', NOW), true)
+})
+
+test('Mon club, nouveau modèle : le club masque un outil qu\'il fournit', () => {
+  const compte = eduClub({ modele: true, lignes: fourniParClub, reglages: [commun('projet_sportif', false)] })
+  assert.equal(menuVisible(compte, 'projet_sportif', NOW), false)
+  assert.equal(sectionVerrouillee(compte, 'projet_sportif', NOW), false)
+})
+
+test('Mon club : un outil payé par l\'éducateur reste affiché, essai en cours compris', () => {
+  const reglages = [commun('tactique', false), commun('seances', false)]
+  const lignes = [{ outil: 'tactique', source: 'achat', fin_le: null }, { outil: 'seances', source: 'essai', fin_le: futur }]
+  const compte = eduClub({ modele: true, lignes, reglages, mode: 'individualise' })
+  assert.equal(menuVisible(compte, 'tactipad', NOW), true)
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), true)
+  const finie = eduClub({ modele: true, lignes: [{ outil: 'tactique', source: 'achat', fin_le: passe }], reglages })
+  assert.equal(menuVisible(finie, 'tactipad', NOW), false)
+})
+
+test('Mon club, individualisé : le réglage individuel passe avant le commun', () => {
+  const reglages = [commun('seances', false), perso('seances', true), perso('tactique', false)]
+  const compte = eduClub({ mode: 'individualise', reglages })
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), true)
+  assert.equal(menuVisible(compte, 'tactipad', NOW), false)
+  assert.equal(menuVisible(compte, 'bibliotheque', NOW), true)
+})
+
+test('Mon club, même pour tous : les réglages individuels sont mis de côté', () => {
+  const reglages = [commun('seances', false), perso('seances', true), perso('tactique', false)]
+  const compte = eduClub({ mode: 'commun', reglages })
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), false)
+  assert.equal(menuVisible(compte, 'tactipad', NOW), true)
+  assert.equal(affichageDepuisLignes('commun', [perso('tactique', false)], MOI), null)
+})
+
+test('Mon club : un nouvel éducateur reçoit le réglage commun, jamais celui d\'un autre', () => {
+  const reglages = [commun('prep_physique', false), perso('prep_physique', true, 'edu-2'), perso('tactique', false, 'edu-2')]
+  const compte = eduClub({ mode: 'individualise', reglages })
+  assert.equal(menuVisible(compte, 'prep_physique', NOW), false)
+  assert.equal(menuVisible(compte, 'tactipad', NOW), true)
+})
+
+test('Mon club : l\'éducateur peut masquer en plus ce que le club affiche, pas l\'inverse', () => {
+  const affiche = eduClub({ modele: true, lignes: fourniParClub, masques: ['projet_sportif'], reglages: [commun('projet_sportif', true)] })
+  assert.equal(menuVisible(affiche, 'projet_sportif', NOW), false)
+  const masque = eduClub({ modele: true, lignes: fourniParClub, reglages: [commun('projet_sportif', false)] })
+  assert.equal(menuVisible(masque, 'projet_sportif', NOW), false)
+})
+
+test('Mon club : le socle et Statistiques (présence gratuite) ne se masquent jamais', () => {
+  const reglages = ['suivi_joueurs', 'stats_collectives', 'seances', 'tactique', 'projet_sportif'].map(o => commun(o, false))
+  const compte = eduClub({ reglages })
+  for (const cle of ['accueil', 'profil', 'equipe', 'stats', 'matchs', 'entrainements', 'materiel', 'terrains', 'deplacements', 'clotures_saison']) {
+    assert.equal(menuVisible(compte, cle, NOW), true, cle)
+  }
+  assert.equal(menuVisible(compte, 'sante', NOW), false)
+  assert.equal(menuVisible(compte, 'notes', NOW), false)
+})
+
+test('Mon club : le réglage des éducateurs ne touche pas le menu du club', () => {
+  const compte = compteDepuisLignes('club', false, [], [], [], affichageDepuisLignes('commun', [commun('projet_sportif', false)], MOI))
+  assert.equal(menuVisible(compte, 'projet_sportif', NOW), true)
 })

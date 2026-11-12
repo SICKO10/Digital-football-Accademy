@@ -2,13 +2,13 @@ import { useColors } from '../../lib/theme'
 import EtapeIdentite from './EtapeIdentite'
 import EtapeAccesBureau from './EtapeAccesBureau'
 import EtapeOutils from './EtapeOutils'
+import EtapeEducateurs from './EtapeEducateurs'
 
-// Les étapes 2 à 4 arrivent dans les blocs suivants : en production elles restent
-// masquées tant qu'elles ne sont pas faites, en local on voit leur place.
+// Une étape pas encore faite reste masquée en production ; en local on voit sa place.
 const ETAPES = [
   { id: 'identite', titre: 'Identité', fait: true },
   { id: 'outils', titre: 'Outils du club', fait: true },
-  { id: 'educateurs', titre: 'Dashboard de mes éducateurs', fait: false, bientot: 'Régler le menu de vos éducateurs, pour tous ou un par un.' },
+  { id: 'educateurs', titre: 'Dashboard de mes éducateurs', fait: true },
   { id: 'bureau', titre: 'Accès du bureau', fait: true, presidentSeul: true },
 ]
 
@@ -17,7 +17,7 @@ const ETAPES = [
 // s'affichent qu'au président : un rôle à qui il a donné « Mon club » ne les voit pas.
 export default function MonClub({
   club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, couleurPrincipale,
-  outils, clubId, estCompteClub, etape, setEtape, estPresident, rolePermissions, roleCategoriesAccess, savingPermissions, sauvegarderPermissions,
+  outils, clubId, estCompteClub, educateurs, etape, setEtape, estPresident, rolePermissions, roleCategoriesAccess, savingPermissions, sauvegarderPermissions,
 }) {
   const colors = useColors()
   const visibles = ETAPES.filter(e => (e.fait || import.meta.env.DEV) && (!e.presidentSeul || estPresident))
@@ -53,7 +53,8 @@ export default function MonClub({
         <EtapeIdentite club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme}
           uploaderImageTheme={uploaderImageTheme} savingTheme={savingTheme} themeUploading={themeUploading} isMobile={isMobile} />
       )}
-      {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} />}
+      {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
+      {courante.id === 'educateurs' && <EtapeEducateurs clubId={clubId} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
       {courante.id === 'bureau' && estPresident && (
         <EtapeAccesBureau rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
           saving={savingPermissions} onSave={sauvegarderPermissions} couleurPrincipale={couleurPrincipale} isMobile={isMobile} />

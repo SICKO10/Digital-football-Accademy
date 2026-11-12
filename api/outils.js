@@ -1,6 +1,7 @@
 /* global process */
 import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_securite.js'
 import Stripe from 'stripe'
+import { affichageDepuisLignes } from '../src/lib/outilsAcces.js'
 import { lireOffre, planOffre, notificationOffre } from '../src/lib/offresOutils.js'
 import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
@@ -46,6 +47,12 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 //   l'outil pour au moins aussi longtemps est laissé tel quel. `apercu: true` compte
 //   sans rien écrire ; un envoi à un groupe exige `confirme: true` et `attendu` (le
 //   nombre vu à l'aperçu). Les comptes reçoivent une notification dans la cloche.
+// - `prevenir_menu` (Mon club, bloc 7) : après un réglage du menu de ses éducateurs
+//   (page Mon club), le club envoie ce qui a vraiment changé pour chacun (outils
+//   retirés, réaffichés). Le serveur relit les réglages en base, ne garde que ce
+//   qui est vrai, saute les outils que l'éducateur paie lui-même, et écrit une
+//   seule notification par éducateur (cloche seulement, aucun email). Ouvert aux
+//   clubs des deux modèles.
 // - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
@@ -57,7 +64,7 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir']
+const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir', 'prevenir_menu']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -195,6 +202,17 @@ export function donneesOutils() {
       if (ids.length === 0) return []
       const profils = await lire(db().from('profiles').select('id').in('id', ids).eq('modele_outils', true))
       return (profils || []).map(p => p.id)
+    },
+    // Éducateurs affiliés acceptés du club, quel que soit leur modèle (Mon club règle leur menu).
+    educateursAffilies: async (club) => {
+      const lies = await lire(db().from('club_educateurs').select('educateur_id').eq('club_id', club).eq('statut', 'accepte'))
+      return [...new Set((lies || []).map(l => l.educateur_id).filter(Boolean))]
+    },
+    // Réglage « Dashboard de mes éducateurs » du club : mode et lignes d'affichage.
+    reglageMenuEducateurs: async (club) => {
+      const reglages = await lire(db().from('mon_club_reglages').select('mode_educateurs').eq('club_id', club).maybeSingle())
+      const lignes = await lire(db().from('mon_club_affichage').select('cible, educateur_id, outil, visible').eq('club_id', club).in('cible', ['educateurs', 'educateur']))
+      return { mode: reglages?.mode_educateurs || 'commun', lignes: lignes || [] }
     },
     // Notifications de la cloche (table `notifications`) : { user_id, type, titre, contenu, lien }.
     notifier: async (lignes) => {
@@ -413,6 +431,41 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
     return res.status(200).json({ ok: true, sens: plan.sens, total: plan.total, fin_le: abo.finPeriode, ...(avertissement ? { avertissement } : {}) })
   }
 
+  // Mon club : prévient les éducateurs dont le menu a changé (bloc 7). Le navigateur
+  // dit ce qu'il croit avoir changé ; seul ce que la base confirme est annoncé.
+  async function prevenirMenu({ profil, corps, clubId, res }) {
+    if (profil?.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club prévient ses éducateurs' })
+    const demandes = Array.isArray(corps.changements) ? corps.changements : null
+    if (!demandes || demandes.length > 200) return res.status(400).json({ error: 'Changements manquants ou trop nombreux' })
+    const outilsMenu = (ids) => [...new Set(Array.isArray(ids) ? ids : [])].map(id => trouverOutil('educateur', id)).filter(o => o && o.menus.length > 0)
+
+    const [affilies, reglage] = await Promise.all([donnees.educateursAffilies(clubId), donnees.reglageMenuEducateurs(clubId)])
+    const maintenantMs = maintenant()
+    const date = new Date(maintenantMs).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
+    const noms = (liste) => liste.map(o => o.nom).join(', ')
+    const lignes = []
+    for (const d of demandes) {
+      if (!d || !affilies.includes(d.educateur_id)) continue
+      const affichage = affichageDepuisLignes(reglage.mode, reglage.lignes, d.educateur_id)
+      const visible = (o) => !affichage || (o.id in affichage.individuel ? affichage.individuel[o.id] : affichage.commun[o.id] !== false)
+      const retires = []
+      for (const o of outilsMenu(d.retires)) {
+        if (visible(o)) continue
+        // Un outil payé par l'éducateur reste dans son menu : rien à lui annoncer.
+        if (actifMaintenant(await donnees.ligne(d.educateur_id, o.id), maintenantMs)) continue
+        retires.push(o)
+      }
+      const reaffiches = outilsMenu(d.reaffiches).filter(visible)
+      if (retires.length === 0 && reaffiches.length === 0) continue
+      const phrases = []
+      if (retires.length > 0) phrases.push(`Votre club a retiré ${noms(retires)} de votre menu le ${date}.`)
+      if (reaffiches.length > 0) phrases.push(`Votre club a réaffiché ${noms(reaffiches)} dans votre menu le ${date}.`)
+      lignes.push({ user_id: d.educateur_id, type: 'menu_club_modifie', titre: 'Menu modifié par votre club', contenu: phrases.join(' '), lien: '/educateur' })
+    }
+    if (lignes.length > 0) await donnees.notifier(lignes)
+    return res.status(200).json({ ok: true, notifies: lignes.length })
+  }
+
   return async function handler(req, res) {
     const utilisateur = await authentifier(req, res, verifierJeton)
     if (!utilisateur) return
@@ -480,6 +533,8 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       }
 
       const profil = await donnees.profil(utilisateur.id)
+
+      if (action === 'prevenir_menu') return await prevenirMenu({ profil, corps, clubId: utilisateur.id, res })
 
       if (action === 'composer') {
         if (profil?.plan !== 'educateur' && profil?.plan !== 'club') return res.status(403).json({ error: 'Réservé aux éducateurs et aux clubs' })
