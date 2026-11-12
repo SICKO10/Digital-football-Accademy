@@ -832,9 +832,11 @@ export function SectionZones({ pole, clubId, readOnly }) {
   )
 }
 
-function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimaire, couleurSecondaire, onRetour }) {
+function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimaire, couleurSecondaire, onRetour, onVue }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
+  // Le dashboard suit l'onglet ouvert pour afficher le bon tutoriel.
+  const choisirOnglet = (cle) => { setOnglet(cle); onVue(cle) }
   const equipesDuPole = categories.filter(c => pole.categories.includes(c.nom))
   // La planification annuelle est propre à chaque catégorie précise (un U15 et
   // un U16 n'ont pas le même contenu de saison), pas au pôle dans son ensemble.
@@ -864,7 +866,7 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: 24, overflowX: 'auto' }}>
         {ONGLETS.map(o => (
-          <button key={o.key} onClick={() => setOnglet(o.key)}
+          <button key={o.key} onClick={() => choisirOnglet(o.key)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: '10px 18px',
               fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
@@ -930,14 +932,14 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
 // club (club_categories) ; Principes de jeu / Planification annuelle / Règles
 // du jeu sont des sections à part entière (principes_jeu, planification_annuelle,
 // regles_jeu), en écriture pour le club/staff et lecture seule sinon.
-export default function ProjetSportif({ categories = [], clubId, readOnly = false, logoUrl, couleurPrimaire, couleurSecondaire }) {
+export default function ProjetSportif({ categories = [], clubId, readOnly = false, logoUrl, couleurPrimaire, couleurSecondaire, onVue = () => {} }) {
   const colors = useColors()
   const [poleActifKey, setPoleActifKey] = useState(null)
   const [genre, setGenre] = useState('masculin')
 
   if (poleActifKey) {
     return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly}
-      logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} onRetour={() => setPoleActifKey(null)} />
+      logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} onRetour={() => { setPoleActifKey(null); onVue('poles') }} onVue={onVue} />
   }
 
   const poles = genre === 'masculin' ? polesMasculins() : polesFeminins()
@@ -973,7 +975,7 @@ export default function ProjetSportif({ categories = [], clubId, readOnly = fals
           const equipes = categories.filter(c => pole.categories.includes(c.nom)).sort((a, b) => pole.categories.indexOf(a.nom) - pole.categories.indexOf(b.nom) || (a.equipe || '').localeCompare(b.equipe || ''))
           const couvertes = new Set(equipes.map(c => c.nom))
           return (
-            <button key={key} onClick={() => setPoleActifKey(key)}
+            <button key={key} onClick={() => { setPoleActifKey(key); onVue('categories') }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderTop: `3px solid ${pole.couleur}`, borderRadius: 14, padding: '18px 20px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', gap: 12, color: colors.text.primary }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = pole.couleur + '66'; e.currentTarget.style.borderTopColor = pole.couleur }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border.subtle; e.currentTarget.style.borderTopColor = pole.couleur }}>

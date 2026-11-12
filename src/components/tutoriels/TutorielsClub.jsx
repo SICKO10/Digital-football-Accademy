@@ -387,25 +387,117 @@ const TUTORIELS = {
     titre: 'Projet Sportif',
     etapes: [
       {
-        titre: 'Le projet de jeu du club',
-        texte: 'Les onglets regroupent tout le projet sportif : catégories et stats, principes de jeu, zones de terrain, planification annuelle et règles du jeu.',
-        visuel: <Onglets items={['Catégories & Stats', 'Principes de jeu', 'Zones de terrain', 'Planification annuelle', 'Règles du jeu']} actif="Principes de jeu" />,
+        titre: 'Pourquoi c’est important',
+        texte: 'Un club où chaque éducateur joue à sa façon perd ses joueurs en route. Le projet sportif écrit une ligne commune : mêmes principes de jeu, mêmes règles et même progression, de catégorie en catégorie.',
+        astuce: 'Un projet clair aide aussi à recruter : un éducateur qui arrive sait où il met les pieds.',
+        visuel: <Cartes items={[{ titre: 'Principes', texte: 'Comment on joue', couleur: c.accent.green, icone: '⚽' }, { titre: 'Zones', texte: 'Où on joue', couleur: c.accent.blue, icone: '▦' }, { titre: 'Saison', texte: 'Quand on progresse', couleur: c.accent.amber, icone: '↗' }]} />,
       },
       {
-        titre: 'Principes de jeu et zones',
-        texte: 'Pour chaque phase (organisation offensive et défensive, transitions, coups de pied arrêtés), écris tes principes. Dessine les zones clés du terrain et les schémas de CPA.',
-        visuel: <Onglets items={['Organisation offensive', 'Organisation défensive', 'Transition offensive', 'Transition défensive', 'Coups de pied arrêtés']} actif="Organisation offensive" couleur={c.accent.green} />,
-      },
-      {
-        titre: 'Règles du jeu',
-        texte: 'Ajoute les documents officiels de chaque catégorie (FFF, Ligue) avec « Ajouter un document » : titre, lien et saison.',
-        visuel: <Formulaire champs={[['Titre', 'Règlements FFF U13'], ['Saison', '2026-2027'], ['Lien URL', 'https://fff.fr/…', true]]} bouton="Ajouter un document" />,
+        titre: 'Choisis un pôle',
+        texte: 'Les équipes sont réunies en pôles par tranche d’âge. Choisis « Masculin » ou « Féminin », puis ouvre le pôle à compléter : tu y trouves les onglets du projet.',
+        visuel: <Onglets items={['Masculin', 'Féminin']} actif="Masculin" />,
       },
       {
         titre: 'Droits des éducateurs',
-        texte: 'En haut de la page, choisis si tes éducateurs peuvent éditer le Projet Sportif et la Planification annuelle. Par défaut, ils consultent sans modifier.',
+        texte: 'Plus bas sur la page, choisis si tes éducateurs peuvent éditer le Projet Sportif et la Planification annuelle. Par défaut, ils consultent sans modifier.',
         astuce: 'Un réglage individuel reste possible depuis Éducateurs (menu d’actions).',
         visuel: <Boutons items={['Éditer le Projet Sportif', 'Éditer la Planification annuelle']} actifs={['Éditer le Projet Sportif']} />,
+      },
+    ],
+  }),
+
+  projet_sportif_categories: (c) => ({
+    titre: 'Projet Sportif : Catégories & Stats',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Un pôle n’a de sens que si chaque équipe a quelqu’un pour la conduire. Cet onglet te montre, d’un coup d’œil, les équipes du pôle et leur éducateur.',
+        visuel: <Liste titre="Pôle U13 à U15" lignes={[['U13 A', 'Karim B.'], ['U15 A', <Statut key="a" couleur={c.accent.amber}>Aucun éducateur affecté</Statut>]]} />,
+      },
+      {
+        titre: 'Que faire ici',
+        texte: 'Repère les équipes sans éducateur. Pour en ajouter ou en affecter un, passe par Sportif, Catégories.',
+        astuce: 'Aucune équipe dans ce pôle ? Crée d’abord la catégorie, elle apparaîtra ici toute seule.',
+        visuel: <Boutons items={['Catégories']} actifs={['Catégories']} />,
+      },
+    ],
+  }),
+
+  projet_sportif_principes: (c) => ({
+    titre: 'Projet Sportif : Principes de jeu',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Ce sont les règles du jeu de ton club : ce que tout joueur doit savoir faire à chaque phase, quelle que soit son équipe. Tes éducateurs s’en servent pour préparer leurs séances.',
+        visuel: <Onglets items={['Organisation offensive', 'Organisation défensive', 'Transition offensive', 'Transition défensive', 'Coups de pied arrêtés']} actif="Organisation offensive" couleur={c.accent.green} />,
+      },
+      {
+        titre: 'Écris tes principes',
+        texte: 'Pour chaque phase, ajoute tes principes un par un avec « + principe ». Une idée courte et claire vaut mieux qu’un long paragraphe.',
+        points: [
+          'Ajoute des images (schémas, captures) pour illustrer la phase.',
+          'Reste concret : « le gardien relance au pied court » se retient mieux que « construire proprement ».',
+        ],
+        visuel: <Pile><Formulaire colonnes={1} champs={[['Principe', 'Jouer court depuis le gardien']]} bouton="+ principe" /></Pile>,
+      },
+    ],
+  }),
+
+  projet_sportif_zones: (c) => ({
+    titre: 'Projet Sportif : Zones de terrain',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Un dessin sur le terrain se comprend plus vite qu’un texte. Les zones montrent à tes joueurs où se placer et où presser, phase par phase.',
+        visuel: <Cartes items={[{ titre: 'Zones', texte: 'Où on joue', couleur: c.accent.green, icone: '▦' }, { titre: 'Coups de pied arrêtés', texte: 'Schémas offensifs et défensifs', couleur: c.accent.blue, icone: '⚑' }]} />,
+      },
+      {
+        titre: 'Dessine tes zones',
+        texte: 'Choisis la phase de jeu, puis trace les zones clés sur le terrain. Tu peux aussi charger un fond de terrain et une galerie d’images.',
+        points: [
+          'Les coups de pied arrêtés ont leurs propres schémas, offensifs et défensifs.',
+          'Enregistre : les zones apparaissent ensuite dans la préparation de tes équipes.',
+        ],
+        visuel: <Onglets items={['Organisation offensive', 'Organisation défensive', 'Transition offensive']} actif="Organisation offensive" />,
+      },
+    ],
+  }),
+
+  projet_sportif_planification: (c) => ({
+    titre: 'Projet Sportif : Planification annuelle',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Une saison se prépare avant le premier match. La planification annuelle découpe l’année en phases avec des objectifs, pour que les entraînements montent en puissance au lieu de se répéter.',
+        astuce: 'Elle est propre à chaque catégorie : un U15 et un U16 n’ont pas le même contenu de saison.',
+        visuel: <Etapes items={[{ texte: 'Préparation', couleur: c.accent.amber }, { texte: 'Compétition', couleur: c.accent.blue }, { texte: 'Fin de saison', couleur: c.accent.green }]} />,
+      },
+      {
+        titre: 'Construis ta saison',
+        texte: 'Choisis la catégorie, puis ajoute des phases avec « + Ajouter une phase » : dates, objectifs prioritaires, principes recherchés et critères de réussite.',
+        points: [
+          'Gagne du temps : « Importer un document » lit un plan que tu as déjà (papier, tableau, PDF en image).',
+          'Les compétitions et échéances se notent au même endroit.',
+          'Le bouton « Personnaliser le PDF » (logo, couleurs) prépare un document à partager.',
+        ],
+        visuel: <Formulaire champs={[['Phase de jeu', 'Préparation'], ['Date de début', '01/08'], ['Date de fin', '31/08'], ['Objectifs prioritaires', 'Condition physique', true]]} bouton="+ Ajouter une phase" />,
+      },
+    ],
+  }),
+
+  projet_sportif_regles: (c) => ({
+    titre: 'Projet Sportif : Règles du jeu',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Durée des matchs, nombre de joueurs, règles spécifiques : ça change selon les catégories. Rassemble ici les documents officiels pour que tout le monde applique les mêmes.',
+        visuel: <Liste titre="Règles du jeu" lignes={[['Règlements FFF U13', '2026-2027'], ['Règlement Ligue U15', '2026-2027']]} />,
+      },
+      {
+        titre: 'Ajoute un document',
+        texte: 'Clique sur « Ajouter un document » : catégorie, titre, lien et saison.',
+        astuce: 'Mets à jour la saison à chaque rentrée pour retrouver facilement la bonne version.',
+        visuel: <Formulaire champs={[['Titre', 'Règlements FFF U13'], ['Saison', '2026-2027'], ['Lien URL', 'https://fff.fr/…', true]]} bouton="Ajouter un document" />,
       },
     ],
   }),
@@ -438,8 +530,13 @@ const TUTORIELS = {
   }),
 
   evenements: (c) => ({
-    titre: 'Événements & Projets',
+    titre: 'Événements',
     etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Soirée, tournoi, réunion, assemblée : un événement bien préparé réunit les familles et fait vivre le club. Ici, tu poses la date, le lieu et qui s’en occupe, pour que rien ne repose sur la mémoire d’une seule personne.',
+        visuel: <Cartes items={[{ titre: 'Quand et où', texte: 'Date, heure, lieu', couleur: c.accent.green, icone: '▦' }, { titre: 'Qui', texte: 'Référents et participants', couleur: c.accent.blue, icone: '@' }, { titre: 'Quoi faire', texte: 'Missions et matériel', couleur: c.accent.amber, icone: '✓' }]} />,
+      },
       {
         titre: 'Créer un événement',
         texte: 'Clique sur « + Nouvel événement » : titre, date, heure, lieu et type (tournoi, soirée, réunion…).',
@@ -455,10 +552,31 @@ const TUTORIELS = {
         texte: 'Un événement peut se répéter chaque semaine, mois ou année, et s’afficher sur le planning du club. Le bouton « PDF » exporte la fiche.',
         visuel: <Onglets items={['Chaque semaine', 'Chaque mois', 'Chaque année']} actif="Chaque mois" />,
       },
+    ],
+  }),
+
+  projets: (c) => ({
+    titre: 'Projets',
+    etapes: [
       {
-        titre: 'Suivre un projet',
-        texte: '« + Nouveau projet » : objectif, dates, responsable et référents. Fais évoluer son statut au fil de l’avancement.',
+        titre: 'Pourquoi c’est important',
+        texte: 'Un projet, c’est un chantier qui dure : refaire le site du club, acheter des équipements, lancer une école de foot féminine. Ici, tu le découpes, tu désignes un responsable et tu vois où il en est, sans relancer tout le monde.',
         visuel: <Etapes items={[{ texte: 'En attente', couleur: c.accent.amber }, { texte: 'En cours', couleur: c.accent.blue }, { texte: 'Terminé', couleur: c.accent.green }]} />,
+      },
+      {
+        titre: 'Crée ton projet',
+        texte: 'Clique sur « + Nouveau projet » : objectif, dates, responsable et référents.',
+        points: [
+          'Une colonne par statut : tu vois d’un coup d’œil ce qui avance et ce qui attend.',
+          'Ouvre un projet pour y ajouter participants, matériel et missions.',
+        ],
+        visuel: <Formulaire champs={[['Titre', 'Nouveaux maillots'], ['Objectif', 'Équiper les U11 à U15'], ['Responsable', 'Trésorier'], ['Date de fin', '30/06']]} bouton="Sauvegarder" />,
+      },
+      {
+        titre: 'Fais avancer le projet',
+        texte: 'Change son statut au fil de l’avancement : « En attente », « En cours » puis « Terminé ». Un projet terminé reste consultable.',
+        astuce: 'Un projet avec un responsable nommé avance presque toujours mieux qu’un projet que « tout le monde » suit.',
+        visuel: <Boutons items={['+ Nouveau projet']} actifs={['+ Nouveau projet']} />,
       },
     ],
   }),

@@ -833,6 +833,7 @@ export default function DashboardClub() {
   const setActiveTab = (id) => {
     const etape = etapeMonClubDeLOnglet(id)
     if (etape) setMonClubEtape(etape)
+    if (id !== 'projet_sportif') setVueProjetSportif('poles')
     setActiveTabEtat(etape ? 'mon_club' : id)
   }
   // Outils à la carte (comptes `modele_outils` seulement) : les outils sont ceux
@@ -1078,6 +1079,7 @@ export default function DashboardClub() {
   // (sélectionné parmi le staff, inchangé).
   const [saisieReferentProjet, setSaisieReferentProjet] = useState({ prenom: '', nom: '' })
   const [sousVueEvenements, setSousVueEvenements] = useState('evenements') // 'evenements' | 'projets' | 'cff4'
+  const [vueProjetSportif, setVueProjetSportif] = useState('poles') // 'poles' ou l'onglet ouvert d'un pôle
 
   // Budget
   const [budgetEntries, setBudgetEntries] = useState([])
@@ -3280,7 +3282,11 @@ export default function DashboardClub() {
   // Le tutoriel suit l'écran affiché : chaque étape de Mon club a le sien (Staff et Organigramme gardent les leurs).
   const etapesMonClub = etapesMonClubVisibles(droitsMonClub)
   const etapeAffichee = etapesMonClub.includes(monClubEtape) ? monClubEtape : etapesMonClub[0]
-  const pageTuto = activeTab !== 'mon_club' ? activeTab : etapeMonClubDeLOnglet(etapeAffichee) || `mon_club_${etapeAffichee}`
+  const vueEvenements = peutEvenements ? (sousVueEvenements === 'cff4' && !peutCff4 ? 'evenements' : sousVueEvenements) : 'cff4'
+  const pageTuto = activeTab === 'mon_club' ? etapeMonClubDeLOnglet(etapeAffichee) || `mon_club_${etapeAffichee}`
+    : activeTab === 'evenements' ? (vueEvenements === 'cff4' ? 'projet_club_cff4' : vueEvenements)
+    : activeTab === 'projet_sportif' && vueProjetSportif !== 'poles' ? `projet_sportif_${vueProjetSportif}`
+    : activeTab
 
   const renderNavItem = (item) => {
     const actif = item.subKeys ? item.subKeys.includes(activeTab) : activeTab === item.id
@@ -3813,7 +3819,7 @@ export default function DashboardClub() {
       {(() => {
         // Ouverture automatique : jamais par-dessus le guide d'accueil (tant
         // qu'il n'est pas terminé) ni pour une page non autorisée.
-        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(pageTuto) ? 'sportif' : pageTuto.startsWith('mon_club_') ? 'mon_club' : pageTuto
+        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(pageTuto) || pageTuto.startsWith('projet_sportif_') ? 'sportif' : pageTuto === 'projets' ? 'evenements' : pageTuto.startsWith('mon_club_') ? 'mon_club' : pageTuto
         const auto = moi?.id && PAGES_TUTORIEL_CLUB.includes(pageTuto) && canViewSection(permission)
           && tutorielDejaVu(`onboarding_${clubId}`, clubId) && !tutorielDejaVu(`club_${pageTuto}`, moi.id)
         const page = tutoOuvert || (auto ? pageTuto : null)
@@ -4116,7 +4122,7 @@ export default function DashboardClub() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
               <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'projet' })} style={{ width: isMobile ? '100%' : 'auto' }} />
             </div>
-            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')}
+            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')} onVue={setVueProjetSportif}
               logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
             {/* Permissions éducateurs — Projet Sportif / Planification : réglage
                 secondaire, placé sous les pôles (le contenu passe d'abord). */}
