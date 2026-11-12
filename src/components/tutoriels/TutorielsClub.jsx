@@ -506,6 +506,148 @@ const TUTORIELS = {
     ],
   }),
 
+  // Les étapes de Mon club (clé = mon_club_ + id de l'étape) : Staff et Organigramme
+  // gardent leurs tutoriels ci-dessus.
+  mon_club_identite: (c) => ({
+    titre: 'Identité du club',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'C’est la première chose que voient tes joueurs et tes éducateurs en ouvrant leur espace : tes couleurs, ta photo, ton logo et ton slogan. Un club reconnaissable inspire confiance et donne envie de s’investir.',
+        astuce: 'Chaque réglage s’applique tout de suite, sans quitter la page.',
+        visuel: <Cartes items={[{ titre: 'Couleurs', texte: 'Principale et secondaire', couleur: c.accent.green, icone: '◐' }, { titre: 'Images', texte: 'Fond et logo', couleur: c.accent.blue, icone: '▣' }, { titre: 'Slogan', texte: 'Une phrase courte', couleur: c.accent.amber, icone: '“' }]} />,
+      },
+      {
+        titre: 'Choisis tes couleurs',
+        texte: 'Clique sur le carré de la couleur principale puis de la couleur secondaire : toutes les couleurs sont possibles.',
+        points: [
+          'Un aperçu montre le rendu tel que tes joueurs et éducateurs le verront.',
+          'Clique sur « Appliquer cette couleur » pour l’enregistrer.',
+          'Si une couleur est trop claire ou trop sombre pour rester lisible, elle est ajustée automatiquement.',
+        ],
+        visuel: <Pile><Formulaire champs={[['Couleur principale', '#1E8E3E'], ['Couleur secondaire', '#F5B700']]} /><Boutons items={['Appliquer cette couleur']} actifs={['Appliquer cette couleur']} /></Pile>,
+      },
+      {
+        titre: 'Ajoute ta photo, ton logo et ton slogan',
+        texte: 'La photo de fond (stade, terrain, vestiaire…) et le logo s’enregistrent dès que tu choisis le fichier. Le slogan est une phrase courte affichée sur l’accueil de tes joueurs et de tes éducateurs.',
+        astuce: 'Choisis une photo nette et lumineuse : elle sert de décor à tout l’accueil.',
+        visuel: <Formulaire colonnes={1} champs={[['Slogan du club', 'Ensemble, on va plus loin']]} bouton="Enregistrer" />,
+      },
+    ],
+  }),
+
+  mon_club_outils: (c) => ({
+    titre: 'Outils du club',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Ton forfait inclut plusieurs outils. Un menu trop chargé perd tes équipes : ici, tu gardes à l’écran seulement ce que ton club utilise vraiment.',
+        astuce: 'Rien n’est supprimé : un outil retiré garde toutes ses données et revient dès que tu le réaffiches.',
+        visuel: <Etapes items={[{ texte: 'Affiché', couleur: c.accent.green }, { texte: 'Retiré du menu', couleur: c.accent.amber }, { texte: 'Données gardées', couleur: c.accent.blue }]} />,
+      },
+      {
+        titre: 'Affiche ou retire un outil',
+        texte: 'Chaque outil a son interrupteur. Éteint, il disparaît du menu du club et reste fermé à tes éducateurs.',
+        points: [
+          'Seul le compte du club active ou désactive les outils de son forfait : les autres membres du bureau voient leur état.',
+          'Un bandeau « Annuler » s’affiche quelques secondes après chaque changement.',
+        ],
+        visuel: <Liste titre="Outils affichés" lignes={[['Budget', <Statut key="b" couleur={c.accent.green}>Affiché</Statut>], ['Inventaire', <Statut key="i" couleur={c.text.faint}>Retiré</Statut>]]} />,
+      },
+      {
+        titre: 'Pars d’un modèle',
+        texte: 'En haut de la page, les modèles de départ (Club compétition, École de foot / formation, Minimal, Tout afficher) règlent d’un coup les outils du club et le menu de tes éducateurs.',
+        points: [
+          'Un clic montre ce qui va changer, « Appliquer » le fait, « Ne pas appliquer » laisse tout tel quel.',
+          'Aucun outil payant n’est acheté ni activé.',
+          'Tes éducateurs sont prévenus dans leur cloche.',
+        ],
+        visuel: <Boutons items={['Appliquer', 'Ne pas appliquer']} actifs={['Appliquer']} />,
+      },
+    ],
+  }),
+
+  mon_club_educateurs: (c) => ({
+    titre: 'Dashboard de mes éducateurs',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Un éducateur qui trouve tout de suite ce dont il a besoin l’utilise davantage. Ici, tu choisis les entrées du menu que tes éducateurs voient, pour qu’ils ne voient que l’essentiel.',
+        astuce: 'Retirer une entrée enlève seulement son accès dans le menu : rien n’est supprimé.',
+        visuel: <Liste titre="Menu de l’éducateur" lignes={[['Mon équipe', <Statut key="e" couleur={c.accent.green}>Affiché</Statut>], ['Rapports & Évaluations', <Statut key="r" couleur={c.accent.amber}>Retiré</Statut>]]} />,
+      },
+      {
+        titre: 'Même menu pour tous, ou éducateur par éducateur',
+        texte: 'Choisis le mode de réglage.',
+        points: [
+          '« Le même pour tous » : tous tes éducateurs voient le même menu. C’est le plus simple.',
+          '« Individualisé » : tu règles le menu éducateur par éducateur. Au départ, chacun suit le réglage commun.',
+          'Quand tu repasses en « Le même pour tous », tes réglages individuels sont gardés de côté.',
+        ],
+        visuel: <Onglets items={['Le même pour tous', 'Individualisé']} actif="Le même pour tous" />,
+      },
+      {
+        titre: 'Vérifie avant de valider',
+        texte: 'Le bouton « Voir comme un éducateur » ouvre un aperçu de son menu tel qu’il le verra. Chaque changement apparaît dans le journal et peut être annulé.',
+        astuce: 'Un outil qu’un éducateur paie lui-même reste toujours affiché pour lui.',
+        visuel: <Boutons items={['Voir comme un éducateur']} actifs={['Voir comme un éducateur']} />,
+      },
+    ],
+  }),
+
+  mon_club_bureau: (c) => ({
+    titre: 'Accès du bureau',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Le budget, les sponsors ou les déplacements ne sont pas faits pour tout le monde. Cette page fixe ce que chaque rôle du bureau (directeur sportif, trésorier, secrétaire…) peut voir et modifier. Le président voit et modifie tout.',
+        astuce: 'Cette étape est réservée au président.',
+        visuel: <Liste titre="Trésorier" lignes={[['Budget', <Statut key="b" couleur={c.accent.green}>Voir · Modifier</Statut>], ['Sponsors', <Statut key="s" couleur={c.accent.blue}>Voir</Statut>]]} />,
+      },
+      {
+        titre: 'Règle ce que chaque rôle peut faire',
+        texte: 'Dans « Ce que chaque rôle peut faire », coche pour chaque rubrique si le rôle peut la voir et la modifier.',
+        points: [
+          'Donne à chacun uniquement ce dont il a besoin.',
+          '« Mon club » : le rôle coché voit les étapes Identité, Outils du club et Dashboard de mes éducateurs.',
+          'Staff et Organigramme se règlent séparément, avec leur propre case.',
+        ],
+        visuel: <Liste titre="Ce que chaque rôle peut faire" lignes={[['Mon club', <Statut key="m" couleur={c.text.faint}>Aucun accès</Statut>], ['Staff', <Statut key="s" couleur={c.accent.blue}>Voir</Statut>]]} />,
+      },
+      {
+        titre: 'Limite par catégorie, puis enregistre',
+        texte: 'Dans « Accès par catégorie d’équipe », limite les catégories visibles pour les rôles sans accès complet (par exemple U15 à U20 pour un responsable formation).',
+        points: [
+          'Rien ne change tant que tu n’as pas cliqué sur « Enregistrer ».',
+          '« Annuler mes changements » revient à l’état enregistré.',
+        ],
+        visuel: <Boutons items={['Enregistrer', 'Annuler mes changements']} actifs={['Enregistrer']} />,
+      },
+    ],
+  }),
+
+  mon_club_journal: (c) => ({
+    titre: 'Journal des changements',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Quand tu règles le menu de tes éducateurs, tu dois pouvoir retrouver qui a changé quoi, et revenir en arrière si besoin. Le journal garde l’historique, du plus récent au plus ancien.',
+        astuce: 'Les changements apparaissent ici quelques secondes après un réglage de l’étape « Dashboard de mes éducateurs ».',
+        visuel: <Liste titre="Journal" lignes={[['Aujourd’hui, 18:02', <Statut key="a" couleur={c.accent.blue}>Menu modifié</Statut>], ['Hier, 09:40', <Statut key="b" couleur={c.accent.blue}>Menu modifié</Statut>]]} />,
+      },
+      {
+        titre: 'Rétablis un changement',
+        texte: 'Le bouton « Rétablir » remet le menu comme il était avant ce changement.',
+        points: [
+          'Rien n’est supprimé : le rétablissement s’ajoute à l’historique.',
+          'Tes éducateurs sont prévenus dans leur cloche.',
+          'Seul le compte du club peut rétablir un changement, les autres membres du bureau consultent l’historique.',
+        ],
+        visuel: <Boutons items={['Rétablir']} actifs={['Rétablir']} />,
+      },
+    ],
+  }),
+
   organigramme: () => ({
     titre: 'Organigramme',
     etapes: [

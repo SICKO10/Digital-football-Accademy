@@ -3243,9 +3243,9 @@ export default function DashboardClub() {
   const NAV_SPORTIF = [
     ...(canViewSection('sportif') ? [
       { id: 'categories', label: t('club_tab_categories', lang), Icon: IcoClipboard },
+      { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
       { id: 'planning', label: 'Planning', Icon: IcoCalendar },
       { id: 'projet_sportif', label: 'Projet Sportif', Icon: IcoStar },
-      { id: 'classements', label: t('club_tab_classements', lang), Icon: IcoTrophy },
       ...(recrutementActif(club?.email) ? [{ id: 'recrutement', label: t('club_tab_recrutement', lang), Icon: IcoSearch }] : []),
       { id: 'educateurs', label: t('club_tab_educateurs', lang), Icon: IcoUsers, badge: educateursEnAttente.length + nbDemandesSaison },
     ] : []),
@@ -3277,8 +3277,10 @@ export default function DashboardClub() {
   const TOUTES_ENTREES = [...NAV_GENERAL, ...NAV_SPORTIF, ...NAV_ADMINISTRATIF]
   const TITRES_SECTION = Object.fromEntries(TOUTES_ENTREES.flatMap(item => [item.id, ...(item.subKeys || [])].map(id => [id, item.label])))
   const entreeActive = TOUTES_ENTREES.find(item => item.subKeys?.includes(activeTab))
-  // Le tutoriel suit l'écran affiché : Staff et Organigramme gardent le leur dans Mon club.
-  const pageTuto = activeTab === 'mon_club' && monClubVisible(droitsMonClub) && etapeMonClubDeLOnglet(monClubEtape) ? monClubEtape : activeTab
+  // Le tutoriel suit l'écran affiché : chaque étape de Mon club a le sien (Staff et Organigramme gardent les leurs).
+  const etapesMonClub = etapesMonClubVisibles(droitsMonClub)
+  const etapeAffichee = etapesMonClub.includes(monClubEtape) ? monClubEtape : etapesMonClub[0]
+  const pageTuto = activeTab !== 'mon_club' ? activeTab : etapeMonClubDeLOnglet(etapeAffichee) || `mon_club_${etapeAffichee}`
 
   const renderNavItem = (item) => {
     const actif = item.subKeys ? item.subKeys.includes(activeTab) : activeTab === item.id
@@ -3818,7 +3820,7 @@ export default function DashboardClub() {
       {(() => {
         // Ouverture automatique : jamais par-dessus le guide d'accueil (tant
         // qu'il n'est pas terminé) ni pour une page non autorisée.
-        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(pageTuto) ? 'sportif' : pageTuto
+        const permission = ['categories', 'educateurs', 'classements', 'planning', 'projet_sportif', 'tournoi'].includes(pageTuto) ? 'sportif' : pageTuto.startsWith('mon_club_') ? 'mon_club' : pageTuto
         const auto = moi?.id && PAGES_TUTORIEL_CLUB.includes(pageTuto) && canViewSection(permission)
           && tutorielDejaVu(`onboarding_${clubId}`, clubId) && !tutorielDejaVu(`club_${pageTuto}`, moi.id)
         const page = tutoOuvert || (auto ? pageTuto : null)
