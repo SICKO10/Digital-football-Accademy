@@ -56,7 +56,12 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Noter dans « Reste à finir » de chaque bloc concerné ce que la lecture change (nom de colonne, cas réels de dépassement).
 - Ce que je teste pour valider : je lance la requête, je lis le tableau, il correspond à ce que je connais de mes clubs.
 - Reste à finir :
+  - Kevin : lancer `sauvegarder.sh`, puis exécuter les 6 requêtes de `supabase_outils_offerts_etat.sql` (une à la fois) et coller les résultats ; je les recopie dans le journal ci-dessous et je clos le bloc.
+  - Pour le bloc 1 : `outils_actifs` et `a_outil` (dans `supabase_outils_a_la_carte.sql`) exigent aujourd'hui que le club DÉTIENNE l'outil (`outils_comptes`) et ne regardent pas `modele_outils` ni `quota_equipes`. Les 3 outils `viaClub` (projet_sportif, cff4, stages) doivent garder cette règle. Le rang d'affiliation dépend de la colonne de date de `club_educateurs` (requête 1) : aucune date n'est créée par les fichiers SQL du dépôt, à confirmer.
+  - Pour le bloc 2 : une limite existe déjà côté écran seulement, `educateurs_inclus` dans `accepterEducateur` (`src/pages/DashboardClub.jsx` ~l.2894, null = pas de limite). À remplacer par `quota_equipes` pour les clubs `modele_outils`. L'acceptation par invitation (`supabase/functions/accepter-invitation/index.ts` l.162, upsert statut `accepte`) n'a aucune limite : le garde-fou doit être en base. `AcceptInvite.jsx` ne touche pas `club_educateurs` (il gère joueurs et dirigeants).
+  - Pour le bloc 6 : les notifications passent par la table `notifications` (user_id, type, titre, contenu, lien) ; la requête 6 dira si `type` est libre.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : commit des deux fichiers de plan et du brief (e04d15b, pas de push). Lecture du code faite. Requêtes de lecture écrites, en attente des résultats de Kevin.
 
 ### Bloc 1 : la règle en base (outils fournis et places)
 - Statut : à faire
