@@ -3,7 +3,8 @@ import { useColors } from '../../lib/theme'
 import { ecrireAffichageClub } from './ecritures'
 import { appelerOutils } from '../../lib/outilsApi'
 import { OUTILS, THEMES_CLUB } from '../../lib/catalogueOutils'
-import CarteOutil from '../outils/CarteOutil'
+import { EnteteEtape, CarteReglage, Encart } from './ui'
+import { ICONES, stylesMonClub } from './uiMonClub'
 import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
 import ModelesDepart from './ModelesDepart'
@@ -74,20 +75,27 @@ export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs,
     () => THEMES_CLUB.map(t => ({ ...t, outils: OUTILS_CLUB.filter(o => o.theme === t.id) })).filter(t => t.outils.length > 0),
     [],
   )
-  const titreTheme = { margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-  const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
+  const st = stylesMonClub(colors)
+  const nbAffiches = pret ? OUTILS_CLUB.filter(allume).length : 0
+  const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }
+  const texte = nouveauModele
+    ? 'Ces outils sont inclus dans votre forfait. Un outil désactivé disparaît du dashboard du club ; vos données restent là et reviennent dès que vous le réactivez.'
+    : 'Tous vos outils sont affichés. Retirer un outil enlève seulement son entrée du menu du club : rien n\'est supprimé, et en le réaffichant vous retrouvez tout.'
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
-      <p style={{ margin: '0 0 16px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
-        {nouveauModele
-          ? 'Ces outils sont inclus dans votre forfait. Un outil désactivé disparaît du dashboard du club ; vos données restent là et reviennent dès que vous le réactivez.'
-          : 'Tous vos outils sont affichés. Retirer un outil enlève seulement son entrée du menu du club : rien n\'est supprimé, et en le réaffichant vous retrouvez tout.'}
-      </p>
+      <EnteteEtape icone={ICONES.outils} titre="Outils du club" texte={texte}>
+        {pret && (
+          <div style={{ flex: '0 1 220px', minWidth: 170, padding: '12px 16px', borderRadius: 14, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {OUTILS_CLUB.length} affichés</p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={OUTILS_CLUB.length} aria-valuenow={nbAffiches} aria-label="Outils affichés" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
+              <div style={{ width: `${(nbAffiches / OUTILS_CLUB.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
+            </div>
+          </div>
+        )}
+      </EnteteEtape>
       {nouveauModele && !estCompteClub && (
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: colors.text.faint }}>
-          Seul le compte du club active ou désactive les outils de son forfait. Vous voyez ici leur état.
-        </p>
+        <Encart>Seul le compte du club active ou désactive les outils de son forfait. Vous voyez ici leur état.</Encart>
       )}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des outils...</p>}
@@ -97,28 +105,36 @@ export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs,
           appliquerClub={appliquer} couleur={couleurPrincipale} />
       )}
 
-      {pret && parTheme.map(t => (
-        <section key={t.id} aria-labelledby={`theme-${t.id}`} style={{ marginBottom: 28 }}>
-          <h3 id={`theme-${t.id}`} style={titreTheme}>{t.titre}</h3>
-          <div style={grille}>
-            {t.outils.map(o => {
-              const actif = allume(o)
-              return (
-                <CarteOutil
-                  key={o.id}
-                  nom={o.nom}
-                  promesse={o.promesse}
-                  badge={actif ? null : { texte: nouveauModele ? 'Désactivé' : 'Retiré du menu', couleur: colors.accent.amber }}
-                  pied={o.explication}
-                  action={peutAgir
-                    ? <Interrupteur actif={actif} libelle={`${o.nom} sur le dashboard du club`} onClick={() => changer(o)} occupe={enCours === o.id} />
-                    : null}
-                />
-              )
-            })}
-          </div>
-        </section>
-      ))}
+      {pret && parTheme.map(t => {
+        const nb = t.outils.filter(allume).length
+        return (
+          <section key={t.id} aria-labelledby={`theme-${t.id}`} style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+              <h3 id={`theme-${t.id}`} style={{ margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{t.titre}</h3>
+              <span style={{ flex: 1, height: 1, background: colors.border.subtle }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: colors.text.faint }}>{nb} sur {t.outils.length}</span>
+            </div>
+            <div style={grille}>
+              {t.outils.map(o => {
+                const actif = allume(o)
+                return (
+                  <CarteReglage
+                    key={o.id}
+                    nom={o.nom}
+                    description={o.promesse}
+                    pied={o.explication}
+                    actif={actif}
+                    badge={actif ? null : { texte: nouveauModele ? 'Désactivé' : 'Retiré du menu', couleur: colors.accent.amber }}
+                    action={peutAgir
+                      ? <Interrupteur actif={actif} libelle={`${o.nom} sur le dashboard du club`} onClick={() => changer(o)} occupe={enCours === o.id} />
+                      : null}
+                  />
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
 
       <BandeauAnnuler changement={changement} onFin={finChangement} />
     </div>

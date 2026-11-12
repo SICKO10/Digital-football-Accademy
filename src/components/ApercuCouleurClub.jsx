@@ -31,7 +31,7 @@ function Miniature({ palette, titre }) {
 }
 
 // Aperçu « comme vos joueurs et éducateurs la verront », mis à jour avant tout enregistrement.
-export default function ApercuCouleurClub({ couleur, couleur2 }) {
+export default function ApercuCouleurClub({ couleur, couleur2, sansTitre = false }) {
   const claire = useMemo(() => calculerPalette(couleur, 'claire', couleur2), [couleur, couleur2])
   const sombre = useMemo(() => calculerPalette(couleur, 'sombre', couleur2), [couleur, couleur2])
 
@@ -40,9 +40,11 @@ export default function ApercuCouleurClub({ couleur, couleur2 }) {
 
   return (
     <div style={{ gridColumn: '1 / -1' }}>
-      <div style={{ fontSize: '12px', fontWeight: 600, color: '#9A9AA5', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        Aperçu : comme vos joueurs et éducateurs la verront
-      </div>
+      {!sansTitre && (
+        <div style={{ fontSize: '12px', fontWeight: 600, color: '#9A9AA5', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Aperçu : comme vos joueurs et éducateurs la verront
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <Miniature palette={claire} titre="Thème clair" />
         <Miniature palette={sombre} titre="Thème sombre" />

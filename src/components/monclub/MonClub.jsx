@@ -4,6 +4,7 @@ import EtapeAccesBureau from './EtapeAccesBureau'
 import EtapeOutils from './EtapeOutils'
 import EtapeEducateurs from './EtapeEducateurs'
 import EtapeJournal from './EtapeJournal'
+import { stylesMonClub, CSS_MON_CLUB } from './uiMonClub'
 
 // Une étape pas encore faite reste masquée en production ; en local on voit sa place.
 const ETAPES = [
@@ -22,29 +23,30 @@ export default function MonClub({
   outils, clubId, estCompteClub, educateurs, etape, setEtape, estPresident, rolePermissions, roleCategoriesAccess, savingPermissions, sauvegarderPermissions,
 }) {
   const colors = useColors()
+  const s = stylesMonClub(colors)
   const visibles = ETAPES.filter(e => (e.fait || import.meta.env.DEV) && (!e.presidentSeul || estPresident))
   const courante = visibles.find(e => e.id === etape) || visibles[0]
 
   return (
-    <div>
-      <p style={{ margin: '0 0 16px', color: colors.text.muted, fontSize: '14px', lineHeight: 1.5 }}>
+    <div style={{ '--mc-marque': s.marque, '--mc-survol': colors.background.raised }}>
+      <style>{CSS_MON_CLUB}</style>
+      <p style={{ margin: '0 0 16px', color: colors.text.faint, fontSize: 14, lineHeight: 1.5 }}>
         Un seul endroit pour personnaliser votre club. Chaque réglage s'applique tout de suite.
       </p>
 
       {visibles.length > 1 && (
-        <div role="tablist" aria-label="Étapes de Mon club" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '16px' }}>
+        <div role="tablist" aria-label="Étapes de Mon club" style={{ display: 'flex', gap: 6, padding: 5, marginBottom: 26, borderRadius: 18, overflowX: 'auto', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
           {visibles.map((e, i) => {
             const actif = e.id === courante.id
             return (
-              <button key={e.id} role="tab" aria-selected={actif} onClick={() => setEtape(e.id)}
+              <button key={e.id} role="tab" aria-selected={actif} onClick={() => setEtape(e.id)} className="mc-btn"
                 style={{
-                  flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif',
-                  padding: isMobile ? '8px 14px' : '10px 18px', borderRadius: '8px', fontWeight: actif ? 700 : 400,
-                  ...(actif
-                    ? { background: couleurPrincipale, color: colors.accent.onBrand, border: 'none' }
-                    : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
+                  display: 'inline-flex', alignItems: 'center', gap: 10, flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  padding: isMobile ? '9px 14px' : '10px 18px', minHeight: 44, borderRadius: 14, fontWeight: 700, border: 'none',
+                  background: actif ? s.marque : 'transparent', color: actif ? s.surMarque : colors.text.secondary, transition: 'background .12s',
                 }}>
-                {i + 1}. {e.titre}
+                <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.raised, color: actif ? s.surMarque : colors.text.faint }}>{i + 1}</span>
+                {e.titre}
               </button>
             )
           })}
@@ -63,9 +65,9 @@ export default function MonClub({
           saving={savingPermissions} onSave={sauvegarderPermissions} couleurPrincipale={couleurPrincipale} isMobile={isMobile} />
       )}
       {!courante.fait && (
-        <div style={{ background: colors.background.sunken, border: `1px dashed ${colors.border.strong}`, borderRadius: '16px', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 6px', color: colors.text.primary, fontSize: '15px', fontWeight: 700 }}>{courante.titre}</h3>
-          <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Bientôt ici : {courante.bientot}</p>
+        <div style={{ background: colors.background.sunken, border: `1px dashed ${colors.border.strong}`, borderRadius: 16, padding: 20 }}>
+          <h3 style={{ margin: '0 0 6px', color: colors.text.primary, fontSize: 15, fontWeight: 700 }}>{courante.titre}</h3>
+          <p style={{ margin: 0, color: colors.text.faint, fontSize: 13 }}>Bientôt ici : {courante.bientot}</p>
         </div>
       )}
     </div>

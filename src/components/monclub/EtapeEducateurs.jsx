@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { ecrireLigne, ecrireMode, lireReglages, modeDepuis, prevenirEducateurs, DELAI_PREVENIR, OUTILS_EDUCATEUR } from './ecritures'
-import CarteOutil from '../outils/CarteOutil'
+import { Icone, EnteteEtape, CarteReglage } from './ui'
+import { ICONES, stylesMonClub } from './uiMonClub'
 import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
 import ApercuMenuEducateur from './ApercuMenuEducateur'
@@ -159,36 +160,55 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
     setEnCours(null)
   }
 
-  const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
-  const bouton = (actif) => ({
-    cursor: enCours ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, padding: '9px 16px', borderRadius: 8,
-    fontWeight: actif ? 700 : 400,
-    ...(actif
-      ? { background: colors.accent.brand, color: colors.accent.onBrand, border: 'none' }
-      : { background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }),
-  })
+  const st = stylesMonClub(colors)
+  const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }
+  const nbAffiches = pret ? OUTILS_EDUCATEUR.filter(affiche).length : 0
+  const initiales = (nom) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map(m => m[0].toUpperCase()).join('')
+  const modes = [
+    { id: 'commun', titre: 'Le même pour tous', texte: 'Tous vos éducateurs voient le même menu.', icone: ICONES.menu },
+    { id: 'individualise', titre: 'Individualisé', texte: 'Vous réglez le menu éducateur par éducateur.', icone: ICONES.educateurs },
+  ]
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
-      <p style={{ margin: '0 0 16px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
-        Choisissez les entrées du menu que vos éducateurs voient. Retirer un outil enlève seulement son entrée du menu : rien n'est supprimé, et en le réaffichant l'éducateur retrouve tout. Un outil qu'un éducateur paie lui-même reste toujours affiché pour lui.
-      </p>
+      <EnteteEtape icone={ICONES.educateurs} titre="Dashboard de mes éducateurs"
+        texte="Choisissez les entrées du menu que vos éducateurs voient. Retirer un outil enlève seulement son entrée du menu : rien n'est supprimé, et en le réaffichant l'éducateur retrouve tout. Un outil qu'un éducateur paie lui-même reste toujours affiché pour lui.">
+        {pret && (
+          <div style={{ flex: '0 1 220px', minWidth: 170, padding: '12px 16px', borderRadius: 14, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {OUTILS_EDUCATEUR.length} affichés</p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={OUTILS_EDUCATEUR.length} aria-valuenow={nbAffiches} aria-label="Entrées affichées dans le menu" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
+              <div style={{ width: `${(nbAffiches / OUTILS_EDUCATEUR.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
+            </div>
+          </div>
+        )}
+      </EnteteEtape>
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!pret && !erreur && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des réglages...</p>}
 
       {pret && (
         <>
-          <div role="radiogroup" aria-label="Mode de réglage" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            <button type="button" role="radio" aria-checked={!individualise} disabled={!!enCours} onClick={() => changerMode('commun')} style={bouton(!individualise)}>
-              Le même pour tous
-            </button>
-            <button type="button" role="radio" aria-checked={individualise} disabled={!!enCours} onClick={() => changerMode('individualise')} style={bouton(individualise)}>
-              Individualisé
-            </button>
+          <div role="radiogroup" aria-label="Mode de réglage" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 14, maxWidth: 720 }}>
+            {modes.map(m => {
+              const actif = (m.id === 'individualise') === individualise
+              return (
+                <button key={m.id} type="button" role="radio" aria-checked={actif} disabled={!!enCours} onClick={() => changerMode(m.id)} className="mc-btn mc-carte"
+                  style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', padding: '16px 18px', borderRadius: 16, cursor: enCours ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif',
+                    background: actif ? st.marque + '16' : colors.background.surface, border: `2px solid ${actif ? st.marque : colors.border.default}`, color: colors.text.primary }}>
+                  <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: actif ? st.marque : colors.background.sunken, color: actif ? st.surMarque : colors.text.faint }}>
+                    <Icone d={m.icone} size={20} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 15, fontWeight: 800 }}>{m.titre}</span>
+                    <span style={{ display: 'block', marginTop: 2, fontSize: 12, lineHeight: 1.45, color: colors.text.faint }}>{m.texte}</span>
+                  </span>
+                  {actif && <span aria-hidden="true" style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: st.marque, color: st.surMarque }}><Icone d={ICONES.check} size={13} trait={3} /></span>}
+                </button>
+              )
+            })}
           </div>
-          <div style={{ margin: '0 0 16px' }}>
-            <button type="button" aria-expanded={apercu} onClick={() => setApercu(a => !a)} style={{ ...bouton(false), cursor: 'pointer' }}>
-              {apercu ? 'Masquer l\'aperçu' : 'Voir comme un éducateur'}
+          <div style={{ margin: '0 0 22px' }}>
+            <button type="button" aria-expanded={apercu} onClick={() => setApercu(a => !a)} className="mc-btn" style={st.bouton(false)}>
+              <Icone d={ICONES.oeil} size={16} />{apercu ? 'Masquer l\'aperçu' : 'Voir comme un éducateur'}
             </button>
           </div>
           {apercu && <ApercuMenuEducateur mode={mode} lignes={lignes} educateurs={liste} couleur={couleurPrincipale} onFermer={() => setApercu(false)} />}
@@ -202,14 +222,15 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
             liste.length === 0
               ? <p style={{ margin: '12px 0', fontSize: 13, color: colors.text.faint }}>Aucun éducateur affilié pour l'instant. Leur menu suivra le réglage commun dès leur arrivée.</p>
               : (
-                <div role="tablist" aria-label="Éducateurs" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 0', margin: '8px 0 16px' }}>
+                <div role="tablist" aria-label="Éducateurs" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 12px', margin: '0 0 12px' }}>
                   {liste.map(e => {
                     const actif = cible?.id === e.id
                     return (
-                      <button key={e.id} type="button" role="tab" aria-selected={actif} onClick={() => setChoisi(e.id)} style={{ ...bouton(actif), flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                      <button key={e.id} type="button" role="tab" aria-selected={actif} onClick={() => setChoisi(e.id)} className="mc-btn" style={{ ...st.pastille(actif), paddingLeft: 8 }}>
+                        <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.sunken, color: actif ? st.surMarque : colors.text.secondary }}>{initiales(e.nom)}</span>
                         {e.nom}
                         {ajustes(e.id) && (
-                          <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(255,255,255,0.25)' : colors.accent.amber + '1f', color: actif ? colors.accent.onBrand : colors.accent.amber }}>
+                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.amber + '2a', color: actif ? st.surMarque : colors.text.primary }}>
                             Ajusté
                           </span>
                         )}
@@ -221,20 +242,21 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
           )}
 
           {(!individualise || cible) && (
-            <div style={{ marginTop: individualise ? 0 : 16 }}>
-              {cible && <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: colors.text.primary }}>Menu de {cible.nom}</h3>}
+            <div>
+              {cible && <h3 style={{ margin: '4px 0 14px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>Menu de {cible.nom}</h3>}
               <div style={grille}>
                 {OUTILS_EDUCATEUR.map(o => {
                   const actif = affiche(o)
                   const ajuste = cible && o.id in individuel(cible.id)
                   return (
-                    <CarteOutil
+                    <CarteReglage
                       key={o.id}
                       nom={o.nom}
-                      promesse={o.promesse}
+                      description={o.promesse}
+                      actif={actif}
                       badge={!actif
                         ? { texte: 'Retiré du menu', couleur: colors.accent.amber }
-                        : ajuste ? { texte: 'Ajusté pour cet éducateur', couleur: colors.accent.brand } : null}
+                        : ajuste ? { texte: 'Ajusté pour cet éducateur', couleur: st.marque } : null}
                       action={<Interrupteur actif={actif} libelle={`${o.nom} dans le menu${cible ? ` de ${cible.nom}` : ' des éducateurs'}`} onClick={() => changerOutil(o)} occupe={enCours === o.id || enCours === 'mode'} />}
                     />
                   )
