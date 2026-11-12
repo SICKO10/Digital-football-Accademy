@@ -257,3 +257,34 @@ Rappel : `/clear` et une session neuve par bloc ; pas de nouveau bloc si la barr
 - Ce que je teste pour valider : le parcours de bout en bout sur mon propre compte club.
 - Reste à finir : (1) parcours complet à jouer par Kevin sur son compte club (4 étapes, clair/sombre, mobile) : aucune session club ici, rien n'a été ouvert dans un navigateur ; (2) vérification en lecture d'un club réel ancien modèle non faite ici (pas d'accès à la base) ; (3) commit et push après ton « ok » ; (4) bloc 10 (journal) toujours optionnel, non fait ; (5) lint : 17 problèmes déjà présents avant le chantier dans `DashboardClub.jsx` (dont `sportifVisible` et `administratifVisible` inutilisés), non touchés.
 - Journal : 2026-11-12, Sonnet 5.5. Les anciens panneaux de `DashboardClub.jsx` étaient déjà remplacés par des liens vers Mon club (« Personnaliser », « Accès du bureau ») : rien de plus à retirer. `TutorielsClub.jsx` : étape « Logo, couleurs et slogan » et étape « Ce que chacun peut faire » (Staff) pointent maintenant vers Mon club ; « Droits des éducateurs » de Projet sportif laissé tel quel (encart conservé). Vérifs : `npm test` 387 OK, 1 ignoré, 0 échec ; `npm run build` OK.
+
+### Bloc 12 : regrouper le menu du dashboard club (demande de Kevin du 2026-11-12)
+- Statut : à faire
+- Objectif : un menu club plus court, avec des entrées regroupées en sous-onglets, sur le modèle du dashboard éducateur (`subKeys` et `SousOngletsBar`) et de « Événements & Projets ».
+- Résultat testable : le menu du dashboard club montre ces entrées, chacune avec ses sous-onglets.
+  - **Finance** (menu administratif) : Budget, Sponsors.
+  - **Organisation** (menu sportif) : Déplacements, Planifier séance, Planning des terrains, Inventaire.
+  - **Événements sportifs** (nouvelle entrée du menu sportif) : Stages, Tournois.
+  - **Mon club** : Identité, Outils du club, Dashboard de mes éducateurs, Accès du bureau, Journal, et en plus Staff et Organigramme (déplacés ici). « Accès du bureau » reste le seul écran des permissions.
+  - Le lien « Permissions par rôle » du Staff ouvre toujours Accès du bureau.
+- Modèle : sonnet · Effort : high · Coût estimé : élevé (grosse page, `DashboardClub.jsx`)
+- Pourquoi ce modèle : regroupement d'écrans existants, sans nouvelle donnée ; l'effort high à cause de la taille du fichier et des droits.
+- Lancement : `/clear`, puis `/model sonnet`, puis `/effort high`, puis `/bloc 12 PLAN-mon-club.md`
+- Dépend de : blocs 0 à 11
+- Prérequis : aucun SQL. Sauvegarde Git avant (commit propre au départ).
+- Choix retenus par défaut (Kevin corrige à la validation) :
+  - Les écrans eux-mêmes ne changent pas : seuls le rangement du menu et les sous-onglets changent. Les anciens identifiants d'écran (`budget`, `sponsors`, `stages`, `tournoi`, `terrains`, `seances`, `deplacements`, `inventaire`, `staff`, `organigramme`) restent valables : les liens et raccourcis qui les ouvrent continuent de marcher et allument l'entrée parente.
+  - Droits : chaque sous-onglet garde sa propre permission (`canViewSection`) et son règlement par les outils du club (`outils.menuVisible`). Une entrée regroupée apparaît dès qu'un de ses sous-onglets est accessible, et s'ouvre sur le premier accessible. Un membre du bureau qui avait « Staff » ou « Organigramme » mais pas « Mon club » voit Mon club avec seulement ces deux étapes.
+  - Ordre des étapes de Mon club : Identité, Staff, Organigramme, Accès du bureau, Outils du club, Dashboard de mes éducateurs, Journal.
+  - « Planning » (calendrier des équipes), « Classements », « Catégories », « Projet Sportif » et « Éducateurs » restent des entrées du menu sportif telles quelles.
+  - Les listes d'outils de Mon club (étape 2) et les modèles de départ ne changent pas : ils règlent des outils, pas des entrées de menu.
+- Étapes :
+  - Lire les entrées du menu (`NAV_SPORTIF`, `NAV_ADMINISTRATIF`), les droits et les écrans concernés ; faire un commit propre avant.
+  - Ajouter le groupement par `subKeys` côté club (même mécanique que l'éducateur), avec la barre de sous-onglets en haut de chaque écran regroupé.
+  - Staff et Organigramme : les afficher comme étapes de Mon club (passer les écrans existants à `MonClub.jsx`), supprimer leurs entrées de menu, garder les droits.
+  - Retirer la double entrée du menu pour tout ce qui est regroupé ; corriger l'onglet actif corrigé au chargement (liste d'identifiants valides, vers la ligne 1150).
+  - Mettre à jour les tutoriels club (`TutorielsClub.jsx`) et tout texte qui nomme les anciennes entrées.
+  - Tests : règle de visibilité des entrées regroupées (fonction pure, dans `src/lib`) ; lint, build.
+- Ce que je teste pour valider : sur mon compte club, ouvrir chaque entrée et chaque sous-onglet ; vérifier Mon club avec Staff et Organigramme ; avec un rôle du bureau de test (trésorier : Finance seulement, par exemple), vérifier que seules les entrées permises apparaissent ; vérifier un club de l'ancien modèle.
+- Reste à finir :
+- Journal :
