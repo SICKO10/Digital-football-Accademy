@@ -195,13 +195,6 @@ const getEducateurOnboardingSteps = (email) => [
     position: "bottom",
   },
   {
-    id: 12,
-    title: "Ajoute tes dirigeants",
-    message: "Dans Explorer → Dirigeants, invite tes dirigeants par email et choisis ce qu'ils peuvent voir et modifier.",
-    targetId: "nav-explorer",
-    position: "bottom",
-  },
-  {
     id: 13,
     title: "C'est parti ! 🚀",
     message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.",
@@ -280,7 +273,6 @@ const IcoLayout    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoVideo     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
 const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-const IcoBuilding  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1"/></svg>
 const IcoCompass   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
 const IcoSend      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
@@ -5820,13 +5812,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       { key: 'bibliotheque', label: t('nav_bibliotheque', lang), icon: <IcoBook /> },
     ] },
     { titre: 'THÈME PROJET', items: [
-      { key: 'projet_sportif', label: 'Projet Sportif', icon: <IcoStar /> },
-      { key: 'projet_club_cff4', label: 'Projet Club — CFF4', icon: <IcoBuilding /> },
+      { key: 'projets', label: 'Projets', icon: <IcoStar />, subKeys: ['projet_sportif', 'projet_club_cff4'] },
     ] },
     { titre: t('section_suivi_reseau', lang), items: [
       { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
       ...(recrutementActif(profil?.email) ? [{ key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> }] : []),
-      { key: 'explorer', label: 'Explorer', icon: <IcoCompass /> },
     ] },
   ]
 
@@ -12033,6 +12023,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
             <Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} />
           </div>
+        )}
+
+        {['projet_sportif', 'projet_club_cff4'].includes(activeSection) && (
+          <SousOngletsBar
+            items={[{ key: 'projet_sportif', label: 'Projet Sportif' }, { key: 'projet_club_cff4', label: 'Projet Club CFF4' }].filter(it => canView(it.key))}
+            activeSection={activeSection} setActiveSection={setActiveSection}
+          />
         )}
 
         {activeSection === 'projet_sportif' && (

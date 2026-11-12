@@ -31,7 +31,7 @@ export default function ApercuMenuEducateur({ mode, lignes, educateurs, couleur,
         {onFermer && <button type="button" onClick={onFermer} style={{ cursor: 'pointer', fontSize: 13, padding: '6px 12px', borderRadius: 8, background: 'transparent', color: colors.text.muted, border: `1px solid ${colors.border.default}` }}>Fermer</button>}
       </div>
       <p style={{ margin: '0 0 12px', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
-        Aperçu du menu avec vos réglages actuels, en lecture seule. Chez un éducateur, un outil qu'il paie lui-même reste affiché, et certaines entrées (Stages, Explorer, Mes outils) dépendent de son compte.
+        Aperçu du menu avec vos réglages actuels, en lecture seule. Chez un éducateur, un outil qu'il paie lui-même reste affiché, et certaines entrées (Stages, Mes outils) dépendent de son compte.
       </p>
       <div role="tablist" aria-label="Éducateur à prévisualiser" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 12px' }}>
         <button type="button" role="tab" aria-selected={choix === 'type'} onClick={() => setChoix('type')} style={pastille(choix === 'type')}>Éducateur type</button>

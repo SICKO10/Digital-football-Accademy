@@ -8,14 +8,14 @@ export const MODELES = [
     nom: 'Club compétition',
     pour: 'Équipes en championnat : tout est affiché.',
     club: ['competition', 'projet_sportif', 'finances', 'vie_club', 'stages', 'cff4'],
-    educateurs: ['suivi_joueurs', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video', 'projet_sportif', 'cff4', 'stages'],
+    educateurs: ['suivi_joueurs', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'projet_sportif', 'cff4', 'stages'],
   },
   {
     id: 'ecole',
     nom: 'École de foot / formation',
-    pour: 'Club centré sur les jeunes : séances, suivi, préparation physique et projet.',
+    pour: 'Club centré sur les jeunes : création d\'entraînement, Tacticboard, Bibliothèque et suivi, sans projets ni préparation physique.',
     club: ['projet_sportif', 'vie_club', 'stages', 'cff4'],
-    educateurs: ['seances', 'prep_physique', 'suivi_joueurs', 'projet_sportif', 'cff4', 'stages'],
+    educateurs: ['seances', 'tactique', 'bibliotheque', 'suivi_joueurs'],
   },
   {
     id: 'minimal',
@@ -29,7 +29,7 @@ export const MODELES = [
     nom: 'Tout afficher',
     pour: 'Remet tous les outils et tout le menu des éducateurs.',
     club: ['competition', 'projet_sportif', 'finances', 'vie_club', 'stages', 'cff4'],
-    educateurs: ['suivi_joueurs', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video', 'projet_sportif', 'cff4', 'stages'],
+    educateurs: ['suivi_joueurs', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'projet_sportif', 'cff4', 'stages'],
   },
 ]
 

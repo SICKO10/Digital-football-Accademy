@@ -18,12 +18,10 @@ const SECTIONS = [
     { key: 'bibliotheque', label: 'Bibliothèque' },
   ] },
   { titre: 'THÈME PROJET', items: [
-    { key: 'projet_sportif', label: 'Projet Sportif' },
-    { key: 'projet_club_cff4', label: 'Projet Club — CFF4' },
+    { key: 'projets', label: 'Projets', subKeys: ['projet_sportif', 'projet_club_cff4'] },
   ] },
   { titre: 'SUIVI & RÉSEAU', items: [
     { key: 'suivi', label: 'Rapports & Évaluations', subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
-    { key: 'explorer', label: 'Explorer' },
   ] },
 ]
 
