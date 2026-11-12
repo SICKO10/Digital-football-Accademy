@@ -3305,32 +3305,25 @@ export default function DashboardClub() {
   // Parcours d'onboarding (guide "Cedinho") : une étape par rubrique clé,
   // ciblant son bouton de nav (id nav-<rubrique>) — les rubriques masquées
   // par les permissions du staff sont retirées du parcours.
-  const rubriquesVisibles = new Set([
-    ...TOUTES_ENTREES.flatMap(item => item.subKeys || [item.id]),
-    ...etapesMonClubVisibles(droitsMonClub).filter(id => id === 'staff' || id === 'organigramme'),
-  ])
+  const rubriquesVisibles = new Set(TOUTES_ENTREES.flatMap(item => [item.id, ...(item.subKeys || [])]))
   const clubOnboardingSteps = [
-    { title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer toutes les rubriques de l'espace club, dans l'ordre où les mettre en place.", targetId: null, position: "center" },
-    { rubrique: 'profil', title: "Profil du club", message: "Commence ici : logo, couleurs et infos du club. Ils apparaissent ensuite dans l'espace de tes éducateurs et de tes joueurs." },
+    { title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les rubriques de l'espace club, en commençant par celles à régler en premier.", targetId: null, position: "center" },
+    { rubrique: 'mon_club', title: "Mon club", message: "Commence ici : c'est le centre de réglage de ton club. Identité (couleurs, logo, slogan), Staff, Organigramme, Accès du bureau, Outils du club et Dashboard de tes éducateurs." },
+    { rubrique: 'profil', title: "Profil du club", message: "Renseigne les infos du club : nom, région, ville du siège et stades. Tu y retrouves aussi ton abonnement et les avis reçus." },
     { rubrique: 'categories', title: "Catégories & Équipes", message: "Crée tes catégories et tes équipes (U11 A, U13 B…) et désigne l'éducateur responsable de chacune." },
-    { rubrique: 'educateurs', title: "Éducateurs", message: "Invite tes éducateurs par email ou partage-leur le code club : ils rejoignent le club depuis leur dashboard." },
-    { rubrique: 'staff', title: "Ajoute ton staff", message: "Dans Mon club, étape Staff : invite ton directeur sportif, ton secrétaire, ton trésorier par email. Leurs accès se règlent dans l'étape Accès du bureau." },
-    { rubrique: 'terrains', title: "Planning des terrains", message: "Répartis les créneaux de tes terrains entre les équipes pour les entraînements et les matchs." },
-    { rubrique: 'deplacements', title: "Déplacements", message: "Organise les trajets des matchs à l'extérieur et répartis les joueurs dans les mini-bus." },
-    { rubrique: 'classements', title: "Stat équipe", message: "Choisis une équipe : bilan, derniers résultats, classement officiel et classement des joueurs (buteurs, passeurs, présence)." },
-    { rubrique: 'budget', title: "Budget", message: "Suis les recettes et les dépenses du club au fil de la saison." },
-    { rubrique: 'sponsors', title: "Sponsors", message: "Gère les sponsors et partenaires du club." },
-    { rubrique: 'newsletter', title: "Newsletter", message: "Envoie une communication à tes éducateurs et joueurs affiliés : elle est publiée dans leur espace et envoyée par email." },
-    { rubrique: 'inventaire', title: "Inventaire", message: "Gère l'équipement du club : packs attribués aux joueurs et au staff, tailles, et suivi des remises." },
+    { rubrique: 'classements', title: "Stats équipe", message: "Juste sous les catégories : choisis une équipe pour voir son bilan, ses derniers résultats, le classement officiel et le classement des joueurs (buteurs, passeurs, présence)." },
     { rubrique: 'planning', title: "Planning", message: "Vue générale de toutes les équipes : matchs, entraînements, événements et projets sur un calendrier jour, semaine, mois ou année." },
-    { rubrique: 'seances', title: "Planifier séance", message: "Planifie des séances d'entraînement pour une équipe à la place de son éducateur : elles apparaissent directement dans son planning." },
     { rubrique: 'projet_sportif', title: "Projet Sportif", message: "Définis les principes de jeu du club par phase, et choisis si tes éducateurs peuvent les modifier." },
-    { rubrique: 'tournoi', title: "Tournois", message: "Suis les tournois auxquels tes équipes participent, ou organise le tien : planning, résultats et classement." },
-    { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes." },
-    { rubrique: 'evenements', title: "Événements & Projets", message: "Organise tournois, soirées et réunions, pilote les projets du club (référents, participants, matériel, missions) et construis le projet club selon le guide de certification FFF (CFF4)." },
+    { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes, par poste, région, niveau et statistiques." },
+    { rubrique: 'educateurs', title: "Éducateurs", message: "Invite tes éducateurs par email ou partage-leur le code club : ils rejoignent le club depuis leur dashboard." },
+    { rubrique: 'organisation', title: "Organisation", message: "Quatre sous-onglets pour la logistique : Déplacements (trajets et mini-bus), Planifier séance (à la place d'un éducateur), Planning des terrains et Inventaire (équipement du club)." },
+    { rubrique: 'evenements_sportifs', title: "Événements sportifs", message: "Deux sous-onglets : Stages (planning, inscriptions, page publique pour les familles) et Tournois (ceux de tes équipes ou le tien)." },
+    { rubrique: 'finance', title: "Finance", message: "Deux sous-onglets : Budget pour suivre les recettes et les dépenses de la saison, Sponsors pour gérer les partenaires du club." },
+    { rubrique: 'evenements', title: "Événements & Projets", message: "Organise soirées et réunions, pilote les projets du club (référents, participants, matériel, missions) et construis le projet club selon le guide de certification FFF (CFF4)." },
     { rubrique: 'taches', title: "Tâches & Responsabilités", message: "Note qui fait quoi au club et suis les tâches ponctuelles avec leur statut." },
-    { rubrique: 'organigramme', title: "Organigramme", message: "Dans Mon club, étape Organigramme : présente les membres du club et leur rôle." },
-    { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.", targetId: null, position: "center" },
+    { rubrique: 'newsletter', title: "Newsletter", message: "Envoie une communication à tes éducateurs et joueurs affiliés : elle est publiée dans leur espace et envoyée par email." },
+    { rubrique: 'mes_outils', title: "Mes outils", message: "Retrouve ton abonnement et choisis les outils affichés sur le dashboard du club, ainsi que ceux que tu ouvres à tes éducateurs." },
+    { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite, je suis toujours là.", targetId: null, position: "center" },
   ]
     .filter(step => !step.rubrique || rubriquesVisibles.has(step.rubrique))
     .map((step, i) => ({ id: i + 1, position: "bottom", targetId: step.rubrique ? `nav-${entreeDeLOnglet(step.rubrique)}` : null, ...step }))

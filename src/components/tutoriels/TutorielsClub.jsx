@@ -648,6 +648,112 @@ const TUTORIELS = {
     ],
   }),
 
+  accueil: (c) => ({
+    titre: 'Accueil du club',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'L’accueil te donne la vie du club en un coup d’œil : ce qui demande ton action et ce qui arrive cette semaine. C’est la page à ouvrir en premier.',
+        visuel: <Cartes items={[{ titre: 'Équipes', texte: 'Actives et éducateurs affiliés', couleur: c.accent.green, icone: '⚽' }, { titre: 'Matchs', texte: 'À venir et derniers résultats', couleur: c.accent.blue, icone: '▶' }, { titre: 'Planning', texte: 'La semaine du club', couleur: c.accent.amber, icone: '▦' }]} />,
+      },
+      {
+        titre: 'Traite ce qui attend',
+        texte: 'Quand un éducateur demande à rejoindre le club, une alerte s’affiche avec un bouton « Traiter » qui ouvre la page Éducateurs.',
+        astuce: 'Plus tu réponds vite, plus vite l’éducateur peut travailler avec ses joueurs.',
+        visuel: <Boutons items={['Traiter']} actifs={['Traiter']} />,
+      },
+      {
+        titre: 'Suis la semaine et va plus vite',
+        texte: 'Le planning de la semaine, les terrains disponibles, les prochains matchs et les derniers résultats sont regroupés ici. « Tout le planning » ouvre le calendrier complet, et les actions rapides t’emmènent directement vers les pages utiles.',
+        visuel: <Boutons items={['Tout le planning']} actifs={['Tout le planning']} />,
+      },
+    ],
+  }),
+
+  recrutement: (c) => ({
+    titre: 'Recrutement',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Un joueur de plus au bon poste peut changer ta saison. Le moteur de recrutement te fait gagner du temps : tu cherches parmi les joueurs de la plateforme avec leurs vraies statistiques.',
+        visuel: <Cartes items={[{ titre: 'Filtres', texte: 'Poste, région, niveau', couleur: c.accent.green, icone: '⌕' }, { titre: 'Statistiques', texte: 'Buts, passes, duels…', couleur: c.accent.blue, icone: '%' }]} />,
+      },
+      {
+        titre: 'Trouve les bons profils',
+        texte: 'Choisis le poste, la région, le niveau et la catégorie, puis fixe des minimums de statistiques si tu veux.',
+        points: [
+          'Trie les résultats par buts, passes décisives, km parcourus, pourcentage de passes ou de duels, récupérations, arrêts ou matchs joués.',
+          'Le statut du joueur (par exemple « Recherche active ») te dit s’il est ouvert à une proposition.',
+        ],
+        visuel: <Formulaire champs={[['Poste', 'Milieu'], ['Région', 'Occitanie'], ['Niveau', 'Régional 1'], ['Trier', 'Buts/m']]} />,
+      },
+      {
+        titre: 'Ouvre la fiche et contacte',
+        texte: 'Clique sur un joueur pour voir ses 5 derniers matchs et son détail. Si une information manque, « Demander le détail au joueur » lui envoie une demande : c’est lui qui décide de partager. « Contacter ce joueur » ouvre un message.',
+        astuce: 'Présente-toi et explique ce que tu proposes : un message précis reçoit plus souvent une réponse.',
+        visuel: <Boutons items={['Demander le détail au joueur', 'Contacter ce joueur']} actifs={['Contacter ce joueur']} />,
+      },
+    ],
+  }),
+
+  stages: (c) => ({
+    titre: 'Stages',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'Un stage bien organisé fait rentrer des familles dans le club et de l’argent dans la caisse. Ici, tu prépares tout au même endroit : planning, inscriptions et page publique pour les familles.',
+        visuel: <Etapes items={[{ texte: 'Brouillon', couleur: c.text.faint }, { texte: 'Ouvert', couleur: c.accent.green }, { texte: 'Complet', couleur: c.accent.amber }, { texte: 'Terminé', couleur: c.accent.blue }]} />,
+      },
+      {
+        titre: 'Crée ton stage',
+        texte: 'Clique sur « + Nouveau stage » et renseigne le nom, les dates, le lieu et le nombre de places par jour.',
+        points: [
+          'Ajoute une description, le règlement affiché aux familles et le matériel à apporter.',
+          'Le stage démarre en « Brouillon » : seule l’équipe du club le voit.',
+        ],
+        visuel: <Pile><Formulaire champs={[['Nom du stage', 'Stage de Toussaint U11-U13'], ['Date de début', '21/10'], ['Date de fin', '25/10'], ['Places par jour', '40']]} /><Boutons items={['+ Nouveau stage']} actifs={['+ Nouveau stage']} /></Pile>,
+      },
+      {
+        titre: 'Construis le programme',
+        texte: 'Dans la fiche du stage, les onglets couvrent tout : Vue d’ensemble, Inscriptions, Planning, Organisation, Actualités, Sponsors, Offres & tarifs et Paramètres.',
+        points: [
+          'Planning : « + Ajouter un créneau » (activité, responsable, plan B en cas de pluie). « Dupliquer une journée » évite de tout resaisir.',
+          'Organisation : les tâches, les encadrants et le matériel.',
+        ],
+        visuel: <Onglets items={['Vue d’ensemble', 'Inscriptions', 'Planning', 'Organisation']} actif="Planning" />,
+      },
+      {
+        titre: 'Ouvre aux familles',
+        texte: 'Passe le stage en « Ouvert » : la page publique devient accessible, avec un lien à partager aux parents et aux joueurs.',
+        astuce: 'Le plan B et les notes restent internes : ils n’apparaissent jamais sur la page publique.',
+        visuel: <Boutons items={['Ouvrir la page']} actifs={['Ouvrir la page']} />,
+      },
+    ],
+  }),
+
+  mes_outils: (c) => ({
+    titre: 'Mes outils',
+    etapes: [
+      {
+        titre: 'Pourquoi c’est important',
+        texte: 'C’est ici que tu gères ton abonnement et que tu décides quels outils apparaissent sur le dashboard du club. Ils sont tous inclus dans ton forfait, sans supplément.',
+        astuce: 'Seul le compte du club peut modifier ces choix. Les autres membres du bureau les consultent.',
+        visuel: <Liste titre="Abonnement club" lignes={[['Statut', <Statut key="s" couleur={c.accent.green}>ACTIF</Statut>]]} />,
+      },
+      {
+        titre: 'Affiche ou retire un outil',
+        texte: 'Chaque outil a une carte avec un interrupteur. Retiré, il disparaît du menu du club, mais ses données restent et reviennent dès que tu le réactives.',
+        visuel: <Liste titre="Outils du club" lignes={[['Budget', <Statut key="b" couleur={c.accent.green}>Affiché</Statut>], ['Inventaire', <Statut key="i" couleur={c.text.faint}>Retiré</Statut>]]} />,
+      },
+      {
+        titre: 'Ouvre des outils à tes éducateurs',
+        texte: 'Dans « Outils pour mes éducateurs », choisis ceux que tes éducateurs affiliés peuvent utiliser. Active d’abord l’outil sur ton propre dashboard.',
+        astuce: 'Pour régler ce que chaque éducateur voit dans son menu, va dans Mon club, étape « Dashboard de mes éducateurs ».',
+        visuel: <Etapes items={[{ texte: 'Ouvert à tes éducateurs', couleur: c.accent.green }, { texte: 'Fermé pour tes éducateurs', couleur: c.text.faint }]} />,
+      },
+    ],
+  }),
+
   organigramme: () => ({
     titre: 'Organigramme',
     etapes: [
