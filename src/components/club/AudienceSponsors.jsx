@@ -7,16 +7,14 @@ import { useColors } from '../../lib/theme'
 // sponsors. Aucune nouvelle table : tout vient des journaux déjà alimentés
 // (connexions_log via sponsors_audience_stats, tournoi_vues_log, stage_vues_log et les
 // trois journaux de clics). Une source dont la migration manque s'affiche « non activé ».
-// Les visites de la page publique du club ne sont pas encore comptées.
+// Les visites de la page publique du club viennent de club_vues_log (supabase_club_vues_page_publique.sql).
 
 const CSS = `
   .au-chip:focus-visible, .au-tuile:focus-visible { outline: 2px solid var(--au-brand); outline-offset: 2px; }
-  .au-tuiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .au-tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
   .au-tuile { text-align: left; cursor: pointer; font-family: Inter, sans-serif; transition: border-color .12s, background .12s; }
   .au-ligne { transition: background .12s; }
   .au-ligne:hover { background: var(--au-hover); }
-  @media (max-width: 960px) { .au-tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 520px) { .au-tuiles { grid-template-columns: 1fr; } }
 `
 
 const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
@@ -67,8 +65,9 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
       const idsStages = stages.map(s => s.id)
 
       const lireListe = async (ids, construire) => (ids.length === 0 ? { data: [] } : toutLire(construire))
-      const [conn, clicsClub, vuesT, vuesS, clicsT, clicsS] = await Promise.all([
+      const [conn, vuesClub, clicsClub, vuesT, vuesS, clicsT, clicsS] = await Promise.all([
         toutLire(() => supabase.rpc('sponsors_audience_stats', { p_club_id: clubId, p_depuis: depuis })),
+        toutLire(() => supabase.from('club_vues_log').select('created_at').eq('club_id', clubId).gte('created_at', depuis)),
         toutLire(() => supabase.from('sponsor_clics_log').select('created_at').eq('club_id', clubId).gte('created_at', depuis)),
         lireListe(idsTournois, () => supabase.from('tournoi_vues_log').select('tournoi_id, created_at').in('tournoi_id', idsTournois).gte('created_at', depuis)),
         lireListe(idsStages, () => supabase.from('stage_vues_log').select('stage_id, created_at').in('stage_id', idsStages).gte('created_at', depuis)),
@@ -76,11 +75,13 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
         lireListe(idsStages, () => supabase.from('stage_sponsor_clics_log').select('stage_id, created_at').in('stage_id', idsStages).gte('created_at', depuis)),
       ])
       if (annule) return
-      // 42P01 = table absente, 42883 = fonction absente : la migration n'a pas été lancée.
-      const manquant = (r) => !!r.error && ['42P01', '42883'].includes(r.error.code)
+      // 42P01 = table absente, 42883 = fonction absente, 42501 = lecture refusée : la migration
+      // n'a pas été lancée. Mieux vaut « Non activé » qu'un faux zéro.
+      const manquant = (r) => !!r.error && ['42P01', '42883', '42501'].includes(r.error.code)
       setDonnees({
         tournois, stages,
         connexions: manquant(conn) ? null : (conn.data || []).map(l => ({ d: new Date(`${l.jour}T12:00:00`), n: Number(l.nb), role: l.role })),
+        vuesClub: manquant(vuesClub) ? null : (vuesClub.data || []).map(l => ({ d: new Date(l.created_at), n: 1 })),
         clicsClub: manquant(clicsClub) ? null : (clicsClub.data || []).map(l => ({ d: new Date(l.created_at), n: 1 })),
         vuesT: manquant(vuesT) ? null : (vuesT.data || []).map(l => ({ d: new Date(l.created_at), n: 1, id: l.tournoi_id })),
         vuesS: manquant(vuesS) ? null : (vuesS.data || []).map(l => ({ d: new Date(l.created_at), n: 1, id: l.stage_id })),
@@ -126,6 +127,7 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
   const clicsTous = (donnees.clicsClub || []).concat(donnees.clicsT || [], donnees.clicsS || [])
   const sources = [
     { id: 'connexions', titre: 'Connexions', sous: 'ouvertures de la plateforme', couleur: accent, lignes: donnees.connexions },
+    { id: 'club', titre: 'Visites page club', sous: 'page publique du club', couleur: colors.accent.red || accent, lignes: donnees.vuesClub },
     { id: 'tournois', titre: 'Visites tournois', sous: 'pages publiques', couleur: colors.accent.blue || accent, lignes: donnees.vuesT },
     { id: 'stages', titre: 'Visites stages', sous: 'pages publiques', couleur: colors.accent.amber || accent, lignes: donnees.vuesS },
     { id: 'clics', titre: 'Clics sponsors', sous: 'bandeau, tournois, stages', couleur: colors.accent.purpleLight || accent, lignes: donnees.clicsClub === null && donnees.clicsT === null && donnees.clicsS === null ? null : clicsTous },
@@ -286,9 +288,8 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
       </div>
 
       <div style={{ ...carte, padding: 16, fontSize: 13, color: colors.text.secondary, lineHeight: 1.6 }}>
-        <strong style={{ color: colors.text.primary }}>Comment lire ces chiffres.</strong> Une connexion est une ouverture de la plateforme par un éducateur, un joueur ou le club, pas une personne différente. Une visite est une ouverture de la page publique d'un tournoi ou d'un stage. Les chiffres commencent le jour où chaque mesure a été activée.
+        <strong style={{ color: colors.text.primary }}>Comment lire ces chiffres.</strong> Une connexion est une ouverture de la plateforme par un éducateur, un joueur ou le club, pas une personne différente. Une visite est une ouverture de la page publique du club, d'un tournoi ou d'un stage (une seule par session de navigation). Les chiffres commencent le jour où chaque mesure a été activée.
         {aucuneDonnee && <> Rien n'est encore enregistré sur cette période.</>}
-        {' '}Les visites de la page publique du club ne sont pas encore comptées.
       </div>
     </div>
   )

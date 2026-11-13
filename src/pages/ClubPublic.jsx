@@ -112,6 +112,17 @@ export default function ClubPublic() {
       // candidatures déjà envoyées, en plus (pas à la place) des requêtes
       // éducateur ci-dessous, qui restent des no-op inoffensifs pour un id de club.
       const estClub = edu?.plan === 'club'
+      // Visite comptée une fois par session et par club (le rafraîchissement ne gonfle pas le chiffre),
+      // jamais pour le club sur sa propre page : alimente Financement > Audience.
+      if (estClub && user.id !== id) {
+        try {
+          const cle = `vue-club-${id}`
+          if (!sessionStorage.getItem(cle)) {
+            sessionStorage.setItem(cle, '1')
+            supabase.rpc('loguer_vue_club', { p_club_id: id }).then(() => {})
+          }
+        } catch { /* stockage indisponible : la visite n'est simplement pas comptée */ }
+      }
       const noop = Promise.resolve({ data: null })
 
       const [
