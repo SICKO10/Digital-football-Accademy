@@ -20,7 +20,7 @@ import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, 
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { ZONES_RPE, DEFINITION_RPE, zoneRpe, rpeDeReponse } from '../lib/rpe'
-import Tactipad from '../components/Tactipad'
+import { CRITERES_EDU } from '../lib/criteresEdu'
 import SponsorsBar from '../components/SponsorsBar'
 import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } from '../lib/categories'
 import { saisonActuelle, bornesSaison, libelleSaison, filtrerParSaison } from '../lib/saison'
@@ -33,6 +33,7 @@ import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principes
 // DashboardEducateur (1,06 Mo, le plus gros de l'app) alors que la plupart ne sont
 // jamais ouvertes dans une session donnée (une seule section/modale à la fois).
 const AnalyseVideo = lazy(() => import('../components/AnalyseVideo'))
+const Tactipad = lazy(() => import('../components/Tactipad'))
 const StagesModule = lazy(() => import('../components/stages/StagesModule'))
 const RapportMatch = lazy(() => import('../components/RapportMatch'))
 const GestionPrepPhysique = lazy(() => import('../components/prepphysique/GestionPrepPhysique'))
@@ -405,45 +406,6 @@ const TYPES_ANNONCE = [
   { key: 'autre', label: '📢 Autre', color: '#6b7280' },
 ]
 
-// ── Grille d'évaluation éducateur ────────────────────────────────────────────
-export const CRITERES_EDU = [
-  { key: 'leadership', label: '👥 Leadership & Management', color: '#f59e0b', criteres: [
-    { key: 'gestion_groupe', label: 'Gestion du groupe' },
-    { key: 'discipline', label: 'Discipline' },
-    { key: 'cohesion', label: 'Création de cohésion' },
-    { key: 'gestion_conflits', label: 'Gestion des conflits' },
-  ]},
-  { key: 'pedagogie', label: '🎓 Pédagogie', color: colors.accent.purpleLight, criteres: [
-    { key: 'qualite_explications', label: 'Qualité des explications' },
-    { key: 'capacite_corriger', label: 'Capacité à corriger' },
-    { key: 'individualisation', label: 'Individualisation' },
-    { key: 'adaptation_age', label: 'Adaptation à l\'âge' },
-  ]},
-  { key: 'football', label: '⚽ Compétences football', color: colors.accent.green, criteres: [
-    { key: 'animation_seances', label: 'Animation des séances' },
-    { key: 'competence_tactique', label: 'Compétence tactique' },
-    { key: 'coaching_match', label: 'Coaching en match' },
-    { key: 'planification', label: 'Planification' },
-  ]},
-  { key: 'developpement', label: '📈 Développement joueurs', color: '#34d399', criteres: [
-    { key: 'progression_technique', label: 'Progression technique' },
-    { key: 'progression_tactique', label: 'Progression tactique' },
-    { key: 'progression_physique', label: 'Progression physique' },
-    { key: 'progression_mentale', label: 'Progression mentale' },
-  ]},
-  { key: 'professionnalisme', label: '🤝 Professionnalisme', color: colors.accent.blue, criteres: [
-    { key: 'ponctualite', label: 'Ponctualité' },
-    { key: 'organisation', label: 'Organisation' },
-    { key: 'communication_club', label: 'Communication avec le club' },
-    { key: 'investissement', label: 'Investissement' },
-  ]},
-  { key: 'performance', label: '🏅 Performance', color: '#f87171', criteres: [
-    { key: 'resultats', label: 'Résultats' },
-    { key: 'respect_projet_jeu', label: 'Respect du projet de jeu' },
-    { key: 'valorisation_joueurs', label: 'Valorisation des joueurs' },
-    { key: 'objectifs_atteints', label: 'Objectifs atteints' },
-  ]},
-]
 
 // ── Charge SheetJS depuis CDN (xlsx) ─────────────────────────────────────────
 function loadSheetJS() {
@@ -2091,12 +2053,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // onglets spécifiques (Mes séances, Bibliothèque, Explorer > Dirigeants),
     // jamais à l'Accueil — chargés à la demande via des useEffect scopés à
     // activeSection plus bas (même pattern que chargerMonMateriel), pas ici.
-    // chargerMesSeancesOuvertes lancé SANS être attendu : ses fiches embarquent
-    // les schémas tactiques en PNG (plusieurs Mo par fiche) — attendre ce
-    // téléchargement retardait tout l'accueil d'environ 15 s (constaté en
-    // production, onglet Réseau). Les listes de fiches affichent un état de
-    // chargement d'ici là (mesSeancesOuvertesChargees).
-    chargerMesSeancesOuvertes(targetId).catch(() => setMesSeancesOuvertesChargees(true))
+    // chargerMesSeancesOuvertes est lancé plus bas, après l'affichage de l'accueil :
+    // ses fiches embarquent les schémas tactiques en PNG (plusieurs Mo par fiche), les
+    // attendre retardait tout l'accueil d'environ 15 s (constaté en production, onglet
+    // Réseau). Les listes de fiches affichent un état de chargement d'ici là
+    // (mesSeancesOuvertesChargees).
     const [, clubAffiliationData, clubCategoriesData] = await Promise.all([chargerProfilEdu(targetId), chargerClubAffiliation(targetId), chargerClubCategories(targetId), chargerMesAutresRoles(user.id), chargerNotifications(targetId)])
 
     // Phase 2 — équipe active parmi celles de ce coach (mémorisée en
@@ -2131,6 +2092,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       clubAffiliationData?.club_id ? chargerMesTaillesEquipementEduc(clubAffiliationData.club_id, targetId) : Promise.resolve(),
     ])
     setLoading(false)
+    // Lancé APRÈS l'affichage de l'accueil : ces fiches embarquent les schémas en PNG
+    // (plusieurs Mo). Lancé en même temps que le reste, leur téléchargement saturait la
+    // connexion et retardait tout (17 à 19 s constatés à l'ouverture du compte éducateur).
+    chargerMesSeancesOuvertes(targetId).catch(() => setMesSeancesOuvertesChargees(true))
   }
 
   const chargerNotifications = async (uid) => {
@@ -11782,7 +11747,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedeForm.nom || ''}</p>
                 <button onClick={() => setShowTactipadBiblio(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
-              <Tactipad
+              <Suspense fallback={null}><Tactipad
                 userId={userId}
                 mode="modal"
                 vueParDefaut="demi"
@@ -11796,7 +11761,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 }}
                 onFermer={() => setShowTactipadBiblio(false)}
                 lang={lang}
-              />
+              /></Suspense>
             </div>
           </div>
         )}
@@ -12030,7 +11995,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_tacticboard', lang)}</h1>
             <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
-            <Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} />
+            <Suspense fallback={null}><Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} /></Suspense>
           </div>
         )}
 
@@ -13417,7 +13382,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedesActifs[tactipadModal]?.numero}</p>
             <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
           </div>
-          <Tactipad
+          <Suspense fallback={null}><Tactipad
             userId={userId}
             mode="modal"
             vueParDefaut="demi"
@@ -13447,7 +13412,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             }}
             onFermer={() => setTactipadModal(null)}
             lang={lang}
-          />
+          /></Suspense>
         </div>
       </div>
       )
