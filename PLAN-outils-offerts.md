@@ -88,7 +88,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - 2026-11-13, Kevin : `supabase_outils_offerts.sql` exécuté en production, puis `supabase_outils_offerts_verification.sql` : 21 lignes sur 21 à `ok = true` (dont 19 : rien resté en base, 20 : accès des comptes réels identiques avant et après, 21 : places cohérentes). Bloc passé à « fait ». Avant le bloc 2 : relancer `sauvegarder.sh` (un SQL a tourné depuis la dernière sauvegarde).
 
 ### Bloc 2 : la limite à l'affiliation
-- Statut : en cours (code prêt et testé en local ; reste le SQL, le déploiement des 2 fonctions et le test réel par Kevin)
+- Statut : fait
 - Objectif : un club au nouveau modèle ne peut pas accepter plus d'éducateurs que son forfait ne le permet.
 - Résultat testable : avec un forfait 2 équipes et 2 éducateurs acceptés, accepter un 3e affiche « Votre forfait permet 2 éducateurs. Passez au forfait supérieur pour en accueillir plus. » avec un lien vers les forfaits ; rien n'est enregistré en base.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -109,6 +109,8 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 - Journal :
   - 2026-11-13, Sonnet 5.5 : `supabase_limite_educateurs.sql` (fonction `limite_educateurs_atteinte`, réservée au serveur, et garde-fou sur `club_educateurs`, erreur code DF001, verrou du profil du club contre deux acceptations simultanées) + `supabase_limite_educateurs_verification.sql` (18 contrôles, sous-transaction annulée). Testé sur Postgres 17 local : 18 sur 18 ; sans le garde-fou, 7 contrôles échouent (le contrôle détecte bien une absence) ; fichier relançable ; deux acceptations simultanées : la seconde est refusée. Écart au plan : `envoyer-invitation` (compte existant, directement accepté) n'était pas listé et passait aussi à « accepte » : couvert. `AcceptInvite.jsx` inchangé : il affiche déjà `data.error` renvoyé par `accepter-invitation`. Les fonctions renvoient le refus en statut 200 avec `error`, car le navigateur ne lit pas le corps des réponses en erreur. `DashboardClub.jsx` : message + bouton « Voir les forfaits », « N / M places utilisées » (en-tête et carte des demandes). Build OK, 410 tests sur 410 (1 ignoré, comme avant).
   - 2026-11-13, Kevin : `supabase_limite_educateurs.sql` exécuté en production. Premier contrôle : 5 lignes fausses (2, 3, 5, 7, 8), cause = erreur du contrôle et non du garde-fou : le déclencheur existant `sync_quota_equipes` (UPDATE OF palier) remettait le quota du club d'essai à 7 dès que le contrôle écrivait `palier`. Reproduit en local en ajoutant ce déclencheur, contrôle corrigé (il n'écrit plus `palier`). Second contrôle en production : 18 lignes sur 18 à `ok = true` (dont 12 : chemin du navigateur avec les vraies règles d'accès, et 11 : rien resté en base). Reste : déploiement des 2 fonctions, push, test réel dans l'écran du club.
+  - 2026-11-13, Kevin : « fait » après push (b71a276) et déploiement des 2 fonctions (accepter-invitation, envoyer-invitation). Bloc passé à « fait ». Non confirmé à l'écran : l'affichage « N / M places utilisées » de l'onglet Éducateurs et le message de refus (les captures reçues montrent Mon club, pas Éducateurs). À regarder au passage au bloc 4 ou 9.
+  - 2026-11-13, Kevin : deux demandes ajoutées hors plan, voir « Demandes ajoutées en cours de chantier » en bas de ce fichier.
 
 ### Bloc 3 : l'éducateur reçoit vraiment ses outils
 - Statut : à faire
@@ -234,3 +236,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 - Ce que je teste pour valider : je refais le parcours principal moi-même sur digitalfootball.academy.
 - Reste à finir :
 - Journal :
+
+## Demandes ajoutées en cours de chantier (hors blocs, 2026-11-13)
+- **Finances et partenaires absent du menu alors que son interrupteur est allumé** (club d'essai ; Compétition : Classements absent aussi). Piste : le menu du club applique d'abord `mon_club_affichage` (outils « retirés du menu », cible club, `visible = false`, héritage de l'ancien modèle, cf. `menuMasqueParLeClub` dans `src/lib/outilsAcces.js`), alors que l'interrupteur du nouveau modèle lit l'outil actif dans `outils_actifs` : les deux peuvent se contredire. À confirmer par une lecture en base (lignes `cible = 'club'` du club d'essai), puis correction probable : en nouveau modèle, ne plus appliquer ces anciennes lignes.
+- **Rubrique Configuration** à la place de « Mes outils » dans le menu Administratif : y réunir « Outils du club » (étape 5 de Mon club), « Dashboard de mes éducateurs » (étape 6, outils des éducateurs) et « Journal des changements » (étape 7), pour alléger Mon club (qui garderait Identité, Staff, Organigramme, Accès du bureau). Deux points à trancher avant de coder : où va la page « Mes outils » actuelle (forfait et abonnement) et ce que voient les clubs de l'ancien modèle (leur interrupteur de menu est aujourd'hui dans l'étape 5).
