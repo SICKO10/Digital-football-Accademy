@@ -47,7 +47,9 @@ begin
   begin
     -- Départ propre : nouveau modèle, 2 places, testfinal seul affilié accepté,
     -- deux demandes en attente (A et B).
-    update public.profiles set modele_outils = true, abonnement_actif = true, palier = coalesce(palier, 'c200'), quota_equipes = 2 where id = v_club;
+    -- Ne pas toucher à `palier` : le déclencheur sync_quota_equipes (UPDATE OF palier)
+    -- recalculerait quota_equipes d'après le palier et annulerait le quota d'essai.
+    update public.profiles set modele_outils = true, abonnement_actif = true, quota_equipes = 2 where id = v_club;
     delete from public.club_educateurs where club_id = v_club and educateur_id in (v_a, v_b);
     delete from public.club_educateurs where club_id = v_club and educateur_id is distinct from v_edu;
     insert into public.club_educateurs (club_id, educateur_id, statut, methode) values (v_club, v_a, 'en_attente', 'code');
