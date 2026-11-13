@@ -41,7 +41,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 ## Blocs
 
 ### Bloc 0 : mise en place et état des lieux
-- Statut : à faire
+- Statut : fait
 - Objectif : sauvegarder, connaître la situation réelle en base avant de toucher aux règles.
 - Résultat testable : un tableau dans le journal du bloc : clubs du nouveau modèle, leur forfait, leur nombre d'éducateurs affiliés, ceux au-dessus de la limite ; état du club d'essai et de `testfinal`.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
