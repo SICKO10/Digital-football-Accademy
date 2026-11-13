@@ -5,6 +5,7 @@ import { COACH_ADMIN_EMAILS } from './lib/coachAdmin'
 import InstallAppBanner from './components/InstallAppBanner'
 import { ThemeProvider, PorteeThemeClub } from './lib/ThemeProvider'
 import { useCouleurChargement } from './lib/couleurChargement'
+import { precharger, derniereVue } from './lib/prechargement'
 
 // Chargement à la demande de chaque page — sans ça, Vite regroupait tout
 // (dont les 3 dashboards, plusieurs milliers de lignes chacun) dans un seul
@@ -61,7 +62,12 @@ function ChargementPage() {
 function SmartDashboard() {
   const [dest, setDest] = useState(null)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Le dashboard habituel se télécharge pendant que les requêtes cherchent la bonne page.
+    precharger(derniereVue())
+    // getSession lit la session déjà présente sur l'appareil (pas d'appel réseau) ;
+    // les droits sont de toute façon vérifiés par la base à chaque requête.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user
       if (!user) { setDest('/login'); return }
       // Comptes coach analyseur reconnus par email — la contrainte CHECK de
       // profiles.plan n'autorise pas la valeur 'coach', cf. lib/coachAdmin.js.

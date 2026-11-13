@@ -93,6 +93,7 @@ import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
 import { etatCartons } from '../lib/disciplineCartons'
+import { precharger, memoriserVue } from '../lib/prechargement'
 
 // Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
 // écran comme Loader.jsx/ChargementPage, qui masquerait le reste du dashboard
@@ -2030,6 +2031,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   useEffect(() => { init() }, [])
 
+  // Vue habituelle mémorisée pour la prochaine connexion ; la vue club du compte
+  // est téléchargée d'avance pour que le changement de vue soit rapide.
+  useEffect(() => { if (!educateurIdOverride) memoriserVue('/educateur') }, [])
+  useEffect(() => { if (mesRoles?.club) precharger('/club') }, [mesRoles])
+
   // sondageEstClos() est calculée en direct depuis l'heure courante (cf. lib/sondage.js),
   // donc aucune écriture en base n'est nécessaire à l'échéance — mais sans ce tick, rien
   // ne force React à recalculer entre deux interactions : le badge 🟢 Sondage ouvert et
@@ -2049,7 +2055,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }, [activeSection])
 
   const init = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    // getSession lit la session présente sur l'appareil (pas d'appel réseau) ; la base
+    // vérifie les droits à chaque requête.
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) { navigate('/login'); return }
     // Dirigeant délégué (DashboardDirigeant.jsx) : on charge le dashboard de l'éducateur
     // ciblé, pas celui du compte connecté. chargerStaffClub reste sur le compte connecté

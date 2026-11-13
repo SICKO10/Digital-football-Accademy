@@ -64,6 +64,7 @@ import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePaginatio
 import MonClub from '../components/monclub/MonClub'
 import Configuration from '../components/monclub/Configuration'
 import BandeauPlaces from '../components/monclub/BandeauPlaces'
+import { precharger, memoriserVue } from '../lib/prechargement'
 import SousOngletsGroupe from '../components/club/SousOngletsGroupe'
 import { GROUPES_CLUB, sousOngletsAccessibles, entreeDeLOnglet, etapeMonClubDeLOnglet, monClubVisible, etapesMonClubVisibles, configurationVisible, etapesConfigurationVisibles, etapeConfigurationDeLOnglet } from '../lib/menuClubGroupes'
 
@@ -1147,6 +1148,11 @@ export default function DashboardClub() {
 
   useEffect(() => { init() }, [])
 
+  // Vue habituelle mémorisée pour la prochaine connexion ; l'autre vue du compte
+  // (éducateur) est téléchargée d'avance pour que le changement de vue soit rapide.
+  useEffect(() => { memoriserVue('/club') }, [])
+  useEffect(() => { if (mesRoles?.educateur) precharger('/educateur') }, [mesRoles])
+
   // Menu ⋯ des cartes éducateur — fermé au clic en dehors, même pattern que
   // les menus ⋯ des cartes match/résultat/joueur (DashboardEducateur.jsx).
   useEffect(() => {
@@ -1208,7 +1214,10 @@ export default function DashboardClub() {
   }, [activeTab, clubId])
 
   const init = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    // getSession lit la session présente sur l'appareil (pas d'appel réseau) ; la base
+    // vérifie les droits à chaque requête.
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) { navigate('/login'); return }
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     if (!profile) { navigate('/'); return }
@@ -1245,7 +1254,8 @@ export default function DashboardClub() {
     // qu'un seul à la fois — cf. lib/multiRole. club_educateurs vérifié en
     // plus de plan === 'educateur' : un compte 'club' invité comme éducateur
     // garde ce plan (cf. 341b631, ne plus jamais l'écraser).
-    setMesRoles(await chargerMesRoles(user.id))
+    // Lancé en parallèle des autres chargements (plus d'attente avant eux).
+    const rolesEnCours = chargerMesRoles(user.id).then(setMesRoles).catch(() => {})
     setProfilClubEdit({ club: clubProfile.club || '', region: clubProfile.region || '', ville: clubProfile.ville || '', description: clubProfile.description || '', stades: clubProfile.stades || [] })
     setThemeEdit({
       couleur_principale: clubProfile.couleur_principale || colors.accent.green,
@@ -1271,7 +1281,7 @@ export default function DashboardClub() {
     // déclaration de activeTab plus haut) — elles ne bloquaient auparavant
     // l'affichage de tout le dashboard que pour des onglets pas forcément
     // ouverts (audit perf 2026-10-27).
-    await Promise.all([chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId), chargerNbDemandesSaison(resolvedClubId)])
+    await Promise.all([rolesEnCours, chargerCategories(resolvedClubId), chargerEducateurs(resolvedClubId), chargerAvisClub(resolvedClubId), chargerStaff(resolvedClubId), chargerBudget(resolvedClubId), chargerAccueilData(resolvedClubId), chargerRolePermissions(resolvedClubId), chargerRoleCategoriesAccess(resolvedClubId), chargerEvenements(resolvedClubId), chargerOrganigramme(resolvedClubId), chargerParentsClub(), chargerInventaire(resolvedClubId), chargerInvitationsEducateurEnvoyees(resolvedClubId), chargerNbDemandesSaison(resolvedClubId)])
     setLoading(false)
   }
 

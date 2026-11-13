@@ -5,6 +5,7 @@ import { useLang } from '../hooks/useLang'
 import { t } from '../lib/translations'
 import { colors } from '../tokens'
 import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
+import { precharger, derniereVue } from '../lib/prechargement'
 
 const PILLS = ['500+ joueurs', '50+ clubs', 'Scouts actifs']
 
@@ -36,7 +37,9 @@ function Login() {
     setLoading(true)
     setErreur('')
 
-    const { error } = await supabase.auth.signInWithPassword({
+    // Le dashboard habituel se télécharge pendant la vérification du mot de passe.
+    precharger(derniereVue())
+    const { data: connexion, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -47,7 +50,8 @@ function Login() {
       return
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
+    // L'utilisateur est déjà dans la réponse de connexion : pas d'aller-retour de plus.
+    const user = connexion.user
 
     // Comptes coach analyseur reconnus par email (cf. lib/coachAdmin.js) — à
     // vérifier avant le plan, même priorité que SmartDashboard dans App.jsx.
