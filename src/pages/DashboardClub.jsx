@@ -934,6 +934,8 @@ export default function DashboardClub() {
 
   // Éducateurs affiliés
   const [educateursAffilies, setEducateursAffilies] = useState([])
+  // Places du forfait renvoyées par le garde-fou en base quand une acceptation est refusée.
+  const [limiteEducateursServeur, setLimiteEducateursServeur] = useState(null)
   const [modalModifEdu, setModalModifEdu] = useState(null) // { educateur_id, prenom, nom, telephone }
   const [modalDroitsEdu, setModalDroitsEdu] = useState(null) // { id (club_educateurs), nom, peut_editer_projet_sportif, peut_editer_planification } — null = suit le réglage global
   const [savingModifEdu, setSavingModifEdu] = useState(false)
@@ -2891,15 +2893,29 @@ export default function DashboardClub() {
   }
 
   const accepterEducateur = async (id) => {
-    // educateurs_inclus est réglé manuellement par le support (aucun palier
-    // "nombre d'équipes" figé pour l'instant) — null = pas de limite, pour
-    // ne pas bloquer rétroactivement les clubs déjà actifs aujourd'hui.
-    if (club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus) {
+    // Clubs du nouveau modèle : la limite est le nombre de places du forfait
+    // (quota_equipes), contrôlée aussi en base (supabase_limite_educateurs.sql).
+    if (modeleOutilsClub && educateursAcceptes.length >= club.quota_equipes) {
+      setLimiteEducateursServeur(club.quota_equipes)
+      return
+    }
+    // Autres clubs : educateurs_inclus est réglé manuellement par le support
+    // (aucun palier "nombre d'équipes" figé) — null = pas de limite, pour ne pas
+    // bloquer rétroactivement les clubs déjà actifs aujourd'hui.
+    if (!modeleOutilsClub && club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus) {
       alert(`Limite atteinte : votre abonnement inclut ${club.educateurs_inclus} éducateur${club.educateurs_inclus > 1 ? 's' : ''} gratuit${club.educateurs_inclus > 1 ? 's' : ''}. Contactez le support pour en ajouter.`)
       return
     }
     const affiliation = educateursAffilies.find(e => e.id === id)
-    await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
+    const { error: errAcceptation } = await supabase.from('club_educateurs').update({ statut: 'accepte' }).eq('id', id)
+    if (errAcceptation) {
+      const places = /LIMITE_EDUCATEURS:(\d+)/.exec(errAcceptation.message || '')?.[1]
+      if (places) setLimiteEducateursServeur(Number(places))
+      else alert('Erreur : ' + errAcceptation.message)
+      await chargerEducateurs(clubId)
+      return
+    }
+    setLimiteEducateursServeur(null)
     await chargerEducateurs(clubId)
 
     if (!affiliation?.educateur_id) return
@@ -3220,6 +3236,12 @@ export default function DashboardClub() {
 
   const educateursAcceptes = educateursAffilies.filter(e => e.statut === 'accepte')
   const educateursEnAttente = educateursAffilies.filter(e => e.statut === 'en_attente')
+  // Nouveau modèle : un éducateur = une place du forfait (quota_equipes).
+  const modeleOutilsClub = !!club?.modele_outils && club?.quota_equipes != null
+  const placesEducateurs = modeleOutilsClub ? club.quota_equipes : (club?.educateurs_inclus ?? null)
+  const placesBloquees = modeleOutilsClub
+    ? (limiteEducateursServeur ?? (educateursAcceptes.length >= club.quota_equipes && educateursEnAttente.length > 0 ? club.quota_equipes : null))
+    : null
 
   // Navigation — sidebar gauche, 3 groupes plats (Vue générale / Sportif /
   // Administratif). Un seul point de vérité par groupe pour l'affichage ET les
@@ -4182,7 +4204,7 @@ export default function DashboardClub() {
                 <div>
                   <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Éducateurs</h1>
                   <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
-                    {educateursAcceptes.length} affilié{educateursAcceptes.length > 1 ? 's' : ''}{club?.educateurs_inclus != null ? ` sur ${club.educateurs_inclus} inclus` : ''} · {nbEquipesEncadrees} équipe{nbEquipesEncadrees > 1 ? 's' : ''} encadrée{nbEquipesEncadrees > 1 ? 's' : ''}
+                    {modeleOutilsClub ? `${educateursAcceptes.length} / ${placesEducateurs} places utilisées` : <>{educateursAcceptes.length} affilié{educateursAcceptes.length > 1 ? 's' : ''}{placesEducateurs != null ? ` sur ${placesEducateurs} inclus` : ''}</>} · {nbEquipesEncadrees} équipe{nbEquipesEncadrees > 1 ? 's' : ''} encadrée{nbEquipesEncadrees > 1 ? 's' : ''}
                   </p>
                 </div>
                 <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'educateurs' })} style={{ width: isMobile ? '100%' : 'auto' }} />
@@ -4200,10 +4222,23 @@ export default function DashboardClub() {
                   />
                 )}
 
+                {/* Limite de places du forfait atteinte */}
+                {placesBloquees != null && (
+                  <div style={{ background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, borderRadius: '10px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                    <p style={{ margin: 0, color: colors.accent.red, fontSize: '13px', fontWeight: 600, flex: 1, minWidth: '220px' }}>
+                      Votre forfait permet {placesBloquees} éducateur{placesBloquees > 1 ? 's' : ''}. Passez au forfait supérieur pour en accueillir plus.
+                    </p>
+                    <button onClick={() => setActiveTab('profil')} style={{ ...st.btnSolid, flex: isMobile ? 1 : 'none' }}>Voir les forfaits</button>
+                  </div>
+                )}
+
                 {/* En attente */}
                 {educateursEnAttente.length > 0 && (
                   <div style={{ ...carteEdu, borderLeft: `4px solid ${colors.accent.amber}` }}>
-                    <p style={{ ...eyebrowEdu, color: colors.accent.amber, marginBottom: '12px' }}>{t('club_en_attente_validation', lang)} · {educateursEnAttente.length}</p>
+                    <p style={{ ...eyebrowEdu, color: colors.accent.amber, marginBottom: modeleOutilsClub ? '4px' : '12px' }}>{t('club_en_attente_validation', lang)} · {educateursEnAttente.length}</p>
+                    {modeleOutilsClub && (
+                      <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>{educateursAcceptes.length} / {placesEducateurs} places utilisées</p>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {educateursEnAttente.map(e => (
                         <div key={e.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px' }}>
@@ -4227,7 +4262,7 @@ export default function DashboardClub() {
                 {/* Affiliés */}
                 <div>
                   <p style={{ ...eyebrowEdu, marginBottom: '10px' }}>{t('club_educateurs_affilies_titre', lang)} · {educateursAcceptes.length}</p>
-                  {club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus && (
+                  {!modeleOutilsClub && club?.educateurs_inclus != null && educateursAcceptes.length >= club.educateurs_inclus && (
                     <p style={{ margin: '0 0 10px', fontSize: '12px', color: colors.accent.amber }}>
                       Limite d'éducateurs gratuits atteinte — <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Ajouter des éducateurs — ' + (club?.club || ''))}`} style={{ color: colors.accent.amber }}>contacter le support</a> pour en ajouter.
                     </p>

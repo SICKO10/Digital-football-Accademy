@@ -15,6 +15,18 @@ const PARENT_PERMISSIONS_DEFAUT = {
   planning: 'lecture', notes: 'lecture', analyses: 'lecture', recruteurs: 'lecture',
 }
 
+// Club du nouveau modèle déjà au maximum de ses places (profiles.quota_equipes) :
+// la règle vit en base (limite_educateurs_atteinte), le même garde-fou refuse
+// aussi toute acceptation qui passerait entre les mailles. Réponse en 200 avec
+// `error` : le navigateur ne lit le corps d'une réponse que si elle est en 2xx.
+const reponseLimiteEducateurs = (places: number) => new Response(
+  JSON.stringify({
+    error: `Votre forfait permet ${places} éducateur${places > 1 ? 's' : ''}. Passez au forfait supérieur pour en accueillir plus.`,
+    limite_educateurs: places,
+  }),
+  { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+)
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -228,9 +240,15 @@ serve(async (req) => {
       }
 
       if (role === 'educateur') {
-        await supabase.from('club_educateurs').upsert({
+        const { data: placesPleines } = await supabase.rpc('limite_educateurs_atteinte', { p_club: club_id, p_educateur: existingUser.id })
+        if (placesPleines != null) return reponseLimiteEducateurs(placesPleines)
+        const { error: errEducateur } = await supabase.from('club_educateurs').upsert({
           club_id, educateur_id: existingUser.id, statut: 'accepte', methode: 'invite',
         }, { onConflict: 'club_id,educateur_id' })
+        if (errEducateur) {
+          if (errEducateur.code === 'DF001') return reponseLimiteEducateurs(Number(errEducateur.message.split(':')[1]))
+          console.error('[envoyer-invitation] affiliation éducateur non enregistrée:', errEducateur.message)
+        }
         // Ne JAMAIS écraser plan ici — forçait auparavant 'educateur' pour
         // débloquer le dashboard (le compte restait coincé malgré
         // club_educateurs accepté), mais écrasait aussi au passage le plan
@@ -277,6 +295,12 @@ serve(async (req) => {
         JSON.stringify({ success: true, linked: true, message: 'Compte existant lié directement', mailError }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Club déjà plein : inutile d'envoyer une invitation qui serait refusée à l'acceptation.
+    if (role === 'educateur') {
+      const { data: placesPleines } = await supabase.rpc('limite_educateurs_atteinte', { p_club: club_id, p_educateur: null })
+      if (placesPleines != null) return reponseLimiteEducateurs(placesPleines)
     }
 
     // Nouvel utilisateur → créer l'invitation (token à nous, pas de magic link Supabase)

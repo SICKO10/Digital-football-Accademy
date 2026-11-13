@@ -88,7 +88,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - 2026-11-13, Kevin : `supabase_outils_offerts.sql` exécuté en production, puis `supabase_outils_offerts_verification.sql` : 21 lignes sur 21 à `ok = true` (dont 19 : rien resté en base, 20 : accès des comptes réels identiques avant et après, 21 : places cohérentes). Bloc passé à « fait ». Avant le bloc 2 : relancer `sauvegarder.sh` (un SQL a tourné depuis la dernière sauvegarde).
 
 ### Bloc 2 : la limite à l'affiliation
-- Statut : à faire
+- Statut : en cours (code prêt et testé en local ; reste le SQL, le déploiement des 2 fonctions et le test réel par Kevin)
 - Objectif : un club au nouveau modèle ne peut pas accepter plus d'éducateurs que son forfait ne le permet.
 - Résultat testable : avec un forfait 2 équipes et 2 éducateurs acceptés, accepter un 3e affiche « Votre forfait permet 2 éducateurs. Passez au forfait supérieur pour en accueillir plus. » avec un lien vers les forfaits ; rien n'est enregistré en base.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -102,7 +102,12 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Afficher « 3 / 4 places utilisées » près des demandes d'affiliation.
 - Ce que je teste pour valider : sur le club d'essai, accepter une demande de trop et voir le message ; vérifier qu'une demande dans la limite passe toujours.
 - Reste à finir :
+  - Kevin, dans l'ordre : (1) `~/Sauvegardes-DigitalFootball/sauvegarder.sh` ; (2) `supabase_limite_educateurs.sql` en entier dans l'éditeur SQL, puis `supabase_limite_educateurs_verification.sql` en entier (18 lignes, toutes `ok = true`) ; (3) après mon « ok » : `supabase functions deploy accepter-invitation envoyer-invitation` ; (4) après mon « ok » : push ; (5) test réel (voir compte rendu). Le SQL doit passer AVANT le déploiement des fonctions (sans lui, elles ne bloquent simplement rien).
+  - Limites voulues : clubs de l'ancien modèle et forfait sans `quota_equipes` : aucune limite en base (l'ancienne limite `educateurs_inclus` reste côté écran). Une demande en attente (par code, ou invitation d'un compte existant par recherche) n'est pas bloquée, seule l'acceptation l'est ; une invitation par email à un nouveau compte est refusée dès l'envoi si le club est plein, et à l'acceptation si le club s'est rempli entre-temps (le lien reste valable).
+  - Pour le bloc 7 : un club au-dessus de sa limite (forfait réduit) voit « 5 / 4 places utilisées » dans l'onglet Éducateurs ; le garde-fou ne touche aucune affiliation déjà acceptée. Le bandeau « Voir les forfaits » renvoie à l'onglet Profil (choix d'offre en libre-service).
+  - Aucun texte nouveau dans `translations.js` : les messages du club sont en français dans l'écran, comme le message de quota d'équipes existant.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : `supabase_limite_educateurs.sql` (fonction `limite_educateurs_atteinte`, réservée au serveur, et garde-fou sur `club_educateurs`, erreur code DF001, verrou du profil du club contre deux acceptations simultanées) + `supabase_limite_educateurs_verification.sql` (18 contrôles, sous-transaction annulée). Testé sur Postgres 17 local : 18 sur 18 ; sans le garde-fou, 7 contrôles échouent (le contrôle détecte bien une absence) ; fichier relançable ; deux acceptations simultanées : la seconde est refusée. Écart au plan : `envoyer-invitation` (compte existant, directement accepté) n'était pas listé et passait aussi à « accepte » : couvert. `AcceptInvite.jsx` inchangé : il affiche déjà `data.error` renvoyé par `accepter-invitation`. Les fonctions renvoient le refus en statut 200 avec `error`, car le navigateur ne lit pas le corps des réponses en erreur. `DashboardClub.jsx` : message + bouton « Voir les forfaits », « N / M places utilisées » (en-tête et carte des demandes). Build OK, 410 tests sur 410 (1 ignoré, comme avant).
 
 ### Bloc 3 : l'éducateur reçoit vraiment ses outils
 - Statut : à faire

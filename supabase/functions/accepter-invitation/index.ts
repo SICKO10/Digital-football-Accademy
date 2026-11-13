@@ -14,6 +14,16 @@ const PARENT_PERMISSIONS_DEFAUT = {
   planning: 'lecture', notes: 'lecture', analyses: 'lecture', recruteurs: 'lecture',
 }
 
+// Club plein : message pour l'éducateur invité (le club, lui, est prévenu par
+// envoyer-invitation et par son écran). L'invitation n'est pas consommée.
+const reponseLimiteEducateurs = (places: number) => new Response(
+  JSON.stringify({
+    error: "Ce club a atteint la limite d'éducateurs de son forfait. Préviens le club : dès qu'il aura une place libre ou un forfait supérieur, ce même lien fonctionnera.",
+    limite_educateurs: places,
+  }),
+  { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+)
+
 // Toutes les opérations passent par le service role : la table `invitations` n'a
 // volontairement aucune policy de lecture publique (un token = un accès direct au
 // compte concerné, elle ne doit jamais être listable via la clé anon), et les
@@ -106,6 +116,15 @@ serve(async (req) => {
       const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
       let userId = listData?.users?.find(u => u.email?.toLowerCase() === inv.email.toLowerCase())?.id
 
+      // Club du nouveau modèle plein : on s'arrête AVANT de créer le compte, et
+      // l'invitation reste valable (le club peut monter de forfait, puis le même
+      // lien refonctionne). Réponse en 200 avec `error` pour que AcceptInvite.jsx
+      // puisse afficher le message (le navigateur ne lit que les corps 2xx).
+      if (inv.role === 'educateur') {
+        const { data: placesPleines } = await supabase.rpc('limite_educateurs_atteinte', { p_club: inv.club_id, p_educateur: userId || null })
+        if (placesPleines != null) return reponseLimiteEducateurs(placesPleines)
+      }
+
       if (!userId) {
         const { data: created, error: createErr } = await supabase.auth.admin.createUser({
           email: inv.email,
@@ -195,6 +214,8 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ error: 'action invalide' }), { status: 400, headers: corsHeaders })
   } catch (err) {
+    // Garde-fou en base (deux acceptations simultanées passées entre les mailles).
+    if (err?.code === 'DF001') return reponseLimiteEducateurs(Number(String(err.message).split(':')[1]))
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
