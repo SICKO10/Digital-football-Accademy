@@ -690,8 +690,8 @@ const TUTORIELS = {
     etapes: [
       {
         titre: 'Pourquoi c’est important',
-        texte: 'Un éducateur qui trouve tout de suite ce dont il a besoin l’utilise davantage. Ici, tu choisis les entrées du menu que tes éducateurs voient, pour qu’ils ne voient que l’essentiel.',
-        astuce: 'Retirer une entrée enlève seulement son accès dans le menu : rien n’est supprimé.',
+        texte: 'Un éducateur qui trouve tout de suite ce dont il a besoin l’utilise davantage. Ici, tu choisis les outils que ton club offre à tes éducateurs : ils les reçoivent dans leur menu sans rien payer.',
+        astuce: 'Ton forfait couvre un éducateur par équipe (forfait 4 équipes : 4 éducateurs). Les éducateurs en plus gardent le socle gratuit et tu les vois à part, avec « Sans place ».',
         visuel: <Liste titre="Menu de l’éducateur" lignes={[['Mon équipe', <Statut key="e" couleur={c.accent.green}>Affiché</Statut>], ['Rapports & Évaluations', <Statut key="r" couleur={c.accent.amber}>Retiré</Statut>]]} />,
       },
       {
@@ -706,8 +706,8 @@ const TUTORIELS = {
       },
       {
         titre: 'Vérifie avant de valider',
-        texte: 'Le bouton « Voir comme un éducateur » ouvre un aperçu de son menu tel qu’il le verra. Chaque changement apparaît dans le journal et peut être annulé.',
-        astuce: 'Un outil qu’un éducateur paie lui-même reste toujours affiché pour lui.',
+        texte: 'Allume un outil pour l’offrir, éteins-le pour ne plus le fournir : l’éducateur est prévenu dans sa cloche. Le bouton « Voir comme un éducateur » ouvre un aperçu de son menu tel qu’il le verra.',
+        astuce: 'Il faut un forfait actif pour offrir des outils. Un outil qu’un éducateur paie lui-même reste toujours affiché pour lui.',
         visuel: <Boutons items={['Voir comme un éducateur']} actifs={['Voir comme un éducateur']} />,
       },
     ],

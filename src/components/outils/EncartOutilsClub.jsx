@@ -8,7 +8,10 @@ import { doublonsClub } from '../../lib/outilsAcces'
 // - doublon : un outil qu'il paie alors que son club le lui fournit. Calculé à
 //   la lecture, il disparaît dès que l'éducateur a retiré le sien ;
 // - retrait : le club a retiré un outil. Notification stockée par le serveur
-//   (type `outil_club_retire`), que l'éducateur ferme quand il l'a lue.
+//   (type `outil_club_retire`), que l'éducateur ferme quand il l'a lue ;
+// - fin : le club ne lui fournit plus ses outils (fin ou baisse du forfait).
+//   Notification écrite par la base (type `outils_club_fin`), avec un bouton
+//   vers ses offres.
 export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
   const colors = useColors()
   const [retraits, setRetraits] = useState([])
@@ -16,7 +19,7 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
   useEffect(() => {
     if (!outils?.actif || !userId) return undefined
     let annule = false
-    supabase.from('notifications').select('id, contenu').eq('user_id', userId).eq('type', 'outil_club_retire').eq('lu', false)
+    supabase.from('notifications').select('id, type, contenu').eq('user_id', userId).in('type', ['outil_club_retire', 'outils_club_fin']).eq('lu', false)
       .order('created_at', { ascending: false }).limit(5)
       .then(({ data, error }) => {
         if (error) console.error('notifications outils', error.message)
@@ -27,7 +30,7 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
 
   if (!outils?.actif || !outils.pret) return null
   const doublons = doublonsClub(outils.etats)
-  if (doublons.length === 0 && retraits.length === 0) return null
+  if (doublons.length === 0 && retraits.length === 0 && !outils.sansPlace) return null
 
   const fermer = async (id) => {
     setRetraits(prev => prev.filter(n => n.id !== id))
@@ -51,14 +54,20 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
         <div key={n.id}>
           <p style={paragraphe}>{n.contenu}</p>
           <button onClick={() => fermer(n.id)} style={bouton}>J'ai compris</button>
+          {n.type === 'outils_club_fin' && (
+            <button onClick={() => { fermer(n.id); onVoirMesOutils() }} style={{ ...bouton, marginLeft: 8 }}>Voir mes offres</button>
+          )}
         </div>
       ))}
+      {outils.sansPlace && (
+        <p style={paragraphe}>Ton club a atteint sa limite d'éducateurs : tu gardes le socle gratuit. Tu peux ajouter les outils dont tu as besoin avec tes propres offres.</p>
+      )}
       {doublons.map(({ outil }) => (
         <p key={outil.id} style={paragraphe}>
           <strong>{outil.nom}</strong> : ton club te le fournit gratuitement, tu peux retirer le tien dans Mes outils.
         </p>
       ))}
-      {doublons.length > 0 && <button onClick={onVoirMesOutils} style={bouton}>Voir Mes outils</button>}
+      {(doublons.length > 0 || outils.sansPlace) && <button onClick={onVoirMesOutils} style={bouton}>Voir Mes outils</button>}
     </div>
   )
 }

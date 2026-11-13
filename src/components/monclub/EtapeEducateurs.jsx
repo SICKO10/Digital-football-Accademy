@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useColors } from '../../lib/theme'
+import { supabase } from '../../supabase'
+import { outilsDuRole, cleFournitureClub, outilOuvrableParClub } from '../../lib/catalogueOutils'
+import { appelerOutils } from '../../lib/outilsApi'
 import { ecrireLigne, ecrireMode, lireReglages, modeDepuis, prevenirEducateurs, DELAI_PREVENIR, OUTILS_EDUCATEUR } from './ecritures'
 import { Icone, EnteteEtape, CarteReglage } from './ui'
 import { ICONES, stylesMonClub } from './uiMonClub'
@@ -7,13 +10,19 @@ import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
 import ApercuMenuEducateur from './ApercuMenuEducateur'
 
+const AUCUN = []
+
 // Étape 3 de Mon club : le menu des éducateurs affiliés, le même pour tous ou
 // réglé éducateur par éducateur. Ne règle que l'affichage du menu : un outil
 // retiré reste joignable par un lien direct, rien n'est supprimé. Les réglages
 // individuels sont mis de côté (pas effacés) quand on repasse en « même pour
 // tous » ; l'appli des éducateurs les ignore alors (voir affichageDepuisLignes).
 // `educateurs` : éducateurs affiliés acceptés (lignes de club_educateurs).
-export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale }) {
+// `fourniture` (club du nouveau modèle) : { forfaitActif, places }. Dans ce cas
+// l'interrupteur du réglage commun veut dire « le club fournit cet outil »
+// (ligne dans outils_club_ouverts, via api/outils.js), dans la limite des places.
+// `outils` : useOutils du club (outils ouverts, outils détenus, rechargement).
+export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale, fourniture = null, outils = null }) {
   const colors = useColors()
   const [mode, setMode] = useState('commun')
   const [lignes, setLignes] = useState([])
@@ -30,6 +39,9 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
   const lot = useRef({ avant: null, minuterie: null })
   const etat = useRef({})
 
+  const [sansPlaceLus, setSansPlace] = useState(AUCUN)
+  // Outils fournis à un éducateur précis : { [educateur_id]: [outil, ...] }.
+  const [fournisIndiv, setFournisIndiv] = useState({})
   const [version, setVersion] = useState(0)
   const lire = useCallback(() => setVersion(v => v + 1), [])
 
@@ -54,10 +66,45 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
   const individualise = mode === 'individualise'
   const nbMisDeCote = !individualise ? new Set(lignes.filter(l => l.cible === 'educateur').map(l => l.educateur_id)).size : 0
 
-  const liste = useMemo(() => (educateurs || []).map(e => ({
-    id: e.educateur_id,
-    nom: [e.educateur?.prenom, e.educateur?.nom].filter(Boolean).join(' ') || e.educateur?.email || 'Éducateur',
-  })), [educateurs])
+  const liste = useMemo(() => {
+    const vus = new Set()
+    return (educateurs || []).filter(e => e.educateur_id && !vus.has(e.educateur_id) && vus.add(e.educateur_id)).map(e => ({
+      id: e.educateur_id,
+      nom: [e.educateur?.prenom, e.educateur?.nom].filter(Boolean).join(' ') || e.educateur?.email || 'Éducateur',
+    }))
+  }, [educateurs])
+  const offre = !!fourniture && !!outils
+  const places = fourniture?.places ?? 0
+  const fournis = offre ? outils.ouverts : null
+
+  // Éducateurs au-delà de la limite du forfait : la base décide (educateur_a_place).
+  const idsListe = liste.map(e => e.id).join(',')
+  useEffect(() => {
+    if (!offre || !fourniture.forfaitActif || !idsListe) return undefined
+    let annule = false
+    Promise.all(idsListe.split(',').map(id => supabase.rpc('educateur_a_place', { p_club: clubId, p_educateur: id }).then(r => [id, r])))
+      .then(lus => {
+        if (annule) return
+        if (lus.some(([, r]) => r.error)) { console.error('educateur_a_place', lus.find(([, r]) => r.error)[1].error.message); return }
+        setSansPlace(lus.filter(([, r]) => r.data === false).map(([id]) => id))
+      })
+    return () => { annule = true }
+  }, [offre, fourniture?.forfaitActif, places, idsListe, clubId, version])
+  // Lecture de ce que le club fournit éducateur par éducateur (le club la lit sous ses droits).
+  useEffect(() => {
+    if (!offre) return undefined
+    let annule = false
+    supabase.from('outils_educateur_fournis').select('educateur_id, outil').eq('club_id', clubId).then(({ data, error }) => {
+      if (annule) return
+      if (error) { console.error('outils_educateur_fournis', error.message); setErreur('Impossible de lire les outils fournis éducateur par éducateur, réessayez dans un instant.'); return }
+      const parEducateur = {}
+      for (const l of data || []) (parEducateur[l.educateur_id] ||= []).push(l.outil)
+      setFournisIndiv(parEducateur)
+    })
+    return () => { annule = true }
+  }, [offre, clubId, version])
+  const sansPlace = offre && fourniture.forfaitActif && idsListe ? sansPlaceLus : AUCUN
+  const nomSansPlace = liste.filter(e => sansPlace.includes(e.id)).map(e => e.nom)
   const cible = individualise ? (liste.find(e => e.id === choisi) || liste[0] || null) : null
   const ajustes = (id) => Object.keys(individuel(id)).length > 0
 
@@ -67,6 +114,13 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
     if (cible) { const i = individuel(cible.id); if (o.id in i) return i[o.id] }
     return commun[o.id] !== false
   }
+
+  // Nouveau modèle : l'outil est-il fourni, et le club peut-il le fournir ?
+  const fourni = (o) => offre && outils.ouverts.includes(cleFournitureClub(o))
+  const detenu = (o) => !o.viaClub || outils.lignes.some(l => l.outil === o.viaClub)
+  // Fourni à tous, ou à l'éducateur choisi seulement. Seuls les outils offerts (sans `viaClub`) peuvent l'être à un seul.
+  const peutEtreFourniAUn = (o) => offre && !o.viaClub
+  const fourniAUn = (o) => !!cible && (fournisIndiv[cible.id] || []).includes(o.id)
 
   // Envoie aux éducateurs ce qui a vraiment changé dans leur menu depuis le début
   // du lot, relu en base : un changement annulé, ou remis comme avant, n'envoie rien.
@@ -146,6 +200,43 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
     setEnCours(null)
   }
 
+  // Interrupteur « fourni » : ouvre ou ferme l'outil pour tous les éducateurs
+  // affiliés (api/outils.js prévient ceux qui le perdent). L'ouvrir remet aussi
+  // l'entrée au menu si elle avait été retirée.
+  const changerFourniture = async (o) => {
+    const cle = cleFournitureClub(o)
+    const ouvert = !fourni(o)
+    setEnCours(o.id)
+    await executer(
+      `${o.nom} : ${ouvert ? 'fourni à vos éducateurs' : 'plus fourni à vos éducateurs'}.`,
+      async () => {
+        await appelerOutils('ouvrir_club', { outil: cle, ouvert })
+        if (ouvert && commun[o.id] === false) await ecrireLigne(clubId, 'educateurs', null, o.id, undefined)
+        outils.recharger()
+      },
+      async () => { await appelerOutils('ouvrir_club', { outil: cle, ouvert: !ouvert }); outils.recharger() },
+    )
+    setEnCours(null)
+  }
+
+  // Interrupteur « fourni à cet éducateur » : fournit ou cesse de fournir un outil
+  // à lui seul (api/outils.js, même limite de places). Le fournir remet aussi
+  // l'entrée à son menu si elle avait été retirée pour lui.
+  const changerFournitureIndividuelle = async (o) => {
+    const educateur = cible.id
+    const ouvert = !fourniAUn(o)
+    setEnCours(o.id)
+    await executer(
+      `${o.nom} : ${ouvert ? 'fourni à' : 'plus fourni à'} ${cible.nom}.`,
+      async () => {
+        await appelerOutils('fournir_educateur', { outil: o.id, educateur, ouvert })
+        if (ouvert && OUTILS_EDUCATEUR.some(x => x.id === o.id) && !affiche(o)) await ecrireLigne(clubId, 'educateur', educateur, o.id, commun[o.id] !== false ? undefined : true)
+      },
+      () => appelerOutils('fournir_educateur', { outil: o.id, educateur, ouvert: !ouvert }),
+    )
+    setEnCours(null)
+  }
+
   const changerMode = async (nouveau) => {
     if (nouveau === mode) return
     const avant = mode
@@ -162,7 +253,10 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
 
   const st = stylesMonClub(colors)
   const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }
-  const nbAffiches = pret ? OUTILS_EDUCATEUR.filter(affiche).length : 0
+  const outilsListe = offre && !individualise ? outilsDuRole('educateur').filter(o => outilOuvrableParClub(cleFournitureClub(o))) : OUTILS_EDUCATEUR
+  const nbAffiches = pret ? outilsListe.filter(o => (offre && !individualise ? fourni(o) : affiche(o))).length : 0
+  // Fiche d'un éducateur (nouveau modèle) : aussi les outils fournissables sans entrée de menu à régler (Analyse vidéo).
+  const outilsFiche = offre && individualise ? outilsDuRole('educateur').filter(o => OUTILS_EDUCATEUR.some(x => x.id === o.id) || peutEtreFourniAUn(o)) : outilsListe
   const initiales = (nom) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map(m => m[0].toUpperCase()).join('')
   const modes = [
     { id: 'commun', titre: 'Le même pour tous', texte: 'Tous vos éducateurs voient le même menu.', icone: ICONES.menu },
@@ -172,13 +266,18 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
       <EnteteEtape icone={ICONES.educateurs} titre="Dashboard de mes éducateurs"
-        texte="Choisissez les entrées du menu que vos éducateurs voient. Retirer un outil enlève seulement son entrée du menu : rien n'est supprimé, et en le réaffichant l'éducateur retrouve tout. Un outil qu'un éducateur paie lui-même reste toujours affiché pour lui.">
+        texte={offre
+          ? 'Choisissez les outils que votre club fournit à vos éducateurs : ils les utilisent sans rien payer, dans la limite des places de votre forfait. Si vous cessez de fournir un outil, vos éducateurs sont prévenus et gardent leurs données. Un outil qu\'un éducateur paie lui-même reste toujours affiché pour lui.'
+          : 'Choisissez les entrées du menu que vos éducateurs voient. Retirer un outil enlève seulement son entrée du menu : rien n\'est supprimé, et en le réaffichant l\'éducateur retrouve tout. Un outil qu\'un éducateur paie lui-même reste toujours affiché pour lui.'}>
         {pret && (
           <div style={{ flex: '0 1 220px', minWidth: 170, padding: '12px 16px', borderRadius: 14, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {OUTILS_EDUCATEUR.length} affichés</p>
-            <div role="meter" aria-valuemin={0} aria-valuemax={OUTILS_EDUCATEUR.length} aria-valuenow={nbAffiches} aria-label="Entrées affichées dans le menu" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
-              <div style={{ width: `${(nbAffiches / OUTILS_EDUCATEUR.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {outilsListe.length} {offre && !individualise ? 'fournis' : 'affichés'}</p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={outilsListe.length} aria-valuenow={nbAffiches} aria-label="Entrées affichées dans le menu" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
+              <div style={{ width: `${(nbAffiches / outilsListe.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
             </div>
+            {offre && fourniture.forfaitActif && (
+              <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.secondary }}><strong style={{ color: sansPlace.length ? colors.accent.red : colors.text.primary }}>{Math.min(liste.length, places)} / {places}</strong> places</p>
+            )}
           </div>
         )}
       </EnteteEtape>
@@ -187,6 +286,16 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
 
       {pret && (
         <>
+          {offre && !fourniture.forfaitActif && (
+            <p role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: colors.accent.amber + '22', color: colors.text.primary }}>
+              Prenez un forfait pour fournir des outils à vos éducateurs.
+            </p>
+          )}
+          {offre && sansPlace.length > 0 && (
+            <div role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: 12, fontSize: 13, lineHeight: 1.5, background: colors.accent.amber + '22', color: colors.text.primary }}>
+              <strong>Sans place : socle seulement.</strong> Votre forfait permet {places} éducateur{places > 1 ? 's' : ''} : {nomSansPlace.join(', ')} {sansPlace.length > 1 ? 'n\'ont' : 'n\'a'} que le socle gratuit. Passez au forfait supérieur pour leur fournir aussi les outils. Aucune affiliation n'est supprimée.
+            </div>
+          )}
           <div role="radiogroup" aria-label="Mode de réglage" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 14, maxWidth: 720 }}>
             {modes.map(m => {
               const actif = (m.id === 'individualise') === individualise
@@ -211,7 +320,7 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
               <Icone d={ICONES.oeil} size={16} />{apercu ? 'Masquer l\'aperçu' : 'Voir comme un éducateur'}
             </button>
           </div>
-          {apercu && <ApercuMenuEducateur mode={mode} lignes={lignes} educateurs={liste} couleur={couleurPrincipale} onFermer={() => setApercu(false)} />}
+          {apercu && <ApercuMenuEducateur mode={mode} lignes={lignes} educateurs={liste} couleur={couleurPrincipale} fournis={fournis} sansPlace={sansPlace} fournisIndividuels={fournisIndiv} onFermer={() => setApercu(false)} />}
           {nbMisDeCote > 0 && (
             <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.faint }}>
               {nbMisDeCote} éducateur{nbMisDeCote > 1 ? 's ont' : ' a'} un réglage individuel gardé de côté : il revient si vous repassez en « Individualisé ».
@@ -229,6 +338,12 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
                       <button key={e.id} type="button" role="tab" aria-selected={actif} onClick={() => setChoisi(e.id)} className="mc-btn" style={{ ...st.pastille(actif), paddingLeft: 8 }}>
                         <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.sunken, color: actif ? st.surMarque : colors.text.secondary }}>{initiales(e.nom)}</span>
                         {e.nom}
+                        {sansPlace.includes(e.id) && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.red + '22', color: actif ? st.surMarque : colors.text.primary }}>Sans place</span>}
+                        {(fournisIndiv[e.id] || []).length > 0 && (
+                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : st.marque + '22', color: actif ? st.surMarque : colors.text.primary }}>
+                            {fournisIndiv[e.id].length} fourni{fournisIndiv[e.id].length > 1 ? 's' : ''} à lui seul
+                          </span>
+                        )}
                         {ajustes(e.id) && (
                           <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.amber + '2a', color: actif ? st.surMarque : colors.text.primary }}>
                             Ajusté
@@ -245,19 +360,52 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale 
             <div>
               {cible && <h3 style={{ margin: '4px 0 14px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>Menu de {cible.nom}</h3>}
               <div style={grille}>
-                {OUTILS_EDUCATEUR.map(o => {
-                  const actif = affiche(o)
-                  const ajuste = cible && o.id in individuel(cible.id)
+                {outilsFiche.map(o => {
+                  if (offre && !individualise) {
+                    const actifF = fourni(o)
+                    const bloque = !actifF && (!fourniture.forfaitActif || !detenu(o))
+                    return (
+                      <CarteReglage
+                        key={o.id}
+                        nom={o.nom}
+                        description={o.promesse}
+                        actif={actifF}
+                        badge={actifF ? { texte: 'Fourni par le club', couleur: st.marque }
+                          : !fourniture.forfaitActif ? { texte: 'Forfait requis', couleur: colors.accent.amber }
+                            : !detenu(o) ? { texte: 'Activez-le d\'abord dans Outils du club', couleur: colors.accent.amber } : null}
+                        action={<Interrupteur actif={actifF} libelle={`${o.nom} fourni à mes éducateurs`} onClick={() => changerFourniture(o)} desactive={bloque} occupe={enCours === o.id || enCours === 'mode'} />}
+                      />
+                    )
+                  }
+                  const reglableMenu = OUTILS_EDUCATEUR.some(x => x.id === o.id)
+                  const parUn = cible && peutEtreFourniAUn(o)
+                  const pourTous = parUn && fourni(o)
+                  const actif = reglableMenu ? affiche(o) : !!(pourTous || fourniAUn(o))
+                  const ajuste = reglableMenu && cible && o.id in individuel(cible.id)
+                  const aUnePlace = cible && !sansPlace.includes(cible.id)
+                  const fournisseurBloque = !!parUn && (!fourniture.forfaitActif || (!fourniAUn(o) && !aUnePlace))
                   return (
                     <CarteReglage
                       key={o.id}
                       nom={o.nom}
                       description={o.promesse}
                       actif={actif}
-                      badge={!actif
+                      badge={!reglableMenu ? null : !actif
                         ? { texte: 'Retiré du menu', couleur: colors.accent.amber }
                         : ajuste ? { texte: 'Ajusté pour cet éducateur', couleur: st.marque } : null}
-                      action={<Interrupteur actif={actif} libelle={`${o.nom} dans le menu${cible ? ` de ${cible.nom}` : ' des éducateurs'}`} onClick={() => changerOutil(o)} occupe={enCours === o.id || enCours === 'mode'} />}
+                      extra={parUn && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
+                          <span style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 700, color: colors.text.secondary }}>
+                            {pourTous ? 'Fourni à tous vos éducateurs'
+                              : fourniAUn(o) ? `Fourni à ${cible.nom}`
+                                : !fourniture.forfaitActif ? 'Forfait requis pour fournir cet outil'
+                                  : !aUnePlace ? 'Sans place : forfait supérieur nécessaire'
+                                    : `Fournir à ${cible.nom} seulement`}
+                          </span>
+                          <Interrupteur actif={pourTous || fourniAUn(o)} libelle={`${o.nom} fourni à ${cible.nom} seulement`} onClick={() => changerFournitureIndividuelle(o)} desactive={pourTous || fournisseurBloque} occupe={enCours === o.id || enCours === 'mode'} />
+                        </div>
+                      )}
+                      action={reglableMenu ? <Interrupteur actif={actif} libelle={`${o.nom} dans le menu${cible ? ` de ${cible.nom}` : ' des éducateurs'}`} onClick={() => changerOutil(o)} occupe={enCours === o.id || enCours === 'mode'} /> : null}
                     />
                   )
                 })}

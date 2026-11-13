@@ -195,6 +195,26 @@ export const outilEducateurPour = (clubOutilId) => OUTILS.find(o => o.role === '
 // ont un équivalent côté éducateur.
 export const outilsOuvrables = () => outilsDuRole('club').filter(o => outilEducateurPour(o.id))
 
+// Outils éducateur que le club fournit sans les détenir (nouveau modèle, forfait
+// actif, dans la limite de places) : ceux sans `viaClub`. Même liste que la
+// fonction base `outil_offert_par_club` (supabase_outils_offerts.sql).
+export const outilsOfferts = () => outilsDuRole('educateur').filter(o => !o.viaClub)
+
+// Outil éducateur que le club peut ouvrir, à partir de l'id reçu : l'id de
+// l'outil club (Stages, Projet sportif, CFF4) ou celui d'un outil offert.
+// `offert` : le club n'a pas besoin de détenir l'outil.
+export function outilOuvrableParClub(id) {
+  const viaClub = outilEducateurPour(id)
+  if (viaClub) return { outil: viaClub, offert: false }
+  const offert = outilsOfferts().find(o => o.id === id)
+  return offert ? { outil: offert, offert: true } : null
+}
+
+// Identifiant que la base renvoie (source « club ») quand le club fournit cet
+// outil éducateur : l'outil club pour les trois outils `viaClub`, l'outil
+// éducateur lui-même pour les outils offerts.
+export const cleFournitureClub = (outilEducateur) => outilEducateur.viaClub || outilEducateur.id
+
 // Trois questions à l'inscription (bloc 11).
 export const QUESTIONS = [
   {
@@ -309,7 +329,7 @@ export function outilsVisibles(compte, maintenant = new Date()) {
   }
   if (role === 'educateur') {
     for (const o of outilsDuRole('educateur')) {
-      if (o.viaClub && clubOutils.includes(o.viaClub)) visibles.add(o.id)
+      if (clubOutils.includes(cleFournitureClub(o))) visibles.add(o.id)
     }
   }
   return [...visibles]
@@ -353,6 +373,17 @@ export const trouverForfait = (palier) => FORFAITS_CLUB.find(f => f.palier === p
 export function forfaitPourEquipes(nbEquipes) {
   const n = Math.max(1, Number(nbEquipes) || 0)
   return FORFAITS_CLUB.find(f => f.equipes >= n) || null
+}
+
+// Club du nouveau modèle avec un forfait actif : combien d'éducateurs affiliés
+// n'ont pas de place (la base donne les places dans l'ordre des demandes, donc
+// c'est le surplus sur quota_equipes) et quel forfait les couvrirait tous.
+// null quand tout va bien. forfaitSuggere vaut null au-delà du plus grand forfait.
+export function etatPlacesClub({ nbEducateurs = 0, places = 0, forfaitActif = false } = {}) {
+  if (!forfaitActif || !(places > 0)) return null
+  const sansPlace = Math.max(0, Number(nbEducateurs) - places)
+  if (sansPlace === 0) return null
+  return { sansPlace, places, forfaitSuggere: forfaitPourEquipes(nbEducateurs) }
 }
 
 // Ce qu'on paie en une fois au premier paiement (bloc 7), pour une seule

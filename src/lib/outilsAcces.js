@@ -3,7 +3,7 @@
 // Un compte qui n'est pas au nouveau modèle (modeleOutils faux) ne voit
 // jamais rien de filtré : chaque fonction répond « autorisé ».
 
-import { SOCLE, OUTILS, outilsVisibles, outilsDuRole, trouverOutil, joursRestantsEssai, droitActif, outilsOuvrables } from './catalogueOutils.js'
+import { SOCLE, OUTILS, outilsVisibles, outilsDuRole, trouverOutil, joursRestantsEssai, droitActif, outilsOuvrables, cleFournitureClub } from './catalogueOutils.js'
 
 // Onglets de « Mon équipe > Statistiques » dans l'ordre de la page. La
 // présence (et le taux de présence qu'elle contient) reste dans le socle ;
@@ -92,15 +92,17 @@ export function ongletsStatsPermis(compte, maintenant = new Date()) {
 function menuMasque(compte, cle, maintenant) {
   if (compte.role !== 'educateur' || !compte.masques?.length) return false
   const o = outilPourMenu('educateur', cle)
-  if (!o || !o.viaClub || !compte.masques.includes(o.id)) return false
-  if (!compte.clubOutils?.includes(o.viaClub)) return false
+  if (!o || !compte.masques.includes(o.id)) return false
+  if (!compte.clubOutils?.includes(cleFournitureClub(o))) return false
   return !compte.droits.some(d => d.outil === o.id && droitActif(d, maintenant))
 }
 
 // Vrai quand le club a retiré de son menu l'outil qui porte cette entrée. Ne
-// touche que l'affichage : la page et les données restent là.
+// touche que l'affichage : la page et les données restent là. Réservé à
+// l'ancien modèle : en nouveau modèle l'interrupteur est l'outil actif, et une
+// ancienne ligne « retiré du menu » ne doit plus le contredire.
 function menuMasqueParLeClub(compte, cle) {
-  if (compte?.role !== 'club' || !compte.masquesClub?.length) return false
+  if (compte?.role !== 'club' || compte.modeleOutils || !compte.masquesClub?.length) return false
   const o = outilPourMenu('club', cle)
   return !!o && compte.masquesClub.includes(o.id)
 }
@@ -166,8 +168,8 @@ export function etatsOutils({ role, lignes = [], essaisUtilises = [], masques = 
   const liste = []
   for (const o of outilsDuRole(role)) {
     const propre = lignes.find(l => l.outil === o.id && l.source !== 'club')
-    const fourniParLeClub = role === 'educateur' && !!o.viaClub
-      && lignes.some(l => l.source === 'club' && l.outil === o.viaClub)
+    const fourniParLeClub = role === 'educateur'
+      && lignes.some(l => l.source === 'club' && l.outil === cleFournitureClub(o))
     let etat
     let finLe = null
     if (propre) {

@@ -93,7 +93,7 @@ export default function Tarifs() {
             <div style={{ ...carte, marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>Combien d'équipes dans ton club ?</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: colors.text.faint }}>Le forfait dépend du nombre d'équipes, les outils sont tous inclus.</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: colors.text.faint }}>Le forfait dépend du nombre d'équipes. Il inclut tous les outils pour tes {nbEquipes} éducateurs : tu les offres à tes éducateurs affiliés, ils ne paient rien.</p>
               </div>
               <PasEquipes valeur={nbEquipes} onChange={setNbEquipes} />
             </div>
@@ -147,9 +147,14 @@ export default function Tarifs() {
               </div>
             ))}
           </div>
+          {role === 'club' && (
+            <p style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
+              Chaque forfait inclut tous les outils pour autant d'éducateurs affiliés que d'équipes couvertes. Les prix ne changent pas.
+            </p>
+          )}
           {role === 'educateur' && (
             <p style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.5, color: colors.text.faint }}>
-              Si ton club t'ouvre certains de ses outils, ils s'ajoutent à ton compte sans frais.
+              Ton club peut te fournir ces outils sans frais : s'il t'ouvre certains de ses outils, ils s'ajoutent à ton compte.
             </p>
           )}
         </section>

@@ -65,7 +65,7 @@ export default function PaiementForfaitClub({ clubId, nomClub, nbEquipes, peutPa
         ) : (
           <>
             <p style={{ fontSize: 13, lineHeight: 1.5, color: colors.text.secondary, margin: '0 0 1.25rem' }}>
-              Le forfait de {nomClub || 'ton club'} dépend de son nombre d'équipes ({nbEquipes} aujourd'hui). Tous les outils du club sont inclus : tu choisis ensuite ceux qui apparaissent sur ton dashboard, dans Mes outils.
+              Le forfait de {nomClub || 'ton club'} dépend de son nombre d'équipes ({nbEquipes} aujourd'hui). Tous les outils du club sont inclus, et ton forfait couvre aussi tes éducateurs affiliés, à raison d'un éducateur par équipe couverte : tu choisis ensuite ceux que tu leur offres, dans Mon club.
             </p>
             {retour === 'annule' && <p style={{ fontSize: 13, color: colors.text.faint, margin: '0 0 1rem' }}>Paiement annulé : rien n'a été prélevé.</p>}
 

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   OUTILS, SOCLE, outilsVisibles, menuFiltre, totalComposition,
-  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour, roleDepuisReponses,
+  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour, outilsOfferts, etatPlacesClub, outilOuvrableParClub, roleDepuisReponses,
 } from '../src/lib/catalogueOutils.js'
 
 const NOW = new Date('2026-11-10T12:00:00Z')
@@ -172,4 +172,33 @@ test('roleDepuisReponses : éducateur, club, ou rien tant que la question 1 manq
   assert.equal(roleDepuisReponses({ q1: 'dirigeant_club' }), 'club')
   assert.equal(roleDepuisReponses({}), null)
   assert.equal(roleDepuisReponses(), null)
+})
+
+test('outils offerts par le club : les 7 outils sans viaClub, même liste que la base', () => {
+  assert.deepEqual(
+    outilsOfferts().map(o => o.id),
+    ['suivi_joueurs', 'stats_collectives', 'seances', 'tactique', 'bibliotheque', 'prep_physique', 'evaluations_video'],
+  )
+  assert.equal(outilOuvrableParClub('tactique').offert, true)
+  assert.equal(outilOuvrableParClub('cff4').offert, false)
+  assert.equal(outilOuvrableParClub('cff4').outil.role, 'educateur')
+  assert.equal(outilOuvrableParClub('finances'), null)
+})
+
+test('éducateur affilié : reçoit un outil offert quand le club le lui fournit (ligne club au nom de l\'outil)', () => {
+  const compte = { role: 'educateur', modeleOutils: true, droits: [], clubOutils: ['tactique', 'bibliotheque'] }
+  assert.deepEqual(outilsVisibles(compte, NOW).sort(), ['bibliotheque', 'tactique'])
+  assert.deepEqual(outilsVisibles({ ...compte, clubOutils: ['finances'] }, NOW), [])
+})
+
+test('places du club : surplus d\'éducateurs, forfait suggéré, rien si tout va bien', () => {
+  assert.equal(etatPlacesClub({ nbEducateurs: 4, places: 4, forfaitActif: true }), null)
+  assert.equal(etatPlacesClub({ nbEducateurs: 0, places: 4, forfaitActif: true }), null)
+  assert.equal(etatPlacesClub({ nbEducateurs: 6, places: 4, forfaitActif: false }), null)
+  assert.equal(etatPlacesClub({ nbEducateurs: 6, places: 0, forfaitActif: true }), null)
+  const e = etatPlacesClub({ nbEducateurs: 6, places: 4, forfaitActif: true })
+  assert.equal(e.sansPlace, 2)
+  assert.equal(e.places, 4)
+  assert.equal(e.forfaitSuggere.equipes, 7)
+  assert.equal(etatPlacesClub({ nbEducateurs: 30, places: 22, forfaitActif: true }).forfaitSuggere, null)
 })

@@ -26,7 +26,7 @@ export default function OutilNonActive({ role, cle, outilId, detail, libelleBout
       <p style={{ margin: '0 0 14px', fontSize: 14, lineHeight: 1.5, color: colors.text.secondary }}>{outil.promesse}</p>
       <p style={{ margin: '0 0 22px', fontSize: 13, lineHeight: 1.5, color: colors.text.faint }}>
         {outil.achetable
-          ? (viaClub ? 'Cet outil n\'est pas actif sur ton compte. Il est aussi fourni par ton club quand il l\'a souscrit.' : 'Cet outil n\'est pas actif sur ton compte.')
+          ? (viaClub ? 'Cet outil n\'est pas actif sur ton compte. Il est aussi fourni par ton club quand il l\'a souscrit.' : role === 'educateur' ? 'Cet outil n\'est pas actif sur ton compte. Ton club peut aussi te le fournir.' : 'Cet outil n\'est pas actif sur ton compte.')
           : 'Cet outil est fourni par ton club quand il l\'a souscrit.'}
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>

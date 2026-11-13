@@ -128,11 +128,12 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Si la piste est confirmée : en nouveau modèle, ne plus appliquer les lignes `mon_club_affichage` de la cible club (ou les ignorer dans `menuMasqueParLeClub` quand `modeleOutils`) ; test dans `tests/outilsAcces.test.js` ; l'ancien modèle ne change pas.
   - Sinon : chercher la vraie cause avant de coder, sans deviner.
 - Ce que je teste pour valider : recharger le dashboard du club d'essai, voir Finance et Classements dans le menu.
-- Reste à finir :
+- Reste à finir : Classements : aucune ligne de masquage en base pour Compétition, donc la correction ne le garantit pas. Si « Classements » manque encore après le test, vérifier que Compétition est bien un outil actif (source forfait) pour le club d'essai.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : lecture en base : une ligne `finances, visible = false` (12/11 17:40), aucune pour `competition`. Piste confirmée pour Finances. `menuMasqueParLeClub` (`src/lib/outilsAcces.js`) ignore désormais les anciennes lignes quand `modeleOutils` ; ancien modèle inchangé. Test ancien « le masquage s'ajoute au verrouillage » réécrit (il décrivait l'ancien comportement) + 1 test ajouté. 411 tests sur 411, build OK. En attente du test de Kevin avant commit.
 
 ### Bloc 2c : rubrique Configuration dans le menu du club
-- Statut : à faire
+- Statut : fait, en attente du test de Kevin
 - Objectif : alléger Mon club. La rubrique « Mes outils » du menu devient « Configuration » et réunit tout ce qui règle les outils.
 - Résultat testable : dans le menu Administratif, « Configuration » remplace « Mes outils » et contient quatre sous-pages : Mon forfait (l'actuelle page Mes outils : forfait, abonnement, paiement), Outils du club (étape 5 de Mon club), Outils des éducateurs (étape 6, « Dashboard de mes éducateurs »), Journal des changements (étape 7). Mon club ne garde que Identité, Staff, Organigramme et Accès du bureau.
 - Décisions de Kevin (2026-11-13) : la page Mes outils actuelle va dans Configuration, en première sous-page ; Configuration est visible pour tous les clubs, y compris l'ancien modèle (qui n'y voit pas Mon forfait, mais garde son interrupteur de menu dans Outils du club et le Journal).
@@ -144,10 +145,13 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 - Points de vigilance à relire dans le code : `ETAPES_MON_CLUB` et `etapesMonClubVisibles` (`src/lib/menuClubGroupes.js`, testé par `tests/menuClubGroupes.test.js`), `NAV_ADMINISTRATIF` et l'onglet `mes_outils` (`src/pages/DashboardClub.jsx`), les tutoriels par étape (`src/components/tutoriels/TutorielsClub.jsx`, pages `mon_club_*`), les droits (`mon_club` pour régler ; `mes_outils` pour l'onglet), les liens et retours Stripe vers `mes_outils` (`retourDuPortail`), l'ancien lien `mon_club` + étape, et la clé `outils` du menu éducateur si elle partage le nom. Aucun texte client sans validation de Kevin. Aucune base touchée.
 - Ce que je teste pour valider : club nouveau modèle (club d'essai) et un club ancien modèle : chaque sous-page s'ouvre, les interrupteurs marchent comme avant, le retour de paiement Stripe arrive sur Configuration > Mon forfait.
 - Reste à finir :
+  - Test de Kevin sur le club d'essai (nouveau modèle) et un club de l'ancien modèle, retour de paiement Stripe compris ; ensuite commit et push (avec le correctif 2b, encore non commité).
+  - Les tutoriels gardent leurs textes et titres d'origine (« Mes outils », « Dashboard de mes éducateurs »), à reformuler si Kevin le veut.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : nouvelle rubrique « Configuration » (`src/components/monclub/Configuration.jsx`) avec Mon forfait, Outils du club, Outils des éducateurs, Journal des changements ; Mon club ne garde que Identité, Staff, Organigramme, Accès du bureau (`menuClubGroupes.js`). Visible pour tous les clubs ; Mon forfait seulement en nouveau modèle. L'ancien identifiant `mes_outils` (bouton « outil non activé », retour de paiement Stripe via `retourDuPortail`) ouvre Configuration sur Mon forfait. Aucune base touchée. 4 tests ajoutés, 2 adaptés : 416 tests, 0 échec (1 ignoré) ; build OK. Pas testé à l'écran (pas de navigateur dans la session).
 
 ### Bloc 3 : l'éducateur reçoit vraiment ses outils
-- Statut : à faire
+- Statut : fait, en attente du test de Kevin
 - Objectif : l'appli de l'éducateur affiche et ouvre les outils fournis par son club.
 - Résultat testable : `testfinal`, avec Tacticboard et Bibliothèque ouverts par le club, voit ces deux outils dans son menu, peut les utiliser et enregistrer, et voit « Fourni par <nom du club> » dans Mes outils.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -162,11 +166,15 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Tests automatiques sur les nouveaux cas, build.
 - Ce que je teste pour valider : connexion `testfinal` sur digitalfootball.academy, ouvrir Tacticboard, créer et enregistrer un schéma.
 - Reste à finir :
+  - Test de Kevin après push : voir compte rendu. Les écrans du club ne montrent pas encore les 7 outils à fournir (bloc 4) : tant que le bloc 4 n'est pas fait, un club ne peut en ouvrir un que par l'API. Pour tester avec `testfinal`, il faut une ligne `outils_club_ouverts` (voir compte rendu).
+  - Fermer un outil offert prévient tous les éducateurs affiliés, y compris ceux sans place (qui ne l'avaient pas) : réglé au bloc 6.
+  - Le message sans place est écrit en « tu » comme le reste de l'appli éducateur (le plan disait « Votre »).
   - Du bloc 1 : `api/outils.js` action `ouvrir_club` (~l.712) refuse tout outil sans équivalent club (`outilEducateurPour`) : à ouvrir aux 7 outils quand `club_offre_outils` est vrai (la base l'autorise déjà). `outils_actifs` renvoie ces outils avec `source = 'club'` et `fin_le` vide.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : la base renvoie pour les 7 outils offerts une ligne `club` au nom de l'outil éducateur (ex. `tactique`), et pour Stages, Projet sportif et CFF4 au nom de l'outil club. Nouvelle règle commune dans `catalogueOutils.js` (`outilsOfferts`, `outilOuvrableParClub`, `cleFournitureClub`) utilisée par le menu, l'état des outils, le masquage et les doublons (`outilsAcces.js`). `api/outils.js` : `ouvrir_club` accepte les 7 outils offerts (sans que le club les détienne, mais avec un forfait choisi, même règle que la base) ; la notification de retrait suit. `useOutils` : nouveau `sansPlace` (club avec forfait et outil offert ouvert, éducateur au-delà de la limite). Textes : « Fourni par <nom du club> » (Mes outils), message sans place (Mes outils + encart d'accueil), phrase « Ton club peut aussi te le fournir » sur la carte d'un outil non activé. Aucune base touchée. 424 tests, 0 échec (1 ignoré) ; build OK. Pas testé à l'écran (pas de navigateur dans la session) : rien n'est poussé.
 
 ### Bloc 4 : l'écran du club dit la vérité
-- Statut : à faire
+- Statut : fait, en attente du test de Kevin
 - Objectif : dans Mon club, étape « Dashboard de mes éducateurs », l'interrupteur allumé veut dire « fourni », avec le compteur de places et l'aperçu juste.
 - Résultat testable : le club allume Préparation physique, l'éducateur la reçoit ; l'en-tête affiche « 3 / 4 places » ; les éducateurs sans place apparaissent à part avec « Sans place : socle seulement » ; « Voir comme un éducateur » montre exactement le menu reçu.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -182,10 +190,15 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 - Ce que je teste pour valider : club d'essai et `testfinal` dans deux navigateurs : allumer, éteindre un outil, regarder le menu de l'éducateur.
 - Reste à finir :
   - Du bloc 1 : la règle ne permet pas de choisir qui a une place (rang = date de demande). « Donner sa place à » demande un ajout SQL (une priorité par affiliation) : à reporter au bloc 7. Pour savoir qui a une place : `educateur_a_place(club, educateur)`.
+  - Journal et Rétablir : les changements d'outils fournis ne sont pas enregistrés dans le journal de Mon club (la table ne connaît que retiré/réaffiché du menu). Demande un ajout SQL : à décider au bloc 7 ou 9.
+  - Mode « Individualisé » en nouveau modèle : ses interrupteurs règlent toujours le menu éducateur par éducateur, pas la fourniture (qui reste commune à tous). La fourniture individuelle est le bloc 8 (optionnel).
+  - Aperçu : un outil que l'éducateur paie lui-même reste affiché chez lui, l'aperçu ne peut pas le savoir (déjà noté).
+  - Pas testé à l'écran (pas de navigateur dans la session) ; rien n'est poussé.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : `EtapeEducateurs.jsx` reçoit `fourniture` ({ forfaitActif, places }) et `outils` (useOutils du club) depuis `DashboardClub.jsx` via `Configuration.jsx`. Nouveau modèle, mode « même pour tous » : les 10 outils éducateur du catalogue, interrupteur = `ouvrir_club` de `api/outils.js` (l'API prévient les éducateurs qui perdent l'outil ; ouvrir remet aussi l'entrée au menu si elle était retirée). Compteur « N / places » (quota_equipes), message et étiquette « Sans place » (rpc `educateur_a_place`), outils grisés sans forfait actif (« Prenez un forfait pour fournir des outils à vos éducateurs ») ou si le club ne détient pas Stages, Projet sportif, CFF4. Aperçu : `apercuMenuEducateur` accepte les outils fournis (4e paramètre), étiquette « Non fourni », éducateur sans place = socle seulement. Ancien modèle : aucun changement. Aucune base touchée. 428 tests, 0 échec (1 ignoré) ; build OK.
 
 ### Bloc 5 : textes, tutoriels et présentation des forfaits
-- Statut : à faire
+- Statut : fait, en attente du test de Kevin
 - Objectif : partout où le club choisit ou découvre son forfait, il comprend qu'il inclut les outils de ses éducateurs.
 - Résultat testable : la présentation des forfaits club indique « Inclut tous les outils pour vos N éducateurs » ; le tutoriel de l'étape « Dashboard de mes éducateurs » est à jour ; aucun prix modifié.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -199,10 +212,14 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Côté éducateur : une phrase dans ses offres « Votre club peut vous fournir ces outils ».
 - Ce que je teste pour valider : relire les textes sur le site en ligne, côté club et côté éducateur.
 - Reste à finir :
+  - Relire les textes sur le site en ligne après push (pas testé à l'écran, pas de navigateur dans la session). Rien n'est poussé.
+  - Le texte du paiement de forfait dit « un éducateur par équipe couverte » : exact tant que places = quota_equipes.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : phrases ajoutées sans tiret. Tarifs club (`Tarifs.jsx`) : « Inclut tous les outils pour tes N éducateurs » + note sous la grille, prix inchangés ; côté éducateur : « Ton club peut te fournir ces outils sans frais ». `PaiementForfaitClub.jsx` : le forfait couvre aussi les éducateurs affiliés. `MesOutils.jsx` : phrase sous « Autres outils » côté éducateur. Tutoriel `mon_club_educateurs` réécrit (offrir, places, sans place, forfait actif). Aucune base touchée. Tests OK, build OK.
+
 
 ### Bloc 6 : prévenir l'éducateur qui perd ses outils
-- Statut : à faire
+- Statut : prêt, SQL à exécuter par Kevin
 - Objectif : quand le club n'a plus de forfait actif, passe à un forfait plus petit ou ferme un outil, chaque éducateur concerné reçoit une notification dans sa cloche, avec la date.
 - Résultat testable : forfait du club d'essai arrêté (ou simulé en base sur le club d'essai uniquement) : `testfinal` reçoit « Votre club ne fournit plus vos outils depuis le JJ/MM. Vos données sont conservées. » avec un bouton vers ses offres ; ses séances et schémas sont toujours là.
 - Modèle : opus · Effort : high · Coût estimé : moyen
@@ -217,10 +234,17 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Aucun email (cloche seulement). Tests et fichier de contrôle.
 - Ce que je teste pour valider : regarder la cloche de `testfinal` après la simulation, puis remettre le club d'essai dans son état (procédure donnée par le bloc, pas de retour arrière prêt à lancer).
 - Reste à finir :
+  - Kevin, dans l'ordre : (1) `~/Sauvegardes-DigitalFootball/sauvegarder.sh` ; (2) `supabase_fin_outils_club.sql` en entier, puis `supabase_fin_outils_club_verification.sql` en entier (21 lignes, toutes `ok = true`) ; (3) `supabase_fin_outils_club_simulation.sql` (une ligne : l'avis de testfinal) ; (4) l'avis ne s'affiche à l'écran qu'après le push de l'encart (avec les blocs 2b à 5, toujours non poussés).
+  - Prévenir AVANT la fin : non fait. Quand un club résilie, Stripe envoie la date de fin, mais la base ne la garde pas pour un club (`outils_synchroniser_abonnement`, branche club, ne retient rien tant que l'abonnement court) : le déclencheur ne peut pas la voir. Le faire demande de modifier cette fonction de paiement (garder la date de fin programmée) : à décider par Kevin, bloc à part.
+  - Perte de l'affiliation (le club retire l'éducateur) : pas d'avis de ce bloc, hors périmètre.
+  - Tout changement manuel du forfait d'un club du nouveau modèle dans l'éditeur SQL prévient maintenant ses éducateurs (même règle).
+  - Les contrôles des blocs 1 et 2 n'ont pas été relancés en local (ils demandent toute la structure Supabase) ; le déclencheur ne peut pas les faire échouer (erreurs avalées, aucune écriture sur leurs tables). Les relancer en production au bloc 9.
+  - Pas testé à l'écran (pas de navigateur dans la session).
 - Journal :
+  - 2026-11-13, Opus 5.5 : déclencheur en base plutôt que dans le webhook (aucun changement Stripe) : `prevenir_fin_outils_club` sur `profiles` (après changement de plan, modele_outils, abonnement_actif, palier, quota_equipes, club du nouveau modèle seulement). Compare avant et après : fin du forfait ou sortie du nouveau modèle = tous ceux qui recevaient des outils ; forfait plus petit = ceux qui perdent leur place (même rang que `educateur_a_place`) ; Stages, Projet sportif, CFF4 perdus à la fin de l'abonnement. Seulement si le club fournissait au moins un outil ouvert, éducateurs au nouveau modèle. Type `outils_club_fin`, lien `/educateur`, un seul avis non lu par éducateur et par heure. Une erreur dans le déclencheur est avalée : un paiement ne peut jamais échouer à cause de lui. Texte en « tu » comme le reste de l'appli éducateur (le plan disait « Votre »). Testé sur Postgres 17 local (tables minimales, vraie fonction du webhook `outils_synchroniser_abonnement`) : 21 sur 21 ; sans le déclencheur, 12 lignes échouent ; fichier relançable ; simulation : avis reçu, club remis à l'identique, pas de doublon au 2e lancement. `api/outils.js` : fermer un outil offert ne prévient plus que les éducateurs qui ont une place (et personne sans forfait choisi), Stages, Projet sportif, CFF4 inchangés (reste à finir du bloc 3 réglé). `EncartOutilsClub.jsx` : affiche aussi l'avis de fin, bouton « Voir mes offres ». 3 tests ajoutés : 431 tests, 0 échec (1 ignoré) ; build OK. Sauvegarde : ~/Sauvegardes-DigitalFootball/outils-offerts-bloc6-2026-11-13/.
 
 ### Bloc 7 : le club voit et gère ses places
-- Statut : à faire
+- Statut : fait, en attente du test de Kevin
 - Objectif : un club au-dessus de sa limite comprend la situation et sait quoi faire.
 - Résultat testable : un club avec 6 éducateurs au forfait 4 voit un bandeau « 2 éducateurs sans place : choisissez qui garde ses outils ou passez au forfait 7 équipes » avec un bouton vers le forfait supérieur.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -234,10 +258,16 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Si le bloc 4 a reporté « Donner sa place à », le faire ici.
 - Ce que je teste pour valider : sur le club d'essai, avec plus d'éducateurs que de places (ou forfait 2 équipes), voir le bandeau et le bouton.
 - Reste à finir :
+  - Test de Kevin après push (pas testé à l'écran, pas de navigateur dans la session). Pour voir le bandeau : le club d'essai doit avoir plus d'éducateurs affiliés acceptés que de places (quota_equipes). Rien n'est poussé.
+  - « Donner sa place à » (choisir qui garde ses outils) NON fait : la règle du bloc 1 donne les places dans l'ordre des demandes, le choix demande un ajout SQL (une priorité par affiliation, avec ton « ok » et une sauvegarde). Le bandeau ne promet donc pas ce choix : il propose de passer au forfait supérieur. À décider : bloc à part, ou avec le bloc 8.
+  - Journal des changements d'outils fournis (reporté du bloc 4) : toujours non fait, demande aussi un SQL. À décider au bloc 9.
+  - Le bouton « Voir mon forfait » ouvre Mon forfait (portail Stripe pour changer de forfait) ; je n'ai pas pu vérifier que le portail autorise le changement de forfait, à regarder lors de ton test.
+  - Le bandeau n'est pas affiché dans Configuration (l'étape « Outils des éducateurs » dit déjà qui est sans place).
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : `etatPlacesClub` (`catalogueOutils.js`) : surplus d'éducateurs sur `quota_equipes` et forfait suggéré par `forfaitPourEquipes` (null au-delà de 22 : « contactez le support »). Nouveau `BandeauPlaces.jsx` affiché sur l'accueil et dans Mon club, club du nouveau modèle avec forfait actif et surplus seulement, pour ceux qui voient Configuration. Boutons : « Voir mon forfait » (président seulement, sinon phrase « Seul le président peut changer le forfait »), « Voir qui est sans place » (ouvre Outils des éducateurs), ou « Contacter le support » si aucun forfait ne suffit. Aucune base touchée. 432 tests, 0 échec (1 ignoré) ; build et lint OK.
 
 ### Bloc 8 (optionnel) : outils fournis éducateur par éducateur [IDÉE du brief]
-- Statut : à faire
+- Statut : prêt, SQL à exécuter par Kevin
 - Objectif : le club clique sur le nom d'un éducateur et choisit les outils fournis et son menu, pour lui seul.
 - Résultat testable : le club fournit Préparation physique à un seul éducateur ; lui la reçoit, l'autre non.
 - Modèle : sonnet · Effort : high · Coût estimé : élevé
@@ -251,10 +281,17 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Notifications du bloc 6 appliquées aussi à ces changements.
 - Ce que je teste pour valider : deux éducateurs d'essai, un outil fourni à un seul.
 - Reste à finir :
+  - Kevin, dans l'ordre : (1) `~/Sauvegardes-DigitalFootball/sauvegarder.sh` ; (2) `supabase_outils_offerts_educateur.sql` en entier ; (3) `supabase_outils_offerts_educateur_verification.sql` en entier (26 lignes, toutes `ok = true`) ; (4) l'écran n'affiche la fiche qu'après le push (avec les blocs 2b à 7, toujours non poussés). Le fichier du bloc 6 n'a pas besoin d'avoir été lancé avant : celui-ci recrée la fonction et le déclencheur d'avis de fin (si le bloc 6 est déjà lancé, rien ne se perd).
+  - Journal et « Rétablir » pour ces changements : non fait (la table du journal ne connaît que retiré/réaffiché du menu, ajout SQL). Reste le bandeau « Annuler » après chaque changement. À décider au bloc 9, avec le journal des outils fournis à tous (déjà reporté).
+  - Fournir un outil à un seul éducateur ne concerne que les 7 outils offerts (pas Stages, Projet sportif ni CFF4, qui suivent ce que le club détient). Pas de « retirer à un seul » un outil fourni à tous (le réglage est additif).
+  - L'écran prend l'éducateur « sans place » en compte : interrupteur grisé avec « Sans place : forfait supérieur nécessaire ». Si une place se libère, la ligne reprend effet toute seule.
+  - Pas testé sur le vrai site (pas de navigateur connecté dans la session) : l'écran a seulement été rendu avec des données factices (capture lue, thème clair). Le thème sombre et le téléphone ne sont pas regardés.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : table voisine `outils_educateur_fournis` (club, éducateur, outil) plutôt qu'une colonne ajoutée à `outils_club_ouverts` (clé primaire et requêtes existantes intactes). Lecture : le club et son staff, l'éducateur ses lignes ; écriture par `api/outils.js` seulement. `outils_actifs` et `a_outil` : la source « club » prend aussi ces lignes (mêmes conditions que la fourniture à tous : outil offert, `club_offre_outils`, `educateur_a_place`) ; autres sources recopiées à l'identique ; fourni à tous et à lui seul = une seule ligne. Déclencheur du bloc 6 mis à jour (`prevenir_fin_outils_club`) pour prévenir aussi l'éducateur qui perd un outil fourni à lui seul, et personne à tort. Testé sur Postgres 17 local (tables minimales, vrais fichiers des blocs 1, 6 et 8) : 26 contrôles sur 26 ; un changement volontaire de la règle fait bien échouer 3 contrôles ; fichier relançable ; essai à deux éducateurs affiliés (un seul reçoit l'outil, avis seulement pour celui qui perd). `api/outils.js` : action `fournir_educateur` (refus sans forfait, sans place, éducateur non affilié, outil non offert) ; fermer pour tous ne prévient plus celui à qui l'outil reste fourni à lui seul ; cesser de fournir à un seul prévient cet éducateur sauf si le club le fournit à tous. Écran : dans « Individualisé », chaque carte d'outil offert a une ligne « Fournir à X seulement », pastille « N fournis à lui seul » sur l'onglet, aperçu qui en tient compte ; Analyse vidéo et Stats collectives (sans entrée de menu à régler) apparaissent avec la seule ligne de fourniture. Correction au passage : erreur de lint du bloc 4 (`setSansPlace` dans un effet). 9 tests ajoutés : 440 tests, 0 échec (1 ignoré) ; build OK ; lint des fichiers touchés propre. Sauvegarde : ~/Sauvegardes-DigitalFootball/outils-offerts-bloc8-2026-11-13/.
+
 
 ### Bloc 9 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait côté code, parcours de Kevin en attente (SQL des blocs 6 et 8, puis push, puis test)
 - Objectif : parcours complet vérifié en production, plans et mémoire à jour.
 - Résultat testable : la liste de contrôle du bloc est entièrement cochée avec preuves (tests, captures, résultats SQL).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -269,4 +306,13 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Commit et push en français après ton « ok ».
 - Ce que je teste pour valider : je refais le parcours principal moi-même sur digitalfootball.academy.
 - Reste à finir :
+  - Kevin, dans l'ordre : (1) `~/Sauvegardes-DigitalFootball/sauvegarder.sh` ; (2) `supabase_fin_outils_club.sql` puis `supabase_fin_outils_club_verification.sql` (21 lignes `ok = true`) puis `supabase_fin_outils_club_simulation.sql` (bloc 6) ; (3) `supabase_outils_offerts_educateur.sql` puis `supabase_outils_offerts_educateur_verification.sql` (26 lignes `ok = true`) (bloc 8) ; (4) relancer `supabase_outils_offerts_verification.sql` (21 lignes) et `supabase_limite_educateurs_verification.sql` (18 lignes) : ils n'ont pas été relancés après les blocs 6 et 8 ; (5) me dire « ok » pour le commit et le push (le SQL doit passer AVANT le push : l'écran « Fournir à X seulement » appelle une table qui n'existe pas sans le bloc 8) ; (6) parcours sur digitalfootball.academy (liste ci-dessous).
+  - Parcours à refaire par Kevin (club d'essai `deabreu.amorim+club@gmail.com`, éducateur `testfinal`) : le club allume un outil dans « Outils des éducateurs », `testfinal` le voit dans son menu et l'ouvre ; club à N+1 éducateurs sur N places : bandeau « sans place », demande refusée avec message ; `testfinal` sans place : message « sans place » ; fin de forfait simulée (`supabase_fin_outils_club_simulation.sql`) : avis dans la cloche de `testfinal` ; menu du club : Finance et Classements présents, rubrique Configuration ; un outil fourni à `testfinal` seul ; non-régression : un éducateur qui paie lui-même garde ses outils, un club de l'ancien modèle ne voit aucun changement, Stages, Projet sportif et CFF4 inchangés ; thème sombre et téléphone jamais regardés.
+  - Encore jamais vu à l'écran (aucun navigateur dans les sessions des blocs 2b à 8) : tout l'affichage de ces blocs.
+  - Décisions pour Kevin, rien de commencé (chacune demande un SQL) : (a) « Donner sa place à » (choisir qui garde ses outils, aujourd'hui l'ordre des demandes) ; (b) journal et « Rétablir » des changements d'outils fournis (à tous ou à un seul) ; (c) prévenir l'éducateur AVANT la fin du forfait (demande de garder la date de fin programmée dans la fonction de paiement). À regrouper en un chantier « suite » si tu les veux.
+  - Le portail Stripe autorise-t-il le changement de forfait ? À regarder avec le bouton « Voir mon forfait » du bandeau.
+  - Anciens clubs : aucun changement voulu, aucune migration prévue.
 - Journal :
+  - 2026-11-13, Sonnet 5.5 : vérifications automatiques : 440 tests, 0 échec (1 ignoré) ; build OK ; lint des 25 fichiers modifiés : mêmes erreurs qu'avant le chantier (comparaison avec le dernier commit, fichier par fichier : aucune erreur ajoutée, les 40 restantes datent d'avant, surtout les gros tableaux de bord). Relecture : pas de TODO, console.log ni texte à compléter dans les fichiers touchés. Fichiers SQL du chantier tous à la racine, un fichier + un contrôle par bloc, les annulations nommées `_ANNULATION_NE_PAS_EXECUTER`. Aucun SQL lancé, rien commité ni poussé par cette session. Parcours en production non fait : pas de navigateur dans la session, SQL des blocs 6 et 8 non confirmés.
+  - 2026-11-13, Kevin : SQL du bloc 6 (`supabase_fin_outils_club.sql`) puis du bloc 8 (`supabase_outils_offerts_educateur.sql`) exécutés en production, « les deux succès » (contrôles de 21 et 26 lignes, détail des lignes non transmis). Restent : les deux contrôles de relance des blocs 1 et 2, la simulation de fin de forfait (après le push), le « ok » pour commit et push, puis le parcours à l'écran.
+  - 2026-11-13, Kevin : contrôles de relance en production : limite d'éducateurs 18 sur 18 ; outils fournis 20 sur 21. Ligne 19 à `false` (1 outil ouvert au lieu de 0) : l'outil est `projet_sportif`, que les cas d'essai du contrôle n'ouvrent jamais, donc réglage fait par Kevin dans l'écran, pas un reste d'essai. Le contrôle 19 date du bloc 1, quand le club d'essai n'avait rien : à lire comme « pas d'autre outil que ceux allumés par Kevin ». Pour la simulation de fin de forfait, le club d'essai doit fournir un des 7 outils offerts (Tacticboard par exemple) : `projet_sportif` ne suffit pas.

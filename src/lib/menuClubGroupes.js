@@ -13,8 +13,12 @@ export const GROUPES_CLUB = [
 // Étapes de « Mon club » dans leur ordre d'affichage. Staff et Organigramme y ont été
 // déplacés : ils gardent leur propre permission, et un membre du bureau qui n'a que
 // celles-là voit Mon club avec ces deux étapes seulement.
-export const ETAPES_MON_CLUB = ['identite', 'staff', 'organigramme', 'bureau', 'outils', 'educateurs', 'journal']
-const ETAPES_REGLAGES = ['identite', 'bureau', 'outils', 'educateurs', 'journal']
+export const ETAPES_MON_CLUB = ['identite', 'staff', 'organigramme', 'bureau']
+const ETAPES_REGLAGES = ['identite', 'bureau']
+
+// Sous-pages de la rubrique « Configuration » : tout ce qui règle les outils.
+// « forfait » est l'ancienne page Mes outils (abonnement, paiement).
+export const ETAPES_CONFIGURATION = ['forfait', 'outils', 'educateurs', 'journal']
 
 export function groupeDeLOnglet(ongletId) {
   return GROUPES_CLUB.find(g => g.sousOnglets.includes(ongletId)) || null
@@ -54,4 +58,20 @@ export function etapesMonClubVisibles({ peutReglages, estPresident, peutStaff, p
 
 export function monClubVisible(droits) {
   return etapesMonClubVisibles(droits).length > 0
+}
+
+// Sous-pages de Configuration visibles. Mon forfait suit le droit de la page Mes outils
+// (et n'existe qu'en nouveau modèle) ; les trois réglages exigent le droit d'édition de
+// « mon_club », comme avant dans Mon club.
+export function etapesConfigurationVisibles({ peutReglages, peutForfait }) {
+  return ETAPES_CONFIGURATION.filter(id => (id === 'forfait' ? !!peutForfait : !!peutReglages))
+}
+
+export function configurationVisible(droits) {
+  return etapesConfigurationVisibles(droits).length > 0
+}
+
+// Ancien identifiant « mes_outils » : ouvre Configuration sur Mon forfait.
+export function etapeConfigurationDeLOnglet(ongletId) {
+  return ongletId === 'mes_outils' ? 'forfait' : null
 }

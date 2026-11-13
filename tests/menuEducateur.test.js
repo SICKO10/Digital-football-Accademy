@@ -30,3 +30,30 @@ test('Suivi des joueurs retiré : Mon équipe reste (Statistiques jamais masqué
   const e = entrees(apercuMenuEducateur('commun', [{ cible: 'educateurs', outil: 'suivi_joueurs', visible: false }]))
   assert.equal(e.equipe.visible, true)
 })
+
+test('club du nouveau modèle : outil non fourni = entrée « nonFourni », fourni = visible', () => {
+  const e = entrees(apercuMenuEducateur('commun', [], null, ['tactique']))
+  assert.equal(e.tactipad.visible, true)
+  assert.equal(e.prep_physique.visible, false)
+  assert.equal(e.prep_physique.nonFourni, true)
+  assert.equal(e.prep_physique.retire, false)
+})
+
+test('club du nouveau modèle : éducateur sans place = socle seulement', () => {
+  const e = entrees(apercuMenuEducateur('commun', [], null, []))
+  assert.equal(e.tactipad.visible, false)
+  assert.equal(e.tactipad.nonFourni, true)
+  assert.equal(e.equipe.visible, true)
+})
+
+test('club du nouveau modèle : un outil fourni mais retiré du menu reste « retiré »', () => {
+  const e = entrees(apercuMenuEducateur('commun', [{ cible: 'educateurs', outil: 'tactique', visible: false }], null, ['tactique']))
+  assert.equal(e.tactipad.visible, false)
+  assert.equal(e.tactipad.retire, true)
+  assert.equal(e.tactipad.nonFourni, false)
+})
+
+test('ancien modèle : nonFourni jamais posé', () => {
+  const e = entrees(apercuMenuEducateur('commun', []))
+  assert.ok(Object.values(e).every(i => i.nonFourni === false))
+})

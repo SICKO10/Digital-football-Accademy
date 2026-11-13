@@ -6267,7 +6267,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           <OutilNonActive role="educateur" cle={activeSectionBrut} onRetour={() => setActiveSection('accueil')} onMesOutils={outils.actif ? () => setActiveSection('mes_outils') : undefined} />
         )}
 
-        {activeSection === 'mes_outils' && outils.actif && <MesOutils role="educateur" outils={outils} userId={userId} />}
+        {activeSection === 'mes_outils' && outils.actif && <MesOutils role="educateur" outils={outils} userId={userId} nomClub={clubAffiliation?.statut === 'accepte' ? (clubAffiliation.club?.club || '') : ''} />}
 
         {['equipe', 'stats', 'sante', 'historique'].includes(activeSection) && (
           <SousOngletsBar

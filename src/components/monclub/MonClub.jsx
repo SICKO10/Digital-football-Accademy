@@ -1,9 +1,6 @@
 import { useColors } from '../../lib/theme'
 import EtapeIdentite from './EtapeIdentite'
 import EtapeAccesBureau from './EtapeAccesBureau'
-import EtapeOutils from './EtapeOutils'
-import EtapeEducateurs from './EtapeEducateurs'
-import EtapeJournal from './EtapeJournal'
 import { stylesMonClub, CSS_MON_CLUB } from './uiMonClub'
 import { etapesMonClubVisibles } from '../../lib/menuClubGroupes'
 
@@ -14,9 +11,6 @@ const ETAPES = [
   { id: 'staff', titre: 'Staff', fait: true },
   { id: 'organigramme', titre: 'Organigramme', fait: true },
   { id: 'bureau', titre: 'Accès du bureau', fait: true },
-  { id: 'outils', titre: 'Outils du club', fait: true },
-  { id: 'educateurs', titre: 'Dashboard de mes éducateurs', fait: true },
-  { id: 'journal', titre: 'Journal des changements', fait: true },
 ]
 
 // etape / setEtape viennent du dashboard : le lien « Permissions par rôle » du Staff
@@ -25,7 +19,7 @@ const ETAPES = [
 // gardent leur propre permission.
 export default function MonClub({
   club, themeEdit, setThemeEdit, sauvegarderTheme, uploaderImageTheme, savingTheme, themeUploading, isMobile, couleurPrincipale,
-  outils, clubId, estCompteClub, educateurs, etape, setEtape, droits, ecrans, rolePermissions, roleCategoriesAccess, savingPermissions, sauvegarderPermissions,
+  etape, setEtape, droits, ecrans, rolePermissions, roleCategoriesAccess, savingPermissions, sauvegarderPermissions,
 }) {
   const colors = useColors()
   const s = stylesMonClub(colors)
@@ -63,9 +57,6 @@ export default function MonClub({
         <EtapeIdentite club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit} sauvegarderTheme={sauvegarderTheme}
           uploaderImageTheme={uploaderImageTheme} savingTheme={savingTheme} themeUploading={themeUploading} isMobile={isMobile} />
       )}
-      {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
-      {courante.id === 'educateurs' && <EtapeEducateurs clubId={clubId} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
-      {courante.id === 'journal' && <EtapeJournal clubId={clubId} educateurs={educateurs} estCompteClub={estCompteClub} />}
       {courante.id === 'staff' && ecrans.staff()}
       {courante.id === 'organigramme' && ecrans.organigramme()}
       {courante.id === 'bureau' && (

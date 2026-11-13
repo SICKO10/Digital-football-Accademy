@@ -62,8 +62,10 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 import { statutPresenceEffectif, estStatutPresent, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
 import MonClub from '../components/monclub/MonClub'
+import Configuration from '../components/monclub/Configuration'
+import BandeauPlaces from '../components/monclub/BandeauPlaces'
 import SousOngletsGroupe from '../components/club/SousOngletsGroupe'
-import { GROUPES_CLUB, sousOngletsAccessibles, entreeDeLOnglet, etapeMonClubDeLOnglet, monClubVisible, etapesMonClubVisibles } from '../lib/menuClubGroupes'
+import { GROUPES_CLUB, sousOngletsAccessibles, entreeDeLOnglet, etapeMonClubDeLOnglet, monClubVisible, etapesMonClubVisibles, configurationVisible, etapesConfigurationVisibles, etapeConfigurationDeLOnglet } from '../lib/menuClubGroupes'
 
 const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
@@ -828,12 +830,14 @@ export default function DashboardClub() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [onboardingKey, setOnboardingKey] = useState(0)
   const replayOnboarding = () => setOnboardingKey(k => k + 1)
-  const [activeTabBrut, setActiveTabEtat] = useState(() => (retourDuPortail() ? 'mes_outils' : 'accueil'))
+  const [activeTabBrut, setActiveTabEtat] = useState(() => (retourDuPortail() ? 'configuration' : 'accueil'))
   // Staff et Organigramme sont des étapes de Mon club : les anciens liens qui les ouvrent
   // (raccourcis, tutoriels) arrivent sur Mon club, à la bonne étape.
   const setActiveTab = (id) => {
     const etape = etapeMonClubDeLOnglet(id)
     if (etape) setMonClubEtape(etape)
+    // Ancien « Mes outils » : Configuration, sur Mon forfait.
+    if (etapeConfigurationDeLOnglet(id)) { setConfigEtape('forfait'); setActiveTabEtat('configuration'); return }
     if (id !== 'projet_sportif') setVueProjetSportif('poles')
     setActiveTabEtat(etape ? 'mon_club' : id)
   }
@@ -907,6 +911,7 @@ export default function DashboardClub() {
   const [rolePermissions, setRolePermissions] = useState([]) // [{ role, section, can_view, can_edit }]
   const [roleCategoriesAccess, setRoleCategoriesAccess] = useState([]) // [{ role, categories, acces_complet }]
   const [monClubEtape, setMonClubEtape] = useState('identite')
+  const [configEtape, setConfigEtape] = useState('forfait')
   const [savingPermissions, setSavingPermissions] = useState(false)
 
   // Catégories & équipes
@@ -1165,6 +1170,7 @@ export default function DashboardClub() {
     if (canViewSection('stages')) idsSportif.push('stages')
     const idsAdministratif = ['sponsors', 'deplacements', 'profil', 'budget', 'evenements', 'inventaire', 'newsletter', 'taches', 'projet_club_cff4'].filter(canViewSection)
     if (monClubVisible({ peutReglages: canEditSection('mon_club'), estPresident: monRole === 'president', peutStaff: canViewSection('staff'), peutOrganigramme: canViewSection('organigramme') })) idsAdministratif.push('mon_club')
+    if (canEditSection('mon_club') || (outils.actif && canViewSection('mes_outils'))) idsAdministratif.push('configuration')
     const idsVisibles = ['accueil', ...idsSportif, ...idsAdministratif]
     if (!idsVisibles.includes(activeTab)) setActiveTab('accueil')
   }, [monRole, rolePermissions])
@@ -3284,6 +3290,10 @@ export default function DashboardClub() {
     peutReglages: canEditSection('mon_club'), estPresident: monRole === 'president',
     peutStaff: ongletAccessible('staff'), peutOrganigramme: ongletAccessible('organigramme'),
   }
+  const droitsConfiguration = {
+    peutReglages: canEditSection('mon_club'),
+    peutForfait: outils.actif && canViewSection('mes_outils') && outils.menuVisible('mes_outils'),
+  }
   const NAV_ADMINISTRATIF = [
     ...entreeGroupe('finance'),
     ...[
@@ -3293,7 +3303,7 @@ export default function DashboardClub() {
       { id: 'profil', label: t('club_tab_profil', lang), Icon: IcoStar },
     ].filter(item => (item.id === 'evenements' ? peutEvenements || peutCff4 : canViewSection(item.id) && outils.menuVisible(item.id))),
     ...(monClubVisible(droitsMonClub) ? [{ id: 'mon_club', label: 'Mon club', Icon: IcoStar }] : []),
-    ...(outils.actif && canViewSection('mes_outils') && outils.menuVisible('mes_outils') ? [{ id: 'mes_outils', label: 'Mes outils', Icon: IcoClipboard }] : []),
+    ...(configurationVisible(droitsConfiguration) ? [{ id: 'configuration', label: 'Configuration', Icon: IcoClipboard }] : []),
   ]
 
   const sportifVisible = NAV_SPORTIF.length > 0
@@ -3306,7 +3316,17 @@ export default function DashboardClub() {
   const etapesMonClub = etapesMonClubVisibles(droitsMonClub)
   const etapeAffichee = etapesMonClub.includes(monClubEtape) ? monClubEtape : etapesMonClub[0]
   const vueEvenements = peutEvenements ? (sousVueEvenements === 'cff4' && !peutCff4 ? 'evenements' : sousVueEvenements) : 'cff4'
+  const etapesConfiguration = etapesConfigurationVisibles(droitsConfiguration)
+  const configAffichee = etapesConfiguration.includes(configEtape) ? configEtape : etapesConfiguration[0]
+  // Éducateurs au-delà des places du forfait (nouveau modèle) : bandeau pour ceux qui gèrent la configuration.
+  const bandeauPlaces = modeleOutilsClub && configurationVisible(droitsConfiguration) ? (
+    <BandeauPlaces nbEducateurs={new Set(educateursAcceptes.map(e => e.educateur_id)).size} places={club.quota_equipes}
+      forfaitActif={!!(club.abonnement_actif && club.palier)} club={club.club} isMobile={isMobile}
+      peutGererForfait={monRole === 'president'} onForfait={() => setActiveTab('mes_outils')}
+      onEducateurs={etapesConfiguration.includes('educateurs') ? () => { setConfigEtape('educateurs'); setActiveTabEtat('configuration') } : undefined} />
+  ) : null
   const pageTuto = activeTab === 'mon_club' ? etapeMonClubDeLOnglet(etapeAffichee) || `mon_club_${etapeAffichee}`
+    : activeTab === 'configuration' ? (configAffichee === 'forfait' ? 'mes_outils' : `mon_club_${configAffichee}`)
     : activeTab === 'evenements' ? (vueEvenements === 'cff4' ? 'projet_club_cff4' : vueEvenements)
     : activeTab === 'projet_sportif' && vueProjetSportif !== 'poles' ? `projet_sportif_${vueProjetSportif}`
     : activeTab
@@ -3337,7 +3357,7 @@ export default function DashboardClub() {
   const rubriquesVisibles = new Set(TOUTES_ENTREES.flatMap(item => [item.id, ...(item.subKeys || [])]))
   const clubOnboardingSteps = [
     { title: "Bienvenue sur Digital Football ! ⚽", message: "Je suis Cedinho, ton guide. Je vais te montrer les rubriques de l'espace club, en commençant par celles à régler en premier.", targetId: null, position: "center" },
-    { rubrique: 'mon_club', title: "Mon club", message: "Commence ici : c'est le centre de réglage de ton club. Identité (couleurs, logo, slogan), Staff, Organigramme, Accès du bureau, Outils du club et Dashboard de tes éducateurs." },
+    { rubrique: 'mon_club', title: "Mon club", message: "Commence ici : c'est le centre de réglage de ton club. Identité (couleurs, logo, slogan), Staff, Organigramme et Accès du bureau." },
     { rubrique: 'profil', title: "Profil du club", message: "Renseigne les infos du club : nom, région, ville du siège et stades. Tu y retrouves aussi ton abonnement et les avis reçus." },
     { rubrique: 'categories', title: "Catégories & Équipes", message: "Crée tes catégories et tes équipes (U11 A, U13 B…) et désigne l'éducateur responsable de chacune." },
     { rubrique: 'classements', title: "Stats équipe", message: "Juste sous les catégories : choisis une équipe pour voir son bilan, ses derniers résultats, le classement officiel et le classement des joueurs (buteurs, passeurs, présence)." },
@@ -3351,7 +3371,7 @@ export default function DashboardClub() {
     { rubrique: 'evenements', title: "Événements & Projets", message: "Organise soirées et réunions, pilote les projets du club (référents, participants, matériel, missions) et construis le projet club selon le guide de certification FFF (CFF4)." },
     { rubrique: 'taches', title: "Tâches & Responsabilités", message: "Note qui fait quoi au club et suis les tâches ponctuelles avec leur statut." },
     { rubrique: 'newsletter', title: "Newsletter", message: "Envoie une communication à tes éducateurs et joueurs affiliés : elle est publiée dans leur espace et envoyée par email." },
-    { rubrique: 'mes_outils', title: "Mes outils", message: "Retrouve ton abonnement et choisis les outils affichés sur le dashboard du club, ainsi que ceux que tu ouvres à tes éducateurs." },
+    { rubrique: 'configuration', title: "Configuration", message: "Retrouve ton abonnement, choisis les outils affichés sur le dashboard du club, ceux que tu ouvres à tes éducateurs, et le journal des changements." },
     { title: "C'est parti ! 🚀", message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite, je suis toujours là.", targetId: null, position: "center" },
   ]
     .filter(step => !step.rubrique || rubriquesVisibles.has(step.rubrique))
@@ -3937,6 +3957,7 @@ export default function DashboardClub() {
           <div style={st.content}>
 
         {/* ── ACCUEIL ── */}
+        {activeTab === 'accueil' && bandeauPlaces}
         {activeTab === 'accueil' && (
           <AccueilClub
             clubId={clubId}
@@ -6424,19 +6445,25 @@ export default function DashboardClub() {
           <OutilNonActive role="club" cle={activeTabBrut} onRetour={() => setActiveTab('accueil')} onMesOutils={outils.actif && monRole === 'president' ? () => setActiveTab('mes_outils') : undefined} />
         )}
 
+        {activeTab === 'mon_club' && monClubVisible(droitsMonClub) && bandeauPlaces}
         {activeTab === 'mon_club' && monClubVisible(droitsMonClub) && (
           <MonClub club={club} themeEdit={themeEdit} setThemeEdit={setThemeEdit}
             sauvegarderTheme={sauvegarderTheme} uploaderImageTheme={uploaderImageTheme}
             savingTheme={savingTheme} themeUploading={themeUploading}
             isMobile={isMobile} couleurPrincipale={couleurPrincipale}
-            outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId} educateurs={educateursAcceptes}
             etape={monClubEtape} setEtape={setMonClubEtape} droits={droitsMonClub}
             ecrans={{ staff: ecranStaff, organigramme: ecranOrganigramme }}
             rolePermissions={rolePermissions} roleCategoriesAccess={roleCategoriesAccess}
             savingPermissions={savingPermissions} sauvegarderPermissions={sauvegarderPermissions} />
         )}
 
-        {activeTab === 'mes_outils' && outils.actif && <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'} />}
+        {activeTab === 'configuration' && configurationVisible(droitsConfiguration) && (
+          <Configuration etape={configEtape} setEtape={setConfigEtape} droits={droitsConfiguration} isMobile={isMobile}
+            outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId} educateurs={educateursAcceptes}
+            couleurPrincipale={couleurPrincipale}
+            fourniture={club?.modele_outils ? { forfaitActif: !!(club.abonnement_actif && club.palier), places: club.quota_equipes ?? 0 } : null}
+            ecranForfait={() => <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'} />} />
+        )}
       </div>
           </div>
         </div>

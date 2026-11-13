@@ -294,10 +294,10 @@ test('masquage du club : ne touche pas un éducateur', () => {
   assert.equal(menuVisible(compte, 'budget', NOW), true)
 })
 
-test('club nouveau modèle : le masquage s\'ajoute au verrouillage', () => {
+test('club nouveau modèle : seul le verrouillage compte, une ancienne ligne de masquage est ignorée', () => {
   const lignes = [{ outil: 'finances', source: 'forfait', fin_le: null }, { outil: 'stages', source: 'forfait', fin_le: null }]
   const compte = compteDepuisLignes('club', true, lignes, [], ['finances'])
-  assert.equal(menuVisible(compte, 'budget', NOW), false)
+  assert.equal(menuVisible(compte, 'budget', NOW), true)
   assert.equal(menuVisible(compte, 'stages', NOW), true)
   assert.equal(menuVisible(compte, 'newsletter', NOW), false)
 })
@@ -404,4 +404,36 @@ test('Mon club : le socle et Statistiques (présence gratuite) ne se masquent ja
 test('Mon club : le réglage des éducateurs ne touche pas le menu du club', () => {
   const compte = compteDepuisLignes('club', false, [], [], [], affichageDepuisLignes('commun', [commun('projet_sportif', false)], MOI))
   assert.equal(menuVisible(compte, 'projet_sportif', NOW), true)
+})
+
+test('Menu du club : une ancienne ligne « retiré du menu » ne masque rien en nouveau modèle', () => {
+  const lignes = [{ outil: 'finances', source: 'plan' }]
+  const nouveau = compteDepuisLignes('club', true, lignes, [], ['finances'])
+  assert.equal(menuVisible(nouveau, 'budget', NOW), true)
+  const ancien = compteDepuisLignes('club', false, [], [], ['finances'])
+  assert.equal(menuVisible(ancien, 'budget', NOW), false)
+})
+
+test('outil offert par le club : menu ouvert, état « club », doublon si l\'éducateur le paie aussi', () => {
+  const lignes = [{ outil: 'tactique', source: 'club', fin_le: null }, { outil: 'seances', source: 'achat', fin_le: null }, { outil: 'seances', source: 'club', fin_le: null }]
+  const compte = edu(lignes)
+  assert.equal(menuVisible(compte, 'tactipad', NOW), true)
+  assert.equal(menuVisible(compte, 'bibliotheque', NOW), false)
+  const etats = etatsOutils({ role: 'educateur', lignes, maintenant: NOW })
+  assert.equal(etats.find(e => e.outil.id === 'tactique').etat, 'club')
+  assert.equal(etats.find(e => e.outil.id === 'seances').etat, 'actif')
+  assert.deepEqual(doublonsClub(etats).map(d => d.outil.id), ['seances'])
+})
+
+test('outil offert : l\'éducateur peut le masquer de son menu, sauf s\'il le paie', () => {
+  const lignes = [{ outil: 'tactique', source: 'club', fin_le: null }, { outil: 'seances', source: 'club', fin_le: null }, { outil: 'seances', source: 'achat', fin_le: null }]
+  const compte = compteDepuisLignes('educateur', true, lignes, ['tactique', 'seances'])
+  assert.equal(menuVisible(compte, 'tactipad', NOW), false)
+  assert.equal(menuVisible(compte, 'mes_seances', NOW), true)
+})
+
+test('éducateur sans place : aucune ligne club, outil verrouillé et « disponible » dans Mes outils', () => {
+  const compte = edu([])
+  assert.equal(menuVisible(compte, 'tactipad', NOW), false)
+  assert.equal(etatsOutils({ role: 'educateur', lignes: [], maintenant: NOW }).find(e => e.outil.id === 'tactique').etat, 'disponible')
 })

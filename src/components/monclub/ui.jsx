@@ -29,7 +29,7 @@ export function EnteteEtape({ icone, titre, texte, children }) {
 
 // Carte d'un outil avec son interrupteur (étapes Outils et Dashboard des éducateurs).
 // Éteinte, elle s'estompe et porte une pastille : l'état se lit sans la couleur seule.
-export function CarteReglage({ nom, description, pied, actif, badge, action }) {
+export function CarteReglage({ nom, description, pied, actif, badge, action, extra = null }) {
   const colors = useColors()
   const s = stylesMonClub(colors)
   return (
@@ -47,6 +47,7 @@ export function CarteReglage({ nom, description, pied, actif, badge, action }) {
         <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, color: colors.text.primary, background: badge.couleur + '2a', border: `1px solid ${badge.couleur}66` }}>{badge.texte}</span>
       )}
       <p style={{ margin: 0, flex: 1, fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>{description}</p>
+      {extra}
       {pied && (
         <p style={{ margin: 0, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: colors.text.faint }}>
           <Icone d={ICONES.menu} size={13} />{pied}

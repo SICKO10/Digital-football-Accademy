@@ -12,7 +12,7 @@ function monde({ panneLigne = false } = {}) {
   const profils = {
     [U.edu]: { plan: 'educateur', modele_outils: true, abonnement_actif: true },
     [U.eduAncien]: { plan: 'educateur', modele_outils: false, abonnement_actif: true },
-    [U.club]: { plan: 'club', modele_outils: true, abonnement_actif: true },
+    [U.club]: { plan: 'club', modele_outils: true, abonnement_actif: true, palier: 'club_4' },
     [U.clubImpaye]: { plan: 'club', modele_outils: true, abonnement_actif: false },
     [U.joueur]: { plan: 'joueur_starter', modele_outils: true, abonnement_actif: false },
     [U.eduNeuf]: { plan: 'educateur', modele_outils: false, abonnement_actif: false, abonnement_debut: null },
@@ -22,6 +22,8 @@ function monde({ panneLigne = false } = {}) {
   const lignes = new Map()
   const essais = new Set()
   const ouverts = new Set()
+  const fournis = new Set()
+  const sansPlace = new Set()
   const notifs = []
   const journal = []
   let panneJournal = false
@@ -29,16 +31,20 @@ function monde({ panneLigne = false } = {}) {
   let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais, ouverts, notifs, profils, menu, journal,
+    lignes, essais, ouverts, fournis, sansPlace, notifs, profils, menu, journal,
     pannerNotifications: () => { panneNotif = true },
     pannerJournal: () => { panneJournal = true },
     donnees: {
       ouvert: async (c, o) => ouverts.has(cle(c, o)),
       ouvrirOutil: async (c, o) => { ouverts.add(cle(c, o)) },
       fermerOutil: async (c, o) => { ouverts.delete(cle(c, o)) },
+      fourniAEducateur: async (c, e, o) => fournis.has(`${c}|${e}|${o}`),
+      fournirAEducateur: async (c, e, o) => { fournis.add(`${c}|${e}|${o}`) },
+      cesserDeFournirAEducateur: async (c, e, o) => { fournis.delete(`${c}|${e}|${o}`) },
       educateursAffilies: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
       reglageMenuEducateurs: async () => menu,
       educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
+      aUnePlace: async (c, e) => c === U.club && !sansPlace.has(e),
       journaliser: async (l) => { if (panneJournal) throw new Error('panne'); journal.push(...l.map((x, i) => ({ id: `j${journal.length + i + 1}`, ...x }))) },
       entreeJournal: async (c, jid) => journal.find(x => x.id === jid && x.club_id === c) || null,
       notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
@@ -168,10 +174,131 @@ test('ouvrir_club : refus pour un outil que le club n\'a pas, sans équivalent �
   assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: true })).code, 409)
   clubAvec(m, 'finances')
   assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'finances', ouvert: true })).code, 400)
-  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'seances', ouvert: true })).code, 400)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'inconnu', ouvert: true })).code, 400)
   clubAvec(m, 'cff4')
   assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4' })).code, 400)
   assert.equal(m.ouverts.size, 0)
+})
+
+test('ouvrir_club : un outil offert (Tacticboard) s\'ouvre sans que le club le détienne', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: true })).code, 200)
+  assert.ok(m.ouverts.has(`${U.club}|tactique`))
+  assert.equal(m.notifs.length, 0)
+})
+
+test('ouvrir_club : un outil offert est refusé sans forfait choisi, rien n\'est ouvert', async () => {
+  const m = monde()
+  m.profils[U.club] = { ...m.profils[U.club], palier: null }
+  const r = await appeler(m, U.club, { action: 'ouvrir_club', outil: 'bibliotheque', ouvert: true })
+  assert.equal(r.code, 403)
+  assert.equal(m.ouverts.size, 0)
+})
+
+test('ouvrir_club : fermer un outil offert prévient les éducateurs', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })).code, 200)
+  assert.equal(m.ouverts.size, 0)
+  assert.equal(m.notifs.length, 2)
+  assert.equal(m.notifs[0].contenu, 'Ton club ne te fournit plus l\'outil Tacticboard depuis aujourd\'hui.')
+})
+
+test('ouvrir_club : fermer un outil offert ne prévient que les éducateurs qui ont une place', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  m.sansPlace.add(U.eduAffilie2)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })).code, 200)
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie])
+})
+
+test('ouvrir_club : fermer un outil offert sans forfait choisi ne prévient personne (personne ne l\'avait)', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  m.profils[U.club] = { ...m.profils[U.club], palier: null }
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })).code, 200)
+  assert.equal(m.ouverts.size, 0)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('ouvrir_club : fermer un outil offert ne prévient pas l\'éducateur à qui il reste fourni à lui seul', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  m.fournis.add(`${U.club}|${U.eduAffilie}|tactique`)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })).code, 200)
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie2])
+})
+
+test('fournir_educateur : le club fournit un outil à un seul éducateur, sans prévenir ni toucher aux autres', async () => {
+  const m = monde()
+  const r = await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: true })
+  assert.equal(r.code, 200)
+  assert.deepEqual([...m.fournis], [`${U.club}|${U.eduAffilie}|prep_physique`])
+  assert.equal(m.ouverts.size, 0)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('fournir_educateur : cesser de fournir prévient cet éducateur seulement', async () => {
+  const m = monde()
+  m.fournis.add(`${U.club}|${U.eduAffilie}|prep_physique`)
+  const r = await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })
+  assert.equal(r.code, 200)
+  assert.equal(m.fournis.size, 0)
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie])
+  assert.match(m.notifs[0].contenu, /ne te fournit plus l'outil/)
+})
+
+test('fournir_educateur : cesser de fournir ne prévient personne si le club le fournit à tous', async () => {
+  const m = monde()
+  m.fournis.add(`${U.club}|${U.eduAffilie}|prep_physique`)
+  m.ouverts.add(`${U.club}|prep_physique`)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })).code, 200)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('fournir_educateur : cesser de fournir à un éducateur qui n\'avait rien ne prévient personne', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })).code, 200)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('fournir_educateur : refusé pour un éducateur sans place, un non affilié, Stages ou sans choix', async () => {
+  const m = monde()
+  m.sansPlace.add(U.eduAffilie2)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie2, ouvert: true })).code, 409)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.edu, ouvert: true })).code, 404)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', ouvert: true })).code, 404)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'cff4', educateur: U.eduAffilie, ouvert: true })).code, 400)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'inconnu', educateur: U.eduAffilie, ouvert: true })).code, 400)
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie })).code, 400)
+  assert.equal(m.fournis.size, 0)
+})
+
+test('fournir_educateur : réservé au club du nouveau modèle, abonnement actif et forfait choisi', async () => {
+  const m = monde()
+  const corps = { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: true }
+  assert.equal((await appeler(m, U.edu, corps)).code, 403)
+  assert.equal((await appeler(m, U.clubImpaye, corps)).code, 403)
+  m.profils[U.club] = { ...m.profils[U.club], palier: null }
+  assert.equal((await appeler(m, U.club, corps)).code, 403)
+  assert.equal(m.fournis.size, 0)
+})
+
+test('fournir_educateur : une panne de notification ne bloque pas le club', async () => {
+  const m = monde()
+  m.fournis.add(`${U.club}|${U.eduAffilie}|prep_physique`)
+  m.pannerNotifications()
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })).code, 200)
+  assert.equal(m.fournis.size, 0)
+})
+
+test('ouvrir_club : fermer Stages, Projet sportif ou CFF4 prévient aussi les éducateurs sans place', async () => {
+  const m = monde()
+  clubAvec(m, 'cff4')
+  m.ouverts.add(`${U.club}|cff4`)
+  m.sansPlace.add(U.eduAffilie2)
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'cff4', ouvert: false })).code, 200)
+  assert.equal(m.notifs.length, 2)
 })
 
 test('ouvrir_club : réservé au club du nouveau modèle, abonnement actif', async () => {

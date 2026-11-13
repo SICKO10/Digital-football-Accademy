@@ -3,7 +3,7 @@ import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_s
 import Stripe from 'stripe'
 import { affichageDepuisLignes } from '../src/lib/outilsAcces.js'
 import { lireOffre, planOffre, notificationOffre } from '../src/lib/offresOutils.js'
-import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, outilEducateurPour, outilOuvrableParClub, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -22,6 +22,10 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 //   éducateurs affiliés, qui le reçoivent sans payer. Fermer, ou retirer l'outil
 //   du club, prévient ses éducateurs (table `notifications`) : ils le perdent
 //   tout de suite, comme le club.
+// - `fournir_educateur` (bloc 8) : le club fournit (ou cesse de fournir) un des
+//   outils offerts à UN éducateur affilié précis, sans le donner aux autres
+//   (table `outils_educateur_fournis`). Mêmes règles que la fourniture à tous :
+//   forfait choisi, et l'éducateur doit avoir une place dans le forfait.
 // - `payer` : premier paiement d'une composition, en une fois et pour une seule
 //   périodicité (éducateur : ses outils ; club : son forfait selon ses équipes).
 //   Crée une session Stripe Checkout et rend son adresse. Les outils s'activent
@@ -67,7 +71,7 @@ import { trouverOutil, outilEducateurPour, ESSAI_JOURS, ESSAIS_GRATUITS, lignesS
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir', 'prevenir_menu']
+const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'fournir_educateur', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir', 'prevenir_menu']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -156,7 +160,7 @@ export function donneesOutils() {
     return data
   }
   return {
-    profil: (id) => lire(db().from('profiles').select('plan, modele_outils, abonnement_actif, abonnement_debut, email').eq('id', id).maybeSingle()),
+    profil: (id) => lire(db().from('profiles').select('plan, modele_outils, abonnement_actif, abonnement_debut, email, palier').eq('id', id).maybeSingle()),
     // Passe un compte neuf au nouveau modèle ; l'éducateur obtient en plus l'accès gratuit au socle.
     activerModele: async (id, { ouvrirAcces }) => {
       const { error } = await db().from('profiles').update({ modele_outils: true, ...(ouvrirAcces ? { abonnement_actif: true } : {}) }).eq('id', id)
@@ -198,6 +202,16 @@ export function donneesOutils() {
       const { error } = await db().from('outils_club_ouverts').delete().eq('club_id', club).eq('outil', outil)
       if (error) throw error
     },
+    // Outils fournis à un éducateur précis (bloc 8).
+    fourniAEducateur: async (club, educateur, outil) => !!(await lire(db().from('outils_educateur_fournis').select('outil').eq('club_id', club).eq('educateur_id', educateur).eq('outil', outil).maybeSingle())),
+    fournirAEducateur: async (club, educateur, outil) => {
+      const { error } = await db().from('outils_educateur_fournis').upsert({ club_id: club, educateur_id: educateur, outil }, { onConflict: 'club_id,educateur_id,outil' })
+      if (error) throw error
+    },
+    cesserDeFournirAEducateur: async (club, educateur, outil) => {
+      const { error } = await db().from('outils_educateur_fournis').delete().eq('club_id', club).eq('educateur_id', educateur).eq('outil', outil)
+      if (error) throw error
+    },
     // Éducateurs affiliés acceptés du club, au nouveau modèle (les autres ne voient pas les outils).
     educateursDuClub: async (club) => {
       const lies = await lire(db().from('club_educateurs').select('educateur_id').eq('club_id', club).eq('statut', 'accepte'))
@@ -206,6 +220,8 @@ export function donneesOutils() {
       const profils = await lire(db().from('profiles').select('id').in('id', ids).eq('modele_outils', true))
       return (profils || []).map(p => p.id)
     },
+    // L'éducateur a-t-il une place dans le forfait du club ? (même règle que la base)
+    aUnePlace: async (club, educateur) => (await lire(db().rpc('educateur_a_place', { p_club: club, p_educateur: educateur }))) === true,
     // Éducateurs affiliés acceptés du club, quel que soit leur modèle (Mon club règle leur menu).
     educateursAffilies: async (club) => {
       const lies = await lire(db().from('club_educateurs').select('educateur_id').eq('club_id', club).eq('statut', 'accepte'))
@@ -688,12 +704,16 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       }
 
       // Les éducateurs affiliés perdent l'outil du club : ils sont prévenus, sans bloquer l'action du club.
-      const prevenirRetrait = async (outilClub) => {
-        const outilEdu = outilEducateurPour(outilClub.id)
+      // Un outil offert n'allait qu'aux éducateurs qui ont une place, et seulement avec un forfait choisi.
+      // Un éducateur à qui l'outil reste fourni à lui seul ne le perd pas : pas d'avis.
+      const prevenirRetrait = async (outilEdu, offert = false, seulement = null) => {
         try {
-          const ids = await donnees.educateursDuClub(utilisateur.id)
+          if (offert && (!profil.modele_outils || !profil.palier)) return
+          const ids = seulement || await donnees.educateursDuClub(utilisateur.id)
           const lignes = []
           for (const id of ids) {
+            if (offert && !(await donnees.aUnePlace(utilisateur.id, id))) continue
+            if (offert && !seulement && await donnees.fourniAEducateur(utilisateur.id, id, outilEdu.id)) continue
             const propre = actifMaintenant(await donnees.ligne(id, outilEdu.id), maintenantMs)
             lignes.push({
               user_id: id,
@@ -712,17 +732,43 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
       if (action === 'ouvrir_club') {
         if (profil.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club choisit les outils de ses éducateurs' })
         if (!profil.abonnement_actif) return res.status(403).json({ error: 'L\'abonnement du club n\'est pas actif' })
-        const outilClub = trouverOutil('club', idOutil)
-        if (!outilClub || !outilEducateurPour(outilClub.id)) return res.status(400).json({ error: 'Cet outil ne peut pas être ouvert aux éducateurs' })
+        const ouvrable = outilOuvrableParClub(idOutil)
+        if (!ouvrable) return res.status(400).json({ error: 'Cet outil ne peut pas être ouvert aux éducateurs' })
         if (typeof corps.ouvert !== 'boolean') return res.status(400).json({ error: 'Choix manquant' })
         if (corps.ouvert) {
-          if (!actifMaintenant(await donnees.ligne(utilisateur.id, outilClub.id), maintenantMs)) {
+          if (ouvrable.offert) {
+            // Outil fourni sans être détenu : il faut un forfait choisi (même règle que la base, club_offre_outils).
+            if (!profil.modele_outils || !profil.palier) return res.status(403).json({ error: 'Choisis d\'abord un forfait pour fournir cet outil à tes éducateurs' })
+          } else if (!actifMaintenant(await donnees.ligne(utilisateur.id, ouvrable.outil.id), maintenantMs)) {
             return res.status(409).json({ error: 'Active d\'abord cet outil sur le dashboard du club' })
           }
-          await donnees.ouvrirOutil(utilisateur.id, outilClub.id)
-        } else if (await donnees.ouvert(utilisateur.id, outilClub.id)) {
-          await donnees.fermerOutil(utilisateur.id, outilClub.id)
-          await prevenirRetrait(outilClub)
+          await donnees.ouvrirOutil(utilisateur.id, ouvrable.outil.id)
+        } else if (await donnees.ouvert(utilisateur.id, ouvrable.outil.id)) {
+          await donnees.fermerOutil(utilisateur.id, ouvrable.outil.id)
+          await prevenirRetrait(ouvrable.outil, ouvrable.offert)
+        }
+        return res.status(200).json({ ok: true })
+      }
+
+      if (action === 'fournir_educateur') {
+        if (profil.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club choisit les outils de ses éducateurs' })
+        if (!profil.abonnement_actif) return res.status(403).json({ error: 'L\'abonnement du club n\'est pas actif' })
+        if (!profil.modele_outils || !profil.palier) return res.status(403).json({ error: 'Choisis d\'abord un forfait pour fournir cet outil à tes éducateurs' })
+        const ouvrable = outilOuvrableParClub(idOutil)
+        if (!ouvrable || !ouvrable.offert) return res.status(400).json({ error: 'Cet outil ne peut pas être fourni à un seul éducateur' })
+        if (typeof corps.ouvert !== 'boolean') return res.status(400).json({ error: 'Choix manquant' })
+        const educateur = typeof corps.educateur === 'string' ? corps.educateur : ''
+        if (!(await donnees.educateursDuClub(utilisateur.id)).includes(educateur)) {
+          return res.status(404).json({ error: 'Cet éducateur n\'est pas affilié à ton club' })
+        }
+        const place = await donnees.aUnePlace(utilisateur.id, educateur)
+        if (corps.ouvert) {
+          if (!place) return res.status(409).json({ error: 'Cet éducateur n\'a pas de place dans ton forfait : passe au forfait supérieur pour lui fournir des outils' })
+          await donnees.fournirAEducateur(utilisateur.id, educateur, ouvrable.outil.id)
+        } else if (await donnees.fourniAEducateur(utilisateur.id, educateur, ouvrable.outil.id)) {
+          await donnees.cesserDeFournirAEducateur(utilisateur.id, educateur, ouvrable.outil.id)
+          // Il garde l'outil si le club le fournit à tous : rien à annoncer.
+          if (place && !(await donnees.ouvert(utilisateur.id, ouvrable.outil.id))) await prevenirRetrait(ouvrable.outil, true, [educateur])
         }
         return res.status(200).json({ ok: true })
       }
@@ -741,7 +787,7 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         // Un outil ouvert aux éducateurs est fermé avec lui : il faudra le rouvrir si le club le reprend.
         if (outilEducateurPour(outil.id) && await donnees.ouvert(utilisateur.id, outil.id)) {
           await donnees.fermerOutil(utilisateur.id, outil.id)
-          await prevenirRetrait(outil)
+          await prevenirRetrait(outilEducateurPour(outil.id))
         }
       }
       return res.status(200).json({ ok: true })

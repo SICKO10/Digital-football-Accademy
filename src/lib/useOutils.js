@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import {
   compteDepuisLignes, affichageDepuisLignes, sectionVerrouillee, menuVisible, outilActif, ongletsStatsPermis, etatsOutils,
 } from './outilsAcces'
+import { outilsOfferts } from './catalogueOutils'
 
 // Lit les outils actifs d'un compte (fonction base `outils_actifs`) et rend les
 // réponses prêtes à l'emploi pour un dashboard.
@@ -21,6 +22,7 @@ export function useOutils({ role, userId, modeleOutils, desactive = false, clubI
   const [masquesClubLus, setMasquesClubLus] = useState(false)
   const [affichageClub, setAffichageClub] = useState(null)
   const [pret, setPret] = useState(false)
+  const [sansPlace, setSansPlace] = useState(false)
 
   const [version, setVersion] = useState(0)
   const recharger = useCallback(() => setVersion(v => v + 1), [])
@@ -87,6 +89,26 @@ export function useOutils({ role, userId, modeleOutils, desactive = false, clubI
     return () => { annule = true }
   }, [lireAffichageClub, clubId, userId, version])
 
+  // Éducateur affilié sans place : son club fournit des outils (forfait actif,
+  // au moins un outil offert ouvert) mais l'éducateur est au-delà de la limite
+  // de son forfait. Il a le socle gratuit, et un message le lui explique.
+  const lireSansPlace = role === 'educateur' && actif && !!userId && !!clubId
+  useEffect(() => {
+    if (!lireSansPlace) return undefined
+    let annule = false
+    Promise.all([
+      supabase.rpc('club_offre_outils', { p_club: clubId }),
+      supabase.rpc('educateur_a_place', { p_club: clubId, p_educateur: userId }),
+      supabase.from('outils_club_ouverts').select('outil').eq('club_id', clubId),
+    ]).then(([offre, place, ouverts]) => {
+      if (annule) return
+      if (offre.error || place.error || ouverts.error) console.error('place club', (offre.error || place.error || ouverts.error).message)
+      const offerts = (ouverts.data || []).some(o => outilsOfferts().some(x => x.id === o.outil))
+      setSansPlace(!offre.error && !place.error && offre.data === true && place.data === false && offerts)
+    })
+    return () => { annule = true }
+  }, [lireSansPlace, clubId, userId, version])
+
   // Nouveau modèle : on attend les droits avant d'appliquer les réglages du
   // club, pour ne pas cacher un instant un outil que l'éducateur paie.
   const affichageApplique = lireAffichageClub && (!actif || pret) ? affichageClub : null
@@ -106,6 +128,7 @@ export function useOutils({ role, userId, modeleOutils, desactive = false, clubI
     lignes,
     etats,
     ouverts,
+    sansPlace: lireSansPlace && sansPlace,
     masquesClub,
     masquesClubLus,
     recharger,
@@ -113,5 +136,5 @@ export function useOutils({ role, userId, modeleOutils, desactive = false, clubI
     menuVisible: (cle) => menuVisible(compte, cle),
     outilActif: (outilId) => outilActif(compte, outilId),
     ongletsStats: () => ongletsStatsPermis(compte),
-  }), [actif, pret, lignes, etats, ouverts, masquesClub, masquesClubLus, recharger, compte])
+  }), [actif, pret, lignes, etats, ouverts, lireSansPlace, sansPlace, masquesClub, masquesClubLus, recharger, compte])
 }

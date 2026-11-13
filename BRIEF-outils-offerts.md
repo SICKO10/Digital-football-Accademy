@@ -1,5 +1,5 @@
 # BRIEF : le club offre les outils à ses éducateurs affiliés
-Date : 2026-11-12 · Statut : prêt pour /plan (à lancer en Opus, session neuve) · Suite de BRIEF-mon-club.md
+Date : 2026-11-12 · Statut : réalisé côté code (blocs 0 à 9), en attente du SQL des blocs 6 et 8, du push et du test de Kevin (voir PLAN-outils-offerts.md) · Suite de BRIEF-mon-club.md
 
 ## Vision en 3 lignes
 Un club qui prend un forfait (par exemple jusqu'à 4 équipes) peut affilier autant d'éducateurs que son forfait le prévoit et leur donner tous les outils qu'il veut. L'éducateur ne paie rien.

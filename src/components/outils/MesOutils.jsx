@@ -26,7 +26,7 @@ const ETATS_ACTIFS = ['actif', 'retire', 'club', 'essai', 'offre']
 // section à part, avec un choix « afficher sur mon dashboard ».
 // `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit ;
 // `userId` : compte de l'éducateur (affichage des outils du club).
-export default function MesOutils({ role, outils, peutModifier = true, userId }) {
+export default function MesOutils({ role, outils, peutModifier = true, userId, nomClub = '' }) {
   const colors = useColors()
   const [enCours, setEnCours] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -66,7 +66,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId })
     if (etat === 'essai') return { texte: `Essai : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.info }
     if (etat === 'offre') return { texte: `Offert : ${joursRestants} ${joursRestants > 1 ? 'jours restants' : 'jour restant'}`, couleur: colors.accent.success }
     if (etat === 'retire') return { texte: `Actif jusqu'au ${dateFr(finLe)}`, couleur: colors.accent.amber }
-    if (etat === 'club') return { texte: 'Fourni par ton club', couleur: colors.accent.info }
+    if (etat === 'club') return { texte: nomClub ? `Fourni par ${nomClub}` : 'Fourni par ton club', couleur: colors.accent.info }
     if (etat === 'essai_termine') return { texte: 'Essai terminé', couleur: colors.accent.amber }
     return null
   }
@@ -203,6 +203,11 @@ export default function MesOutils({ role, outils, peutModifier = true, userId })
               </div>
             </section>
           )}
+          {outils.sansPlace && (
+            <p style={{ margin: '0 0 24px', padding: '12px 14px', fontSize: 13, lineHeight: 1.55, color: colors.text.primary, background: colors.background.surface, border: `1px solid ${colors.accent.amber}`, borderRadius: 12 }}>
+              Ton club a atteint sa limite d'éducateurs : tu gardes le socle gratuit. Tu peux ajouter les outils dont tu as besoin avec tes propres offres, plus bas.
+            </p>
+          )}
           {duClub.length > 0 && (
             <section aria-labelledby="titre-club-educ" style={{ marginBottom: 32 }}>
               <h2 id="titre-club-educ" style={titreSection}>Fournis par ton club</h2>
@@ -224,6 +229,9 @@ export default function MesOutils({ role, outils, peutModifier = true, userId })
           {autres.length > 0 && (
             <section aria-labelledby="titre-autres">
               <h2 id="titre-autres" style={titreSection}>Autres outils</h2>
+              {role === 'educateur' && (
+                <p style={{ margin: '0 0 10px', fontSize: 13, color: colors.text.faint }}>Ton club peut te fournir ces outils sans frais : demande-lui. Sinon, tu peux les activer avec tes propres offres.</p>
+              )}
               <div style={grille}>
                 {autres.map(e => (
                   <CarteOutil key={e.outil.id} nom={e.outil.nom} promesse={e.outil.promesse} badge={badge(e)} pied={prix(e)}>
