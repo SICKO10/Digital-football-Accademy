@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
+import DossierSponsorPDF from './DossierSponsorPDF'
 
 // Audience du club, présentée comme un argument pour les sponsors : connexions à la
 // plateforme, visites des pages publiques de tournois et de stages, clics sur les
@@ -37,7 +38,7 @@ async function toutLire(construire) {
   return { data: lignes }
 }
 
-export default function AudienceSponsors({ clubId, couleurPrincipale }) {
+export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
   const colors = useColors()
   const accent = couleurPrincipale || colors.accent.green
   const surBrand = colors.accent.onBrand || '#000'
@@ -45,6 +46,9 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
   const [periode, setPeriode] = useState('saison0')
   const [metrique, setMetrique] = useState('connexions')
   const [survol, setSurvol] = useState(null)
+  const [contact, setContact] = useState('')
+  const [enCours, setExport] = useState(false)
+  const pdfRef = useRef(null)
 
   const maintenant = useMemo(() => new Date(), [])
   const saisonCourante = useMemo(() => debutSaison(maintenant), [maintenant])
@@ -170,6 +174,36 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
 
   const aucuneDonnee = sources.every(s => s.lignes === null || totalSource(s) === 0)
 
+  // Dossier sponsor : une page A4 en PDF, avec les sources activées et leurs chiffres sur la période choisie.
+  const valeursDe = (source) => barres.map(b => somme(dans(source.lignes, debut, fin).filter(l => (parJour ? cleJour(l.d) : cleMois(l.d)) === b.cle)))
+  const sourcesActives = sources.filter(s => s.lignes !== null)
+  const sourcePrincipale = sourcesActives[0]
+  const totalVues = (id) => totalSource(sources.find(s => s.id === id)) || 0
+  const apparitions = [
+    ...(sourcesActives.some(s => s.id === 'connexions') ? ['Un bandeau partenaires affiché dans l\'application, chez les éducateurs et les joueurs du club'] : []),
+    ...(totalVues('tournois') > 0 ? ['Un espace partenaires sur la page publique de chaque tournoi organisé par le club'] : []),
+    ...(totalVues('stages') > 0 ? ['Un espace partenaires sur la page publique de chaque stage organisé par le club'] : []),
+  ]
+  const periodeLabel = PERIODES.find(p => p.id === periode)?.label || ''
+  const exporterPDF = async () => {
+    if (!pdfRef.current) return
+    setExport(true)
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794, height: 1123, windowWidth: 794 })
+      const { jsPDF } = await import('jspdf')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight())
+      const nom = (club?.club || 'club').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      pdf.save(`dossier-sponsor-${nom || 'club'}-${periode}.pdf`)
+    } catch (e) {
+      console.error('Erreur export dossier sponsor:', e)
+      alert('Erreur lors de la génération du PDF.')
+    } finally {
+      setExport(false)
+    }
+  }
+
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', color: colors.text.primary, '--au-brand': accent, '--au-hover': colors.background.sunken }}>
       <style>{CSS}</style>
@@ -179,6 +213,21 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
         <p style={{ margin: '6px 0 0', fontSize: 14, color: colors.text.secondary, lineHeight: 1.5, maxWidth: 680 }}>
           Ce que le club offre en visibilité : à chaque connexion et à chaque visite de page publique, les sponsors du club sont affichés. Ces chiffres sont réels et comptés automatiquement.
         </p>
+      </div>
+
+      <div style={{ ...carte, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, marginBottom: 16 }}>
+        <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Dossier sponsor en PDF</div>
+          <p style={{ margin: '4px 0 10px', fontSize: 13, color: colors.text.secondary, lineHeight: 1.5 }}>Une page aux couleurs du club avec les chiffres de la période choisie, à joindre à vos propositions.</p>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: colors.text.faint, marginBottom: 4 }} htmlFor="au-contact">Contact affiché en bas de page (facultatif)</label>
+          <textarea id="au-contact" value={contact} onChange={e => setContact(e.target.value.slice(0, 160))} rows={2} placeholder={'Prénom Nom, fonction\nemail ou téléphone'}
+            style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', padding: '8px 10px', borderRadius: 10, border: `1px solid ${colors.border.subtle}`, background: colors.background.sunken, color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+        </div>
+        <button type="button" className="au-chip" onClick={exporterPDF} disabled={enCours || aucuneDonnee}
+          style={{ padding: '10px 20px', minHeight: 44, borderRadius: 999, border: 'none', background: accent, color: surBrand, fontSize: 14, fontWeight: 800, cursor: (enCours || aucuneDonnee) ? 'not-allowed' : 'pointer', opacity: aucuneDonnee ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
+          {enCours ? 'Création du PDF…' : 'Exporter le dossier sponsor'}
+        </button>
+        {aucuneDonnee && <p style={{ flexBasis: '100%', margin: 0, fontSize: 12, color: colors.text.faint }}>Rien n'est encore enregistré sur cette période : choisis une autre période pour exporter.</p>}
       </div>
 
       <div role="tablist" aria-label="Période" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -290,6 +339,16 @@ export default function AudienceSponsors({ clubId, couleurPrincipale }) {
       <div style={{ ...carte, padding: 16, fontSize: 13, color: colors.text.secondary, lineHeight: 1.6 }}>
         <strong style={{ color: colors.text.primary }}>Comment lire ces chiffres.</strong> Une connexion est une ouverture de la plateforme par un éducateur, un joueur ou le club, pas une personne différente. Une visite est une ouverture de la page publique du club, d'un tournoi ou d'un stage (une seule par session de navigation). Les chiffres commencent le jour où chaque mesure a été activée.
         {aucuneDonnee && <> Rien n'est encore enregistré sur cette période.</>}
+      </div>
+
+      {/* Page A4 capturée pour le PDF : montée hors écran, pas masquée, pour une mise en page déjà stable à l'export. */}
+      <div aria-hidden="true" style={{ position: 'fixed', left: -9999, top: 0 }}>
+        <DossierSponsorPDF ref={pdfRef} club={club} couleur={accent} periodeLabel={periodeLabel}
+          tuiles={sourcesActives.map(s => ({ id: s.id, titre: s.titre, sous: s.sous, couleur: s.couleur, total: totalSource(s) || 0 }))}
+          graphique={sourcePrincipale ? { titre: `${sourcePrincipale.titre} ${parJour ? 'par jour' : 'par mois'}`, barres, valeurs: valeursDe(sourcePrincipale), couleur: sourcePrincipale.couleur, parJour } : null}
+          roles={sourcePrincipale?.id === 'connexions' ? connexionsParRole : null}
+          evenements={evenements} apparitions={apparitions} contact={contact.trim()}
+          dateTexte={maintenant.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} />
       </div>
     </div>
   )

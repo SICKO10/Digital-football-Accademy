@@ -5136,7 +5136,7 @@ export default function DashboardClub() {
             {budgetVue === 'previsionnel' ? (
               <Suspense fallback={null}><BudgetPrevisionnel clubId={clubId} categories={categories} joueurs={joueursClub} canEdit={canEditSection('budget')} /></Suspense>
             ) : budgetVue === 'audience' ? (
-              <Suspense fallback={null}><AudienceSponsors clubId={clubId} couleurPrincipale={couleurPrincipale} /></Suspense>
+              <Suspense fallback={null}><AudienceSponsors clubId={clubId} couleurPrincipale={couleurPrincipale} club={club} /></Suspense>
             ) : (
               <Suspense fallback={null}>
                 <BudgetReel
