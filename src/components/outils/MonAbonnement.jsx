@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { appelerOutils, ouvrirPortail, retourDuPortail, effacerRetourPaiement } from '../../lib/outilsApi'
-import { FORFAITS_CLUB, PALIERS_EDUCATEUR, clePourPeriodicite, outilsDuPack, planModification, tarifParCle, trouverOutil } from '../../lib/catalogueOutils'
+import { FORFAITS_CLUB, PALIERS_EDUCATEUR, clePourPeriodicite, outilsDuPack, phrasePlacesClub, planModification, tarifParCle, trouverForfait, trouverOutil } from '../../lib/catalogueOutils'
 import CarteOutil from './CarteOutil'
 
 // Bloc « Mon abonnement » de Mes outils (bloc 8), pour un compte qui a un
@@ -14,7 +14,10 @@ const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeri
 const unite = (periodicite) => (periodicite === 'annuel' ? 'par an' : 'par mois')
 const liste = (ids) => ids.map(id => trouverOutil('educateur', id)?.nom || id).join(', ')
 
-export default function MonAbonnement({ role, outils }) {
+// Club du nouveau modèle : `forfaitClub` ({ palier, places, actif, nbEducateurs })
+// ajoute le forfait en grand, les dates et les places. `lectureSeule` : on n'appelle
+// pas Stripe (personne d'autre que le président ne gère le forfait).
+export default function MonAbonnement({ role, outils, forfaitClub = null, lectureSeule = false }) {
   const colors = useColors()
   const [infos, setInfos] = useState(null)
   const [erreurLecture, setErreurLecture] = useState('')
@@ -31,12 +34,13 @@ export default function MonAbonnement({ role, outils }) {
   }, [])
 
   useEffect(() => {
+    if (lectureSeule) return undefined
     let annule = false
     appelerOutils('abonnement')
       .then(r => { if (!annule) { setInfos(r); setErreurLecture('') } })
       .catch(e => { if (!annule) setErreurLecture(e.message) })
     return () => { annule = true }
-  }, [version])
+  }, [version, lectureSeule])
 
   // Après un changement, le webhook met quelques secondes à mettre la base à jour.
   const { recharger } = outils
@@ -87,6 +91,65 @@ export default function MonAbonnement({ role, outils }) {
   const lien = { background: 'none', border: 'none', padding: '10px 4px', fontSize: 13, fontWeight: 600, fontFamily: police, color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }
 
   if (erreurLecture) return <p role="alert" style={{ ...texte, marginBottom: 24, color: colors.accent.red }}>Abonnement : {erreurLecture}</p>
+
+  const pastille = (libelle, couleur) => (
+    <span style={{ fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, color: couleur, background: couleur + '22', whiteSpace: 'nowrap' }}>{libelle}</span>
+  )
+  const fait = (etiquette, valeur) => (
+    <div style={{ minWidth: 0 }}>
+      <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>{etiquette}</p>
+      <p style={{ margin: '4px 0 0', fontSize: 15, fontWeight: 700, color: colors.text.primary }}>{valeur}</p>
+    </div>
+  )
+  const grilleFaits = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, marginTop: 18, paddingTop: 18, borderTop: `1px solid ${colors.border.subtle}` }
+  // Places : éducateurs affiliés par rapport à la limite du forfait, avec une jauge.
+  const blocPlaces = forfaitClub && forfaitClub.actif && forfaitClub.places > 0 && (() => {
+    const plein = forfaitClub.nbEducateurs >= forfaitClub.places
+    const depasse = forfaitClub.nbEducateurs > forfaitClub.places
+    const couleur = depasse ? colors.accent.red : plein ? colors.accent.amber : colors.accent.success
+    return (
+      <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${colors.border.subtle}` }}>
+        <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: colors.text.primary }}>{phrasePlacesClub(forfaitClub)}</p>
+        <div style={{ height: 8, borderRadius: 999, background: colors.background.raised, overflow: 'hidden' }} role="img" aria-label={phrasePlacesClub(forfaitClub)}>
+          <div style={{ height: '100%', width: `${Math.min(100, (forfaitClub.nbEducateurs / forfaitClub.places) * 100)}%`, background: couleur, borderRadius: 999 }} />
+        </div>
+        <p style={{ ...texte, marginTop: 8 }}>
+          {depasse
+            ? 'Plus d\'éducateurs que de places : les derniers affiliés n\'ont que le socle gratuit. Passe au forfait supérieur pour tous les couvrir.'
+            : 'Chaque place donne à un éducateur affilié les outils que tu lui fournis, sans rien payer de son côté.'}
+        </p>
+      </div>
+    )
+  })()
+
+  // Club sans abonnement géré ici (accès en lecture seule, compte d'essai ou forfait attribué à la main).
+  if (role === 'club' && forfaitClub && (lectureSeule || !infos?.abonnement)) {
+    if (!lectureSeule && infos === null) return null
+    const f = trouverForfait(forfaitClub.palier)
+    return (
+      <section aria-labelledby="titre-abonnement" style={{ marginBottom: 32, fontFamily: police }}>
+        <h2 id="titre-abonnement" style={titreSection}>Mon forfait</h2>
+        <div style={carte}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: colors.text.primary }}>
+              {forfaitClub.actif && f ? `Forfait ${f.equipes} équipes` : 'Aucun forfait actif'}
+            </p>
+            {pastille(forfaitClub.actif ? 'Actif' : 'Inactif', forfaitClub.actif ? colors.accent.success : colors.accent.amber)}
+          </div>
+          {forfaitClub.actif ? (
+            <p style={{ ...texte, marginTop: 6 }}>
+              {lectureSeule
+                ? 'Seul le président voit le détail de l\'abonnement et peut le changer.'
+                : 'Aucun abonnement de paiement n\'est rattaché à ce forfait : il n\'y a donc ni date de renouvellement ni résiliation à gérer ici.'}
+            </p>
+          ) : (
+            <p style={{ ...texte, marginTop: 6 }}>Ton club n'a pas de forfait actif : aucun outil n'est fourni à tes éducateurs pour le moment.</p>
+          )}
+          {blocPlaces}
+        </div>
+      </section>
+    )
+  }
   if (!infos?.abonnement) return null
   const abo = infos.abonnement
   const tarif = tarifParCle(abo.cle)
@@ -147,21 +210,51 @@ export default function MonAbonnement({ role, outils }) {
   const choisis = choix ?? abo.outils
   const basculer = (id) => setChoix(choisis.includes(id) ? choisis.filter(x => x !== id) : [...choisis, id])
   const forfaitsPossibles = FORFAITS_CLUB.filter(f => f.equipes >= (infos.nbEquipes || 0))
+  // Forfait juste au-dessus de l'actuel (le suivant dans la liste des forfaits du club).
+  const forfaitSuperieur = !educateur && tarif?.forfait ? FORFAITS_CLUB.find(f => f.equipes > tarif.forfait.equipes) || null : null
 
   return (
     <section aria-labelledby="titre-abonnement" style={{ marginBottom: 32, fontFamily: police }}>
-      <h2 id="titre-abonnement" style={titreSection}>Mon abonnement</h2>
+      <h2 id="titre-abonnement" style={titreSection}>{educateur ? 'Mon abonnement' : 'Mon forfait'}</h2>
       <div style={carte}>
-        <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>
-          {tarif ? `${tarif.nom} : ${tarif.prix} € ${unite(tarif.periodicite)}` : 'Abonnement des outils'}
-        </p>
+        {educateur ? (
+          <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>
+            {tarif ? `${tarif.nom} : ${tarif.prix} € ${unite(tarif.periodicite)}` : 'Abonnement des outils'}
+          </p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.3px', color: colors.text.primary }}>
+                  {tarif?.forfait ? `Forfait ${tarif.forfait.equipes} équipes` : 'Forfait du club'}
+                </p>
+                {tarif && (
+                  <p style={{ margin: '4px 0 0', fontSize: 15, color: colors.text.secondary }}>
+                    <strong style={{ color: colors.text.primary }}>{tarif.prix} €</strong> {unite(tarif.periodicite)}
+                  </p>
+                )}
+              </div>
+              {enRetard
+                ? pastille('Paiement en retard', colors.accent.red)
+                : abo.resiliation ? pastille('Résilié', colors.accent.amber) : pastille('Actif', colors.accent.success)}
+            </div>
+            <div style={grilleFaits}>
+              {abo.debut && fait('Souscrit le', dateFr(abo.debut))}
+              {fin && fait(abo.resiliation ? 'Prend fin le' : 'Prochain renouvellement', fin)}
+              {tarif && fait('Paiement', tarif.periodicite === 'annuel' ? 'Annuel' : 'Mensuel')}
+              {tarif?.forfait && fait('Équipes couvertes', `Jusqu'à ${tarif.forfait.equipes}`)}
+            </div>
+            {blocPlaces}
+            <div style={{ height: 14 }} />
+          </>
+        )}
         {abo.resiliation ? (
           <p style={{ ...texte, color: colors.accent.amber, fontWeight: 600 }}>
             Résilié : {educateur ? 'tes outils restent actifs' : 'ton club garde l\'accès complet'} jusqu'au {fin}.
             Ensuite, {educateur ? 'ton compte revient au socle gratuit' : 'ton club passe en accès limité'}. Tes données sont conservées.
           </p>
         ) : (
-          <p style={texte}>Prochaine échéance le {fin}. Sans engagement.</p>
+          <p style={texte}>{educateur ? `Prochaine échéance le ${fin}. Sans engagement.` : 'Sans engagement : tu peux résilier à tout moment, le forfait reste actif jusqu\'à la date de fin de période.'}</p>
         )}
         {programme && (
           <p style={{ ...texte, marginTop: 8, color: colors.text.primary, fontWeight: 600 }}>
@@ -188,9 +281,16 @@ export default function MonAbonnement({ role, outils }) {
                 Reprendre mon abonnement
               </button>
             ) : (
-              <button type="button" disabled={envoi || enRetard} style={bouton(true)} onClick={() => { setMode('modifier'); setChoix(educateur ? abo.outils : null); setMessage('') }}>
-                {educateur ? 'Modifier mes outils' : 'Changer de forfait'}
-              </button>
+              <>
+                {!educateur && forfaitSuperieur && (
+                  <button type="button" disabled={envoi || enRetard} style={bouton(true)} onClick={() => { setMode('modifier'); setChoix(forfaitSuperieur.palier); setMessage('') }}>
+                    Passer au forfait supérieur
+                  </button>
+                )}
+                <button type="button" disabled={envoi || enRetard} style={bouton(educateur || !forfaitSuperieur)} onClick={() => { setMode('modifier'); setChoix(educateur ? abo.outils : null); setMessage('') }}>
+                  {educateur ? 'Modifier mes outils' : 'Changer de forfait'}
+                </button>
+              </>
             )}
             {!abo.resiliation && !programme && autrePeriodicite && (
               <button type="button" disabled={envoi || enRetard} style={bouton(false)} onClick={() => { setMode('periodicite'); setMessage('') }}>

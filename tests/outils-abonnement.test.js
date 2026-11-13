@@ -90,10 +90,17 @@ test('normaliserAbonnement : fin de période lue sur l\'abonnement ou sur sa lig
   assert.deepEqual(recent.items, [{ id: 'si', cle: 'k' }])
 })
 
+test('normaliserAbonnement : date de souscription lue sur start_date, sinon created', () => {
+  const ligne = { data: [{ id: 'si', price: { lookup_key: 'k' } }] }
+  assert.equal(normaliserAbonnement({ id: 's', status: 'active', start_date: 1796990400, created: 1790000000, items: ligne }).debut, FIN)
+  assert.equal(normaliserAbonnement({ id: 's', status: 'active', created: 1796990400, items: ligne }).debut, FIN)
+  assert.equal(normaliserAbonnement({ id: 's', status: 'active', items: ligne }).debut, null)
+})
+
 test('abonnement : rend l\'état lu chez Stripe, ou rien sans abonnement', async () => {
   const res = await appeler(monde(), U.edu, { action: 'abonnement' })
   assert.equal(res.code, 200)
-  assert.deepEqual(res.corps.abonnement, { statut: 'active', finPeriode: FIN, resiliation: false, cle: 'pack_educateur_3_mensuel', outils: ['seances', 'tactique'], changement: null })
+  assert.deepEqual(res.corps.abonnement, { statut: 'active', finPeriode: FIN, debut: null, resiliation: false, cle: 'pack_educateur_3_mensuel', outils: ['seances', 'tactique'], changement: null })
   assert.deepEqual((await appeler(monde({ client: null }), U.edu, { action: 'abonnement' })).corps.abonnement, null)
   assert.equal((await appeler(monde(), U.club, { action: 'abonnement' })).corps.nbEquipes, 3)
   assert.equal((await appeler(monde(), U.joueur, { action: 'abonnement' })).code, 403)

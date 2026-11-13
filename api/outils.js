@@ -94,6 +94,7 @@ export function normaliserAbonnement(s) {
     metadata: s.metadata || {},
     items: items.map(i => ({ id: i.id, cle: i.price?.lookup_key || null })),
     finPeriode: fin ? new Date(fin * 1000).toISOString() : null,
+    debut: (s.start_date ?? s.created) ? new Date((s.start_date ?? s.created) * 1000).toISOString() : null,
     resiliation: !!s.cancel_at_period_end || !!s.cancel_at,
     echeancier: (typeof s.schedule === 'string' ? s.schedule : s.schedule?.id) || null,
   }
@@ -357,8 +358,9 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
     if (action === 'abonnement') {
       if (!abo) return res.status(200).json({ abonnement: null, nbEquipes })
       const { statut, finPeriode, resiliation } = abo
+      const debut = abo.debut ?? null
       const outils = String(abo.metadata.outils || '').split(',').filter(Boolean)
-      return res.status(200).json({ abonnement: { statut, finPeriode, resiliation, cle: abo.items[0]?.cle || null, outils, changement }, nbEquipes })
+      return res.status(200).json({ abonnement: { statut, finPeriode, debut, resiliation, cle: abo.items[0]?.cle || null, outils, changement }, nbEquipes })
     }
     if (!abo) return res.status(404).json({ error: 'Aucun abonnement en cours' })
     // Échéancier posé à la main dans Stripe : on n'y touche pas d'ici.

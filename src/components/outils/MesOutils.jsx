@@ -3,7 +3,7 @@ import { useColors } from '../../lib/theme'
 import { supabase } from '../../supabase'
 import { appelerOutils } from '../../lib/outilsApi'
 import { outilsPourEducateurs } from '../../lib/outilsAcces'
-import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR, phrasePlacesClub, trouverForfait } from '../../lib/catalogueOutils'
+import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
 import Interrupteur from './Interrupteur'
@@ -125,7 +125,6 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
 
   const nbClub = etats.filter(e => e.etat === 'actif').length
   const pageForfait = role === 'club' && !!forfaitClub
-  const forfaitCourant = pageForfait ? trouverForfait(forfaitClub.palier) : null
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
@@ -154,24 +153,9 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
 
-      {outils.pret && pageForfait && (
-        <section aria-labelledby="titre-places" style={{ marginBottom: 24 }}>
-          <h2 id="titre-places" style={titreSection}>Ton forfait et tes places</h2>
-          {forfaitClub.actif && forfaitClub.places > 0 ? (
-            <div style={{ maxWidth: 420 }}><CarteOutil
-              nom={forfaitCourant ? `Forfait ${forfaitCourant.equipes} équipes` : 'Forfait du club'}
-              promesse={`${phrasePlacesClub(forfaitClub)} Chaque place donne à un éducateur les outils que tu lui fournis, sans rien payer de son côté.`}
-              pied={forfaitClub.nbEducateurs > forfaitClub.places ? 'Plus d\'éducateurs que de places : passe au forfait supérieur' : 'Forfait actif'}
-            /></div>
-          ) : (
-            <p style={{ margin: 0, maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
-              Ton club n'a pas de forfait actif : aucun outil n'est fourni à tes éducateurs pour le moment.
-            </p>
-          )}
-        </section>
+      {outils.pret && role === 'club' && (peutModifier || pageForfait) && (
+        <MonAbonnement role="club" outils={outils} forfaitClub={forfaitClub} lectureSeule={!peutModifier} />
       )}
-
-      {outils.pret && role === 'club' && peutModifier && <MonAbonnement role="club" outils={outils} />}
 
       {outils.pret && role === 'club' && !pageForfait && (
         <section aria-labelledby="titre-club">
