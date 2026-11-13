@@ -112,6 +112,40 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - 2026-11-13, Kevin : « fait » après push (b71a276) et déploiement des 2 fonctions (accepter-invitation, envoyer-invitation). Bloc passé à « fait ». Non confirmé à l'écran : l'affichage « N / M places utilisées » de l'onglet Éducateurs et le message de refus (les captures reçues montrent Mon club, pas Éducateurs). À regarder au passage au bloc 4 ou 9.
   - 2026-11-13, Kevin : deux demandes ajoutées hors plan, voir « Demandes ajoutées en cours de chantier » en bas de ce fichier.
 
+### Bloc 2b : le menu du club oublie des outils actifs (Finances, Classements)
+- Statut : à faire
+- Objectif : un outil dont l'interrupteur est allumé dans « Outils du club » apparaît dans le menu du club.
+- Résultat testable : sur le club d'essai, Finances et partenaires allumé donne l'entrée « Finance » dans le menu Administratif, Compétition allumé donne « Classements » dans Sportif.
+- Modèle : sonnet · Effort : medium · Coût estimé : faible
+- Pourquoi ce modèle : lecture d'une règle d'affichage et correction courte, avec test.
+- Lancement : `/clear`, puis `/model sonnet`, puis `/effort medium`, puis `/bloc 2b PLAN-outils-offerts.md`
+- Dépend de : rien
+- Prérequis : résultat de la lecture en base ci-dessous (Kevin).
+- Constat (2026-11-13) : captures de Kevin, club d'essai : Finances et Compétition allumés, mais ni « Finance » ni « Classements » dans le menu.
+- Piste : `menuVisible` applique d'abord les anciennes lignes `mon_club_affichage` (`cible = 'club'`, `visible = false`, « retiré du menu », `menuMasqueParLeClub` dans `src/lib/outilsAcces.js`), alors que l'interrupteur du nouveau modèle lit l'outil actif (`outils_actifs`). Le club d'essai vient de l'ancien modèle : des lignes anciennes peuvent le contredire. En nouveau modèle, plus rien n'écrit ces lignes (étape Outils du club écrit via `choisir_club`).
+- Étapes :
+  - Kevin colle le résultat de : `select outil, visible, maj_le from public.mon_club_affichage where cible = 'club' and club_id = (select id from auth.users where email = 'deabreu.amorim+club@gmail.com');` (lecture seule).
+  - Si la piste est confirmée : en nouveau modèle, ne plus appliquer les lignes `mon_club_affichage` de la cible club (ou les ignorer dans `menuMasqueParLeClub` quand `modeleOutils`) ; test dans `tests/outilsAcces.test.js` ; l'ancien modèle ne change pas.
+  - Sinon : chercher la vraie cause avant de coder, sans deviner.
+- Ce que je teste pour valider : recharger le dashboard du club d'essai, voir Finance et Classements dans le menu.
+- Reste à finir :
+- Journal :
+
+### Bloc 2c : rubrique Configuration dans le menu du club
+- Statut : à faire
+- Objectif : alléger Mon club. La rubrique « Mes outils » du menu devient « Configuration » et réunit tout ce qui règle les outils.
+- Résultat testable : dans le menu Administratif, « Configuration » remplace « Mes outils » et contient quatre sous-pages : Mon forfait (l'actuelle page Mes outils : forfait, abonnement, paiement), Outils du club (étape 5 de Mon club), Outils des éducateurs (étape 6, « Dashboard de mes éducateurs »), Journal des changements (étape 7). Mon club ne garde que Identité, Staff, Organigramme et Accès du bureau.
+- Décisions de Kevin (2026-11-13) : la page Mes outils actuelle va dans Configuration, en première sous-page ; Configuration est visible pour tous les clubs, y compris l'ancien modèle (qui n'y voit pas Mon forfait, mais garde son interrupteur de menu dans Outils du club et le Journal).
+- Modèle : sonnet · Effort : high · Coût estimé : moyen
+- Pourquoi ce modèle : déplacement d'écrans existants et de permissions de menu, logique déjà en place, peu de logique nouvelle.
+- Lancement : `/clear`, puis `/model sonnet`, puis `/effort high`, puis `/bloc 2c PLAN-outils-offerts.md`
+- Dépend de : bloc 2b (même zone du menu)
+- Prérequis : aucun
+- Points de vigilance à relire dans le code : `ETAPES_MON_CLUB` et `etapesMonClubVisibles` (`src/lib/menuClubGroupes.js`, testé par `tests/menuClubGroupes.test.js`), `NAV_ADMINISTRATIF` et l'onglet `mes_outils` (`src/pages/DashboardClub.jsx`), les tutoriels par étape (`src/components/tutoriels/TutorielsClub.jsx`, pages `mon_club_*`), les droits (`mon_club` pour régler ; `mes_outils` pour l'onglet), les liens et retours Stripe vers `mes_outils` (`retourDuPortail`), l'ancien lien `mon_club` + étape, et la clé `outils` du menu éducateur si elle partage le nom. Aucun texte client sans validation de Kevin. Aucune base touchée.
+- Ce que je teste pour valider : club nouveau modèle (club d'essai) et un club ancien modèle : chaque sous-page s'ouvre, les interrupteurs marchent comme avant, le retour de paiement Stripe arrive sur Configuration > Mon forfait.
+- Reste à finir :
+- Journal :
+
 ### Bloc 3 : l'éducateur reçoit vraiment ses outils
 - Statut : à faire
 - Objectif : l'appli de l'éducateur affiche et ouvre les outils fournis par son club.
@@ -236,7 +270,3 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
 - Ce que je teste pour valider : je refais le parcours principal moi-même sur digitalfootball.academy.
 - Reste à finir :
 - Journal :
-
-## Demandes ajoutées en cours de chantier (hors blocs, 2026-11-13)
-- **Finances et partenaires absent du menu alors que son interrupteur est allumé** (club d'essai ; Compétition : Classements absent aussi). Piste : le menu du club applique d'abord `mon_club_affichage` (outils « retirés du menu », cible club, `visible = false`, héritage de l'ancien modèle, cf. `menuMasqueParLeClub` dans `src/lib/outilsAcces.js`), alors que l'interrupteur du nouveau modèle lit l'outil actif dans `outils_actifs` : les deux peuvent se contredire. À confirmer par une lecture en base (lignes `cible = 'club'` du club d'essai), puis correction probable : en nouveau modèle, ne plus appliquer ces anciennes lignes.
-- **Rubrique Configuration** à la place de « Mes outils » dans le menu Administratif : y réunir « Outils du club » (étape 5 de Mon club), « Dashboard de mes éducateurs » (étape 6, outils des éducateurs) et « Journal des changements » (étape 7), pour alléger Mon club (qui garderait Identité, Staff, Organigramme, Accès du bureau). Deux points à trancher avant de coder : où va la page « Mes outils » actuelle (forfait et abonnement) et ce que voient les clubs de l'ancien modèle (leur interrupteur de menu est aujourd'hui dans l'étape 5).
