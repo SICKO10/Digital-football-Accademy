@@ -1749,8 +1749,8 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   // impossible à distinguer autrement qu'au survol du titre) — proportions
   // alignées sur cageW/cageH réels d'ObjetNode (30×18 / 50×27).
   const outilsCages = [
-    { key: 'petite_cage', title: 'Petite cage (double-clic pour pivoter)', apercu: <svg width="22" height="14" viewBox="0 0 30 18"><rect x="2" y="2" width="26" height="14" fill="none" stroke="#fff" strokeWidth="2"/><path d="M2 16 L6 18 L24 18 L28 16" stroke="#fff" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
-    { key: 'grande_cage', title: 'Grande cage (double-clic pour pivoter)', apercu: <svg width="30" height="17" viewBox="0 0 50 27"><rect x="2" y="2" width="46" height="23" fill="none" stroke="#fff" strokeWidth="2"/><path d="M2 25 L8 27 L42 27 L48 25" stroke="#fff" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
+    { key: 'petite_cage', title: 'Petite cage (double-clic pour pivoter)', apercu: <svg width="22" height="14" viewBox="0 0 30 18"><rect x="2" y="2" width="26" height="14" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M2 16 L6 18 L24 18 L28 16" stroke="currentColor" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
+    { key: 'grande_cage', title: 'Grande cage (double-clic pour pivoter)', apercu: <svg width="30" height="17" viewBox="0 0 50 27"><rect x="2" y="2" width="46" height="23" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M2 25 L8 27 L42 27 L48 25" stroke="currentColor" strokeWidth="1" strokeDasharray="2,1.5" fill="none"/></svg> },
   ]
 
   // Matériel tactique : cliquer une vignette active l'outil (comme les autres
