@@ -64,7 +64,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - 2026-11-13, Sonnet 5.5 : commit des deux fichiers de plan et du brief (e04d15b, pas de push). Lecture du code faite. Requêtes de lecture écrites. Résultat reçu : requête 6 seulement (notifications.type libre). Requêtes 1 à 6 reçues. Requête 2 : le club d'essai est le SEUL club du nouveau modèle (palier c200, 7 places, 1 éducateur accepté, aucun dépassement) : aucun vrai club n'est concerné, le risque de retirer des outils à un client réel est nul à ce stade. Requête 5 : « Success », donc aucun outil ouvert ni détenu par le club d'essai (lu comme « aucune ligne » ; à reconfirmer au bloc 1, car l'essai du bloc 1 doit d'abord lui faire détenir ou ouvrir un outil).  Club d'essai (0e341547…) : modele_outils = FAUX, palier c200 (7 équipes, cohérent avec le catalogue), abonnement actif ; Kevin l'a passé au nouveau modèle (modele_outils vrai) le 2026-11-13, sur son seul retour « fait ». testfinal (75df7fba…) : modele_outils vrai, affilié accepté au club d'essai depuis le 2026-11-11, aucun palier propre.
 
 ### Bloc 1 : la règle en base (outils fournis et places)
-- Statut : à faire
+- Statut : en attente (SQL prêt et testé en local, à exécuter par Kevin)
 - Objectif : un club du nouveau modèle au forfait actif peut ouvrir n'importe lequel des 9 outils éducateur, et seuls ses N premiers éducateurs affiliés les reçoivent.
 - Résultat testable : le fichier de contrôle renvoie les valeurs attendues ; en base, `outils_actifs(testfinal)` liste les outils ouverts par le club avec la source `club` ; un éducateur au-delà de la limite ne reçoit rien ; les clubs de l'ancien modèle ne changent pas.
 - Modèle : opus · Effort : high · Coût estimé : élevé
@@ -80,7 +80,13 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Ne pas modifier `outil_ferme` ni le verrou : ils appellent `a_outil`, vérifier qu'ils suivent.
 - Ce que je teste pour valider : j'exécute les deux fichiers, je renvoie le résultat du contrôle ; je me connecte à un compte éducateur payant existant et ses outils sont toujours là.
 - Reste à finir :
+  - Kevin : lancer `sauvegarder.sh` (un SQL a tourné le 2026-11-13 depuis la sauvegarde du 2026-11-11), exécuter `supabase_outils_offerts.sql` en entier, puis `supabase_outils_offerts_verification.sql` en entier, et renvoyer le tableau (21 lignes, toutes `ok = true`). Le bloc passe à « fait » à réception.
+  - Les lignes 19 et 20 du contrôle supposent que le club d'essai n'a encore ouvert aucun outil. Si une ligne est fausse, ne rien relancer : me renvoyer le tableau.
+  - Rang d'une place = date de la demande d'affiliation (`created_at`), pas de son acceptation : une demande ancienne acceptée tard passe devant un éducateur accepté avant elle. Choisir qui a une place n'est pas possible avec cette règle (voir bloc 4).
+  - Le club peut fournir sans les détenir 7 outils (Suivi des joueurs, Stats collectives, Séances, Tacticboard, Bibliothèque, Préparation physique, Analyse vidéo) ; Stages, Projet sportif et CFF4 gardent l'ancienne règle. Le brief parle de « 9 outils » et de « 6 autres » : le catalogue en compte 7 + 3. À garder en tête pour les textes du bloc 5.
+  - Fichier `supabase_outils_offerts_ANNULATION_NE_PAS_EXECUTER.sql` écrit (remet l'ancienne règle), à n'utiliser que sur décision explicite.
 - Journal :
+  - 2026-11-13, Opus 5.5 : trois fonctions ajoutées (`outil_offert_par_club`, `club_offre_outils`, `educateur_a_place`), troisième source « club » dans `outils_actifs` et `a_outil` (les deux règles existantes recopiées à l'identique), règle d'ouverture de `outils_club_ouverts` resserrée pour les 7 outils. `outil_ferme` non modifié. Forfait sans `quota_equipes` = aucune place (prudence). Testé sur une base Postgres 17 locale (installée via Homebrew, tables minimales imitant Supabase, club d'essai, testfinal, club ancien modèle à 3 éducateurs pour 2 places, éducateur payant) : 21 contrôles sur 21 passent ; le contrôle détecte bien une différence quand on en crée une ; l'annulation remet l'ancienne règle ; le fichier se relance sans erreur. Pas encore exécuté en production.
 
 ### Bloc 2 : la limite à l'affiliation
 - Statut : à faire
@@ -115,6 +121,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Tests automatiques sur les nouveaux cas, build.
 - Ce que je teste pour valider : connexion `testfinal` sur digitalfootball.academy, ouvrir Tacticboard, créer et enregistrer un schéma.
 - Reste à finir :
+  - Du bloc 1 : `api/outils.js` action `ouvrir_club` (~l.712) refuse tout outil sans équivalent club (`outilEducateurPour`) : à ouvrir aux 7 outils quand `club_offre_outils` est vrai (la base l'autorise déjà). `outils_actifs` renvoie ces outils avec `source = 'club'` et `fin_le` vide.
 - Journal :
 
 ### Bloc 4 : l'écran du club dit la vérité
@@ -133,6 +140,7 @@ Rappel : `/clear` et une session neuve par bloc. Les blocs Opus sont courts : ne
   - Journal et bouton Rétablir de Mon club : enregistrer ces changements comme les autres.
 - Ce que je teste pour valider : club d'essai et `testfinal` dans deux navigateurs : allumer, éteindre un outil, regarder le menu de l'éducateur.
 - Reste à finir :
+  - Du bloc 1 : la règle ne permet pas de choisir qui a une place (rang = date de demande). « Donner sa place à » demande un ajout SQL (une priorité par affiliation) : à reporter au bloc 7. Pour savoir qui a une place : `educateur_a_place(club, educateur)`.
 - Journal :
 
 ### Bloc 5 : textes, tutoriels et présentation des forfaits
