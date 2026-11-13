@@ -30,6 +30,7 @@ import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } fr
 import OnboardingGuide from '../components/OnboardingGuide'
 const BudgetPrevisionnel = lazy(() => import('../components/club/BudgetPrevisionnel'))
 const BudgetReel = lazy(() => import('../components/club/BudgetReel'))
+const AudienceSponsors = lazy(() => import('../components/club/AudienceSponsors'))
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
 import { TutorielClub, PAGES_TUTORIEL_CLUB } from '../components/tutoriels/TutorielsClub'
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
@@ -5101,7 +5102,7 @@ export default function DashboardClub() {
           <div>
             {/* Prévisionnel / Suivi réel : même style que les pastilles d'équipe du budget prévisionnel. */}
             <div role="tablist" aria-label="Vue du budget" style={{ display: 'inline-flex', gap: 4, padding: 4, marginBottom: 20, borderRadius: 999, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-              {[{ id: 'previsionnel', label: 'Prévisionnel' }, { id: 'reel', label: 'Suivi réel' }].map(v => {
+              {[{ id: 'previsionnel', label: 'Prévisionnel' }, { id: 'reel', label: 'Suivi réel' }, { id: 'audience', label: 'Audience' }].map(v => {
                 const actif = budgetVue === v.id
                 return (
                   <button key={v.id} role="tab" aria-selected={actif} onClick={() => setBudgetVue(v.id)}
@@ -5113,6 +5114,8 @@ export default function DashboardClub() {
             </div>
             {budgetVue === 'previsionnel' ? (
               <Suspense fallback={null}><BudgetPrevisionnel clubId={clubId} categories={categories} joueurs={joueursClub} canEdit={canEditSection('budget')} /></Suspense>
+            ) : budgetVue === 'audience' ? (
+              <Suspense fallback={null}><AudienceSponsors clubId={clubId} couleurPrincipale={couleurPrincipale} /></Suspense>
             ) : (
               <Suspense fallback={null}>
                 <BudgetReel
