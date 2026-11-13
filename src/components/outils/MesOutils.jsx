@@ -3,7 +3,7 @@ import { useColors } from '../../lib/theme'
 import { supabase } from '../../supabase'
 import { appelerOutils } from '../../lib/outilsApi'
 import { outilsPourEducateurs } from '../../lib/outilsAcces'
-import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR } from '../../lib/catalogueOutils'
+import { ESSAI_JOURS, ESSAIS_GRATUITS, PALIERS_EDUCATEUR, phrasePlacesClub, trouverForfait } from '../../lib/catalogueOutils'
 import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
 import Interrupteur from './Interrupteur'
@@ -26,7 +26,11 @@ const ETATS_ACTIFS = ['actif', 'retire', 'club', 'essai', 'offre']
 // section à part, avec un choix « afficher sur mon dashboard ».
 // `outils` : résultat de useOutils ; `peutModifier` : seul le compte club choisit ;
 // `userId` : compte de l'éducateur (affichage des outils du club).
-export default function MesOutils({ role, outils, peutModifier = true, userId, nomClub = '' }) {
+// `forfaitClub` : club du nouveau modèle seulement ({ palier, places, nbEducateurs,
+// actif }). La page devient alors « Mon forfait » : l'abonnement et les places,
+// sans les interrupteurs, qui vivent dans « Outils du club » et « Outils des
+// éducateurs ». Sans lui (ancien modèle, éducateur), la page reste complète.
+export default function MesOutils({ role, outils, peutModifier = true, userId, nomClub = '', forfaitClub = null }) {
   const colors = useColors()
   const [enCours, setEnCours] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -120,6 +124,8 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
   }
 
   const nbClub = etats.filter(e => e.etat === 'actif').length
+  const pageForfait = role === 'club' && !!forfaitClub
+  const forfaitCourant = pageForfait ? trouverForfait(forfaitClub.palier) : null
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
@@ -128,17 +134,19 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.accent.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
           </svg>
-          Mes outils
+          {pageForfait ? 'Mon forfait' : 'Mes outils'}
         </h1>
         <p style={{ margin: 0, maxWidth: 620, fontSize: '13px', lineHeight: 1.55, color: colors.text.faint }}>
-          {role === 'club'
+          {pageForfait
+            ? 'Ton abonnement et les places réservées à tes éducateurs. Les outils se règlent dans « Outils du club » et « Outils des éducateurs ».'
+            : role === 'club'
             ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu en ajoutes ou en retires quand tu veux, sans supplément.'
             : ESSAIS_GRATUITS
               ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
               : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin, au mois ou à l\'année.'}
         </p>
         {role === 'club' && !peutModifier && (
-          <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.faint }}>Seul le compte du club peut modifier ces choix.</p>
+          <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.faint }}>{pageForfait ? 'Seul le président peut changer le forfait.' : 'Seul le compte du club peut modifier ces choix.'}</p>
         )}
       </header>
 
@@ -146,9 +154,26 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
 
+      {outils.pret && pageForfait && (
+        <section aria-labelledby="titre-places" style={{ marginBottom: 24 }}>
+          <h2 id="titre-places" style={titreSection}>Ton forfait et tes places</h2>
+          {forfaitClub.actif && forfaitClub.places > 0 ? (
+            <div style={{ maxWidth: 420 }}><CarteOutil
+              nom={forfaitCourant ? `Forfait ${forfaitCourant.equipes} équipes` : 'Forfait du club'}
+              promesse={`${phrasePlacesClub(forfaitClub)} Chaque place donne à un éducateur les outils que tu lui fournis, sans rien payer de son côté.`}
+              pied={forfaitClub.nbEducateurs > forfaitClub.places ? 'Plus d\'éducateurs que de places : passe au forfait supérieur' : 'Forfait actif'}
+            /></div>
+          ) : (
+            <p style={{ margin: 0, maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
+              Ton club n'a pas de forfait actif : aucun outil n'est fourni à tes éducateurs pour le moment.
+            </p>
+          )}
+        </section>
+      )}
+
       {outils.pret && role === 'club' && peutModifier && <MonAbonnement role="club" outils={outils} />}
 
-      {outils.pret && role === 'club' && (
+      {outils.pret && role === 'club' && !pageForfait && (
         <section aria-labelledby="titre-club">
           <h2 id="titre-club" style={titreSection}>
             Sur ton dashboard <span style={{ fontWeight: 700, color: colors.text.faint }}>· {nbClub} sur {etats.length}</span>
@@ -168,7 +193,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
         </section>
       )}
 
-      {outils.pret && role === 'club' && peutModifier && (
+      {outils.pret && role === 'club' && !pageForfait && peutModifier && (
         <section aria-labelledby="titre-educateurs" style={{ marginTop: 32 }}>
           <h2 id="titre-educateurs" style={titreSection}>Outils pour mes éducateurs</h2>
           <p style={{ margin: '0 0 14px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>

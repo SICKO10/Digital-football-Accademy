@@ -6462,7 +6462,8 @@ export default function DashboardClub() {
             outils={outils} clubId={clubId} estCompteClub={!!clubId && clubId === monUserId} educateurs={educateursAcceptes}
             couleurPrincipale={couleurPrincipale}
             fourniture={club?.modele_outils ? { forfaitActif: !!(club.abonnement_actif && club.palier), places: club.quota_equipes ?? 0 } : null}
-            ecranForfait={() => <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'} />} />
+            ecranForfait={() => <MesOutils role="club" outils={outils} peutModifier={monRole === 'president'}
+              forfaitClub={club?.modele_outils ? { palier: club.palier, places: club.quota_equipes ?? 0, actif: !!(club.abonnement_actif && club.palier), nbEducateurs: new Set(educateursAcceptes.map(e => e.educateur_id)).size } : null} />} />
         )}
       </div>
           </div>

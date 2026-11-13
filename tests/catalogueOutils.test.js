@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   OUTILS, SOCLE, outilsVisibles, menuFiltre, totalComposition,
-  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour, outilsOfferts, etatPlacesClub, outilOuvrableParClub, roleDepuisReponses,
+  joursRestantsEssai, outilsPrecoches, outilsSansPrix, trouverOutil, outilsDuRole, outilsOuvrables, outilEducateurPour, outilsOfferts, etatPlacesClub, outilOuvrableParClub, roleDepuisReponses, phrasePlacesClub,
 } from '../src/lib/catalogueOutils.js'
 
 const NOW = new Date('2026-11-10T12:00:00Z')
@@ -201,4 +201,10 @@ test('places du club : surplus d\'éducateurs, forfait suggéré, rien si tout v
   assert.equal(e.places, 4)
   assert.equal(e.forfaitSuggere.equipes, 7)
   assert.equal(etatPlacesClub({ nbEducateurs: 30, places: 22, forfaitActif: true }).forfaitSuggere, null)
+})
+
+test('phrasePlacesClub : accords au singulier et au pluriel', () => {
+  assert.equal(phrasePlacesClub({ nbEducateurs: 1, places: 1 }), '1 éducateur affilié sur 1 place.')
+  assert.equal(phrasePlacesClub({ nbEducateurs: 3, places: 4 }), '3 éducateurs affiliés sur 4 places.')
+  assert.equal(phrasePlacesClub({ nbEducateurs: 0, places: 2 }), '0 éducateur affilié sur 2 places.')
 })

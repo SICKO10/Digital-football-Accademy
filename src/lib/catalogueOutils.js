@@ -386,6 +386,13 @@ export function etatPlacesClub({ nbEducateurs = 0, places = 0, forfaitActif = fa
   return { sansPlace, places, forfaitSuggere: forfaitPourEquipes(nbEducateurs) }
 }
 
+// Phrase de l'écran « Mon forfait » : éducateurs affiliés par rapport aux places.
+export function phrasePlacesClub({ nbEducateurs = 0, places = 0 } = {}) {
+  const n = Number(nbEducateurs) || 0
+  const p = Number(places) || 0
+  return `${n} éducateur${n > 1 ? 's' : ''} affilié${n > 1 ? 's' : ''} sur ${p} place${p > 1 ? 's' : ''}.`
+}
+
 // Ce qu'on paie en une fois au premier paiement (bloc 7), pour une seule
 // périodicité : clés de recherche Stripe des lignes et total en euros.
 // Éducateur : le palier qui couvre le nombre d'outils choisis ; club : un
