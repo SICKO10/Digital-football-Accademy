@@ -2,7 +2,7 @@ import { supabase } from '../../supabase'
 import { OUTILS } from '../../lib/catalogueOutils'
 import { affichageDepuisLignes } from '../../lib/outilsAcces'
 import { appelerOutils } from '../../lib/outilsApi'
-import { planRetablir } from '../../lib/journalMonClub'
+import { planRetablir, planRetablirServeur, estPlace, estFourniture } from '../../lib/journalMonClub'
 
 // Lectures et écritures de Mon club partagées par les étapes Outils du club et
 // Dashboard de mes éducateurs, et par les modèles de départ. Elles ne touchent
@@ -96,6 +96,12 @@ export async function prevenirEducateurs(clubId, avant, liste, retablitId) {
 // 'deja' si le menu était déjà revenu, 'ok' sinon ; une erreur dit pourquoi
 // c'est impossible tel quel.
 export async function retablirEntree(clubId, entree, liste) {
+  if (estPlace(entree) || estFourniture(entree)) {
+    const plan = planRetablirServeur(entree, liste)
+    if (plan.erreur) throw new Error(plan.erreur)
+    for (const a of plan.appels) await appelerOutils(a.action, { ...a.params, retablit_id: entree.id })
+    return 'ok'
+  }
   const { reglages, lus } = await lireReglages(clubId)
   const echec = reglages.error || lus.error
   if (echec) throw new Error(echec.message)

@@ -60,6 +60,10 @@ import { trouverOutil, outilEducateurPour, outilOuvrableParClub, outilsOfferts, 
 //   table `mon_club_journal`) : une ligne par outil et par sens, avec les éducateurs
 //   concernés ; `retablit_id` marque un « Rétablir ». Une panne du journal ne bloque
 //   pas l'envoi.
+// - `ouvrir_club`, `fournir_educateur` et `choisir_place` écrivent aussi au journal
+//   (actions fourni, plus_fourni, place_donnee, place_retiree, place_auto ; une place
+//   garde son état d'avant). Seul un changement réel est inscrit. Elles acceptent
+//   `retablit_id`, comme `prevenir_menu`. Une panne du journal ne bloque jamais le changement.
 // - `portail` : adresse du portail client Stripe (carte bancaire, factures).
 // - `verifier-prix` : réservée aux administrateurs. Contrôle que chaque prix du
 //   catalogue existe dans Stripe (clé de recherche, montant, période). Utilise
@@ -252,7 +256,7 @@ export function donneesOutils() {
       const { error } = await db().from('mon_club_journal').insert(lignes)
       if (error) throw error
     },
-    entreeJournal: (club, id) => lire(db().from('mon_club_journal').select('id, outil, action').eq('club_id', club).eq('id', id).maybeSingle()),
+    entreeJournal: (club, id) => lire(db().from('mon_club_journal').select('id, outil, action, educateur_ids').eq('club_id', club).eq('id', id).maybeSingle()),
     // Notifications de la cloche (table `notifications`) : { user_id, type, titre, contenu, lien }.
     notifier: async (lignes) => {
       const { error } = await db().from('notifications').insert(lignes)
@@ -537,6 +541,24 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
     await donnees.journaliser(lignes)
   }
 
+  // Journal des outils fournis et des places : une ligne par changement réel. `retablitId` n'est gardé que
+  // s'il désigne une ligne du même club, sur le même outil (ou le même éducateur) et dans le sens opposé.
+  // Une panne du journal ne bloque jamais le changement : il est déjà fait.
+  async function journaliserChangements(clubId, lignes, retablitId) {
+    if (lignes.length === 0) return
+    try {
+      const origine = typeof retablitId === 'string' ? await donnees.entreeJournal(clubId, retablitId) : null
+      const retablit = (l) => origine && origine.action !== l.action
+        && (l.outil ? origine.outil === l.outil : !origine.outil && origine.educateur_ids?.[0] === l.educateur_ids[0])
+      await donnees.journaliser(lignes.map(l => ({
+        club_id: clubId, auteur_id: clubId, outil: null, educateur_ids: [], tous: false, etat_avant: null,
+        ...l, retablit_id: retablit(l) ? origine.id : null,
+      })))
+    } catch (err) {
+      console.error('outils : journal non écrit', err.code || err.message)
+    }
+  }
+
   return async function handler(req, res) {
     const utilisateur = await authentifier(req, res, verifierJeton)
     if (!utilisateur) return
@@ -757,9 +779,14 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           } else if (!actifMaintenant(await donnees.ligne(utilisateur.id, ouvrable.outil.id), maintenantMs)) {
             return res.status(409).json({ error: 'Active d\'abord cet outil sur le dashboard du club' })
           }
+          const dejaOuvert = await donnees.ouvert(utilisateur.id, ouvrable.outil.id)
           await donnees.ouvrirOutil(utilisateur.id, ouvrable.outil.id)
+          if (!dejaOuvert) {
+            await journaliserChangements(utilisateur.id, [{ action: 'fourni', outil: ouvrable.outil.id, tous: true, educateur_ids: await donnees.educateursAffilies(utilisateur.id) }], corps.retablit_id)
+          }
         } else if (await donnees.ouvert(utilisateur.id, ouvrable.outil.id)) {
           await donnees.fermerOutil(utilisateur.id, ouvrable.outil.id)
+          await journaliserChangements(utilisateur.id, [{ action: 'plus_fourni', outil: ouvrable.outil.id, tous: true, educateur_ids: await donnees.educateursAffilies(utilisateur.id) }], corps.retablit_id)
           await prevenirRetrait(ouvrable.outil, ouvrable.offert)
         }
         return res.status(200).json({ ok: true })
@@ -779,9 +806,14 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         const place = await donnees.aUnePlace(utilisateur.id, educateur)
         if (corps.ouvert) {
           if (!place) return res.status(409).json({ error: 'Cet éducateur n\'a pas de place dans ton forfait : passe au forfait supérieur pour lui fournir des outils' })
+          const dejaFourni = await donnees.fourniAEducateur(utilisateur.id, educateur, ouvrable.outil.id)
           await donnees.fournirAEducateur(utilisateur.id, educateur, ouvrable.outil.id)
+          if (!dejaFourni) {
+            await journaliserChangements(utilisateur.id, [{ action: 'fourni', outil: ouvrable.outil.id, educateur_ids: [educateur] }], corps.retablit_id)
+          }
         } else if (await donnees.fourniAEducateur(utilisateur.id, educateur, ouvrable.outil.id)) {
           await donnees.cesserDeFournirAEducateur(utilisateur.id, educateur, ouvrable.outil.id)
+          await journaliserChangements(utilisateur.id, [{ action: 'plus_fourni', outil: ouvrable.outil.id, educateur_ids: [educateur] }], corps.retablit_id)
           // Il garde l'outil si le club le fournit à tous : rien à annoncer.
           if (place && !(await donnees.ouvert(utilisateur.id, ouvrable.outil.id))) await prevenirRetrait(ouvrable.outil, true, [educateur])
         }
@@ -804,13 +836,16 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
         const placesAvant = async () => new Map(await Promise.all(affilies.map(async id => [id, await donnees.aUnePlace(club, id)])))
         const avant = await placesAvant()
         const ecrire = (id, etat) => (etat ? donnees.poserPlace(club, id, etat, club) : donnees.effacerPlace(club, id))
-        const retours = [[educateur, await donnees.etatPlace(club, educateur)]]
+        const etatAvant = await donnees.etatPlace(club, educateur)
+        const retours = [[educateur, etatAvant]]
+        let libereAvant
         if (corps.etat === 'choisi' && !avant.get(educateur)) {
           const pleines = [...avant.values()].filter(Boolean).length >= await donnees.quotaPlaces(club)
           if (pleines) {
             if (!libere) return res.status(409).json({ error: 'Toutes les places de ton forfait sont prises : choisis l\'éducateur qui libère la sienne' })
             if (libere === educateur || !avant.get(libere)) return res.status(409).json({ error: 'L\'éducateur choisi n\'a pas de place à libérer' })
-            retours.push([libere, await donnees.etatPlace(club, libere)])
+            libereAvant = await donnees.etatPlace(club, libere)
+            retours.push([libere, libereAvant])
             await ecrire(libere, 'retire')
           }
         }
@@ -821,6 +856,12 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           for (const [id, etat] of retours.reverse()) await ecrire(id, etat)
           return res.status(409).json({ error: 'Cet éducateur ne peut pas avoir de place : des éducateurs choisis avant lui occupent déjà tout le forfait' })
         }
+        // Journal : le choix demandé, et la place libérée dans un échange. L'état d'avant permet de rétablir exactement.
+        const actionPlace = { choisi: 'place_donnee', retire: 'place_retiree', auto: 'place_auto' }
+        const changements = [[educateur, etatAvant || 'auto', corps.etat]]
+        if (libereAvant !== undefined) changements.unshift([libere, libereAvant || 'auto', 'retire'])
+        await journaliserChangements(club, changements.filter(([, avantEtat, etat]) => avantEtat !== etat)
+          .map(([id, avantEtat, etat]) => ({ action: actionPlace[etat], educateur_ids: [id], etat_avant: avantEtat })), corps.retablit_id)
         try {
           const date = new Date(maintenantMs).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
           const lignes = []

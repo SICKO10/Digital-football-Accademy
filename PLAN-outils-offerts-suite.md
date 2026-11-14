@@ -107,7 +107,7 @@ Rappel : `/clear` et une session neuve par bloc.
 
 
 ### Bloc 3 : le journal enregistre outils fournis et places (SQL + serveur)
-- Statut : à faire
+- Statut : fait (code et tests ; SQL à lancer par Kevin)
 - Objectif : chaque changement d'outil fourni (à tous ou à un éducateur) et de place écrit une ligne au journal, avec ce qu'il faut pour le rétablir.
 - Résultat testable : après un changement sur le club test, une nouvelle ligne apparaît dans `mon_club_journal` (vérifiée par un SQL de lecture).
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -121,11 +121,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Vérifier qu'aucune limite de nombre de changements n'existe côté serveur ou écran ; en retirer une si on en trouve.
   - Tests serveur ; `npm test`.
 - Ce que je teste pour valider : fournir puis retirer un outil sur le club test, et me recopier le SQL de lecture du journal.
-- Reste à finir :
-- Journal :
+- Reste à finir : Kevin lance `supabase_mon_club_journal_suite.sql` (après la sauvegarde) puis `supabase_mon_club_journal_suite_verification.sql` et me recopie la ligne de résultat ; ensuite il fournit puis retire un outil et donne puis retire une place sur le club test et recopie `select action, outil, educateur_ids, etat_avant from mon_club_journal order by cree_le desc limit 10;`. Ne pas pousser le code en production avant que le SQL soit lancé : sans lui, les nouvelles lignes sont refusées par la base (le changement du club passe quand même, seul le journal reste vide). L'écran Journal n'affiche que les anciennes lignes (retire, reaffiche) jusqu'au bloc 4 : filtre provisoire `.in('action', ...)` dans `EtapeJournal.jsx`, à retirer au bloc 4. Aucune limite sur le nombre de changements côté serveur ; l'écran n'affiche que les 50 derniers (`LIMITE` dans `EtapeJournal.jsx`), à lever ou remplacer par « voir plus » au bloc 4.
+- Journal : 2026-11-14, Sonnet 5.5. SQL : actions `fourni`, `plus_fourni`, `place_donnee`, `place_retiree`, `place_auto` (cinquième action ajoutée au plan pour « remettre en automatique »), colonne `etat_avant` (choisi, retire, auto), `outil` devient facultatif pour les places, règle « une place n'a pas d'outil et garde son état d'avant, un outil n'a pas d'état ». Anciennes lignes intactes. Fichiers de vérification et d'annulation (mémoire) écrits ; script essayé sur une base Postgres de brouillon (premier passage, relance refusée, lignes valides et invalides). `api/outils.js` : `ouvrir_club` (tous les affiliés, `tous` vrai), `fournir_educateur` et `choisir_place` (échange = deux lignes) écrivent une ligne par changement réel seulement, panne du journal avalée ; ces trois actions acceptent déjà `retablit_id` (même outil ou même éducateur, sens opposé, même club) pour le bloc 4. 12 tests ajoutés, `npm test` 463 ok (1 ignoré d'avant), `npm run build` et lint ok.
 
 ### Bloc 4 : écran du journal et bouton « Rétablir » pour ces changements
-- Statut : à faire
+- Statut : fait (code et tests ; test à l'écran par Kevin après le SQL du bloc 3)
 - Objectif : l'étape Journal de Mon club affiche ces nouvelles lignes en français clair et les rétablit.
 - Résultat testable : « Outil Séances fourni à tous les éducateurs », « Place retirée à Paul Martin », etc., et « Rétablir » remet l'état d'avant (avec les avis habituels si un éducateur perd quelque chose).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -138,11 +138,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - `EtapeJournal.jsx` et `ecritures.js` : « Rétablir » appelle la bonne action serveur et marque la ligne `retablit_id`.
   - Tests dans `tests/journalMonClub.test.js` ; `npm test` et `npm run build`.
 - Ce que je teste pour valider : sur le club test, rétablir un outil fourni, un outil retiré et une place retirée, puis relire le journal.
-- Reste à finir :
-- Journal :
+- Reste à finir : Kevin lance d'abord le SQL du bloc 3, puis teste sur le club test : rétablir un outil fourni, un outil plus fourni et une place retirée, et relire le journal. Rétablir une place retirée alors que le forfait est plein est refusé avec la phrase du serveur (« choisis l'éducateur qui libère la sienne ») : à faire alors depuis l'écran des places. Ne pas pousser en production avant le SQL du bloc 3.
+- Journal : 2026-11-14, Sonnet 5.5. `journalMonClub.js` : phrases des 5 nouvelles actions et `planRetablirServeur` (outil fourni/plus fourni : `ouvrir_club` ou `fournir_educateur` dans le sens opposé ; place : `choisir_place` avec l'état d'avant ; refus clair si l'éducateur n'est plus affilié). `ecritures.js` : `retablirEntree` appelle le serveur avec `retablit_id` pour ces lignes (le serveur refuse forfait fini ou plein). `EtapeJournal.jsx` : filtre provisoire retiré, colonne `etat_avant` lue, icônes, limite de 50 remplacée par « Voir les changements plus anciens ». 4 tests ajoutés, `npm test` 467 ok (1 ignoré d'avant), lint et build ok. Pas testé à l'écran : le SQL du bloc 3 n'est pas encore lancé.
 
 ### Bloc 5 : la base garde la date de fin et prévient avant (SQL)
-- Statut : à faire
+- Statut : fait (SQL en place, vérification 10/10 et simulation 17/17 chez Kevin le 2026-11-14)
 - Objectif : quand un club du nouveau modèle résilie, la date de fin est gardée et chaque éducateur qui reçoit des outils du club est prévenu tout de suite.
 - Résultat testable : simulation en base (transaction annulée d'elle-même) : résiliation, un avis par éducateur avec la date ; nouvelle date, avis corrigé sans doublon ; reprise, avis retiré ; fin réelle, avis « après la fin » seul.
 - Modèle : opus · Effort : high · Coût estimé : élevé
@@ -157,11 +157,12 @@ Rappel : `/clear` et une session neuve par bloc.
   - Toute erreur des avis est avalée (avertissement dans les journaux) : un paiement ne peut jamais échouer à cause d'eux, même règle que le chantier précédent.
   - Fichiers `_verification.sql`, `_simulation.sql` (s'annule seule) et `_ANNULATION_NE_PAS_EXECUTER.sql`.
 - Ce que je teste pour valider : les résultats de la vérification et de la simulation, puis le tableau Stripe (onglet Webhooks) : aucune livraison en échec après la mise en place.
-- Reste à finir :
-- Journal :
+- Reste à finir : SQL lancé et validé. Kevin surveille Stripe, onglet Webhooks, aucune livraison du webhook outils en échec. Limites connues : (1) un club qui aurait déjà résilié avant la mise en place n'est pris en compte qu'au prochain événement Stripe de son abonnement ; (2) un éducateur qui devient concerné après la résiliation (nouvelle affiliation, outil fourni) n'est prévenu qu'au prochain événement Stripe ; (3) un éducateur qui perd sa place par `choisir_place` pendant une résiliation garde son avis préalable à côté de l'avis « plus de place » : au bloc 6, `api/outils.js` peut le retirer (ligne de `club_fin_avis`, clé service) ; (4) club avec deux abonnements des outils en même temps : cas non géré (très rare). Pour le bloc 6 : `EncartOutilsClub.jsx` doit lire les types `outils_club_fin_prochaine` et `outils_club_continue` ; Mon forfait lit `club_fin_programmee` (date) et `rpc('club_nb_educateurs_prevenus', { p_club })` (nombre d'éducateurs prévenus).
+- Journal : 2026-11-14, Opus 5.5. `supabase_fin_programmee_club.sql` : tables `club_fin_programmee` (lecture club, staff, éducateurs affiliés) et `club_fin_avis` (serveur seul) ; `educateurs_prevenus_fin_club` (mêmes règles que l'avis « après la fin », outils détenus par le club compris) ; déclencheur `avertir_fin_programmee_club` ; branche club de `outils_synchroniser_abonnement` (résiliation : date gardée ; reprise ou fin : effacée ; panne avalée) ; `prevenir_fin_outils_club` retire l'avis préalable des éducateurs prévenus et efface la fin programmée quand le club n'offre plus rien. Branche éducateur, signature et droits de la fonction du paiement identiques (comparés ligne à ligne). Garde-fou en tête : refus sans rien changer si les deux fonctions remplacées diffèrent des fichiers connus, ou si le script a déjà tourné. Écarts : (a) ajout de `club_nb_educateurs_prevenus` pour le bloc 6, pour éviter un autre SQL ; (b) à la reprise, l'avis préalable est retiré même s'il a été lu (le « ton club continue » le remplace) ; (c) nouvelle date : l'avis est réécrit et redevient non lu, seulement si le jour affiché change. Textes au tutoiement comme les avis existants, date en toutes lettres (« 1er décembre 2026 », heure de Paris). Essais sur Postgres 17 de brouillon : simulation 16/16 (identifiants d'avis en uuid et en nombres), vérification 10/10, garde-fou face à une fonction modifiée, relance refusée, annulation puis relance ok.
+  - 2026-11-14, Opus 5.5. Kevin a lancé le SQL du bloc 3 (vérification : tout vrai, 0 ligne nouvelle) et `supabase_fin_programmee_club.sql` (vérification 10/10). Première simulation arrêtée par la limite d'affiliation (A et B affiliés après le passage à 2 places) : rien gardé. Corrigé (affiliation avant la baisse des places), rejoué sur le brouillon avec une copie de la limite : 16/16. Deuxième passage chez Kevin : 11/16, B prévenu parce que le club test détient un outil reçu par tous ses éducateurs, avec ou sans place (Stages, Projet sportif ou CFF4, règle `viaClub`) : comportement voulu, attentes de la simulation corrigées (cas 0 ajouté, ces outils fermés le temps de l'essai), rejouée sur brouillon avec et sans outil détenu : tout vrai. Limite notée : un éducateur dont la place est retirée reçoit quand même ces outils mais n'est prévenu ni avant ni après la fin (même règle que l'avis « après la fin » existant). Troisième passage chez Kevin : simulation 17/17, rien n'est resté, club test inchangé.
 
 ### Bloc 6 : l'avis visible côté éducateur et côté club
-- Statut : à faire
+- Statut : fait côté code (2026-11-14), test à l'écran à faire par Kevin
 - Objectif : l'éducateur voit l'avis avec la date et ce qu'il garde ; le club sait, avant de résilier, que ses éducateurs seront prévenus.
 - Résultat testable : cloche et encart de l'éducateur avec « Votre club arrête son forfait le 12 décembre 2026 : vos outils fournis restent ouverts jusque-là, vos données sont gardées » ; fenêtre de résiliation du club avec « Vos N éducateurs seront prévenus ».
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -174,11 +175,12 @@ Rappel : `/clear` et une session neuve par bloc.
   - Page Mon forfait du club : phrase dans la confirmation de résiliation, et rappel « vos éducateurs ont été prévenus » tant que la résiliation est programmée.
   - `npm test` et `npm run build`.
 - Ce que je teste pour valider : avec forfait payé, résilier puis reprendre sur le club test et regarder la cloche d'un éducateur à chaque étape ; sinon, l'avis de la simulation affiché à l'écran.
-- Reste à finir :
-- Journal :
+- Reste à finir : Kevin teste à l'écran (voir le compte rendu). Limite : l'avis « fin prochaine » s'affiche dans l'encart d'accueil de l'éducateur tant qu'il n'est pas fermé ; la cloche générale lit déjà la table notifications (non modifiée). Le nombre « éducateurs prévenus » ne s'affiche que pour le président, et seulement s'il est supérieur à 0.
+- Journal : 2026-11-14, Sonnet 5.5. `EncartOutilsClub.jsx` lit `outils_club_fin_prochaine` (titre en gras avec la date, contenu, boutons « J'ai compris » et « Voir mes outils ») et `outils_club_continue`. `MonAbonnement.jsx` (club, président) lit `club_nb_educateurs_prevenus` : phrase dans la confirmation de résiliation (« Tes N éducateurs seront prévenus… ») et rappel « N éducateurs ont été prévenus » tant que la résiliation est programmée. `MesOutils.jsx` et `DashboardClub.jsx` passent l'identifiant du club. `npm test` 471/472 (1 ignoré d'avant), build ok. Pas testé à l'écran (aucune session navigateur).
+
 
 ### Bloc 7 (optionnel) : rappel 7 jours avant la fin
-- Statut : à faire (seulement si Kevin le demande après le bloc 6)
+- Statut : fait (SQL en place, vérification 7/7 et simulation 15/15 chez Kevin le 2026-11-14)
 - Objectif : un second avis automatique 7 jours avant la date de fin programmée.
 - Résultat testable : simulation de la tâche quotidienne avec une date de fin à J+7 : un avis par éducateur, jamais deux fois.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -190,11 +192,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Fonction SQL du rappel (une fois par fin programmée, marqueur « rappel envoyé »).
   - Tâche quotidienne `pg_cron` ; fichier de vérification ; fichier d'arrêt de la tâche pour mémoire.
 - Ce que je teste pour valider : résultat de la simulation, puis la tâche visible dans Supabase.
-- Reste à finir :
-- Journal :
+- Reste à finir : SQL lancé et validé chez Kevin (tâche `rappel-fin-forfait-club` créée, 7/7 et 15/15). Premier vrai rappel visible seulement quand un club réel résiliera avec une fin à 7 jours ou moins. Aucun changement de code côté site : le rappel réécrit l'avis du bloc 5 (même type, `outils_club_fin_prochaine`), que l'encart de l'éducateur affiche déjà. Limites : (1) pas de rappel si la résiliation date de moins de 7 jours avant la fin (l'avis du bloc 5 vient de partir) ; (2) si le club change la date de fin, le rappel repart pour la nouvelle date (un seul avis par éducateur reste dans la cloche) ; (3) un avis déjà lu redevient non lu au moment du rappel, c'est voulu ; (4) heure d'envoi 07:00 UTC (8 h ou 9 h à Paris), le rappel part le premier jour où il reste 7 jours ou moins ; (5) si le script refuse de tourner parce que pg_cron n'est pas disponible, l'extension s'active dans Supabase, Database, Extensions.
+- Journal : 2026-11-14, Sonnet 5.5. `supabase_rappel_fin_club.sql` : garde-fou (pg_cron disponible, bloc 5 en place, pas déjà lancé) ; table `club_fin_rappel` (marqueur par club et par date de fin, effacé en cascade à la reprise ou à la fin réelle, serveur seul) ; fonction `rappeler_fin_programmee_clubs()` (clubs dont la fin tombe dans les 7 jours, éducateurs de `educateurs_prevenus_fin_club`, avis du bloc 5 réécrit non lu, ou créé s'il n'existe plus, une erreur sur un club est avalée et retentée le lendemain) ; tâche `pg_cron` `rappel-fin-forfait-club` à 07:00 UTC. Webhook, fonctions du bloc 5 et code du site non touchés. Fichiers `_verification.sql`, `_simulation.sql` (club test, s'annule seule) et `_ANNULATION_NE_PAS_EXECUTER.sql` (pour mémoire). Essais sur un Postgres 17 de brouillon avec les vrais déclencheurs du bloc 5 : installation, relance refusée, cas de la simulation 11/11 (rappel absent à J+30, un seul rappel à J+5, jamais deux fois, nouvelle date, avis effacé, reprise, résiliation récente, panne avalée, ancien modèle), annulation. pg_cron n'existe pas sur le brouillon : tâche simulée, la vraie création est à voir chez Kevin.
 
 ### Bloc 8 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : code et vérifications automatiques faits (2026-11-14) ; parcours à l'écran et commit en attente de Kevin
 - Objectif : tout le parcours de bout en bout, documents à jour, commit.
 - Résultat testable : liste cochée des parcours, `npm test` et `npm run build` verts, commit poussé sur `main`.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -208,5 +210,5 @@ Rappel : `/clear` et une session neuve par bloc.
   - Livraisons du webhook outils dans Stripe : aucune en échec depuis le bloc 5.
   - Mettre à jour la mémoire du projet et le brief (statut clos) ; commit et push.
 - Ce que je teste pour valider : la liste des parcours, sur ton téléphone et sur ordinateur.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) Kevin déroule la liste à l'écran (places donner/retirer/échanger, journal et Rétablir, résiliation réelle ou simulée avec la cloche d'un éducateur, un club de l'ancien modèle inchangé, téléphone et ordinateur) ; (2) Kevin regarde Stripe, onglet Webhooks : aucune livraison du webhook outils en échec depuis le bloc 5 ; (3) commit et push : en attente, car DashboardClub.jsx contient aussi le travail du chantier catégories (non validé, aucun commit sans accord de Kevin) ; (4) bloc 7 (rappel J-7) : fait et validé en base le 2026-11-14.
+- Journal : 2026-11-14, Sonnet 5.5. `npm test` 471 ok, 1 ignoré d'avant, 0 échec ; `npm run build` ok. Relecture des changements du chantier : journal écrit côté serveur sans jamais bloquer le changement, textes d'avis au tutoiement, rien de Stripe touché. Brief et mémoire du projet marqués clos côté code. Pas de test navigateur (aucune session disponible), pas d'accès à Stripe. Aucun commit.

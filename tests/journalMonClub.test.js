@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { phraseJournal, planRetablir, etatRetablir } from '../src/lib/journalMonClub.js'
+import { phraseJournal, planRetablir, planRetablirServeur, etatRetablir } from '../src/lib/journalMonClub.js'
 
 const A = { id: 'a', nom: 'Paul Martin' }
 const B = { id: 'b', nom: 'Léa Roy' }
@@ -60,4 +60,40 @@ test('état du bouton : possible, déjà rétablie, rétablissement', () => {
   assert.equal(etatRetablir(o, [o]), 'possible')
   assert.equal(etatRetablir(o, [r, o]), 'retablie')
   assert.equal(etatRetablir(r, [r, o]), 'retablissement')
+})
+
+const ligne = (extra) => ({ id: 'j9', outil: null, educateur_ids: [], tous: false, etat_avant: null, retablit_id: null, ...extra })
+
+test('phrases : outils fournis et places', () => {
+  assert.equal(phraseJournal(ligne({ action: 'fourni', outil: 'seances', tous: true, educateur_ids: ['a', 'b'] }), noms), 'Outil Séances : fourni à tous les éducateurs.')
+  assert.equal(phraseJournal(ligne({ action: 'plus_fourni', outil: 'seances', educateur_ids: ['a'] }), noms), 'Outil Séances : n\'est plus fourni à Paul Martin.')
+  assert.equal(phraseJournal(ligne({ action: 'place_donnee', educateur_ids: ['b'] }), noms), 'Place donnée à Léa Roy.')
+  assert.equal(phraseJournal(ligne({ action: 'place_retiree', educateur_ids: ['a'] }), noms), 'Place retirée à Paul Martin.')
+  assert.equal(phraseJournal(ligne({ action: 'place_auto', educateur_ids: ['a'] }), noms), 'Place de Paul Martin remise en automatique.')
+  assert.equal(phraseJournal(ligne({ action: 'place_retiree', educateur_ids: ['x'] }), noms), 'Place retirée à un éducateur.')
+})
+
+test('rétablir un outil fourni ou plus fourni : l\'action serveur dans le sens opposé', () => {
+  assert.deepEqual(planRetablirServeur(ligne({ action: 'fourni', outil: 'seances', tous: true, educateur_ids: ['a'] }), [A, B]).appels,
+    [{ action: 'ouvrir_club', params: { outil: 'seances', ouvert: false } }])
+  assert.deepEqual(planRetablirServeur(ligne({ action: 'plus_fourni', outil: 'seances', educateur_ids: ['a', 'b'] }), [A, B]).appels,
+    [{ action: 'fournir_educateur', params: { outil: 'seances', educateur: 'a', ouvert: true } }, { action: 'fournir_educateur', params: { outil: 'seances', educateur: 'b', ouvert: true } }])
+  // un éducateur parti du club est ignoré, les autres sont rétablis
+  assert.equal(planRetablirServeur(ligne({ action: 'plus_fourni', outil: 'seances', educateur_ids: ['a', 'z'] }), [A]).appels.length, 1)
+})
+
+test('rétablir une place : on remet l\'état d\'avant, refus si l\'éducateur est parti ou l\'état inconnu', () => {
+  assert.deepEqual(planRetablirServeur(ligne({ action: 'place_retiree', educateur_ids: ['a'], etat_avant: 'choisi' }), [A]).appels,
+    [{ action: 'choisir_place', params: { educateur: 'a', etat: 'choisi' } }])
+  assert.deepEqual(planRetablirServeur(ligne({ action: 'place_donnee', educateur_ids: ['a'], etat_avant: 'auto' }), [A]).appels,
+    [{ action: 'choisir_place', params: { educateur: 'a', etat: 'auto' } }])
+  assert.match(planRetablirServeur(ligne({ action: 'place_donnee', educateur_ids: ['z'], etat_avant: 'auto' }), [A]).erreur, /plus affiliés/)
+  assert.match(planRetablirServeur(ligne({ action: 'place_donnee', educateur_ids: ['a'] }), [A]).erreur, /état d'avant/)
+})
+
+test('état du bouton : une place rétablie n\'est plus proposée', () => {
+  const origine = ligne({ id: 'p1', action: 'place_retiree', educateur_ids: ['a'], etat_avant: 'auto' })
+  const retour = ligne({ id: 'p2', action: 'place_auto', educateur_ids: ['a'], retablit_id: 'p1' })
+  assert.equal(etatRetablir(origine, [retour, origine]), 'retablie')
+  assert.equal(etatRetablir(retour, [retour, origine]), 'retablissement')
 })

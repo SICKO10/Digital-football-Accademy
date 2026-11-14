@@ -154,7 +154,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
       {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
 
       {outils.pret && role === 'club' && (peutModifier || pageForfait) && (
-        <MonAbonnement role="club" outils={outils} forfaitClub={forfaitClub} lectureSeule={!peutModifier} />
+        <MonAbonnement role="club" outils={outils} forfaitClub={forfaitClub} lectureSeule={!peutModifier} clubId={userId} />
       )}
 
       {outils.pret && role === 'club' && !pageForfait && (

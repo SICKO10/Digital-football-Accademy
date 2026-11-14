@@ -840,3 +840,119 @@ test('choisir_place : une panne des avis ne bloque pas le changement', async () 
   assert.equal(res.code, 200)
   assert.equal(m.placesChoisies.get(U.eduAffilie), 'retire')
 })
+
+// Journal des outils fournis et des places (bloc 3 de PLAN-outils-offerts-suite.md).
+const resume = (m) => m.journal.map(j => [j.action, j.outil, j.educateur_ids, j.tous, j.etat_avant])
+
+test('journal : ouvrir puis fermer un outil pour tous écrit « fourni » puis « plus_fourni », tous les affiliés', async () => {
+  const m = monde()
+  clubAvec(m, 'projet_sportif')
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: false })
+  assert.deepEqual(resume(m), [
+    ['fourni', 'projet_sportif', [U.eduAffilie, U.eduAffilie2], true, null],
+    ['plus_fourni', 'projet_sportif', [U.eduAffilie, U.eduAffilie2], true, null],
+  ])
+  assert.equal(m.journal[0].club_id, U.club)
+  assert.equal(m.journal[0].auteur_id, U.club)
+})
+
+test('journal : un outil déjà ouvert ou déjà fermé n\'écrit rien (aucun changement réel)', async () => {
+  const m = monde()
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: true })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: true })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'tactique', ouvert: false })
+  assert.deepEqual(m.journal.map(j => j.action), ['fourni', 'plus_fourni'])
+})
+
+test('journal : un outil refusé n\'écrit rien', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })).code, 409)
+  assert.equal(m.journal.length, 0)
+})
+
+test('journal : fournir à un seul éducateur, puis cesser, écrit deux lignes pour lui seul', async () => {
+  const m = monde()
+  await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: true })
+  await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: true })
+  await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })
+  await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: false })
+  assert.deepEqual(resume(m), [
+    ['fourni', 'prep_physique', [U.eduAffilie], false, null],
+    ['plus_fourni', 'prep_physique', [U.eduAffilie], false, null],
+  ])
+})
+
+test('journal : donner, retirer et remettre en automatique une place gardent l\'état d\'avant', async () => {
+  const m = monde()
+  await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi'))
+  await appeler(m, U.club, placeCorps(U.eduAffilie2, 'retire'))
+  await appeler(m, U.club, placeCorps(U.eduAffilie2, 'auto'))
+  assert.deepEqual(resume(m), [
+    ['place_donnee', null, [U.eduAffilie2], false, 'auto'],
+    ['place_retiree', null, [U.eduAffilie2], false, 'choisi'],
+    ['place_auto', null, [U.eduAffilie2], false, 'retire'],
+  ])
+})
+
+test('journal : un choix de place identique à l\'état actuel n\'écrit rien', async () => {
+  const m = monde()
+  m.placesChoisies.set(U.eduAffilie, 'retire')
+  await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))
+  await appeler(m, U.club, placeCorps(U.eduAffilie2, 'auto'))
+  assert.equal(m.journal.length, 0)
+})
+
+test('journal : un échange écrit la place donnée et la place libérée', async () => {
+  const m = monde()
+  m.reglage.quota = 1
+  await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi', U.eduAffilie))
+  assert.deepEqual(resume(m).sort(), [
+    ['place_donnee', null, [U.eduAffilie2], false, 'auto'],
+    ['place_retiree', null, [U.eduAffilie], false, 'auto'],
+  ].sort())
+})
+
+test('journal : une place refusée (409) n\'écrit rien', async () => {
+  const m = monde()
+  m.reglage.quota = 1
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi'))).code, 409)
+  assert.equal(m.journal.length, 0)
+})
+
+test('journal : « Rétablir » une place pointe vers la ligne d\'origine, pour le même éducateur seulement', async () => {
+  const m = monde()
+  await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))
+  const origine = m.journal[0].id
+  await appeler(m, U.club, { ...placeCorps(U.eduAffilie2, 'retire'), retablit_id: origine })
+  assert.equal(m.journal[1].retablit_id, null)
+  await appeler(m, U.club, { ...placeCorps(U.eduAffilie, 'auto'), retablit_id: origine })
+  assert.equal(m.journal[2].action, 'place_auto')
+  assert.equal(m.journal[2].retablit_id, origine)
+})
+
+test('journal : « Rétablir » un outil fourni pointe vers la ligne d\'origine, un autre outil ou un autre club est ignoré', async () => {
+  const m = monde()
+  clubAvec(m, 'projet_sportif')
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })
+  const origine = m.journal[0].id
+  m.journal.push({ id: 'etranger', club_id: id(99), outil: 'projet_sportif', action: 'fourni' })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: false, retablit_id: 'etranger' })
+  assert.equal(m.journal.find(j => j.action === 'plus_fourni').retablit_id, null)
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })
+  await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: false, retablit_id: origine })
+  assert.equal(m.journal.filter(j => j.action === 'plus_fourni').pop().retablit_id, origine)
+})
+
+test('journal : une panne du journal ne bloque ni l\'outil fourni ni la place', async () => {
+  const m = monde()
+  m.pannerJournal()
+  clubAvec(m, 'projet_sportif')
+  assert.equal((await appeler(m, U.club, { action: 'ouvrir_club', outil: 'projet_sportif', ouvert: true })).code, 200)
+  assert.ok(m.ouverts.has(`${U.club}|projet_sportif`))
+  assert.equal((await appeler(m, U.club, { action: 'fournir_educateur', outil: 'prep_physique', educateur: U.eduAffilie, ouvert: true })).code, 200)
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))).code, 200)
+  assert.equal(m.placesChoisies.get(U.eduAffilie), 'retire')
+  assert.equal(m.journal.length, 0)
+})

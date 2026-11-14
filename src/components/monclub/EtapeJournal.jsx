@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { supabase } from '../../supabase'
-import { phraseJournal, etatRetablir } from '../../lib/journalMonClub'
+import { phraseJournal, etatRetablir, estPlace, estFourniture } from '../../lib/journalMonClub'
 import { retablirEntree } from './ecritures'
 import { Icone, EnteteEtape, Encart } from './ui'
 import { ICONES, stylesMonClub } from './uiMonClub'
 
-const LIMITE = 50
+const PAGE = 50
 
 // Étape 5 de Mon club : qui a changé quoi dans le menu des éducateurs, avec un
 // bouton « Rétablir ». Le journal est écrit par le serveur au moment où les
@@ -22,6 +22,7 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
   const [info, setInfo] = useState('')
   const [enCours, setEnCours] = useState(null)
   const [version, setVersion] = useState(0)
+  const [limite, setLimite] = useState(PAGE)
   const recharger = useCallback(() => setVersion(v => v + 1), [])
 
   const liste = useMemo(() => (educateurs || []).map(e => ({
@@ -33,8 +34,9 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
   useEffect(() => {
     let annule = false
     supabase.from('mon_club_journal')
-      .select('id, auteur_libelle, cree_le, action, outil, educateur_ids, tous, retablit_id')
-      .eq('club_id', clubId).order('cree_le', { ascending: false }).limit(LIMITE)
+      .select('id, auteur_libelle, cree_le, action, outil, educateur_ids, tous, etat_avant, retablit_id')
+      .eq('club_id', clubId)
+      .order('cree_le', { ascending: false }).limit(limite)
       .then(({ data, error }) => {
         if (annule) return
         if (error) { setErreur('Le journal n\'est pas disponible pour l\'instant, réessayez dans un instant.'); setPret(true); return }
@@ -43,7 +45,7 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
         setPret(true)
       })
     return () => { annule = true }
-  }, [clubId, version])
+  }, [clubId, version, limite])
 
   const retablir = async (entree) => {
     setEnCours(entree.id)
@@ -52,8 +54,8 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
     try {
       const resultat = await retablirEntree(clubId, entree, liste)
       setInfo(resultat === 'deja'
-        ? 'Le menu était déjà revenu à cet état : rien n\'a été changé.'
-        : 'Rétabli. Vos éducateurs sont prévenus dans leur cloche.')
+        ? 'C\'était déjà revenu à cet état : rien n\'a été changé.'
+        : (estPlace(entree) || estFourniture(entree) ? 'Rétabli.' : 'Rétabli. Vos éducateurs sont prévenus dans leur cloche.'))
       recharger()
     } catch (e) {
       setErreur(e.message || 'Le rétablissement n\'a pas pu se faire, réessayez dans un instant.')
@@ -68,7 +70,7 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
       <EnteteEtape icone={ICONES.journal} titre="Journal des changements"
-        texte={`Les changements du menu de vos éducateurs, du plus récent au plus ancien. «\u00a0Rétablir\u00a0» remet le menu comme avant ce changement et prévient vos éducateurs, rien n'est effacé. Les ${LIMITE} derniers changements sont affichés.`}>
+        texte={`Les changements du menu de vos éducateurs, des outils que vous leur fournissez et de leurs places, du plus récent au plus ancien. «\u00a0Rétablir\u00a0» remet les choses comme avant ce changement et prévient vos éducateurs si besoin, rien n'est effacé.`}>
         {pret && (
           <button type="button" onClick={recharger} disabled={!!enCours} className="mc-btn" style={st.bouton(false, !!enCours)}>
             <Icone d={ICONES.actualiser} size={15} /> Actualiser
@@ -93,9 +95,9 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
           {entrees.map(e => {
             const etat = etatRetablir(e, entrees)
-            const retire = e.action === 'retire'
+            const retire = ['retire', 'plus_fourni', 'place_retiree'].includes(e.action)
             const couleur = etat === 'retablissement' ? colors.accent.blue : retire ? colors.accent.amber : colors.accent.success
-            const icone = etat === 'retablissement' ? ICONES.retablir : retire ? ICONES.oeilBarre : ICONES.oeil
+            const icone = etat === 'retablissement' ? ICONES.retablir : estPlace(e) ? ICONES.educateurs : estFourniture(e) ? ICONES.outils : retire ? ICONES.oeilBarre : ICONES.oeil
             return (
               <li key={e.id} className="mc-ligne" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 16, border: `1px solid ${colors.border.subtle}`, background: colors.background.surface, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: couleur + '24', color: couleur }}>
@@ -118,6 +120,9 @@ export default function EtapeJournal({ clubId, educateurs, estCompteClub }) {
             )
           })}
         </ul>
+      )}
+      {entrees.length >= limite && (
+        <button type="button" onClick={() => setLimite(l => l + PAGE)} className="mc-btn" style={{ ...st.bouton(false, false), marginTop: 14 }}>Voir les changements plus anciens</button>
       )}
     </div>
   )

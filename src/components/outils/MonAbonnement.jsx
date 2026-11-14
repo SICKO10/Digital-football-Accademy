@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { appelerOutils, ouvrirPortail, retourDuPortail, effacerRetourPaiement } from '../../lib/outilsApi'
 import { FORFAITS_CLUB, PALIERS_EDUCATEUR, clePourPeriodicite, outilsDuPack, phrasePlacesClub, planModification, tarifParCle, trouverForfait, trouverOutil } from '../../lib/catalogueOutils'
@@ -12,12 +13,18 @@ import CarteOutil from './CarteOutil'
 // le webhook met la base à jour, puis on recharge les outils.
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 const unite = (periodicite) => (periodicite === 'annuel' ? 'par an' : 'par mois')
+const phraseEducateursPrevenus = (n, dejaFait) => {
+  const eux = n > 1 ? `${n} éducateurs` : '1 éducateur'
+  return dejaFait
+    ? `${eux} ${n > 1 ? 'ont été prévenus' : 'a été prévenu'} dans ${n > 1 ? 'leur' : 'sa'} cloche, avec la date de fin.`
+    : `${n > 1 ? `Tes ${n} éducateurs seront prévenus` : 'Ton éducateur sera prévenu'} tout de suite dans ${n > 1 ? 'leur' : 'sa'} cloche, avec la date de fin.`
+}
 const liste = (ids) => ids.map(id => trouverOutil('educateur', id)?.nom || id).join(', ')
 
 // Club du nouveau modèle : `forfaitClub` ({ palier, places, actif, nbEducateurs })
 // ajoute le forfait en grand, les dates et les places. `lectureSeule` : on n'appelle
 // pas Stripe (personne d'autre que le président ne gère le forfait).
-export default function MonAbonnement({ role, outils, forfaitClub = null, lectureSeule = false }) {
+export default function MonAbonnement({ role, outils, forfaitClub = null, lectureSeule = false, clubId = null }) {
   const colors = useColors()
   const [infos, setInfos] = useState(null)
   const [erreurLecture, setErreurLecture] = useState('')
@@ -28,6 +35,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
   const [erreur, setErreur] = useState('')
   const [message, setMessage] = useState('')
   const [attente, setAttente] = useState(0)
+  const [nbPrevenus, setNbPrevenus] = useState(null)
 
   useEffect(() => {
     if (retourDuPortail()) effacerRetourPaiement()
@@ -41,6 +49,17 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
       .catch(e => { if (!annule) setErreurLecture(e.message) })
     return () => { annule = true }
   }, [version, lectureSeule])
+
+  // Nombre d'éducateurs que le club prévient en résiliant (bloc 6).
+  useEffect(() => {
+    if (role !== 'club' || lectureSeule || !clubId) return undefined
+    let annule = false
+    supabase.rpc('club_nb_educateurs_prevenus', { p_club: clubId }).then(({ data, error }) => {
+      if (error) console.error('educateurs prevenus', error.message)
+      if (!annule) setNbPrevenus(error || data == null ? null : data)
+    })
+    return () => { annule = true }
+  }, [role, lectureSeule, clubId, version])
 
   // Après un changement, le webhook met quelques secondes à mettre la base à jour.
   const { recharger } = outils
@@ -252,6 +271,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
           <p style={{ ...texte, color: colors.accent.amber, fontWeight: 600 }}>
             Résilié : {educateur ? 'tes outils restent actifs' : 'ton club garde l\'accès complet'} jusqu'au {fin}.
             Ensuite, {educateur ? 'ton compte revient au socle gratuit' : 'ton club passe en accès limité'}. Tes données sont conservées.
+            {!educateur && nbPrevenus > 0 && ` ${phraseEducateursPrevenus(nbPrevenus, true)}`}
           </p>
         ) : (
           <p style={texte}>{educateur ? `Prochaine échéance le ${fin}. Sans engagement.` : 'Sans engagement : tu peux résilier à tout moment, le forfait reste actif jusqu\'à la date de fin de période.'}</p>
@@ -310,6 +330,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
               {educateur ? 'Tes outils restent actifs' : 'Ton club garde l\'accès complet'} jusqu'au {fin}, sans nouveau prélèvement.
               Ensuite, {educateur ? 'ton compte revient au socle gratuit' : 'ton club passe en accès limité'}. Tes données sont conservées et réapparaissent si tu reprends.
               {programme && ` Le passage au paiement ${programme.periodicite} prévu est annulé.`}
+              {!educateur && nbPrevenus > 0 && ` ${phraseEducateursPrevenus(nbPrevenus, false)}`}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
               <button type="button" disabled={envoi} style={{ ...bouton(true), background: colors.accent.red }} onClick={() => agir('resilier', {}, `Résiliation enregistrée : fin le ${fin}.`)}>

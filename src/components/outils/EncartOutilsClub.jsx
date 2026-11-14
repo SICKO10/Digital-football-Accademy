@@ -11,7 +11,10 @@ import { doublonsClub } from '../../lib/outilsAcces'
 //   (type `outil_club_retire`), que l'éducateur ferme quand il l'a lue ;
 // - fin : le club ne lui fournit plus ses outils (fin ou baisse du forfait).
 //   Notification écrite par la base (type `outils_club_fin`), avec un bouton
-//   vers ses offres.
+//   vers ses offres ;
+// - fin prochaine : le club a résilié, les outils restent ouverts jusqu'à la
+//   date de fin (type `outils_club_fin_prochaine`) ; si le club reprend son
+//   forfait après lecture, `outils_club_continue` le dit. Sans bouton d'achat.
 export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
   const colors = useColors()
   const [retraits, setRetraits] = useState([])
@@ -19,7 +22,7 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
   useEffect(() => {
     if (!outils?.actif || !userId) return undefined
     let annule = false
-    supabase.from('notifications').select('id, type, contenu').eq('user_id', userId).in('type', ['outil_club_retire', 'outils_club_fin']).eq('lu', false)
+    supabase.from('notifications').select('id, type, titre, contenu').eq('user_id', userId).in('type', ['outil_club_retire', 'outils_club_fin', 'outils_club_fin_prochaine', 'outils_club_continue']).eq('lu', false)
       .order('created_at', { ascending: false }).limit(5)
       .then(({ data, error }) => {
         if (error) console.error('notifications outils', error.message)
@@ -52,10 +55,13 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
       </p>
       {retraits.map(n => (
         <div key={n.id}>
+          {n.titre && ['outils_club_fin_prochaine', 'outils_club_continue'].includes(n.type) && (
+            <p style={{ ...paragraphe, fontWeight: 700 }}>{n.titre}</p>
+          )}
           <p style={paragraphe}>{n.contenu}</p>
           <button onClick={() => fermer(n.id)} style={bouton}>J'ai compris</button>
-          {n.type === 'outils_club_fin' && (
-            <button onClick={() => { fermer(n.id); onVoirMesOutils() }} style={{ ...bouton, marginLeft: 8 }}>Voir mes offres</button>
+          {['outils_club_fin', 'outils_club_fin_prochaine'].includes(n.type) && (
+            <button onClick={() => { fermer(n.id); onVoirMesOutils() }} style={{ ...bouton, marginLeft: 8 }}>{n.type === 'outils_club_fin' ? 'Voir mes offres' : 'Voir mes outils'}</button>
           )}
         </div>
       ))}

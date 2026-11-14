@@ -1,5 +1,5 @@
 # BRIEF : suite du chantier « le club offre les outils » (3 améliorations)
-Date : 2026-11-13 · Statut : décisions de Kevin prises, prêt pour /plan (Opus, session neuve) · Suite de BRIEF-outils-offerts.md et PLAN-outils-offerts.md (blocs 0 à 9 faits côté code, parcours de test de Kevin en cours)
+Date : 2026-11-13 · Statut : blocs 0 à 6 et 8 faits côté code le 2026-11-14 (bloc 7 optionnel non fait), reste le parcours à l'écran de Kevin et le commit · Suite de BRIEF-outils-offerts.md et PLAN-outils-offerts.md (blocs 0 à 9 faits côté code, parcours de test de Kevin en cours)
 
 ## Décisions de Kevin (2026-11-13)
 1. **Le club choisit qui a une place.** À tout moment, le club change quels éducateurs affiliés bénéficient de l'abonnement club, dans la limite des places de son forfait (`profiles.quota_equipes`). Remplace la règle actuelle (rang = date de la demande, `educateur_a_place` en base).
