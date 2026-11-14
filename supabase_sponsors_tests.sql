@@ -34,14 +34,19 @@
 -- droit). Les rôles staff (président, marketing...) ne sont donc pas testés ici.
 -- externe remplacé le 2026-11-14 : le premier choix était dirigeant délégué du club.
 select
-  set_config('sponsors_test.club_id',            '00000000-0000-0000-0000-000000000000', false),
+  set_config('sponsors_test.club_id',            'af8db5d3-ea32-4d9b-b5bf-fb6062505826', false),
   set_config('sponsors_test.saison',             '2026-2027', false),
-  set_config('sponsors_test.sponsor_id',         '00000000-0000-0000-0000-000000000000', false),
-  set_config('sponsors_test.sponsor_autre_club', '00000000-0000-0000-0000-000000000000', false),
-  set_config('sponsors_test.staff_sponsors',     '00000000-0000-0000-0000-000000000000', false),
-  set_config('sponsors_test.staff_sans_droit',   '00000000-0000-0000-0000-000000000000', false),
-  set_config('sponsors_test.joueur_membre',      '00000000-0000-0000-0000-000000000000', false),
-  set_config('sponsors_test.externe',            '00000000-0000-0000-0000-000000000000', false);
+  set_config('sponsors_test.sponsor_id',         '7fa6bc80-c256-46b0-a91c-0e6d4ef9e700', false),
+  set_config('sponsors_test.sponsor_autre_club', '9bdec39f-b015-4b1e-98f7-a8891826c7ef', false),
+  set_config('sponsors_test.staff_sponsors',     'af8db5d3-ea32-4d9b-b5bf-fb6062505826', false),
+  set_config('sponsors_test.staff_sans_droit',   'dfdc814b-59e3-4170-9ad1-0606150fb98d', false),
+  set_config('sponsors_test.joueur_membre',      'dfdc814b-59e3-4170-9ad1-0606150fb98d', false),
+  set_config('sponsors_test.externe',            '19b17e6c-77e9-48fd-a4ee-b17d590be499', false);
+
+-- Valide ces réglages de session tout de suite : sinon le BEGIN du test
+-- suivant les inclut dans sa transaction et son ROLLBACK les efface.
+-- Aucune donnée n'est concernée, seulement des paramètres de session.
+commit;
 
 -- Valide ces réglages de session tout de suite : sinon le BEGIN du test
 -- suivant les inclut dans sa transaction et son ROLLBACK les efface.

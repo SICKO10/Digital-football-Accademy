@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .env
 supabase_sponsors_diagnostic_resultats.txt
+
+# Résultats de diagnostics Supabase (adresses, identifiants) : jamais dans Git
+diagnostic-*.csv
+controle-ouvertures-*.csv
