@@ -305,7 +305,7 @@ begin
   foreach v_table in array array['public.prospects_sponsors', 'public.prospects_echanges'] loop
     foreach v_priv in array array['select', 'insert', 'update', 'delete'] loop
       foreach v_role in array array['anon', 'public'] loop
-        if has_table_privilege(v_role, v_table, v_priv) or has_any_column_privilege(v_role, v_table, v_priv) then
+        if has_table_privilege(v_role, v_table, v_priv) or (case when v_priv = 'delete' then false else has_any_column_privilege(v_role, v_table, v_priv) end) then
           v_bad := array_append(v_bad, format('%s a %s sur %s', v_role, v_priv, v_table));
         end if;
       end loop;

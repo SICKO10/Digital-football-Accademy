@@ -72,7 +72,11 @@ begin
   from pg_policies
   where schemaname = 'public' and tablename = 'sponsors'
     and policyname not in ('Club manages sponsors', 'sponsors_select_gestion', 'sponsors_insert_gestion',
-                           'sponsors_update_gestion', 'sponsors_delete_gestion');
+                           'sponsors_update_gestion', 'sponsors_delete_gestion')
+    -- Verrous du chantier outils à la carte (supabase_outils_verrou.sql) :
+    -- règles RESTRICTIVES, elles ne peuvent que retirer un accès. Conservées.
+    and not (policyname in ('verrou_outils_ajout', 'verrou_outils_modif', 'verrou_outils_suppr')
+             and permissive = 'RESTRICTIVE');
   if v_inattendues is not null then
     raise exception 'ARRÊT : policies inattendues sur sponsors (%). Rien n''a été modifié.', v_inattendues;
   end if;
@@ -195,9 +199,14 @@ declare
 begin
   v_attendues := array['sponsors_delete_gestion', 'sponsors_insert_gestion', 'sponsors_select_gestion', 'sponsors_update_gestion'];
   select array_agg(policyname::text order by policyname) into v_presentes
-  from pg_policies where schemaname = 'public' and tablename = 'sponsors';
+  from pg_policies where schemaname = 'public' and tablename = 'sponsors' and permissive = 'PERMISSIVE';
   if v_presentes is distinct from v_attendues then
     v_bad := array_append(v_bad, format('policies sponsors = %s', v_presentes));
+  end if;
+  if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'sponsors'
+             and permissive = 'RESTRICTIVE'
+             and policyname not in ('verrou_outils_ajout', 'verrou_outils_modif', 'verrou_outils_suppr')) then
+    v_bad := array_append(v_bad, 'policy restrictive inattendue sur sponsors');
   end if;
 
   v_attendues := array['niveaux_partenariat_delete_gestion', 'niveaux_partenariat_insert_gestion',
@@ -217,14 +226,14 @@ begin
 
   -- UPDATE : USING et WITH CHECK tous deux présents et fondés sur l'édition.
   if exists (select 1 from pg_policies where schemaname = 'public'
-             and tablename in ('sponsors', 'niveaux_partenariat') and cmd = 'UPDATE'
+             and tablename in ('sponsors', 'niveaux_partenariat') and cmd = 'UPDATE' and permissive = 'PERMISSIVE'
              and (qual is null or with_check is null
                   or qual not ilike '%sponsors_peut_acceder(club_id, true)%'
                   or with_check not ilike '%sponsors_peut_acceder(club_id, true)%')) then
     v_bad := array_append(v_bad, 'une policy UPDATE n''a pas USING et WITH CHECK en édition');
   end if;
   if exists (select 1 from pg_policies where schemaname = 'public'
-             and tablename in ('sponsors', 'niveaux_partenariat') and cmd = 'INSERT'
+             and tablename in ('sponsors', 'niveaux_partenariat') and cmd = 'INSERT' and permissive = 'PERMISSIVE'
              and (with_check is null or with_check not ilike '%sponsors_peut_acceder(club_id, true)%')) then
     v_bad := array_append(v_bad, 'une policy INSERT n''a pas WITH CHECK en édition');
   end if;
@@ -238,7 +247,7 @@ begin
   foreach v_priv in array array['select', 'insert', 'update', 'delete'] loop
     if has_table_privilege('anon', 'public.niveaux_partenariat', v_priv)
        or has_table_privilege('public', 'public.niveaux_partenariat', v_priv)
-       or has_any_column_privilege('anon', 'public.niveaux_partenariat', v_priv) then
+       or (case when v_priv = 'delete' then false else has_any_column_privilege('anon', 'public.niveaux_partenariat', v_priv) end) then
       v_bad := array_append(v_bad, format('anon/PUBLIC a %s sur niveaux_partenariat', v_priv));
     end if;
     if not has_table_privilege('authenticated', 'public.niveaux_partenariat', v_priv) then

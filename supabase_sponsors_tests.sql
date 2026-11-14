@@ -28,6 +28,11 @@
 --                      staff_sponsors et ignorer l'échec de T3b
 -- joueur_membre      : joueur affilié (accepté) à un éducateur accepté du club
 -- externe            : compte sans aucun lien avec club_id
+-- Renseigné le 2026-11-14 (AS CANNES, seul club avec un sponsor en bandeau).
+-- Le club n'a aucun staff utilisable : staff_sponsors = le compte club
+-- lui-même (droit complet), staff_sans_droit = le joueur affilié (aucun
+-- droit). Les rôles staff (président, marketing...) ne sont donc pas testés ici.
+-- externe remplacé le 2026-11-14 : le premier choix était dirigeant délégué du club.
 select
   set_config('sponsors_test.club_id',            '00000000-0000-0000-0000-000000000000', false),
   set_config('sponsors_test.saison',             '2026-2027', false),
@@ -37,6 +42,11 @@ select
   set_config('sponsors_test.staff_sans_droit',   '00000000-0000-0000-0000-000000000000', false),
   set_config('sponsors_test.joueur_membre',      '00000000-0000-0000-0000-000000000000', false),
   set_config('sponsors_test.externe',            '00000000-0000-0000-0000-000000000000', false);
+
+-- Valide ces réglages de session tout de suite : sinon le BEGIN du test
+-- suivant les inclut dans sa transaction et son ROLLBACK les efface.
+-- Aucune donnée n'est concernée, seulement des paramètres de session.
+commit;
 
 -- F0. Fixtures renseignées et cohérentes (lecture seule).
 do $$
@@ -488,6 +498,11 @@ select
   set_config('sponsors_test.staff_president',     '00000000-0000-0000-0000-000000000000', false),
   set_config('sponsors_test.staff_marketing',     '00000000-0000-0000-0000-000000000000', false),
   set_config('sponsors_test.staff_secretaire',    '00000000-0000-0000-0000-000000000000', false);
+
+-- Valide ces réglages de session tout de suite : sinon le BEGIN du test
+-- suivant les inclut dans sa transaction et son ROLLBACK les efface.
+-- Aucune donnée n'est concernée, seulement des paramètres de session.
+commit;
 
 -- T13. Prospects et échanges par rôle, sans accès interclubs.
 --      Attendu par défaut : club, président, marketing, secrétaire = édition ;
