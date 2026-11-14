@@ -3,7 +3,8 @@ import { etatPlacesClub } from '../../lib/catalogueOutils'
 import { CONTACT_EMAIL } from '../../lib/stripeLinks'
 
 // Bandeau du club du nouveau modèle dont les éducateurs affiliés dépassent les
-// places de son forfait : ceux au-delà n'ont que le socle gratuit. Ne s'affiche
+// places de son forfait : certains n'ont que le socle gratuit (le club choisit
+// lesquels dans « Dashboard de mes éducateurs », sinon les plus récents). Ne s'affiche
 // que dans ce cas. Seul le président gère le forfait (écran Mon forfait).
 // `onForfait` ouvre Mon forfait, `onEducateurs` ouvre « Outils des éducateurs ».
 export default function BandeauPlaces({ nbEducateurs, places, forfaitActif, club, peutGererForfait, onForfait, onEducateurs, isMobile }) {
@@ -23,7 +24,7 @@ export default function BandeauPlaces({ nbEducateurs, places, forfaitActif, club
         {sansPlace} éducateur{pluriel ? 's' : ''} sans place
       </p>
       <p style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>
-        Votre forfait permet {etat.places} éducateur{etat.places > 1 ? 's' : ''} : {pluriel ? 'les derniers affiliés n\'ont' : 'le dernier affilié n\'a'} que le socle gratuit, sans les outils que vous fournissez.
+        Votre forfait permet {etat.places} éducateur{etat.places > 1 ? 's' : ''} : {pluriel ? 'les éducateurs sans place n\'ont' : 'l\'éducateur sans place n\'a'} que le socle gratuit, sans les outils que vous fournissez. Vous choisissez qui a une place.
         {forfaitSuggere
           ? ` Avec le forfait ${forfaitSuggere.equipes} équipes, tous vos éducateurs ont leurs outils.`
           : ' Vos éducateurs dépassent le plus grand forfait : contactez le support.'}
@@ -36,7 +37,7 @@ export default function BandeauPlaces({ nbEducateurs, places, forfaitActif, club
         {!forfaitSuggere && (
           <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Plus de places éducateurs : ' + (club || ''))}`} style={bouton(true)}>Contacter le support</a>
         )}
-        {onEducateurs && <button type="button" onClick={onEducateurs} style={bouton(false)}>Voir qui est sans place</button>}
+        {onEducateurs && <button type="button" onClick={onEducateurs} style={bouton(false)}>Choisir qui a une place</button>}
       </div>
       {forfaitSuggere && !peutGererForfait && (
         <p style={{ margin: '10px 0 0', fontSize: 12, color: colors.text.faint }}>Seul le président du club peut changer le forfait.</p>

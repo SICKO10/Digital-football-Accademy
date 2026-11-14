@@ -3,7 +3,7 @@ import { verifierJetonSupabase, clientServiceSupabase, authentifier } from './_s
 import Stripe from 'stripe'
 import { affichageDepuisLignes } from '../src/lib/outilsAcces.js'
 import { lireOffre, planOffre, notificationOffre } from '../src/lib/offresOutils.js'
-import { trouverOutil, outilEducateurPour, outilOuvrableParClub, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
+import { trouverOutil, outilEducateurPour, outilOuvrableParClub, outilsOfferts, ESSAI_JOURS, ESSAIS_GRATUITS, lignesStripe, comparerPrix, compositionPaiement, planModification, tarifParCle, clePourPeriodicite, PERIODICITES } from '../src/lib/catalogueOutils.js'
 
 // Outils à la carte : une seule fonction serveur, plusieurs actions (l'offre
 // gratuite Vercel limite le nombre de fonctions).
@@ -71,7 +71,7 @@ import { trouverOutil, outilEducateurPour, outilOuvrableParClub, ESSAI_JOURS, ES
 
 const JOUR_MS = 86400000
 
-const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'fournir_educateur', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir', 'prevenir_menu']
+const ACTIONS = ['composer', 'essai', 'choisir_club', 'ouvrir_club', 'fournir_educateur', 'choisir_place', 'payer', 'abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail', 'verifier-prix', 'offrir', 'prevenir_menu']
 const ACTIONS_ABONNEMENT = ['abonnement', 'modifier', 'resilier', 'reprendre', 'periodicite', 'portail']
 
 // Adresse de retour après Stripe : l'origine de la page si elle est connue,
@@ -223,6 +223,19 @@ export function donneesOutils() {
     },
     // L'éducateur a-t-il une place dans le forfait du club ? (même règle que la base)
     aUnePlace: async (club, educateur) => (await lire(db().rpc('educateur_a_place', { p_club: club, p_educateur: educateur }))) === true,
+    // Places choisies par le club (table `club_places_choisies`) : 'choisi' (garantie), 'retire', ou null (automatique).
+    quotaPlaces: async (club) => (await lire(db().from('profiles').select('quota_equipes').eq('id', club).maybeSingle()))?.quota_equipes || 0,
+    etatPlace: async (club, educateur) => (await lire(db().from('club_places_choisies').select('etat').eq('club_id', club).eq('educateur_id', educateur).maybeSingle()))?.etat || null,
+    poserPlace: async (club, educateur, etat, auteur) => {
+      const { error } = await db().from('club_places_choisies').upsert(
+        { club_id: club, educateur_id: educateur, etat, auteur_id: auteur, change_le: new Date().toISOString() }, { onConflict: 'club_id,educateur_id' },
+      )
+      if (error) throw error
+    },
+    effacerPlace: async (club, educateur) => {
+      const { error } = await db().from('club_places_choisies').delete().eq('club_id', club).eq('educateur_id', educateur)
+      if (error) throw error
+    },
     // Éducateurs affiliés acceptés du club, quel que soit leur modèle (Mon club règle leur menu).
     educateursAffilies: async (club) => {
       const lies = await lire(db().from('club_educateurs').select('educateur_id').eq('club_id', club).eq('statut', 'accepte'))
@@ -773,6 +786,64 @@ export function creerHandler({ verifierJeton, donnees, maintenant = () => Date.n
           if (place && !(await donnees.ouvert(utilisateur.id, ouvrable.outil.id))) await prevenirRetrait(ouvrable.outil, true, [educateur])
         }
         return res.status(200).json({ ok: true })
+      }
+
+      // Le club donne, retire ou rend à l'automatique la place d'un éducateur. Tout est plein : l'éducateur
+      // qui libère la sienne doit être nommé (pas de dépassement du forfait). Ceux qui perdent une place
+      // alors qu'ils recevaient des outils du club sont prévenus, sans bloquer le changement.
+      if (action === 'choisir_place') {
+        if (profil.plan !== 'club') return res.status(403).json({ error: 'Seul le compte du club choisit les places de ses éducateurs' })
+        if (!profil.abonnement_actif) return res.status(403).json({ error: 'L\'abonnement du club n\'est pas actif' })
+        if (!profil.modele_outils || !profil.palier) return res.status(403).json({ error: 'Choisis d\'abord un forfait pour gérer les places de tes éducateurs' })
+        if (!['choisi', 'retire', 'auto'].includes(corps.etat)) return res.status(400).json({ error: 'Choix manquant' })
+        const club = utilisateur.id
+        const educateur = typeof corps.educateur === 'string' ? corps.educateur : ''
+        const libere = typeof corps.libere === 'string' && corps.libere ? corps.libere : null
+        const affilies = await donnees.educateursAffilies(club)
+        if (!affilies.includes(educateur)) return res.status(404).json({ error: 'Cet éducateur n\'est pas affilié à ton club' })
+        const placesAvant = async () => new Map(await Promise.all(affilies.map(async id => [id, await donnees.aUnePlace(club, id)])))
+        const avant = await placesAvant()
+        const ecrire = (id, etat) => (etat ? donnees.poserPlace(club, id, etat, club) : donnees.effacerPlace(club, id))
+        const retours = [[educateur, await donnees.etatPlace(club, educateur)]]
+        if (corps.etat === 'choisi' && !avant.get(educateur)) {
+          const pleines = [...avant.values()].filter(Boolean).length >= await donnees.quotaPlaces(club)
+          if (pleines) {
+            if (!libere) return res.status(409).json({ error: 'Toutes les places de ton forfait sont prises : choisis l\'éducateur qui libère la sienne' })
+            if (libere === educateur || !avant.get(libere)) return res.status(409).json({ error: 'L\'éducateur choisi n\'a pas de place à libérer' })
+            retours.push([libere, await donnees.etatPlace(club, libere)])
+            await ecrire(libere, 'retire')
+          }
+        }
+        await ecrire(educateur, corps.etat === 'auto' ? null : corps.etat)
+        const apres = await placesAvant()
+        if (corps.etat === 'choisi' && !apres.get(educateur)) {
+          // Des places garanties plus anciennes passent avant (forfait réduit) : on remet tout comme avant.
+          for (const [id, etat] of retours.reverse()) await ecrire(id, etat)
+          return res.status(409).json({ error: 'Cet éducateur ne peut pas avoir de place : des éducateurs choisis avant lui occupent déjà tout le forfait' })
+        }
+        try {
+          const date = new Date(maintenantMs).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' })
+          const lignes = []
+          for (const id of affilies) {
+            if (!avant.get(id) || apres.get(id)) continue
+            let recoit = false
+            for (const o of outilsOfferts()) {
+              if (await donnees.ouvert(club, o.id) || await donnees.fourniAEducateur(club, id, o.id)) { recoit = true; break }
+            }
+            if (!recoit) continue
+            lignes.push({
+              user_id: id,
+              type: 'outils_club_fin',
+              titre: 'Ton club ne fournit plus tes outils',
+              contenu: `Ton club n'a plus de place pour toi depuis le ${date}. Tu gardes le socle gratuit et tes données sont conservées. Tu peux reprendre les outils dont tu as besoin avec tes propres offres.`,
+              lien: '/educateur',
+            })
+          }
+          if (lignes.length > 0) await donnees.notifier(lignes)
+        } catch (err) {
+          console.error('outils : prévenir les éducateurs sans place', err.message)
+        }
+        return res.status(200).json({ ok: true, aPlace: apres.get(educateur) === true })
       }
 
       // choisir_club

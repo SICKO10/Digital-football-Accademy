@@ -24,6 +24,15 @@ function monde({ panneLigne = false } = {}) {
   const ouverts = new Set()
   const fournis = new Set()
   const sansPlace = new Set()
+  // Places choisies par le club : { [educateur]: 'choisi' | 'retire' }. Rang comme la base : garanties d'abord, puis ancienneté.
+  const placesChoisies = new Map()
+  const reglage = { quota: 99 }
+  const affilies = [U.eduAffilie, U.eduAffilie2]
+  const rang = (e) => {
+    const ordre = affilies.filter(x => placesChoisies.get(x) !== 'retire')
+      .sort((a, b) => (placesChoisies.get(b) === 'choisi') - (placesChoisies.get(a) === 'choisi') || affilies.indexOf(a) - affilies.indexOf(b))
+    return ordre.indexOf(e) + 1
+  }
   const notifs = []
   const journal = []
   let panneJournal = false
@@ -31,7 +40,7 @@ function monde({ panneLigne = false } = {}) {
   let panneNotif = false
   const cle = (c, o) => `${c}|${o}`
   return {
-    lignes, essais, ouverts, fournis, sansPlace, notifs, profils, menu, journal,
+    lignes, essais, ouverts, fournis, sansPlace, placesChoisies, reglage, notifs, profils, menu, journal,
     pannerNotifications: () => { panneNotif = true },
     pannerJournal: () => { panneJournal = true },
     donnees: {
@@ -44,7 +53,11 @@ function monde({ panneLigne = false } = {}) {
       educateursAffilies: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
       reglageMenuEducateurs: async () => menu,
       educateursDuClub: async (c) => (c === U.club ? [U.eduAffilie, U.eduAffilie2] : []),
-      aUnePlace: async (c, e) => c === U.club && !sansPlace.has(e),
+      aUnePlace: async (c, e) => c === U.club && !sansPlace.has(e) && rang(e) >= 1 && rang(e) <= reglage.quota,
+      quotaPlaces: async () => reglage.quota,
+      etatPlace: async (c, e) => placesChoisies.get(e) || null,
+      poserPlace: async (c, e, etat) => { placesChoisies.set(e, etat) },
+      effacerPlace: async (c, e) => { placesChoisies.delete(e) },
       journaliser: async (l) => { if (panneJournal) throw new Error('panne'); journal.push(...l.map((x, i) => ({ id: `j${journal.length + i + 1}`, ...x }))) },
       entreeJournal: async (c, jid) => journal.find(x => x.id === jid && x.club_id === c) || null,
       notifier: async (l) => { if (panneNotif) throw new Error('panne'); notifs.push(...l) },
@@ -736,4 +749,94 @@ test('journal : une panne du journal ne bloque pas l\'envoi des notifications', 
   assert.equal(res.code, 200)
   assert.equal(m.notifs.length, 1)
   assert.equal(m.journal.length, 0)
+})
+
+// choisir_place : le club donne, retire ou rend à l'automatique la place d'un éducateur.
+const placeCorps = (educateur, etat, libere) => ({ action: 'choisir_place', educateur, etat, ...(libere ? { libere } : {}) })
+
+test('choisir_place : retirer la place prévient l\'éducateur qui recevait un outil, pas les autres', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))
+  assert.equal(res.code, 200)
+  assert.equal(m.placesChoisies.get(U.eduAffilie), 'retire')
+  assert.equal(m.notifs.length, 1)
+  assert.equal(m.notifs[0].user_id, U.eduAffilie)
+  assert.equal(m.notifs[0].type, 'outils_club_fin')
+  assert.match(m.notifs[0].contenu, /n'a plus de place pour toi depuis le 09\/11/)
+})
+
+test('choisir_place : retirer la place d\'un éducateur qui ne recevait rien ne prévient personne', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))).code, 200)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('choisir_place : donner une place quand il en reste ne prévient personne', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi'))
+  assert.equal(res.code, 200)
+  assert.equal(res.corps.aPlace, true)
+  assert.equal(m.placesChoisies.get(U.eduAffilie2), 'choisi')
+  assert.equal(m.notifs.length, 0)
+})
+
+test('choisir_place : tout est plein, il faut nommer l\'éducateur qui libère la sienne', async () => {
+  const m = monde()
+  m.reglage.quota = 1
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi'))
+  assert.equal(res.code, 409)
+  assert.match(res.corps.error, /libère la sienne/)
+  assert.equal(m.placesChoisies.size, 0)
+})
+
+test('choisir_place : échange, l\'éducateur qui libère perd sa place et est prévenu', async () => {
+  const m = monde()
+  m.reglage.quota = 1
+  m.ouverts.add(`${U.club}|tactique`)
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi', U.eduAffilie))
+  assert.equal(res.code, 200)
+  assert.equal(res.corps.aPlace, true)
+  assert.equal(m.placesChoisies.get(U.eduAffilie), 'retire')
+  assert.equal(m.placesChoisies.get(U.eduAffilie2), 'choisi')
+  assert.deepEqual(m.notifs.map(n => n.user_id), [U.eduAffilie])
+})
+
+test('choisir_place : celui qui libère doit avoir une place, et ne peut pas être l\'éducateur lui-même', async () => {
+  const m = monde()
+  m.reglage.quota = 1
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi', U.eduAffilie2))).code, 409)
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie2, 'choisi', U.eduNeuf))).code, 409)
+  assert.equal(m.placesChoisies.size, 0)
+  assert.equal(m.notifs.length, 0)
+})
+
+test('choisir_place : rendre à l\'automatique efface le choix', async () => {
+  const m = monde()
+  m.placesChoisies.set(U.eduAffilie, 'retire')
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie, 'auto'))
+  assert.equal(res.code, 200)
+  assert.equal(m.placesChoisies.has(U.eduAffilie), false)
+})
+
+test('choisir_place : réservé au club du nouveau modèle, abonnement actif, forfait choisi, éducateur affilié', async () => {
+  const m = monde()
+  assert.equal((await appeler(m, U.edu, placeCorps(U.eduAffilie, 'retire'))).code, 403)
+  assert.equal((await appeler(m, U.clubImpaye, placeCorps(U.eduAffilie, 'retire'))).code, 403)
+  m.profils[U.club] = { ...m.profils[U.club], palier: null }
+  assert.equal((await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))).code, 403)
+  m.profils[U.club] = { ...m.profils[U.club], palier: 'club_4' }
+  assert.equal((await appeler(m, U.club, placeCorps(U.joueur, 'retire'))).code, 404)
+  assert.equal((await appeler(m, U.club, { action: 'choisir_place', educateur: U.eduAffilie, etat: 'autre' })).code, 400)
+  assert.equal(m.placesChoisies.size, 0)
+})
+
+test('choisir_place : une panne des avis ne bloque pas le changement', async () => {
+  const m = monde()
+  m.ouverts.add(`${U.club}|tactique`)
+  m.pannerNotifications()
+  const res = await appeler(m, U.club, placeCorps(U.eduAffilie, 'retire'))
+  assert.equal(res.code, 200)
+  assert.equal(m.placesChoisies.get(U.eduAffilie), 'retire')
 })

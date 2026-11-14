@@ -9,6 +9,7 @@ import { ICONES, stylesMonClub } from './uiMonClub'
 import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
 import ApercuMenuEducateur from './ApercuMenuEducateur'
+import PlacesEducateurs from './PlacesEducateurs'
 
 const AUCUN = []
 
@@ -39,7 +40,7 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
   const lot = useRef({ avant: null, minuterie: null })
   const etat = useRef({})
 
-  const [sansPlaceLus, setSansPlace] = useState(AUCUN)
+  const [sansPlaceLus, setSansPlace] = useState(null)
   // Outils fournis à un éducateur précis : { [educateur_id]: [outil, ...] }.
   const [fournisIndiv, setFournisIndiv] = useState({})
   const [version, setVersion] = useState(0)
@@ -103,7 +104,7 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
     })
     return () => { annule = true }
   }, [offre, clubId, version])
-  const sansPlace = offre && fourniture.forfaitActif && idsListe ? sansPlaceLus : AUCUN
+  const sansPlace = offre && fourniture.forfaitActif && idsListe ? (sansPlaceLus || AUCUN) : AUCUN
   const nomSansPlace = liste.filter(e => sansPlace.includes(e.id)).map(e => e.nom)
   const cible = individualise ? (liste.find(e => e.id === choisi) || liste[0] || null) : null
   const ajustes = (id) => Object.keys(individuel(id)).length > 0
@@ -295,6 +296,9 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
             <div role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: 12, fontSize: 13, lineHeight: 1.5, background: colors.accent.amber + '22', color: colors.text.primary }}>
               <strong>Sans place : socle seulement.</strong> Votre forfait permet {places} éducateur{places > 1 ? 's' : ''} : {nomSansPlace.join(', ')} {sansPlace.length > 1 ? 'n\'ont' : 'n\'a'} que le socle gratuit. Passez au forfait supérieur pour leur fournir aussi les outils. Aucune affiliation n'est supprimée.
             </div>
+          )}
+          {offre && fourniture.forfaitActif && liste.length > 0 && idsListe && sansPlaceLus !== null && (
+            <PlacesEducateurs clubId={clubId} educateurs={liste} sansPlace={sansPlace} places={places} version={version} onChange={lire} />
           )}
           <div role="radiogroup" aria-label="Mode de réglage" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 14, maxWidth: 720 }}>
             {modes.map(m => {
