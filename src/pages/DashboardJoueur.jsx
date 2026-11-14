@@ -72,6 +72,8 @@ import TuileChiffre from '../components/joueur/TuileChiffre'
 import SectionRepliable from '../components/joueur/SectionRepliable'
 import BandeSemaine from '../components/joueur/BandeSemaine'
 import ALaUne from '../components/joueur/ALaUne'
+import SondageCategorie from '../components/categories/SondageCategorie'
+import { equipeConvocation } from '../lib/categoriesJoueur'
 import JaugeSaison from '../components/joueur/JaugeSaison'
 import ApercuPro from '../components/joueur/ApercuPro'
 import BarreActions from '../components/joueur/BarreActions'
@@ -825,9 +827,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
     const { data: convs } = await supabase.from('convocations').select('*').in('id', convocationIds)
     const matchIds = [...new Set((convs || []).map(c => c.match_id).filter(Boolean))]
-    const { data: matchs } = matchIds.length > 0
-      ? await supabase.from('matchs_equipe').select('id, adversaire, date, heure, lieu, domicile, competition').in('id', matchIds)
+    // Fonction de la base (chantier catégories) : renvoie aussi le match d'un
+    // autre éducateur de la catégorie, et le nom de l'équipe (« U15 B »). Si
+    // elle n'existe pas encore, on garde la lecture directe d'avant.
+    const { data: viaFonction, error: erreurFonction } = matchIds.length > 0
+      ? await supabase.rpc('categories_joueur_convocations', { p_match_ids: matchIds })
       : { data: [] }
+    const { data: matchs } = matchIds.length > 0 && erreurFonction
+      ? await supabase.from('matchs_equipe').select('id, adversaire, date, heure, lieu, domicile, competition').in('id', matchIds)
+      : { data: (viaFonction || []).map(m => ({ id: m.match_id, adversaire: m.adversaire, date: m.date, heure: m.heure, lieu: m.lieu, domicile: m.domicile, competition: m.competition, equipe: equipeConvocation(m) })) }
     const matchsParId = Object.fromEntries((matchs || []).map(m => [m.id, m]))
 
     // Sans heure connue, on garde le match visible jusqu'à la fin de sa
@@ -3783,6 +3791,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               if (accepteesAff.length === 0) return null
               return <SondageSemaine mode="joueur" userId={userId} affiliations={accepteesAff} accentColor={colors.accent.green} />
             })()}
+            {/* Catégorie en effectif commun : réponse à la date, séances de toutes les équipes. Rien en mode par équipe. */}
+            <SondageCategorie userId={userId} readOnly={readOnly} isMobile={isMobile} lang={lang} />
             {/* Ma saison — même composant que la variante affiliée. Mesures du
                 profil Pro : seulement des compteurs déjà chargés (analyses rendues,
                 demandes de bilan médical). Les clips publiés ne sont pas chargés ici,

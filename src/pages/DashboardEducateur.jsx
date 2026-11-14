@@ -95,6 +95,14 @@ import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
 import { etatCartons } from '../lib/disciplineCartons'
 import { precharger, memoriserVue } from '../lib/prechargement'
+import { regrouperEffectifCommun } from '../lib/categoriesEffectif'
+import { calculerExpirationConvocation } from '../lib/convocations'
+import { chargerCategorieCommune } from '../components/categories/chargerCategorieCommune'
+import BandeauEffectifCommun from '../components/categories/BandeauEffectifCommun'
+import FicheJoueurCategorie from '../components/categories/FicheJoueurCategorie'
+import GrilleConvocations from '../components/categories/GrilleConvocations'
+import RenfortConvocation from '../components/categories/RenfortConvocation'
+import { comptesRenforts, lignesFeuilleMatch } from '../lib/categoriesRenfort'
 
 // Fallback des sections/modales lazy ci-dessus — un spinner inline (pas plein
 // écran comme Loader.jsx/ChargementPage, qui masquerait le reste du dashboard
@@ -1800,6 +1808,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   // Équipe
   const [joueurs, setJoueurs] = useState([])
+  // Catégorie en effectif commun (chantier catégories) : null en mode par équipe.
+  const [effectifCommun, setEffectifCommun] = useState(null)
+  const [grilleOuverte, setGrilleOuverte] = useState(false)
   const [showAddJoueur, setShowAddJoueur] = useState(false)
   const [newJoueur, setNewJoueur] = useState({ prenom: '', nom: '', poste: '', categorie: '', numero_maillot: '', date_naissance: '', numero_licence: '' })
   const importRef = useRef(null)
@@ -1887,6 +1898,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [modalSondageMatch, setModalSondageMatch] = useState(null) // match affiché dans la modale résultats
   const [convocationsCoches, setConvocationsCoches] = useState({}) // { [joueur_id]: bool }, pré-coché ✅/🏆 à l'ouverture de la modale
   const [convocationExistante, setConvocationExistante] = useState(null) // ligne convocations déjà publiée pour ce match, si existante
+  const [renfortsConvoc, setRenfortsConvoc] = useState([]) // joueurs d'une autre équipe de la catégorie ajoutés à la convocation en cours
+  const [renfortsParMatch, setRenfortsParMatch] = useState({}) // { [match_id]: renforts } pour la feuille de match et la notation
   const [convocationForm, setConvocationForm] = useState({ type_terrain: 'Herbe', arbitre_nom: '', notes: '', timeline: [] })
   const [publiantConvocation, setPubliantConvocation] = useState(false)
   const [scrollVersConvocation, setScrollVersConvocation] = useState(false) // ouverture via le bouton "📢 Convocation" plutôt que "📋 Sondage dispo" → scroll direct à la section
@@ -1900,6 +1913,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }, [modalSondageMatch, scrollVersConvocation])
 
   const [modalMatchJoue, setModalMatchJoue] = useState(null)
+
+  // Renforts (joueurs d'une autre équipe de la catégorie convoqués ou saisis
+  // sur ce match) : chargés à l'ouverture de la feuille de match, de la saisie
+  // du score ou de la notation, pour les ajouter à la liste de l'équipe.
+  useEffect(() => {
+    const ids = [...new Set([matchActif?.id, modalMatchJoue?.id, matchANoter?.id].filter(Boolean))]
+    if (ids.length === 0) return
+    let annule = false
+    ;(async () => {
+      const lots = await Promise.all(ids.map(async id => {
+        const { data, error } = await supabase.rpc('categories_renforts_match', { p_match_id: id })
+        return [id, error ? [] : (data || [])]
+      }))
+      if (!annule) setRenfortsParMatch(prev => ({ ...prev, ...Object.fromEntries(lots) }))
+    })()
+    return () => { annule = true }
+  }, [matchActif?.id, modalMatchJoue?.id, matchANoter?.id])
+
   const [modalMatchForm, setModalMatchForm] = useState(null)
   const [savingMatchForm, setSavingMatchForm] = useState(false)
 
@@ -2206,11 +2237,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // compte lié). Un seul enrichissement ici : tous les consommateurs de
   // `joueurs` (Mon équipe, Évaluations, podiums stats, clôture de saison...)
   // héritent d'avatar_url sans requête supplémentaire de leur côté.
+  // Catégorie en effectif commun : toutes les fiches de la catégorie, quel que
+  // soit l'éducateur qui les a ajoutées (une ligne par compte).
   const chargerJoueurs = async (uid, catId) => {
-    let q = supabase.from('equipe_joueurs').select('*').eq('educateur_id', uid).order('nom')
-    if (catId) q = q.eq('club_categorie_id', catId)
+    const categorie = await chargerCategorieCommune(catId)
+    let q = supabase.from('equipe_joueurs').select('*').order('nom')
+    if (categorie) q = q.eq('categorie_id', categorie.id)
+    else {
+      q = q.eq('educateur_id', uid)
+      if (catId) q = q.eq('club_categorie_id', catId)
+    }
     const { data } = await q
-    const roster = data || []
+    let roster = data || []
+    if (categorie) {
+      const commun = regrouperEffectifCommun(roster, catId)
+      roster = commun.joueurs
+      setEffectifCommun({ categorie, nbJoueurs: roster.length, fichesMasquees: commun.fichesMasquees, doublons: commun.doublons })
+    } else setEffectifCommun(null)
     const joueurIds = [...new Set(roster.map(j => j.joueur_id).filter(Boolean))]
     // Photo affichée (avatar_url) : celle ajoutée par le coach dans l'effectif
     // (equipe_joueurs.photo_url) en priorité, sinon celle du compte du joueur
@@ -4434,6 +4477,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const supprimerJoueur = async (id) => {
+    // Effectif commun : la fiche d'un autre éducateur (ou du club) n'est pas
+    // supprimable ici ; l'arrêter avant de toucher à ses affiliations.
+    const fiche = joueurs.find(j => j.id === id)
+    if (fiche && fiche.educateur_id !== userId) {
+      alert('Ce joueur a été ajouté par un autre éducateur de la catégorie ou par le club : seul lui, ou le club, peut le supprimer.')
+      return
+    }
     if (!confirm('Supprimer ce joueur ?')) return
     console.log('Suppression ID:', id)
     // equipe_joueurs est référencé par affiliations.equipe_joueur_id (FK) — la
@@ -5492,6 +5542,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Convocation déjà publiée pour ce match, si elle existe — pré-remplit le
   // formulaire et les cases cochées à l'ouverture de la modale "Sondage dispo".
   const chargerConvocation = async (matchId) => {
+    setRenfortsConvoc([])
     const { data: conv } = await supabase.from('convocations').select('*').eq('match_id', matchId).maybeSingle()
     if (!conv) {
       setConvocationExistante(null)
@@ -5512,19 +5563,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       if (j) parJoueurId[j.id] = true
     })
     setConvocationsCoches(parJoueurId)
-  }
-
-  // Dimanche suivant le match, 20h — le widget joueur (lecture filtrée sur
-  // expire_at > now()) disparaît tout seul à ce moment-là, pas de tâche
-  // planifiée nécessaire.
-  const calculerExpirationConvocation = (dateMatch) => {
-    const d = new Date(`${dateMatch}T00:00:00`)
-    const jourSemaine = d.getDay() // 0=dimanche..6=samedi
-    const joursVersDimanche = (7 - jourSemaine) % 7 || 7
-    const dimanche = new Date(d)
-    dimanche.setDate(d.getDate() + joursVersDimanche)
-    dimanche.setHours(20, 0, 0, 0)
-    return dimanche.toISOString()
+    // Les joueurs convoqués qui ne sont pas dans la liste de l'équipe sont des
+    // renforts d'une autre équipe de la catégorie : sans les relire ici, la
+    // republication de la convocation les retirerait sans le dire.
+    const { data: renforts } = await supabase.rpc('categories_renforts_match', { p_match_id: matchId })
+    setRenfortsConvoc((renforts || []).filter(r => r.convoque))
   }
 
   const publierConvocation = async (match) => {
@@ -5546,6 +5589,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const joueurIds = reponsesDispoMatch(match.id)
       .filter(j => (convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')) && j.joueur_id)
       .map(j => j.joueur_id)
+    for (const compte of comptesRenforts(renfortsConvoc)) if (!joueurIds.includes(compte)) joueurIds.push(compte)
 
     // Remplace le groupe convoqué en entier (delete + insert) plutôt que de
     // calculer un diff — plus simple, et le volume (effectif d'une équipe)
@@ -6325,6 +6369,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                   )}
 
+                  <BandeauEffectifCommun effectif={effectifCommun} />
+                  {effectifCommun && (
+                    <button onClick={() => setGrilleOuverte(true)} style={{ alignSelf: 'flex-start', padding: '10px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      Convocations {labelCategorie(effectifCommun.categorie.nom)}
+                    </button>
+                  )}
+                  {effectifCommun && grilleOuverte && (
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: colors.background.base, overflowY: 'auto', padding: isMobile ? '16px' : '32px' }}>
+                      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                        <GrilleConvocations key={effectifCommun.categorie.id} categorie={effectifCommun.categorie} userId={userId} estClub={false} accentColor={colors.accent.green}
+                          filAriane={[{ label: 'Mon équipe', onClick: () => setGrilleOuverte(false) }]} onRetour={() => setGrilleOuverte(false)} />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Synthèse de l'effectif */}
                   {joueurs.length > 0 && (
                     <div style={{ ...st.card, margin: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: isMobile ? '16px' : '28px', alignItems: 'center' }}>
@@ -6613,6 +6672,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </div>
                         )
                       })()}
+
+                      <div style={{ marginBottom: '1rem' }}><FicheJoueurCategorie ficheId={j.id} /></div>
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -8193,14 +8254,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <div style={{ marginTop: '6px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '14px' }}>
                             <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
-                              {joueurs.map(j => {
+                              {lignesFeuilleMatch(joueurs, renfortsParMatch[m.id]).map(j => {
                                 const key = m.id
                                 const s = (statsMatch[key] || {})[j.id] || {}
                                 const existingStat = (m.stats_match || []).find(st => st.joueur_id === j.id) || {}
                                 const val = (field) => s[field] !== undefined ? s[field] : (existingStat[field] ?? '')
                                 return (
                                   <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom?.[0] || ""}.</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {j.prenom} {j.nom?.[0] || ""}.
+                                      {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.faint }}>{j.mentionRenfort}</small>}
+                                    </span>
                                     <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), minutes: parseInt(e.target.value) || 0 } } }))}
                                       style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
@@ -8253,7 +8317,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <Suspense fallback={<SectionLoader />}>
                   <NotationMatch
                     match={matchANoter}
-                    joueurs={joueurs}
+                    joueurs={lignesFeuilleMatch(joueurs, renfortsParMatch[matchANoter.id])}
                     educateurId={userId}
                     onClose={() => { setMatchANoter(null); chargerMatchs(userId, equipeActive?.id) }}
                   />
@@ -8523,6 +8587,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const m = modalSondageMatch
               const reponses = reponsesDispoMatch(m.id)
               const nomsCoches = reponses.filter(j => convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')).map(j => `${j.prenom} ${j.nom}`)
+                .concat(renfortsConvoc.filter(r => r.joueur_id).map(r => `${r.prenom} ${r.nom}`))
               const copierConvocations = async () => {
                 try {
                   await navigator.clipboard.writeText(`Les convoqués sont :\n\n${nomsCoches.join('\n')}`)
@@ -8576,6 +8641,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           )
                         })}
                       </div>
+                      <RenfortConvocation clubCategorieId={m.club_categorie_id} joueursEquipe={joueurs} renforts={renfortsConvoc} onChange={setRenfortsConvoc} />
                       <button onClick={copierConvocations} style={st.btnSolid} disabled={nomsCoches.length === 0}>
                         Copier la liste ({nomsCoches.length})
                       </button>
@@ -8753,7 +8819,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
-                    {joueurs.map(j => {
+                    {lignesFeuilleMatch(joueurs, renfortsParMatch[modalMatchJoue.id]).map(j => {
                       const key = modalMatchJoue.id
                       const s = (statsMatch[key] || {})[j.id] || {}
                       // Même repère visuel que le scanner "nouveau match" : une
@@ -8768,6 +8834,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? `${colors.accent.green}1f` : 'transparent', borderRadius: '6px', border: `1px solid ${detected ? `${colors.accent.green}55` : 'transparent'}` }}>
                           <span style={{ fontSize: '14px', fontWeight: detected ? 700 : 600, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ""}.
+                            {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.faint }}>{j.mentionRenfort}</small>}
                           </span>
                           <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), minutes: parseInt(e.target.value) || 0 } } }))}

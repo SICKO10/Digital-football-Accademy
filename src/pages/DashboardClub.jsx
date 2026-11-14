@@ -28,6 +28,11 @@ import { useLang } from '../hooks/useLang'
 import { t, LANGS, localeOf } from '../lib/translations'
 import { STRIPE_LINKS_CLUB, PALIERS_QUOTA_EQUIPES, CONTACT_EMAIL, stripeUrl } from '../lib/stripeLinks'
 import OnboardingGuide from '../components/OnboardingGuide'
+import ListeCategories from '../components/categories/ListeCategories'
+import CreerCategorie from '../components/categories/CreerCategorie'
+import GrilleConvocations from '../components/categories/GrilleConvocations'
+import ChangerModeCategorie from '../components/categories/ChangerModeCategorie'
+import FicheJoueurCategorie from '../components/categories/FicheJoueurCategorie'
 const BudgetPrevisionnel = lazy(() => import('../components/club/BudgetPrevisionnel'))
 const BudgetReel = lazy(() => import('../components/club/BudgetReel'))
 const AudienceSponsors = lazy(() => import('../components/club/AudienceSponsors'))
@@ -920,6 +925,9 @@ export default function DashboardClub() {
   // Fenêtre Historique saison : { vue: 'equipe' | 'educateurs' | 'projet', equipeId? }
   const [historiqueSaison, setHistoriqueSaison] = useState(null)
   const [showAddCategorie, setShowAddCategorie] = useState(false)
+  const [vueCategories, setVueCategories] = useState('equipes') // 'equipes' | 'liste' | 'creer' | 'grille' | 'mode'
+  const [categorieGrille, setCategorieGrille] = useState(null)
+  const [categorieMode, setCategorieMode] = useState(null)
   const [newCategorie, setNewCategorie] = useState({ nom: 'U13', equipe: 'A', educateur_id: '' })
   const [savingCategorie, setSavingCategorie] = useState(false)
 
@@ -4020,6 +4028,26 @@ export default function DashboardClub() {
           })
           const photoEducateur = (id) => educateursAcceptes.find(e => e.educateur_id === id)?.educateur
           const nbSansEducateur = categories.filter(c => !c.educateur_id).length
+          if (vueCategories === 'liste') {
+            return <ListeCategories clubId={clubId} equipes={categories} peutCreer={clubId === monUserId} accentColor={couleurPrincipale}
+              onCreer={() => setVueCategories('creer')} onConvocations={(c) => { setCategorieGrille(c); setVueCategories('grille') }}
+              onChangerMode={(c) => { setCategorieMode(c); setVueCategories('mode') }} onRetour={() => setVueCategories('equipes')} onChange={() => chargerCategories(clubId)} />
+          }
+          if (vueCategories === 'grille' && categorieGrille) {
+            return <GrilleConvocations key={categorieGrille.id} categorie={categorieGrille} userId={monUserId} estClub={clubId === monUserId} accentColor={couleurPrincipale}
+              filAriane={[{ label: 'Catégories & Équipes', onClick: () => setVueCategories('equipes') }, { label: 'Catégories', onClick: () => setVueCategories('liste') }]}
+              onRetour={() => setVueCategories('liste')} />
+          }
+          if (vueCategories === 'mode' && categorieMode && clubId === monUserId) {
+            return <ChangerModeCategorie key={categorieMode.id} categorie={categorieMode} accentColor={couleurPrincipale}
+              filAriane={[{ label: 'Catégories & Équipes', onClick: () => setVueCategories('equipes') }, { label: 'Catégories', onClick: () => setVueCategories('liste') }]}
+              onRetour={() => setVueCategories('liste')} onTermine={async () => { await chargerCategories(clubId); setVueCategories('liste') }} />
+          }
+          if (vueCategories === 'creer' && clubId === monUserId) {
+            return <CreerCategorie clubId={clubId} quotaEquipes={club?.quota_equipes ?? null} nbEquipesClub={categories.length} accentColor={couleurPrincipale}
+              onTermine={async () => { await chargerCategories(clubId); setVueCategories('liste') }}
+              onRetour={() => setVueCategories('liste')} onRetourEquipes={() => setVueCategories('equipes')} />
+          }
           return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
@@ -4033,9 +4061,9 @@ export default function DashboardClub() {
               <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'equipe' })} style={{ width: isMobile ? '100%' : 'auto' }} />
               {canEditSection('sportif') && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
-                  <button onClick={autoAssignerJoueurs} disabled={autoAssignLoading} title="Rattache automatiquement les joueurs sans équipe à l'équipe A de leur éducateur"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none', justifyContent: 'center' }}>
-                    <IcoEclair /> {autoAssignLoading ? t('club_assignation_cours', lang) : t('club_auto_assigner', lang)}
+                  <button onClick={() => setVueCategories('liste')}
+                    style={{ padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
+                    Catégories
                   </button>
                   <button onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
                     style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
@@ -4044,12 +4072,6 @@ export default function DashboardClub() {
                 </div>
               )}
             </div>
-
-            {autoAssignResult && (
-              <div style={{ background: couleurPrincipale + '10', border: `1px solid ${couleurPrincipale}30`, borderRadius: '10px', padding: '10px 16px', color: couleurPrincipale, fontSize: '13px', fontWeight: 600 }}>
-                {autoAssignResult.count} {t('club_joueur_assigne_auto', lang)}
-              </div>
-            )}
 
             {showAddCategorie && (
               <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}40`, margin: 0 }}>
@@ -7137,6 +7159,8 @@ export default function DashboardClub() {
                   </div>
                 </div>
               )}
+
+              <FicheJoueurCategorie ficheId={j.id} />
 
               {/* Position points séance par mois */}
               {positionParMois.length > 0 && (

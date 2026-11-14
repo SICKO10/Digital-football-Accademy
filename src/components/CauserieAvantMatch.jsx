@@ -5,7 +5,7 @@ import TacticalBoard from './TacticalBoard'
 import TactipadViewer from './TactipadViewer'
 import CompositionTerrain, { ModalSelectionJoueur } from './CompositionTerrain'
 import { sansPositions } from '../lib/compositionPositions'
-import { useColors } from '../lib/theme'
+import { useColors, useTheme } from '../lib/theme'
 import EcussonClub from './EcussonClub'
 
 const METEO_OPTIONS = [
@@ -381,7 +381,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
         {slide.type === 'composition' && (
           // Terrain aussi grand que l'écran le permet (largeur, ou hauteur moins le titre et les remplaçants)
           <div style={{ width: '100%', maxWidth: 'min(96vw, 1500px, calc((100dvh - 290px) * 1.55))' }}>
-            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} maxLargeur="100%" />
+            <CompositionTerrain formation={f.formation || '4-4-2'} titulaires={f.titulaires || []} remplacants={f.remplacants || []} modeEdit={false} affichageNom={f.composition_affichage_nom || 'nom'} maxLargeur="100%" claire={theme === 'claire'} />
           </div>
         )}
 
@@ -434,6 +434,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
 
 export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, equipeUnique = true, clubId, joueurs = [], nomClub, logoClub = null, couleurClub = null, photoClub = null, logoAdversaire = () => null }) {
   const colors = useColors()
+  const { theme: themeApp } = useTheme()
   const [vue, setVue] = useState('liste') // 'liste' | 'form' | 'fiche'
   const [fiches, setFiches] = useState([])
   const [ficheCourante, setFicheCourante] = useState(null)
@@ -1113,12 +1114,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
   const contenuFiche = (
     <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '20px', overflow: 'hidden', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
-      <div style={{ background: 'linear-gradient(135deg, #0f2010 0%, #080808 60%)', borderBottom: `1px solid ${colors.border.faint}`, padding: '28px 32px' }}>
+      <div style={{ background: themeApp === 'claire' ? 'linear-gradient(135deg, #ecfdf3 0%, #f8fafc 60%)' : 'linear-gradient(135deg, #0f2010 0%, #080808 60%)', borderBottom: `1px solid ${colors.border.faint}`, padding: '28px 32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <span style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 700 }}>{typeLabel.toUpperCase()}</span>
-              <span style={{ background: 'rgba(255,255,255,0.06)', color: colors.text.faint, borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 600 }}>
+              <span style={{ background: themeApp === 'claire' ? '#e2e8f0' : 'rgba(255,255,255,0.06)', color: colors.text.faint, borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 600 }}>
                 {f.domicile_exterieur === 'domicile' ? '🏠 Domicile' : '✈️ Extérieur'}
               </span>
               {f.match_aller_resultat && (
@@ -1140,7 +1141,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
                 { nom: equipeNom || 'Nous', rang: f.notre_classement, pts: f.notre_points, bp: f.notre_buts_pour, bc: f.notre_buts_contre, color: '#4ade80' },
                 { nom: f.adversaire, rang: f.adversaire_classement, pts: f.adversaire_points, bp: f.adversaire_buts_pour, bc: f.adversaire_buts_contre, color: '#f87171' },
               ].map((e, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${e.color}22`, borderRadius: '12px', padding: '14px 18px', textAlign: 'center', minWidth: '110px' }}>
+                <div key={i} style={{ background: themeApp === 'claire' ? '#ffffff' : 'rgba(255,255,255,0.04)', border: `1px solid ${e.color}${themeApp === 'claire' ? '66' : '22'}`, borderRadius: '12px', padding: '14px 18px', textAlign: 'center', minWidth: '110px' }}>
                   <p style={{ margin: 0, color: e.color, fontWeight: 900, fontSize: '28px', lineHeight: 1 }}>{e.rang ? `${e.rang}e` : '—'}</p>
                   <p style={{ margin: '4px 0 2px', color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{e.nom}</p>
                   <p style={{ margin: 0, color: colors.text.primary, fontSize: '12px', fontWeight: 600 }}>{e.pts != null ? `${e.pts} pts` : ''}</p>

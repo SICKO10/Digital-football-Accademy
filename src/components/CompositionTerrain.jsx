@@ -1,5 +1,19 @@
 import { useRef, useState } from 'react'
 import { IconClose, IconCheck } from './icones'
+import { useTheme } from '../lib/theme'
+
+const PALETTE_SOMBRE = {
+  chipFond: 'rgba(255,255,255,0.08)', chipTexte: 'rgba(255,255,255,0.4)', hint: 'rgba(255,255,255,0.45)',
+  btnBord: 'rgba(255,255,255,0.25)', btnTexte: 'rgba(255,255,255,0.7)', titre: '#fff',
+  blocFond: 'rgba(255,255,255,0.03)', blocBord: 'rgba(255,255,255,0.07)', blocLabel: 'rgba(255,255,255,0.3)',
+  remplBord: 'rgba(255,255,255,0.15)', remplFond: 'rgba(255,255,255,0.05)', remplNom: 'rgba(255,255,255,0.4)',
+}
+const PALETTE_CLAIRE = {
+  chipFond: '#e2e8f0', chipTexte: '#475569', hint: '#64748b',
+  btnBord: '#cbd5e1', btnTexte: '#334155', titre: '#0f172a',
+  blocFond: '#f1f5f9', blocBord: '#e2e8f0', blocLabel: '#64748b',
+  remplBord: '#cbd5e1', remplFond: '#64748b', remplNom: '#475569',
+}
 
 // Formations disponibles — chaque ligne totalise toujours 11 (gardien inclus),
 // dans l'ordre naturel gardien → attaque. C'est aussi l'ordre de stockage du
@@ -72,8 +86,14 @@ const nomAvecNumero = (joueur, affichageNom) => {
 export default function CompositionTerrain({
   formation, titulaires = [], remplacants = [], modeEdit, titre, affichageNom = 'nom',
   onChangerFormation, onAssignerTitulaire, onDeplacerTitulaire,
-  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, maxLargeur = '760px',
+  onAjouterRemplacant, onRetirerRemplacant, onChangerAffichageNom, maxLargeur = '760px', claire,
 }) {
+  // Hors terrain (boutons, titre, remplaçants) : le composant était pensé pour
+  // un fond sombre, en blanc translucide — invisible sur une carte claire.
+  // `claire` force le choix (présentation plein écran, qui a son propre
+  // thème) ; sinon on suit le thème du dashboard.
+  const { theme } = useTheme()
+  const p = (claire ?? theme === 'claire') ? PALETTE_CLAIRE : PALETTE_SOMBRE
   const config = FORMATIONS[formation] || FORMATIONS['4-4-2']
   const pitchRef = useRef(null)
   // Glisser-déposer : pendant le geste, la pastille est déplacée directement (sans
@@ -153,8 +173,8 @@ export default function CompositionTerrain({
           {Object.keys(FORMATIONS).map(f => (
             <button key={f} onClick={() => replacer(f)} style={{
               padding: '5px 12px', borderRadius: '20px', border: 'none',
-              background: formation === f ? '#4ade80' : 'rgba(255,255,255,0.08)',
-              color: formation === f ? '#000' : 'rgba(255,255,255,0.4)',
+              background: formation === f ? '#4ade80' : p.chipFond,
+              color: formation === f ? '#000' : p.chipTexte,
               fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
             }}>{f}</button>
           ))}
@@ -163,11 +183,11 @@ export default function CompositionTerrain({
 
       {modeEdit && (
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap' }}>
-          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Clique sur un joueur pour le changer, maintiens et glisse pour le déplacer.</span>
+          <span style={{ color: p.hint, fontSize: '12px' }}>Clique sur un joueur pour le changer, maintiens et glisse pour le déplacer.</span>
           {titulaires.some(j => j?.pos) && (
             <button onClick={() => replacer(formation)} style={{
-              padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent',
-              color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              padding: '5px 12px', borderRadius: '20px', border: `1px solid ${p.btnBord}`, background: 'transparent',
+              color: p.btnTexte, fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}>Replacer automatiquement</button>
           )}
         </div>
@@ -178,8 +198,8 @@ export default function CompositionTerrain({
           {[{ val: 'prenom', label: 'Prénom' }, { val: 'nom', label: 'Nom' }].map(o => (
             <button key={o.val} onClick={() => onChangerAffichageNom(o.val)} style={{
               padding: '5px 14px', borderRadius: '20px', border: 'none',
-              background: affichageNom === o.val ? '#4ade80' : 'rgba(255,255,255,0.08)',
-              color: affichageNom === o.val ? '#000' : 'rgba(255,255,255,0.4)',
+              background: affichageNom === o.val ? '#4ade80' : p.chipFond,
+              color: affichageNom === o.val ? '#000' : p.chipTexte,
               fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
             }}>{o.label}</button>
           ))}
@@ -187,7 +207,7 @@ export default function CompositionTerrain({
       )}
 
       {titre && (
-        <div style={{ textAlign: 'center', marginBottom: '12px', color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.7 }}>
+        <div style={{ textAlign: 'center', marginBottom: '12px', color: p.titre, fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.7 }}>
           {titre}
         </div>
       )}
@@ -289,14 +309,14 @@ export default function CompositionTerrain({
         </div>
       </div>
 
-      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '14px 18px' }}>
-        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>
+      <div style={{ marginTop: '16px', background: p.blocFond, border: `1px solid ${p.blocBord}`, borderRadius: '14px', padding: '14px 18px' }}>
+        <div style={{ color: p.blocLabel, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>
           Remplaçants ({remplacants.length})
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {remplacants.map((j, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-              <div style={{ width: TAILLE_REMPLACANT, height: TAILLE_REMPLACANT, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: TAILLE_REMPLACANT, height: TAILLE_REMPLACANT, borderRadius: '50%', border: `2px solid ${p.remplBord}`, background: p.remplFond, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <AvatarJoueur joueur={j} fontSize="clamp(10px, 1.5cqw, 15px)" />
                 {j.numero != null && (
                   <div style={{ position: 'absolute', top: '-3px', right: '-3px', background: '#4ade80', color: '#000', borderRadius: '50%', width: 'clamp(13px, 2cqw, 17px)', height: 'clamp(13px, 2cqw, 17px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(7px, 1cqw, 9px)', fontWeight: 800, border: '1.5px solid #0a0a0a' }}>{j.numero}</div>
@@ -308,14 +328,14 @@ export default function CompositionTerrain({
                   </button>
                 )}
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAvecNumero(j, affichageNom)}</span>
+              <span style={{ color: p.remplNom, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', maxWidth: '54px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAvecNumero(j, affichageNom)}</span>
             </div>
           ))}
           {modeEdit && remplacants.length < MAX_REMPLACANTS && (
-            <div onClick={onAjouterRemplacant} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px dashed rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.15)', fontSize: '20px' }}>+</div>
+            <div onClick={onAjouterRemplacant} style={{ width: '48px', height: '48px', borderRadius: '50%', border: `2px dashed ${p.remplBord}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: p.blocLabel, fontSize: '20px' }}>+</div>
           )}
           {remplacants.length === 0 && !modeEdit && (
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontStyle: 'italic', margin: 0 }}>Aucun remplaçant annoncé.</p>
+            <p style={{ color: p.blocLabel, fontSize: '11px', fontStyle: 'italic', margin: 0 }}>Aucun remplaçant annoncé.</p>
           )}
         </div>
       </div>

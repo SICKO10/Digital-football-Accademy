@@ -74,7 +74,7 @@ export default function ALaUne({ choix, isMobile = false, lang = 'fr', repConvoc
     ].filter(Boolean).join(' · ')
     corps = (
       <>
-        <Eyebrow>Tu es convoqué{m?.competition ? ` · ${m.competition}` : ''}</Eyebrow>
+        <Eyebrow>Tu es convoqué{m?.equipe ? ` · ${m.equipe}` : ''}{m?.competition ? ` · ${m.competition}` : ''}</Eyebrow>
         <Titre isMobile={isMobile}>{m?.domicile ? 'vs' : '@'} {m?.adversaire || 'adversaire à confirmer'}</Titre>
         {quand && <Detail>{quand}</Detail>}
 
