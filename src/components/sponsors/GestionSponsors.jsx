@@ -6,6 +6,7 @@ import CatalogueOffres from './CatalogueOffres'
 import ValorisationClub from './ValorisationClub'
 import StatsSponsors from './StatsSponsors'
 import DossierCommercialTemplate from './DossierCommercialTemplate'
+import { PERMISSION_DEFAULTS } from '../../lib/permissionsClub'
 
 const COULEURS_NIVEAU = [
   { val: '#22c55e', label: 'Vert' },
@@ -589,7 +590,10 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 // Fiche prospect complète : édition des infos + statut/pipeline + historique
 // des échanges + conversion en sponsor signé une fois gagné. Un seul modal
 // plutôt qu'un modal liste + un modal détail séparés, pour rester simple.
-function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjouterEchange, onConvertir, onGenererDossier, saving, accentColor = '#4ade80' }) {
+// readOnly : consultation seule (droit de lecture sans droit d'édition sur
+// les sponsors du club) — champs désactivés, historique visible, aucune
+// action d'écriture proposée.
+function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjouterEchange, onConvertir, onGenererDossier, saving, accentColor = '#4ade80', readOnly = false }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
   const [form, setForm] = useState(() => ({
@@ -621,14 +625,21 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
   const champ = (key, value) => setForm(f => ({ ...f, [key]: value }))
   const valide = form.nom_entreprise.trim().length > 0
 
+  // Le champ n'est vidé que si l'échange a réellement été enregistré.
+  const ajouterEchange = async () => {
+    if (!nouvelEchange.trim()) return
+    if (await onAjouterEchange(prospect.id, typeEchange, nouvelEchange.trim())) setNouvelEchange('')
+  }
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{prospect ? 'Modifier le prospect' : 'Nouveau prospect'}</p>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{readOnly ? 'Prospect (consultation)' : prospect ? 'Modifier le prospect' : 'Nouveau prospect'}</p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
+        <fieldset disabled={readOnly} style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '10px' }}>
             <div>
@@ -763,19 +774,22 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <select style={{ ...st.input, width: 'auto' }} value={typeEchange} onChange={e => setTypeEchange(e.target.value)}>
-                    {TYPES_ECHANGE.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
-                  </select>
-                  <input style={{ ...st.input, flex: 1 }} placeholder="Ajouter une note..." value={nouvelEchange}
-                    onChange={e => setNouvelEchange(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && nouvelEchange.trim()) { onAjouterEchange(prospect.id, typeEchange, nouvelEchange.trim()); setNouvelEchange('') } }} />
-                  <button onClick={() => { if (nouvelEchange.trim()) { onAjouterEchange(prospect.id, typeEchange, nouvelEchange.trim()); setNouvelEchange('') } }} style={st.btnSecondary}>Ajouter</button>
-                </div>
+                {!readOnly && (
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <select style={{ ...st.input, width: 'auto' }} value={typeEchange} onChange={e => setTypeEchange(e.target.value)}>
+                      {TYPES_ECHANGE.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+                    </select>
+                    <input style={{ ...st.input, flex: 1 }} placeholder="Ajouter une note..." value={nouvelEchange}
+                      onChange={e => setNouvelEchange(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') ajouterEchange() }} />
+                    <button onClick={ajouterEchange} style={st.btnSecondary}>Ajouter</button>
+                  </div>
+                )}
               </div>
             </>
           )}
         </div>
+        </fieldset>
 
         {prospect && (
           <button onClick={() => onGenererDossier(prospect)} style={{ ...st.btnSecondary, marginTop: '16px', width: '100%' }}>
@@ -783,7 +797,7 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
           </button>
         )}
 
-        {prospect && form.statut === 'gagne' && !prospect.sponsor_id && (
+        {!readOnly && prospect && form.statut === 'gagne' && !prospect.sponsor_id && (
           <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '10px', padding: '12px 14px', marginTop: '16px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '13px', color: accentColor, fontWeight: 700 }}>🎉 Prospect gagné !</p>
             <button onClick={() => onConvertir(prospect)} style={st.btnSolid(accentColor)}>Créer la fiche sponsor signé</button>
@@ -794,11 +808,13 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
         )}
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => onSave(form)} disabled={!valide || saving} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
-            {saving ? 'Enregistrement...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
-          </button>
-          {prospect && <button onClick={() => onDelete(prospect.id)} style={{ ...st.btnSecondary, color: '#ef4444' }}>Supprimer</button>}
-          <button onClick={onClose} style={st.btnSecondary}>Annuler</button>
+          {!readOnly && (
+            <button onClick={() => onSave(form)} disabled={!valide || saving} style={{ ...st.btnSolid(accentColor), flex: 1, opacity: (!valide || saving) ? 0.5 : 1 }}>
+              {saving ? 'Enregistrement...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
+            </button>
+          )}
+          {!readOnly && prospect && <button onClick={() => onDelete(prospect.id)} style={{ ...st.btnSecondary, color: '#ef4444' }}>Supprimer</button>}
+          <button onClick={onClose} style={readOnly ? { ...st.btnSecondary, flex: 1 } : st.btnSecondary}>{readOnly ? 'Fermer' : 'Annuler'}</button>
         </div>
       </div>
     </div>
@@ -806,6 +822,53 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
 }
 
 // ── Composant principal ──────────────────────────────────────────────────────
+// ── Droits sur les prospects ──
+// États : 'chargement' (pas encore connu), 'base' (réponse de
+// sponsors_peut_acceder, la fonction qu'utilisent les policies de la phase
+// 3b), 'compat' (fonction pas encore déployée — phase 1 absente — : même
+// règle recalculée ici), 'erreur' (vérification impossible). Seuls 'base' et
+// 'compat' peuvent accorder un droit ; 'chargement' et 'erreur' n'accordent
+// jamais l'édition.
+const DROITS_INCONNUS = { etat: 'chargement', lecture: false, edition: false }
+
+const fonctionAbsente = (err) => err?.code === 'PGRST202' || err?.code === '42883'
+
+// Compatibilité avant la phase 1 : même règle que sponsors_peut_acceder —
+// compte club de plan 'club' ; staff 'president' ; sinon ligne
+// role_permissions('sponsors') (lecture = can_view, édition = can_view ET
+// can_edit) ; sinon PERMISSION_DEFAULTS.sponsors. Rôle NULL : aucun droit
+// (jamais traité comme président).
+async function calculerDroitsCompat(clubId, userId) {
+  const erreur = (e) => ({ etat: 'erreur', lecture: false, edition: false, message: e.message })
+  const droits = (lecture, edition) => ({ etat: 'compat', lecture, edition })
+  if (userId === clubId) {
+    const { data, error } = await supabase.from('profiles').select('plan').eq('id', clubId).maybeSingle()
+    if (error) return erreur(error)
+    return data?.plan === 'club' ? droits(true, true) : droits(false, false)
+  }
+  const { data: staff, error } = await supabase.from('staff_club').select('role').eq('club_id', clubId).eq('user_id', userId).maybeSingle()
+  if (error) return erreur(error)
+  if (!staff || !staff.role) return droits(false, false)
+  if (staff.role === 'president') return droits(true, true)
+  const { data: ligne, error: errLigne } = await supabase.from('role_permissions').select('can_view, can_edit')
+    .eq('club_id', clubId).eq('role', staff.role).eq('section', 'sponsors').maybeSingle()
+  if (errLigne) return erreur(errLigne)
+  if (ligne) return droits(!!ligne.can_view, !!(ligne.can_view && ligne.can_edit))
+  const parDefaut = (PERMISSION_DEFAULTS.sponsors || []).includes(staff.role)
+  return droits(parDefaut, parDefaut)
+}
+
+async function chargerDroitsProspects(clubId, userId) {
+  const [lecture, edition] = await Promise.all([
+    supabase.rpc('sponsors_peut_acceder', { p_club_id: clubId, p_edition: false }),
+    supabase.rpc('sponsors_peut_acceder', { p_club_id: clubId, p_edition: true }),
+  ])
+  const err = lecture.error || edition.error
+  if (!err) return { etat: 'base', lecture: lecture.data === true, edition: edition.data === true }
+  if (fonctionAbsente(lecture.error) && fonctionAbsente(edition.error)) return calculerDroitsCompat(clubId, userId)
+  return { etat: 'erreur', lecture: false, edition: false, message: err.message }
+}
+
 export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
   const st = useSt()
   const isMobile = useWindowWidth() < 768
@@ -833,6 +896,35 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   const [logoProspectDossier, setLogoProspectDossier] = useState(null)
   const [dossierLoading, setDossierLoading] = useState(false)
   const pdfDossierRef = useRef(null)
+  // Droits sur les prospects (cf. chargerDroitsProspects) pour le couple
+  // (club, utilisateur connecté). Le prop readOnly (canEditSection côté
+  // DashboardClub) traite un rôle staff NULL comme président : il peut
+  // seulement RESTREINDRE, jamais accorder.
+  // Le résultat est mémorisé avec sa clé club:utilisateur ; tant que la clé
+  // ne correspond pas au couple courant (changement de club, de compte,
+  // déconnexion), les droits valent DROITS_INCONNUS — aucun droit précédent
+  // n'est réutilisé.
+  const conversionEnCoursRef = useRef(false)
+  const [sessionUserId, setSessionUserId] = useState(undefined)
+  const [droitsProspectsMemo, setDroitsProspectsMemo] = useState(null)
+  useEffect(() => {
+    const { data: abonnement } = supabase.auth.onAuthStateChange((_evenement, session) => {
+      setSessionUserId(session?.user?.id ?? null)
+    })
+    return () => abonnement.subscription.unsubscribe()
+  }, [])
+  useEffect(() => {
+    if (!clubId || !sessionUserId) return
+    let annule = false
+    const cle = `${clubId}:${sessionUserId}`
+    chargerDroitsProspects(clubId, sessionUserId)
+      .catch(e => ({ etat: 'erreur', lecture: false, edition: false, message: e?.message }))
+      .then(resultat => { if (!annule) setDroitsProspectsMemo({ ...resultat, cle }) })
+    return () => { annule = true }
+  }, [clubId, sessionUserId])
+  const cleDroitsCourante = clubId && sessionUserId ? `${clubId}:${sessionUserId}` : null
+  const droitsProspects = droitsProspectsMemo && droitsProspectsMemo.cle === cleDroitsCourante ? droitsProspectsMemo : DROITS_INCONNUS
+  const prospectsLectureSeule = readOnly || droitsProspects.edition !== true
 
   const loadData = async () => {
     setLoading(true)
@@ -861,6 +953,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
   // ── CRUD prospects ──
   const sauvegarderProspect = async (form) => {
+    if (prospectsLectureSeule) return
     setSaving(true)
     const estEdition = modalProspect && modalProspect !== 'new'
     const payload = {
@@ -892,14 +985,21 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       ? await supabase.from('prospects_sponsors').update(payload).eq('id', modalProspect.id).select().single()
       : await supabase.from('prospects_sponsors').insert(payload).select().single()
     setSaving(false)
-    if (error) { alert('Erreur : ' + error.message); return }
+    // .single() renvoie déjà une erreur si la RLS masque la ligne (0 ligne
+    // modifiée) ; !data couvre le cas restant, sans fermer le modal.
+    if (error || !data) { alert('Erreur : ' + (error?.message || 'prospect non enregistré')); return }
     setModalProspect(null)
-    if (data) setProspects(prev => estEdition ? prev.map(p => (p.id === data.id ? data : p)) : [data, ...prev])
+    setProspects(prev => estEdition ? prev.map(p => (p.id === data.id ? data : p)) : [data, ...prev])
   }
 
   const supprimerProspect = async (id) => {
+    if (prospectsLectureSeule) return
     if (!confirm('Supprimer ce prospect ?')) return
-    await supabase.from('prospects_sponsors').delete().eq('id', id)
+    // .select('id') : la RLS ne lève pas d'erreur quand elle masque la ligne,
+    // elle supprime simplement 0 ligne — seul le résultat permet de savoir.
+    const { data, error } = await supabase.from('prospects_sponsors').delete().eq('id', id).select('id')
+    if (error) { alert('Erreur : ' + error.message); return }
+    if (!data || data.length === 0) { alert('Suppression non effectuée : droits insuffisants ou prospect déjà supprimé.'); return }
     setProspects(prev => prev.filter(p => p.id !== id))
     setModalProspect(null)
   }
@@ -910,9 +1010,14 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
     setEchangesProspect(data || [])
   }
 
+  // Renvoie true seulement si l'échange est réellement enregistré (le modal
+  // ne vide la saisie que dans ce cas).
   const ajouterEchangeProspect = async (prospectId, type, contenu) => {
-    const { data } = await supabase.from('prospects_echanges').insert({ prospect_id: prospectId, type, contenu }).select().single()
-    if (data) setEchangesProspect(prev => [data, ...prev])
+    if (prospectsLectureSeule) return false
+    const { data, error } = await supabase.from('prospects_echanges').insert({ prospect_id: prospectId, type, contenu }).select().single()
+    if (error || !data) { alert('Erreur : ' + (error?.message || 'échange non enregistré')); return false }
+    setEchangesProspect(prev => [data, ...prev])
+    return true
   }
 
   // Dossier commercial personnalisé — charge la valorisation du club et son
@@ -977,25 +1082,85 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   // gérée par l'onglet "Sponsors" pour le suivi post-signature) — le prospect
   // reste dans le pipeline (statut "gagne") mais pointe désormais vers sa
   // fiche sponsor via sponsor_id, pour ne pas le proposer deux fois.
+  //
+  // Sans transaction côté client (création de la fiche puis lien = deux
+  // requêtes), la conversion est rendue rejouable sans doublon :
+  //   1. l'état RÉEL du prospect est relu : déjà lié => rien n'est créé ;
+  //   2. une fiche du même club, de la même saison et au même nom
+  //      d'entreprise, liée à aucun prospect (reste d'un essai interrompu),
+  //      est réutilisée après confirmation au lieu d'en créer une seconde ;
+  //   3. le lien n'est posé que si le prospect n'en a toujours pas
+  //      (sponsor_id IS NULL) : deux essais ne peuvent pas lier deux fiches ;
+  //   4. un verrou empêche deux conversions simultanées depuis cet écran.
+  // L'atomicité complète demande une fonction SQL transactionnelle :
+  // proposition séparée, supabase_sponsors_phase3c_conversion_rpc.sql.
   const convertirEnSponsor = async (prospect) => {
-    const { data, error } = await supabase.from('sponsors').insert({
-      club_id: clubId,
-      saison: saisonActive,
-      entreprise: prospect.nom_entreprise,
-      contact_nom: prospect.contact_nom || null,
-      contact_role: prospect.contact_fonction || null,
-      contact_email: prospect.contact_email || null,
-      contact_telephone: prospect.contact_telephone || null,
-      montant_contrat: prospect.montant_potentiel || 0,
-      notes: prospect.interets || null,
-      paiements: [],
-    }).select().single()
-    if (error) { alert('Erreur : ' + error.message); return }
-    await supabase.from('prospects_sponsors').update({ sponsor_id: data.id }).eq('id', prospect.id)
-    setSponsors(prev => [...prev, data])
-    setProspects(prev => prev.map(p => (p.id === prospect.id ? { ...p, sponsor_id: data.id } : p)))
-    setModalProspect(null)
-    setVue('sponsors')
+    if (prospectsLectureSeule || conversionEnCoursRef.current) return
+    conversionEnCoursRef.current = true
+    const terminer = () => { setModalProspect(null); setVue('sponsors') }
+    try {
+      const { data: actuel, error: errActuel } = await supabase.from('prospects_sponsors').select('id, sponsor_id').eq('id', prospect.id).maybeSingle()
+      if (errActuel) { alert('Erreur : ' + errActuel.message); return }
+      if (!actuel) { alert('Prospect introuvable ou inaccessible.'); return }
+      if (actuel.sponsor_id) {
+        setProspects(prev => prev.map(p => (p.id === prospect.id ? { ...p, sponsor_id: actuel.sponsor_id } : p)))
+        alert('Ce prospect est déjà converti : aucune nouvelle fiche créée.')
+        terminer()
+        return
+      }
+
+      const { data: candidats, error: errCandidats } = await supabase.from('sponsors').select('*')
+        .eq('club_id', clubId).eq('saison', saisonActive).eq('entreprise', prospect.nom_entreprise)
+      if (errCandidats) { alert('Erreur : ' + errCandidats.message); return }
+      let fiche = null
+      if (candidats && candidats.length > 0) {
+        const { data: dejaLies, error: errLies } = await supabase.from('prospects_sponsors').select('sponsor_id')
+          .in('sponsor_id', candidats.map(c => c.id))
+        if (errLies) { alert('Erreur : ' + errLies.message); return }
+        const idsLies = new Set((dejaLies || []).map(l => l.sponsor_id))
+        const libres = candidats.filter(c => !idsLies.has(c.id))
+        if (libres.length > 1) {
+          alert(`Plusieurs fiches sponsor « ${prospect.nom_entreprise} » sans prospect lié existent déjà pour la saison ${saisonActive}. Supprime les doublons dans l'onglet Sponsors avant de convertir.`)
+          return
+        }
+        if (libres.length === 1) {
+          if (!confirm(`Une fiche sponsor « ${prospect.nom_entreprise} » existe déjà pour la saison ${saisonActive}, sans prospect lié (conversion précédente interrompue ?). La lier à ce prospect au lieu d'en créer une nouvelle ?`)) return
+          fiche = libres[0]
+        }
+      }
+
+      if (!fiche) {
+        const { data, error } = await supabase.from('sponsors').insert({
+          club_id: clubId,
+          saison: saisonActive,
+          entreprise: prospect.nom_entreprise,
+          contact_nom: prospect.contact_nom || null,
+          contact_role: prospect.contact_fonction || null,
+          contact_email: prospect.contact_email || null,
+          contact_telephone: prospect.contact_telephone || null,
+          montant_contrat: prospect.montant_potentiel || 0,
+          notes: prospect.interets || null,
+          paiements: [],
+        }).select().single()
+        if (error || !data) { alert('Erreur : ' + (error?.message || 'fiche sponsor non créée')); return }
+        fiche = data
+        setSponsors(prev => [...prev, data])
+      }
+
+      const { data: lien, error: errLien } = await supabase.from('prospects_sponsors').update({ sponsor_id: fiche.id })
+        .eq('id', prospect.id).is('sponsor_id', null).select('id')
+      if (errLien || !lien || lien.length === 0) {
+        alert('La fiche sponsor existe, mais le lien avec le prospect n\'a pas pu être enregistré'
+          + (errLien ? ' : ' + errLien.message : ' (prospect déjà lié entre-temps ou droits insuffisants).')
+          + ' Un nouvel essai réutilisera cette fiche au lieu d\'en créer une autre.')
+        terminer()
+        return
+      }
+      setProspects(prev => prev.map(p => (p.id === prospect.id ? { ...p, sponsor_id: fiche.id } : p)))
+      terminer()
+    } finally {
+      conversionEnCoursRef.current = false
+    }
   }
 
   // ── CRUD sponsors ──
@@ -1285,7 +1450,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {vue === 'prospects' ? (
-            !readOnly && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
+            !prospectsLectureSeule && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
           ) : ['offres', 'valorisation', 'stats'].includes(vue) ? null : (
             <>
               <select style={{ ...st.input, width: 'auto' }} value={saisonActive} onChange={e => setSaisonActive(e.target.value)}>
@@ -1440,7 +1605,18 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
       {vue === 'prospects' && (
         <div>
-          {prospects.length === 0 ? (
+          {droitsProspects.etat === 'erreur' && (
+            <div style={{ ...st.card, marginBottom: '12px', padding: '10px 14px', fontSize: '13px', color: '#f59e0b' }}>
+              Impossible de vérifier tes droits sur les prospects : consultation seule pour le moment.
+            </div>
+          )}
+          {droitsProspects.etat === 'chargement' ? (
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>Vérification des droits...</div>
+          ) : ['base', 'compat'].includes(droitsProspects.etat) && !droitsProspects.lecture ? (
+            <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
+              Ton rôle ne donne pas accès aux prospects de ce club.
+            </div>
+          ) : prospects.length === 0 ? (
             <div style={{ ...st.card, textAlign: 'center', padding: '3rem', color: st.textFaint }}>
               Aucun prospect pour l'instant. Clique sur "+ Nouveau prospect" pour démarrer ton pipeline commercial.
             </div>
@@ -1668,6 +1844,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
           onGenererDossier={ouvrirDossier}
           saving={saving}
           accentColor={accentColor}
+          readOnly={prospectsLectureSeule}
         />
       )}
 
