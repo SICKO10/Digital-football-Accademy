@@ -67,7 +67,12 @@ function AcceptInvite() {
       const { data, error } = await supabase.functions.invoke('accepter-invitation', {
         body: { action: 'accepter', token: codeB, password },
       })
-      if (error || data?.error) throw new Error(data?.error || error?.message || t('invite_erreur_inconnue', lang))
+      if (error || data?.error) {
+        // Une réponse 4xx/5xx de la fonction n'arrive pas dans `data` : le vrai message est dans le corps de la réponse.
+        let msgServeur = null
+        try { msgServeur = (await error?.context?.json?.())?.error } catch { /* corps illisible */ }
+        throw new Error(data?.error || msgServeur || error?.message || t('invite_erreur_inconnue', lang))
+      }
 
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: data.email, password })
       if (signInErr) throw signInErr
