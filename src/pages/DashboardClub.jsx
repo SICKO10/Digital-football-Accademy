@@ -4061,10 +4061,6 @@ export default function DashboardClub() {
               <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'equipe' })} style={{ width: isMobile ? '100%' : 'auto' }} />
               {canEditSection('sportif') && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
-                  <button onClick={() => setVueCategories('liste')}
-                    style={{ padding: '10px 16px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
-                    Catégories
-                  </button>
                   <button onClick={() => { setNewCategorie({ nom: 'U13', equipe: 'A', educateur_id: '' }); setShowAddCategorie(true) }}
                     style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: couleurPrincipale, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', flex: isMobile ? 1 : 'none' }}>
                     {t('club_ajouter_categorie', lang)}
@@ -4072,6 +4068,27 @@ export default function DashboardClub() {
                 </div>
               )}
             </div>
+
+            {canEditSection('sportif') && (
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div style={{ ...st.card, margin: 0 }}>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Les équipes</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: colors.text.secondary, lineHeight: 1.5 }}>
+                    C'est ce que vous voyez ci-dessous : chaque équipe (U13 A, U13 B…) avec son éducateur et ses joueurs. Ajoutez une équipe avec le bouton en haut.
+                  </p>
+                </div>
+                <div style={{ ...st.card, margin: 0, border: `1px solid ${couleurPrincipale}40` }}>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>L'organisation des catégories</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', color: colors.text.secondary, lineHeight: 1.5 }}>
+                    Quand une catégorie a plusieurs équipes, choisissez si chaque équipe garde sa propre liste de joueurs, ou si toutes partagent une seule liste (effectif commun).
+                  </p>
+                  <button onClick={() => setVueCategories('liste')}
+                    style={{ marginTop: '10px', padding: '9px 14px', borderRadius: '10px', border: `1px solid ${couleurPrincipale}`, background: 'transparent', color: couleurPrincipale, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    Choisir l'organisation des catégories
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showAddCategorie && (
               <div style={{ ...st.card, border: `1px solid ${couleurPrincipale}40`, margin: 0 }}>

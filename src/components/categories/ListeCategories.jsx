@@ -41,6 +41,9 @@ export default function ListeCategories({ clubId, equipes, peutCreer, accentColo
           <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
             {liste ? `${groupes.length} catégorie${groupes.length > 1 ? 's' : ''}` : 'Chargement'}
           </p>
+          <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '8px 0 0', maxWidth: '620px', lineHeight: 1.5 }}>
+            Ici, vous choisissez comment les joueurs d'une catégorie sont organisés : une liste par équipe, ou une seule liste commune à toutes les équipes. Cliquez sur « Changer de mode » pour modifier.
+          </p>
         </div>
         {peutCreer && (
           <button onClick={onCreer} style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: accentColor, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
