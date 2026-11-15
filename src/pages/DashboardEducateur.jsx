@@ -5105,6 +5105,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const remonterStatsVersJoueurs = async (matchInfo, statsParJoueur) => {
     const entries = Object.entries(statsParJoueur || {}).filter(([joueurId, s]) => joueurId && (s.minutes || 0) > 0)
     if (!entries.length) return
+    // Lignes existantes de ce match lues en une seule requête (pas une par
+    // joueur) : la base de l'offre gratuite saturait sous la rafale de
+    // requêtes parallèles (statement timeout à l'enregistrement, nov. 2026).
+    const ids = entries.map(([joueurId]) => joueurId)
+    const { data: existants } = await supabase.from('stats_match_joueur').select('id, joueur_id').eq('match_id', matchInfo.id).in('joueur_id', ids)
+    const idExistant = Object.fromEntries((existants || []).map(e => [e.joueur_id, e.id]))
+    const nouveaux = []
     for (const [joueurId, s] of entries) {
       const payload = {
         joueur_id: joueurId,
@@ -5119,34 +5126,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         cartons_rouges: s.carton_rouge ? 1 : 0,
         source: 'feuille_match',
       }
-      const { data: existant } = await supabase.from('stats_match_joueur').select('id').eq('joueur_id', joueurId).eq('match_id', matchInfo.id).maybeSingle()
-      if (existant) await supabase.from('stats_match_joueur').update(payload).eq('id', existant.id)
-      else await supabase.from('stats_match_joueur').insert(payload)
+      if (idExistant[joueurId]) await supabase.from('stats_match_joueur').update(payload).eq('id', idExistant[joueurId])
+      else nouveaux.push(payload)
     }
-    // Moyennes recalculées une fois par joueur concerné (pas par ligne insérée).
-    await Promise.all(entries.map(async ([joueurId]) => {
-      const { data: tousLesMatchs } = await supabase.from('stats_match_joueur').select('*').eq('joueur_id', joueurId)
-      if (!tousLesMatchs?.length) return
-      await supabase.from('profil_recrutement').upsert({ joueur_id: joueurId, ...calculerMoyennes(tousLesMatchs), updated_at: new Date().toISOString() }, { onConflict: 'joueur_id' })
-    }))
+    if (nouveaux.length) await supabase.from('stats_match_joueur').insert(nouveaux)
+    // Moyennes recalculées une fois par joueur concerné : une lecture et une
+    // écriture groupées pour tous les joueurs.
+    const { data: tousLesMatchs } = await supabase.from('stats_match_joueur').select('*').in('joueur_id', ids)
+    const parJoueur = {}
+    for (const m of tousLesMatchs || []) (parJoueur[m.joueur_id] ||= []).push(m)
+    const profils = Object.entries(parJoueur).map(([joueurId, liste]) => ({ joueur_id: joueurId, ...calculerMoyennes(liste), updated_at: new Date().toISOString() }))
+    if (profils.length) await supabase.from('profil_recrutement').upsert(profils, { onConflict: 'joueur_id' })
   }
 
   const sauvegarderStatsMatch = async (matchId) => {
     const entries = Object.entries(statsMatch[matchId] || {})
-    // Un upsert par joueur, chacun indépendant des autres (clé match_id+
-    // joueur_id différente à chaque fois) — en parallèle plutôt qu'en
-    // séquence.
-    const resultats = await Promise.all(entries.map(([joueurId, s]) =>
-      supabase.from('stats_match').upsert({
-        match_id: matchId, joueur_id: joueurId, educateur_id: userId,
-        minutes: s.minutes || 0, buts: s.buts || 0, passes_dec: s.passes_dec || 0,
-        clean_sheet: s.clean_sheet || false, carton_jaune: s.carton_jaune || false, carton_rouge: s.carton_rouge || false
-      }, { onConflict: 'match_id,joueur_id' })
-    ))
-    const erreurs = resultats.filter(r => r.error)
-    if (erreurs.length > 0) {
-      console.error('Erreur sauvegarde stats match:', erreurs.map(e => e.error.message))
-      alert(`Erreur lors de l'enregistrement des stats de ${erreurs.length} joueur${erreurs.length > 1 ? 's' : ''} :\n${erreurs[0].error.message}`)
+    // Un seul upsert groupé pour tous les joueurs (clé match_id+joueur_id) :
+    // une requête par joueur en parallèle saturait la base de l'offre
+    // gratuite (statement timeout, nov. 2026).
+    const lignes = entries.map(([joueurId, s]) => ({
+      match_id: matchId, joueur_id: joueurId, educateur_id: userId,
+      minutes: s.minutes || 0, buts: s.buts || 0, passes_dec: s.passes_dec || 0,
+      clean_sheet: s.clean_sheet || false, carton_jaune: s.carton_jaune || false, carton_rouge: s.carton_rouge || false
+    }))
+    const { error: erreurStats } = lignes.length
+      ? await supabase.from('stats_match').upsert(lignes, { onConflict: 'match_id,joueur_id' })
+      : { error: null }
+    if (erreurStats) {
+      console.error('Erreur sauvegarde stats match:', erreurStats.message)
+      alert(`Erreur lors de l'enregistrement des stats de ${lignes.length} joueur${lignes.length > 1 ? 's' : ''} :\n${erreurStats.message}`)
     }
     const matchInfo = matchs.find(m => m.id === matchId)
     if (matchInfo) {
@@ -5320,6 +5328,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       // dans le corps de la réponse, accessible via error.context (le
       // Response brut), pas directement sur l'objet error.
       let detail = error.message
+      // 546/504 : Supabase a coupé la fonction (trop longue), sans corps utile.
+      if ([546, 504].includes(error.context?.status)) detail = "Le scan a pris trop de temps. Ta photo est gardée : réessaie dans une minute."
       try {
         const body = await error.context?.json()
         if (body?.error) detail = body.error
@@ -6636,7 +6646,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
                   <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-
 
                     {/* Header */}
                     <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: `1px solid ${colors.border.subtle}`, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
