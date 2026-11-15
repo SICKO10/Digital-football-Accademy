@@ -121,7 +121,7 @@ function Groupe({ titre, aide, children }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur }) {
+export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur, readOnly = false }) {
   const colors = useColors()
   const [vue, setVue] = useState('profil') // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
@@ -143,6 +143,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
   const changerVue = (v) => { setVue(v); setErreur(''); setEnregistre(false) }
 
   const sauvegarder = async () => {
+    if (readOnly) return
     setSaving(true)
     setErreur('')
     const payload = { ...form, joueur_id: userId, source: 'manuel' }
@@ -210,7 +211,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
         sousTitre={`${moy.nb_matchs || 0} match${(moy.nb_matchs || 0) > 1 ? 's' : ''} enregistré${(moy.nb_matchs || 0) > 1 ? 's' : ''} · ${joueurPoste || poste}. Ta carte, tes chiffres et tes récompenses de la saison.`} />
 
       <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
-        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${tousMatchs.length})` }].map(o => (
+        {[{ key: 'profil', label: 'Mon profil' }, { key: 'saisir', label: 'Saisir un match' }, { key: 'historique', label: `Historique (${tousMatchs.length})` }].filter(o => !readOnly || o.key !== 'saisir').map(o => (
           <button key={o.key} onClick={() => changerVue(o.key)} style={pastille(vue === o.key)}>{o.label}</button>
         ))}
       </div>
@@ -224,7 +225,9 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
       {vue === 'profil' && (
         <>
           <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} onOuvrirFiche={onOuvrirFiche} logoClub={logoClub} profilJoueur={profilJoueur} isMobile={isMobile} />
-          {matchs.length === 0 ? (
+          {matchs.length === 0 && readOnly ? (
+            <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px', color: colors.text.faint }}>Aucun match enregistré pour le moment.</Carte>
+          ) : matchs.length === 0 ? (
             <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
               <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Complète ton profil avec tes propres matchs</div>
               <div style={{ color: colors.text.faint, fontSize: fontSize.xl, marginBottom: spacing['3xl'] }}>Saisis tes stats après chaque match pour obtenir ton radar de joueur.</div>

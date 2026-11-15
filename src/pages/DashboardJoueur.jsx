@@ -4099,6 +4099,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         {/* ── MON PROFIL ── */}
         {onglet === 'profil' && (
           <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? '16px' : '24px 40px' }}>
+          {/* Mode parent : consultation seule, aucun champ modifiable */}
+          <fieldset disabled={!!readOnly} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             {/* Stats manuelles retirées (matchs/buts/PD/cleansheets) — calculées
                 automatiquement depuis stats_match_joueur via "Mes Statistiques"
                 (cf. MesStats.jsx), pour ne pas avoir deux sources de vérité. */}
@@ -4500,6 +4502,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
               )}
 
+                {!readOnly && (
                 <div style={{ marginTop: spacing['3xl'] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                   <span style={{ display: 'flex', color: colors.icon.muted }}><IconUsers /></span>
@@ -4534,11 +4537,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <p style={{ color: colors.text.ghost, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>Maximum atteint (2 parents)</p>
                 )}
               </div>
+                )}
             </SectionRepliable>
 
             <div style={{ marginBottom: '16px' }}>
               <ParrainageWidget userId={userId} accentColor={colors.accent.green} />
             </div>
+          </fieldset>
           </div>
         )}
 
@@ -4840,7 +4845,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
 
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url} profilJoueur={profil}
+        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url} profilJoueur={profil} readOnly={readOnly}
           onOuvrirFiche={() => { const a = equipePrincipaleStats?.affiliation; if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (

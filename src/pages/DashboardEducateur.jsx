@@ -232,7 +232,7 @@ const EDUCATEUR_FAQ = [
   },
   {
     q: "Comment intégrer un dirigeant ?",
-    a: "Dans Explorer → Dirigeants, clique sur \"Inviter un dirigeant\" et saisis son adresse email. Pour chaque rubrique (effectif, stats, compétition, entraînements, préparation physique, notes), choisis ce qu'il peut faire : aucun accès, lecture seule ou édition. Il reçoit l'invitation par email, crée son compte et retrouve ton dashboard avec uniquement les droits que tu as donnés. Tu peux les modifier ou le retirer à tout moment.",
+    a: "Dans Mon équipe, sous la liste de tes joueurs, utilise le bloc \"Inviter un dirigeant\" et saisis son adresse email. Pour chaque rubrique (effectif, stats, compétition, entraînements, préparation physique, notes), choisis ce qu'il peut faire : aucun accès, lecture seule ou édition. Il reçoit l'invitation par email, crée son compte et retrouve ton dashboard avec uniquement les droits que tu as donnés. Tu peux les modifier ou le retirer à tout moment.",
   },
   {
     q: "Comment créer une fiche de séance ?",
@@ -2841,6 +2841,125 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setAffiliations(af || [])
   }
 
+  // Invitation et gestion des dirigeants (affichée dans Mon équipe, sous les joueurs)
+  const rendreDirigeants = () => (
+        <div>
+          {/* Formulaire invitation — largeur propre, plus étroite que le
+              conteneur : un input email + des lignes de permissions restent
+              lisibles, pas besoin de s'étirer sur toute la page. */}
+          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
+            <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
+            <input
+              value={newDirigeantEmail}
+              onChange={e => setNewDirigeantEmail(e.target.value)}
+              placeholder={t('dir_email_placeholder', lang)}
+              type="email"
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+            />
+  
+            {/* Grille permissions */}
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {[
+                { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
+                { key: 'stats', label: `${t('nav_stats', lang)}` },
+                { key: 'competition', label: `${t('comp_competition', lang)}` },
+                { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
+                { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
+                { key: 'notes', label: 'Notes' },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
+                  <span style={{ fontSize: 13, color: colors.text.secondary }}>{label}</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {['aucun', 'lecture', 'edition'].map(val => (
+                      <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
+                        style={{
+                          padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                          background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
+                          color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success : val === 'lecture' ? colors.accent.info : colors.accent.red) : colors.text.disabled,
+                        }}>
+                        {val === 'aucun' ? `${t('dir_aucun', lang)}` : val === 'lecture' ? `${t('dir_lecture', lang)}` : `${t('dir_edition', lang)}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+  
+            <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
+              style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+              {invitingDirigeant ? 'Envoi...' : `${t('dir_envoyer_invitation', lang)}`}
+            </button>
+          </div>
+  
+          {/* Liste dirigeants existants — grille plutôt qu'une colonne unique,
+              pour remplir l'espace gagné sur la largeur du conteneur. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
+          {dirigeants.map(d => (
+            <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
+                  <p style={{ margin: '3px 0 0', fontSize: 11, color: colors.text.faint }}>
+                    {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ') || t('dir_aucun_acces', lang)}
+                  </p>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.success + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.success : '#f59e0b' }}>
+                  {d.statut === 'accepte' ? `${t('dir_actif', lang)}` : `${t('etat_en_attente', lang)}`}
+                </span>
+              </div>
+  
+              {/* Modifier permissions inline */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
+                  { key: 'stats', label: `${t('nav_stats', lang)}` },
+                  { key: 'competition', label: `${t('comp_competition', lang)}` },
+                  { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
+                  { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
+                  { key: 'notes', label: 'Notes' },
+                ].map(({ key, label }) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: colors.background.sunken, borderRadius: 6 }}>
+                    <span style={{ fontSize: 11, color: colors.text.muted }}>{label}</span>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {['aucun', 'lecture', 'edition'].map(val => (
+                        <button key={val}
+                          onClick={() => modifierPermissions(d.id, key, val)}
+                          style={{
+                            padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                            background: (d.permissions?.[key] || 'aucun') === val
+                              ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft)
+                              : colors.background.raised,
+                            color: (d.permissions?.[key] || 'aucun') === val
+                              ? (val === 'edition' ? colors.accent.success : val === 'lecture' ? colors.accent.info : colors.accent.red)
+                              : colors.border.strong,
+                          }}>
+                          {val === 'aucun' ? t('dir_aucun', lang) : val === 'lecture' ? t('dir_lecture', lang) : t('dir_edition', lang)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+  
+              {d.statut === 'en_attente' && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
+                  <button onClick={() => renvoyerInvitationDirigeant(d)}
+                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {t('dir_renvoyer', lang)}
+                  </button>
+                  <button onClick={() => supprimerDirigeant(d.id)}
+                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    {t('btn_supprimer', lang)}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          </div>
+        </div>
+  )
+
   const chargerDirigeants = async (uid) => {
     const { data } = await supabase.from('dirigeant_acces').select('*').eq('educateur_id', uid)
     setDirigeants(data || [])
@@ -3234,7 +3353,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, competitionSubTab])
-  useEffect(() => { if (activeSection === 'explorer' && userId) chargerDirigeants(userId) }, [activeSection, userId])
+  useEffect(() => { if (['explorer', 'equipe'].includes(activeSection) && userId) chargerDirigeants(userId) }, [activeSection, userId])
   useEffect(() => { if (['equipe', 'notes'].includes(activeSection) && userId) chargerEvaluationsJoueurs(userId) }, [activeSection, userId])
   useEffect(() => {
     if (activeSection !== 'stats' || !userId || matchs.length === 0) return
@@ -6517,6 +6636,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
                   <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            {/* Inviter un dirigeant : sous la liste des joueurs, réservé à l'éducateur lui-même */}
+            {!permissions && canView('equipe') && (<div style={{ marginTop: 28 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px' }}>{t('nav_dirigeants', lang)}</h3>
+              {rendreDirigeants()}
+            </div>)}
+
 
                     {/* Header */}
                     <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: `1px solid ${colors.border.subtle}`, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -12130,121 +12255,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )}
 
               {explorerOnglet === 'dirigeants' ? (
-                <div>
-                  {/* Formulaire invitation — largeur propre, plus étroite que le
-                      conteneur : un input email + des lignes de permissions restent
-                      lisibles, pas besoin de s'étirer sur toute la page. */}
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, marginBottom: 20, maxWidth: 560 }}>
-                    <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 14 }}>{t('dir_inviter', lang)}</p>
-                    <input
-                      value={newDirigeantEmail}
-                      onChange={e => setNewDirigeantEmail(e.target.value)}
-                      placeholder={t('dir_email_placeholder', lang)}
-                      type="email"
-                      style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
-                    />
-
-                    {/* Grille permissions */}
-                    <p style={{ margin: '0 0 10px', fontSize: 11, color: colors.text.faint, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('dir_permissions', lang)}</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                      {[
-                        { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
-                        { key: 'stats', label: `${t('nav_stats', lang)}` },
-                        { key: 'competition', label: `${t('comp_competition', lang)}` },
-                        { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
-                        { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
-                        { key: 'notes', label: 'Notes' },
-                      ].map(({ key, label }) => (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: colors.background.base, borderRadius: 8 }}>
-                          <span style={{ fontSize: 13, color: colors.text.secondary }}>{label}</span>
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            {['aucun', 'lecture', 'edition'].map(val => (
-                              <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
-                                style={{
-                                  padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                                  background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
-                                  color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success : val === 'lecture' ? colors.accent.info : colors.accent.red) : colors.text.disabled,
-                                }}>
-                                {val === 'aucun' ? `${t('dir_aucun', lang)}` : val === 'lecture' ? `${t('dir_lecture', lang)}` : `${t('dir_edition', lang)}`}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
-                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
-                      {invitingDirigeant ? 'Envoi...' : `${t('dir_envoyer_invitation', lang)}`}
-                    </button>
-                  </div>
-
-                  {/* Liste dirigeants existants — grille plutôt qu'une colonne unique,
-                      pour remplir l'espace gagné sur la largeur du conteneur. */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
-                  {dirigeants.map(d => (
-                    <div key={d.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '16px 18px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{d.email}</p>
-                          <p style={{ margin: '3px 0 0', fontSize: 11, color: colors.text.faint }}>
-                            {Object.entries(d.permissions || {}).filter(([, v]) => v !== 'aucun').map(([k, v]) => `${k} (${v})`).join(' · ') || t('dir_aucun_acces', lang)}
-                          </p>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: d.statut === 'accepte' ? colors.accent.success + alpha.subtle : '#f59e0b15', color: d.statut === 'accepte' ? colors.accent.success : '#f59e0b' }}>
-                          {d.statut === 'accepte' ? `${t('dir_actif', lang)}` : `${t('etat_en_attente', lang)}`}
-                        </span>
-                      </div>
-
-                      {/* Modifier permissions inline */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[
-                          { key: 'effectif', label: `${t('equipe_effectif', lang)}` },
-                          { key: 'stats', label: `${t('nav_stats', lang)}` },
-                          { key: 'competition', label: `${t('comp_competition', lang)}` },
-                          { key: 'entrainements', label: `${t('nav_entrainements', lang)}` },
-                          { key: 'prep_physique', label: `${t('nav_prep_physique', lang)}` },
-                          { key: 'notes', label: 'Notes' },
-                        ].map(({ key, label }) => (
-                          <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: colors.background.sunken, borderRadius: 6 }}>
-                            <span style={{ fontSize: 11, color: colors.text.muted }}>{label}</span>
-                            <div style={{ display: 'flex', gap: 3 }}>
-                              {['aucun', 'lecture', 'edition'].map(val => (
-                                <button key={val}
-                                  onClick={() => modifierPermissions(d.id, key, val)}
-                                  style={{
-                                    padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                                    background: (d.permissions?.[key] || 'aucun') === val
-                                      ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft)
-                                      : colors.background.raised,
-                                    color: (d.permissions?.[key] || 'aucun') === val
-                                      ? (val === 'edition' ? colors.accent.success : val === 'lecture' ? colors.accent.info : colors.accent.red)
-                                      : colors.border.strong,
-                                  }}>
-                                  {val === 'aucun' ? t('dir_aucun', lang) : val === 'lecture' ? t('dir_lecture', lang) : t('dir_edition', lang)}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {d.statut === 'en_attente' && (
-                        <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
-                          <button onClick={() => renvoyerInvitationDirigeant(d)}
-                            style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            {t('dir_renvoyer', lang)}
-                          </button>
-                          <button onClick={() => supprimerDirigeant(d.id)}
-                            style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            {t('btn_supprimer', lang)}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  </div>
-                </div>
+                rendreDirigeants()
               ) : explorerOnglet === 'annonces' ? (() => {
                 const annoncesFiltrees = annonces.filter(a => {
                   if (filtreTypeAnnonce !== 'tous' && a.type_annonce !== filtreTypeAnnonce) return false

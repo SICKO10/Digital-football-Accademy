@@ -141,15 +141,6 @@ export default function DashboardParent() {
     <div>
       <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
-        {mesRoles?.club && (
-          <button onClick={() => navigate('/club')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '20px', color: colors.accent.blue, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🏟️ Vue Club</button>
-        )}
-        {mesRoles?.educateur && (
-          <button onClick={() => navigate('/educateur')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '20px', color: colors.accent.green, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>🎓 Vue Éducateur</button>
-        )}
-        {mesRoles?.joueur && (
-          <button onClick={() => navigate('/dashboard-joueur')} style={{ padding: '5px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '20px', color: colors.accent.amber, cursor: 'pointer', fontSize: '11px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>⚽ Vue Joueur</button>
-        )}
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>
       <DashboardJoueur joueurIdOverride={acces.joueur_id} readOnly />

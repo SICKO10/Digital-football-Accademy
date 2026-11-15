@@ -117,6 +117,7 @@ Rappel : `/clear` et une session neuve par bloc.
   - 2026-11-14 · Opus 5.5 · bloc non démarré : prérequis vérifiés en base (diagnostic relancé, lecture seule). Club test = `testfinal` éducateur accepté + 3 équipes, aucun staff, aucun joueur, parent ni dirigeant, aucun compte `deabreu.amorim+…` hormis le club. Matrice validée par Kevin (3 recommandations), `testfinal` remplace `+educ`. Aucun SQL écrit, aucun commit.
   - 2026-11-14 · Opus 5.5 · relance de `/bloc 2` : toujours bloqué. Lecture de `auth.users` : seuls `testfinal@` et `+club@` existent ; `+joueur`, `+parent`, `+staff`, `+dirigeant` absents. Rien écrit.
   - 2026-11-14 · Opus 5.5 · 3e relance : toujours bloqué (mêmes 2 comptes dans `auth.users`). AS CANNES n'a aucun staff (cf. `supabase_sponsors_tests.sql`), il ne peut donc pas remplacer `+staff`. Proposé à Kevin : créer les 4 comptes, ou découper le bloc (2a fonctions + secours maintenant, 2b tests quand les comptes existent). Rien écrit en base.
+  - 2026-11-15 · Opus 5.5 · Kevin a recréé des comptes sur d'autres adresses (voir « Comptes de test »). Joueur, parent et staff OK en base. Toujours bloqué : (1) aucun dirigeant, car l'ajout de dirigeant a disparu avec Explorer (commit `b971f3d`, touche tous les éducateurs) ; (2) aucune restriction de catégorie posée pour le directeur sportif (`role_categories_access` vide pour le club test). Signalé aussi : le parent voit des champs modifiables ; vérifié en base, rien n'a été enregistré à son nom ni au nom du joueur.
 
 ### Bloc 3 : fermeture de `role_categories_access`
 - Statut : à faire
@@ -308,6 +309,12 @@ Tous rattachés au club test `deabreu.amorim+club@gmail.com`. La ligne 37 du dia
 3. `deabreu.amorim+parent@gmail.com` : parent de `+joueur`, accès accepté.
 4. `deabreu.amorim+staff@gmail.com` : membre du staff du club test, avec un rôle limité à **une seule catégorie** (pour tester `role_categories_access`).
 5. `deabreu.amorim+dirigeant@gmail.com` : dirigeant invité par `testfinal`, avec le droit « entraînements » en écriture (le dirigeant écrit dans `entrainements` et `convocation_joueurs` via le tableau de l'éducateur).
+
+État au 2026-11-15 (comptes recréés par Kevin, adresses différentes de la liste ci-dessus) :
+- Joueur = `kenza.harroudsilva@gmail.com` (`5e9dc7a1-7f35-4f55-87da-8c63ed60b703`), affilié accepté à `testfinal`, une seule équipe.
+- Parent = `bykenza.contact@gmail.com` (`1981ced9-3814-4dcd-a3d1-ed168b0101bf`), accès accepté à ce joueur.
+- Staff = `7kevin.amorim10@gmail.com` (`a011f381-88c4-4799-a05b-aea76d527052`), `directeur_sportif` du club test. Reste à le limiter à une seule catégorie (Mon club → Accès du bureau).
+- Dirigeant : à créer quand l'ajout de dirigeant sera revenu dans « Mon équipe ».
 
 ## Matrice
 (rédigée au bloc 1 le 2026-11-14, validée par Kevin le 2026-11-14)
