@@ -6626,12 +6626,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )
             })()}
 
-            {/* Inviter un dirigeant : sous la liste des joueurs, réservé à l'éducateur lui-même */}
-            {!permissions && canView('equipe') && (<div style={{ marginTop: 28 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px' }}>{t('nav_dirigeants', lang)}</h3>
-              {rendreDirigeants()}
-            </div>)}
-
             {/* ── Modal profil joueur ── */}
             {joueurProfil && (() => {
               const j = joueurProfil
@@ -7132,6 +7126,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 })}
               </div>
             )}
+
+            {/* Inviter un dirigeant : sous la liste des joueurs, réservé à l'éducateur lui-même */}
+            {!permissions && canView('equipe') && (<div style={{ marginTop: 28 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px' }}>{t('nav_dirigeants', lang)}</h3>
+              {rendreDirigeants()}
+            </div>)}
           </>
         )}
 
