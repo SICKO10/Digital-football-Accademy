@@ -6626,6 +6626,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )
             })()}
 
+            {/* Inviter un dirigeant : sous la liste des joueurs, réservé à l'éducateur lui-même */}
+            {!permissions && canView('equipe') && (<div style={{ marginTop: 28 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px' }}>{t('nav_dirigeants', lang)}</h3>
+              {rendreDirigeants()}
+            </div>)}
+
             {/* ── Modal profil joueur ── */}
             {joueurProfil && (() => {
               const j = joueurProfil
@@ -6636,11 +6642,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
                   <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            {/* Inviter un dirigeant : sous la liste des joueurs, réservé à l'éducateur lui-même */}
-            {!permissions && canView('equipe') && (<div style={{ marginTop: 28 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 12px' }}>{t('nav_dirigeants', lang)}</h3>
-              {rendreDirigeants()}
-            </div>)}
 
 
                     {/* Header */}
