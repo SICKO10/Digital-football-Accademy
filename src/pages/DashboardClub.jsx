@@ -2290,13 +2290,14 @@ export default function DashboardClub() {
   }
 
   // ── Staff du club ──
+  // Lu par la fonction annuaire (secu_staff_annuaire) : club et staff du club
+  // seulement, sans email ni téléphone des collègues (PLAN-securite-novembre,
+  // bloc 4). Même forme qu'avant ({ id, user_id, role, membre: { prenom, nom } })
+  // pour ne rien changer aux écrans qui s'en servent.
   const chargerStaff = async (uid) => {
-    const { data } = await supabase
-      .from('staff_club')
-      .select('*, membre:user_id(prenom, nom, email)')
-      .eq('club_id', uid)
-      .order('created_at', { ascending: false })
-    setStaffMembers(data || [])
+    const { data, error } = await supabase.rpc('secu_staff_annuaire', { p_club_id: uid })
+    if (error) { console.error('Staff du club :', error.message); setStaffMembers([]); return }
+    setStaffMembers((data || []).map(({ prenom, nom, ...ligne }) => ({ ...ligne, membre: { prenom, nom } })))
   }
 
   const chargerRolePermissions = async (uid) => {
