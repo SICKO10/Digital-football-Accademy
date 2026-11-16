@@ -15,7 +15,9 @@
 --   - section F (fonctions) : tout doit être « ok » dès le bloc 2 ;
 --   - section T (tables) : « ok » si la base répond déjà comme la matrice,
 --     sinon « écart, fermé au bloc N » : normal tant que ce bloc n'est pas
---     appliqué. Après le bloc 9, tout doit être « ok » ;
+--     appliqué. Pour un bloc listé dans t.blocs_appliques (fixtures
+--     ci-dessous), tout écart devient « ÉCHEC ». Après le bloc 9, tout doit
+--     être « ok » ;
 --   - « ÉCHEC » : ne doit jamais apparaître.
 --
 -- Club A = club test (deabreu.amorim+club@), club B = AS CANNES (lecture
@@ -40,6 +42,8 @@ select
   set_config('t.staff_b_ligne', '987adf17-4649-4009-975d-37fecbda762f', false), -- une ligne staff_club de B
   set_config('t.externe',       '19b17e6c-77e9-48fd-a4ee-b17d590be499', false), -- éducateur sans aucun lien avec A ni B
   set_config('t.anon',          '00000000-0000-0000-0000-000000000000', false), -- visiteur sans compte (rôle anon)
+  -- blocs de fermeture déjà appliqués en production (à compléter à chaque bloc)
+  set_config('t.blocs_appliques', '2,3', false),
   -- identifiants des lignes créées pour les tests (annulées à chaque cas)
   set_config('t.fx_seance_a',   gen_random_uuid()::text, false),
   set_config('t.fx_seance_a0',  gen_random_uuid()::text, false),
@@ -465,8 +469,8 @@ select
   obtenu,
   case
     when obtenu = attendu then 'ok'
-    when bloc = 2 or obtenu like 'erreur%' then 'ÉCHEC'
+    when bloc = any(string_to_array(current_setting('t.blocs_appliques'), ',')::int[]) or obtenu like 'erreur%' then 'ÉCHEC'
     else 'écart, fermé au bloc ' || bloc
   end as statut
 from r
-order by (case when obtenu = attendu then 2 when bloc = 2 or obtenu like 'erreur%' then 0 else 1 end), cas;
+order by (case when obtenu = attendu then 2 when bloc = any(string_to_array(current_setting('t.blocs_appliques'), ',')::int[]) or obtenu like 'erreur%' then 0 else 1 end), cas;
