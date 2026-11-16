@@ -47,7 +47,7 @@ export default function Configuration({
       )}
 
       {courante.id === 'forfait' && ecranForfait()}
-      {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} educateurs={educateurs} couleurPrincipale={couleurPrincipale} />}
+      {courante.id === 'outils' && <EtapeOutils outils={outils} clubId={clubId} estCompteClub={estCompteClub} />}
       {courante.id === 'educateurs' && <EtapeEducateurs clubId={clubId} educateurs={educateurs} couleurPrincipale={couleurPrincipale} fourniture={fourniture} outils={outils} />}
       {courante.id === 'journal' && <EtapeJournal clubId={clubId} educateurs={educateurs} estCompteClub={estCompteClub} />}
     </div>

@@ -7,7 +7,6 @@ import { EnteteEtape, CarteReglage, Encart } from './ui'
 import { ICONES, stylesMonClub } from './uiMonClub'
 import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
-import ModelesDepart from './ModelesDepart'
 
 const OUTILS_CLUB = OUTILS.filter(o => o.role === 'club')
 
@@ -21,7 +20,7 @@ const OUTILS_CLUB = OUTILS.filter(o => o.role === 'club')
 // `outils` : résultat de useOutils ; `clubId` : compte du club ; `estCompteClub` :
 // la personne connectée est le compte du club lui-même ; `educateurs` : éducateurs
 // affiliés acceptés (lignes de club_educateurs), pour les modèles de départ.
-export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs, couleurPrincipale }) {
+export default function EtapeOutils({ outils, clubId, estCompteClub }) {
   const colors = useColors()
   const nouveauModele = outils.actif
   const [enCours, setEnCours] = useState(null)
@@ -66,11 +65,6 @@ export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs,
     }
   }
 
-  const listeEducateurs = useMemo(() => (educateurs || []).map(e => ({
-    id: e.educateur_id,
-    nom: [e.educateur?.prenom, e.educateur?.nom].filter(Boolean).join(' ') || e.educateur?.email || 'Éducateur',
-  })), [educateurs])
-
   const parTheme = useMemo(
     () => THEMES_CLUB.map(t => ({ ...t, outils: OUTILS_CLUB.filter(o => o.theme === t.id) })).filter(t => t.outils.length > 0),
     [],
@@ -99,11 +93,6 @@ export default function EtapeOutils({ outils, clubId, estCompteClub, educateurs,
       )}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
       {!pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des outils...</p>}
-
-      {pret && peutAgir && (
-        <ModelesDepart clubId={clubId} educateurs={listeEducateurs} nouveauModele={nouveauModele} clubAffiche={allume}
-          appliquerClub={appliquer} couleur={couleurPrincipale} />
-      )}
 
       {pret && parTheme.map(t => {
         const nb = t.outils.filter(allume).length
