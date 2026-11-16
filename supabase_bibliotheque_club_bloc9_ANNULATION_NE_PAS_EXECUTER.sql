@@ -1,0 +1,57 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 9 de la
+-- bibliothèque du club (PLAN-bibliotheque-club.md).
+--
+-- Effet : la direction du club ne lit plus les procédés partagés au club par
+-- ses éducateurs, et le déclencheur redevient celui du bloc 1 (l'auteur d'un
+-- nouvel ajout redevient toujours la personne connectée ; un ajout
+-- « éducateur » ne serait plus contrôlé). Les procédés déjà adoptés restent
+-- dans la bibliothèque du club, avec leur auteur : aucune donnée n'est effacée.
+-- Il faudrait aussi retirer l'écran « Partagés par vos éducateurs ».
+--
+-- Les lignes ci-dessous sont en commentaire exprès : pour les utiliser, il
+-- faudra les décommenter volontairement, après une sauvegarde.
+-- ============================================================================
+
+-- begin;
+--
+-- drop policy if exists lecture_exercices_partage_club_direction on public.bibliotheque_exercices;
+-- drop function if exists public.secu_club_lit_partage_educateur(uuid, uuid);
+--
+-- -- Déclencheur du bloc 1, à l'identique :
+-- create or replace function public.bibliotheque_club_procedes_avant_ecriture()
+-- returns trigger
+-- language plpgsql
+-- security definer
+-- set search_path to ''
+-- as $$
+-- declare
+--   v_nom text;
+-- begin
+--   if tg_op = 'INSERT' then
+--     if auth.uid() is not null then
+--       new.auteur_id := auth.uid();
+--       select nullif(btrim(coalesce(pr.prenom, '') || ' ' || coalesce(pr.nom, '')), '')
+--         into v_nom
+--         from public.profiles pr
+--        where pr.id = auth.uid();
+--       new.auteur_nom := coalesce(v_nom, '');
+--     end if;
+--     new.created_at := now();
+--     new.updated_at := now();
+--   else
+--     new.club_id    := old.club_id;
+--     new.auteur_nom := old.auteur_nom;
+--     new.origine    := old.origine;
+--     new.created_at := old.created_at;
+--     new.auteur_id  := case when new.auteur_id  is null then null else old.auteur_id  end;
+--     new.origine_id := case when new.origine_id is null then null else old.origine_id end;
+--     new.updated_at := now();
+--   end if;
+--   return new;
+-- end;
+-- $$;
+--
+-- revoke all on function public.bibliotheque_club_procedes_avant_ecriture() from public, anon, authenticated;
+--
+-- commit;

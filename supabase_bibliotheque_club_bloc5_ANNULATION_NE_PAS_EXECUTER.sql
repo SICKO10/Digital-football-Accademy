@@ -1,0 +1,36 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 5 de la
+-- bibliothèque du club (PLAN-bibliotheque-club.md).
+--
+-- ATTENTION : annuler ce bloc ROUVRE la faille relevée au bloc 0 : tout compte
+-- connecté pourrait de nouveau lire, ajouter, modifier et supprimer n'importe
+-- quelle vidéo, y compris celles des clubs. En cas de problème, mieux vaut
+-- corriger la règle fautive que tout annuler.
+--
+-- Effet : retire la lecture des procédés Digital Football par les clubs et leur
+-- staff, remet les 4 règles vidéo d'avant (« tout compte connecté »), retire le
+-- déclencheur et les 3 fonctions du bloc 5. Aucune donnée n'est effacée.
+--
+-- Les lignes ci-dessous sont en commentaire exprès : pour les utiliser, il
+-- faudra les décommenter volontairement, après une sauvegarde.
+-- ============================================================================
+
+-- begin;
+--
+-- drop policy if exists lecture_exercices_df_club on public.bibliotheque_exercices;
+--
+-- drop policy if exists bv_select on public.bibliotheque_videos;
+-- drop policy if exists bv_insert on public.bibliotheque_videos;
+-- drop policy if exists bv_update on public.bibliotheque_videos;
+-- drop policy if exists bv_delete on public.bibliotheque_videos;
+-- create policy bv_select on public.bibliotheque_videos for select using (auth.uid() is not null);
+-- create policy bv_insert on public.bibliotheque_videos for insert with check (auth.uid() is not null);
+-- create policy bv_update on public.bibliotheque_videos for update using (auth.uid() is not null);
+-- create policy bv_delete on public.bibliotheque_videos for delete using (auth.uid() is not null);
+--
+-- drop trigger if exists bibliotheque_videos_portee_figee on public.bibliotheque_videos;
+-- drop function if exists public.bibliotheque_videos_portee_figee();
+-- drop function if exists public.secu_lit_bibliotheque_df();
+-- drop function if exists public.secu_joueur_affilie(uuid, uuid);
+--
+-- commit;
