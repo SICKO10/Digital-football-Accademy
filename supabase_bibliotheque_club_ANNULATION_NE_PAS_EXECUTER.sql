@@ -1,0 +1,30 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 1 de la
+-- bibliothèque du club (PLAN-bibliotheque-club.md).
+--
+-- Effet : supprime la table bibliotheque_club_procedes ET TOUS LES PROCÉDÉS
+-- QUE LES CLUBS Y ONT RANGÉS, les deux fonctions de droits, et retire
+-- 'bibliotheque' des sections réglables (les réglages de rôle déjà
+-- enregistrés pour cette section sont effacés).
+--
+-- Les lignes ci-dessous sont en commentaire exprès : pour les utiliser, il
+-- faudra les décommenter volontairement, après une sauvegarde.
+-- ============================================================================
+
+-- begin;
+--
+-- drop table if exists public.bibliotheque_club_procedes;
+-- drop function if exists public.bibliotheque_club_procedes_avant_ecriture();
+-- drop function if exists public.a_permission_bibliotheque(uuid, boolean);
+-- drop function if exists public.secu_educateur_accepte_club(uuid);
+--
+-- delete from public.role_permissions where section = 'bibliotheque';
+-- alter table public.role_permissions drop constraint role_permissions_section_check;
+-- alter table public.role_permissions add constraint role_permissions_section_check
+--   check (section = any (array[
+--     'sportif', 'seances', 'terrains', 'deplacements', 'budget', 'sponsors',
+--     'repartition_bus', 'profil', 'evenements', 'stages', 'organigramme', 'staff',
+--     'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'mon_club'
+--   ]::text[]));
+--
+-- commit;
