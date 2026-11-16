@@ -2818,7 +2818,9 @@ export default function DashboardClub() {
     })
     setSavingCategorie(false)
     if (error) {
-      alert('Erreur : ' + error.message)
+      alert(error.code === '23505'
+        ? `L'équipe ${snapshot.nom} ${snapshot.equipe} existe déjà dans ce club.`
+        : 'Erreur : ' + error.message)
       setNewCategorie(snapshot)
       setShowAddCategorie(true)
       return
@@ -2828,7 +2830,29 @@ export default function DashboardClub() {
 
   const supprimerCategorie = async (id) => {
     if (!confirm('Supprimer cette catégorie/équipe ?')) return
-    await supabase.from('club_categories').delete().eq('id', id)
+    const equipe = categories.find(c => c.id === id)
+    const nomEquipe = equipe ? `${equipe.nom} ${equipe.equipe}` : 'cette équipe'
+    const { error } = await supabase.from('club_categories').delete().eq('id', id)
+    if (error) {
+      // 23503 : la base refuse tant que des données pointent encore vers
+      // l'équipe (joueurs, séances, matchs...). Avant, l'erreur était ignorée :
+      // l'équipe disparaissait de l'écran puis revenait au rechargement.
+      if (error.code === '23503') {
+        const table = /from table "([^"]+)"/.exec(error.details || error.message || '')?.[1]
+        const quoi = {
+          equipe_joueurs: 'des joueurs y sont encore rattachés. Déplace-les ou retire-les d\'abord',
+          entrainements: 'des séances y sont encore rattachées',
+          matchs_equipe: 'des matchs y sont encore rattachés',
+          causeries: 'des causeries y sont encore rattachées',
+          deplacements: 'des déplacements y sont encore rattachés',
+          profiles: 'c\'est l\'équipe affichée par défaut d\'un éducateur, qui doit d\'abord en choisir une autre',
+        }[table] || 'des données y sont encore rattachées'
+        alert(`Impossible de supprimer ${nomEquipe} : ${quoi}.`)
+      } else {
+        alert('Erreur : ' + error.message)
+      }
+      return
+    }
     setCategories(prev => prev.filter(c => c.id !== id))
   }
 
