@@ -43,7 +43,7 @@ select
   set_config('t.externe',       '19b17e6c-77e9-48fd-a4ee-b17d590be499', false), -- éducateur sans aucun lien avec A ni B
   set_config('t.anon',          '00000000-0000-0000-0000-000000000000', false), -- visiteur sans compte (rôle anon)
   -- blocs de fermeture déjà appliqués en production (à compléter à chaque bloc)
-  set_config('t.blocs_appliques', '2,3', false),
+  set_config('t.blocs_appliques', '2,3,5', false),
   -- identifiants des lignes créées pour les tests (annulées à chaque cas)
   set_config('t.fx_seance_a',   gen_random_uuid()::text, false),
   set_config('t.fx_seance_a0',  gen_random_uuid()::text, false),
@@ -442,10 +442,14 @@ insert into secu_cas values
   $q$select has_table_privilege('anon', 'public.role_categories_access', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
 ('T902', 3, 'droits techniques : aucun compte ne peut vider ni lier role_categories_access', 'club_a', '',
   $q$select has_table_privilege('authenticated', 'public.role_categories_access', 'TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
-('T903', 5, 'droits techniques : le visiteur sans compte n''a aucun droit sur staff_club', 'club_a', '',
-  $q$select has_table_privilege('anon', 'public.staff_club', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
+('T903', 5, 'droits techniques : le visiteur sans compte ne peut ni écrire ni vider staff_club', 'club_a', '',
+  $q$select has_table_privilege('anon', 'public.staff_club', 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
+-- Lecture technique gardée au visiteur (bloc 5) : 51 règles d'autres tables
+-- consultent staff_club pour lui ; il n'y lit aucune ligne (T208).
+('T909', 5, 'droits techniques : le visiteur garde la lecture technique de staff_club (autres tables)', 'club_a', '',
+  $q$select has_table_privilege('anon', 'public.staff_club', 'SELECT')$q$, 'oui'),
 ('T904', 5, 'droits techniques : aucun compte ne peut vider ni lier staff_club', 'club_a', '',
-  $q$select has_table_privilege('authenticated', 'public.staff_club', 'TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
+  $q$select has_table_privilege('authenticated', 'public.staff_club', 'TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
 ('T905', 6, 'droits techniques : le visiteur sans compte n''a aucun droit sur convocation_joueurs', 'club_a', '',
   $q$select has_table_privilege('anon', 'public.convocation_joueurs', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
 ('T906', 6, 'droits techniques : aucun compte ne peut vider ni lier convocation_joueurs', 'club_a', '',
