@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, signOutSafe, avecRetrySession } from '../supabase'
 import Avatar from '../components/Avatar'
 import FicheBMFContenu from '../components/fiches/FicheBMFContenu'
+import FicheClubEquipe from '../components/fiches/FicheClubEquipe'
 import { TutorielEquipe, TutorielPlanning, TutorielSeance, TutorielCompetition, TutorielResultats } from '../components/tutoriels/TutorielsEducateur'
 import { tutorielDejaVu, marquerTutorielVu, useTutorielsVus } from '../lib/tutoriels'
 import BoutonTutoriel from '../components/tutoriels/BoutonTutoriel'
@@ -92,6 +93,7 @@ import { colors, alpha, police, forme } from '../tokens'
 import { construireSt } from '../lib/useStFinance'
 import { useColors } from '../lib/theme'
 import { TitreEcran, Etiquette, CarteChiffre, Jauge, Icone, EtiquetteStatut } from '../components/identite'
+import ChampsFicheClub from '../components/fiches/ChampsFicheClub'
 import { styleTitreEcran, styleCarte, styleCarteLiseree, styleEtiquette, styleChiffreHeros, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleTableau, styleLigneCraie, couleurCraie, couleurClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
 import { Plus, FileText, Link as LienIcone, CircleCheck, TriangleAlert, MapPin, Users, Target, CalendarDays, Clock, Save, ClipboardList, Star, X, IdCard, Activity, CircleX, Bandage, Thermometer, Goal, ShieldCheck, Timer, Medal, Pencil, FolderOpen, Trophy, Inbox, Camera, Landmark, Bot, Sparkles, Trash2, Printer, Folder, Video, Palette, Library, GraduationCap, CircleAlert, ChevronUp, ChevronDown, Check, Square, Lock, Download, Rocket, ChartColumn, Eye, ScanLine, Ellipsis, EllipsisVertical, ExternalLink, Package, ArrowRight, ChevronLeft, ChevronRight, Copy, Search, Zap, Megaphone, Mail, BadgeCheck, Send, Globe, MessageSquare, Mic, CreditCard, Smartphone, Paperclip } from 'lucide-react'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
@@ -809,16 +811,18 @@ function FicheBEFContenu({ fiche, categorieLabel, nomEducateur }) {
 
 // Orientation du PDF selon le gabarit : paysage pour les gabarits fédéraux
 // larges (BEF, BMF), portrait pour le rendu générique (Libre, DEF).
-const orientationFiche = (mode) => (mode === 'BEF' || mode === 'BMF' ? 'landscape' : 'portrait')
+const orientationFiche = (mode) => (mode === 'BEF' || mode === 'BMF' || mode === 'CLUB' ? 'landscape' : 'portrait')
 
-function FicheSeancePrint({ fiche, categorieLabel, nomEducateur, logoClub }) {
+function FicheSeancePrint({ fiche, categorieLabel, nomEducateur, logoClub, couleurClub, effectif }) {
   return createPortal(
     <div id="fiche-print">
       {fiche.mode_diplome === 'BEF'
         ? <FicheBEFContenu fiche={fiche} categorieLabel={categorieLabel} nomEducateur={nomEducateur} />
         : fiche.mode_diplome === 'BMF'
           ? <FicheBMFContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />
-          : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />}
+          : fiche.mode_diplome === 'CLUB'
+            ? <FicheClubEquipe fiche={fiche} logo={logoClub} couleur={couleurClub} {...effectif} />
+            : <FicheContenu fiche={fiche} categorieLabel={categorieLabel} logo={logoClub} />}
     </div>,
     document.body
   )
@@ -2229,6 +2233,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     setJoueurs(avecPhotos(avatarParId))
   }
 
+  // Lecture seule de l'effectif d'une équipe (Fiche club d'une équipe qui n'est pas l'équipe active).
+  const lireEffectifEquipe = async (catId) => {
+    const categorie = await chargerCategorieCommune(catId)
+    let q = supabase.from('equipe_joueurs').select('*').order('nom')
+    if (categorie) q = q.eq('categorie_id', categorie.id)
+    else q = q.eq('educateur_id', userId).eq('club_categorie_id', catId)
+    const { data } = await q
+    const roster = data || []
+    return categorie ? regrouperEffectifCommun(roster, catId).joueurs : roster
+  }
+  const effectifFiche = { joueursActifs: joueurs, equipeActiveId: equipeActive?.id || null, lireEffectif: lireEffectifEquipe }
+
   const chargerMatchs = async (uid, catId) => {
     // Scopé à la saison en cours — sans borne, cette requête (jointe à
     // stats_match/notations_match) ramenait l'historique complet du compte,
@@ -2653,19 +2669,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const now = new Date()
     return new Set([`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`])
   })
-  const ficheVide = {
-    theme: '', date: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', nb_joueurs: '', duree_totale: '', objectif_general: '',
-    // Mode diplôme (BMF/BEF/DEF) — optionnel, null = fiche libre. Fait partie de
-    // `fiche` (et donc de fiche_seance à la sauvegarde) plutôt que des states
-    // séparés : ce composant centralise déjà toute la fiche dans un seul objet.
-    mode_diplome: null, phase_jeu: '', principe_jeu: '',
-    // Séance N° / Heure de début : en-tête de la fiche officielle BEF (cf.
-    // template fédéral) — nom_prenom vient du profil éducateur, pas resaisi ici.
-    numero_seance: '', heure_debut: '',
-    constats: '', justification_pedagogique: '', auto_evaluation: '',
-    analyse_equipe: '', bilan_projection: '',
-    procedes: Array(4).fill(null).map((_, i) => ({
-      numero: i + 1, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '',
+  // Un bloc de procédé vide (numéro 1 à 6). Une Fiche club en a 6, les modèles BMF/BEF/DEF en ont 4.
+  const procedeVide = (numero) => ({
+      numero, titre: '', duree: '', nb_joueurs: '', but: '', organisation: '', consignes: '', variables: '',
       // Champs du gabarit officiel BEF (cf. template fédéral "Fiche séance") —
       // remplacent l'affichage générique (but/organisation/consignes/variables)
       // à l'impression quand mode_diplome === 'BEF'. tps_travail/tps_recup/
@@ -2681,8 +2687,33 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       // Gabarit officiel BMF (modèle FFF, cf. FicheBMFContenu) — surface,
       // comportements_attendus et criteres_reussite sont partagés avec BEF.
       objectif: '', sequence: '', gestion_rotations: '',
-    }))
+    })
+  const ficheVide = {
+    theme: '', date: '', categorie_tactique: '', categorie_age: '', type_seance: 'collectif', nb_joueurs: '', duree_totale: '', objectif_general: '',
+    // Mode diplôme (BMF/BEF/DEF) — optionnel, null = fiche libre. Fait partie de
+    // `fiche` (et donc de fiche_seance à la sauvegarde) plutôt que des states
+    // séparés : ce composant centralise déjà toute la fiche dans un seul objet.
+    // Par défaut une nouvelle fiche est une Fiche club ('CLUB'). null = ancienne fiche Libre (53 existantes), lue avec l'ancien gabarit.
+    mode_diplome: 'CLUB', equipe_id: equipeActive?.id || '', phase_jeu: '', principe_jeu: '',
+    // Séance N° / Heure de début : en-tête de la fiche officielle BEF (cf.
+    // template fédéral) — nom_prenom vient du profil éducateur, pas resaisi ici.
+    numero_seance: '', heure_debut: '',
+    // Fiche club (en-tête) : phases cochées, J± (auto ou choisi), dominante, récupérations, temps.
+    phases_club: [], jour_match: '', jour_match_manuel: false, dominante_athletique: '',
+    recup_1: '', recup_2: '', recup_3: '', recup_4: '', recup_5: '', recup_6: '',
+    tps_effectif_recto: '', tps_effectif_verso: '', tps_total_recto: '', tps_total_verso: '',
+    constats: '', justification_pedagogique: '', auto_evaluation: '',
+    analyse_equipe: '', bilan_projection: '',
+    procedes: Array.from({ length: 6 }, (_, i) => procedeVide(i + 1)),
   }
+  // Range une liste de procédés dans une nouvelle fiche : 6 blocs pour la Fiche club
+  // (complétés avec des blocs vides). Plus de 6 procédés : la fiche reste au gabarit
+  // Libre (rien n'est perdu, la Fiche club n'a que 6 cases).
+  const modeEtProcedesFicheClub = (liste) => (
+    liste.length <= 6
+      ? { mode_diplome: 'CLUB', procedes: [...liste, ...Array.from({ length: 6 - liste.length }, (_, k) => procedeVide(liste.length + k + 1))] }
+      : { mode_diplome: null, procedes: liste }
+  )
   const [fiche, setFiche] = useState(ficheVide)
   const [sport, setSport] = useState('football')
   // Filet de sécurité contre les pertes de fiche en cours de rédaction (cf.
@@ -2735,6 +2766,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
     detecter()
   }, [userId])
+
+  // Les équipes se chargent après le premier affichage : une Fiche club sans équipe
+  // (nouvelle fiche, brouillon restauré) se rattache à l'équipe active dès qu'elle est connue.
+  useEffect(() => {
+    if (fiche.mode_diplome === 'CLUB' && !fiche.equipe_id && equipeActive?.id) {
+      setFiche(f => (f.mode_diplome === 'CLUB' && !f.equipe_id ? { ...f, equipe_id: equipeActive.id } : f))
+    }
+  }, [fiche.mode_diplome, fiche.equipe_id, equipeActive?.id])
 
   // Sauvegarde locale continue (debounced) pendant la rédaction — indépendante
   // de Supabase (aucun appel réseau), donc toujours disponible même si
@@ -3130,6 +3169,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const ouvrirEditionApercu = () => {
     const fs = ficheApercu?.fiche_seance || {}
     setFicheApercuEdit({
+      // Champs propres à la Fiche club (équipe, effectif, phases, J±, temps...) conservés tels quels.
+      ...(fs.mode_diplome === 'CLUB' ? fs : {}),
       theme: fs.theme || '', date: fs.date || '', categorie_tactique: ficheApercu?.categorie_tactique || '',
       categorie_age: ficheApercu?.categorie_age || '', type_seance: ficheApercu?.type_seance || 'collectif',
       nb_joueurs: fs.nb_joueurs || '', duree_totale: fs.duree_totale || '', objectif_general: fs.objectif_general || '',
@@ -3540,7 +3581,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const demarrerFicheDepuisProcedes = async (procedesListe) => {
     const procedes = await Promise.all(procedesListe.map(procedeComplet))
     if (procedes.some(p => !p)) return
-    setFiche({ ...ficheVide, theme: procedes[0]?.theme || '', procedes: procedes.map((p, i) => procedeVersBlocFiche(p, i + 1)) })
+    setFiche({ ...ficheVide, theme: procedes[0]?.theme || '', ...modeEtProcedesFicheClub(procedes.map((p, i) => procedeVersBlocFiche(p, i + 1))) })
     setSport('football')
     setFicheFichierUrl(null)
     setFicheExtraite(false)
@@ -3610,7 +3651,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       }
     }
 
-    const pageEls = el.querySelectorAll('.bef-page, .bmf-page, .fiche-page')
+    const pageEls = el.querySelectorAll('.bef-page, .bmf-page, .fc-page, .fiche-page')
     if (pageEls.length > 0) {
       for (let i = 0; i < pageEls.length; i++) await capturerEtAjouter(pageEls[i], i === 0)
     } else {
@@ -3848,23 +3889,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         phases: resultat.phases || [],
       })
 
+      const procedesIA = exercices.map((ex, i) => ({
+          ...procedeVide(i + 1),
+          titre: [PHASE_LABEL_IA[ex.phase], ex.nom].filter(Boolean).join(' — '),
+          duree: ex.duree != null ? String(ex.duree) : '',
+          nb_joueurs: ex.format_equipes != null ? String(ex.format_equipes) : '',
+          but: ex.criteres_reussite || PHASE_LABEL_IA[ex.phase] || '',
+          criteres_realisation: ex.criteres_reussite || '',
+          organisation: ex.organisation_spatiale || '',
+          consignes: [ex.regles_du_jeu, ex.consignes_coach ? `Consignes coach : ${ex.consignes_coach}` : null].filter(Boolean).join('\n\n'),
+          variables: ex.variante || '',
+          schema_png: schemaExerciceIA(ex.nom, `${ex.organisation_spatiale || ''} ${ex.regles_du_jeu || ''}`),
+        }))
+
       setFiche({
         ...ficheVide,
         theme: generationIAForm.objectif,
         nb_joueurs: generationIAForm.nb_joueurs,
         duree_totale: generationIAForm.duree,
         objectif_general: `${generationIAForm.objectif} — ${generationIAForm.categorie_age}, niveau ${generationIAForm.niveau}`,
-        procedes: exercices.map((ex, i) => ({
-          numero: i + 1,
-          titre: [PHASE_LABEL_IA[ex.phase], ex.nom].filter(Boolean).join(' — '),
-          duree: ex.duree != null ? String(ex.duree) : '',
-          nb_joueurs: ex.format_equipes != null ? String(ex.format_equipes) : '',
-          but: ex.criteres_reussite || PHASE_LABEL_IA[ex.phase] || '',
-          organisation: ex.organisation_spatiale || '',
-          consignes: [ex.regles_du_jeu, ex.consignes_coach ? `Consignes coach : ${ex.consignes_coach}` : null].filter(Boolean).join('\n\n'),
-          variables: ex.variante || '',
-          schema_png: schemaExerciceIA(ex.nom, `${ex.organisation_spatiale || ''} ${ex.regles_du_jeu || ''}`),
-        })),
+        ...modeEtProcedesFicheClub(procedesIA),
       })
       setSport('football')
       setFicheFichierUrl(null)
@@ -4350,8 +4394,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
       // format_detecte vient de l'étiquette [DF-XXX] imprimée sur les fiches
       // officielles (cf. genererFicheVierge) — absente/invalide sur une fiche
-      // manuscrite libre, mode_diplome reste alors null comme avant.
-      const modeDetecte = ['BMF', 'BEF', 'DEF'].includes(extrait.format_detecte) ? extrait.format_detecte : null
+      // manuscrite : la fiche devient une Fiche club (modèle par défaut).
+      const modeDetecte = ['BMF', 'BEF', 'DEF'].includes(extrait.format_detecte) ? extrait.format_detecte : 'CLUB'
 
       setFiche({
         ...ficheVide,
@@ -4370,17 +4414,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         auto_evaluation: extrait.auto_evaluation || '',
         analyse_equipe: extrait.analyse_equipe || '',
         bilan_projection: extrait.bilan_projection || '',
-        procedes: ficheVide.procedes.map((base, i) => {
+        // Fiche club : 6 blocs ; BMF/BEF/DEF : 4 blocs comme avant.
+        procedes: ficheVide.procedes.slice(0, modeDetecte === 'CLUB' ? 6 : 4).map((base, i) => {
           const p = extrait.procedes?.[i]
           if (!p) return base
           // Neutralise les null (champs non détectés) en '' pour rester cohérent
           // avec le reste des champs contrôlés du formulaire "Rédiger".
           const pNettoye = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v == null ? '' : v]))
-          return {
+          const fusion = {
             ...base, ...pNettoye, numero: i + 1,
             duree: pNettoye.duree !== '' ? String(pNettoye.duree) : '',
             nb_joueurs: pNettoye.nb_joueurs !== '' ? String(pNettoye.nb_joueurs) : '',
           }
+          // Fiche club : pas de case « But » sur le modèle papier. Le but lu sur la fiche
+          // manuscrite est rangé en tête du carré gris (organisation) pour ne rien perdre.
+          if (modeDetecte === 'CLUB' && fusion.but) {
+            fusion.organisation = [`But : ${fusion.but}`, fusion.organisation].filter(Boolean).join('\n')
+          }
+          return fusion
         }),
       })
       setFicheFichierUrl(url)
@@ -10448,7 +10499,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     "Principe de jeu" en texte libre plus bas) — dropdown plutôt que texte
                     libre pour que le classement en sous-dossiers dans "Mes séances"
                     fonctionne de façon fiable. */}
-                {!fiche.mode_diplome && themeSeanceInfo(fiche.categorie_tactique) && (
+                {(!fiche.mode_diplome || fiche.mode_diplome === 'CLUB') && themeSeanceInfo(fiche.categorie_tactique) && (
                   <select
                     value={fiche.principe_jeu || ''}
                     onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))}
@@ -10517,16 +10568,31 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     l'encart officiel ci-dessous plutôt que dupliqué, pour ne pas avoir deux
                     champs "objectif" à la fois. */}
                 <div>
-                  <p style={{ ...styleEtiquette(colors), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={GraduationCap} /> Mode diplôme (optionnel)</p>
+                  <p style={{ ...styleEtiquette(colors), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={GraduationCap} /> Modèle de fiche</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    {[null, 'BMF', 'BEF', 'DEF'].map(m => (
+                    {['CLUB', 'BMF', 'BEF', 'DEF'].map(m => (
                       <button
-                        key={m ?? 'libre'}
+                        key={m}
                         type="button"
-                        onClick={() => setFiche(f => ({ ...f, mode_diplome: f.mode_diplome === m ? null : m }))}
+                        onClick={() => setFiche(f => {
+                          // Fiche club = modèle par défaut : un second clic sur BMF/BEF/DEF y revient.
+                          const mode = f.mode_diplome === m ? 'CLUB' : m
+                          if (mode === f.mode_diplome) return f
+                          // Fiche club : 6 procédés (3 au recto, 3 au verso), on complète sans rien effacer.
+                          // Retour vers BMF/BEF/DEF (4 blocs) : on retire seulement les blocs vides en fin de liste.
+                          let procedes = f.procedes
+                          if (mode === 'CLUB' && procedes.length < 6) {
+                            procedes = [...procedes, ...Array.from({ length: 6 - procedes.length }, (_, k) => procedeVide(procedes.length + k + 1))]
+                          } else if (mode !== 'CLUB') {
+                            const vide = p => !['titre', 'duree', 'nb_joueurs', 'but', 'organisation', 'consignes', 'variables', 'criteres_realisation', 'schema_png', 'objectif', 'sequence', 'surface'].some(c => p?.[c])
+                            procedes = [...procedes]
+                            while (procedes.length > 4 && vide(procedes[procedes.length - 1])) procedes.pop()
+                          }
+                          return { ...f, mode_diplome: mode, procedes, ...(mode === 'CLUB' && !f.equipe_id && equipeActive?.id ? { equipe_id: equipeActive.id } : {}) }
+                        })}
                         aria-pressed={fiche.mode_diplome === m}
                         style={{ ...styleChoix(colors, fiche.mode_diplome === m), fontSize: '12px', padding: '6px 8px' }}>
-                        {m === null ? 'Libre' : m}
+                        {m === 'CLUB' ? 'Fiche club' : m}
                         {m === 'BMF' && ' — Moniteur'}
                         {m === 'BEF' && ' — Éducateur'}
                         {m === 'DEF' && ' — Diplôme Éducateur'}
@@ -10535,7 +10601,38 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 </div>
 
-                {fiche.mode_diplome ? (() => {
+                {fiche.mode_diplome === 'CLUB' && (
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {mesEquipes.length > 1 && (
+                      <div>
+                        <p style={{ ...styleEtiquette(colors), marginBottom: '4px' }}>Équipe de la fiche (effectif)</p>
+                        <select
+                          value={fiche.equipe_id || equipeActive?.id || ''}
+                          onChange={e => setFiche(f => ({ ...f, equipe_id: e.target.value }))}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
+                        >
+                          {mesEquipes.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <p style={{ ...styleEtiquette(colors), marginBottom: '4px' }}>Effectif (texte de la fiche)</p>
+                      <input
+                        type="text"
+                        value={fiche.effectif_texte || ''}
+                        onChange={e => setFiche(f => ({ ...f, effectif_texte: e.target.value }))}
+                        placeholder="Rempli tout seul d'après l'équipe, ex. 14 + 2 GB"
+                        className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {fiche.mode_diplome === 'CLUB' && (
+                  <ChampsFicheClub fiche={fiche} setFiche={setFiche} matchs={!fiche.equipe_id || fiche.equipe_id === equipeActive?.id ? matchs : []} colors={colors} styleChoix={styleChoix} />
+                )}
+
+                {fiche.mode_diplome && fiche.mode_diplome !== 'CLUB' ? (() => {
                   const inputStyle = styleChamp(colors)
                   const labelStyle = { ...styleEtiquette(colors), marginBottom: '4px', display: 'block', marginTop: '10px' }
                   return (
@@ -10676,7 +10773,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: forme.rayonCarte, border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
                       )}
                     </div>
-                    {fiche.mode_diplome === 'BEF' ? (() => {
+                    {fiche.mode_diplome === 'CLUB' ? (() => {
+                      // Fiche club : carré gris = organisation + critères de réalisation,
+                      // carré blanc = consignes + variantes (champs existants, comme Libre).
+                      const clubInput = { ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
+                      const clubLabel = { ...styleEtiquette(colors), margin: '6px 0 0', display: 'block' }
+                      return (
+                        <>
+                          <p style={clubLabel}>Carré gris de la fiche</p>
+                          <textarea placeholder="Organisation (dispositif, joueurs, espace)" value={p.organisation} onChange={e => updateProcede(i, 'organisation', e.target.value)} rows={3} className={CLASSE_CHAMP} style={clubInput} />
+                          <textarea placeholder="Critères de réalisation" value={p.criteres_realisation} onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)} rows={3} className={CLASSE_CHAMP} style={clubInput} />
+                          <p style={clubLabel}>Carré blanc de la fiche</p>
+                          <textarea placeholder="Consignes" value={p.consignes} onChange={e => updateProcede(i, 'consignes', e.target.value)} rows={3} className={CLASSE_CHAMP} style={clubInput} />
+                          <textarea placeholder="Variantes" value={p.variables} onChange={e => updateProcede(i, 'variables', e.target.value)} rows={2} className={CLASSE_CHAMP} style={clubInput} />
+                        </>
+                      )
+                    })() : fiche.mode_diplome === 'BEF' ? (() => {
                       const befInput = { ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
                       const befLabel = { ...styleEtiquette(colors), marginBottom: '4px', marginTop: '10px', display: 'block' }
                       return (
@@ -10981,7 +11093,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           {s.theme || t('seance_sans_theme', lang)}
                           {s.fiche_seance?.mode_diplome && (
                             <EtiquetteStatut couleur={s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange} style={{ marginLeft: '8px' }}>
-                              {s.fiche_seance.mode_diplome}
+                              {s.fiche_seance.mode_diplome === 'CLUB' ? 'Fiche club' : s.fiche_seance.mode_diplome}
                             </EtiquetteStatut>
                           )}
                         </p>
@@ -13063,7 +13175,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       </div>
     )}
 
-    <FicheSeancePrint fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} logoClub={clubAffiliation?.club?.avatar_url || null} />
+    <FicheSeancePrint effectif={effectifFiche} fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} logoClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url || null : null} couleurClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale || null : null} />
 
     {/* Aperçu en grand de la fiche en cours de rédaction — purement lecture
         seule (ne touche jamais à `fiche`/`sport`), contrairement à l'ancien
@@ -13088,7 +13200,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
             </button>
           )}
-          {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF') && (
+          {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF' || fiche.mode_diplome === 'CLUB') && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               {icoTexte(Smartphone)}Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
@@ -13099,7 +13211,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 ? <FicheBEFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} />
                 : fiche.mode_diplome === 'BMF'
                   ? <FicheBMFContenu fiche={fiche} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />
-                  : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />}
+                  : fiche.mode_diplome === 'CLUB'
+                    ? <FicheClubEquipe {...effectifFiche} fiche={fiche} logo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url || null : null} couleur={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale || null : null} />
+                    : <FicheContenu fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} logo={clubAffiliation?.club?.avatar_url || null} />}
             </div>
           </ApercuFicheResponsive>
         </div>
@@ -13170,7 +13284,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
             </button>
           )}
-          {!modeEditionApercu && ['BEF', 'BMF'].includes(ficheApercu.fiche_seance?.mode_diplome) && (
+          {!modeEditionApercu && ['BEF', 'BMF', 'CLUB'].includes(ficheApercu.fiche_seance?.mode_diplome) && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
               {icoTexte(Smartphone)}Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
@@ -13253,6 +13367,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       </div>
                     </div>
                   )}
+                  {ficheApercuEdit.mode_diplome === 'CLUB' && (
+                    <div style={{ padding: '12px' }}>
+                      <ChampsFicheClub fiche={ficheApercuEdit} setFiche={setFicheApercuEdit} matchs={!ficheApercuEdit.equipe_id || ficheApercuEdit.equipe_id === equipeActive?.id ? matchs : []} colors={colors} styleChoix={styleChoix} />
+                    </div>
+                  )}
                 </div>
                 <div className="procedes-grid">
                   {ficheApercuEdit.procedes.map((p, i) => (
@@ -13276,10 +13395,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <label>Nombre de joueurs</label>
                           <input value={p.nb_joueurs} onChange={e => updateProcedeApercu(i, 'nb_joueurs', e.target.value)} style={champEditStyle} />
                         </div>
+                        {ficheApercuEdit.mode_diplome !== 'CLUB' && (
                         <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                           <label>But</label>
                           <textarea value={p.but} onChange={e => updateProcedeApercu(i, 'but', e.target.value)} rows={2} style={champEditTextareaStyle} />
                         </div>
+                        )}
                         <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
                           <label>Organisation</label>
                           <textarea value={p.organisation} onChange={e => updateProcedeApercu(i, 'organisation', e.target.value)} rows={2} style={champEditTextareaStyle} />
@@ -13336,6 +13457,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 fiche={{ ...ficheApercu.fiche_seance, categorie_age: ficheApercu.fiche_seance?.categorie_age || ficheApercu.categorie_age }}
                 categorieLabel={themeSeanceInfo(ficheApercu.categorie_tactique)?.label}
                 logo={clubAffiliation?.club?.avatar_url || null}
+              />
+            ) : ficheApercu.fiche_seance?.mode_diplome === 'CLUB' ? (
+              <FicheClubEquipe
+                {...effectifFiche}
+                fiche={ficheApercu.fiche_seance || {}}
+                logo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url || null : null}
+                couleur={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale || null : null}
               />
             ) : (
               <FicheContenu

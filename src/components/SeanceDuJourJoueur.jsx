@@ -57,6 +57,7 @@ function Procede({ p, colors, isMobile }) {
       {bloc('Consignes', p.consignes)}
       {bloc('Critères de réalisation', p.criteres_realisation)}
       {bloc('Critères de réussite', p.criteres_reussite)}
+      {bloc('Variantes', p.variables)}
       {p.schema_data ? (
         <div>
           <div style={{ overflowX: 'auto' }}>

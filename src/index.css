@@ -248,3 +248,67 @@ input[type="date"] {
 @media (prefers-reduced-motion: reduce) {
   .df-bouton, .df-cliquable { transition: none !important; }
 }
+
+/* ── Fiche club (modèle AS Cannes, couleurs du club) ─────────────────────────
+   Cf. FicheClubContenu.jsx. Une .fc-page = une feuille A4 paysage exacte
+   (1500 × 1060 px, comme .bmf-page) ; recto et verso. La couleur du club vient
+   de --fc (fond) et --fc-on (texte posé dessus), posées par le composant. */
+#fiche-print:has(.fc-doc), .fiche-render:has(.fc-doc) {
+  width: 1500px;
+  padding: 0;
+}
+.fc-doc { width: 1500px; background: #fff; color: #111; font-family: Calibri, Carlito, Arial, sans-serif; }
+.fc-page { width: 1500px; height: 1060px; padding: 22px 30px 18px; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; page: fc-paysage; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.fc-page * { box-sizing: border-box; }
+.fc-haut { display: flex; gap: 12px; height: 172px; flex-shrink: 0; }
+.fc-identite { width: 368px; flex-shrink: 0; display: flex; flex-direction: column; }
+.fc-logo { height: 100px; display: flex; align-items: center; }
+.fc-logo img { max-height: 100%; max-width: 160px; object-fit: contain; }
+.fc-ligne-id { font-size: 20px; line-height: 1.5; white-space: nowrap; }
+.fc-effectif { flex: 1; border-collapse: collapse; table-layout: fixed; height: 172px; border: 2px solid #333; }
+.fc-effectif th { background: var(--fc); color: var(--fc-on); font-size: 15px; letter-spacing: 1px; height: 26px; border: 1px solid #333; }
+.fc-effectif td { border: 1px solid #555; padding: 0 8px; font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fc-non-renseignes { height: 16px; flex-shrink: 0; font-size: 11px; color: #555; margin-top: 2px; }
+.fc-corps { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 12px; margin-top: 8px; height: 104px; flex-shrink: 0; }
+.fc-gauche, .fc-droite { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.fc-ligne-a { display: flex; height: 40px; border: 2px solid #333; }
+.fc-ligne-b { display: flex; height: 54px; border: 2px solid #333; }
+.fc-etiquette { display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; text-align: center; line-height: 1.05; flex-shrink: 0; padding: 0 6px; }
+.fc-etiquette-couleur { background: var(--fc); color: var(--fc-on); }
+.fc-etiquette-grise { background: #dcdcdc; width: 112px; }
+.fc-etiquette-jour { width: 62px; }
+.fc-etiquette-dominante { width: 150px; font-size: 14px; }
+.fc-jour, .fc-phase { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; border-left: 1px solid #555; font-size: 15px; text-align: center; line-height: 1.05; padding: 0 3px; }
+.fc-phase { font-size: 14.5px; }
+.fc-jour-coche, .fc-phase-cochee { background: var(--fc); color: var(--fc-on); font-weight: 700; }
+.fc-case-texte { flex: 1; min-width: 0; padding: 4px 8px; font-size: 14px; line-height: 1.2; overflow: hidden; border-left: 1px solid #555; }
+.fc-ligne-theme { flex: 1; font-size: 22px; padding-top: 6px; overflow: hidden; }
+.fc-bas { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 12px; flex: 1; min-height: 0; margin-top: 10px; }
+.fc-strip { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+.fc-strip-groupe { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fc-carre-gris { flex: 1; min-height: 0; background: #f1f1f1; border: 2px solid #333; padding: 6px 8px; overflow: hidden; font-size: 15px; line-height: 1.2; }
+.fc-recup { height: 30px; flex-shrink: 0; display: flex; align-items: center; border: 2px solid #333; border-top: none; font-size: 14px; }
+.fc-recup span { flex: 1; text-align: center; color: #333; }
+.fc-recup-case { width: 110px; height: 100%; border-left: 1px solid #555; display: flex; align-items: center; justify-content: center; font-size: 13px; overflow: hidden; }
+.fc-temps { height: 44px; flex-shrink: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; border: 2px solid #333; }
+.fc-temps-cellule { background: #e6e6e6; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #555; }
+.fc-temps-valeur { border-right: 1px solid #555; display: flex; align-items: center; justify-content: center; font-size: 14px; overflow: hidden; }
+.fc-temps-valeur:last-child { border-right: none; }
+.fc-procedes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; min-height: 0; }
+.fc-procede { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.fc-terrain-cadre { position: relative; aspect-ratio: 340 / 500; flex-shrink: 0; background: #fff; }
+.fc-terrain { width: 100%; height: 100%; display: block; }
+.fc-numero { position: absolute; top: 14px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: var(--fc); color: var(--fc-on); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.fc-carre-blanc { flex: 1; min-height: 0; border: 2px solid #333; background: #fff; padding: 6px 8px; overflow: hidden; font-size: 15px; line-height: 1.2; }
+.fc-schema { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; border: 1px solid #555; box-sizing: border-box; }
+.fc-entete-procede { display: flex; flex-direction: column; margin-bottom: 4px; font-weight: 700; }
+.fc-rubrique { margin-bottom: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fc-rubrique b { display: block; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; color: #444; }
+
+@page fc-paysage { size: A4 landscape; margin: 5mm; }
+@media print {
+  #fiche-print:has(.fc-doc) { width: auto; }
+  .fc-doc, .fc-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .fc-page { zoom: 0.71; break-after: page; break-inside: avoid; }
+  .fc-page:last-child { break-after: auto; }
+}

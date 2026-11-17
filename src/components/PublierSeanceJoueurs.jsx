@@ -21,7 +21,7 @@ const FAMILLES = [
 ]
 
 // Un bloc de gabarit laissé vide (fiche à 4 blocs par défaut) n'est pas un procédé.
-const procedeRempli = p => !!(p && (p.titre?.trim() || p.consignes?.trim() || p.consignes_bef?.trim() || p.organisation?.trim() || p.schema_png))
+const procedeRempli = p => !!(p && (p.titre?.trim() || p.consignes?.trim() || p.consignes_bef?.trim() || p.organisation?.trim() || p.criteres_realisation?.trim() || p.variables?.trim() || p.schema_png))
 
 // Copie figée de ce que le joueur a besoin de voir. Gabarit BEF/BMF : ses
 // blocs écrivent but_bef/consignes_bef, d'où les replis.
@@ -34,6 +34,7 @@ const copieProcede = p => ({
   organisation: p.organisation || p.surface || '',
   consignes: p.consignes || p.consignes_bef || '',
   criteres_realisation: p.criteres_realisation || '',
+  variables: p.variables || p.variantes_bef || '',
   criteres_reussite: p.criteres_reussite || '',
   schema_png: p.schema_png || '',
   schema_data: p.schema_data || null,
