@@ -104,14 +104,14 @@ function CGV() {
                 <tbody>
                   {PALIERS_EDUCATEUR.map((p, i) => (
                     <tr key={p.id}>
-                      <td style={tdStyle}>{['De 1 à 3 outils', 'De 4 à 6 outils', 'De 7 à 9 outils (tous les outils)'][i]}</td>
+                      <td style={tdStyle}>{['De 1 à 3 outils', 'De 4 à 6 outils', 'De 7 à 8 outils (tous les outils)'][i]}</td>
                       <td style={tdStyle}>{euros(p.prixMensuel)}</td>
                       <td style={tdStyle}>{euros(p.prixAnnuel)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <P>Le palier dépend du nombre d'outils choisis : un paiement pour 1 ou 2 outils reste au tarif du premier palier. À partir de 7 outils, le palier « tous les outils » donne accès aux 9 outils achetables. Les outils fournis par un club (article 3.9) ne comptent pas dans le palier.</P>
+              <P>Le palier dépend du nombre d'outils choisis : un paiement pour 1 ou 2 outils reste au tarif du premier palier. À partir de 7 outils, le palier « tous les outils » donne accès aux 8 outils achetables. Les outils fournis par un club (article 3.9) ne comptent pas dans le palier.</P>
             </>
           ) : (
             <P>

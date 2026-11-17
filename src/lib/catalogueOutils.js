@@ -412,7 +412,7 @@ export function compositionPaiement(role, { outils = [], palier = null, pack = f
   const choisis = demandes.map(id => trouverOutil('educateur', id))
   if (choisis.some(o => !o || !o.achetable || o.inclus)) return { erreur: 'Outil inconnu ou non disponible à l\'achat' }
   const p = palierPourNombre(demandes.length)
-  if (!p) return { erreur: 'Choisis au plus 9 outils' }
+  if (!p) return { erreur: 'Choisis au plus 8 outils' }
   // Le palier « tous les outils » donne les 9, même si moins ont été cochés.
   return {
     cles: [annuel ? p.cleAnnuel : p.cleMensuel],
