@@ -209,7 +209,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
 - Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). `DashboardEducateur.jsx` : `ficheVide` = `mode_diplome 'CLUB'`, 6 procédés, équipe active (effet qui la rattache dès que les équipes sont chargées) ; `procedeVide()` factorisé ; boutons de modèle Fiche club, BMF, BEF, DEF (Libre retiré, un 2e clic sur BMF/BEF/DEF revient à Fiche club, retour vers BMF/BEF/DEF retire les blocs vides en trop pour garder 4 blocs) ; scan IA : fiche manuscrite = Fiche club, formats officiels BMF/BEF/DEF inchangés (4 blocs) ; génération IA et import de procédés de la bibliothèque rangés en Fiche club. Anciennes fiches (`mode_diplome` null) : rendu, aperçu et modification non touchés (même gabarit `FicheContenu`). Côté joueur : `PublierSeanceJoueurs.jsx` copie aussi les variantes et compte un procédé qui n'a que des critères ou des variantes ; `SeanceDuJourJoueur.jsx` affiche « Variantes » (les consignes, organisation et critères passaient déjà). `CauserieAvantMatch.jsx`, `DashboardClub.jsx` et `SeanceAccueil.jsx` ne lisent pas le gabarit de fiche (rien à changer). Vérifications : ESLint 0 erreur (4 avertissements anciens, hors lignes touchées), `vite build` OK.
 
 ### Bloc 7 : script SQL des images de fond par phase
-- Statut : à faire
+- Statut : fait (2026-11-17), script exécuté en production par Kevin
 - Objectif : préparer la base pour les 8 phases sans rien perdre, avant de changer le projet sportif.
 - Résultat testable : les 46 images de fond existent aussi sous les nouvelles phases ; les anciennes sont toujours là ; le site actuel n'a pas bougé.
 - Modèle : opus · Effort : medium · Coût estimé : faible
@@ -223,7 +223,9 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
   - Kevin lance la sauvegarde puis le script. Claude contrôle par SELECT et note les chiffres dans le journal.
 - Ce que je teste pour valider : le projet sportif d'un club s'affiche toujours comme avant.
 - Reste à finir :
-- Journal :
+  - Kevin : vérifier que le projet sportif du club s'affiche comme avant (images de fond par phase).
+  - Les anciennes lignes (attaque, defense, pressing, transition_att, transition_def) restent en base ; leur nettoyage éventuel se décidera après le bloc 8, pas avant.
+- Journal : 2026-11-17, modèle réel Opus 5.5 (conforme). Lu en production : 4 contraintes n'acceptent que les anciennes phases (`terrain_fonds`, `terrain_zones`, `terrain_galerie`, `principes_photos` qui a en plus `coups_pied_arretes`) ; `principes_jeu` sans contrainte de phase ; aucune règle RLS ni déclencheur ne dépend de la phase. 46 images, 1 seul club ; le pôle `formation` a à la fois pressing et defense (pressing gardé pour le bloc haut). Code actuel : `PreparationTactiqueJoueur.jsx` et `ProjetSportif.jsx` lisent par nom de phase, les nouvelles lignes sont ignorées tant que le bloc 8 n'est pas fait. Supprimer un fond dans le projet sportif n'efface que la ligne, pas le fichier image : partager la même adresse d'image entre phases est sans risque. Script `supabase_phases_jeu_fonds.sql` : une transaction, contraintes élargies (anciennes valeurs gardées), copies en `on conflict do nothing`, relançable. Attendu : 63 copies (constructions 24, blocs 24, transitions 15). Exécuté par Kevin le 17/11 ; contrôle Claude par SELECT : 109 lignes (46 anciennes intactes + 63 copies, 8 par construction et par bloc, 8 et 7 par transition), 4 contraintes élargies, bloc haut du pôle formation = image Pressing. Commit local, pas poussé (même raison qu'au bloc 6).
 
 ### Bloc 8 : projet sportif et côté joueur sur les 8 phases
 - Statut : à faire
