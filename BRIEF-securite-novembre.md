@@ -1,5 +1,5 @@
 # BRIEF : fermeture des failles d'accès de novembre
-Date : 2026-11-14 · Statut : terminé côté base le 2026-11-17 (4 tables fermées, contrôle des ouvertures relancé ; reste la relance des tests SQL par Kevin et le commit)
+Date : 2026-11-14 · Statut : terminé côté base le 2026-11-17 (4 tables fermées, contrôle des ouvertures relancé ; tests SQL 211/211 ok ; reste le commit)
 
 ## Vision en 3 lignes
 Quatre tables de la base sont ouvertes à n'importe quel compte connecté, tous clubs confondus.

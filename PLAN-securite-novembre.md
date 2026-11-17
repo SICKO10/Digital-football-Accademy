@@ -274,7 +274,7 @@ Rappel : `/clear` et une session neuve par bloc.
 
 
 ### Bloc 9 : vérification finale et clôture
-- Statut : en cours (attente des tests SQL de Kevin)
+- Statut : fait (2026-11-17, tests SQL 211/211 ok, contrôle des ouvertures sans les 4 tables) ; reste le commit, avec l'accord de Kevin
 - Objectif : prouver que les 4 tables sont fermées et qu'aucune nouvelle ouverture n'existe, puis ranger.
 - Résultat testable : `supabase_controle_ouvertures.sql` ne liste plus aucune des 4 tables ; fichier de tests complet tout ok ; BRIEF passé à « terminé ».
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -289,11 +289,12 @@ Rappel : `/clear` et une session neuve par bloc.
   - Commit des fichiers SQL et documents de ce chantier uniquement, après accord.
 - Ce que je teste pour valider : je lis le compte rendu et les résultats du contrôle ; un tour rapide connecté avec le compte club test et `+joueur`.
 - Reste à finir :
-  - Kevin : relancer `supabase_securite_novembre_tests.sql` en entier et me coller le résultat (attendu : 211 ok, 0 échec) ; tour rapide connecté (club test et `+joueur`).
+  - Tour rapide connecté (club test et `+joueur`) : à faire par Kevin si souhaité.
   - Commit sélectif des SQL des blocs 6 et 7, du fichier de tests, du contrôle du 2026-11-17 et des documents, avec l'accord de Kevin (rien n'est commité).
   - Hors chantier, à mettre dans un nouveau brief : 41 règles « tout le monde, même sans compte » (messagerie, `clubs`, budgets, `tournois_*`, notifications...), 5 règles « tout compte connecté » (`budget_modeles`, `demandes_club` x2, `profil_educateur`, `storage.objects`), 9 tables à RLS sans règle ; plus les notes des blocs 6 et 7 (`entrainements_supprimes`, rattachement d'équipe d'un autre club, droits techniques résiduels du visiteur sur `convocation_joueurs` et `staff_club`).
 - Journal :
-  - 2026-11-17 · Sonnet 5.5 · Contrôle des ouvertures relancé en lecture seule par Claude (`supabase db query --linked`), enregistré dans `controle-ouvertures-2026-11-17.csv` : 59 lignes contre 60 au départ. Les 4 tables n'apparaissent plus. Seule différence avec le 2026-11-14 : la règle `lecture convocation joueurs` (lisible sans compte) a disparu. Aucune nouvelle ouverture. `pg_policies` relu : les 4 tables n'ont plus que des règles réservées à `authenticated` (role_categories_access 3, staff_club 7, convocation_joueurs 6, entrainements 4). Droits techniques : `anon` garde SELECT sur `convocation_joueurs` et `staff_club` seulement (voulu, des règles d'autres tables les lisent ; les règles bloquent le visiteur). Tests SQL complets : en attente de Kevin.
+  - 2026-11-17 · Sonnet 5.5 · Contrôle des ouvertures relancé en lecture seule par Claude (`supabase db query --linked`), enregistré dans `controle-ouvertures-2026-11-17.csv` : 59 lignes contre 60 au départ. Les 4 tables n'apparaissent plus. Seule différence avec le 2026-11-14 : la règle `lecture convocation joueurs` (lisible sans compte) a disparu. Aucune nouvelle ouverture. `pg_policies` relu : les 4 tables n'ont plus que des règles réservées à `authenticated` (role_categories_access 3, staff_club 7, convocation_joueurs 6, entrainements 4). Droits techniques : `anon` garde SELECT sur `convocation_joueurs` et `staff_club` seulement (voulu, des règles d'autres tables les lisent ; les règles bloquent le visiteur). 
+  - 2026-11-17 · Sonnet 5.5 · Tests SQL complets lancés par Kevin : 211 cas, 211 ok, 0 écart, 0 ÉCHEC (F01-F94, T101-T114, T201-T219, T301-T322, T401-T452, T901-T910). Chantier clos côté base.
 
 ## Inventaire
 (côté code rempli au bloc 0 le 2026-11-14 ; côté base à compléter au bloc 1 avec le diagnostic)
