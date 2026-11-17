@@ -4,6 +4,7 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
+import { PHASES_JEU, RUBRIQUE_CPA } from '../../constants/phasesJeu'
 import { saisonActuelle } from '../../lib/saison'
 import PlanificationAnnuelle from './PlanificationAnnuelle'
 import TerrainZonesSvg from '../TerrainZonesSvg'
@@ -21,25 +22,19 @@ const ONGLETS = [
   { key: 'regles', label: 'Règles du jeu' },
 ]
 
-const PHASES = [
-  { val: 'attaque', label: 'Organisation offensive' },
-  { val: 'defense', label: 'Organisation défensive' },
-  { val: 'transition_att', label: 'Transition offensive' },
-  { val: 'transition_def', label: 'Transition défensive' },
-  { val: 'coups_pied_arretes', label: 'Coups de pied arrêtés' },
-]
+// Les 8 phases de jeu de la plateforme (src/constants/phasesJeu.js), lues depuis
+// une seule source. Les coups de pied arrêtés restent une rubrique à part.
+const PHASES_BASE = PHASES_JEU.map(p => ({ val: p.cle, label: p.long }))
 
-// Mêmes 4 premières phases que PHASES (principes texte), + CPA scindé
-// offensif/défensif (affichés côte à côte sur la même page côté joueur,
-// cf. PreparationTactiqueJoueur.jsx) — propre à terrain_zones.
+// Principes texte : les 8 phases + les coups de pied arrêtés.
+const PHASES = [...PHASES_BASE, { val: 'coups_pied_arretes', label: 'Coups de pied arrêtés' }]
+
+// Zones de terrain : les 8 phases + CPA scindé offensif/défensif (affichés côte
+// à côte sur la même page côté joueur, cf. PreparationTactiqueJoueur.jsx).
 const PHASES_ZONES = [
-  { val: 'attaque', label: 'Organisation offensive' },
-  { val: 'defense', label: 'Organisation défensive' },
-  { val: 'transition_att', label: 'Transition offensive' },
-  { val: 'transition_def', label: 'Transition défensive' },
-  { val: 'pressing', label: 'Pressing' },
-  { val: 'cpa_offensif', label: 'CPA offensifs' },
-  { val: 'cpa_defensif', label: 'CPA défensifs' },
+  ...PHASES_BASE,
+  { val: RUBRIQUE_CPA.offensif.cle, label: 'CPA offensifs' },
+  { val: RUBRIQUE_CPA.defensif.cle, label: 'CPA défensifs' },
 ]
 const ZONE_VIDE = { x: 10, y: 10, largeur: 80, hauteur: 15, label: '', description: '', couleur: '#4ade80' }
 
@@ -66,10 +61,12 @@ function PlaceholderAVenir({ couleur, texte }) {
   )
 }
 
-// Phases pour lesquelles une photo illustrative peut être ajoutée en plus
-// des principes texte — pour l'instant limité à Organisation offensive/
-// défensive (seules phases demandées), extensible plus tard si besoin.
-const PHASES_AVEC_PHOTO = ['attaque', 'defense']
+// Phases pour lesquelles une photo illustrative peut être ajoutée en plus des
+// principes texte : les 6 phases d'organisation (3 constructions + 3 blocs de
+// défense), qui remplacent l'ancien duo Organisation offensive / défensive.
+const PHASES_AVEC_PHOTO = PHASES_JEU
+  .filter(p => p.cle.startsWith('construction_') || p.cle.startsWith('defense_'))
+  .map(p => p.cle)
 
 export function SectionPrincipes({ pole, clubId, readOnly }) {
   const colors = useColors()

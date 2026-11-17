@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { alpha, fontSize, radius, spacing } from '../tokens'
 import { getPoleDeCategorie } from '../constants/poles'
+import { PHASES_JEU, PHASE_PAR_CLE } from '../constants/phasesJeu'
 import { localeOf } from '../lib/translations'
 import { IconTactic } from './icones'
 import Carte from './joueur/Carte'
@@ -15,7 +16,7 @@ import TerrainZonesSvg from './TerrainZonesSvg'
 import DemiTerrainSchema from './DemiTerrainSchema'
 
 // Un terrain + sa légende, pour une phase donnée — brique de base réutilisée
-// pour les 6 phases (offensif/défensif/transitions×2/CPA×2). La légende est
+// pour les 8 phases de jeu et les 2 rubriques CPA. La légende est
 // cliquable : sélectionner une zone la fait ressortir sur le terrain (fond
 // éclairci pour les autres) — purement une interaction d'affichage, ne
 // dépend d'aucun champ supplémentaire côté terrain_zones. Sur téléphone, le
@@ -160,13 +161,11 @@ function CarteSchema({ schema, colors, locale, onOuvrir }) {
 }
 
 // Schémas partagés en premier : c'est ce que le joueur consulte le plus
-// (avant un match, après une séance), les phases de jeu du club viennent ensuite.
+// (avant un match, après une séance), les 8 phases de jeu du club viennent
+// ensuite (src/constants/phasesJeu.js), puis les coups de pied arrêtés.
 const ONGLETS = [
   { key: 'schemas', label: 'Schémas partagés' },
-  { key: 'offensif', label: 'Projet Offensif' },
-  { key: 'defensif', label: 'Projet Défensif' },
-  { key: 'transitions', label: 'Transitions' },
-  { key: 'pressing', label: 'Pressing' },
+  ...PHASES_JEU.map(p => ({ key: p.cle, label: p.court })),
   { key: 'cpa', label: 'CPA' },
 ]
 
@@ -303,7 +302,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
     <EmptyState
       icon={<IconTactic />}
       title="Le projet de jeu arrive avec ton club"
-      subtitle="Une fois dans une équipe, tu retrouves ici les zones du terrain, le pressing, les transitions et les coups de pied arrêtés de ton club."
+      subtitle="Une fois dans une équipe, tu retrouves ici les zones du terrain, les phases de jeu, les transitions et les coups de pied arrêtés de ton club."
       cta={onNaviguer ? { label: 'Rejoindre mon équipe', onClick: () => onNaviguer('equipe') } : undefined}
     />
   ) : !pole ? (
@@ -327,17 +326,13 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
 
       {onglet !== 'schemas' && blocPhasesVide}
 
-      {phasesPretes && onglet === 'offensif' && <div>{panneau('attaque')}{galerie('attaque')}</div>}
-      {phasesPretes && onglet === 'defensif' && <div>{panneau('defense')}{galerie('defense')}</div>}
-
-      {phasesPretes && onglet === 'transitions' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['5xl'] }}>
-          {sousPhase('Transition offensive', 'transition_att')}
-          {sousPhase('Transition défensive', 'transition_def')}
+      {phasesPretes && PHASE_PAR_CLE[onglet] && (
+        <div>
+          <TitreSection>{PHASE_PAR_CLE[onglet].long}</TitreSection>
+          {panneau(onglet)}
+          {galerie(onglet)}
         </div>
       )}
-
-      {phasesPretes && onglet === 'pressing' && <div>{panneau('pressing')}{galerie('pressing')}</div>}
 
       {phasesPretes && onglet === 'cpa' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['5xl'] }}>

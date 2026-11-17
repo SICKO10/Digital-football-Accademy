@@ -228,7 +228,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
 - Journal : 2026-11-17, modèle réel Opus 5.5 (conforme). Lu en production : 4 contraintes n'acceptent que les anciennes phases (`terrain_fonds`, `terrain_zones`, `terrain_galerie`, `principes_photos` qui a en plus `coups_pied_arretes`) ; `principes_jeu` sans contrainte de phase ; aucune règle RLS ni déclencheur ne dépend de la phase. 46 images, 1 seul club ; le pôle `formation` a à la fois pressing et defense (pressing gardé pour le bloc haut). Code actuel : `PreparationTactiqueJoueur.jsx` et `ProjetSportif.jsx` lisent par nom de phase, les nouvelles lignes sont ignorées tant que le bloc 8 n'est pas fait. Supprimer un fond dans le projet sportif n'efface que la ligne, pas le fichier image : partager la même adresse d'image entre phases est sans risque. Script `supabase_phases_jeu_fonds.sql` : une transaction, contraintes élargies (anciennes valeurs gardées), copies en `on conflict do nothing`, relançable. Attendu : 63 copies (constructions 24, blocs 24, transitions 15). Exécuté par Kevin le 17/11 ; contrôle Claude par SELECT : 109 lignes (46 anciennes intactes + 63 copies, 8 par construction et par bloc, 8 et 7 par transition), 4 contraintes élargies, bloc haut du pôle formation = image Pressing. Commit local, pas poussé (même raison qu'au bloc 6).
 
 ### Bloc 8 : projet sportif et côté joueur sur les 8 phases
-- Statut : à faire
+- Statut : fait (2026-11-17), à contrôler à l'écran par Kevin
 - Objectif : le projet sportif du club et la préparation tactique du joueur utilisent les 8 phases.
 - Résultat testable : dans le projet sportif d'un club, les onglets sont les 8 phases + CPA offensifs et défensifs, avec les images de fond copiées au bloc 7 ; côté joueur, même chose.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -242,7 +242,11 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
   - Rechercher les autres usages des anciennes clés (`attaque`, `defense`, `transition_att`, `transition_def`, `pressing`) et les traiter.
 - Ce que je teste pour valider : projet sportif d'un club qui avait des images de fond ; la même page côté joueur sur téléphone.
 - Reste à finir :
-- Journal :
+  - Kevin : contrôle à l'écran (projet sportif du club, onglet Zones de terrain : 8 phases + CPA, images de fond présentes ; même page côté joueur sur téléphone). Je n'ai pas pu me connecter à un compte, seules la compilation et la base ont été vérifiées.
+  - Les principes texte et les photos de principes n'ont aucune donnée en base : les nouvelles phases démarrent vides, rien à reprendre.
+  - Les anciennes lignes (attaque, defense, pressing, transition_att, transition_def) restent en base, plus lues par l'écran ; nettoyage éventuel à décider plus tard.
+  - Hors périmètre, notés pour le bloc 10 : `src/constants/principesJeu.js` (sous-dossiers Offensif/Défensif de « Mes séances ») garde son ancien découpage.
+- Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). `ProjetSportif.jsx` : principes texte = 8 phases + coups de pied arrêtés ; zones de terrain = 8 phases + CPA offensifs + CPA défensifs (l'onglet Pressing disparaît, son image est déjà sur Déf. bloc haut) ; photo de principe possible sur les 6 phases d'organisation (3 constructions + 3 blocs), à la place d'Organisation offensive/défensive. `PreparationTactiqueJoueur.jsx` : onglets Schémas partagés, les 8 phases (noms courts, titre complet au-dessus du terrain), CPA ; lecture de la galerie et des zones par nouvelle clé. Aucun autre lecteur de `terrain_fonds`, `terrain_zones`, `terrain_galerie`, `principes_jeu`, `principes_photos` ni des anciennes clés dans `src` (`principesJeu.js`, `schemasSeanceIA.js` et `translations.js` n'en dépendent pas : autre sujet). Vérifications : `vite build` OK ; ESLint sans nouvelle erreur (les erreurs restantes sont dans des effets déjà là, lignes non modifiées) ; lecture de la production : `terrain_fonds` contient bien les nouvelles phases (8 par construction et par bloc, 8 et 7 par transition) en plus des anciennes.
 
 ### Bloc 9 : planification annuelle sur les 8 phases
 - Statut : à faire
