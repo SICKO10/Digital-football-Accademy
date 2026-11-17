@@ -1,6 +1,6 @@
 # BRIEF : nouvelle fiche séance (modèle « AS Cannes »)
 
-Statut : questions tranchées le 17/11 (réponses dans `PLAN-fiche-seance.md`, section « Décisions de Kevin »). Plan écrit : 12 blocs (0 à 11) + 1 optionnel.
+Statut : questions tranchées le 17/11 (réponses dans `PLAN-fiche-seance.md`, section « Décisions de Kevin »). Plan écrit : 12 blocs (0 à 11) + 1 optionnel. Blocs 0 à 10 faits (17/11) ; bloc 11 (vérification, mise en ligne) en cours.
 Date : 17 novembre 2026.
 
 ## Objectif

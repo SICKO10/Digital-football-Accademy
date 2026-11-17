@@ -291,7 +291,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
 
 
 ### Bloc 11 : vérification finale, mise en ligne
-- Statut : à faire
+- Statut : en cours
 - Objectif : tout vérifier en conditions réelles et publier.
 - Résultat testable : parcours complet validé sur la version de test Vercel, puis en production après mon « ok ».
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -306,7 +306,11 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
   - Commit et push des blocs 7 à 11 ; déploiement via `vercel-deploy` (test d'abord).
 - Ce que je teste pour valider : la liste du compte rendu, sur la version de test.
 - Reste à finir :
-- Journal :
+  - Kevin : parcours complet sur écran (éducateur avec club, sans club, ancienne Libre, BMF, projet sportif, planification, côté joueur, téléphone, mode sombre) : je ne peux pas me connecter à un compte.
+  - Kevin : impression réelle recto verso.
+  - Version de test Vercel : la commande `vercel` n'est pas installée ; le dossier contient aussi le travail non commité du dashboard joueur v3 (il partirait dans le test). Décision attendue de Kevin.
+  - Pousser les 3 commits locaux (blocs 9 et 10) seulement après ton « ok » pour la mise en ligne.
+- Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). `vite build` OK. Blocs 7 à 8 déjà poussés, blocs 9 et 10 commités en local (3 commits, non poussés). `backups/` du chantier rangés dans `backups/fiche-seance/` (les sauvegardes du dashboard joueur v3 laissées en place). BRIEF mis à jour. Rien déployé, rien poussé.
 
 ### Bloc 12 (optionnel) : [IDÉE] fiche vierge du jour en un clic
 - Statut : à faire (seulement si Kevin le demande)
