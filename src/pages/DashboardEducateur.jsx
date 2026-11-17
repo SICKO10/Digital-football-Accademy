@@ -2243,8 +2243,6 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     const roster = data || []
     return categorie ? regrouperEffectifCommun(roster, catId).joueurs : roster
   }
-  const effectifFiche = { joueursActifs: joueurs, equipeActiveId: equipeActive?.id || null, lireEffectif: lireEffectifEquipe }
-
   const chargerMatchs = async (uid, catId) => {
     // Scopé à la saison en cours — sans borne, cette requête (jointe à
     // stats_match/notations_match) ramenait l'historique complet du compte,
@@ -2543,6 +2541,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     try { return localStorage.getItem('equipe_active_id') || null } catch { return null }
   })
   const equipeActive = mesEquipes.find(e => e.id === equipeActiveId) || mesEquipes[0] || null
+  const effectifFiche = { joueursActifs: joueurs, equipeActiveId: equipeActive?.id || null, lireEffectif: lireEffectifEquipe }
   const changerEquipe = (equipe) => {
     setEquipeActiveId(equipe.id)
     try { localStorage.setItem('equipe_active_id', equipe.id) } catch { /* ignore */ }
