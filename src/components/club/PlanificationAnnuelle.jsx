@@ -352,6 +352,9 @@ function SelecteurMethodo({ camp, sel, setSel, couleur, label }) {
                 {theme}
               </button>
             ))}
+            {getThemes(camp, sel.phase).length === 0 && (
+              <div style={{ color: colors.text.faint, fontSize: 11, fontStyle: 'italic' }}>Aucun thème rangé dans cette phase pour le moment.</div>
+            )}
           </div>
         </div>
       )}
@@ -546,7 +549,10 @@ function ModalSemaine({ semaine, planId, phases, pole, onSave, onClose, onDelete
         <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{label}</div>
         <select value={form[themeKey]} onChange={e => setForm(f => ({ ...f, [themeKey]: e.target.value, [principeKey]: '' }))} style={{ ...selectStyle, marginBottom: 6 }}>
           <option value="">— Thème {label.toLowerCase()}</option>
-          {phasesCamp.map(ph => (
+          {form[themeKey] && !phasesCamp.some(ph => getThemes(camp, ph.key).includes(form[themeKey])) && (
+            <option value={form[themeKey]}>{form[themeKey]} (thème enregistré avant)</option>
+          )}
+          {phasesCamp.filter(ph => getThemes(camp, ph.key).length > 0).map(ph => (
             <optgroup key={ph.key} label={ph.label}>
               {getThemes(camp, ph.key).map(theme => <option key={theme} value={theme}>{theme}</option>)}
             </optgroup>
