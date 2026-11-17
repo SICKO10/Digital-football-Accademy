@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { extractYoutubeId, youtubeThumbnail } from '../lib/youtube'
-import { THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
+import { THEMES_SEANCE, GROUPES_THEMES_PHASES, groupeThemeSeance, themeSeanceInfo } from '../lib/themesSeance'
 
 const CATEGORIES = [
   { val: 'toutes', label: 'Toutes' },
@@ -66,7 +66,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   const [messageFavoris, setMessageFavoris] = useState('')
   const typeBase = type === 'favoris' ? 'perso' : type
   const proprio = proprietaireId || favorisId
-  const [formPhase, setFormPhase] = useState('offensif') // phase affichée dans le sélecteur du formulaire (pas persisté, theme_seance suffit)
+  const [formPhase, setFormPhase] = useState(GROUPES_THEMES_PHASES[0].cle) // phase affichée dans le sélecteur du formulaire (pas persisté, theme_seance suffit)
   const [form, setForm] = useState({
     titre: '', description: '', youtube_url: '',
     categorie: 'technique', theme_seance: '', type_seance: 'collectif', type_procede: '',
@@ -169,6 +169,8 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, clubId, proprietaireId, favorisId])
 
+  const groupeFormActif = GROUPES_THEMES_PHASES.find(g => g.cle === formPhase) || GROUPES_THEMES_PHASES[0]
+
   const FORM_VIDE = { titre: '', description: '', youtube_url: '', categorie: 'technique', theme_seance: '', type_seance: 'collectif', type_procede: '', tags: '', duree: '', visible_joueurs: false }
 
   const ouvrirEditionVideo = (video) => {
@@ -178,7 +180,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       categorie: video.categorie || 'technique', theme_seance: video.theme_seance || '', type_seance: video.type_seance || 'collectif', type_procede: video.type_procede || '',
       tags: (video.tags || []).join(', '), duree: video.duree || '', visible_joueurs: video.visible_joueurs || false,
     })
-    setFormPhase(themeSeanceInfo(video.theme_seance)?.phase || 'offensif')
+    setFormPhase(groupeThemeSeance(video.theme_seance)?.cle || GROUPES_THEMES_PHASES[0].cle)
     setVideoActive(null)
     setShowForm(true)
   }
@@ -321,7 +323,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         {peutAjouter && (
           <button onClick={() => setShowForm(v => {
               const next = !v
-              if (next) { setVideoEnEdition(null); setForm(FORM_VIDE); setFormPhase('offensif') }
+              if (next) { setVideoEnEdition(null); setForm(FORM_VIDE); setFormPhase(GROUPES_THEMES_PHASES[0].cle) }
               return next
             })}
             style={{ background: accentColor, color: colors.black || '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
@@ -347,12 +349,12 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               <div style={{ marginBottom: '12px' }}>
                 <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 8px' }}>Phase</p>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <button key={phase} onClick={() => { setFormPhase(phase); setForm(f => ({ ...f, theme_seance: '' })) }}
+                  {GROUPES_THEMES_PHASES.map(groupe => (
+                    <button key={groupe.cle} onClick={() => { setFormPhase(groupe.cle); setForm(f => ({ ...f, theme_seance: '' })) }}
                       style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
-                        background: formPhase === phase ? groupe.color + '22' : 'transparent',
-                        borderColor: formPhase === phase ? groupe.color : colors.border.strong,
-                        color: formPhase === phase ? groupe.color : colors.text.faint }}>
+                        background: formPhase === groupe.cle ? groupe.color + '22' : 'transparent',
+                        borderColor: formPhase === groupe.cle ? groupe.color : colors.border.strong,
+                        color: formPhase === groupe.cle ? groupe.color : colors.text.faint }}>
                       {groupe.label}
                     </button>
                   ))}
@@ -361,12 +363,12 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               <div style={{ marginBottom: '12px' }}>
                 <p style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 8px' }}>Thème de séance</p>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {THEMES_SEANCE[formPhase].themes.map(th => (
+                  {groupeFormActif.themes.map(th => (
                     <button key={th.value} onClick={() => setForm(f => ({ ...f, theme_seance: th.value }))}
                       style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
-                        background: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color + '22' : 'transparent',
-                        borderColor: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.border.strong,
-                        color: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.text.faint }}>
+                        background: form.theme_seance === th.value ? groupeFormActif.color + '22' : 'transparent',
+                        borderColor: form.theme_seance === th.value ? groupeFormActif.color : colors.border.strong,
+                        color: form.theme_seance === th.value ? groupeFormActif.color : colors.text.faint }}>
                       {th.label}
                     </button>
                   ))}

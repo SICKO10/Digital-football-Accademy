@@ -429,7 +429,7 @@ const TUTORIELS = {
       {
         titre: 'Pourquoi c’est important',
         texte: 'Ce sont les règles du jeu de ton club : ce que tout joueur doit savoir faire à chaque phase, quelle que soit son équipe. Tes éducateurs s’en servent pour préparer leurs séances.',
-        visuel: <Onglets items={['Organisation offensive', 'Organisation défensive', 'Transition offensive', 'Transition défensive', 'Coups de pied arrêtés']} actif="Organisation offensive" couleur={c.accent.green} />,
+        visuel: <Onglets items={['Construction basse', 'Construction médiane', 'Construction haute', 'Défense en bloc haut', 'Coups de pied arrêtés']} actif="Construction basse" couleur={c.accent.green} />,
       },
       {
         titre: 'Écris tes principes',
@@ -453,12 +453,12 @@ const TUTORIELS = {
       },
       {
         titre: 'Dessine tes zones',
-        texte: 'Choisis la phase de jeu, puis trace les zones clés sur le terrain. Tu peux aussi charger un fond de terrain et une galerie d’images.',
+        texte: 'Choisis l’une des 8 phases de jeu, puis trace les zones clés sur le terrain. Tu peux aussi charger un fond de terrain et une galerie d’images.',
         points: [
           'Les coups de pied arrêtés ont leurs propres schémas, offensifs et défensifs.',
           'Enregistre : les zones apparaissent ensuite dans la préparation de tes équipes.',
         ],
-        visuel: <Onglets items={['Organisation offensive', 'Organisation défensive', 'Transition offensive']} actif="Organisation offensive" />,
+        visuel: <Onglets items={['Construction basse', 'Construction médiane', 'Construction haute']} actif="Construction basse" />,
       },
     ],
   }),

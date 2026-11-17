@@ -27,7 +27,7 @@ import { CATEGORIES, CATEGORIES_MASCULIN, CATEGORIES_FEMININ, labelCategorie } f
 import { saisonActuelle, bornesSaison, libelleSaison, filtrerParSaison } from '../lib/saison'
 import { JOURS_SEMAINE } from '../lib/jours'
 import { chargerMesRoles } from '../lib/multiRole'
-import { THEMES_SEANCE, TOUS_THEMES_SEANCE, themeSeanceInfo } from '../lib/themesSeance'
+import { THEMES_SEANCE, TOUS_THEMES_SEANCE, GROUPES_THEMES_PHASES, themeSeanceInfo } from '../lib/themesSeance'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 // Sections/modales chargées à la demande (lazy) plutôt qu'au chargement initial du
 // dashboard : elles pesaient ~10 000 lignes à elles seules dans le chunk
@@ -10364,10 +10364,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
-                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={labelPhase(phase)} key={phase}>
+                  {GROUPES_THEMES_PHASES.map(groupe => (
+                    <optgroup label={groupe.label} key={groupe.cle}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
+                        <option key={groupe.cle + th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -10486,10 +10486,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
-                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={labelPhase(phase)} key={phase}>
+                  {GROUPES_THEMES_PHASES.map(groupe => (
+                    <optgroup label={groupe.label} key={groupe.cle}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
+                        <option key={groupe.cle + th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -11844,10 +11844,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <select id="proc-theme" value={procedeForm.theme} onChange={e => setProcedeForm(f => ({ ...f, theme: e.target.value }))}
                   className={CLASSE_CHAMP} style={styleChamp(colors)}>
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
-                  {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
-                    <optgroup label={labelPhase(phase)} key={phase}>
+                  {GROUPES_THEMES_PHASES.map(groupe => (
+                    <optgroup label={groupe.label} key={groupe.cle}>
                       {groupe.themes.map(th => (
-                        <option key={th.value} value={th.value}>{labelTheme(th.value)}</option>
+                        <option key={groupe.cle + th.value} value={th.value}>{labelTheme(th.value)}</option>
                       ))}
                     </optgroup>
                   ))}
@@ -13306,7 +13306,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <label>Catégorie</label>
                       <select value={ficheApercuEdit.categorie_tactique} onChange={e => setFicheApercuEdit(f => ({ ...f, categorie_tactique: e.target.value }))} style={champEditStyle}>
                         <option value="">—</option>
-                        {TOUS_THEMES_SEANCE.map(c => <option key={c.value} value={c.value}>{labelTheme(c.value)}</option>)}
+                        {GROUPES_THEMES_PHASES.map(groupe => (
+                          <optgroup label={groupe.label} key={groupe.cle}>
+                            {groupe.themes.map(c => <option key={groupe.cle + c.value} value={c.value}>{labelTheme(c.value)}</option>)}
+                          </optgroup>
+                        ))}
                       </select>
                     </div>
                     {!ficheApercuEdit.mode_diplome && themeSeanceInfo(ficheApercuEdit.categorie_tactique) && (
