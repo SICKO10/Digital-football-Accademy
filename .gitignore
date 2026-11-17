@@ -30,3 +30,6 @@ diagnostic-*.csv
 controle-ouvertures-*.csv
 .vercel
 .env*
+
+# Modèles papier (PDF lourds, non commités ; les PNG légers restent versionnables)
+docs/modeles/*.pdf
