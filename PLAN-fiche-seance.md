@@ -313,7 +313,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
 - Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). `vite build` OK. Blocs 7 à 8 déjà poussés, blocs 9 et 10 commités en local (3 commits, non poussés). `backups/` du chantier rangés dans `backups/fiche-seance/` (les sauvegardes du dashboard joueur v3 laissées en place). BRIEF mis à jour. Rien déployé, rien poussé.
 
 ### Bloc 12 (optionnel) : [IDÉE] fiche vierge du jour en un clic
-- Statut : à faire (seulement si Kevin le demande)
+- Statut : fait (code et build OK, test écran par Kevin)
 - Objectif : pour les coachs qui écrivent au stylo, un bouton « Imprimer une fiche vierge » qui sort directement la fiche avec logo, couleur, date, effectif et J± remplis, sans passer par le formulaire.
 - Résultat testable : depuis le planning de l'équipe, 1 clic = 2 pages prêtes à imprimer.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -326,4 +326,6 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
   - Fiche remplie automatiquement (équipe, date, J±), impression directe.
 - Ce que je teste pour valider : imprimer la fiche vierge du prochain entraînement.
 - Reste à finir :
-- Journal :
+  - Kevin : tester à l'écran (Planning ou Mes séances, bouton fiche d'un entraînement, « Imprimer une fiche vierge pour ce jour ») : je ne peux pas me connecter.
+  - Le bouton est dans la fenêtre « Importer une fiche » d'un entraînement (accessible depuis l'accueil, le planning et la liste des entraînements). Pas de bouton séparé sur la carte.
+- Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). Bouton ajouté dans `DashboardEducateur.jsx` : fiche Fiche club vierge avec date de l'entraînement, équipe active, logo, couleur, effectif (automatique) et J± (calculé d'après les matchs), impression directe via `window.print()`, la fiche en cours de rédaction n'est pas touchée. Clé de traduction `ent_imprimer_fiche_vierge` (6 langues). `vite build` OK. Commité, non poussé.

@@ -94,6 +94,7 @@ import { construireSt } from '../lib/useStFinance'
 import { useColors } from '../lib/theme'
 import { TitreEcran, Etiquette, CarteChiffre, Jauge, Icone, EtiquetteStatut } from '../components/identite'
 import ChampsFicheClub from '../components/fiches/ChampsFicheClub'
+import { jourMatchAuto } from '../lib/jourMatchFiche'
 import { styleTitreEcran, styleCarte, styleCarteLiseree, styleEtiquette, styleChiffreHeros, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleTableau, styleLigneCraie, couleurCraie, couleurClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
 import { Plus, FileText, Link as LienIcone, CircleCheck, TriangleAlert, MapPin, Users, Target, CalendarDays, Clock, Save, ClipboardList, Star, X, IdCard, Activity, CircleX, Bandage, Thermometer, Goal, ShieldCheck, Timer, Medal, Pencil, FolderOpen, Trophy, Inbox, Camera, Landmark, Bot, Sparkles, Trash2, Printer, Folder, Video, Palette, Library, GraduationCap, CircleAlert, ChevronUp, ChevronDown, Check, Square, Lock, Download, Rocket, ChartColumn, Eye, ScanLine, Ellipsis, EllipsisVertical, ExternalLink, Package, ArrowRight, ChevronLeft, ChevronRight, Copy, Search, Zap, Megaphone, Mail, BadgeCheck, Send, Globe, MessageSquare, Mic, CreditCard, Smartphone, Paperclip } from 'lucide-react'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
@@ -2714,6 +2715,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       : { mode_diplome: null, procedes: liste }
   )
   const [fiche, setFiche] = useState(ficheVide)
+  // Fiche vierge du jour : imprimée directement, sans toucher à la fiche en cours de rédaction.
+  const [ficheViergeImpression, setFicheViergeImpression] = useState(null)
+  useEffect(() => {
+    if (!ficheViergeImpression) return undefined
+    const fin = () => setFicheViergeImpression(null)
+    window.addEventListener('afterprint', fin)
+    // Deux images d'attente : la fiche doit être dessinée avant d'ouvrir l'impression.
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => window.print()))
+    return () => { cancelAnimationFrame(id); window.removeEventListener('afterprint', fin) }
+  }, [ficheViergeImpression])
   const [sport, setSport] = useState('football')
   // Filet de sécurité contre les pertes de fiche en cours de rédaction (cf.
   // bug du 2026-09-22 : session expirée en plein milieu d'une longue
@@ -12143,6 +12154,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   style={{ ...styleBoutonPrincipal(colors), marginBottom: '6px', width: '100%' }}>
                   {t('ent_rediger_nouvelle_fiche_jour', lang)}
                 </button>
+                <button type="button" className={CLASSE_BOUTON_SECONDAIRE}
+                  onClick={() => {
+                    const cible = entrainements.find(x => x.id === modalImportFicheEntrainement)
+                    const date = cible?.date || ''
+                    setFicheViergeImpression({
+                      ...ficheVide, date, mode_diplome: 'CLUB', equipe_id: equipeActive?.id || '',
+                      jour_match: jourMatchAuto(date, matchs),
+                    })
+                    setModalImportFicheEntrainement(null)
+                  }}
+                  style={{ ...styleBoutonSecondaire(colors), marginBottom: '6px', width: '100%' }}>
+                  <Icone icone={Printer} /> {t('ent_imprimer_fiche_vierge', lang)}
+                </button>
                 <Etiquette as="p" style={{ margin: '4px 0 2px' }}>{t('ent_ou_choisir_fiche', lang)}</Etiquette>
                 {mesSeancesOuvertes.length === 0 ? (
                   <p style={{ fontSize: '13px', color: colors.text.secondary, padding: '8px', fontFamily: police.texte }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
@@ -13174,7 +13198,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       </div>
     )}
 
-    <FicheSeancePrint effectif={effectifFiche} fiche={{ ...fiche, sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} logoClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url || null : null} couleurClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale || null : null} />
+    <FicheSeancePrint effectif={effectifFiche} fiche={{ ...(ficheViergeImpression || fiche), sport }} categorieLabel={themeSeanceInfo(fiche.categorie_tactique)?.label} nomEducateur={`${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim()} logoClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.avatar_url || null : null} couleurClub={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club?.couleur_principale || null : null} />
 
     {/* Aperçu en grand de la fiche en cours de rédaction — purement lecture
         seule (ne touche jamais à `fiche`/`sport`), contrairement à l'ancien
