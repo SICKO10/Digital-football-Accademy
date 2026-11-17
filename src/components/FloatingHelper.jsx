@@ -36,10 +36,10 @@ const DEFAULT_FAQ = [
 // pour suivre le thème clair/sombre de chaque dashboard hôte — buildS() est
 // appelé une fois par rendu dans le composant plutôt qu'un objet figé au
 // niveau module, puisque colors change selon le thème actif.
-const buildS = (colors) => ({
+const buildS = (colors, decalageBas = 0) => ({
   btn: (open, color) => ({
     position: "fixed",
-    bottom: "28px",
+    bottom: `calc(${28 + decalageBas}px + env(safe-area-inset-bottom, 0px))`,
     right: "28px",
     width: "56px",
     height: "56px",
@@ -57,7 +57,7 @@ const buildS = (colors) => ({
   }),
   panel: (open) => ({
     position: "fixed",
-    bottom: "96px",
+    bottom: `calc(${96 + decalageBas}px + env(safe-area-inset-bottom, 0px))`,
     right: "28px",
     width: "320px",
     background: colors.background.raised,
@@ -314,9 +314,9 @@ const buildS = (colors) => ({
 // actif (ex: activeTab === 'accueil'). Sur mobile/tablette, le bouton flottant
 // est masqué en dehors de l'accueil — il chevauche trop souvent le contenu
 // (ex: le panel joueurs du Tacticboard) sur les écrans étroits.
-export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80", estAccueil = true, masque = false }) {
+export default function FloatingHelper({ userId, onReplayOnboarding, faq = DEFAULT_FAQ, accentColor = "#4ade80", estAccueil = true, masque = false, decalageBas = 0 }) {
   const colors = useColors();
-  const S = buildS(colors);
+  const S = buildS(colors, decalageBas);
   const [mobileOuTablette, setMobileOuTablette] = useState(() => window.innerWidth < 1024);
   useEffect(() => {
     const onResize = () => setMobileOuTablette(window.innerWidth < 1024);

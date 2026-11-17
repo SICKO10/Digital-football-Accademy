@@ -21,7 +21,7 @@ import { useIsMobileOrTablet } from '../hooks/useIsMobileOrTablet'
 // de marque du bandeau partenaire, pas celle du club/dashboard courant.
 // sobre (optionnel) : bandeau blanc à bordure fine, sans halo ni animation
 // (accueil éducateur) ; sans l'option, rendu d'origine.
-export default function SponsorsBar({ clubId, sidebarWidth = 0, sobre = false }) {
+export default function SponsorsBar({ clubId, sidebarWidth = 0, sobre = false, decalageBas = 0 }) {
   const colors = useColors()
   const isMobile = useWindowWidth() < 640
   // Même seuil que la sidebar des dashboards (position: sticky, colonne
@@ -72,7 +72,7 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0, sobre = false })
 
   return (
     <div style={{
-      position: 'fixed', left: sidebarPersistante ? sidebarWidth : 0, right: 0, bottom: 0, zIndex: 30,
+      position: 'fixed', left: sidebarPersistante ? sidebarWidth : 0, right: 0, bottom: decalageBas ? `calc(${decalageBas}px + env(safe-area-inset-bottom, 0px))` : 0, zIndex: 30,
       background: sobre ? colors.background.surface : `linear-gradient(to right, ${colors.background.sunken}, ${colors.background.surface}, ${colors.background.sunken})`,
       boxShadow: sobre ? 'none' : `0 -1px 0 0 ${amber}${alpha.medium}, 0 -8px 32px rgba(0,0,0,0.45)`,
       borderTop: sobre ? `1px solid ${colors.border.subtle}` : undefined,
@@ -81,7 +81,7 @@ export default function SponsorsBar({ clubId, sidebarWidth = 0, sobre = false })
       // de la page apparaît sous la barre, "autour" de la bannière sponsor.
       // Le contenu (icônes, texte) garde une hauteur fixe ci-dessous ; ce
       // padding ne fait qu'étendre le fond sombre jusqu'au vrai bord.
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingBottom: decalageBas ? 0 : 'env(safe-area-inset-bottom, 0px)',
     }}>
       <div style={{
         height: isMobile ? 56 : 68,

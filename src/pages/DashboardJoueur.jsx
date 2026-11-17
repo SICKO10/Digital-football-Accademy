@@ -36,7 +36,8 @@ import { CRITERES_EDU as CRITERES_EDU_KEYS } from '../lib/criteresEdu'
 import { CATEGORIES } from '../lib/categories'
 import PrepPhysiqueJoueur from '../components/prepphysique/PrepPhysiqueJoueur'
 import PreparationTactiqueJoueur from '../components/PreparationTactiqueJoueur'
-import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars } from '../lib/menuLateral'
+import { menuLateralCss, BORDURE_MENU, MENU_TOGGLE_STYLE, coqueVars, HAUTEUR_BARRE_BASSE } from '../lib/menuLateral'
+import { House, Users, TrendingUp, UserRound, Plus } from 'lucide-react'
 import EnTeteMenu from '../components/EnTeteMenu'
 import BandeauClub from '../components/BandeauClub'
 import { ecranJoueurCss, choisirALaUne, vignetteVideo } from '../lib/ecranJoueur'
@@ -72,6 +73,10 @@ import TuileChiffre from '../components/joueur/TuileChiffre'
 import SectionRepliable from '../components/joueur/SectionRepliable'
 import BandeSemaine from '../components/joueur/BandeSemaine'
 import ALaUne from '../components/joueur/ALaUne'
+import AfficheMatch from '../components/joueur/AfficheMatch'
+import SeanceAccueil from '../components/joueur/SeanceAccueil'
+import BlocSaisirMatch from '../components/joueur/BlocSaisirMatch'
+import ProgressionAccueil from '../components/joueur/ProgressionAccueil'
 import SondageCategorie from '../components/categories/SondageCategorie'
 import { equipeConvocation } from '../lib/categoriesJoueur'
 import JaugeSaison from '../components/joueur/JaugeSaison'
@@ -357,6 +362,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [demandes, setDemandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [onglet, setOnglet] = useState('dashboard')
+  // Bouton « Saisir mon match » : ouvre Mes Statistiques directement sur la saisie.
+  const [saisieDemandee, setSaisieDemandee] = useState(false)
+  const [saisieCle, setSaisieCle] = useState(0)
   const [stats, setStats] = useState({})
   const [savingStats, setSavingStats] = useState(false)
   const [statsSaved, setStatsSaved] = useState(false)
@@ -436,6 +444,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const [widgetDispoEnt, setWidgetDispoEnt] = useState(null)
   const [widgetDispoMatch, setWidgetDispoMatch] = useState(null)
   const [widgetCalendrier, setWidgetCalendrier] = useState([])
+  const [statsPerso, setStatsPerso] = useState(null) // { matchs, buts, passes } des matchs saisis par le joueur (stats_match_joueur), pour la progression de l'accueil
   const [tauxPresenceAccueil, setTauxPresenceAccueil] = useState(null) // { taux, present, total, serie, buts, passes, minutesJouees, matchsJoues } | null
   const [convocationActive, setConvocationActive] = useState(null) // convocation publiée non expirée pour ce joueur, avec le match joint
   const [repConvoc, setRepConvoc] = useState(null) // 'present' | 'absent' | null — réponse du joueur à convocationActive
@@ -687,7 +696,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       // cumul de ses stats, pas seulement ceux de la première trouvée.
       const acceptees = mesAffiliations.filter(af => af.statut === 'accepte')
       const a = acceptees[0]
-      if (acceptees.length > 0) { chargerCalendrierEtDispos(acceptees); chargerPlanningSemaine(acceptees); chargerTauxPresence(acceptees) }
+      if (acceptees.length > 0) { chargerCalendrierEtDispos(acceptees); chargerPlanningSemaine(acceptees); chargerTauxPresence(acceptees); chargerCompetition(acceptees) }
       if (a) { chargerMesNotes(a.equipe_joueur_id); chargerNotesSeanceEnAttente(a.educateur_id) }
     }
     if (onglet === 'competition') {
@@ -695,6 +704,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       if (acceptees.length > 0) chargerCompetition(acceptees)
     }
   }, [onglet, userId, mesAffiliations])
+
+  // Progression de l'accueil : résumé des matchs que le joueur a saisis lui-même.
+  // Rechargé à chaque retour sur l'accueil, pour refléter une saisie qui vient d'être faite.
+  useEffect(() => {
+    if (onglet !== 'dashboard' || !userId) return
+    let annule = false
+    supabase.from('stats_match_joueur').select('buts, passes_decisives').eq('joueur_id', userId)
+      .then(({ data }) => {
+        if (annule || !data) return
+        setStatsPerso({
+          matchs: data.length,
+          buts: data.reduce((s, m) => s + (m.buts || 0), 0),
+          passes: data.reduce((s, m) => s + (m.passes_decisives || 0), 0),
+        })
+      })
+    return () => { annule = true }
+  }, [onglet, userId])
 
   // Rediriger vers 'accueil' si joueur affilié et onglet non reconnu
   useEffect(() => {
@@ -3449,6 +3475,20 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     statutRecrutement: recrutementProfil.statut_recrutement,
     aUneVideo: !!profil?.clip_url || !!reelJogabonito,
   })
+  // Affiche du prochain match (AfficheMatch) : la convocation publiée gagne, sinon
+  // le prochain match de l'équipe. Quand l'affiche montre déjà ce match, le bloc
+  // « à la une » ne le répète pas (convocation ou match) et laisse la place aux autres.
+  const estAffilieAccueil = mesAffiliations.some(a => a.statut === 'accepte')
+  const matchAffiche = estAffilieAccueil
+    ? (convocationActive?.matchs_equipe || widgetProchainMatch || null)
+    : null
+  // L'affiche porte la convocation et le match ; le bloc « Séance » de l'accueil porte la
+  // séance : « à la une » ne les répète pas. L'affiche est en relief quand plus rien d'autre
+  // ne l'est (un seul relief par écran).
+  const aLaUneSansMatch = estAffilieAccueil && (
+    (matchAffiche && ['convocation', 'match'].includes(aLaUneChoix?.type)) || aLaUneChoix?.type === 'seance'
+  ) ? null : aLaUneChoix
+  const afficheEstALaUne = !aLaUneSansMatch
   // Dernière vidéo publiée : même priorité que la carte « vidéo partagée »
   // (clip Pro d'abord, sinon le reel Jogabonito).
   const dernierLienVideo = profil?.clip_url || reelJogabonito?.video_url || null
@@ -3457,37 +3497,67 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     mesAffiliations.filter(a => a.statut === 'accepte').map(a => ({ affiliation: a, stats: statsJoueur[a.id] }))
   )
 
-  const navItems = [
-    { id: 'dashboard', label: t('jnav_accueil', lang), icon: <IconHome /> },
-    { id: 'equipe', label: t('jnav_equipe', lang), icon: <IconUsers />, badge: mesAffiliations.filter(a => a.statut === 'en_attente').length, section: t('jsec_equipe', lang) },
-    { id: 'annonces', label: 'Actualités du club', icon: <IconMessage />, badge: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length },
-    { id: 'competition', label: t('jnav_competition', lang), icon: <IconTrophy /> },
-    { id: 'equipement', label: 'Équipement', icon: <IconShirt /> },
-    { id: 'entrainement', label: 'Entraînement', icon: <IconDumbbell />, section: t('jsec_preparation', lang) },
-    { id: 'preparation_tactique', label: t('jnav_preparation_tactique', lang), icon: <IconTactic /> },
-    { id: 'prep_physique', label: t('jnav_prep_physique', lang), icon: <IconDumbbell /> },
-    // Santé et Recruteurs (id 'messages') : masqués du menu, mais toujours codés et joignables par leurs liens internes.
-    { id: 'nutrition', label: t('jnav_nutrition', lang), icon: <IconNutrition />, locked: !isPro },
-    // Analyses et Coach analyseur partagent une seule page (onglets) : l'entrée du menu reste active sur les deux.
-    { id: 'analyses', label: t('jnav_analyses', lang), icon: <IconChart />, badge: demandes.filter(d => d.statut === 'analyse').length + (coachUnread || 0), section: t('jsec_developpement', lang) },
-    { id: 'mes_stats', label: 'Mes Statistiques', icon: <IconChart />, section: t('jsec_developpement', lang) },
-    { id: 'profil', label: t('jnav_profil', lang), icon: <IconUser />, section: t('jsec_profil', lang) },
-    { id: 'certif', label: t('jnav_certif', lang), icon: <IconBadge />, section: t('jsec_profil', lang) },
-  ]
+  // Bloc « Ma progression » de l'accueil. Présence : séances suivies avec l'éducateur.
+  // Matchs, buts, passes : ceux de l'équipe (fiches de l'éducateur) s'il y en a, sinon ceux
+  // que le joueur a saisis lui-même. Un chiffre sans donnée n'est pas affiché.
+  const progressionChiffres = (() => {
+    const tp = tauxPresenceAccueil
+    const aDesMatchs = (tp?.matchsJoues ?? 0) > 0
+    const source = aDesMatchs
+      ? { matchs: tp.matchsJoues, buts: tp.buts, passes: tp.passes, libelleMatchs: 'Matchs joués' }
+      : (statsPerso?.matchs ?? 0) > 0 ? { ...statsPerso, libelleMatchs: 'Matchs saisis' } : null
+    return [
+      (tp?.total ?? 0) > 0 && { valeur: `${Math.max(0, Math.min(100, Math.round(tp.taux ?? 0)))} %`, libelle: 'Présence', couleur: colors.accent.green },
+      source && { valeur: source.matchs, libelle: source.libelleMatchs },
+      source && { valeur: source.buts || 0, libelle: 'Buts' },
+      source && { valeur: source.passes || 0, libelle: 'Passes décisives' },
+    ].filter(Boolean)
+  })()
+  const affiliationPrincipaleAccueil = equipePrincipaleStats?.affiliation || mesAffiliations.find(a => a.statut === 'accepte') || null
+  const progressionResultats = !affiliationPrincipaleAccueil ? [] : resultatsCompetition
+    .filter(r => r.educateur_id === affiliationPrincipaleAccueil.educateur_id
+      && (!affiliationPrincipaleAccueil.club_categorie_id || r.club_categorie_id === affiliationPrincipaleAccueil.club_categorie_id))
+    .map(r => ({ code: resultatMatch(r), titre: `${r.domicile ? 'vs' : '@'} ${r.adversaire || 'adversaire'} ${r.score_nous}-${r.score_eux}` }))
+    .filter(r => r.code)
+    .slice(0, 5)
+    .reverse()
 
-  // Ids DOM sur les boutons de nav (toujours montés, contrairement au contenu des
-  // onglets) — cibles utilisées par OnboardingGuide pour surligner chaque rubrique.
-  const NAV_SECTION_IDS = {
-    equipe: 'equipe-section',
-    prep_physique: 'prep-physique-section',
-    analyses: 'analyses-section',
-    coach: 'coach-section',
-    profil: 'profile-section',
-    carte: 'carte-section',
-    certif: 'certif-section',
-    clubs: 'clubs-section',
-    messages: 'messages-section',
+  // Menu à deux niveaux : 4 entrées parentes (barre basse sur téléphone, menu court sur
+  // ordinateur) et, dans chaque rubrique, une rangée de sous-onglets. Les ids d'onglet
+  // sont ceux d'avant : seuls le regroupement et l'affichage changent. Santé, Recruteurs
+  // (messages) et Clubs restent hors menu, joignables par leurs liens internes.
+  const badgesOnglet = {
+    equipe: mesAffiliations.filter(a => a.statut === 'en_attente').length,
+    annonces: annoncesClub.filter(a => !annoncesLuesIds.has(a.id)).length,
+    analyses: demandes.filter(d => d.statut === 'analyse').length + (coachUnread || 0),
   }
+  const sousOngletsLibelles = {
+    equipe: t('jnav_equipe', lang),
+    annonces: 'Actualités du club',
+    competition: t('jnav_competition', lang),
+    entrainement: 'Entraînement',
+    preparation_tactique: t('jnav_preparation_tactique', lang),
+    prep_physique: t('jnav_prep_physique', lang),
+    nutrition: t('jnav_nutrition', lang),
+    analyses: t('jnav_analyses', lang),
+    mes_stats: 'Mes Statistiques',
+    profil: t('jnav_profil', lang),
+    certif: t('jnav_certif', lang),
+    equipement: 'Équipement',
+  }
+  // domId : ids DOM des boutons du menu, cibles de l'OnboardingGuide (toujours montés).
+  const groupesMenu = [
+    { id: 'dashboard', Icone: House, label: t('jnav_accueil', lang), onglets: ['dashboard'] },
+    { id: 'mon_equipe', domId: 'equipe-section', Icone: Users, label: t('jnav_equipe', lang), onglets: ['equipe', 'annonces', 'competition'] },
+    { id: 'progresser', domId: 'progresser-section', Icone: TrendingUp, label: t('jnav_progresser', lang), onglets: ['entrainement', 'preparation_tactique', 'prep_physique', 'nutrition', 'analyses'] },
+    { id: 'moi', domId: 'moi-section', Icone: UserRound, label: t('jnav_moi', lang), onglets: ['mes_stats', 'profil', 'certif', 'equipement'], caches: ['sante', 'messages', 'clubs'] },
+  ].map(g => ({ ...g, badge: g.onglets.reduce((n, id) => n + (badgesOnglet[id] || 0), 0) }))
+  // Analyses et Coach analyseur partagent une page à onglets : le menu reste sur « Analyses ».
+  const ongletMenu = onglet === 'coach' ? 'analyses' : onglet
+  const groupeActif = groupesMenu.find(g => g.onglets.includes(ongletMenu) || g.caches?.includes(ongletMenu)) || null
+  const sousOnglets = groupeActif && groupeActif.onglets.length > 1 && groupeActif.onglets.includes(ongletMenu) ? groupeActif.onglets : []
+  const changerOnglet = (id) => { setSaisieDemandee(false); setOnglet(id); setSidebarOpen(false) }
+  const ouvrirSaisieMatch = () => { setSaisieDemandee(true); setSaisieCle(c => c + 1); setOnglet('mes_stats'); setSidebarOpen(false) }
 
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', overflowX: 'hidden' }}>
@@ -3506,7 +3576,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
       {/* ── Guide onboarding (1ère connexion) + aide flottante (toujours visible) ── */}
       <OnboardingGuide key={onboardingKey} rejouer={onboardingKey > 0} userId={userId} accentColor={colors.accent.green} />
-      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} estAccueil={onglet === 'accueil' || onglet === 'dashboard'} />
+      <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} accentColor={colors.accent.green} estAccueil={onglet === 'accueil' || onglet === 'dashboard'} decalageBas={isMobile ? HAUTEUR_BARRE_BASSE : 0} />
 
       {popupEquipementPret}
 
@@ -3553,22 +3623,22 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         <nav style={{ flex: 1, padding: '8px 10px 12px', display: 'flex', flexDirection: 'column' }}>
           <style>{menuLateralCss}</style>
-          {navItems.map((item, i) => (
-            <div key={item.id}>
-              {item.section && item.section !== navItems[i - 1]?.section && (
-                <p className="df-nav-section">{item.section}</p>
-              )}
-              <button className="df-nav-btn"
-                id={NAV_SECTION_IDS[item.id]}
-                data-actif={onglet === item.id || (item.id === 'analyses' && onglet === 'coach')} data-locked={!!item.locked}
-                onClick={() => { setOnglet(item.id); setSidebarOpen(false) }}>
-                <span className="df-nav-icone">{item.icon}</span>
-                <span style={{ flex: 1 }}>{item.label}</span>
-                {item.locked && <span style={{ opacity: 0.4, display: 'inline-flex', flexShrink: 0 }}><IconLock size={13} /></span>}
-                {item.badge > 0 && <span className="df-nav-badge">{item.badge}</span>}
-              </button>
-            </div>
+          {/* Sur téléphone la navigation est dans la barre basse : le tiroir ne garde que le compte. */}
+          {!isMobile && groupesMenu.map(g => (
+            <button key={g.id} className="df-nav-btn" id={g.domId}
+              data-actif={groupeActif?.id === g.id}
+              onClick={() => changerOnglet(g.onglets[0])}>
+              <span className="df-nav-icone"><g.Icone size={18} strokeWidth={1.75} /></span>
+              <span style={{ flex: 1 }}>{g.label}</span>
+              {g.badge > 0 && <span className="df-nav-badge">{g.badge}</span>}
+            </button>
           ))}
+          {!isMobile && !readOnly && (
+            <button className="df-menu-action" id="saisir-match-section" onClick={ouvrirSaisieMatch}>
+              <Plus size={18} strokeWidth={2} />
+              <span>{t('jnav_saisir_match', lang)}</span>
+            </button>
+          )}
         </nav>
 
         {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
@@ -3688,7 +3758,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: 80, paddingTop: isMobile ? 'calc(64px + env(safe-area-inset-top, 0px))' : 0 }}>
+      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', minHeight: '100vh', paddingBottom: isMobile ? `calc(${HAUTEUR_BARRE_BASSE + 80}px + env(safe-area-inset-bottom, 0px))` : 80, paddingTop: isMobile ? 'calc(64px + env(safe-area-inset-top, 0px))' : 0 }}>
 
         {!readOnly && <NotificationBanner userId={userId} cibles={['tous', 'joueurs']} />}
 
@@ -3699,6 +3769,23 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
               </svg>
             </button>
+        )}
+
+        {/* ── Sous-onglets de la rubrique (rangée défilante sur téléphone) ── */}
+        {sousOnglets.length > 0 && (
+          <div style={{ maxWidth: '980px', margin: '0 auto', padding: isMobile ? `${spacing.lg} ${spacing.lg} 0` : `${spacing['2xl']} 40px 0` }}>
+            <div className="df-onglets" role="tablist" aria-label={groupeActif.label} style={{ ...coqueVars(colors, colors.accent.green), marginBottom: 0 }}>
+              {sousOnglets.map(id => (
+                <button key={id} role="tab" className="df-onglet" aria-selected={ongletMenu === id}
+                  onClick={() => changerOnglet(id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  {sousOngletsLibelles[id]}
+                  {id === 'nutrition' && !isPro && <span style={{ opacity: 0.5, display: 'inline-flex' }}><IconLock size={13} /></span>}
+                  {badgesOnglet[id] > 0 && <span className="df-onglet-badge">{badgesOnglet[id]}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* ── ACCUEIL ── */}
@@ -3722,45 +3809,85 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}
             />
 
-            {/* À la une — le seul bloc en relief de l'écran, choisi par
-                choisirALaUne (convocation, composition, séance ou match pour un
-                affilié ; analyse, visibilité recruteurs, publication pour les
-                autres). Rien à mettre en avant : le bloc disparaît. */}
-            <ALaUne
-              choix={aLaUneChoix}
-              isMobile={isMobile}
-              lang={lang}
-              repConvoc={repConvoc}
-              onRepondreConvocation={repondreConvocation}
-              onOuvrirOnglet={setOnglet}
-              onNaviguer={navigate}
-              style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}
-            />
-
-            {/* Pas de bande « Ma semaine » dans cette variante : SondageSemaine,
-                juste en dessous, montre déjà la semaine ET permet de répondre
-                présent ou absent. Deux vues de la même semaine, dont une muette,
-                c'était redondant (Kevin, 2026-10-29). La bande reste en service
-                sur l'accueil affilié, qui n'a pas SondageSemaine. */}
-
-            {/* Alertes équipe — même composant que la variante affiliée.
-                Convocation, équipement et commentaire du coach ne sont pas passés
-                ici : ils ont déjà leur propre traitement dans cette variante
-                (grande carte de convocation ci-dessous, popupEquipementPret). */}
-            <ListeAlertes
-              rdvDuJour={rdvDuJour}
-              entrainementsNouveaux={entrainementsNouveaux}
-              entrainementsSupprimes={entrainementsSupprimesAlerte}
-              matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
-              matchsHoraireChange={matchsHoraireChange}
-                cartons={alertesCartons}
-              masquer={masquerAlerte}
-              onOuvrirOnglet={setOnglet}
-              lang={lang}
-              isMobile={isMobile}
-              lundiCourant={lundiCourant}
-              style={{ marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }}
-            />
+            {/* ACCUEIL EN 4 ACCÈS : 1. affiche du prochain match, 2. séance du jour,
+                3. saisir un match joué, 4. ma progression. Le joueur Pro sans club n'a ni
+                match ni séance de club : sa progression passe en tête, à la place de
+                l'affiche. Le joueur gratuit sans club garde l'affiche (« Rejoins ton club »,
+                avec le code d'équipe). Le bloc « à la une » (convocation, composition,
+                analyse, visibilité recruteurs...) reste le seul en relief : il ne répète
+                ni le match de l'affiche ni la séance. */}
+            {(() => {
+              const marge = { marginBottom: isMobile ? spacing['2xl'] : spacing['3xl'] }
+              const progression = (
+                <ProgressionAccueil
+                  chiffres={progressionChiffres}
+                  resultats={progressionResultats}
+                  onVoirStats={() => setOnglet('mes_stats')}
+                  onSaisir={ouvrirSaisieMatch}
+                  readOnly={!!readOnly}
+                  isMobile={isMobile}
+                  style={marge}
+                />
+              )
+              const proSansClub = isPro && !estAffilieAccueil
+              return (
+                <>
+                  {proSansClub && progression}
+                  {!proSansClub && (
+                    <AfficheMatch
+                      match={matchAffiche}
+                      convocation={convocationActive && matchAffiche === convocationActive.matchs_equipe ? convocationActive : null}
+                      club={{ nom: clubAffilieInfo?.club, logo: clubAffilieInfo?.image_hero_url || clubAffilieInfo?.avatar_url }}
+                      affilie={estAffilieAccueil}
+                      repConvoc={repConvoc}
+                      onRepondre={repondreConvocation}
+                      onOuvrirEquipe={() => setOnglet('equipe')}
+                      niveau={afficheEstALaUne && matchAffiche ? 'relief' : 'standard'}
+                      isMobile={isMobile}
+                      lang={lang}
+                      style={marge}
+                    />
+                  )}
+                  <ALaUne
+                    choix={aLaUneSansMatch}
+                    isMobile={isMobile}
+                    lang={lang}
+                    repConvoc={repConvoc}
+                    onRepondreConvocation={repondreConvocation}
+                    onOuvrirOnglet={setOnglet}
+                    onNaviguer={navigate}
+                    style={marge}
+                  />
+                  {/* Alertes équipe : convocation, équipement et commentaire du coach ne sont pas
+                      passés ici, ils ont déjà leur traitement (affiche, popupEquipementPret). */}
+                  <ListeAlertes
+                    rdvDuJour={rdvDuJour}
+                    entrainementsNouveaux={entrainementsNouveaux}
+                    entrainementsSupprimes={entrainementsSupprimesAlerte}
+                    matchSemaine={showProchainMatchSemaine ? prochainMatchSemaine : null}
+                    matchsHoraireChange={matchsHoraireChange}
+                    cartons={alertesCartons}
+                    masquer={masquerAlerte}
+                    onOuvrirOnglet={setOnglet}
+                    lang={lang}
+                    isMobile={isMobile}
+                    lundiCourant={lundiCourant}
+                    style={marge}
+                  />
+                  {estAffilieAccueil && (
+                    <SeanceAccueil
+                      prochainEntrainement={widgetProchainEnt}
+                      onOuvrir={() => setOnglet('entrainement')}
+                      isMobile={isMobile}
+                      lang={lang}
+                      style={marge}
+                    />
+                  )}
+                  {!readOnly && <BlocSaisirMatch onSaisir={ouvrirSaisieMatch} isMobile={isMobile} style={marge} />}
+                  {!proSansClub && progression}
+                </>
+              )
+            })()}
 
             {/* COMPOSITION — terrain visuel de la composition, publiée par
                 l'éducateur depuis sa fiche de causerie avant-match (lecture
@@ -3793,21 +3920,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             })()}
             {/* Catégorie en effectif commun : réponse à la date, séances de toutes les équipes. Rien en mode par équipe. */}
             <SondageCategorie userId={userId} readOnly={readOnly} isMobile={isMobile} lang={lang} />
-            {/* Ma saison — même composant que la variante affiliée. Mesures du
-                profil Pro : seulement des compteurs déjà chargés (analyses rendues,
-                demandes de bilan médical). Les clips publiés ne sont pas chargés ici,
-                donc non affichés. Sans donnée, la section disparaît. */}
-            <JaugeSaison
-              presence={tauxPresenceAccueil}
-              notes={mesNotes}
-              mesures={[
-                { valeur: demandes.filter(d => d.statut === 'analyse').length, libelle: 'analyses reçues', couleur: colors.accent.green },
-                { valeur: demandesBilanMedical.length, libelle: 'demandes de bilan médical', couleur: colors.accent.blue },
-              ]}
-              isMobile={isMobile}
-              style={{ marginBottom: spacing['3xl'] }}
-            />
-
             {mesNotes.length > 0 && (
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: radius['2xl'], padding: spacing['3xl'], marginBottom: spacing['3xl'] }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing['2xl'] }}>
@@ -3871,28 +3983,16 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   ]}
                 />
 
-                {/* TEASER MON ÉQUIPE */}
+                {/* ÉQUIPE : un joueur rattaché retrouve son équipe et sa fiche d'évaluation dans
+                    le menu (Mon équipe). Ici, seulement la fin de saison et l'invitation à
+                    rejoindre un club (le joueur gratuit la voit déjà sur l'affiche). */}
                 {!mesAffiliations.some(a => a.statut === 'accepte') && (
                   <MessageFinSaisonJoueur affiliations={mesAffiliations} isMobile={isMobile} onVoirSaisons={() => setOnglet('equipe')} />
                 )}
                 {(() => {
                   const aff = mesAffiliations.find(a => a.statut === 'accepte')
                   const pending = !aff && mesAffiliations.find(a => a.statut === 'en_attente')
-                  if (aff) {
-                    const pe = aff.profil_educateur
-                    return (
-                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
-                          {pe?.prenom?.[0]}{pe?.nom?.[0]}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pe?.club || `${pe?.prenom} ${pe?.nom}`}</p>
-                          <p style={{ margin: `${spacing.xs} 0 0`, fontSize: '12px', color: colors.accent.green }}>{t('jeq_titre', lang)}</p>
-                        </div>
-                        <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Stats →</span>
-                      </button>
-                    )
-                  }
+                  if (aff) return null
                   if (pending) {
                     return (
                       <div style={{ background: colors.accent.orange + alpha.faint, border: `1px solid ${colors.accent.orange + alpha.light}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'] }}>
@@ -3900,31 +4000,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       </div>
                     )
                   }
+                  if (!isPro) return null
                   return (
                     <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: `1px dashed ${colors.border.default}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>
                       Rejoins ton équipe avec le code fourni par ton éducateur
-                    </button>
-                  )
-                })()}
-
-                {/* RACCOURCI FICHE D'ÉVALUATION — même prérequis que le bouton
-                    "Voir ma fiche" de l'onglet Mon équipe (affiliation acceptée),
-                    identique starter/pro : evaluations_joueur n'a aucune notion
-                    de plan, seulement l'affiliation (cf. policies RLS). */}
-                {(() => {
-                  const aff = mesAffiliations.find(a => a.statut === 'accepte')
-                  if (!aff) return null
-                  return (
-                    <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: aff.equipe_joueur_id, educateurId: aff.educateur_id })}
-                      style={{ width: '100%', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.blue + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, flexShrink: 0 }}>
-                        <IconClipboard />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Fiche d'évaluation</p>
-                        <p style={{ margin: `${spacing.xs} 0 0`, fontSize: '12px', color: colors.text.faint }}>Points forts, objectifs, ressenti de ton éducateur</p>
-                      </div>
-                      <span style={{ color: colors.accent.blue, fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>Voir →</span>
                     </button>
                   )
                 })()}
@@ -4845,7 +4924,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         )}
 
 
-        {onglet === 'mes_stats' && <MesStats userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url} profilJoueur={profil} readOnly={readOnly}
+        {onglet === 'mes_stats' && <MesStats key={saisieCle} vueInitiale={saisieDemandee ? 'saisir' : 'profil'} userId={userId} joueurPoste={profil?.poste} isMobile={isMobile} statsEquipe={equipePrincipaleStats?.stats || null} logoClub={clubAffilieInfo?.avatar_url} profilJoueur={profil} readOnly={readOnly}
           onOuvrirFiche={() => { const a = equipePrincipaleStats?.affiliation; if (a) setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id }) }} />}
         {/* ── PRÉPARATION PHYSIQUE ── */}
         {onglet === 'prep_physique' && (
@@ -5587,7 +5666,34 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         <VoirToutClassement classement={classementOuvert} onClose={() => setClassementOuvert(null)} />
       )}
 
-      {(onglet === 'accueil' || onglet === 'dashboard') && <SponsorsBar clubId={clubIdInventaire} sidebarWidth={220} />}
+      {/* ── Barre basse (téléphone) : 4 entrées + « Saisir mon match » au centre ── */}
+      {isMobile && (
+        <nav className="df-barre-basse" aria-label="Navigation principale"
+          style={{ ...coqueVars(colors, colors.accent.green), '--df-sur-accent': colors.accent.onBrand, minHeight: HAUTEUR_BARRE_BASSE }}>
+          {groupesMenu.slice(0, 2).map(g => (
+            <button key={g.id} className="df-barre-btn" id={g.domId} data-actif={groupeActif?.id === g.id}
+              onClick={() => changerOnglet(g.onglets[0])}>
+              <span className="df-barre-icone"><g.Icone size={22} strokeWidth={1.75} />{g.badge > 0 && <span className="df-barre-badge">{g.badge}</span>}</span>
+              <span>{g.label}</span>
+            </button>
+          ))}
+          {readOnly ? <span /> : (
+            <button className="df-barre-btn df-barre-action" id="saisir-match-section" onClick={ouvrirSaisieMatch}>
+              <span className="df-barre-rond"><Plus size={26} strokeWidth={2.25} /></span>
+              <span>{t('jnav_saisir_match', lang)}</span>
+            </button>
+          )}
+          {groupesMenu.slice(2).map(g => (
+            <button key={g.id} className="df-barre-btn" id={g.domId} data-actif={groupeActif?.id === g.id}
+              onClick={() => changerOnglet(g.onglets[0])}>
+              <span className="df-barre-icone"><g.Icone size={22} strokeWidth={1.75} />{g.badge > 0 && <span className="df-barre-badge">{g.badge}</span>}</span>
+              <span>{g.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {(onglet === 'accueil' || onglet === 'dashboard') && <SponsorsBar clubId={clubIdInventaire} sidebarWidth={220} decalageBas={isMobile ? HAUTEUR_BARRE_BASSE : 0} />}
     </div>
   )
 }

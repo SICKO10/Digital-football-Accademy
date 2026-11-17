@@ -504,6 +504,9 @@ export const T = {
   jnav_certif:              { fr: 'Certification',            en: 'Certification',         pt: 'Certificação',          es: 'Certificación',         it: 'Certificazione',        de: 'Zertifizierung'        },
   jnav_explorer:            { fr: 'Explorer',                 en: 'Explore',               pt: 'Explorar',              es: 'Explorar',              it: 'Esplora',               de: 'Entdecken'             },
   jnav_recruteurs:          { fr: 'Recruteurs',               en: 'Recruiters',            pt: 'Recrutadores',          es: 'Reclutadores',          it: 'Reclutatori',           de: 'Scouts'                },
+  jnav_progresser:          { fr: 'Progresser',               en: 'Improve',               pt: 'Progredir',             es: 'Progresar',             it: 'Migliora',              de: 'Besser werden'         },
+  jnav_moi:                 { fr: 'Moi',                      en: 'Me',                    pt: 'Eu',                    es: 'Yo',                    it: 'Io',                    de: 'Ich'                   },
+  jnav_saisir_match:        { fr: 'Saisir mon match',         en: 'Log my match',          pt: 'Registar o meu jogo',   es: 'Anotar mi partido',     it: 'Inserisci la partita',  de: 'Mein Spiel eintragen'  },
 
   // ── Dashboard joueur — Accueil ──────────────────────────────────────────────────
   jd_quota_titre:           { fr: 'Solde d\'analyses',        en: 'Analysis balance',      pt: 'Saldo de análises',     es: 'Saldo de análisis',     it: 'Saldo analisi',         de: 'Analyse-Guthaben'      },

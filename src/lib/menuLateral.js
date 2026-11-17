@@ -12,6 +12,9 @@
 // bouton qui l'ouvre, df-topbar sur la barre du haut quand le dashboard en a une.
 // La couleur d'accent de chaque espace vient de --df-accent (posée par la page).
 
+// Hauteur de la barre basse des dashboards sur téléphone (px, hors zone du home indicator).
+export const HAUTEUR_BARRE_BASSE = 60
+
 export const BORDURE_MENU = '1px solid rgba(255,255,255,0.2)'
 
 export const menuLateralCss = `
@@ -47,6 +50,19 @@ export const menuLateralCss = `
   .df-onglet:hover { color: var(--df-texte, #111111); background: var(--df-survol, rgba(0,0,0,0.04)); }
   .df-onglet:focus-visible { outline: 2px solid var(--df-accent, #1F7A4D); outline-offset: -2px; }
   .df-onglet[aria-selected="true"] { color: var(--df-texte, #111111); font-weight: 700; box-shadow: inset 0 -3px 0 var(--df-accent, #1F7A4D); }
+  .df-onglet-badge { margin-left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--df-accent, #1F7A4D); color: var(--df-sur-accent, #FFFFFF); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0; }
+  .df-menu-action { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; padding: 11px 12px; border: none; border-radius: 6px; background: var(--menu-active-bg, #FFFFFF); color: var(--menu-active-text, #1F7A4D); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .df-menu-action:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+  .df-menu-action:focus-visible { outline: 2px solid var(--menu-text, #FFFFFF); outline-offset: 2px; }
+  .df-barre-basse { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch; background: var(--df-surface, #FFFFFF); border-top: 1px solid var(--df-bordure, rgba(0,0,0,0.12)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .df-barre-btn { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; padding: 6px 2px; border: none; background: transparent; color: var(--df-texte-doux, #5A6B62); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.05; text-align: center; text-transform: uppercase; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .df-barre-btn[data-actif="true"] { color: var(--df-texte, #111111); font-weight: 700; box-shadow: inset 0 3px 0 var(--df-accent, #1F7A4D); }
+  .df-barre-btn:focus-visible { outline: 2px solid var(--df-accent, #1F7A4D); outline-offset: -2px; }
+  .df-barre-icone { position: relative; display: inline-flex; }
+  .df-barre-badge { position: absolute; top: -5px; right: -10px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--df-accent, #1F7A4D); color: var(--df-sur-accent, #FFFFFF); font-size: 12px; font-weight: 700; letter-spacing: 0; }
+  .df-barre-action { color: var(--df-texte, #111111); }
+  .df-barre-rond { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-top: -22px; border-radius: 50%; background: var(--df-accent, #1F7A4D); color: var(--df-sur-accent, #FFFFFF); border: 3px solid var(--df-surface, #FFFFFF); box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.15s ease; }
+  .df-barre-action:active .df-barre-rond { transform: scale(0.94); }
   .df-drawer { transition: left 0.25s ease, box-shadow 0.25s ease; }
   .df-drawer[data-ouvert="true"] { box-shadow: 8px 0 32px rgba(0,0,0,0.35); }
   .df-drawer-backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); animation: df-drawer-fondu 0.2s ease; }

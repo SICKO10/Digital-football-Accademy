@@ -121,9 +121,9 @@ function Groupe({ titre, aide, children }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur, readOnly = false }) {
+export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur, readOnly = false, vueInitiale = 'profil' }) {
   const colors = useColors()
-  const [vue, setVue] = useState('profil') // profil | saisir | historique
+  const [vue, setVue] = useState(vueInitiale) // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
   const [saving, setSaving] = useState(false)
   const [erreur, setErreur] = useState('')

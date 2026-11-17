@@ -24,78 +24,38 @@ const DEFAULT_STEPS = [
   },
   {
     id: 3,
-    title: "Mon Équipe",
+    title: "Mon équipe",
     message:
-      "Rejoins l'équipe de ton éducateur avec le code qu'il t'a donné : tu accèdes à tes stats de présence et à tes coéquipiers.",
+      "Rejoins l'équipe de ton éducateur avec le code qu'il t'a donné. Tu retrouves ici ton équipe, les actualités de ton club et la compétition.",
     targetId: "equipe-section",
     position: "bottom",
   },
   {
     id: 4,
-    title: "Préparation physique",
+    title: "Progresser",
     message:
-      "Des programmes d'entraînement physique adaptés à ton poste, à faire à ton rythme.",
-    targetId: "prep-physique-section",
+      "Séances, tactique, préparation physique, nutrition et analyses vidéo : tout ce qui te fait progresser est réuni ici. Les onglets en haut de la page changent de rubrique.",
+    targetId: "progresser-section",
     position: "bottom",
   },
   {
     id: 5,
-    title: "Tes analyses vidéo",
+    title: "Moi",
     message:
-      "Retrouve ici tes analyses dès qu'elles sont prêtes — tu reçois une notification et un email. Écoute, applique, progresse.",
-    targetId: "analyses-section",
+      "Ton profil visible par les recruteurs, tes statistiques, ta certification et ton équipement. C'est ta vitrine, remplis-la bien.",
+    targetId: "moi-section",
     position: "bottom",
   },
   {
     id: 6,
-    title: "Coach analyseur",
+    title: "Saisir mon match",
     message:
-      "Discute directement avec un coach pro pour des conseils personnalisés sur ton jeu.",
-    targetId: "coach-section",
+      "Après chaque match, note ton résultat et tes stats en quelques secondes. Ta progression se met à jour toute seule.",
+    targetId: "saisir-match-section",
     position: "bottom",
   },
   {
     id: 7,
-    title: "Ton profil joueur",
-    message:
-      "Ton profil est visible par les recruteurs (abonnement Pro). Remplis-le bien — c'est ta vitrine !",
-    targetId: "profile-section",
-    position: "bottom",
-  },
-  {
-    id: 8,
-    title: "Carte FIFA",
-    message:
-      "Génère ta propre carte de joueur façon FIFA à partir de tes stats, et partage-la sur les réseaux.",
-    targetId: "carte-section",
-    position: "bottom",
-  },
-  {
-    id: 9,
-    title: "Certification",
-    message:
-      "Envoie tes feuilles de match pour faire certifier ton niveau réel par notre équipe — ça renforce la crédibilité de ton profil.",
-    targetId: "certif-section",
-    position: "bottom",
-  },
-  {
-    id: 10,
-    title: "Explorer",
-    message:
-      "Découvre les clubs et recruteurs présents sur la plateforme.",
-    targetId: "clubs-section",
-    position: "bottom",
-  },
-  {
-    id: 11,
-    title: "Messages",
-    message:
-      "Échange directement avec les recruteurs qui s'intéressent à ton profil.",
-    targetId: "messages-section",
-    position: "bottom",
-  },
-  {
-    id: 12,
     title: "C'est parti",
     message:
       "Tu es prêt. Si tu as une question, clique sur le ballon en bas à droite — je suis toujours là.",
