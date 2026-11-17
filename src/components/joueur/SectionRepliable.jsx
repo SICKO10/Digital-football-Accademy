@@ -21,7 +21,7 @@ export default function SectionRepliable({ titre, resume, ouvert, onToggle, isMo
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg,
           width: '100%', background: 'transparent', border: 'none', padding: 0,
-          color: colors.text.primary, cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
+          color: colors.text.primary, cursor: 'pointer', textAlign: 'left', fontFamily: 'Barlow, sans-serif',
         }}
       >
         <span>

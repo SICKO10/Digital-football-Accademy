@@ -3,6 +3,9 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
 import { radius } from '../../tokens'
+import { History } from 'lucide-react'
+import { Icone } from '../identite'
+import { styleBoutonSecondaire, CLASSE_BOUTON_SECONDAIRE } from '../../lib/identite'
 import { labelCategorie } from '../../lib/categories'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../../lib/supabasePagination'
 import {
@@ -24,9 +27,9 @@ const nomEquipe = (c) => `${labelCategorie(c.nom)}${c.equipe ? ` ${c.equipe}` : 
 export function BoutonHistoriqueSaison({ onClick, couleur, style, libelle = 'Historique saison' }) {
   const colors = useColors()
   return (
-    <button onClick={onClick}
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 14px', borderRadius: 10, border: `1px solid ${couleur || colors.border.default}`, background: 'transparent', color: couleur || colors.text.secondary, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', ...style }}>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" /></svg>
+    <button onClick={onClick} className={CLASSE_BOUTON_SECONDAIRE}
+      style={{ ...styleBoutonSecondaire(colors), ...(couleur ? { borderColor: couleur, color: couleur } : {}), ...style }}>
+      <Icone icone={History} />
       {libelle}
     </button>
   )
@@ -49,7 +52,7 @@ export default function HistoriqueClub({ clubId, categories = [], vue, equipeIni
         style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: isMobile ? 0 : radius.lg, width: '100%', maxWidth: 980, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto', padding: isMobile ? 16 : 24, color: colors.text.primary }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{titres[vue]}</h2>
-          <button onClick={onClose} aria-label="Fermer" style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: 10, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Fermer</button>
+          <button onClick={onClose} aria-label="Fermer" style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: 10, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Barlow, sans-serif' }}>Fermer</button>
         </div>
         {vue === 'equipe' && <VueEquipe categories={categories} equipeInitiale={equipeInitiale} />}
         {vue === 'educateurs' && <VueEducateurs categories={categories} />}

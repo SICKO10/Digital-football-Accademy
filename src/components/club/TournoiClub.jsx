@@ -4,14 +4,20 @@ import { useColors } from '../../lib/theme'
 import TournoiOrganise from './TournoiOrganise'
 import { labelCategorie } from '../../lib/categories'
 import PaveDateTournoi from './PaveDateTournoi'
+import { TitreEcran, Icone } from '../identite'
+import { Plus } from 'lucide-react'
+import { styleCarte, styleChamp, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, couleurCraie, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 
-const STATUT_COULEUR = {
-  'Inscrit': '#f59e0b',
-  'Confirmé': '#3b82f6',
-  'En cours': '#4ade80',
-  'Terminé': '#888',
-  'Annulé': '#ef4444',
-}
+const STATUTS_TOURNOI = ['Inscrit', 'Confirmé', 'En cours', 'Terminé', 'Annulé']
+// Couleur de repère du statut (liseré, marqueur) : jamais utilisée en texte.
+const couleurStatut = (colors, statut) => ({
+  'Inscrit': colors.accent.amber,
+  'Confirmé': colors.accent.info,
+  'En cours': colors.accent.success,
+  'Terminé': colors.text.dim,
+  'Annulé': colors.accent.red,
+}[statut] || colors.text.dim)
 
 const PHASES = ['Poule', 'Quart de finale', 'Demi-finale', 'Petite finale', 'Finale']
 
@@ -224,18 +230,20 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   const partJoueur = convocations.length > 0 ? (budgetTotal / convocations.length).toFixed(2) : '0.00'
   const nomCategorie = (id) => { const c = categories?.find(x => x.id === id); return c ? `${labelCategorie(c.nom)}${c.equipe ? ` ${c.equipe}` : ''}` : null }
 
+  // Mise en forme : kit d'identité (bloc 10), aucun changement de comportement.
+  const craie = `1px solid ${couleurCraie(colors)}`
   const st = {
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
-    label: { fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', fontWeight: 700 },
-    card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' },
-    btnSolid: { background: colors.accent.green, color: colors.accent.onBrand, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
-    btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-    btnGhost: { background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, cursor: 'pointer', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' },
+    input: styleChamp(colors),
+    label: { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' },
+    card: { ...styleCarte(colors), padding: '18px' },
+    btnSolid: styleBoutonPrincipal(colors),
+    btnSecondary: styleBoutonSecondaire(colors),
+    btnGhost: { ...styleBoutonSecondaire(colors), border: '1px solid transparent', padding: '0 8px', gap: '6px', minHeight: '36px' },
   }
 
   if (sousOnglet === 'organisation') return (
     <div style={{ maxWidth: 1000 }}>
-      <TitreSection colors={colors} />
+      <TitreSection />
       <SousOngletsBar sousOnglet={sousOnglet} setSousOnglet={setSousOnglet} colors={colors} />
       <TournoiOrganise clubId={clubId} userId={userId} readOnly={readOnly} />
     </div>
@@ -243,11 +251,11 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
 
   if (vue === 'liste') return (
     <div style={{ maxWidth: 1000 }}>
-      <TitreSection colors={colors} />
+      <TitreSection />
       <SousOngletsBar sousOnglet={sousOnglet} setSousOnglet={setSousOnglet} colors={colors} />
       {!readOnly && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button onClick={ouvrirNouveau} style={st.btnSolid}>+ Nouveau tournoi</button>
+          <button onClick={ouvrirNouveau} className={CLASSE_BOUTON} style={st.btnSolid}><Icone icone={Plus} />Nouveau tournoi</button>
         </div>
       )}
 
@@ -255,10 +263,10 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
 
       {!loading && tournois.length === 0 && (
         <div style={{ ...st.card, textAlign: 'center', padding: '60px 24px' }}>
-          <div style={{ color: colors.accent.green, marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><IcoTrophy /></div>
-          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Aucun tournoi enregistré</div>
+          <div style={{ color: colors.text.dim, marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><IcoTrophy /></div>
+          <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '16px', marginBottom: '6px' }}>Aucun tournoi enregistré</div>
           <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '18px' }}>Ajoutez les tournois auxquels participe votre club</div>
-          {!readOnly && <button onClick={ouvrirNouveau} style={st.btnSolid}>+ Ajouter un tournoi</button>}
+          {!readOnly && <button onClick={ouvrirNouveau} className={CLASSE_BOUTON} style={st.btnSolid}><Icone icone={Plus} />Ajouter un tournoi</button>}
         </div>
       )}
 
@@ -270,26 +278,26 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
         const aVenir = tournois.filter(t => finDe(t) >= auj).sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''))
         const passes = tournois.filter(t => finDe(t) < auj).sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''))
         const carteTournoi = (t, passe) => {
-          const couleur = STATUT_COULEUR[t.statut] || colors.text.faint
+          const couleur = couleurStatut(colors, t.statut)
           const cat = nomCategorie(t.club_categorie_id)
           const meta = [t.lieu, t.format, t.nb_equipes ? `${t.nb_equipes} équipes` : null].filter(Boolean).join(' · ')
           return (
-            <div key={t.id} onClick={() => ouvrirDetail(t)}
-              style={{ ...st.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}`, opacity: passe ? 0.8 : 1 }}>
+            <div key={t.id} onClick={() => ouvrirDetail(t)} className={CLASSE_CLIQUABLE}
+              style={{ ...st.card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px 12px 19px', boxShadow: `inset ${forme.lisere} 0 0 ${couleur}`, opacity: passe ? 0.8 : 1 }}>
               <PaveDateTournoi iso={t.date_debut} colors={colors} couleur={passe ? null : couleur} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                  <span style={{ background: couleur + '1a', color: couleur, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{t.statut}</span>
-                  {cat && <span style={{ background: colors.background.raised, color: colors.text.secondary, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>{cat}</span>}
+                  <span style={{ ...styleEtiquette(colors), fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: craie, borderRadius: '4px', padding: '2px 8px' }}><span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: couleur }} />{t.statut}</span>
+                  {cat && <span style={{ background: colors.background.raised, color: colors.text.secondary, border: craie, borderRadius: '4px', padding: '2px 8px', fontSize: '12px', fontWeight: 600 }}>{cat}</span>}
                 </div>
-                <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
-                {meta && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta}</div>}
+                <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
+                {meta && <div style={{ color: colors.text.dim, fontSize: '13px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta}</div>}
               </div>
               <div style={{ color: colors.text.faint, display: 'flex' }}><IcoChevronRight /></div>
             </div>
           )
         }
-        const titre = (txt, n) => <p style={{ margin: '4px 0 8px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{txt} <span style={{ color: colors.text.faint, fontWeight: 600 }}>· {n}</span></p>
+        const titre = (txt, n) => <p style={{ ...styleEtiquette(colors), margin: '4px 0 8px' }}>{txt} <span style={{ fontWeight: 500 }}>· {n}</span></p>
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {aVenir.length > 0 && <div>{titre('À venir et en cours', aVenir.length)}<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{aVenir.map(t => carteTournoi(t, false))}</div></div>}
@@ -313,49 +321,49 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
     const invalide = !form.nom || !form.date_debut || !form.club_categorie_id
     return (
     <div style={{ maxWidth: 760 }}>
-      <button onClick={() => setVue(editingId ? 'detail' : 'liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
+      <button onClick={() => setVue(editingId ? 'detail' : 'liste')} className={CLASSE_BOUTON_SECONDAIRE} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
       <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '20px' }}>{editingId ? 'Modifier le tournoi' : 'Nouveau tournoi'}</h2>
       <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 18px' }}>Un tournoi auquel une équipe du club participe. Tu pourras ensuite saisir les matchs, convoquer le groupe et suivre la logistique.</p>
 
       <div style={{ display: 'grid', gap: '14px' }}>
         {section('Le tournoi', <>
-          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Tournoi de Cannes U18" style={st.input} />)}
+          {champ('Nom du tournoi *', <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Tournoi de Cannes U18" className={CLASSE_CHAMP} style={st.input} />)}
           {grille(160, <>
-            {champ('Équipe du club *', <select value={form.club_categorie_id} onChange={e => setForm(p => ({ ...p, club_categorie_id: e.target.value }))} style={st.input}>
+            {champ('Équipe du club *', <select value={form.club_categorie_id} onChange={e => setForm(p => ({ ...p, club_categorie_id: e.target.value }))} className={CLASSE_CHAMP} style={st.input}>
               <option value="">Choisir…</option>
               {(categories || []).map(c => <option key={c.id} value={c.id}>{labelCategorie(c.nom)}{c.equipe ? ` ${c.equipe}` : ''}</option>)}
             </select>)}
-            {champ('Du *', <input type="date" value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} style={st.input} />)}
-            {champ('Au', <input type="date" value={form.date_fin} onChange={e => setForm(p => ({ ...p, date_fin: e.target.value }))} style={st.input} />)}
+            {champ('Du *', <input type="date" value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />)}
+            {champ('Au', <input type="date" value={form.date_fin} onChange={e => setForm(p => ({ ...p, date_fin: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />)}
           </>)}
           {grille(200, <>
-            {champ('Organisateur', <input value={form.organisateur} onChange={e => setForm(p => ({ ...p, organisateur: e.target.value }))} placeholder="AS Cannes" style={st.input} />)}
-            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(p => ({ ...p, lieu: e.target.value }))} placeholder="Cannes" style={st.input} />)}
+            {champ('Organisateur', <input value={form.organisateur} onChange={e => setForm(p => ({ ...p, organisateur: e.target.value }))} placeholder="AS Cannes" className={CLASSE_CHAMP} style={st.input} />)}
+            {champ('Lieu', <input value={form.lieu} onChange={e => setForm(p => ({ ...p, lieu: e.target.value }))} placeholder="Cannes" className={CLASSE_CHAMP} style={st.input} />)}
           </>)}
         </>)}
 
         {section('Format et statut', grille(160, <>
-          {champ('Format', <select value={form.format} onChange={e => setForm(p => ({ ...p, format: e.target.value }))} style={st.input}>
+          {champ('Format', <select value={form.format} onChange={e => setForm(p => ({ ...p, format: e.target.value }))} className={CLASSE_CHAMP} style={st.input}>
             {['Poules uniquement', 'Poules + KO', 'Round-robin', 'Élimination directe', 'Système suisse'].map(f => <option key={f}>{f}</option>)}
           </select>)}
-          {champ('Statut', <select value={form.statut} onChange={e => setForm(p => ({ ...p, statut: e.target.value }))} style={st.input}>
-            {Object.keys(STATUT_COULEUR).map(x => <option key={x}>{x}</option>)}
+          {champ('Statut', <select value={form.statut} onChange={e => setForm(p => ({ ...p, statut: e.target.value }))} className={CLASSE_CHAMP} style={st.input}>
+            {STATUTS_TOURNOI.map(x => <option key={x}>{x}</option>)}
           </select>)}
-          {champ('Joueurs max', <input type="number" value={form.nb_joueurs_max} onChange={e => setForm(p => ({ ...p, nb_joueurs_max: e.target.value }))} style={st.input} />)}
+          {champ('Joueurs max', <input type="number" value={form.nb_joueurs_max} onChange={e => setForm(p => ({ ...p, nb_joueurs_max: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />)}
         </>))}
 
         {section('Organisation', <>
           {grille(200, <>
-            {champ('Contact', <input value={form.contact_nom} onChange={e => setForm(p => ({ ...p, contact_nom: e.target.value }))} placeholder="Nom de l'organisateur" style={st.input} />)}
-            {champ("Frais d'inscription (€)", <input type="number" min="0" step="0.01" placeholder="0.00" value={form.budget_inscription} onChange={e => setForm(p => ({ ...p, budget_inscription: e.target.value }))} style={st.input} />)}
+            {champ('Contact', <input value={form.contact_nom} onChange={e => setForm(p => ({ ...p, contact_nom: e.target.value }))} placeholder="Nom de l'organisateur" className={CLASSE_CHAMP} style={st.input} />)}
+            {champ("Frais d'inscription (€)", <input type="number" min="0" step="0.01" placeholder="0.00" value={form.budget_inscription} onChange={e => setForm(p => ({ ...p, budget_inscription: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />)}
           </>)}
           <p style={{ margin: '-4px 0 0', color: colors.text.faint, fontSize: '11px' }}>Les frais d'inscription sont ajoutés automatiquement au budget du club (dépense, catégorie Tournoi).</p>
-          {champ('Notes', <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Horaires de convocation, infos pratiques…" style={{ ...st.input, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />)}
+          {champ('Notes', <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Horaires de convocation, infos pratiques…" className={CLASSE_CHAMP} style={{ ...st.input, resize: 'vertical', fontFamily: 'Barlow, sans-serif' }} />)}
         </>)}
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={sauvegarderTournoi} disabled={invalide}
-            style={{ ...st.btnSolid, opacity: invalide ? 0.4 : 1, padding: '12px 22px', fontSize: '14px' }}>
+            className={CLASSE_BOUTON} style={{ ...st.btnSolid, opacity: invalide ? 0.4 : 1, padding: '12px 22px', fontSize: '14px' }}>
             {editingId ? 'Enregistrer les modifications' : 'Enregistrer le tournoi'}
           </button>
           {invalide && <span style={{ fontSize: '12px', color: colors.text.faint }}>Nom, équipe et date de début sont obligatoires.</span>}
@@ -373,30 +381,30 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
       { key: 'logistique', label: 'Logistique' },
       { key: 'bilan', label: 'Bilan' },
     ]
-    const couleur = STATUT_COULEUR[selected.statut] || colors.text.faint
+    const couleur = couleurStatut(colors, selected.statut)
 
     return (
       <div style={{ maxWidth: 1000 }}>
-        <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
+        <button onClick={() => setVue('liste')} className={CLASSE_BOUTON_SECONDAIRE} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
 
         <div style={{ ...st.card, margin: '16px 0 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
             <div>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ background: couleur + '20', color: couleur, border: `1px solid ${couleur}40`, borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 700 }}>{selected.statut}</span>
-                <span style={{ color: colors.text.disabled, fontSize: '12px', padding: '3px 0' }}>{nomCategorie(selected.club_categorie_id)}</span>
+                <span style={{ ...styleEtiquette(colors), display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: craie, borderRadius: '4px', padding: '3px 10px' }}><span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: couleur }} />{selected.statut}</span>
+                <span style={{ color: colors.text.dim, fontSize: '13px', padding: '3px 0' }}>{nomCategorie(selected.club_categorie_id)}</span>
               </div>
-              <h2 style={{ color: colors.text.primary, margin: '0 0 6px', fontSize: '19px', fontWeight: 900 }}>{selected.nom}</h2>
+              <h2 style={{ color: colors.text.primary, margin: '0 0 6px', fontSize: '24px', fontWeight: 700, fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em' }}>{selected.nom}</h2>
               <div style={{ color: colors.text.faint, fontSize: '13px' }}>
                 {new Date(selected.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {selected.date_fin && selected.date_fin !== selected.date_debut && ` → ${new Date(selected.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                {selected.date_fin && selected.date_fin !== selected.date_debut && ` au ${new Date(selected.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                 {selected.lieu && ` · ${selected.lieu}`}
               </div>
             </div>
             {!readOnly && (
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => ouvrirModification(selected)} style={st.btnSecondary}>Modifier</button>
-                <button onClick={() => supprimerTournoi(selected.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>Supprimer</button>
+                <button onClick={() => ouvrirModification(selected)} className={CLASSE_BOUTON_SECONDAIRE} style={st.btnSecondary}>Modifier</button>
+                <button onClick={() => supprimerTournoi(selected.id)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>Supprimer</button>
               </div>
             )}
           </div>
@@ -405,7 +413,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
         <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {onglets.map(o => (
             <button key={o.key} onClick={() => setOnglet(o.key)}
-              style={{ padding: '8px 16px', borderRadius: '20px', border: onglet === o.key ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: onglet === o.key ? colors.accent.green + '15' : 'transparent', color: onglet === o.key ? colors.accent.green : colors.text.faint, fontWeight: onglet === o.key ? 700 : 400, fontSize: '13px', cursor: 'pointer' }}>
+              aria-pressed={onglet === o.key} className={CLASSE_BOUTON} style={{ ...(onglet === o.key ? st.btnSolid : st.btnSecondary), minHeight: '36px', padding: '0 14px', fontSize: '13px', borderRadius: '6px' }}>
               {o.label}
             </button>
           ))}
@@ -443,36 +451,36 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                 <div>
                   <label style={st.label}>Adversaire *</label>
-                  <input value={formMatch.adversaire} onChange={e => setFormMatch(p => ({ ...p, adversaire: e.target.value }))} placeholder="AS Monaco" style={st.input} />
+                  <input value={formMatch.adversaire} onChange={e => setFormMatch(p => ({ ...p, adversaire: e.target.value }))} placeholder="AS Monaco" className={CLASSE_CHAMP} style={st.input} />
                 </div>
                 <div>
                   <label style={st.label}>Phase</label>
-                  <select value={formMatch.phase} onChange={e => setFormMatch(p => ({ ...p, phase: e.target.value }))} style={st.input}>
+                  <select value={formMatch.phase} onChange={e => setFormMatch(p => ({ ...p, phase: e.target.value }))} className={CLASSE_CHAMP} style={st.input}>
                     {PHASES.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={st.label}>Score (Nous)</label>
-                  <input type="number" min="0" value={formMatch.score_nous} onChange={e => setFormMatch(p => ({ ...p, score_nous: e.target.value }))} style={st.input} />
+                  <input type="number" min="0" value={formMatch.score_nous} onChange={e => setFormMatch(p => ({ ...p, score_nous: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />
                 </div>
                 <div>
                   <label style={st.label}>Score (Eux)</label>
-                  <input type="number" min="0" value={formMatch.score_eux} onChange={e => setFormMatch(p => ({ ...p, score_eux: e.target.value }))} style={st.input} />
+                  <input type="number" min="0" value={formMatch.score_eux} onChange={e => setFormMatch(p => ({ ...p, score_eux: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />
                 </div>
                 <div>
                   <label style={st.label}>Heure</label>
-                  <input type="time" value={formMatch.heure} onChange={e => setFormMatch(p => ({ ...p, heure: e.target.value }))} style={st.input} />
+                  <input type="time" value={formMatch.heure} onChange={e => setFormMatch(p => ({ ...p, heure: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />
                 </div>
                 <div>
                   <label style={st.label}>Terrain</label>
-                  <input value={formMatch.terrain} onChange={e => setFormMatch(p => ({ ...p, terrain: e.target.value }))} style={st.input} />
+                  <input value={formMatch.terrain} onChange={e => setFormMatch(p => ({ ...p, terrain: e.target.value }))} className={CLASSE_CHAMP} style={st.input} />
                 </div>
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={st.label}>Buteurs (séparés par une virgule)</label>
-                <input value={formMatch.buteurs} onChange={e => setFormMatch(p => ({ ...p, buteurs: e.target.value }))} placeholder="Lhyam F., Rayan A." style={st.input} />
+                <input value={formMatch.buteurs} onChange={e => setFormMatch(p => ({ ...p, buteurs: e.target.value }))} placeholder="Lhyam F., Rayan A." className={CLASSE_CHAMP} style={st.input} />
               </div>
-              <button onClick={ajouterMatch} disabled={!formMatch.adversaire} style={{ ...st.btnSolid, opacity: !formMatch.adversaire ? 0.4 : 1 }}>+ Ajouter</button>
+              <button onClick={ajouterMatch} disabled={!formMatch.adversaire} className={CLASSE_BOUTON} style={{ ...st.btnSolid, opacity: !formMatch.adversaire ? 0.4 : 1 }}>+ Ajouter</button>
             </div>
             )}
 
@@ -492,8 +500,8 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                     </div>
                     {m.buteurs?.length > 0 && <div style={{ color: colors.text.faint, fontSize: '12px' }}>Buteurs : {m.buteurs.join(', ')}</div>}
                   </div>
-                  <div style={{ color: colors.text.primary, fontWeight: 900, fontSize: '18px' }}>{joue ? `${m.score_nous} - ${m.score_eux}` : '—'}</div>
-                  {!readOnly && <button onClick={() => supprimerMatch(m.id)} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40', padding: '6px 10px' }}>Suppr.</button>}
+                  <div style={{ color: colors.text.primary, fontFamily: police.titre, fontWeight: 700, fontSize: '22px', fontVariantNumeric: 'tabular-nums' }}>{joue ? `${m.score_nous} - ${m.score_eux}` : '—'}</div>
+                  {!readOnly && <button onClick={() => supprimerMatch(m.id)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...st.btnSecondary, color: colors.accent.red, borderColor: colors.accent.red + '40', padding: '6px 10px' }}>Suppr.</button>}
                 </div>
               )
             })}
@@ -511,20 +519,20 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                 const conv = convocations.find(c => c.equipe_joueur_id === j.id)
                 const selectionne = !!conv
                 return (
-                  <div key={j.id} style={{ ...st.card, padding: '12px 16px', border: `1px solid ${selectionne ? colors.accent.green + '40' : colors.border.faint}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div key={j.id} style={{ ...st.card, padding: '12px 16px', paddingLeft: selectionne ? '19px' : '16px', boxShadow: selectionne ? `inset ${forme.lisere} 0 0 ${colors.accent.brand}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ background: colors.background.raised, borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>
+                      <div style={{ background: colors.background.raised, borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.primary, fontFamily: police.titre, fontWeight: 700, fontSize: '16px', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                         {j.numero_maillot || '?'}
                       </div>
                       <div>
-                        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{j.prenom} {j.nom}</div>
-                        <div style={{ color: colors.text.disabled, fontSize: '12px' }}>{j.poste}</div>
+                        <div style={{ color: colors.text.primary, fontWeight: 600, fontSize: '15px' }}>{j.prenom} {j.nom}</div>
+                        <div style={{ color: colors.text.dim, fontSize: '13px' }}>{j.poste}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {selectionne && (
                         <select value={conv.statut} disabled={readOnly} onChange={e => majStatutConvocation(conv.id, e.target.value)}
-                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '6px', padding: '4px 8px', color: conv.statut === 'Présent' ? colors.accent.green : conv.statut === 'Absent' ? colors.accent.red : colors.accent.amber, fontSize: '12px', fontWeight: 700 }}>
+                          aria-label={`Réponse de ${j.prenom} ${j.nom}`} className={CLASSE_CHAMP} style={{ ...st.input, width: 'auto', minHeight: '36px', padding: '0 10px', fontSize: '14px', fontWeight: 600, boxShadow: `inset ${forme.lisere} 0 0 ${conv.statut === 'Présent' ? colors.accent.success : conv.statut === 'Absent' ? colors.accent.red : colors.accent.amber}` }}>
                           <option value="En attente">En attente</option>
                           <option value="Présent">Présent</option>
                           <option value="Absent">Absent</option>
@@ -532,8 +540,8 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                       )}
                       {!readOnly && (
                         <button onClick={() => toggleConvocation(j.id)}
-                          style={{ background: selectionne ? colors.accent.red + '15' : colors.accent.green + '15', border: `1px solid ${selectionne ? colors.accent.red + '40' : colors.accent.green + '40'}`, borderRadius: '8px', padding: '6px 14px', color: selectionne ? colors.accent.red : colors.accent.green, fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                          {selectionne ? 'Retirer' : '+ Sélectionner'}
+                          className={selectionne ? CLASSE_BOUTON_SECONDAIRE : CLASSE_BOUTON} style={{ ...(selectionne ? st.btnSecondary : st.btnSolid), minHeight: '36px', padding: '0 14px', fontSize: '13px' }}>
+                          {selectionne ? 'Retirer' : 'Sélectionner'}
                         </button>
                       )}
                     </div>
@@ -553,7 +561,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
                 <label style={st.label}>{label}</label>
-                <input defaultValue={selected[key] || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected[key] || '') && majChamp(key, e.target.value)} placeholder={placeholder} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
+                <input defaultValue={selected[key] || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected[key] || '') && majChamp(key, e.target.value)} placeholder={placeholder} className={CLASSE_CHAMP} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
               </div>
             ))}
 
@@ -567,13 +575,13 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                 ].map(({ key, label }) => (
                   <div key={key}>
                     <label style={st.label}>{label} (€)</label>
-                    <input type="number" defaultValue={selected[key] || 0} disabled={readOnly} onBlur={e => !readOnly && majChamp(key, Number(e.target.value))} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
+                    <input type="number" defaultValue={selected[key] || 0} disabled={readOnly} onBlur={e => !readOnly && majChamp(key, Number(e.target.value))} className={CLASSE_CHAMP} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
                   </div>
                 ))}
               </div>
               <div style={{ borderTop: `1px solid ${colors.border.faint}`, paddingTop: '12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ color: colors.text.secondary, fontSize: '13px' }}>Total : <strong style={{ color: colors.text.primary }}>{budgetTotal}€</strong></div>
-                <div style={{ color: colors.text.secondary, fontSize: '13px' }}>Part/joueur ({convocations.length}j) : <strong style={{ color: colors.accent.green }}>{partJoueur}€</strong></div>
+                <div style={{ color: colors.text.secondary, fontSize: '13px' }}>Part/joueur ({convocations.length}j) : <strong style={{ color: colors.text.primary, fontFamily: police.titre, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>{partJoueur}€</strong></div>
               </div>
             </div>
           </div>
@@ -586,12 +594,12 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                 { label: 'Victoires', value: stats.victoires, color: colors.accent.success },
                 { label: 'Nuls', value: stats.nuls, color: colors.accent.amber },
                 { label: 'Défaites', value: stats.defaites, color: colors.accent.red },
-                { label: 'Buts marqués', value: stats.butsPour, color: colors.accent.green },
+                { label: 'Buts marqués', value: stats.butsPour, color: colors.accent.brand },
                 { label: 'Buts encaissés', value: stats.butsContre, color: colors.accent.red },
-                { label: 'Matchs joués', value: stats.joues, color: colors.text.primary },
+                { label: 'Matchs joués', value: stats.joues, color: colors.text.dim },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ ...st.card, textAlign: 'center' }}>
-                  <div style={{ color, fontSize: '26px', fontWeight: 900 }}>{value}</div>
+                <div key={label} style={{ ...st.card, textAlign: 'center', boxShadow: `inset 0 ${forme.lisere} 0 ${color}` }}>
+                  <div style={{ color: colors.text.primary, fontFamily: police.titre, fontSize: '32px', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums', marginBottom: '6px' }}>{value}</div>
                   <div style={st.label}>{label}</div>
                 </div>
               ))}
@@ -602,11 +610,11 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
                   <label style={st.label}>Classement obtenu</label>
-                  <input defaultValue={selected.classement_final || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected.classement_final || '') && majChamp('classement_final', e.target.value)} placeholder="1er / Vainqueur / 3ème…" style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
+                  <input defaultValue={selected.classement_final || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected.classement_final || '') && majChamp('classement_final', e.target.value)} placeholder="1er / Vainqueur / 3ème…" className={CLASSE_CHAMP} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
                 </div>
                 <div>
                   <label style={st.label}>Trophée / récompense</label>
-                  <input defaultValue={selected.trophee || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected.trophee || '') && majChamp('trophee', e.target.value)} placeholder="Coupe, médaille…" style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
+                  <input defaultValue={selected.trophee || ''} disabled={readOnly} onBlur={e => !readOnly && e.target.value !== (selected.trophee || '') && majChamp('trophee', e.target.value)} placeholder="Coupe, médaille…" className={CLASSE_CHAMP} style={{ ...st.input, opacity: readOnly ? 0.6 : 1 }} />
                 </div>
               </div>
             </div>
@@ -620,7 +628,7 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
                   return Object.entries(compteur).sort((a, b) => b[1] - a[1]).map(([nom, buts]) => (
                     <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
                       <span style={{ color: colors.text.primary, fontSize: '14px' }}>{nom}</span>
-                      <span style={{ color: colors.accent.green, fontWeight: 700 }}>{buts} but{buts > 1 ? 's' : ''}</span>
+                      <span style={{ color: colors.text.primary, fontWeight: 700 }}>{buts} but{buts > 1 ? 's' : ''}</span>
                     </div>
                   ))
                 })()}
@@ -635,24 +643,25 @@ export default function TournoiClub({ clubId, categories, readOnly = false, user
   return null
 }
 
-function TitreSection({ colors }) {
+function TitreSection() {
   return (
-    <div style={{ marginBottom: '4px' }}>
-      <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 800, margin: 0 }}>Tournois</h1>
-      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Les tournois auxquels le club participe, et ceux qu'il organise.</p>
-    </div>
+    <TitreEcran titre="Tournois" sousTitre="Les tournois auxquels le club participe, et ceux qu'il organise." style={{ marginBottom: '4px' }} />
   )
 }
 
 function SousOngletsBar({ sousOnglet, setSousOnglet, colors }) {
   return (
-    <div style={{ display: 'inline-flex', gap: '2px', padding: '3px', margin: '16px 0 18px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
-      {SOUS_ONGLETS.map(o => (
-        <button key={o.key} onClick={() => setSousOnglet(o.key)}
-          style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: sousOnglet === o.key ? colors.background.raised : 'transparent', color: sousOnglet === o.key ? colors.text.primary : colors.text.faint, fontWeight: sousOnglet === o.key ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          {o.label}
-        </button>
-      ))}
+    <div role="group" aria-label="Type de tournoi" style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', margin: '16px 0 18px' }}>
+      {SOUS_ONGLETS.map(o => {
+        const actif = sousOnglet === o.key
+        const base = actif ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors)
+        return (
+          <button key={o.key} type="button" aria-pressed={actif} onClick={() => setSousOnglet(o.key)} className={CLASSE_BOUTON}
+            style={{ ...base, minHeight: '36px', padding: '0 14px', fontSize: '13px', borderRadius: '6px' }}>
+            {o.label}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -68,7 +68,7 @@ export default function AnalysesJoueur({ sansEntete = false,
           style={{
             minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: radius.xl, border: 'none',
             background: colors.accent.green, color: colors.black, fontSize: fontSize.xl, fontWeight: 700,
-            fontFamily: 'Inter, sans-serif', cursor: 'pointer', width: isMobile ? '100%' : 'auto',
+            fontFamily: 'Barlow, sans-serif', cursor: 'pointer', width: isMobile ? '100%' : 'auto',
           }}
         >
           {t('ja_nouvelle', lang)}

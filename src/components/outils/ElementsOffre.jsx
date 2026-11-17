@@ -4,7 +4,7 @@ import { MAX_EQUIPES } from '../../lib/simulateurTarifs'
 // Éléments d'interface partagés par l'inscription composée (ComposerOffre) et la
 // page publique des tarifs : carte d'outil à cocher et choix du nombre d'équipes.
 // Page publique, toujours sombre : jetons de couleur fixes (pas useColors).
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 
 const Coche = ({ coche }) => (
   <span aria-hidden="true" style={{

@@ -52,7 +52,7 @@ export default function PartenairePublic() {
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '20px 24px', marginBottom: '20px' }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Barlow, sans-serif' }}>
       <BoutonRetourApp />
       <div style={{ background: accent, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         {club?.avatar_url && <img src={club.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />}

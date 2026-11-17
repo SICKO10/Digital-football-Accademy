@@ -180,7 +180,7 @@ export default function NotationMatch({ match, joueurs, educateurId, onClose }) 
     const actif = visibilite[cle]
     return (
       <button type="button" onClick={() => basculerVisibilite(cle)}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flex: '1 1 220px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.subtle}`, background: colors.background.surface, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flex: '1 1 220px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.subtle}`, background: colors.background.surface, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', textAlign: 'left' }}>
         <span>
           <span style={{ display: 'block', color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{label}</span>
           <span style={{ display: 'block', color: actif ? colors.accent.green : colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{actif ? 'Visibles par les joueurs' : 'Masqués aux joueurs'}</span>

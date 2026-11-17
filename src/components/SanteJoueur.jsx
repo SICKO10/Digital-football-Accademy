@@ -222,13 +222,13 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
 
   const s = {
     pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: radius.pill, padding: `3px ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700, whiteSpace: 'nowrap' }),
-    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: radius.base, padding: `${spacing.base} ${spacing['3xl']}`, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: radius.base, padding: `${spacing.md} ${spacing['2xl']}`, fontWeight: 600, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif' },
+    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: radius.base, padding: `${spacing.base} ${spacing['3xl']}`, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: radius.base, padding: `${spacing.md} ${spacing['2xl']}`, fontWeight: 600, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
     label: { color: colors.text.faint, fontSize: fontSize.base, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.xs, display: 'block', fontWeight: 700 },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' },
-    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Inter, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
+    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' },
+    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
     sousTitre: { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.base },
-    lienDiscret: { background: 'transparent', border: 'none', fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 },
+    lienDiscret: { background: 'transparent', border: 'none', fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', padding: 0 },
   }
   const cadre = { padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '980px', margin: '0 auto' }
   const dateCourte = (d, opts) => new Date(`${d}T12:00:00`).toLocaleDateString(locale, opts)
@@ -454,7 +454,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                   </Carte>
                 ) : (
                   <button onClick={() => { setFormRdvOuvert(b.id); setFormRdv(RDV_VIDE) }}
-                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: radius.base, padding: `${spacing.md} ${spacing.xl}`, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: spacing.lg }}>
+                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: radius.base, padding: `${spacing.md} ${spacing.xl}`, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginBottom: spacing.lg }}>
                     + Programmer un rendez-vous
                   </button>
                 )}

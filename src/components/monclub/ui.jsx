@@ -1,5 +1,8 @@
 import { useColors } from '../../lib/theme'
 import { ICONES, stylesMonClub } from './uiMonClub'
+import { TitreEcran } from '../identite'
+import { styleLigneCraie } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 
 // Pièces visuelles partagées par les étapes de « Mon club ».
 
@@ -9,22 +12,11 @@ export function Icone({ d, size = 16, trait = 2 }) {
   )
 }
 
-// En-tête d'une étape : icône dans un rond à la couleur du club, titre, explication.
+// En-tête d'une étape : titre condensé en capitales, explication, actions à droite,
+// puis la ligne de craie du kit. (`icone` n'est plus affichée : décoration retirée.)
+// eslint-disable-next-line no-unused-vars
 export function EnteteEtape({ icone, titre, texte, children }) {
-  const colors = useColors()
-  const s = stylesMonClub(colors)
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 22 }}>
-      <span aria-hidden="true" style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: s.marque + '24', color: s.marque }}>
-        <Icone d={icone} size={24} />
-      </span>
-      <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.4px', color: colors.text.primary }}>{titre}</h2>
-        <p style={{ margin: '6px 0 0', maxWidth: 680, fontSize: 14, lineHeight: 1.6, color: colors.text.faint }}>{texte}</p>
-      </div>
-      {children}
-    </div>
-  )
+  return <TitreEcran as="h2" titre={titre} sousTitre={texte} actions={children} />
 }
 
 // Carte d'un outil avec son interrupteur (étapes Outils et Dashboard des éducateurs).
@@ -34,24 +26,26 @@ export function CarteReglage({ nom, description, pied, actif, badge, action, ext
   const s = stylesMonClub(colors)
   return (
     <div className="mc-carte" style={{
-      position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 10, padding: '20px 18px 16px', borderRadius: 18,
-      background: colors.background.surface, border: `1px solid ${actif ? s.marque + '66' : colors.border.subtle}`,
-      boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 8px 22px rgba(0,0,0,0.04)', opacity: actif ? 1 : 0.74,
+      ...s.carte, position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, padding: '18px 18px 16px 21px',
+      borderColor: actif ? s.marque : s.carte.borderColor,
+      boxShadow: actif ? `inset ${forme.lisere} 0 0 ${s.marque}` : 'none', opacity: actif ? 1 : 0.74,
     }}>
-      <span aria-hidden="true" style={{ position: 'absolute', top: 0, left: 18, right: 18, height: 3, borderRadius: '0 0 4px 4px', background: actif ? s.marque : 'transparent' }} />
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, lineHeight: 1.3, letterSpacing: '-0.2px', color: colors.text.primary }}>{nom}</h3>
+        <h3 style={{ ...s.titreCarte, fontSize: 18, lineHeight: 1.2 }}>{nom}</h3>
         {action}
       </div>
       {badge && (
-        <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, color: colors.text.primary, background: badge.couleur + '2a', border: `1px solid ${badge.couleur}66` }}>{badge.texte}</span>
+        <span style={{ alignSelf: 'flex-start', fontFamily: police.texte, fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 8px', borderRadius: forme.rayonPastille, color: colors.text.primary, background: badge.couleur + '2a', border: `1px solid ${badge.couleur}66` }}>{badge.texte}</span>
       )}
       <p style={{ margin: 0, flex: 1, fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>{description}</p>
       {extra}
       {pied && (
-        <p style={{ margin: 0, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: colors.text.faint }}>
-          <Icone d={ICONES.menu} size={13} />{pied}
-        </p>
+        <>
+          <div aria-hidden="true" style={styleLigneCraie(colors)} />
+          <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: colors.text.secondary }}>
+            <Icone d={ICONES.menu} size={13} />{pied}
+          </p>
+        </>
       )}
     </div>
   )
@@ -61,7 +55,7 @@ export function CarteReglage({ nom, description, pied, actif, badge, action, ext
 export function Encart({ children }) {
   const colors = useColors()
   return (
-    <div role="note" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 16px', borderRadius: 14, background: colors.accent.blue + '14', border: `1px solid ${colors.accent.blue}33`, marginBottom: 18 }}>
+    <div role="note" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 16px', borderRadius: forme.rayonCarte, background: colors.accent.blue + '14', border: `1px solid ${colors.accent.blue}33`, marginBottom: 18 }}>
       <span style={{ color: colors.accent.blue, display: 'inline-flex', marginTop: 1 }}><Icone d={ICONES.info} size={18} /></span>
       <div style={{ fontSize: 13, lineHeight: 1.6, color: colors.text.secondary }}>{children}</div>
     </div>

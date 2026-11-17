@@ -93,7 +93,7 @@ export default function NotificationBanner({ userId, cibles }) {
         </span>
         <h2 style={{ color: colors.text.primary, fontSize: '20px', fontWeight: 800, margin: '0 0 18px' }}>{notif.titre}</h2>
 
-        <div style={{ fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ fontFamily: 'Barlow, sans-serif' }}>
           <style>{`
             .notif-contenu p { margin-bottom: 12px; color: ${colors.text.secondary}; line-height: 1.7; }
             .notif-contenu strong { color: ${colors.text.primary}; }
@@ -104,7 +104,7 @@ export default function NotificationBanner({ userId, cibles }) {
         </div>
 
         <button onClick={() => marquerLu(notif.id)}
-          style={{ marginTop: '24px', padding: '12px 32px', background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+          style={{ marginTop: '24px', padding: '12px 32px', background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', width: '100%', fontFamily: 'Barlow, sans-serif' }}>
           J'ai compris
         </button>
       </div>

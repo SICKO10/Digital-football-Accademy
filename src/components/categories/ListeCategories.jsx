@@ -3,11 +3,16 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { regrouperCategories, MODES_CATEGORIE } from '../../lib/categoriesClub'
+import { styleCarte, styleBoutonPrincipal, styleBoutonSecondaire, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE } from '../../lib/identite'
+import { police } from '../../tokens'
+import { TitreEcran, Icone } from '../identite'
+import { Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { FilAriane, Message, Pastille } from './UiCategories'
 
 // Liste des catégories du club (U15 : A, B, C) avec leur mode. Création,
 // suppression et changement de mode réservés au compte principal du club
 // (décision 2 du brief).
-export default function ListeCategories({ clubId, equipes, peutCreer, accentColor, onCreer, onConvocations, onChangerMode, onRetour, onChange }) {
+export default function ListeCategories({ clubId, equipes, peutCreer, onCreer, onConvocations, onChangerMode, onRetour, onChange }) {
   const colors = useColors()
   const [liste, setListe] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -28,63 +33,57 @@ export default function ListeCategories({ clubId, equipes, peutCreer, accentColo
   }
 
   const groupes = liste ? regrouperCategories(liste, equipes) : []
-  const btnLien = { background: 'none', border: 'none', padding: 0, color: accentColor, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  const petit = { ...styleBoutonSecondaire(colors), minHeight: '34px', padding: '0 12px', fontSize: '13px' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      <nav style={{ fontSize: '13px', color: colors.text.faint }}>
-        <button style={btnLien} onClick={onRetour}>Catégories & Équipes</button> / Catégories
-      </nav>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Catégories</h1>
-          <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
-            {liste ? `${groupes.length} catégorie${groupes.length > 1 ? 's' : ''}` : 'Chargement'}
-          </p>
-          <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '8px 0 0', maxWidth: '620px', lineHeight: 1.5 }}>
-            Ici, vous choisissez comment les joueurs d'une catégorie sont organisés : une liste par équipe, ou une seule liste commune à toutes les équipes. Cliquez sur « Changer de mode » pour modifier.
-          </p>
-        </div>
-        {peutCreer && (
-          <button onClick={onCreer} style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: accentColor, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            Créer une catégorie
+      <FilAriane etapes={[{ label: 'Catégories & Équipes', onClick: onRetour }]} courant="Catégories" />
+      <TitreEcran
+        titre="Catégories"
+        sousTitre={liste ? `${groupes.length} catégorie${groupes.length > 1 ? 's' : ''}` : 'Chargement'}
+        style={{ marginBottom: 0 }}
+        actions={peutCreer && (
+          <button className={CLASSE_BOUTON} onClick={onCreer} style={styleBoutonPrincipal(colors)}>
+            <Icone icone={Plus} />Créer une catégorie
           </button>
         )}
-      </div>
-      {erreur && <p style={{ margin: 0, color: colors.accent.red, fontSize: '13px' }}>{erreur}</p>}
+      />
+      <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0, maxWidth: '620px', lineHeight: 1.5 }}>
+        Ici, vous choisissez comment les joueurs d'une catégorie sont organisés : une liste par équipe, ou une seule liste commune à toutes les équipes. Cliquez sur « Changer de mode » pour modifier.
+      </p>
+      {erreur && <Message ton="erreur">{erreur}</Message>}
       {liste && groupes.length === 0 && !erreur && (
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '2.5rem 1.5rem', textAlign: 'center', color: colors.text.secondary, fontWeight: 600 }}>
+        <div style={{ ...styleCarte(colors), padding: '2.5rem 1.5rem', textAlign: 'center', color: colors.text.secondary, fontWeight: 600 }}>
           Aucune catégorie pour le moment.
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {groupes.map(c => (
-          <div key={c.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div key={c.id} style={{ ...styleCarte(colors), display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <p style={{ margin: 0, flex: 1, fontWeight: 800, fontSize: '16px', minWidth: '90px' }}>{labelCategorie(c.nom)}</p>
-              <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '999px', border: `1px solid ${colors.border.default}`, color: colors.text.secondary }}>
-                {MODES_CATEGORIE[c.mode]?.label || c.mode}
-              </span>
+              <p style={{ margin: 0, flex: 1, fontFamily: police.titre, fontWeight: 700, fontSize: '22px', lineHeight: 1.1, letterSpacing: '0.01em', textTransform: 'uppercase', minWidth: '90px' }}>{labelCategorie(c.nom)}</p>
+              <Pastille>{MODES_CATEGORIE[c.mode]?.label || c.mode}</Pastille>
               {onConvocations && c.mode === 'commun' && c.equipes.length > 0 && (
-                <button onClick={() => onConvocations(c)} style={btnLien}>Convocations</button>
+                <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => onConvocations(c)} style={petit}>Convocations</button>
               )}
               {onChangerMode && peutCreer && c.equipes.length > 0 && (
-                <button onClick={() => onChangerMode(c)} style={btnLien}>Changer de mode</button>
+                <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => onChangerMode(c)} style={petit}>Changer de mode</button>
               )}
               {peutCreer && c.equipes.length === 0 && (
-                <button onClick={() => supprimer(c)} style={{ ...btnLien, color: colors.accent.red }}>Supprimer</button>
+                <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => supprimer(c)} style={petit}>
+                  <span style={{ color: colors.accent.red, display: 'inline-flex' }}><Icone icone={Trash2} taille={16} /></span>Supprimer
+                </button>
               )}
             </div>
             {c.equipes.length > 0 ? (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {c.equipes.map(e => (
-                  <span key={e.id} style={{ padding: '6px 12px', borderRadius: '9px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, fontSize: '13px', fontWeight: 700 }}>
-                    {e.nom} {e.equipe}
-                  </span>
-                ))}
+                {c.equipes.map(e => <Pastille key={e.id}>{e.nom} {e.equipe}</Pastille>)}
               </div>
             ) : (
-              <p style={{ margin: 0, fontSize: '12px', color: colors.accent.amber }}>Aucune équipe dans cette catégorie.</p>
+              <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: colors.text.secondary }}>
+                <span style={{ color: colors.accent.orange, display: 'inline-flex' }}><Icone icone={TriangleAlert} taille={16} /></span>
+                Aucune équipe dans cette catégorie.
+              </p>
             )}
           </div>
         ))}

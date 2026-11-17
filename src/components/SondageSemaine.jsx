@@ -246,19 +246,19 @@ export default function SondageSemaine({ mode, userId, educateurId, equipeCatego
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
         <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors2.text.primary }}>{mode === 'joueur' ? 'Planning de la semaine' : 'Sondage de présence — semaine'}</p>
-        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors2.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
+        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ background: 'none', border: 'none', color: colors2.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Barlow, sans-serif' }}>{vue === 'mois' ? 'Ce mois' : 'Cette semaine'}</button>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>‹</button>
+          <button onClick={() => setOffset(o => o - 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>‹</button>
           <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors2.text.faint, minWidth: '150px', textAlign: 'center' }}>{label}</p>
-          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>›</button>
+          <button onClick={() => setOffset(o => o + 1)} style={{ background: 'transparent', border: `1px solid ${colors2.border.default}`, color: accentColor, borderRadius: '8px', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>›</button>
         </div>
         {mode === 'joueur' && (
           <div style={{ display: 'flex', background: colors2.background.sunken, borderRadius: '8px', padding: '2px', gap: '2px' }}>
             {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
               <button key={v} onClick={() => changerVue(v)}
-                style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors2.black : colors2.text.faint }}>
+                style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors2.black : colors2.text.faint }}>
                 {lbl}
               </button>
             ))}
@@ -420,7 +420,7 @@ function CarteEvenementEducateur({ ev, roster, reponses, ouvert, onToggle, accen
 
   const boutonVoirSeance = ev.type === 'entrainement' && ev.fiche_id && onVoirFiche && (
     <button onClick={e => { e.stopPropagation(); onVoirFiche(ev.fiche_id) }}
-      style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: isMobile ? '5px 12px' : '6px 12px', fontSize: isMobile ? '12px' : '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+      style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: isMobile ? '5px 12px' : '6px 12px', fontSize: isMobile ? '12px' : '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', whiteSpace: 'nowrap' }}>
       Voir séance{isMobile ? ' →' : ''}
     </button>
   )

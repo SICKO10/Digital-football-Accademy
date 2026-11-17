@@ -25,7 +25,7 @@ const st = {
     borderRadius: '16px', padding: '1.75rem', textAlign: 'left', display: 'flex', flexDirection: 'column',
   }),
   feature: { fontSize: '13px', color: colors.text.secondary, display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.5 },
-  cta: (color, dark) => ({ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: color ? 'none' : '1px solid #333', background: color || 'transparent', color: dark ? colors.background.base : colors.text.primary, fontSize: '14px', fontWeight: 700, textAlign: 'center', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: 'auto' }),
+  cta: (color, dark) => ({ display: 'block', width: '100%', padding: '13px', borderRadius: '10px', border: color ? 'none' : '1px solid #333', background: color || 'transparent', color: dark ? colors.background.base : colors.text.primary, fontSize: '14px', fontWeight: 700, textAlign: 'center', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginTop: 'auto' }),
 }
 
 // Halo + badge "Recommandé" appliqués à la card annuelle mise en avant — la
@@ -104,7 +104,7 @@ function CycleToggle({ cycle, setCycle, libelle, badge = true, marge = '2.5rem' 
     background: actif ? colors.accent.green : 'transparent',
     color: actif ? colors.black : '#e4e4e7',
     border: 'none', borderRadius: '999px', padding: '12px 30px', minHeight: '46px', fontSize: '15px', fontWeight: 800,
-    cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '8px',
+    cursor: 'pointer', fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', gap: '8px',
     boxShadow: actif ? '0 0 0 3px rgba(74,222,128,0.22)' : 'none', transition: 'background .15s, box-shadow .15s',
   })
   return (
@@ -125,7 +125,7 @@ function CycleToggle({ cycle, setCycle, libelle, badge = true, marge = '2.5rem' 
   )
 }
 
-const inputStyle = { width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '11px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }
+const inputStyle = { width: '100%', background: colors.background.base, border: '1px solid #2a2a2a', borderRadius: '10px', color: colors.text.primary, padding: '11px 14px', fontSize: '14px', fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }
 
 // Le choix du palier et le paiement sont désormais en libre-service
 // (tableau de paliers plus haut, chaque prix renvoie directement vers
@@ -209,12 +209,12 @@ function FormulaireClub() {
       <input placeholder="Nom du club *" value={form.nomClub} onChange={champ('nomClub')} style={inputStyle} />
       {ouvert === 'question' && (
         <textarea placeholder="Votre question" value={form.message} onChange={champ('message')} rows={3}
-          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Barlow, sans-serif' }} />
       )}
       {erreur && <p style={{ color: '#f87171', fontSize: '12px', margin: 0 }}>{erreur}</p>}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button onClick={() => setOuvert(null)} disabled={envoi}
-          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '13px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.secondary, padding: '13px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
           Annuler
         </button>
         <button onClick={envoyer} disabled={envoi}
@@ -232,7 +232,7 @@ export default function Offres() {
   const isAnnuel = cycle === 'annuel'
 
   return (
-    <div style={{ background: colors.background.base, minHeight: '100vh', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ background: colors.background.base, minHeight: '100vh', color: 'white', fontFamily: 'Barlow, sans-serif' }}>
 
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', zIndex: 100 }}>
         <div onClick={() => navigate('/')} style={{ fontSize: '17px', fontWeight: 800, cursor: 'pointer' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
@@ -359,7 +359,7 @@ export default function Offres() {
       />
 
       <div style={{ textAlign: 'center', padding: '2rem 1.5rem 4rem' }}>
-        <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.dim, border: '1px solid #2a2a2a', padding: '12px 28px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Déjà un compte ? Se connecter</button>
+        <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.dim, border: '1px solid #2a2a2a', padding: '12px 28px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Déjà un compte ? Se connecter</button>
       </div>
     </div>
   )

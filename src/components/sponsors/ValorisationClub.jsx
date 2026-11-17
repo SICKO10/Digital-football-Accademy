@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { makeUseSt } from '../../lib/theme'
+import { useSt } from '../../lib/useStFinance'
+import { Message } from '../categories/UiCategories'
 
 const CHAMPS_VALORISATION = [
   { key: 'nb_licencies', label: 'Nombre de licenciés' },
@@ -14,23 +15,6 @@ const CHAMPS_VALORISATION = [
   { key: 'nb_affichages_physiques', label: 'Affichages physiques estimés' },
 ]
 
-const stSombre = {
-  card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
-  label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  bgRaised: '#1a1a1a', border: '#2a2a2a',
-  text: '#fff', textDim: '#ccc', textFaint: '#666', textGhost: '#444',
-}
-const stClaire = {
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  input: { background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
-  label: { fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  bgRaised: '#f1f5f9', border: '#cbd5e1',
-  text: '#0f172a', textDim: '#334155', textFaint: '#64748b', textGhost: '#94a3b8',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 export default function ValorisationClub({ clubId, readOnly = false, accentColor = '#4ade80' }) {
   const st = useSt()
@@ -67,9 +51,9 @@ export default function ValorisationClub({ clubId, readOnly = false, accentColor
 
   if (tableMissing) {
     return (
-      <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '16px 20px', color: '#f59e0b', fontSize: '13px' }}>
+      <Message ton="alerte">
         La table <code>club_valorisation</code> n'existe pas encore en base — exécute la migration SQL dans Supabase avant d'utiliser cette rubrique.
-      </div>
+      </Message>
     )
   }
 
@@ -110,9 +94,9 @@ export default function ValorisationClub({ clubId, readOnly = false, accentColor
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           {CHAMPS_VALORISATION.map(c => (
-            <div key={c.key} style={{ background: st.bgRaised, borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+            <div key={c.key} style={{ background: st.bgRaised, borderRadius: '6px', padding: '12px', textAlign: 'center' }}>
               <div style={{ color: st.textFaint, fontSize: '11px', marginBottom: '4px' }}>{c.label}</div>
-              <div style={{ color: accentColor, fontWeight: 900, fontSize: '18px' }}>{Number(valorisation[c.key] || 0).toLocaleString('fr-FR')}</div>
+              <div style={{ color: st.text, fontFamily: st.police.titre, fontWeight: 700, fontSize: '24px', fontVariantNumeric: 'tabular-nums' }}>{Number(valorisation[c.key] || 0).toLocaleString('fr-FR')}</div>
             </div>
           ))}
         </div>

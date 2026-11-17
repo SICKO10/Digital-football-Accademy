@@ -102,7 +102,7 @@ export default function MesSaisonsCoach({ educateurId }) {
               return (
                 <div key={eq.id} style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 10 }}>
                   <button onClick={() => setOuvertes(o => ({ ...o, [cleOuv]: !o[cleOuv] }))} aria-expanded={ouverte}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Barlow, sans-serif' }}>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 15, fontWeight: 800 }}>{eq.nom}</span>
                       {eq.club && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: colors.text.faint }}>{eq.club}</span>}
@@ -117,7 +117,7 @@ export default function MesSaisonsCoach({ educateurId }) {
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: colors.text.secondary }}>
                     Niveau de pratique (visible dans Explorer)
                     <select value={niveaux[cleOuv] || ''} onChange={e => choisirNiveau(s.saison, eq.id, e.target.value)}
-                      style={{ background: colors.background.base, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: radius.md, padding: '5px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.base, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: radius.md, padding: '5px 8px', fontSize: 12, fontFamily: 'Barlow, sans-serif' }}>
                       <option value="">Non précisé</option>
                       {NIVEAUX_PRATIQUE.map(n => <option key={n} value={n}>{n}</option>)}
                     </select>

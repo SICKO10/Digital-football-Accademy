@@ -1772,7 +1772,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
   const btnStyle = (active) => ({
     width: '38px', height: '38px', borderRadius: '8px', border: active ? '1px solid #4ade80' : `1px solid ${colors.border.default}`,
     background: active ? '#4ade8020' : colors.background.surface, color: active ? '#4ade80' : colors.text.secondary, fontSize: '16px',
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'Inter, sans-serif',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'Barlow, sans-serif',
   })
 
   // Empêche de glisser un joueur/joker/objet hors du terrain — Konva n'a
@@ -2444,7 +2444,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                 <input type="number" min={300} max={8000} step={100}
                   value={stepDurations[etapeActive] ?? 2000}
                   onChange={e => setStepDurations(prev => ({ ...prev, [etapeActive]: Math.max(300, parseInt(e.target.value) || 2000) }))}
-                  style={{ width: 68, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '4px 6px', color: colors.text.secondary, fontSize: 11, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  style={{ width: 68, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '4px 6px', color: colors.text.secondary, fontSize: 11, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
                 <span style={{ fontSize: 11, color: colors.text.faint }}>ms</span>
               </div>
 
@@ -2602,7 +2602,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                   const nbEtapes = s.schema?.sequences?.length || 1
                   const nbJoueurs = (s.schema?.elements || []).filter(el => el.type === 'joueur').length
                   const enCours = currentSchemaId === s.id
-                  const btnPetit = (couleur, actif) => ({ display: 'inline-flex', alignItems: 'center', gap: '5px', background: actif ? couleur + '1f' : 'transparent', border: `1px solid ${actif ? couleur + '70' : colors.border.default}`, color: actif ? couleur : colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' })
+                  const btnPetit = (couleur, actif) => ({ display: 'inline-flex', alignItems: 'center', gap: '5px', background: actif ? couleur + '1f' : 'transparent', border: `1px solid ${actif ? couleur + '70' : colors.border.default}`, color: actif ? couleur : colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' })
                   return (
                     <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${enCours ? '#60a5fa70' : colors.border.subtle}`, borderLeft: `3px solid ${dossier?.couleur || colors.border.strong}`, borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -2725,10 +2725,10 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
             <input
               name="texte" autoFocus defaultValue={saisie.valeur}
               onKeyDown={ev => { if (ev.key === 'Escape') fermerSaisie(null) }}
-              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, fontSize: '16px', padding: '10px 12px', fontFamily: 'Inter, sans-serif' }} />
+              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, fontSize: '16px', padding: '10px 12px', fontFamily: 'Barlow, sans-serif' }} />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => fermerSaisie(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
-              <button type="submit" style={{ background: '#4ade80', border: 'none', color: '#000', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>OK</button>
+              <button type="button" onClick={() => fermerSaisie(null)} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Annuler</button>
+              <button type="submit" style={{ background: '#4ade80', border: 'none', color: '#000', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>OK</button>
             </div>
           </form>
         </div>

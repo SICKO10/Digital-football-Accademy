@@ -28,7 +28,7 @@ const THEMES = {
     brillant: '#fff2c2', ombre: '201,154,46',
   },
 }
-const POLICE = "'Barlow Condensed', 'Inter', sans-serif"
+const POLICE = "'Barlow Condensed', 'Barlow', sans-serif"
 
 // Contour (repère 400 x 600) : moitié droite, puis miroir pour la gauche.
 const DROITE = [

@@ -175,7 +175,7 @@ export default function CompositionTerrain({
               padding: '5px 12px', borderRadius: '20px', border: 'none',
               background: formation === f ? '#4ade80' : p.chipFond,
               color: formation === f ? '#000' : p.chipTexte,
-              fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
+              fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Barlow, sans-serif',
             }}>{f}</button>
           ))}
         </div>
@@ -187,7 +187,7 @@ export default function CompositionTerrain({
           {titulaires.some(j => j?.pos) && (
             <button onClick={() => replacer(formation)} style={{
               padding: '5px 12px', borderRadius: '20px', border: `1px solid ${p.btnBord}`, background: 'transparent',
-              color: p.btnTexte, fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              color: p.btnTexte, fontWeight: 700, fontSize: '11px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
             }}>Replacer automatiquement</button>
           )}
         </div>
@@ -200,7 +200,7 @@ export default function CompositionTerrain({
               padding: '5px 14px', borderRadius: '20px', border: 'none',
               background: affichageNom === o.val ? '#4ade80' : p.chipFond,
               color: affichageNom === o.val ? '#000' : p.chipTexte,
-              fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Inter, sans-serif',
+              fontWeight: 700, fontSize: '11px', cursor: 'pointer', letterSpacing: '0.5px', fontFamily: 'Barlow, sans-serif',
             }}>{o.label}</button>
           ))}
         </div>
@@ -382,7 +382,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
 
   return (
     <div onClick={fermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '75vh', overflowY: 'auto', fontFamily: 'Inter, sans-serif' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '75vh', overflowY: 'auto', fontFamily: 'Barlow, sans-serif' }}>
         <h3 style={{ color: '#fff', margin: '0 0 16px' }}>{multiSelect ? 'Choisir un ou plusieurs joueurs' : 'Choisir un joueur'}</h3>
 
         <div style={{ marginBottom: '12px' }}>
@@ -402,7 +402,7 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
               fontSize: '14px',
               outline: 'none',
               boxSizing: 'border-box',
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Barlow, sans-serif',
             }}
             onFocus={e => e.target.style.borderColor = '#4ade80'}
             onBlur={e => e.target.style.borderColor = '#2a2a2a'}
@@ -459,18 +459,18 @@ export function ModalSelectionJoueur({ joueursDispo, dejaUtilises, onConfirmer, 
         )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={fermer} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
+          <button onClick={fermer} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Annuler</button>
           {!multiSelect && onRetirer && (
-            <button onClick={onRetirer} style={{ flex: 1, background: 'none', border: '1px solid #ef444444', color: '#ef4444', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Retirer</button>
+            <button onClick={onRetirer} style={{ flex: 1, background: 'none', border: '1px solid #ef444444', color: '#ef4444', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Retirer</button>
           )}
           {multiSelect ? (
             <button disabled={choisisMultiple.length === 0} onClick={confirmerMultiple}
-              style={{ flex: 2, background: choisisMultiple.length ? '#4ade80' : '#1a1a1a', border: 'none', color: choisisMultiple.length ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisisMultiple.length ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+              style={{ flex: 2, background: choisisMultiple.length ? '#4ade80' : '#1a1a1a', border: 'none', color: choisisMultiple.length ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisisMultiple.length ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif' }}>
               Ajouter {choisisMultiple.length > 0 ? `(${choisisMultiple.length})` : ''}
             </button>
           ) : (
             <button disabled={!choisi} onClick={() => onConfirmer({ joueur_id: choisi.joueur_id, prenom: choisi.prenom, nom: choisi.nom, avatar_url: choisi.avatar_url || null, numero: parseInt(numero, 10) || null, capitaine })}
-              style={{ flex: 2, background: choisi ? '#4ade80' : '#1a1a1a', border: 'none', color: choisi ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisi ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+              style={{ flex: 2, background: choisi ? '#4ade80' : '#1a1a1a', border: 'none', color: choisi ? '#000' : '#333', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '14px', cursor: choisi ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif' }}>
               Confirmer
             </button>
           )}

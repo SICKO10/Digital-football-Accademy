@@ -86,21 +86,21 @@ export default function DashboardParent() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: colors.accent.green, fontFamily: 'Inter, sans-serif' }}>Chargement...</p>
+      <p style={{ color: colors.accent.green, fontFamily: 'Barlow, sans-serif' }}>Chargement...</p>
     </div>
   )
 
   const profilIncomplet = !profilParent?.profil_complet
   const champsRequis = ['prenom', 'nom', 'telephone', 'email', 'profession']
   const formValide = champsRequis.every(c => formParent[c]?.trim()) && consentement
-  const inputStyle = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }
+  const inputStyle = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' }
 
   if (profilIncomplet) {
     return (
       <div style={{ minHeight: '100vh', background: colors.background.base, position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '32px', maxWidth: '460px', width: '100%' }}>
-          <h2 style={{ fontWeight: 800, marginBottom: '8px', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>👋 Bienvenue sur Digital Football</h2>
-          <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '24px', fontFamily: 'Inter, sans-serif' }}>
+          <h2 style={{ fontWeight: 800, marginBottom: '8px', color: colors.text.primary, fontFamily: 'Barlow, sans-serif' }}>👋 Bienvenue sur Digital Football</h2>
+          <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '24px', fontFamily: 'Barlow, sans-serif' }}>
             Avant d'accéder au profil de {joueurNom || 'votre enfant'}, merci de compléter votre profil. Ces informations sont transmises au club.
           </p>
           {[
@@ -111,7 +111,7 @@ export default function DashboardParent() {
             { label: 'Profession', champ: 'profession', type: 'text' },
           ].map(({ label, champ, type }) => (
             <div key={champ} style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px', fontFamily: 'Inter, sans-serif' }}>{label}</label>
+              <label style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px', fontFamily: 'Barlow, sans-serif' }}>{label}</label>
               <input type={type} value={formParent[champ]} onChange={e => setFormParent(prev => ({ ...prev, [champ]: e.target.value }))} style={inputStyle} />
             </div>
           ))}
@@ -123,15 +123,15 @@ export default function DashboardParent() {
               onChange={e => setConsentement(e.target.checked)}
               style={{ marginTop: '2px', accentColor: colors.accent.green, width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
             />
-            <label htmlFor="rgpd" style={{ color: colors.text.faint, fontSize: '13px', lineHeight: '1.5', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <label htmlFor="rgpd" style={{ color: colors.text.faint, fontSize: '13px', lineHeight: '1.5', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               J'accepte que mes informations personnelles (nom, prénom, téléphone, profession) soient collectées et consultées par le club {joueurClub ? <strong style={{ color: colors.text.secondary }}>{joueurClub}</strong> : 'de votre enfant'} dans le cadre du suivi de mon enfant sur la plateforme Digital Football. Ces données ne seront pas partagées avec des tiers.
             </label>
           </div>
           <button onClick={sauvegarderProfilParent} disabled={!formValide || savingProfil}
-            style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '14px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: formValide ? 1 : 0.4 }}>
+            style={{ width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '14px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginTop: '8px', opacity: formValide ? 1 : 0.4 }}>
             {savingProfil ? 'Enregistrement...' : '✅ Confirmer mon profil'}
           </button>
-          <p style={{ color: colors.text.ghost, fontSize: '11px', textAlign: 'center', marginTop: '12px', fontFamily: 'Inter, sans-serif' }}>Tous les champs sont obligatoires</p>
+          <p style={{ color: colors.text.ghost, fontSize: '11px', textAlign: 'center', marginTop: '12px', fontFamily: 'Barlow, sans-serif' }}>Tous les champs sont obligatoires</p>
         </div>
       </div>
     )
@@ -139,7 +139,7 @@ export default function DashboardParent() {
 
   return (
     <div>
-      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Inter, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+      <div style={{ background: colors.background.sunken, borderBottom: `1px solid ${colors.border.subtle}`, padding: '8px 14px', color: colors.text.dim, fontSize: '11px', textAlign: 'center', fontFamily: 'Barlow, sans-serif', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span>👁️ Vue en lecture seule — Profil de {joueurNom}</span>
         <span onClick={handleLogout} style={{ color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }}>Déconnexion</span>
       </div>

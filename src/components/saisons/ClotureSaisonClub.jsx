@@ -76,7 +76,7 @@ export default function ClotureSaisonClub({ clubId, userId, categories, accentCo
     await recharger()
   }
 
-  const bouton = { padding: '10px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  const bouton = { padding: '10px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }
   const accent = accentColor || colors.accent.green
 
   return (

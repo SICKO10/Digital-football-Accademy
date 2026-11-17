@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { police } from '../tokens'
+import { styleEtiquette, texteSur } from '../lib/identite'
 
 // ── Guide Projet FFF — certification CFF4 (BMF) ─────────────────────────────
 
@@ -13,17 +15,20 @@ const ETAPES = [
 ]
 
 const AXES_DIAGNOSTIC = [
-  { key: 'note_attraction',     label: "Pouvoir d'attraction",         projet: 'Associatif', color: '#3b82f6' },
-  { key: 'note_accueil',        label: "Qualité de l'accueil",         projet: 'Associatif', color: '#3b82f6' },
-  { key: 'note_fidelisation',   label: 'Fidélisation',                 projet: 'Associatif', color: '#3b82f6' },
-  { key: 'note_environnement',  label: 'Environnement',                projet: 'Associatif', color: '#3b82f6' },
-  { key: 'note_encadrement',    label: 'Encadrement',                  projet: 'Sportif',    color: '#4ade80' },
-  { key: 'note_offre_pratiques',label: 'Offre de pratiques',           projet: 'Sportif',    color: '#4ade80' },
-  { key: 'note_niveau_normes',  label: 'Niveau & normes',              projet: 'Sportif',    color: '#4ade80' },
-  { key: 'note_esprit_jeu',     label: 'Esprit du jeu',                projet: 'Éducatif',   color: '#f59e0b' },
-  { key: 'note_regles_vie',     label: 'Règles de vie / citoyenneté',  projet: 'Éducatif',   color: '#f59e0b' },
-  { key: 'note_regles_jeu',     label: 'Règles du jeu / arbitrage',    projet: 'Éducatif',   color: '#f59e0b' },
+  { key: 'note_attraction',     label: "Pouvoir d'attraction",         projet: 'Associatif' },
+  { key: 'note_accueil',        label: "Qualité de l'accueil",         projet: 'Associatif' },
+  { key: 'note_fidelisation',   label: 'Fidélisation',                 projet: 'Associatif' },
+  { key: 'note_environnement',  label: 'Environnement',                projet: 'Associatif' },
+  { key: 'note_encadrement',    label: 'Encadrement',                  projet: 'Sportif' },
+  { key: 'note_offre_pratiques',label: 'Offre de pratiques',           projet: 'Sportif' },
+  { key: 'note_niveau_normes',  label: 'Niveau & normes',              projet: 'Sportif' },
+  { key: 'note_esprit_jeu',     label: 'Esprit du jeu',                projet: 'Éducatif' },
+  { key: 'note_regles_vie',     label: 'Règles de vie / citoyenneté',  projet: 'Éducatif' },
+  { key: 'note_regles_jeu',     label: 'Règles du jeu / arbitrage',    projet: 'Éducatif' },
 ]
+
+// Couleur de repère de chaque projet (remplissage des notes, radar) : jamais du texte.
+const couleurAxe = (colors, axe) => ({ Associatif: colors.accent.info, Sportif: colors.accent.success, 'Éducatif': colors.accent.amber }[axe.projet] || colors.accent.brand)
 
 const OBJECTIFS_PAR_PROJET = {
   associatif: [
@@ -141,20 +146,20 @@ export default function ProjetClubCFF4({ userId, clubId }) {
   // ── Styles
   const inp = {
     width: '100%', background: colors.background.raised,
-    border: `1px solid ${colors.border.subtle}`, borderRadius: '8px',
+    border: `1px solid ${colors.border.subtle}`, borderRadius: '6px',
     padding: '10px 14px', color: colors.text.primary,
     fontSize: '14px', outline: 'none', boxSizing: 'border-box',
   }
   const btn = {
-    background: colors.accent.green, color: colors.accent.onBrand, border: 'none',
-    borderRadius: '8px', padding: '10px 20px', fontWeight: 700,
+    background: colors.accent.brand, color: colors.accent.onBrand, border: 'none',
+    borderRadius: '6px', padding: '10px 20px', fontWeight: 700,
     fontSize: '14px', cursor: 'pointer',
   }
-  const label = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
-  const card = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '24px' }
+  const label = { color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
+  const card = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', padding: '24px' }
 
   if (!clubId) {
-    return <p style={{ color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '40px' }}>Affilie-toi d'abord à un club pour accéder au Projet Club — CFF4.</p>
+    return <p style={{ color: colors.text.dim, fontSize: '13px', textAlign: 'center', padding: '40px' }}>Affilie-toi d'abord à un club pour accéder au Projet Club — CFF4.</p>
   }
 
   return (
@@ -163,12 +168,12 @@ export default function ProjetClubCFF4({ userId, clubId }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <div style={{ color: colors.accent.green, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>Formation fédérale</div>
-          <h1 style={{ color: colors.text.primary, fontSize: '22px', fontWeight: 900, margin: 0 }}>Projet Club — CFF4</h1>
-          <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Certificat Fédéral de Football 4 · BMF · FFF</p>
+          <div style={{ ...styleEtiquette(colors), marginBottom: '4px' }}>Formation fédérale</div>
+          <h1 style={{ color: colors.text.primary, fontFamily: police.titre, fontSize: 'clamp(24px, 5.5vw, 32px)', lineHeight: 1.05, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', margin: 0 }}>Projet Club — CFF4</h1>
+          <p style={{ color: colors.text.dim, fontSize: '13px', margin: '4px 0 0' }}>Certificat Fédéral de Football 4 · BMF · FFF</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {saved && <span style={{ color: colors.accent.green, fontSize: '13px', fontWeight: 700 }}>Enregistré</span>}
+          {saved && <span style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700 }}>Enregistré</span>}
           <select value={saison} onChange={e => setSaison(e.target.value)} style={{ ...inp, width: 'auto', padding: '8px 12px' }}>
             {['2024-2025', '2025-2026', '2026-2027', '2027-2028'].map(s => <option key={s}>{s}</option>)}
           </select>
@@ -177,38 +182,38 @@ export default function ProjetClubCFF4({ userId, clubId }) {
 
       {/* Score global */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
-          Score moyen : <span style={{ color: colors.accent.green, fontWeight: 800, fontSize: '16px' }}>{scoreTotal}/5</span>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
+          Score moyen : <span style={{ color: colors.text.primary, fontFamily: police.titre, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: '16px' }}>{scoreTotal}/5</span>
         </div>
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
-          Actions planifiées : <span style={{ color: '#f59e0b', fontWeight: 800 }}>{actions.length}</span>
+        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', padding: '12px 20px', fontSize: '13px', color: colors.text.secondary }}>
+          Actions planifiées : <span style={{ color: colors.text.primary, fontFamily: police.titre, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: '16px' }}>{actions.length}</span>
         </div>
       </div>
 
       {/* Navigation étapes */}
       <div style={{ display: 'flex', gap: '4px', borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: '28px', overflowX: 'auto' }}>
         {ETAPES.map(e => (
-          <button key={e.key} onClick={() => setEtape(e.key)} style={{
+          <button key={e.key} type="button" aria-pressed={etape === e.key} onClick={() => setEtape(e.key)} className="df-cliquable" style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px',
-            fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
-            color: etape === e.key ? colors.accent.green : colors.text.faint,
-            borderBottom: etape === e.key ? `2px solid ${colors.accent.green}` : '2px solid transparent',
+            fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap',
+            color: etape === e.key ? colors.text.primary : colors.text.dim,
+            borderBottom: etape === e.key ? `3px solid ${colors.accent.brand}` : '3px solid transparent', minHeight: '40px',
           }}>
             {e.label}
           </button>
         ))}
       </div>
 
-      {loading && <div style={{ color: colors.text.faint, textAlign: 'center', padding: '60px' }}>Chargement...</div>}
+      {loading && <div style={{ color: colors.text.dim, textAlign: 'center', padding: '60px' }}>Chargement...</div>}
 
       {/* ══ ÉTAPE 1 — IDENTITÉ ══ */}
       {!loading && etape === 'identite' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={card}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '16px' }}>Valeurs du club</h3>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>Valeurs du club</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[0, 1, 2, 3, 4].map(i => (
-                <input key={i} value={identite.valeurs?.[i] || ''} onChange={e => {
+                <input className="df-champ" key={i} value={identite.valeurs?.[i] || ''} onChange={e => {
                   const v = [...(identite.valeurs || ['', '', '', '', ''])]
                   v[i] = e.target.value
                   setIdentite({ ...identite, valeurs: v })
@@ -217,12 +222,12 @@ export default function ProjetClubCFF4({ userId, clubId }) {
             </div>
             <div style={{ marginTop: '12px' }}>
               <label style={label}>Slogan</label>
-              <input value={identite.slogan || ''} onChange={e => setIdentite({ ...identite, slogan: e.target.value })} placeholder="Ex : Plus qu'un club, une famille" style={inp} />
+              <input className="df-champ" value={identite.slogan || ''} onChange={e => setIdentite({ ...identite, slogan: e.target.value })} placeholder="Ex : Plus qu'un club, une famille" style={inp} />
             </div>
           </div>
 
           <div style={card}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '16px' }}>État civil</h3>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>État civil</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               {[
                 { key: 'date_creation', label: 'Date de création', placeholder: 'Ex: 1972' },
@@ -232,27 +237,27 @@ export default function ProjetClubCFF4({ userId, clubId }) {
               ].map(f => (
                 <div key={f.key}>
                   <label style={label}>{f.label}</label>
-                  <input value={identite[f.key] || ''} onChange={e => setIdentite({ ...identite, [f.key]: e.target.value })} placeholder={f.placeholder} style={inp} />
+                  <input className="df-champ" value={identite[f.key] || ''} onChange={e => setIdentite({ ...identite, [f.key]: e.target.value })} placeholder={f.placeholder} style={inp} />
                 </div>
               ))}
               <div>
                 <label style={label}>Nombre total de licenciés</label>
-                <input type="number" value={identite.nb_licencies || ''} onChange={e => setIdentite({ ...identite, nb_licencies: e.target.value })} style={inp} />
+                <input className="df-champ" type="number" value={identite.nb_licencies || ''} onChange={e => setIdentite({ ...identite, nb_licencies: e.target.value })} style={inp} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '20px' }}>
-                <input type="checkbox" id="omnisport" checked={identite.club_omnisport || false} onChange={e => setIdentite({ ...identite, club_omnisport: e.target.checked })} />
+                <input className="df-champ" type="checkbox" id="omnisport" checked={identite.club_omnisport || false} onChange={e => setIdentite({ ...identite, club_omnisport: e.target.checked })} />
                 <label htmlFor="omnisport" style={{ color: colors.text.primary, fontSize: '14px' }}>Club omnisport</label>
               </div>
             </div>
           </div>
 
           <div style={card}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '16px' }}>Bureau</h3>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>Bureau</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
               {['president', 'secretaire', 'tresorier'].map(r => (
                 <div key={r}>
                   <label style={label}>{r.charAt(0).toUpperCase() + r.slice(1)}</label>
-                  <input value={identite[r] || ''} onChange={e => setIdentite({ ...identite, [r]: e.target.value })} style={inp} />
+                  <input className="df-champ" value={identite[r] || ''} onChange={e => setIdentite({ ...identite, [r]: e.target.value })} style={inp} />
                 </div>
               ))}
             </div>
@@ -273,7 +278,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
 
           {['Associatif', 'Sportif', 'Éducatif'].map(projet => (
             <div key={projet} style={card}>
-              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontSize: '15px' }}>
+              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>
                 Projet {projet}
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -281,7 +286,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                   <div key={axe.key}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <label style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 600 }}>{axe.label}</label>
-                      <span style={{ color: axe.color, fontWeight: 800, fontSize: '15px' }}>{diagnostic[axe.key]}/5</span>
+                      <span style={{ color: colors.text.primary, fontFamily: police.titre, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: '18px' }}>{diagnostic[axe.key]}/5</span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {[0, 1, 2, 3, 4, 5].map(n => (
@@ -289,8 +294,8 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                           style={{
                             flex: 1, padding: '8px 0', border: 'none', borderRadius: '6px', cursor: 'pointer',
                             fontWeight: 700, fontSize: '13px',
-                            background: diagnostic[axe.key] >= n && n > 0 ? axe.color : colors.background.raised,
-                            color: diagnostic[axe.key] >= n && n > 0 ? '#000' : colors.text.faint,
+                            background: diagnostic[axe.key] >= n && n > 0 ? couleurAxe(colors, axe) : colors.background.raised,
+                            color: diagnostic[axe.key] >= n && n > 0 ? texteSur(couleurAxe(colors, axe)) : colors.text.dim,
                           }}>{n}</button>
                       ))}
                     </div>
@@ -300,7 +305,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                         value={diagnostic.details?.[axe.key]?.plus || ''}
                         onChange={e => setDiagnostic({ ...diagnostic, details: { ...diagnostic.details, [axe.key]: { ...diagnostic.details?.[axe.key], plus: e.target.value } } })}
                         placeholder="Points + / Opportunités"
-                        style={{ ...inp, fontSize: '12px', padding: '8px 12px', borderColor: colors.accent.green + '40' }}
+                        style={{ ...inp, fontSize: '12px', padding: '8px 12px', borderColor: colors.border.strong }}
                       />
                       <input
                         value={diagnostic.details?.[axe.key]?.moins || ''}
@@ -317,7 +322,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
 
           {/* Toile d'araignée SVG */}
           <div style={{ ...card, textAlign: 'center' }}>
-            <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontSize: '15px' }}>Vision globale du club</h3>
+            <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>Vision globale du club</h3>
             <RadarChart diagnostic={diagnostic} colors={colors} />
           </div>
 
@@ -332,7 +337,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {Object.entries(OBJECTIFS_PAR_PROJET).map(([projet, objList]) => (
             <div key={projet} style={card}>
-              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontSize: '15px', textTransform: 'capitalize' }}>
+              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>
                 Projet {projet}
               </h3>
               {objList.map((obj, idx) => {
@@ -340,12 +345,12 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                 const data = objectifs[key] || { axes: ['', '', '', '', ''] }
                 return (
                   <div key={idx} style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                    <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
+                    <div style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
                       Objectif {idx + 1} — {obj}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {[0, 1, 2, 3, 4].map(i => (
-                        <input key={i}
+                        <input className="df-champ" key={i}
                           value={data.axes?.[i] || ''}
                           onChange={async e => {
                             const axes = [...(data.axes || ['', '', '', '', ''])]
@@ -381,7 +386,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
           {/* Calendrier saison */}
           {actions.length > 0 && (
             <div style={{ ...card, marginBottom: '20px', overflowX: 'auto' }}>
-              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontSize: '15px' }}>Calendrier de saison</h3>
+              <h3 style={{ color: colors.text.primary, margin: '0 0 16px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>Calendrier de saison</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '700px' }}>
                 <thead>
                   <tr>
@@ -410,15 +415,15 @@ export default function ProjetClubCFF4({ userId, clubId }) {
           {/* Liste fiches */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {actions.length === 0 && (
-              <div style={{ textAlign: 'center', color: colors.text.faint, padding: '40px', background: colors.background.surface, borderRadius: '12px' }}>
+              <div style={{ textAlign: 'center', color: colors.text.dim, padding: '40px', background: colors.background.surface, borderRadius: '6px' }}>
                 Aucune fiche action — cliquez sur "+ Nouvelle fiche action"
               </div>
             )}
             {actions.map(a => (
-              <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{a.intitule}</div>
-                  <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '3px' }}>
+                  <div style={{ color: colors.text.dim, fontSize: '12px', marginTop: '3px' }}>
                     Projet {a.sous_projet} · Objectif {a.objectif_general}
                     {a.responsable && ` · ${a.responsable}`}
                     {a.date_action && ` · ${new Date(a.date_action).toLocaleDateString('fr-FR')}`}
@@ -426,13 +431,13 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+                    fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px',
                     background: a.statut === 'realisee' ? colors.accent.success + '20' : a.statut === 'en_cours' ? colors.accent.amber + '20' : colors.accent.red + '20',
-                    color: a.statut === 'realisee' ? colors.accent.success : a.statut === 'en_cours' ? colors.accent.amber : colors.accent.red,
+                    color: colors.text.primary,
                   }}>
                     {a.statut === 'realisee' ? 'Réalisée' : a.statut === 'en_cours' ? 'En cours' : 'Planifiée'}
                   </span>
-                  <button onClick={() => supprimerAction(a.id)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '18px' }}>×</button>
+                  <button onClick={() => supprimerAction(a.id)} style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', fontSize: '18px' }}>×</button>
                 </div>
               </div>
             ))}
@@ -441,8 +446,8 @@ export default function ProjetClubCFF4({ userId, clubId }) {
           {/* Modale nouvelle action */}
           {showNewAction && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ background: colors.background.surface, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto', border: `1px solid ${colors.border.default}` }}>
-                <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px' }}>Nouvelle fiche action</h3>
+              <div style={{ background: colors.background.surface, borderRadius: '6px', padding: '28px', width: '100%', maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto', border: `1px solid ${colors.border.default}` }}>
+                <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontWeight: 700, fontSize: '20px' }}>Nouvelle fiche action</h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -466,25 +471,25 @@ export default function ProjetClubCFF4({ userId, clubId }) {
 
                   <div>
                     <label style={label}>Intitulé de l'action *</label>
-                    <input value={newAction.intitule} onChange={e => setNewAction({ ...newAction, intitule: e.target.value })} placeholder="Ex: Tournoi de recrutement U8-U11" style={inp} />
+                    <input className="df-champ" value={newAction.intitule} onChange={e => setNewAction({ ...newAction, intitule: e.target.value })} placeholder="Ex: Tournoi de recrutement U8-U11" style={inp} />
                   </div>
                   <div>
                     <label style={label}>Résumé</label>
-                    <textarea value={newAction.resume} onChange={e => setNewAction({ ...newAction, resume: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} placeholder="Description de l'action..." />
+                    <textarea className="df-champ" value={newAction.resume} onChange={e => setNewAction({ ...newAction, resume: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} placeholder="Description de l'action..." />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label style={label}>Date</label>
-                      <input type="date" value={newAction.date_action} onChange={e => setNewAction({ ...newAction, date_action: e.target.value })} style={inp} />
+                      <input className="df-champ" type="date" value={newAction.date_action} onChange={e => setNewAction({ ...newAction, date_action: e.target.value })} style={inp} />
                     </div>
                     <div>
                       <label style={label}>Responsable</label>
-                      <input value={newAction.responsable} onChange={e => setNewAction({ ...newAction, responsable: e.target.value })} style={inp} />
+                      <input className="df-champ" value={newAction.responsable} onChange={e => setNewAction({ ...newAction, responsable: e.target.value })} style={inp} />
                     </div>
                     <div>
                       <label style={label}>Public concerné</label>
-                      <input value={newAction.public_concerne} onChange={e => setNewAction({ ...newAction, public_concerne: e.target.value })} placeholder="Ex: Jeunes U8-U11" style={inp} />
+                      <input className="df-champ" value={newAction.public_concerne} onChange={e => setNewAction({ ...newAction, public_concerne: e.target.value })} placeholder="Ex: Jeunes U8-U11" style={inp} />
                     </div>
                     <div>
                       <label style={label}>Statut</label>
@@ -508,8 +513,8 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                           setNewAction({ ...newAction, mois_calendrier: mois })
                         }} style={{
                           padding: '5px 10px', border: 'none', borderRadius: '6px', cursor: 'pointer',
-                          background: newAction.mois_calendrier.includes(m.toLowerCase()) ? colors.accent.green : colors.background.raised,
-                          color: newAction.mois_calendrier.includes(m.toLowerCase()) ? '#000' : colors.text.faint,
+                          background: newAction.mois_calendrier.includes(m.toLowerCase()) ? colors.accent.brand : colors.background.raised,
+                          color: newAction.mois_calendrier.includes(m.toLowerCase()) ? colors.accent.onBrand : colors.text.dim,
                           fontWeight: 700, fontSize: '12px',
                         }}>{m}</button>
                       ))}
@@ -519,17 +524,17 @@ export default function ProjetClubCFF4({ userId, clubId }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label style={label}>Budget recettes (€)</label>
-                      <input type="number" value={newAction.budget_recettes} onChange={e => setNewAction({ ...newAction, budget_recettes: parseFloat(e.target.value) })} style={inp} />
+                      <input className="df-champ" type="number" value={newAction.budget_recettes} onChange={e => setNewAction({ ...newAction, budget_recettes: parseFloat(e.target.value) })} style={inp} />
                     </div>
                     <div>
                       <label style={label}>Budget dépenses (€)</label>
-                      <input type="number" value={newAction.budget_depenses} onChange={e => setNewAction({ ...newAction, budget_depenses: parseFloat(e.target.value) })} style={inp} />
+                      <input className="df-champ" type="number" value={newAction.budget_depenses} onChange={e => setNewAction({ ...newAction, budget_depenses: parseFloat(e.target.value) })} style={inp} />
                     </div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', marginTop: '24px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setShowNewAction(false)} style={{ background: 'none', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '10px 20px', cursor: 'pointer' }}>Annuler</button>
+                  <button onClick={() => setShowNewAction(false)} style={{ background: 'none', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '6px', padding: '10px 20px', cursor: 'pointer' }}>Annuler</button>
                   <button onClick={ajouterAction} style={btn}>Ajouter</button>
                 </div>
               </div>
@@ -542,7 +547,7 @@ export default function ProjetClubCFF4({ userId, clubId }) {
       {!loading && etape === 'suivi' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {actions.length === 0 && (
-            <div style={{ textAlign: 'center', color: colors.text.faint, padding: '40px', background: colors.background.surface, borderRadius: '12px' }}>
+            <div style={{ textAlign: 'center', color: colors.text.dim, padding: '40px', background: colors.background.surface, borderRadius: '6px' }}>
               Créez d'abord des fiches action dans l'étape Plan d'actions.
             </div>
           )}
@@ -552,12 +557,12 @@ export default function ProjetClubCFF4({ userId, clubId }) {
 
           {/* Attestation */}
           {actions.length > 0 && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green}40`, borderRadius: '12px', padding: '20px', marginTop: '8px' }}>
-              <h3 style={{ color: colors.accent.green, margin: '0 0 12px', fontSize: '15px' }}>Attestation de stage pédagogique</h3>
+            <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green}40`, borderRadius: '6px', padding: '20px', marginTop: '8px' }}>
+              <h3 style={{ color: colors.text.primary, margin: '0 0 12px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: '20px', fontWeight: 700 }}>Attestation de stage pédagogique</h3>
               <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '0 0 12px' }}>
                 À faire signer par le président du club après la réalisation de chaque action.
               </p>
-              <button onClick={() => window.print()} style={{ ...btn, background: 'transparent', border: `1px solid ${colors.accent.green}`, color: colors.accent.green }}>
+              <button onClick={() => window.print()} style={{ ...btn, background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.primary }}>
                 Imprimer l'attestation
               </button>
             </div>
@@ -609,7 +614,7 @@ function RadarChart({ diagnostic, colors }) {
         const ly = cy + (r + 20) * Math.sin(a)
         return (
           <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
-            fill={axe.color} fontSize="9" fontWeight="600">
+            fill={colors.text.secondary} fontSize="10" fontWeight="600">
             {axe.label.length > 14 ? axe.label.substring(0, 13) + '…' : axe.label}
           </text>
         )
@@ -647,16 +652,16 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
     }, { onConflict: 'action_id' })
   }
 
-  const label = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
+  const label = { color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
 
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', overflow: 'hidden' }}>
+    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', overflow: 'hidden' }}>
       <div onClick={() => setOpen(!open)} style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ color: colors.text.primary, fontWeight: 700 }}>{action.intitule}</div>
-          <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px' }}>Projet {action.sous_projet}</div>
+          <div style={{ color: colors.text.dim, fontSize: '12px', marginTop: '2px' }}>Projet {action.sous_projet}</div>
         </div>
-        <span style={{ color: colors.text.faint, fontSize: '18px' }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: colors.text.dim, fontSize: '18px' }}>{open ? '▲' : '▼'}</span>
       </div>
 
       {open && (
@@ -664,11 +669,11 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '14px' }}>
             <div>
               <label style={label}>Avant (ce qu'on attendait)</label>
-              <textarea value={suivi.avant} onChange={e => setSuivi({ ...suivi, avant: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} />
+              <textarea className="df-champ" value={suivi.avant} onChange={e => setSuivi({ ...suivi, avant: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} />
             </div>
             <div>
               <label style={label}>Après (ce qui a été réalisé)</label>
-              <textarea value={suivi.apres} onChange={e => setSuivi({ ...suivi, apres: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} />
+              <textarea className="df-champ" value={suivi.apres} onChange={e => setSuivi({ ...suivi, apres: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical' }} />
             </div>
           </div>
 
@@ -685,7 +690,7 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
                     <button key={String(v)} onClick={() => setSuivi({ ...suivi, [f.key]: v })} style={{
                       flex: 1, padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '12px',
                       background: suivi[f.key] === v ? (v ? colors.accent.success : colors.accent.red) : colors.background.raised,
-                      color: suivi[f.key] === v ? '#000' : colors.text.faint,
+                      color: suivi[f.key] === v ? texteSur(v ? colors.accent.success : colors.accent.red) : colors.text.dim,
                     }}>{v ? 'Oui' : 'Non'}</button>
                   ))}
                 </div>
@@ -696,16 +701,16 @@ function SuiviAction({ action, userId, clubId, inp, colors }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={label}>Points positifs</label>
-              <textarea value={suivi.points_positifs} onChange={e => setSuivi({ ...suivi, points_positifs: e.target.value })} rows={2} style={{ ...inp, resize: 'none' }} />
+              <textarea className="df-champ" value={suivi.points_positifs} onChange={e => setSuivi({ ...suivi, points_positifs: e.target.value })} rows={2} style={{ ...inp, resize: 'none' }} />
             </div>
             <div>
               <label style={label}>Points à améliorer</label>
-              <textarea value={suivi.points_ameliorer} onChange={e => setSuivi({ ...suivi, points_ameliorer: e.target.value })} rows={2} style={{ ...inp, resize: 'none' }} />
+              <textarea className="df-champ" value={suivi.points_ameliorer} onChange={e => setSuivi({ ...suivi, points_ameliorer: e.target.value })} rows={2} style={{ ...inp, resize: 'none' }} />
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={sauvegarder} style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer' }}>Enregistrer</button>
+            <button onClick={sauvegarder} style={{ background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '6px', padding: '8px 18px', fontWeight: 700, cursor: 'pointer' }}>Enregistrer</button>
           </div>
         </div>
       )}

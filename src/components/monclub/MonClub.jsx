@@ -3,6 +3,8 @@ import EtapeIdentite from './EtapeIdentite'
 import EtapeAccesBureau from './EtapeAccesBureau'
 import { stylesMonClub, CSS_MON_CLUB } from './uiMonClub'
 import { etapesMonClubVisibles } from '../../lib/menuClubGroupes'
+import { coqueVars } from '../../lib/menuLateral'
+import { forme } from '../../tokens'
 
 // Une étape pas encore faite reste masquée en production ; en local on voit sa place.
 // Staff et Organigramme sont des écrans du dashboard : il les passe dans `ecrans`.
@@ -30,26 +32,17 @@ export default function MonClub({
   return (
     <div style={{ '--mc-marque': s.marque, '--mc-survol': colors.background.raised }}>
       <style>{CSS_MON_CLUB}</style>
-      <p style={{ margin: '0 0 16px', color: colors.text.faint, fontSize: 14, lineHeight: 1.5 }}>
+      <p style={{ margin: '0 0 16px', color: colors.text.secondary, fontSize: 14, lineHeight: 1.5 }}>
         Un seul endroit pour personnaliser votre club. Chaque réglage s'applique tout de suite.
       </p>
 
       {visibles.length > 1 && (
-        <div role="tablist" aria-label="Étapes de Mon club" style={{ display: 'flex', gap: 6, padding: 5, marginBottom: 26, borderRadius: 18, overflowX: 'auto', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-          {visibles.map((e, i) => {
-            const actif = e.id === courante.id
-            return (
-              <button key={e.id} role="tab" aria-selected={actif} onClick={() => setEtape(e.id)} className="mc-btn"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 10, flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer', fontSize: 13, fontFamily: 'Inter, sans-serif',
-                  padding: isMobile ? '9px 14px' : '10px 18px', minHeight: 44, borderRadius: 14, fontWeight: 700, border: 'none',
-                  background: actif ? s.marque : 'transparent', color: actif ? s.surMarque : colors.text.secondary, transition: 'background .12s',
-                }}>
-                <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.raised, color: actif ? s.surMarque : colors.text.faint }}>{i + 1}</span>
-                {e.titre}
-              </button>
-            )
-          })}
+        <div role="tablist" aria-label="Étapes de Mon club" className="df-onglets" style={coqueVars(colors, colors.accent.green)}>
+          {visibles.map(e => (
+            <button key={e.id} role="tab" aria-selected={e.id === courante.id} className="df-onglet" onClick={() => setEtape(e.id)}>
+              {e.titre}
+            </button>
+          ))}
         </div>
       )}
 
@@ -64,9 +57,9 @@ export default function MonClub({
           saving={savingPermissions} onSave={sauvegarderPermissions} couleurPrincipale={couleurPrincipale} isMobile={isMobile} />
       )}
       {!courante.fait && (
-        <div style={{ background: colors.background.sunken, border: `1px dashed ${colors.border.strong}`, borderRadius: 16, padding: 20 }}>
-          <h3 style={{ margin: '0 0 6px', color: colors.text.primary, fontSize: 15, fontWeight: 700 }}>{courante.titre}</h3>
-          <p style={{ margin: 0, color: colors.text.faint, fontSize: 13 }}>Bientôt ici : {courante.bientot}</p>
+        <div style={{ background: colors.background.sunken, border: `1px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte, padding: 20 }}>
+          <h3 style={{ ...s.titreCarte, margin: '0 0 6px' }}>{courante.titre}</h3>
+          <p style={{ margin: 0, color: colors.text.secondary, fontSize: 13 }}>Bientôt ici : {courante.bientot}</p>
         </div>
       )}
     </div>

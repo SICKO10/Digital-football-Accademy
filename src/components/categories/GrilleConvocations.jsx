@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { alpha } from '../../tokens'
 import { useIsMobileOrTablet } from '../../hooks/useIsMobileOrTablet'
 import { labelCategorie } from '../../lib/categories'
 import { calculerExpirationConvocation } from '../../lib/convocations'
@@ -11,6 +10,11 @@ import {
   conflitsJoueur, texteConflit, indexerSondage, fusionnerSondageDate, statutSondage, absentDuMatch,
 } from '../../lib/categoriesGrille'
 import Avatar from '../Avatar'
+import { styleCarte, styleChamp, styleTableau, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { police } from '../../tokens'
+import { TitreEcran, Icone } from '../identite'
+import { ArrowLeft, TriangleAlert } from 'lucide-react'
+import { FilAriane, Message } from './UiCategories'
 
 const aujourdhui = () => new Date().toISOString().slice(0, 10)
 
@@ -133,63 +137,51 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
     setMessage({ texte: `Convocation ${col.libelle} publiée : ${selection.size} joueur${selection.size > 1 ? 's' : ''}.`, erreur: false })
   }
 
-  const btnLien = { background: 'none', border: 'none', padding: 0, color: accent, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  const input = { padding: '10px 12px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontSize: '14px', fontFamily: 'Inter, sans-serif', minWidth: 0 }
-  const cellule = { padding: '8px 10px', borderBottom: `1px solid ${colors.border.subtle}`, verticalAlign: 'middle' }
+  const tab = styleTableau(colors)
+  const cellule = { ...tab.cellule, padding: '10px 12px', verticalAlign: 'middle' }
+  const petit = { ...styleBoutonSecondaire(colors), minHeight: '36px', padding: '0 14px', fontSize: '13px' }
   const largeurColonne = isMobile ? '110px' : '150px'
 
   const jourLisible = date ? new Date(`${date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, maxWidth: '100%' }}>
-      <nav style={{ fontSize: '13px', color: colors.text.faint }}>
-        {(filAriane || []).map((e, i) => (
-          <span key={i}><button style={btnLien} onClick={e.onClick}>{e.label}</button> / </span>
-        ))}
-        Convocations {libelleCategorie}
-      </nav>
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Convocations {libelleCategorie}</h1>
-          <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
-            {joueurs ? `Effectif commun · ${joueurs.length} joueur${joueurs.length > 1 ? 's' : ''}` : 'Chargement'}
-          </p>
-        </div>
-        {onRetour && <button style={{ ...btnLien, fontSize: '13px' }} onClick={onRetour}>Retour</button>}
-      </div>
+      <FilAriane etapes={(filAriane || []).map(e => ({ label: e.label, onClick: e.onClick }))} courant={`Convocations ${libelleCategorie}`} />
+      <TitreEcran
+        titre={`Convocations ${libelleCategorie}`}
+        sousTitre={joueurs ? `Effectif commun · ${joueurs.length} joueur${joueurs.length > 1 ? 's' : ''}` : 'Chargement'}
+        style={{ marginBottom: 0 }}
+        actions={onRetour && (
+          <button className={CLASSE_BOUTON_SECONDAIRE} onClick={onRetour} style={styleBoutonSecondaire(colors)}>
+            <Icone icone={ArrowLeft} />Retour
+          </button>
+        )}
+      />
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text.secondary, fontWeight: 600 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', ...styleEtiquette(colors) }}>
           Date
-          <input type="date" value={date || ''} onChange={e => { if (e.target.value) { setChargement(true); setDate(e.target.value); setMessage(null) } }} style={input} />
+          <input type="date" className={CLASSE_CHAMP} value={date || ''} onChange={e => { if (e.target.value) { setChargement(true); setDate(e.target.value); setMessage(null) } }} style={{ ...styleChamp(colors), width: 'auto' }} />
         </label>
-        <input type="search" placeholder="Rechercher" value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1) }}
-          style={{ ...input, flex: 1, minWidth: '160px' }} />
+        <input type="search" className={CLASSE_CHAMP} aria-label="Rechercher un joueur" placeholder="Rechercher" value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1) }}
+          style={{ ...styleChamp(colors), flex: 1, minWidth: '160px', width: 'auto' }} />
       </div>
-      {date && <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, textTransform: 'capitalize' }}>{jourLisible}</p>}
+      {date && <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: colors.text.secondary, textTransform: 'capitalize' }}>{jourLisible}</p>}
 
-      {message && (
-        <p role="status" style={{ margin: 0, padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
-          background: (message.erreur ? colors.accent.red : colors.accent.success) + alpha.subtle,
-          border: `1px solid ${(message.erreur ? colors.accent.red : colors.accent.success)}${alpha.light}`,
-          color: message.erreur ? colors.accent.red : colors.text.primary }}>
-          {message.texte}
-        </p>
-      )}
+      {message && <Message ton={message.erreur ? 'erreur' : 'succes'}>{message.texte}</Message>}
 
       {!chargement && colonnes.length === 0 && joueurs && (
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '2rem 1.5rem', textAlign: 'center', color: colors.text.secondary }}>
-          <p style={{ margin: 0, fontWeight: 700 }}>Aucun match de {libelleCategorie} ce jour-là.</p>
-          <p style={{ margin: '6px 0 0', fontSize: '13px', color: colors.text.faint }}>Choisis une autre date, ou crée le match dans le calendrier de l'équipe.</p>
+        <div style={{ ...styleCarte(colors), padding: '2rem 1.5rem', textAlign: 'center', color: colors.text.secondary }}>
+          <p style={{ margin: 0, fontWeight: 700, color: colors.text.primary }}>Aucun match de {libelleCategorie} ce jour-là.</p>
+          <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.text.secondary }}>Choisis une autre date, ou crée le match dans le calendrier de l'équipe.</p>
         </div>
       )}
 
       {isMobile && colonnes.length > 1 && (
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {colonnes.map((c, i) => (
-            <button key={c.match_id} onClick={() => setColMobile(i)}
-              style={{ padding: '8px 14px', borderRadius: '999px', border: `1px solid ${i === colMobile ? accent : colors.border.default}`, background: i === colMobile ? accent + alpha.subtle : 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <button key={c.match_id} onClick={() => setColMobile(i)} className={CLASSE_BOUTON_SECONDAIRE} aria-pressed={i === colMobile}
+              style={{ ...petit, ...(i === colMobile ? { borderColor: colors.text.primary, borderWidth: '2px', background: colors.background.sunken } : {}) }}>
               {c.libelle}
             </button>
           ))}
@@ -197,7 +189,7 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
       )}
 
       {colonnes.length > 0 && joueurs && (
-        <div style={{ overflowX: 'auto', border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', background: colors.background.surface }}>
+        <div style={{ ...styleCarte(colors), padding: 0, overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%', tableLayout: 'fixed', minWidth: isMobile ? 0 : `${220 + colonnesAffichees.length * 150}px` }}>
             <colgroup>
               <col />
@@ -205,7 +197,7 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
             </colgroup>
             <thead>
               <tr>
-                <th style={{ ...cellule, position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface, textAlign: 'left', fontSize: '12px', color: colors.text.faint, fontWeight: 700, minWidth: 0 }}>
+                <th style={{ ...cellule, ...styleEtiquette(colors), position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface, textAlign: 'left', minWidth: 0, verticalAlign: 'top' }}>
                   Joueur
                 </th>
                 {colonnesAffichees.map(c => {
@@ -214,22 +206,22 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
                   const bloque = envoiEnCours === c.match_id || (c.convocation_publiee ? !modifiee : selection.size === 0)
                   return (
                     <th key={c.match_id} style={{ ...cellule, textAlign: 'left', verticalAlign: 'top', width: largeurColonne, minWidth: largeurColonne, background: colors.background.surface }}>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: colors.text.primary }}>{c.libelle}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 600, color: colors.text.faint }}>
+                      <p style={{ margin: 0, fontFamily: police.titre, fontSize: '19px', fontWeight: 700, lineHeight: 1.1, letterSpacing: '0.01em', textTransform: 'uppercase', color: colors.text.primary }}>{c.libelle}</p>
+                      <p style={{ margin: '3px 0 0', fontSize: '12px', fontWeight: 500, color: colors.text.secondary }}>
                         {[heureCourte(c.heure), c.adversaire && `${c.domicile ? 'vs' : '@'} ${c.adversaire}`].filter(Boolean).join(' · ')}
                       </p>
-                      <p style={{ margin: '6px 0 8px', fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>
+                      <p style={{ margin: '8px 0 10px', fontSize: '13px', fontWeight: 600, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>
                         {selection.size} convoqué{selection.size > 1 ? 's' : ''}
                         {c.convocation_publiee && !modifiee ? ' · publiée' : ''}
                         {modifiee ? ' · à envoyer' : ''}
                       </p>
                       {c.peutEnvoyer ? (
-                        <button onClick={() => envoyer(c)} disabled={bloque}
-                          style={{ width: '100%', padding: '8px 10px', borderRadius: '9px', border: 'none', background: bloque ? colors.background.raised : accent, color: bloque ? colors.text.faint : colors.accent.onBrand, fontWeight: 700, fontSize: '12px', cursor: bloque ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button onClick={() => envoyer(c)} disabled={bloque} className={CLASSE_BOUTON}
+                          style={{ ...styleBoutonPrincipal(colors), width: '100%', minHeight: '36px', padding: '6px 10px', fontSize: '13px', whiteSpace: 'normal', textAlign: 'center' }}>
                           {envoiEnCours === c.match_id ? 'Envoi...' : `${c.convocation_publiee ? 'Mettre à jour' : 'Envoyer'} · ${c.libelle}`}
                         </button>
                       ) : (
-                        <span style={{ fontSize: '11px', color: colors.text.faint }}>Lecture seule</span>
+                        <span style={{ fontSize: '12px', color: colors.text.secondary }}>Lecture seule</span>
                       )}
                     </th>
                   )
@@ -250,12 +242,16 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
                         <Avatar person={j} size={30} bg={colors.background.raised} border="none" textColor={colors.text.secondary} />
                         <div style={{ minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{convocable ? (j.poste || '') : 'Sans compte : ne peut pas être convoqué'}</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary }}>{convocable ? (j.poste || '') : 'Sans compte : ne peut pas être convoqué'}</p>
                           {sond.texte && (
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 700, color: sond.ton === 'alerte' ? colors.accent.red : colors.text.faint }}>{sond.texte}</p>
+                            <p style={{ margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: sond.ton === 'alerte' ? colors.text.primary : colors.text.secondary }}>
+                              {sond.ton === 'alerte' && <span style={{ color: colors.accent.red, display: 'inline-flex' }}><Icone icone={TriangleAlert} taille={14} /></span>}{sond.texte}
+                            </p>
                           )}
                           {texteConflit(conflitsDuJoueur) && (
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 700, color: colors.accent.orange || colors.accent.red }}>{texteConflit(conflitsDuJoueur)}</p>
+                            <p style={{ margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: colors.text.primary }}>
+                              <span style={{ color: colors.accent.orange, display: 'inline-flex' }}><Icone icone={TriangleAlert} taille={14} /></span>{texteConflit(conflitsDuJoueur)}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -276,7 +272,7 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
                 )
               })}
               {pagination.items.length === 0 && (
-                <tr><td colSpan={colonnesAffichees.length + 1} style={{ ...cellule, textAlign: 'center', color: colors.text.faint, fontSize: '13px' }}>Aucun joueur ne correspond.</td></tr>
+                <tr><td colSpan={colonnesAffichees.length + 1} style={{ ...cellule, textAlign: 'center', color: colors.text.secondary, fontSize: '14px' }}>Aucun joueur ne correspond.</td></tr>
               )}
             </tbody>
           </table>
@@ -284,17 +280,11 @@ export default function GrilleConvocations({ categorie, userId, estClub, accentC
       )}
 
       {colonnes.length > 0 && joueurs && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', fontSize: '13px', color: colors.text.secondary }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', fontSize: '14px', color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>
           <span>{pagination.debut}–{pagination.fin} sur {pagination.total}</span>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => setPage(pagination.page - 1)} disabled={pagination.page <= 1}
-              style={{ padding: '8px 14px', borderRadius: '9px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.primary, fontWeight: 600, fontSize: '13px', cursor: pagination.page <= 1 ? 'default' : 'pointer', opacity: pagination.page <= 1 ? 0.4 : 1, fontFamily: 'Inter, sans-serif' }}>
-              Précédent
-            </button>
-            <button onClick={() => setPage(pagination.page + 1)} disabled={pagination.page >= pagination.pages}
-              style={{ padding: '8px 14px', borderRadius: '9px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.primary, fontWeight: 600, fontSize: '13px', cursor: pagination.page >= pagination.pages ? 'default' : 'pointer', opacity: pagination.page >= pagination.pages ? 0.4 : 1, fontFamily: 'Inter, sans-serif' }}>
-              Suivant
-            </button>
+            <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setPage(pagination.page - 1)} disabled={pagination.page <= 1} style={petit}>Précédent</button>
+            <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setPage(pagination.page + 1)} disabled={pagination.page >= pagination.pages} style={petit}>Suivant</button>
           </div>
         </div>
       )}

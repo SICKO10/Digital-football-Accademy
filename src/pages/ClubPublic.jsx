@@ -308,8 +308,8 @@ export default function ClubPublic() {
   const totalJoues = matchsJoues.length
 
   const st = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
-    tab: (active) => ({ padding: '8px 18px', background: active ? colors.accent.green : 'transparent', color: active ? colors.black : colors.text.faint, border: `1px solid ${active ? colors.accent.green : colors.border.default}`, borderRadius: '20px', fontSize: '13px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' },
+    tab: (active) => ({ padding: '8px 18px', background: active ? colors.accent.green : 'transparent', color: active ? colors.black : colors.text.faint, border: `1px solid ${active ? colors.accent.green : colors.border.default}`, borderRadius: '20px', fontSize: '13px', fontWeight: active ? 700 : 400, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }),
     card: { background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem', marginBottom: '12px' },
     sectionTitle: { fontSize: '11px', fontWeight: 700, color: colors.accent.green, textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 12px' },
   }
@@ -320,7 +320,7 @@ export default function ClubPublic() {
   return (
     <div style={st.page}>
       <button onClick={() => navigate(-1)}
-        style={{ position: 'fixed', top: 16, left: 16, zIndex: 200, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid #333', color: '#fff', padding: '8px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+        style={{ position: 'fixed', top: 16, left: 16, zIndex: 200, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid #333', color: '#fff', padding: '8px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
         {t('clubpub_retour', lang)}
       </button>
 
@@ -343,7 +343,7 @@ export default function ClubPublic() {
           </div>
           {contactAutorise && (
             <button onClick={ouvrirChat}
-              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: 10, padding: '10px 22px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               Contacter
             </button>
           )}
@@ -395,7 +395,7 @@ export default function ClubPublic() {
                 value={newPost}
                 onChange={e => setNewPost(e.target.value)}
                 rows={3}
-                style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 10, padding: 12, color: colors.text.primary, fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 12, fontFamily: 'Inter, sans-serif' }}
+                style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 10, padding: 12, color: colors.text.primary, fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 12, fontFamily: 'Barlow, sans-serif' }}
               />
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {[
@@ -405,13 +405,13 @@ export default function ClubPublic() {
                   { value: 'recrutement', label: 'Recrutement' },
                 ].map(pt => (
                   <button key={pt.value} onClick={() => setPostType(pt.value)}
-                    style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: postType === pt.value ? 'none' : `1px solid ${colors.border.default}`, background: postType === pt.value ? colors.accent.green : colors.background.raised, color: postType === pt.value ? colors.background.base : colors.text.faint, fontFamily: 'Inter, sans-serif' }}>
+                    style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: postType === pt.value ? 'none' : `1px solid ${colors.border.default}`, background: postType === pt.value ? colors.accent.green : colors.background.raised, color: postType === pt.value ? colors.background.base : colors.text.faint, fontFamily: 'Barlow, sans-serif' }}>
                     {pt.label}
                   </button>
                 ))}
               </div>
               <button onClick={handlePost} disabled={!newPost.trim() || postingLoading}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: newPost.trim() ? colors.accent.green : colors.background.raised, color: newPost.trim() ? colors.background.base : colors.text.disabled, fontWeight: 700, fontSize: 14, cursor: newPost.trim() ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif' }}>
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: newPost.trim() ? colors.accent.green : colors.background.raised, color: newPost.trim() ? colors.background.base : colors.text.disabled, fontWeight: 700, fontSize: 14, cursor: newPost.trim() ? 'pointer' : 'default', fontFamily: 'Barlow, sans-serif' }}>
                 {postingLoading ? 'Publication...' : 'Publier →'}
               </button>
             </div>
@@ -455,7 +455,7 @@ export default function ClubPublic() {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: `1px solid ${colors.border.faint}` }}>
                     <button onClick={() => handleLike(post.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', color: likedPosts.has(post.id) ? colors.accent.green : colors.text.disabled, fontSize: 14, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: 'pointer', color: likedPosts.has(post.id) ? colors.accent.green : colors.text.disabled, fontSize: 14, fontWeight: 600, fontFamily: 'Barlow, sans-serif' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconHeart size={13} filled={likedPosts.has(post.id)} />{post.likes_count || 0}</span>
                     </button>
                   </div>
@@ -574,7 +574,7 @@ export default function ClubPublic() {
                       <span style={{ fontWeight: 600, fontSize: '14px' }}>{cat.nom} {cat.equipe || ''}</span>
                     </div>
                     {cat.educateur_id && (
-                      <button onClick={() => navigate(`/clubs/${cat.educateur_id}`)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={() => navigate(`/clubs/${cat.educateur_id}`)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                         Voir l'équipe →
                       </button>
                     )}
@@ -764,7 +764,7 @@ export default function ClubPublic() {
                     ))}
                   </div>
                   <button onClick={() => setShowValForm(!showValForm)}
-                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'transparent', border: '1px solid #2a2a2a', color: colors.text.faint, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {t('clubpub_ajouter_saison', lang)}
                   </button>
                 </div>
@@ -777,7 +777,7 @@ export default function ClubPublic() {
                     {t('clubpub_badge_certifie_desc', lang)} <strong style={{ color: '#f0c030' }}>{t('clubpub_badge_certifie', lang)}</strong>.
                   </p>
                   <button onClick={() => setShowValForm(true)}
-                    style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {t('clubpub_valider_participation', lang)}
                   </button>
                 </div>
@@ -815,11 +815,11 @@ export default function ClubPublic() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={soumettreValidation}
                       disabled={valSending || valFeuilles.filter(f => f.trim()).length < 5}
-                      style={{ flex: 1, background: colors.accent.green, color: colors.black, border: 'none', padding: '11px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (valSending || valFeuilles.filter(f => f.trim()).length < 5) ? 0.4 : 1 }}>
+                      style={{ flex: 1, background: colors.accent.green, color: colors.black, border: 'none', padding: '11px', borderRadius: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: (valSending || valFeuilles.filter(f => f.trim()).length < 5) ? 0.4 : 1 }}>
                       {valSending ? t('clubpub_envoi', lang) : t('clubpub_valider', lang)}
                     </button>
                     <button onClick={() => setShowValForm(false)}
-                      style={{ background: colors.background.raised, color: colors.text.dim, border: '1px solid #2a2a2a', padding: '11px 16px', borderRadius: '9px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: colors.background.raised, color: colors.text.dim, border: '1px solid #2a2a2a', padding: '11px 16px', borderRadius: '9px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                       {t('clubpub_annuler', lang)}
                     </button>
                   </div>
@@ -851,9 +851,9 @@ export default function ClubPublic() {
                     </div>
                     <textarea value={commentaireVal} onChange={e => setCommentaireVal(e.target.value)}
                       placeholder={t('clubpub_commentaire_placeholder', lang)}
-                      style={{ width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '13px', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', marginBottom: '12px' }} />
+                      style={{ width: '100%', background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '13px', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box', marginBottom: '12px' }} />
                     <button onClick={soumettreNote} disabled={!noteVal || noteSending}
-                      style={{ width: '100%', background: noteVal ? colors.accent.green : colors.background.raised, color: noteVal ? colors.black : colors.text.faint, border: 'none', padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: noteVal ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif', opacity: (!noteVal || noteSending) ? 0.5 : 1 }}>
+                      style={{ width: '100%', background: noteVal ? colors.accent.green : colors.background.raised, color: noteVal ? colors.black : colors.text.faint, border: 'none', padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: noteVal ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif', opacity: (!noteVal || noteSending) ? 0.5 : 1 }}>
                       {noteSending ? t('clubpub_envoi', lang) : monAvis ? t('clubpub_mettre_a_jour_note', lang) : t('clubpub_envoyer_ma_note', lang)}
                     </button>
                     {monAvis && <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.faint, textAlign: 'center' }}>{t('clubpub_deja_note', lang)} {monAvis.note}/5 — {t('clubpub_tu_peux_modifier', lang)}</p>}
@@ -915,9 +915,9 @@ export default function ClubPublic() {
               <input value={nouveauMessageChat} onChange={e => setNouveauMessageChat(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && envoyerMessageChat()}
                 placeholder="Écrire un message..."
-                style={{ flex: 1, background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' }} />
+                style={{ flex: 1, background: colors.background.raised, border: '1px solid #2a2a2a', borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' }} />
               <button onClick={envoyerMessageChat} disabled={envoyingMessageChat || !nouveauMessageChat.trim()}
-                style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (envoyingMessageChat || !nouveauMessageChat.trim()) ? 0.5 : 1 }}>
+                style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: (envoyingMessageChat || !nouveauMessageChat.trim()) ? 0.5 : 1 }}>
                 Envoyer
               </button>
             </div>

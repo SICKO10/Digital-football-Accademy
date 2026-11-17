@@ -9,4 +9,4 @@ export const PHOTOS = {
 export const TRAITEMENT_PHOTO = 'saturate(0.82) contrast(1.06) brightness(0.92)'
 
 // Police des titres de la page Offres (Barlow Condensed, déjà chargée par index.html).
-export const POLICE_TITRE = "'Barlow Condensed', Inter, sans-serif"
+export const POLICE_TITRE = "'Barlow Condensed', Barlow, sans-serif"

@@ -4,6 +4,8 @@ import { useColors } from '../../lib/theme'
 import { appelerOutils, ouvrirPortail, retourDuPortail, effacerRetourPaiement } from '../../lib/outilsApi'
 import { FORFAITS_CLUB, PALIERS_EDUCATEUR, clePourPeriodicite, outilsDuPack, phrasePlacesClub, planModification, tarifParCle, trouverForfait, trouverOutil } from '../../lib/catalogueOutils'
 import CarteOutil from './CarteOutil'
+import { styleCarte, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, couleurCraie } from '../../lib/identite'
+import { forme, police as policeKit } from '../../tokens'
 
 // Bloc « Mon abonnement » de Mes outils (bloc 8), pour un compte qui a un
 // abonnement des outils en cours : tarif et échéance lus chez Stripe, changer
@@ -98,39 +100,39 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
     }
   }
 
-  const police = 'Inter, sans-serif'
-  const titreSection = { margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: '16px 18px' }
+  const police = 'Barlow, sans-serif'
+  const titreSection = { ...styleEtiquette(colors), margin: '0 0 12px' }
+  const carte = { ...styleCarte(colors), padding: '16px 18px' }
+  const titreForfait = (taille) => ({ margin: 0, fontFamily: policeKit.titre, fontSize: taille, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: colors.text.primary })
   const texte = { margin: 0, fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }
   const bouton = (principal) => ({
-    border: principal ? 'none' : `1px solid ${colors.border.default}`, borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 700,
-    fontFamily: police, cursor: envoi ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
-    background: principal ? colors.accent.brand : colors.background.raised, color: principal ? colors.accent.onBrand : colors.text.primary,
+    ...(principal ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors)),
+    cursor: envoi ? 'not-allowed' : 'pointer', opacity: envoi ? 0.7 : 1,
   })
-  const lien = { background: 'none', border: 'none', padding: '10px 4px', fontSize: 13, fontWeight: 600, fontFamily: police, color: colors.text.faint, cursor: 'pointer', textDecoration: 'underline' }
+  const lien = { background: 'none', border: 'none', padding: '10px 4px', fontSize: 13, fontWeight: 600, fontFamily: police, color: colors.text.secondary, cursor: 'pointer', textDecoration: 'underline' }
 
   if (erreurLecture) return <p role="alert" style={{ ...texte, marginBottom: 24, color: colors.accent.red }}>Abonnement : {erreurLecture}</p>
 
   const pastille = (libelle, couleur) => (
-    <span style={{ fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, color: couleur, background: couleur + '22', whiteSpace: 'nowrap' }}>{libelle}</span>
+    <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: forme.rayonPastille, color: colors.text.primary, background: couleur + '22', border: `1px solid ${couleur}66`, whiteSpace: 'nowrap' }}>{libelle}</span>
   )
   const fait = (etiquette, valeur) => (
     <div style={{ minWidth: 0 }}>
-      <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>{etiquette}</p>
+      <p style={{ ...styleEtiquette(colors), fontSize: 11 }}>{etiquette}</p>
       <p style={{ margin: '4px 0 0', fontSize: 15, fontWeight: 700, color: colors.text.primary }}>{valeur}</p>
     </div>
   )
-  const grilleFaits = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, marginTop: 18, paddingTop: 18, borderTop: `1px solid ${colors.border.subtle}` }
+  const grilleFaits = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, marginTop: 18, paddingTop: 18, borderTop: `1px solid ${couleurCraie(colors)}` }
   // Places : éducateurs affiliés par rapport à la limite du forfait, avec une jauge.
   const blocPlaces = forfaitClub && forfaitClub.actif && forfaitClub.places > 0 && (() => {
     const plein = forfaitClub.nbEducateurs >= forfaitClub.places
     const depasse = forfaitClub.nbEducateurs > forfaitClub.places
     const couleur = depasse ? colors.accent.red : plein ? colors.accent.amber : colors.accent.success
     return (
-      <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${colors.border.subtle}` }}>
+      <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${couleurCraie(colors)}` }}>
         <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: colors.text.primary }}>{phrasePlacesClub(forfaitClub)}</p>
-        <div style={{ height: 8, borderRadius: 999, background: colors.background.raised, overflow: 'hidden' }} role="img" aria-label={phrasePlacesClub(forfaitClub)}>
-          <div style={{ height: '100%', width: `${Math.min(100, (forfaitClub.nbEducateurs / forfaitClub.places) * 100)}%`, background: couleur, borderRadius: 999 }} />
+        <div style={{ height: 6, borderRadius: forme.rayonPastille, background: colors.border.default, overflow: 'hidden' }} role="img" aria-label={phrasePlacesClub(forfaitClub)}>
+          <div style={{ height: '100%', width: `${Math.min(100, (forfaitClub.nbEducateurs / forfaitClub.places) * 100)}%`, background: couleur }} />
         </div>
         <p style={{ ...texte, marginTop: 8 }}>
           {depasse
@@ -150,7 +152,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
         <h2 id="titre-abonnement" style={titreSection}>Mon forfait</h2>
         <div style={carte}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: colors.text.primary }}>
+            <p style={titreForfait(26)}>
               {forfaitClub.actif && f ? `Forfait ${f.equipes} équipes` : 'Aucun forfait actif'}
             </p>
             {pastille(forfaitClub.actif ? 'Actif' : 'Inactif', forfaitClub.actif ? colors.accent.success : colors.accent.amber)}
@@ -237,14 +239,14 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
       <h2 id="titre-abonnement" style={titreSection}>{educateur ? 'Mon abonnement' : 'Mon forfait'}</h2>
       <div style={carte}>
         {educateur ? (
-          <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>
+          <p style={{ ...titreForfait(22), margin: '0 0 4px' }}>
             {tarif ? `${tarif.nom} : ${tarif.prix} € ${unite(tarif.periodicite)}` : 'Abonnement des outils'}
           </p>
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
               <div>
-                <p style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.3px', color: colors.text.primary }}>
+                <p style={titreForfait(28)}>
                   {tarif?.forfait ? `Forfait ${tarif.forfait.equipes} équipes` : 'Forfait du club'}
                 </p>
                 {tarif && (
@@ -325,7 +327,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
         )}
 
         {mode === 'resilier' && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${couleurCraie(colors)}` }}>
             <p style={{ ...texte, color: colors.text.primary }}>
               {educateur ? 'Tes outils restent actifs' : 'Ton club garde l\'accès complet'} jusqu'au {fin}, sans nouveau prélèvement.
               Ensuite, {educateur ? 'ton compte revient au socle gratuit' : 'ton club passe en accès limité'}. Tes données sont conservées et réapparaissent si tu reprends.
@@ -342,7 +344,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
         )}
 
         {mode === 'periodicite' && autrePeriodicite && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${couleurCraie(colors)}` }}>
             <p style={{ ...texte, color: colors.text.primary }}>
               À partir du {fin}, tu paieras {autrePeriodicite.prix} € {unite(autrePeriodicite.periodicite)} au lieu de {tarif.prix} € {unite(tarif.periodicite)}, {educateur ? 'avec les mêmes outils' : 'avec le même forfait'}.
               {economie > 0 && ` Sur 12 mois, tu économises ${economie} €.`}
@@ -358,7 +360,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
         )}
 
         {mode === 'modifier' && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border.subtle}` }}>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${couleurCraie(colors)}` }}>
             {educateur ? (
               <>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0 0 12px' }}>
@@ -367,7 +369,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
                     const courant = (nouveau || tarif)?.palier?.id === p.id
                     return (
                       <span key={p.id} style={{
-                        fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999,
+                        fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: forme.rayonPastille,
                         color: courant ? colors.accent.onBrand : colors.text.secondary,
                         background: courant ? colors.accent.brand : colors.background.raised,
                       }}>
@@ -385,8 +387,7 @@ export default function MonAbonnement({ role, outils, forfaitClub = null, lectur
               </>
             ) : (
               <select aria-label="Nouveau forfait" value={choix || ''} onChange={e => setChoix(e.target.value || null)} style={{
-                width: '100%', maxWidth: 420, marginBottom: 12, padding: '11px 14px', borderRadius: 10, border: `1px solid ${colors.border.default}`,
-                background: colors.background.raised, color: colors.text.primary, fontSize: 14, fontFamily: police, cursor: 'pointer',
+                ...styleChamp(colors), maxWidth: 420, marginBottom: 12, cursor: 'pointer',
               }}>
                 <option value="">Choisis un forfait ({infos.nbEquipes} équipes aujourd'hui)</option>
                 {forfaitsPossibles.filter(f => f.palier !== tarif?.forfait?.palier).map(f => (

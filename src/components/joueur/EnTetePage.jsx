@@ -24,7 +24,7 @@ export default function EnTetePage({ kicker, titre, accentMot, sousTitre, isMobi
               <span style={{ fontSize: fontSize.lg, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: couleur }}>{kicker}</span>
             </div>
           )}
-          <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Inter', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '52px' : '88px', color: colors.text.primary, overflowWrap: 'anywhere' }}>
+          <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Barlow', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '52px' : '88px', color: colors.text.primary, overflowWrap: 'anywhere' }}>
             {parties[0]}{parties[1] && <span style={{ color: couleur }}>{parties[1]}</span>}
           </h1>
           {sousTitre && (

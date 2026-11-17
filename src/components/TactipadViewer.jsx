@@ -191,7 +191,7 @@ export default function TactipadViewer({ schema, width = 640, apercu = false, on
 
       {hasAnimation && !apercu && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-          <button onClick={(e) => { e.stopPropagation(); basculer() }} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={(e) => { e.stopPropagation(); basculer() }} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 16px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             {playing ? '⏸ Pause' : '▶ Lire l\'animation'}
           </button>
           <span style={{ color: colors.text.faint, fontSize: '12px' }}>Étape {etape + 1}/{sequences.length}</span>

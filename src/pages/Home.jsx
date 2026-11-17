@@ -64,7 +64,7 @@ const PROFILS_STYLE = `
     transition: opacity 0.25s ease; }
   .pc-card > * { position: relative; }
   .pc-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: Inter, sans-serif; cursor: pointer;
+    padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: Barlow, sans-serif; cursor: pointer;
     color: var(--pc); background: var(--pc-bg); border: 1px solid var(--pc-border-cta);
     transition: background 0.2s ease, border-color 0.2s ease; }
   .pc-cta svg { transition: transform 0.2s ease; }
@@ -125,7 +125,7 @@ function EtapesSection({ badge, titre, etapes, color, ctaLabel, onCta }) {
         })}
       </div>
       {ctaLabel && (
-        <button onClick={onCta} style={{ background: 'transparent', color, border: `1px solid ${color}40`, padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '3rem', fontFamily: 'Inter, sans-serif' }}>
+        <button onClick={onCta} style={{ background: 'transparent', color, border: `1px solid ${color}40`, padding: '12px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '3rem', fontFamily: 'Barlow, sans-serif' }}>
           {ctaLabel}
         </button>
       )}
@@ -214,7 +214,7 @@ function Home() {
     <>
     <HomeNav lang={lang} setLang={setLang} navigate={navigate} />
     <BandeauPromo lang={lang} onClick={() => navigate('/offres')} />
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Inter, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: 'white', fontFamily: 'Barlow, sans-serif', overflowX: 'hidden', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
 
       {/* maxWidth élargi de 800px à 1400px (strictement pour laisser la place
           à HeroDashboardsPreview et sa composition en profondeur). Badge/H1/
@@ -236,7 +236,7 @@ function Home() {
             onClick={() => navigate('/register')}
             onMouseEnter={() => setHeroCta1Hover(true)}
             onMouseLeave={() => setHeroCta1Hover(false)}
-            style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta1Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta1Hover ? '0 8px 20px #4ade8040' : 'none', fontFamily: 'Barlow, sans-serif' }}>
             {t('hero_cta_compte', lang)}
           </button>
           <a
@@ -244,7 +244,7 @@ function Home() {
             onClick={allerALaDemo}
             onMouseEnter={() => setHeroCta2Hover(true)}
             onMouseLeave={() => setHeroCta2Hover(false)}
-            style={{ display: 'inline-block', background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none', fontFamily: 'Inter, sans-serif' }}>
+            style={{ display: 'inline-block', background: 'transparent', color: colors.accent.green, border: '1px solid #4ade8040', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s', transform: heroCta2Hover ? 'translateY(-2px)' : 'none', boxShadow: heroCta2Hover ? '0 8px 20px #4ade8020' : 'none', fontFamily: 'Barlow, sans-serif' }}>
             {t('hero_cta_demo', lang)}
           </a>
         </div>
@@ -303,7 +303,7 @@ function Home() {
             </div>
           ))}
         </div>
-        <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('home_voir_jogabonito', lang)}</button>
+        <button onClick={() => navigate('/jogabonito')} style={{ background: colors.accent.orange, color: colors.text.primary, border: 'none', padding: '14px 36px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('home_voir_jogabonito', lang)}</button>
       </section>
 
       {/* La section "Digital Football en action" (DemoSemaineMatch) est
@@ -324,7 +324,7 @@ function Home() {
                   border: `1px solid ${actif ? tabItem.color : '#222'}`,
                   color: actif ? tabItem.color : colors.text.faint,
                   borderRadius: '20px', padding: '8px 20px', fontSize: '13px', fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 }}>
                 {tabItem.label}
               </button>
@@ -342,7 +342,7 @@ function Home() {
           <p style={{ color: colors.text.dim, fontSize: '14px', lineHeight: 1.7, marginBottom: '1.75rem' }}>
             Licence, sponsoring local, subventions... découvrez 6 stratégies concrètes et un calculateur pour couvrir l'outil sans impact sur les familles.
           </p>
-          <button onClick={() => navigate('/comment-financer')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir le guide de financement →</button>
+          <button onClick={() => navigate('/comment-financer')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '13px 32px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Voir le guide de financement →</button>
         </div>
       </section>
 
@@ -351,8 +351,8 @@ function Home() {
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 100%, #4ade8014 0%, transparent 70%)', pointerEvents: 'none' }} />
         <h2 style={{ position: 'relative', zIndex: 1, fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, marginBottom: '1rem' }}>Prêt à rejoindre l'écosystème ?</h2>
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Créer mon profil</button>
-          <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('auth_connexion_titre', lang)}</button>
+          <button onClick={() => navigate('/register')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Créer mon profil</button>
+          <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: colors.text.secondary, border: '1px solid #333', padding: '15px 36px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('auth_connexion_titre', lang)}</button>
         </div>
       </section>
 

@@ -53,7 +53,7 @@ export default function EquipementJoueur({
     border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
     background: actif ? colors.accent.green + alpha.soft : colors.background.raised,
     color: actif ? colors.accent.green : colors.text.primary,
-    fontSize: fontSize.xl, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+    fontSize: fontSize.xl, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
     cursor: readOnly ? 'default' : 'pointer',
   })
 
@@ -69,7 +69,7 @@ export default function EquipementJoueur({
           {!readOnly && (
             <button
               onClick={onRecupere}
-              style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: radius.base, minHeight: '44px', padding: `0 ${spacing['3xl']}`, fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: radius.base, minHeight: '44px', padding: `0 ${spacing['3xl']}`, fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}
             >
               J'ai récupéré mon équipement
             </button>

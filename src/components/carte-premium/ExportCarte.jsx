@@ -44,7 +44,7 @@ export default function ExportCarte({ carte, cadre, nomFichier = 'carte.png', co
   }
 
   const bouton = (plein) => ({
-    flex: 1, minHeight: 40, padding: '0 14px', borderRadius: 10, cursor: occupe ? 'wait' : 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'Inter, sans-serif',
+    flex: 1, minHeight: 40, padding: '0 14px', borderRadius: 10, cursor: occupe ? 'wait' : 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'Barlow, sans-serif',
     border: `1px solid ${couleur}`, background: plein ? couleur : 'transparent', color: plein ? '#04130c' : couleur, opacity: occupe ? 0.6 : 1,
   })
 

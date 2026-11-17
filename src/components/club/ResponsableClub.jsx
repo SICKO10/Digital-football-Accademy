@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { radius } from '../../tokens'
+import { styleCarte, styleChamp, styleBoutonPrincipal, styleBoutonSecondaire, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { police } from '../../tokens'
+import { Message } from '../categories/UiCategories'
 
 // Profil club : transfert du compte à un autre responsable (réservé au compte
 // créateur) et message au support en cas de conflit interne. Les deux envoient
@@ -23,7 +25,7 @@ async function envoyerTicket(userId, sujet, message) {
   return e2 ? e2.message : null
 }
 
-export default function ResponsableClub({ userId, estCreateur, nomClub, emailActuel, accentColor }) {
+export default function ResponsableClub({ userId, estCreateur, nomClub, emailActuel }) {
   const colors = useColors()
   const [mode, setMode] = useState(null) // 'transfert' | 'contact'
   const [nouvelEmail, setNouvelEmail] = useState('')
@@ -61,49 +63,50 @@ export default function ResponsableClub({ userId, estCreateur, nomClub, emailAct
     fermer()
   }
 
-  const champ = { width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: radius.md, border: `1px solid ${colors.border.strong}`, background: colors.background.raised, color: colors.text.primary, fontSize: 14, fontFamily: 'inherit' }
-  const bouton = (plein) => ({ padding: '10px 16px', borderRadius: radius.md, border: plein ? 'none' : `1px solid ${colors.border.strong}`, background: plein ? accentColor : 'transparent', color: plein ? '#fff' : colors.text.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer' })
+  const champ = styleChamp(colors)
+  const bouton = (plein) => (plein ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors))
+  const classe = (plein) => (plein ? CLASSE_BOUTON : CLASSE_BOUTON_SECONDAIRE)
 
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: radius.lg, padding: 20, marginBottom: '1.5rem' }}>
-      <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: 16, color: colors.text.primary }}>Responsable du compte club</p>
-      <p style={{ margin: '0 0 14px', fontSize: 13, color: colors.text.dim, lineHeight: 1.5 }}>
+    <div style={{ ...styleCarte(colors), padding: 20, marginBottom: '1.5rem' }}>
+      <p style={{ margin: '0 0 6px', fontFamily: police.titre, fontWeight: 700, fontSize: 20, letterSpacing: '0.02em', textTransform: 'uppercase', color: colors.text.primary }}>Responsable du compte club</p>
+      <p style={{ margin: '0 0 14px', fontSize: 14, color: colors.text.secondary, lineHeight: 1.5 }}>
         {estCreateur
           ? 'Tu es le responsable de ce compte. Si tu quittes le club, tu peux demander à transmettre la responsabilité à une autre adresse email.'
           : 'Le transfert de responsabilité est réservé au créateur du compte club. En cas de désaccord interne, contacte le support.'}
       </p>
-      {envoye && <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.accent.success, fontWeight: 600 }}>{envoye}</p>}
+      {envoye && <Message ton="succes" style={{ marginBottom: 12 }}>{envoye}</Message>}
 
       {!mode && (
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {estCreateur && <button style={bouton(true)} onClick={() => { setEnvoye(''); setMode('transfert') }}>Transférer la responsabilité</button>}
-          <button style={bouton(false)} onClick={() => { setEnvoye(''); setMode('contact') }}>Contactez-nous</button>
+          {estCreateur && <button type="button" className={classe(true)} style={bouton(true)} onClick={() => { setEnvoye(''); setMode('transfert') }}>Transférer la responsabilité</button>}
+          <button type="button" className={classe(false)} style={bouton(false)} onClick={() => { setEnvoye(''); setMode('contact') }}>Contactez-nous</button>
         </div>
       )}
 
       {mode === 'transfert' && (
         <div style={{ display: 'grid', gap: 10 }}>
-          <input style={champ} type="email" placeholder="Email du nouveau responsable" value={nouvelEmail} onChange={e => setNouvelEmail(e.target.value)} />
-          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: colors.text.secondary, lineHeight: 1.4 }}>
+          <input className={CLASSE_CHAMP} style={champ} type="email" aria-label="Email du nouveau responsable" placeholder="Email du nouveau responsable" value={nouvelEmail} onChange={e => setNouvelEmail(e.target.value)} />
+          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 14, color: colors.text.secondary, lineHeight: 1.4 }}>
             <input type="checkbox" checked={confirme} onChange={e => setConfirme(e.target.checked)} style={{ marginTop: 3 }} />
             Je confirme vouloir transmettre la responsabilité de ce compte club. Le support vérifiera avant de modifier quoi que ce soit.
           </label>
-          {erreur && <p style={{ margin: 0, fontSize: 13, color: colors.accent.red }}>{erreur}</p>}
+          {erreur && <Message ton="erreur">{erreur}</Message>}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={bouton(true)} onClick={envoyer} disabled={enCours}>{enCours ? 'Envoi…' : 'Envoyer la demande'}</button>
-            <button style={bouton(false)} onClick={fermer}>Annuler</button>
+            <button type="button" className={classe(true)} style={bouton(true)} onClick={envoyer} disabled={enCours}>{enCours ? 'Envoi…' : 'Envoyer la demande'}</button>
+            <button type="button" className={classe(false)} style={bouton(false)} onClick={fermer}>Annuler</button>
           </div>
         </div>
       )}
 
       {mode === 'contact' && (
         <div style={{ display: 'grid', gap: 10 }}>
-          <input style={champ} placeholder="Sujet" value={sujet} onChange={e => setSujet(e.target.value)} />
-          <textarea style={{ ...champ, minHeight: 100, resize: 'vertical' }} placeholder="Explique la situation" value={message} onChange={e => setMessage(e.target.value)} />
-          {erreur && <p style={{ margin: 0, fontSize: 13, color: colors.accent.red }}>{erreur}</p>}
+          <input className={CLASSE_CHAMP} style={champ} aria-label="Sujet" placeholder="Sujet" value={sujet} onChange={e => setSujet(e.target.value)} />
+          <textarea className={CLASSE_CHAMP} style={{ ...champ, minHeight: 100, resize: 'vertical' }} aria-label="Explique la situation" placeholder="Explique la situation" value={message} onChange={e => setMessage(e.target.value)} />
+          {erreur && <Message ton="erreur">{erreur}</Message>}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={bouton(true)} onClick={envoyer} disabled={enCours}>{enCours ? 'Envoi…' : 'Envoyer au support'}</button>
-            <button style={bouton(false)} onClick={fermer}>Annuler</button>
+            <button type="button" className={classe(true)} style={bouton(true)} onClick={envoyer} disabled={enCours}>{enCours ? 'Envoi…' : 'Envoyer au support'}</button>
+            <button type="button" className={classe(false)} style={bouton(false)} onClick={fermer}>Annuler</button>
           </div>
         </div>
       )}

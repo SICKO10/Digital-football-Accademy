@@ -43,7 +43,7 @@ select
   set_config('t.externe',       '19b17e6c-77e9-48fd-a4ee-b17d590be499', false), -- éducateur sans aucun lien avec A ni B
   set_config('t.anon',          '00000000-0000-0000-0000-000000000000', false), -- visiteur sans compte (rôle anon)
   -- blocs de fermeture déjà appliqués en production (à compléter à chaque bloc)
-  set_config('t.blocs_appliques', '2,3,5', false),
+  set_config('t.blocs_appliques', '2,3,5,6,7', false),
   -- identifiants des lignes créées pour les tests (annulées à chaque cas)
   set_config('t.fx_seance_a',   gen_random_uuid()::text, false),
   set_config('t.fx_seance_a0',  gen_random_uuid()::text, false),
@@ -157,6 +157,18 @@ begin
       execute pg_temp.sql_test($q$ update public.dirigeant_acces set permissions = permissions || '{"entrainements":"lecture"}' where id = {dirigeant_ligne} $q$);
     elsif v_cle = 'dirigeant_entrainements_aucun' then
       execute pg_temp.sql_test($q$ update public.dirigeant_acces set permissions = permissions || '{"entrainements":"aucun"}' where id = {dirigeant_ligne} $q$);
+    elsif v_cle = 'presences' then
+      -- une présence sur la séance de A et une sur la séance de B. La colonne
+      -- joueur_id pointe vers equipe_joueurs : on prend une fiche existante qui
+      -- n'est celle d'aucun compte affilié (sinon « joueur_read_own_presences »
+      -- la laisserait voir à son propre joueur, ce qui fausserait T452).
+      execute pg_temp.sql_test($q$
+        insert into public.presences_entrainement (id, entrainement_id, joueur_id, educateur_id, present)
+        select gen_random_uuid(), s.sid, f.id, s.eid, true
+        from (select id from public.equipe_joueurs
+              where id not in (select equipe_joueur_id from public.affiliations where equipe_joueur_id is not null)
+              limit 1) f,
+             (values ({fx_seance_a}, {educ_a}), ({fx_seance_b}, {educ_b})) as s(sid, eid) $q$);
     elsif v_cle = 'staff_a_role_vide' then
       execute pg_temp.sql_test($q$ update public.staff_club set role = null where id = {staff_a_ligne} $q$);
     else
@@ -394,6 +406,12 @@ insert into secu_cas values
 ('T317', 6, 'convoqués : l''éducateur de B vide la convocation A',    'educ_b',  '', $q$delete from public.convocation_joueurs where convocation_id = {fx_conv_a}$q$, 'non'),
 ('T318', 6, 'convoqués : un compte sans lien lit la convocation A',   'externe', '', $q$select count(*) from public.convocation_joueurs where convocation_id = {fx_conv_a}$q$, 'non'),
 ('T319', 6, 'convoqués : visiteur sans compte',                       'anon',    '', $q$select count(*) from public.convocation_joueurs where convocation_id = {fx_conv_a}$q$, 'non'),
+-- Règles de convocations qui consultent convocation_joueurs (bloc 6) : le
+-- joueur et le parent voient toujours la convocation publiée, le visiteur
+-- lit sans « permission refusée » et ne voit rien (1 = aucune erreur, 0 ligne).
+('T320', 6, 'convocation : le joueur convoqué voit la convocation publiée', 'joueur_a', '', $q$select count(*) from public.convocations where id = {fx_conv_a}$q$, 'oui'),
+('T321', 6, 'convocation : le parent voit la convocation publiée de son enfant', 'parent_a', '', $q$select count(*) from public.convocations where id = {fx_conv_a}$q$, 'oui'),
+('T322', 6, 'convocation : le visiteur lit sans erreur et ne voit rien', 'anon', '', $q$select case when count(*) = 0 then 1 else 0 end from public.convocations$q$, 'oui'),
 -- entrainements : fermée au bloc 7
 ('T401', 7, 'séances : l''éducateur auteur lit la sienne',             'educ_a',  '', $q$select count(*) from public.entrainements where id = {fx_seance_a}$q$, 'oui'),
 ('T402', 7, 'séances : l''éducateur de A lit une séance de B',         'educ_a',  '', $q$select count(*) from public.entrainements where id = {fx_seance_b}$q$, 'non'),
@@ -437,6 +455,18 @@ insert into secu_cas values
 ('T440', 7, 'séances : le directeur sportif de A supprime une séance',  'staff_a', '', $q$delete from public.entrainements where id = {fx_seance_a}$q$, 'oui'),
 ('T441', 7, 'séances : le club A supprime une séance de B',             'club_a',  '', $q$delete from public.entrainements where id = {fx_seance_b}$q$, 'non'),
 ('T442', 7, 'séances : un compte sans lien supprime une séance de A',   'externe', '', $q$delete from public.entrainements where id = {fx_seance_a}$q$, 'non'),
+('T443', 7, 'séances : le dirigeant (lecture) lit une séance',          'dirigeant_a', 'dirigeant_entrainements_lecture', $q$select count(*) from public.entrainements where id = {fx_seance_a}$q$, 'oui'),
+('T444', 7, 'séances : le dirigeant (lecture) modifie une séance',      'dirigeant_a', 'dirigeant_entrainements_lecture', $q$update public.entrainements set description = 'modifiée' where id = {fx_seance_a}$q$, 'non'),
+('T445', 7, 'séances : le dirigeant (lecture) supprime une séance',     'dirigeant_a', 'dirigeant_entrainements_lecture', $q$delete from public.entrainements where id = {fx_seance_a}$q$, 'non'),
+('T446', 7, 'séances : le dirigeant (aucun) lit une séance',            'dirigeant_a', 'dirigeant_entrainements_aucun', $q$select count(*) from public.entrainements where id = {fx_seance_a}$q$, 'non'),
+('T447', 7, 'séances : le directeur sportif en lecture seule supprime une séance', 'staff_a', 'ds_seances_lecture', $q$delete from public.entrainements where id = {fx_seance_a}$q$, 'non'),
+('T448', 7, 'séances : l''éducateur de l''équipe crée une séance au nom d''un autre éducateur', 'educ_a', '', $q$insert into public.entrainements (educateur_id, date, club_categorie_id) values ({educ_b}, current_date, {equipe_a})$q$, 'non'),
+('T449', 7, 'séances : le joueur supprime une séance',                  'joueur_a', '', $q$delete from public.entrainements where id = {fx_seance_a}$q$, 'non'),
+('T450', 7, 'séances : le parent crée une séance',                      'parent_a', '', $q$insert into public.entrainements (educateur_id, date) values ({educ_a}, current_date)$q$, 'non'),
+-- La règle joueur_read_team_presences (presences_entrainement) lit entrainements :
+-- le joueur doit toujours voir les présences des séances de son éducateur.
+('T451', 7, 'présences : le joueur lit les présences d''une séance de son éducateur', 'joueur_a', 'presences', $q$select count(*) from public.presences_entrainement where entrainement_id = {fx_seance_a}$q$, 'oui'),
+('T452', 7, 'présences : le joueur lit les présences d''une séance de B', 'joueur_a', 'presences', $q$select count(*) from public.presences_entrainement where entrainement_id = {fx_seance_b}$q$, 'non'),
 -- droits techniques (catalogue, aucune écriture)
 ('T901', 3, 'droits techniques : le visiteur sans compte n''a aucun droit sur role_categories_access', 'club_a', '',
   $q$select has_table_privilege('anon', 'public.role_categories_access', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
@@ -450,14 +480,18 @@ insert into secu_cas values
   $q$select has_table_privilege('anon', 'public.staff_club', 'SELECT')$q$, 'oui'),
 ('T904', 5, 'droits techniques : aucun compte ne peut vider ni lier staff_club', 'club_a', '',
   $q$select has_table_privilege('authenticated', 'public.staff_club', 'TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
-('T905', 6, 'droits techniques : le visiteur sans compte n''a aucun droit sur convocation_joueurs', 'club_a', '',
-  $q$select has_table_privilege('anon', 'public.convocation_joueurs', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
+('T905', 6, 'droits techniques : le visiteur sans compte ne peut ni écrire ni vider convocation_joueurs', 'club_a', '',
+  $q$select has_table_privilege('anon', 'public.convocation_joueurs', 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
+-- Lecture technique gardée au visiteur (bloc 6) : 2 règles de convocations
+-- consultent convocation_joueurs pour lui ; il n'y lit aucune ligne (T319).
+('T910', 6, 'droits techniques : le visiteur garde la lecture technique de convocation_joueurs (convocations)', 'club_a', '',
+  $q$select has_table_privilege('anon', 'public.convocation_joueurs', 'SELECT')$q$, 'oui'),
 ('T906', 6, 'droits techniques : aucun compte ne peut vider ni lier convocation_joueurs', 'club_a', '',
-  $q$select has_table_privilege('authenticated', 'public.convocation_joueurs', 'TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
+  $q$select has_table_privilege('authenticated', 'public.convocation_joueurs', 'TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
 ('T907', 7, 'droits techniques : le visiteur sans compte n''a aucun droit sur entrainements', 'club_a', '',
-  $q$select has_table_privilege('anon', 'public.entrainements', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')$q$, 'non'),
+  $q$select has_table_privilege('anon', 'public.entrainements', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non'),
 ('T908', 7, 'droits techniques : aucun compte ne peut vider ni lier entrainements', 'club_a', '',
-  $q$select has_table_privilege('authenticated', 'public.entrainements', 'TRUNCATE,REFERENCES,TRIGGER')$q$, 'non');
+  $q$select has_table_privilege('authenticated', 'public.entrainements', 'TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')$q$, 'non');
 
 -- ═════════════════════════════════════════════════════════════════════════
 -- RÉSULTAT

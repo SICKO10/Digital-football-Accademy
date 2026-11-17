@@ -8,6 +8,9 @@ import { PaiementOutils, RetourPaiement } from './PaiementOutils'
 import CarteOutil from './CarteOutil'
 import Interrupteur from './Interrupteur'
 import MonAbonnement from './MonAbonnement'
+import { TitreEcran } from '../identite'
+import { styleEtiquette, styleBoutonPrincipal } from '../../lib/identite'
+import { forme } from '../../tokens'
 
 const euros = (n) => `${n} €`
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -62,7 +65,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
   const autres = etats.filter(e => !ETATS_ACTIFS.includes(e.etat) && !dansBoutique(e))
 
   // Intertitre au format des sections du dashboard éducateur.
-  const titreSection = { margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+  const titreSection = { ...styleEtiquette(colors), margin: '0 0 12px' }
   const grille = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 
   const badge = ({ etat, finLe, joursRestants, fourniParLeClub }) => {
@@ -84,10 +87,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
   const essai = (e) => {
     if (e.etat !== 'disponible' || !ESSAIS_GRATUITS) return null
     return (
-      <button type="button" disabled={enCours === e.outil.id} onClick={() => agir(e.outil.id, 'essai')} style={{
-        alignSelf: 'flex-start', background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: 10,
-        padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-      }}>
+      <button type="button" className="df-bouton" disabled={enCours === e.outil.id} onClick={() => agir(e.outil.id, 'essai')} style={{ ...styleBoutonPrincipal(colors), alignSelf: 'flex-start' }}>
         {enCours === e.outil.id ? 'Un instant...' : `Essayer ${ESSAI_JOURS} jours gratuitement`}
       </button>
     )
@@ -127,31 +127,24 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
   const pageForfait = role === 'club' && !!forfaitClub
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '10px', color: colors.text.primary }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.accent.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
-          </svg>
-          {pageForfait ? 'Mon forfait' : 'Mes outils'}
-        </h1>
-        <p style={{ margin: 0, maxWidth: 620, fontSize: '13px', lineHeight: 1.55, color: colors.text.faint }}>
-          {pageForfait
-            ? 'Ton abonnement et les places réservées à tes éducateurs. Les outils se règlent dans « Outils du club » et « Outils des éducateurs ».'
-            : role === 'club'
-            ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu en ajoutes ou en retires quand tu veux, sans supplément.'
-            : ESSAIS_GRATUITS
-              ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
-              : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin, au mois ou à l\'année.'}
-        </p>
+    <div style={{ maxWidth: 960, margin: '0 auto', fontFamily: 'Barlow, sans-serif' }}>
+      <TitreEcran as="h1" titre={pageForfait ? 'Mon forfait' : 'Mes outils'}
+        sousTitre={pageForfait
+          ? 'Ton abonnement et les places réservées à tes éducateurs. Les outils se règlent dans « Outils du club » et « Outils des éducateurs ».'
+          : role === 'club'
+          ? 'Choisis les outils qui apparaissent sur le dashboard de ton club. Ils sont tous inclus dans ton forfait : tu en ajoutes ou en retires quand tu veux, sans supplément.'
+          : ESSAIS_GRATUITS
+            ? `Garde le socle gratuit et ajoute seulement ce dont tu as besoin. Chaque outil s'essaie ${ESSAI_JOURS} jours gratuitement, sans carte bancaire.`
+            : 'Garde le socle gratuit et ajoute seulement ce dont tu as besoin, au mois ou à l\'année.'} />
+      <header style={{ marginBottom: 24, marginTop: -8 }}>
         {role === 'club' && !peutModifier && (
-          <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.faint }}>{pageForfait ? 'Seul le président peut changer le forfait.' : 'Seul le compte du club peut modifier ces choix.'}</p>
+          <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.secondary }}>{pageForfait ? 'Seul le président peut changer le forfait.' : 'Seul le compte du club peut modifier ces choix.'}</p>
         )}
       </header>
 
       {role === 'educateur' && <RetourPaiement outils={outils} />}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
-      {!outils.pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement de tes outils...</p>}
+      {!outils.pret && <p style={{ fontSize: 13, color: colors.text.secondary }}>Chargement de tes outils...</p>}
 
       {outils.pret && role === 'club' && (peutModifier || pageForfait) && (
         <MonAbonnement role="club" outils={outils} forfaitClub={forfaitClub} lectureSeule={!peutModifier} clubId={userId} />
@@ -160,7 +153,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
       {outils.pret && role === 'club' && !pageForfait && (
         <section aria-labelledby="titre-club">
           <h2 id="titre-club" style={titreSection}>
-            Sur ton dashboard <span style={{ fontWeight: 700, color: colors.text.faint }}>· {nbClub} sur {etats.length}</span>
+            Sur ton dashboard <span style={{ fontWeight: 600 }}>· {nbClub} sur {etats.length}</span>
           </h2>
           <div style={grille}>
             {etats.map(e => (
@@ -180,7 +173,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
       {outils.pret && role === 'club' && !pageForfait && peutModifier && (
         <section aria-labelledby="titre-educateurs" style={{ marginTop: 32 }}>
           <h2 id="titre-educateurs" style={titreSection}>Outils pour mes éducateurs</h2>
-          <p style={{ margin: '0 0 14px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
+          <p style={{ margin: '0 0 14px', maxWidth: 620, fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>
             Tes éducateurs affiliés reçoivent gratuitement les outils que tu leur ouvres, et choisissent ceux qu'ils affichent. Si tu fermes un outil, ils le perdent tout de suite et sont prévenus.
           </p>
           <div style={grille}>
@@ -213,7 +206,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
             </section>
           )}
           {outils.sansPlace && (
-            <p style={{ margin: '0 0 24px', padding: '12px 14px', fontSize: 13, lineHeight: 1.55, color: colors.text.primary, background: colors.background.surface, border: `1px solid ${colors.accent.amber}`, borderRadius: 12 }}>
+            <p style={{ margin: '0 0 24px', padding: '12px 14px', fontSize: 13, lineHeight: 1.55, color: colors.text.primary, background: colors.background.surface, border: `1px solid ${colors.accent.amber}`, borderRadius: forme.rayonCarte }}>
               Ton club a atteint sa limite d'éducateurs : tu gardes le socle gratuit. Tu peux ajouter les outils dont tu as besoin avec tes propres offres, plus bas.
             </p>
           )}
@@ -239,7 +232,7 @@ export default function MesOutils({ role, outils, peutModifier = true, userId, n
             <section aria-labelledby="titre-autres">
               <h2 id="titre-autres" style={titreSection}>Autres outils</h2>
               {role === 'educateur' && (
-                <p style={{ margin: '0 0 10px', fontSize: 13, color: colors.text.faint }}>Ton club peut te fournir ces outils sans frais : demande-lui. Sinon, tu peux les activer avec tes propres offres.</p>
+                <p style={{ margin: '0 0 10px', fontSize: 13, color: colors.text.secondary }}>Ton club peut te fournir ces outils sans frais : demande-lui. Sinon, tu peux les activer avec tes propres offres.</p>
               )}
               <div style={grille}>
                 {autres.map(e => (

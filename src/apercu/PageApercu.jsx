@@ -6,7 +6,7 @@ import { joueurDemo, joueurDemoReel } from '../components/carte-premium/donneesD
 // Page de prévisualisation locale : données fictives uniquement, aucun appel réseau,
 // absente du site mis en ligne. Options d'adresse : ?photo=/image.png (test d'une photo),
 // ?export=1 (lance l'export en image et l'affiche à droite).
-const bloc = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: '#9a9aa5', fontFamily: 'Inter, sans-serif', fontSize: 13 }
+const bloc = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: '#9a9aa5', fontFamily: 'Barlow, sans-serif', fontSize: 13 }
 const params = new URLSearchParams(window.location.search)
 const photoTest = params.get('photo')
 

@@ -11,7 +11,7 @@ import ComposerOffre from './ComposerOffre'
 // 2. le compte : création, passage au nouveau modèle (action serveur `composer`),
 //    puis paiement chez Stripe ou dashboard gratuit.
 // Les profils joueur et recruteur gardent l'inscription habituelle.
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 const parPeriode = (periodicite) => (periodicite === 'annuel' ? 'par an' : 'par mois')
 
 export default function InscriptionComposee({ navigate, redirectApres, refParrainId, retourProfils }) {

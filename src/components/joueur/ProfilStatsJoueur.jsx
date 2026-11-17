@@ -14,7 +14,7 @@ import TitreSection from './TitreSection'
 const TYPES_COLLECTIFS = new Set(['tournoi_victoire', 'champion', 'coupe'])
 const TYPES_IGNORES = new Set(['tournoi_participation', 'veo_stats_autodeclarees'])
 
-const POLICE_CHIFFRES = "'Barlow Condensed', 'Inter', sans-serif"
+const POLICE_CHIFFRES = "'Barlow Condensed', 'Barlow', sans-serif"
 
 const moisLong = (mois) => {
   const [a, m] = mois.split('-')

@@ -4,12 +4,12 @@
 // Usage : <style>{ecranJoueurCss(colors)}</style> à la racine de DashboardJoueur,
 // puis className="dj-display" | "dj-chiffre" | "dj-eyebrow" | "dj-cliquable" |
 // "dj-grain". Règle : la police display (Barlow Condensed) n'est jamais utilisée
-// sous 11 px ni pour un paragraphe ; tout le reste reste en Inter.
+// sous 11 px ni pour un paragraphe ; tout le reste reste en Barlow.
 
 export const ecranJoueurCss = (colors) => `
-  .dj-display { font-family: 'Barlow Condensed', Inter, sans-serif; font-weight: 800; letter-spacing: -0.5px; }
-  .dj-chiffre { font-family: 'Barlow Condensed', Inter, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .dj-eyebrow { font-family: 'Barlow Condensed', Inter, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .dj-display { font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 800; letter-spacing: -0.5px; }
+  .dj-chiffre { font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dj-eyebrow { font-family: 'Barlow Condensed', Barlow, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
   .dj-cliquable { transition: transform 0.18s ease, border-color 0.18s ease; }
   .dj-cliquable:hover { transform: translateY(-2px); border-color: ${colors.border.default} !important; }
   .dj-cliquable:focus-visible { outline: 2px solid var(--df-accent, ${colors.accent.green}); outline-offset: 2px; }

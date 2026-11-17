@@ -49,7 +49,7 @@ export default function ParcoursCoach({ educateurId }) {
             return (
               <div key={cle} style={{ background: colors.background.base, borderRadius: radius.lg, padding: '10px 12px' }}>
                 <button onClick={() => setOuverte(ouvert ? null : cle)} aria-expanded={ouvert}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Barlow, sans-serif' }}>
                   <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
                     <strong>{l.categorie_nom || 'Équipe'}</strong>
                     <span style={{ color: colors.text.faint }}>{[l.club_nom, l.niveau, libelleSaison(l.saison)].filter(Boolean).map(x => ` · ${x}`).join('')}</span>

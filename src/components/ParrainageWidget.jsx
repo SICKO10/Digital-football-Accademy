@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useColors } from "../lib/theme";
 import { IconGift, IconCheck, IconCopy } from './icones'
+import { styleCarte, styleChamp, styleBoutonPrincipal, CLASSE_BOUTON } from "../lib/identite";
+import { styleMontant } from "../lib/identiteFinance";
+import { police, forme } from "../tokens";
 
 // ─── COMPOSANT ───────────────────────────────────────────────────────────────
 // Bloc "Parraine et gagne" — même convention que FloatingHelper.jsx (props
@@ -36,43 +39,37 @@ export default function ParrainageWidget({ userId, accentColor = "#4ade80" }) {
   const palier = count >= 9 ? 3 : count >= 6 ? 2 : count >= 3 ? 1 : 0;
 
   return (
-    <div style={{ background: `linear-gradient(135deg, ${accentColor}12 0%, ${colors.background.surface} 100%)`, border: `1px solid ${accentColor}25`, borderRadius: "16px", padding: "24px" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", marginBottom: "20px" }}>
-        <span style={{ display: "flex", color: accentColor }}><IconGift size={30} /></span>
+    <div style={{ ...styleCarte(colors), padding: "20px 20px 20px 23px", boxShadow: `inset ${forme.lisere} 0 0 ${accentColor}` }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "18px" }}>
+        <span style={{ display: "flex", color: colors.text.primary, marginTop: "2px" }}><IconGift size={26} /></span>
         <div>
-          <h3 style={{ color: accentColor, fontWeight: 800, fontSize: "17px", margin: "0 0 6px" }}>Parraine et gagne</h3>
-          <p style={{ color: colors.text.faint, fontSize: "13px", margin: 0, lineHeight: 1.6 }}>
+          <h3 style={{ fontFamily: police.titre, fontWeight: 700, fontSize: "22px", letterSpacing: "0.02em", textTransform: "uppercase", color: colors.text.primary, margin: "0 0 6px" }}>Parraine et gagne</h3>
+          <p style={{ color: colors.text.secondary, fontSize: "14px", margin: 0, lineHeight: 1.6 }}>
             3 parrainages = <strong style={{ color: colors.text.primary }}>1 an offert</strong> ·{" "}
             6 = <strong style={{ color: colors.text.primary }}>2 ans offerts</strong> ·{" "}
             9 = <strong style={{ color: colors.text.primary }}>3 ans + 2 vidéos d'analyse</strong>
           </p>
-          <p style={{ color: colors.text.disabled, fontSize: "12px", marginTop: "4px" }}>Seuls les abonnements annuels comptent.</p>
+          <p style={{ color: colors.text.secondary, fontSize: "13px", margin: "4px 0 0" }}>Seuls les abonnements annuels comptent.</p>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: "8px" }}>
         <div style={{
-          flex: 1, minWidth: 0, boxSizing: "border-box", padding: "11px 14px",
-          background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: "10px",
-          color: colors.text.faint, fontSize: "12px", fontFamily: "monospace",
+          ...styleChamp(colors), flex: 1, minWidth: 0, width: "auto", display: "flex", alignItems: "center",
+          color: colors.text.secondary, fontSize: "13px", fontFamily: "monospace",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {lien}
         </div>
-        <button
-          onClick={copier}
-          style={{ flexShrink: 0, padding: "11px 18px", borderRadius: "10px", border: "none", background: accentColor, color: "#0a0a0a", fontWeight: 700, fontSize: "13px", cursor: "pointer", whiteSpace: "nowrap" }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-            {copied ? "Copié" : "Copier"}
-          </span>
+        <button type="button" onClick={copier} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+          {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+          {copied ? "Copié" : "Copier"}
         </button>
       </div>
 
       {count !== null && (
-        <p style={{ margin: "12px 0 0", fontSize: "12px", color: accentColor, fontWeight: 600 }}>
-          {count}/9 filleuls annuels{palier > 0 ? ` · Palier ${palier} atteint` : ""}
+        <p style={{ margin: "12px 0 0", fontSize: "14px", color: colors.text.primary, fontWeight: 600 }}>
+          <span style={styleMontant(colors, 18)}>{count}/9</span> filleuls annuels{palier > 0 ? ` · Palier ${palier} atteint` : ""}
         </p>
       )}
     </div>

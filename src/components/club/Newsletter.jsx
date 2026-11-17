@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { alpha } from '../../tokens'
+import { police } from '../../tokens'
 import { fetchToutesLignes } from '../../lib/supabasePagination'
+import { styleCarte, styleCarteLiseree, styleChamp, styleBoutonPrincipal, styleBoutonSecondaire, styleEtiquette, styleChiffreHeros, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { TitreEcran, Etiquette, Jauge, Icone, EtiquetteStatut } from '../identite'
+import { Trash2 } from 'lucide-react'
 
 const CIBLES = [
   { val: 'tous', label: 'Tout le monde' },
@@ -17,9 +20,8 @@ const CIBLES = [
 // affiliés à ces éducateurs) — il n'existe pas de colonne profiles.role, le
 // rattachement au club passe toujours par ces deux tables (cf.
 // DashboardClub.jsx pour le même schéma).
-export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincipale, readOnly }) {
+export default function Newsletter({ clubId, auteurNom, auteurId, readOnly }) {
   const colors = useColors()
-  const accent = couleurPrincipale || colors.accent.green
   const [annonces, setAnnonces] = useState([])
   const [lusParAnnonce, setLusParAnnonce] = useState({})
   const [loading, setLoading] = useState(true)
@@ -99,65 +101,71 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
 
   const cibleLabel = (val) => CIBLES.find(c => c.val === val)?.label || val
 
+  // Mise en forme : kit d'identité (bloc 11), aucun changement de comportement.
+  const carte = { ...styleCarte(colors), padding: '18px 20px' }
+  const champ = styleChamp(colors)
+  const nbPersonnes = compteurs[form.cible]
+  const peutEnvoyer = form.titre.trim() && form.contenu.trim() && !envoi
+  const totalLus = Object.values(lusParAnnonce).reduce((s, v) => s + v, 0)
+  const stat = (valeur, libelle) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={styleChiffreHeros(colors, 32)}>{valeur}</div>
+      <Etiquette as="div" style={{ marginTop: '6px', fontSize: '11px' }}>{libelle}</Etiquette>
+    </div>
+  )
+
   return (
     <div>
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ color: colors.text.primary, fontSize: '24px', fontWeight: 800, margin: 0 }}>Newsletter</h1>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Communications envoyées aux membres affiliés du club, dans l'app et par email.</p>
-      </div>
+      <TitreEcran titre="Newsletter" sousTitre="Communications envoyées aux membres affiliés du club, dans l'app et par email." />
 
       {!readOnly && (
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1.4 1 360px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', boxSizing: 'border-box' }}>
-            <p style={{ margin: '0 0 16px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Nouvelle communication</p>
+          <div style={{ ...carte, flex: '1.4 1 360px' }}>
+            <Etiquette as="p" style={{ margin: '0 0 16px' }}>Nouvelle communication</Etiquette>
 
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Envoyer à</div>
-              <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '2px', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
-                {CIBLES.map(c => (
-                  <button key={c.val} onClick={() => setForm(f => ({ ...f, cible: c.val }))}
-                    style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: form.cible === c.val ? 700 : 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Inter, sans-serif',
-                      background: form.cible === c.val ? colors.background.raised : 'transparent',
-                      color: form.cible === c.val ? colors.text.primary : colors.text.faint }}>
-                    {c.label} <span style={{ color: form.cible === c.val ? accent : colors.text.faint, fontSize: '12px', fontWeight: 700 }}>{compteurs[c.val]}</span>
-                  </button>
-                ))}
+            <div role="group" aria-label="Envoyer à" style={{ marginBottom: '16px' }}>
+              <Etiquette as="div" style={{ marginBottom: '8px' }}>Envoyer à</Etiquette>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {CIBLES.map(c => {
+                  const actif = form.cible === c.val
+                  return (
+                    <button key={c.val} type="button" aria-pressed={actif} onClick={() => setForm(f => ({ ...f, cible: c.val }))} className={CLASSE_BOUTON_SECONDAIRE}
+                      style={actif
+                        ? { ...styleBoutonPrincipal(colors), minHeight: '36px', padding: '0 14px', fontSize: '13px', borderRadius: '6px' }
+                        : { ...styleBoutonSecondaire(colors), minHeight: '36px', padding: '0 14px', fontSize: '13px', borderRadius: '6px' }}>
+                      {c.label}
+                      <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '15px', fontVariantNumeric: 'tabular-nums' }}>{compteurs[c.val]}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
-            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
-              placeholder="Objet / Titre"
-              style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box' }} />
+            <label htmlFor="newsletter-titre" style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Objet / Titre</label>
+            <input id="newsletter-titre" className={CLASSE_CHAMP} value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
+              placeholder="Objet / Titre" style={{ ...champ, marginBottom: '12px' }} />
 
-            <textarea value={form.contenu} onChange={e => setForm(f => ({ ...f, contenu: e.target.value }))}
+            <label htmlFor="newsletter-contenu" style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Message</label>
+            <textarea id="newsletter-contenu" className={CLASSE_CHAMP} value={form.contenu} onChange={e => setForm(f => ({ ...f, contenu: e.target.value }))}
               placeholder="Contenu du message..." rows={6}
-              style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '12px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', marginBottom: '16px', boxSizing: 'border-box' }} />
+              style={{ ...champ, resize: 'vertical', marginBottom: '16px' }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '12px', color: colors.text.faint }}>Sera envoyée à <strong style={{ color: colors.text.primary }}>{compteurs[form.cible]}</strong> personne{compteurs[form.cible] > 1 ? 's' : ''}, aussi par email.</span>
-              <button onClick={envoyer} disabled={!form.titre.trim() || !form.contenu.trim() || envoi}
-                style={{ background: accent, color: colors.background.base, border: 'none', borderRadius: '8px', padding: '12px 24px', fontWeight: 800, fontSize: '14px', cursor: envoi ? 'default' : 'pointer', opacity: envoi ? 0.6 : 1 }}>
+              <span style={{ fontFamily: police.texte, fontSize: '13px', color: colors.text.secondary }}>Sera envoyée à <strong style={{ color: colors.text.primary }}>{nbPersonnes}</strong> personne{nbPersonnes > 1 ? 's' : ''}, aussi par email.</span>
+              <button type="button" onClick={envoyer} disabled={!peutEnvoyer} className={CLASSE_BOUTON}
+                style={{ ...styleBoutonPrincipal(colors), cursor: envoi ? 'default' : 'pointer' }}>
                 {envoi ? 'Envoi...' : 'Envoyer'}
               </button>
             </div>
           </div>
 
-          <div style={{ flex: '0.8 1 240px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }}>
-              <p style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 16px' }}>Statistiques</p>
+          <div style={{ flex: '0.8 1 240px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box', minWidth: 0 }}>
+            <div style={carte}>
+              <Etiquette as="p" style={{ margin: '0 0 14px' }}>Statistiques</Etiquette>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary }}>{annonces.length}</div>
-                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Envois</div>
-                </div>
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: colors.accent.green }}>{Object.values(lusParAnnonce).reduce((s, v) => s + v, 0)}</div>
-                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Lus</div>
-                </div>
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: accent }}>{compteurs.tous}</div>
-                  <div style={{ fontSize: '11px', color: colors.text.faint }}>Membres</div>
-                </div>
+                {stat(annonces.length, 'Envois')}
+                {stat(totalLus, 'Lus')}
+                {stat(compteurs.tous, 'Membres')}
               </div>
             </div>
 
@@ -166,14 +174,9 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
               // actuel de la cible, faute d'historique du nombre de destinataires).
               const taux = Math.round(annonces.reduce((acc, a) => acc + Math.min(1, (lusParAnnonce[a.id] || 0) / Math.max(1, compteurs[a.cible] || 1)), 0) / annonces.length * 100)
               return (
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '16px 20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', color: colors.text.faint }}>Taux de lecture moyen</span>
-                    <span style={{ fontSize: '18px', fontWeight: 800, color: colors.text.primary }}>{taux}%</span>
-                  </div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
-                    <div style={{ width: `${taux}%`, height: '100%', background: accent }} />
-                  </div>
+                <div style={carte}>
+                  <Jauge libelle="Taux de lecture moyen" pourcentages
+                    segments={[{ libelle: 'Lus', valeur: taux }, { libelle: 'Non lus', valeur: 100 - taux }]} />
                 </div>
               )
             })()}
@@ -182,44 +185,41 @@ export default function Newsletter({ clubId, auteurNom, auteurId, couleurPrincip
       )}
 
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', margin: 0 }}>Historique des envois</h3>
-          <span style={{ color: colors.text.faint, fontSize: '13px' }}>{annonces.length} message{annonces.length > 1 ? 's' : ''}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px', gap: '8px' }}>
+          <Etiquette as="h2">Historique des envois</Etiquette>
+          <span style={{ fontFamily: police.texte, color: colors.text.dim, fontSize: '13px' }}>{annonces.length} message{annonces.length > 1 ? 's' : ''}</span>
         </div>
         {loading ? (
-          <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p>
+          <p style={{ color: colors.text.dim, fontSize: '14px' }}>Chargement...</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {annonces.map(a => (
-              <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${accent}`, borderRadius: '12px', padding: '14px 18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{a.titre}</span>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ background: colors.background.raised, color: colors.text.faint, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>
-                      {cibleLabel(a.cible)}
-                    </span>
-                    {a.envoye_email && (
-                      <span style={{ background: colors.accent.blue + alpha.soft, color: colors.accent.blue, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>Email envoyé</span>
-                    )}
-                    <span style={{ background: accent + alpha.faint, color: accent, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>
-                      {lusParAnnonce[a.id] || 0} lu{(lusParAnnonce[a.id] || 0) > 1 ? 's' : ''}
-                    </span>
-                    <span style={{ color: colors.text.disabled, fontSize: '11px' }}>
-                      {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                    {!readOnly && (
-                      <button onClick={() => supprimer(a.id)}
-                        title="Supprimer" style={{ background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '2px', display: 'flex' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                      </button>
-                    )}
+            {annonces.map(a => {
+              const nbLus = lusParAnnonce[a.id] || 0
+              return (
+                <div key={a.id} style={{ ...styleCarteLiseree(colors), padding: '14px 18px 14px 21px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontFamily: police.texte, color: colors.text.primary, fontWeight: 600, fontSize: '16px' }}>{a.titre}</span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+                      <EtiquetteStatut couleur={colors.text.dim}>{cibleLabel(a.cible)}</EtiquetteStatut>
+                      {a.envoye_email && <EtiquetteStatut couleur={colors.accent.info}>Email envoyé</EtiquetteStatut>}
+                      <EtiquetteStatut couleur={nbLus > 0 ? colors.accent.success : colors.text.dim}>{nbLus} lu{nbLus > 1 ? 's' : ''}</EtiquetteStatut>
+                      <span style={{ fontFamily: police.texte, color: colors.text.dim, fontSize: '13px' }}>
+                        {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                      {!readOnly && (
+                        <button type="button" onClick={() => supprimer(a.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                          style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', minWidth: '36px', padding: 0, border: '1px solid transparent', color: colors.text.dim }}>
+                          <Icone icone={Trash2} seule libelle={`Supprimer la communication « ${a.titre} »`} />
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  <p style={{ fontFamily: police.texte, color: colors.text.secondary, fontSize: '14px', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{a.contenu}</p>
                 </div>
-                <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0, lineHeight: '1.5', whiteSpace: 'pre-wrap', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{a.contenu}</p>
-              </div>
-            ))}
+              )
+            })}
             {annonces.length === 0 && (
-              <div style={{ background: colors.background.surface, border: `1px dashed ${colors.border.default}`, borderRadius: '12px', color: colors.text.faint, fontSize: '13px', textAlign: 'center', padding: '32px' }}>Aucune communication envoyée pour l'instant.</div>
+              <div style={{ ...styleCarte(colors), borderStyle: 'dashed', color: colors.text.dim, fontSize: '14px', textAlign: 'center', padding: '32px' }}>Aucune communication envoyée pour l'instant.</div>
             )}
           </div>
         )}

@@ -49,7 +49,7 @@ export default function NutritionIntro({ onCommencer, onTutoriel, isMobile }) {
 
         <div style={{ marginTop: spacing['4xl'], display: 'flex', gap: spacing.lg, flexWrap: 'wrap' }}>
           <button onClick={onCommencer}
-            style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: `${spacing.lg} ${spacing['4xl']}`, minHeight: '44px', fontWeight: 700, fontSize: fontSize.xl, cursor: 'pointer', fontFamily: 'Inter, sans-serif', width: isMobile ? '100%' : undefined }}>
+            style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: `${spacing.lg} ${spacing['4xl']}`, minHeight: '44px', fontWeight: 700, fontSize: fontSize.xl, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', width: isMobile ? '100%' : undefined }}>
             Créer mon profil
           </button>
         </div>

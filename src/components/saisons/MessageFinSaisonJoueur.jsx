@@ -24,7 +24,7 @@ export default function MessageFinSaisonJoueur({ affiliations, isMobile, onVoirS
           </p>
           {onVoirSaisons && (
             <button onClick={onVoirSaisons}
-              style={{ marginTop: spacing.lg, background: 'none', border: 'none', padding: 0, color: colors.accent.green, fontWeight: 700, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ marginTop: spacing.lg, background: 'none', border: 'none', padding: 0, color: colors.accent.green, fontWeight: 700, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               Voir mes saisons
             </button>
           )}

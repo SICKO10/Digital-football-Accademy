@@ -12,7 +12,7 @@ import { CarteChoix, PasEquipes } from '../components/outils/ElementsOffre'
 // pointe ici et la page demande aux moteurs de recherche de l'ignorer.
 // Tous les prix viennent du catalogue et de simulerOffre, jamais d'ici.
 // Page toujours sombre : jetons de couleur fixes, comme l'inscription composée.
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
 const ROLES = [['educateur', 'Éducateur'], ['club', 'Club']]
 

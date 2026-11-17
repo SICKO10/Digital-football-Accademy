@@ -15,7 +15,7 @@ export default function BandeauClub({ club, couleur, isMobile }) {
   const taille = isMobile ? 56 : 80
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 16, boxSizing: 'border-box', marginBottom: 20, fontFamily: 'Inter, sans-serif',
+      display: 'flex', alignItems: 'center', gap: 16, boxSizing: 'border-box', marginBottom: 20, fontFamily: 'Barlow, sans-serif',
       borderRadius: 16, padding: isMobile ? '18px 16px' : '24px 26px', minHeight: fond ? (isMobile ? 110 : 140) : undefined,
       ...(fond
         ? { backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.75), rgba(0,0,0,0.25)), url("${fond}")`, backgroundSize: 'cover', backgroundPosition: 'center' }

@@ -7,14 +7,18 @@ import CompositionTerrain, { ModalSelectionJoueur } from './CompositionTerrain'
 import { sansPositions } from '../lib/compositionPositions'
 import { useColors, useTheme } from '../lib/theme'
 import EcussonClub from './EcussonClub'
+import { Sun, CloudSun, CloudRain, Wind, Snowflake, Flame, Goal, ShieldCheck, Repeat, Target, Key, Timer, Printer, MonitorPlay, Check, ChevronLeft, TriangleAlert, Circle, Plus } from 'lucide-react'
+import { Icone, TitreEcran, EtiquetteStatut } from './identite'
+import { styleCarte, styleCarteLiseree, styleEtiquette, styleChiffreHeros, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, couleurCraie, couleurClub as couleurDuClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
+import { police, forme } from '../tokens'
 
 const METEO_OPTIONS = [
-  { val: 'soleil', icon: '☀️', label: 'Soleil' },
-  { val: 'nuageux', icon: '⛅', label: 'Nuageux' },
-  { val: 'pluie', icon: '🌧️', label: 'Pluie' },
-  { val: 'vent', icon: '💨', label: 'Vent' },
-  { val: 'froid', icon: '🥶', label: 'Froid' },
-  { val: 'chaud', icon: '🥵', label: 'Chaud' },
+  { val: 'soleil', icon: Sun, label: 'Soleil' },
+  { val: 'nuageux', icon: CloudSun, label: 'Nuageux' },
+  { val: 'pluie', icon: CloudRain, label: 'Pluie' },
+  { val: 'vent', icon: Wind, label: 'Vent' },
+  { val: 'froid', icon: Snowflake, label: 'Froid' },
+  { val: 'chaud', icon: Flame, label: 'Chaud' },
 ]
 
 const TYPE_MATCH = [
@@ -58,13 +62,13 @@ function ListeChamp({ valeurs, onChange, onAjouter, onSupprimer, placeholder, in
       {valeurs.map((val, i) => (
         <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '14px', minWidth: '16px' }}>•</span>
-          <input style={{ ...inputStyle, flex: 1 }} placeholder={placeholder} value={val} onChange={e => onChange(i, e.target.value)} />
+          <input className={CLASSE_CHAMP} style={{ ...inputStyle, flex: 1 }} placeholder={placeholder} value={val} onChange={e => onChange(i, e.target.value)} />
           {valeurs.length > 1 && (
             <button onClick={() => onSupprimer(i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
           )}
         </div>
       ))}
-      <button onClick={onAjouter} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', marginTop: '2px', fontFamily: 'Inter, sans-serif' }}>
+      <button onClick={onAjouter} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', marginTop: '2px', fontFamily: 'Barlow, sans-serif' }}>
         + Ajouter
       </button>
     </div>
@@ -222,22 +226,22 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
       slides.push({ titre, accent, icone, type: 'board', board })
     })
   }
-  ajouterListe('AVEC LE BALLON', '#818cf8', '⚽', f.animation_avec_ballon)
-  ajouterListe('SANS LE BALLON', '#f97316', '🛡️', f.animation_sans_ballon)
-  ajouterListe('TRANSITIONS', '#2dd4bf', '🔄', f.transitions)
+  ajouterListe('AVEC LE BALLON', '#818cf8', Goal, f.animation_avec_ballon)
+  ajouterListe('SANS LE BALLON', '#f97316', ShieldCheck, f.animation_sans_ballon)
+  ajouterListe('TRANSITIONS', '#2dd4bf', Repeat, f.transitions)
   // Une slide par mouvement tactique sélectionné (chacun peut être lu
   // indépendamment, pas de rythme imposé au coach pendant la causerie).
   ;(f.tactipad_ids || []).forEach(id => {
     const tp = tactipadsDispo?.find(t => t.id === id)
-    if (tp) slides.push({ titre: tp.nom || 'MOUVEMENT TACTIQUE', accent: '#38bdf8', icone: '🎯', type: 'mouvement', schema: tp.schema })
+    if (tp) slides.push({ titre: tp.nom || 'MOUVEMENT TACTIQUE', accent: '#38bdf8', icone: Target, type: 'mouvement', schema: tp.schema })
   })
-  ajouterListe('CPA OFFENSIFS', '#4ade80', '⚽', f.cpa_offensifs)
-  ajouterSchemas('SCHÉMA CPA OFFENSIF', '#4ade80', '🟢', f.schemas_cpa_offensif)
-  ajouterListe('TIREURS', '#facc15', '🎯', f.tireurs)
-  ajouterListe('CPA DÉFENSIFS', '#f87171', '🛡️', f.cpa_defensifs)
-  ajouterSchemas('SCHÉMA CPA DÉFENSIF', '#f87171', '🔴', f.schemas_cpa_defensif)
-  ajouterListe('NOS CLÉS DU MATCH', '#fbbf24', '🔑', f.cles_du_match)
-  ajouterListe('PREMIÈRES MINUTES', '#60a5fa', '⏱️', f.premieres_minutes)
+  ajouterListe('CPA OFFENSIFS', '#4ade80', Goal, f.cpa_offensifs)
+  ajouterSchemas('SCHÉMA CPA OFFENSIF', '#4ade80', Circle, f.schemas_cpa_offensif)
+  ajouterListe('TIREURS', '#facc15', Target, f.tireurs)
+  ajouterListe('CPA DÉFENSIFS', '#f87171', ShieldCheck, f.cpa_defensifs)
+  ajouterSchemas('SCHÉMA CPA DÉFENSIF', '#f87171', Circle, f.schemas_cpa_defensif)
+  ajouterListe('NOS CLÉS DU MATCH', '#fbbf24', Key, f.cles_du_match)
+  ajouterListe('PREMIÈRES MINUTES', '#60a5fa', Timer, f.premieres_minutes)
   if (f.message_coach) slides.push({ titre: 'MESSAGE DU COACH', accent: '#a78bfa', type: 'message' })
 
   const [slideIdx, setSlideIdx] = useState(0)
@@ -325,23 +329,23 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
   const maxWidthSchema = (ratio, defaut) => isLandscapeCourt ? `min(90vw, calc((100dvh - 150px) * ${ratio}))` : defaut
 
   return createPortal(
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: pal.fond, zIndex: 9999, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', background: pal.fond, zIndex: 9999, fontFamily: 'Barlow, sans-serif' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, display: 'flex', alignItems: 'center', padding: isLandscapeCourt ? '10px 20px' : '24px 40px' }}>
         <div style={{ display: 'flex', gap: isLandscapeCourt ? '6px' : '10px' }}>
           {photoClub && (
             <button onClick={basculerPhoto} title="Afficher ou masquer la photo du club en fond" aria-pressed={avecPhoto}
-              style={{ background: avecPhoto ? accentClub + '22' : 'none', border: `1px solid ${avecPhoto ? accentClub + '88' : pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: avecPhoto ? accentClub + '22' : 'none', border: `1px solid ${avecPhoto ? accentClub + '88' : pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               Photo club
             </button>
           )}
           <button onClick={telechargerPresentation} disabled={exportEnCours} title="Télécharger en PDF (pour présenter sans connexion)"
-            style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: exportEnCours ? 'default' : 'pointer', opacity: exportEnCours ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: exportEnCours ? 'default' : 'pointer', opacity: exportEnCours ? 0.5 : 1, fontFamily: 'Barlow, sans-serif' }}>
             {exportEnCours ? '⏳ Génération…' : '⬇ Télécharger'}
           </button>
-          <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={changerTheme} title="Changer le thème" style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             {theme === 'sombre' ? 'Claire' : 'Sombre'}
           </button>
-          <button onClick={onFermer} style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>✕ {isLandscapeCourt ? '' : 'Quitter [Échap]'}</button>
+          <button onClick={onFermer} style={{ background: 'none', border: `1px solid ${pal.bordure}`, color: pal.texteDoux, borderRadius: '8px', padding: isLandscapeCourt ? '5px 10px' : '8px 14px', fontSize: isLandscapeCourt ? '11px' : '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>✕ {isLandscapeCourt ? '' : 'Quitter [Échap]'}</button>
         </div>
       </div>
 
@@ -354,7 +358,7 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
           <EcussonClub nom={equipeNom || 'Nous'} logo={logoClub} taille={isLandscapeCourt ? 24 : 36} />
           <p style={{ margin: 0, color: pal.texteFaint, fontSize: isLandscapeCourt ? '12px' : '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{equipeNom || 'Nous'} vs {f.adversaire}</p>
         </div>
-        <p style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 32px', color: slide.accent, fontSize: isLandscapeCourt ? '13px' : '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone ? `${slide.icone} ` : ''}{slide.titre}</p>
+        <p style={{ margin: isLandscapeCourt ? '0 0 10px' : '0 0 32px', color: slide.accent, fontSize: isLandscapeCourt ? '13px' : '18px', fontWeight: 800, letterSpacing: '4px' }}>{slide.icone && <slide.icone size={isLandscapeCourt ? 14 : 20} strokeWidth={2} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: '10px' }} />}{slide.titre}</p>
 
         {slide.type === 'intro' && (
           <>
@@ -727,23 +731,24 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   }
 
   // ─── Styles ────────────────────────────────────────────────────────────
-  const card = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '20px' }
-  const label = { display: 'block', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }
-  const inp = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '8px', color: colors.text.primary, fontSize: '14px', padding: '9px 12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' }
+  const card = { ...styleCarte(colors), padding: '20px' }
+  const label = { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }
+  const inp = styleChamp(colors)
   const txa = { ...inp, minHeight: '75px', resize: 'vertical', lineHeight: 1.6 }
-  const btnG = { background: '#4ade80', border: 'none', borderRadius: '10px', color: '#000', fontWeight: 700, fontSize: '14px', padding: '10px 22px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  const btnO = { background: 'none', border: `1px solid ${colors.border.faint}`, borderRadius: '10px', color: colors.text.faint, fontSize: '13px', padding: '9px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  const btnG = styleBoutonPrincipal(colors)
+  const btnO = styleBoutonSecondaire(colors)
+  const styleTitreEcranLocal = { fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', margin: 0, color: colors.text.primary }
   const numInp = { ...inp, width: '70px' }
-  const sectionTitle = (num, color, txt) => (
-    <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', color: colors.text.primary, borderLeft: `3px solid ${color}`, paddingLeft: '10px' }}>
-      <span style={{ color, marginRight: '6px' }}>{num}</span>{txt}
+  const sectionTitle = (num, _couleur, txt) => (
+    <p style={{ margin: '0 0 14px', fontFamily: police.titre, fontWeight: 700, fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.01em', color: colors.text.primary, borderLeft: `${forme.lisere} solid ${couleurDuClub(colors)}`, paddingLeft: '10px' }}>
+      <span style={{ color: colors.text.dim, marginRight: '8px', fontVariantNumeric: 'tabular-nums' }}>{num}</span>{txt}
     </p>
   )
 
   if (tableMissing) {
     return (
       <div style={{ background: '#1a1a00', border: '1px solid #f59e0b40', borderRadius: '12px', padding: 24 }}>
-        <div style={{ color: '#f59e0b', fontWeight: 700 }}>⚠️ La table <code>causeries</code> n'existe pas encore en base (ou vient d'être recréée avec un nouveau format).</div>
+        <div style={{ color: '#f59e0b', fontWeight: 700 }}><TriangleAlert size={18} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: '6px' }} />La table <code>causeries</code> n'existe pas encore en base (ou vient d'être recréée avec un nouveau format).</div>
         <div style={{ color: colors.text.faint, fontSize: 14, marginTop: 4 }}>Exécute supabase_causeries.sql dans l'éditeur SQL Supabase.</div>
       </div>
     )
@@ -760,9 +765,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
     const passees = fiches.filter(f => f.date_match && f.date_match < aujourdhuiIso).sort((a, b) => b.date_match.localeCompare(a.date_match))
     const prochaineId = aVenir.find(f => f.date_match)?.id
     const COULEURS_TYPE = { championnat: colors.accent.info, coupe: colors.accent.amber, amical: colors.accent.orange, tournoi: colors.accent.purpleLight }
-    const etiquette = (texte, couleur) => (
-      <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: couleur, background: couleur + '1a', border: `1px solid ${couleur}40`, whiteSpace: 'nowrap' }}>{texte}</span>
-    )
+    const etiquette = (texte, couleur) => <EtiquetteStatut couleur={couleur}>{texte}</EtiquetteStatut>
 
     const carte = (f) => {
       const vedette = f.id === prochaineId
@@ -770,22 +773,23 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       const typeLabel = TYPE_MATCH.find(t => t.val === f.type_match)?.label
       const meteoLabel = METEO_OPTIONS.find(m => m.val === f.meteo)?.label
       return (
-        <div key={f.id} onClick={() => ouvrirFiche(f)} style={{
-          cursor: 'pointer', display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto', alignItems: 'center', gap: '16px',
-          background: vedette ? colors.background.raised : colors.background.surface,
-          border: `1px solid ${vedette ? colors.accent.blue + '55' : colors.border.subtle}`, borderLeft: `4px solid ${vedette ? colors.accent.blue : colors.border.strong}`,
-          borderRadius: '10px', padding: '14px 16px',
-        }}>
+        <div key={f.id} onClick={() => ouvrirFiche(f)} role="button" tabIndex={0} className={CLASSE_CLIQUABLE}
+          onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ouvrirFiche(f) } }}
+          style={{
+            ...(vedette ? styleCarteLiseree(colors) : styleCarte(colors)),
+            cursor: 'pointer', display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto', alignItems: 'center', gap: '16px',
+            padding: '14px 16px', paddingLeft: vedette ? '19px' : '16px',
+          }}>
           {/* Pavé date */}
-          <div style={{ width: '58px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ width: '58px', textAlign: 'center', border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonPastille, overflow: 'hidden' }}>
             {date ? (
               <>
-                <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: vedette ? colors.black : colors.text.faint, background: vedette ? colors.accent.blue : colors.background.raised }}>{date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                <p style={{ margin: 0, padding: '5px 0 0', fontSize: '22px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{date.getDate()}</p>
-                <p style={{ margin: 0, padding: '2px 0 5px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{date.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+                <p style={{ ...styleEtiquette(colors), margin: 0, padding: '3px 0', fontSize: '10px', color: vedette ? texteSur(couleurDuClub(colors)) : colors.text.dim, background: vedette ? couleurDuClub(colors) : colors.background.raised }}>{date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                <p style={{ ...styleChiffreHeros(colors, 26), margin: 0, padding: '5px 0 0' }}>{date.getDate()}</p>
+                <p style={{ ...styleEtiquette(colors), margin: 0, padding: '2px 0 5px', fontSize: '10px' }}>{date.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
               </>
             ) : (
-              <p style={{ margin: 0, padding: '12px 4px', fontSize: '10px', fontWeight: 700, color: colors.text.faint, lineHeight: 1.3 }}>Date à définir</p>
+              <p style={{ ...styleEtiquette(colors), margin: 0, padding: '12px 4px', fontSize: '10px', lineHeight: 1.3 }}>Date à définir</p>
             )}
           </div>
 
@@ -793,16 +797,16 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
               <EcussonClub nom={nomClub || equipeNom || 'Nous'} logo={logoClub} taille={32} />
-              <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.faint }}>vs</span>
+              <span style={{ ...styleEtiquette(colors), fontSize: '12px' }}>vs</span>
               <EcussonClub nom={f.adversaire} logo={logoAdversaire(f.adversaire)} taille={32} />
-              <span style={{ fontWeight: 800, fontSize: '15px', textTransform: 'uppercase', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{f.adversaire || 'Adversaire'}</span>
+              <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '20px', textTransform: 'uppercase', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{f.adversaire || 'Adversaire'}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
               {typeLabel && etiquette(typeLabel, COULEURS_TYPE[f.type_match] || colors.text.secondary)}
-              {etiquette(f.domicile_exterieur === 'domicile' ? 'Domicile' : 'Extérieur', f.domicile_exterieur === 'domicile' ? colors.accent.green : colors.text.secondary)}
-              {f.heure_match && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.secondary }}>{String(f.heure_match).slice(0, 5)}</span>}
+              {etiquette(f.domicile_exterieur === 'domicile' ? 'Domicile' : 'Extérieur', f.domicile_exterieur === 'domicile' ? couleurDuClub(colors) : colors.text.dim)}
+              {f.heure_match && <span style={{ fontFamily: police.titre, fontSize: '15px', fontWeight: 700, color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{String(f.heure_match).slice(0, 5)}</span>}
               {(meteoLabel || f.temperature != null) && (
-                <span style={{ fontSize: '11px', color: colors.text.faint }}>{[meteoLabel, f.temperature != null && f.temperature !== '' ? `${f.temperature}°C` : null].filter(Boolean).join(' · ')}</span>
+                <span style={{ fontSize: '12px', color: colors.text.dim }}>{[meteoLabel, f.temperature != null && f.temperature !== '' ? `${f.temperature}°C` : null].filter(Boolean).join(' · ')}</span>
               )}
             </div>
           </div>
@@ -811,27 +815,27 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {f.notre_classement && f.adversaire_classement && (
               <div style={{ textAlign: 'center' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '18px', fontVariantNumeric: 'tabular-nums' }}>
-                  <span style={{ color: colors.accent.green }}>{f.notre_classement}<sup style={{ fontSize: '9px' }}>e</sup></span>
-                  <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 600 }}> vs </span>
-                  <span style={{ color: colors.accent.red }}>{f.adversaire_classement}<sup style={{ fontSize: '9px' }}>e</sup></span>
+                <p style={{ ...styleChiffreHeros(colors, 24), margin: 0 }}>
+                  <span>{f.notre_classement}<sup style={{ fontSize: '10px' }}>e</sup></span>
+                  <span style={{ fontFamily: police.texte, color: colors.text.dim, fontSize: '12px', fontWeight: 600 }}> vs </span>
+                  <span>{f.adversaire_classement}<sup style={{ fontSize: '10px' }}>e</sup></span>
                 </p>
-                <p style={{ margin: 0, color: colors.text.faint, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Classement</p>
+                <p style={{ ...styleEtiquette(colors), margin: 0, fontSize: '10px' }}>Classement</p>
               </div>
             )}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={e => { e.stopPropagation(); setMenuOuvert(menuOuvert === f.id ? null : f.id) }}
-                aria-label="Plus d'actions"
-                style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', width: '36px', height: '36px', cursor: 'pointer', lineHeight: 1 }}
+                aria-label="Plus d'actions" aria-haspopup="menu" aria-expanded={menuOuvert === f.id}
+                style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0, fontSize: '18px', lineHeight: 1 }} className={CLASSE_BOUTON_SECONDAIRE}
               >⋯</button>
               {menuOuvert === f.id && (
                 <>
                   <div onClick={e => { e.stopPropagation(); setMenuOuvert(null) }} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
                   <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '40px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '150px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                    <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Modifier</button>
-                    <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Dupliquer</button>
-                    <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.accent.red, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Supprimer</button>
+                    <button onClick={() => { setMenuOuvert(null); editer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Modifier</button>
+                    <button onClick={() => { setMenuOuvert(null); dupliquer(f) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Dupliquer</button>
+                    <button onClick={() => { setMenuOuvert(null); supprimer(f.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.accent.red, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>Supprimer</button>
                   </div>
                 </>
               )}
@@ -843,25 +847,20 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
     const section = (titre, liste) => liste.length > 0 && (
       <div>
-        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{titre} <span style={{ color: colors.text.faint }}>· {liste.length}</span></p>
+        <p style={{ ...styleEtiquette(colors), margin: '0 0 10px' }}>{titre} <span style={{ color: colors.text.dim }}>· {liste.length}</span></p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{liste.map(carte)}</div>
       </div>
     )
 
     return (
       <div style={{ maxWidth: '1100px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px' }}>Causerie avant match</h2>
-            <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '13px' }}>Fiches de préparation visuelles à afficher dans le vestiaire</p>
-          </div>
-          <button onClick={() => { setForm(formVide()); setFicheCourante(null); setVue('form') }} style={btnG}>+ Nouvelle fiche</button>
-        </div>
+        <TitreEcran titre="Causerie avant match" sousTitre="Fiches de préparation visuelles à afficher dans le vestiaire"
+          actions={<button type="button" onClick={() => { setForm(formVide()); setFicheCourante(null); setVue('form') }} className={CLASSE_BOUTON} style={btnG}><Icone icone={Plus} /> Nouvelle fiche</button>} />
 
         {fiches.length === 0 ? (
           <div style={{ ...card, textAlign: 'center', padding: '48px 24px' }}>
             <p style={{ color: colors.text.primary, fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>Aucune fiche pour l'instant</p>
-            <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>Crée ta première préparation de match : objectifs, clés du match, coups de pied arrêtés, message du coach.</p>
+            <p style={{ color: colors.text.dim, fontSize: '13px', margin: 0 }}>Crée ta première préparation de match : objectifs, clés du match, coups de pied arrêtés, message du coach.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -877,8 +876,8 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   if (vue === 'form') return (
     <div style={{ maxWidth: '720px', margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={() => setVue('liste')} style={btnO}>← Retour</button>
-        <h2 style={{ margin: 0, color: colors.text.primary, fontSize: '20px', fontWeight: 800 }}>{ficheCourante ? 'Modifier la fiche' : 'Nouvelle fiche de match'}</h2>
+        <button type="button" onClick={() => setVue('liste')} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={ChevronLeft} /> Retour</button>
+        <h2 style={{ ...styleTitreEcranLocal, fontSize: '24px' }}>{ficheCourante ? 'Modifier la fiche' : 'Nouvelle fiche de match'}</h2>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -888,37 +887,37 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={label}>Adversaire *</label>
-              <input style={inp} placeholder="AS Monaco U17…" value={form.adversaire} onChange={e => set('adversaire', e.target.value)} />
+              <input className={CLASSE_CHAMP} style={inp} placeholder="AS Monaco U17…" value={form.adversaire} onChange={e => set('adversaire', e.target.value)} />
             </div>
             <div>
               <label style={label}>Type de match</label>
-              <select style={inp} value={form.type_match} onChange={e => set('type_match', e.target.value)}>
+              <select className={CLASSE_CHAMP} style={inp} value={form.type_match} onChange={e => set('type_match', e.target.value)}>
                 {TYPE_MATCH.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
               </select>
             </div>
             <div>
               <label style={label}>Date du match</label>
-              <input type="date" style={inp} value={form.date_match} onChange={e => set('date_match', e.target.value)} />
+              <input type="date" className={CLASSE_CHAMP} style={inp} value={form.date_match} onChange={e => set('date_match', e.target.value)} />
             </div>
             <div>
               <label style={label}>Heure</label>
-              <input type="time" style={inp} value={form.heure_match} onChange={e => set('heure_match', e.target.value)} />
+              <input type="time" className={CLASSE_CHAMP} style={inp} value={form.heure_match} onChange={e => set('heure_match', e.target.value)} />
             </div>
             <div>
               <label style={label}>Lieu</label>
-              <select style={inp} value={form.domicile_exterieur} onChange={e => set('domicile_exterieur', e.target.value)}>
-                <option value="domicile">🏠 Domicile</option>
-                <option value="exterieur">✈️ Extérieur</option>
+              <select className={CLASSE_CHAMP} style={inp} value={form.domicile_exterieur} onChange={e => set('domicile_exterieur', e.target.value)}>
+                <option value="domicile">Domicile</option>
+                <option value="exterieur">Extérieur</option>
               </select>
             </div>
             <div>
               <label style={label}>Match aller — résultat</label>
-              <input style={inp} placeholder="Victoire 2-1, Défaite 0-3…" value={form.match_aller_resultat} onChange={e => set('match_aller_resultat', e.target.value)} />
+              <input className={CLASSE_CHAMP} style={inp} placeholder="Victoire 2-1, Défaite 0-3…" value={form.match_aller_resultat} onChange={e => set('match_aller_resultat', e.target.value)} />
             </div>
           </div>
           <div>
             <label style={label}>Objectifs du match</label>
-            <textarea style={txa} placeholder="Gagner pour rester dans le top 5, tester le nouveau système…" value={form.objectifs} onChange={e => set('objectifs', e.target.value)} />
+            <textarea className={CLASSE_CHAMP} style={txa} placeholder="Gagner pour rester dans le top 5, tester le nouveau système…" value={form.objectifs} onChange={e => set('objectifs', e.target.value)} />
           </div>
         </div>
 
@@ -926,21 +925,21 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           {sectionTitle('02', '#60a5fa', 'Classements & statistiques')}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div>
-              <p style={{ ...label, color: '#4ade80', marginBottom: '10px' }}>🟢 {equipeNom || 'Notre équipe'}</p>
+              <p style={{ ...label, marginBottom: '10px' }}><Icone icone={Circle} taille={12} style={{ display: 'inline', fill: 'currentColor' }} /> {equipeNom || 'Notre équipe'}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={label}>Place</label><input type="number" style={numInp} placeholder="3" value={form.notre_classement} onChange={e => set('notre_classement', e.target.value)} /></div>
-                <div><label style={label}>Points</label><input type="number" style={numInp} placeholder="21" value={form.notre_points} onChange={e => set('notre_points', e.target.value)} /></div>
-                <div><label style={label}>Buts marqués</label><input type="number" style={numInp} placeholder="18" value={form.notre_buts_pour} onChange={e => set('notre_buts_pour', e.target.value)} /></div>
-                <div><label style={label}>Buts encaissés</label><input type="number" style={numInp} placeholder="9" value={form.notre_buts_contre} onChange={e => set('notre_buts_contre', e.target.value)} /></div>
+                <div><label style={label}>Place</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="3" value={form.notre_classement} onChange={e => set('notre_classement', e.target.value)} /></div>
+                <div><label style={label}>Points</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="21" value={form.notre_points} onChange={e => set('notre_points', e.target.value)} /></div>
+                <div><label style={label}>Buts marqués</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="18" value={form.notre_buts_pour} onChange={e => set('notre_buts_pour', e.target.value)} /></div>
+                <div><label style={label}>Buts encaissés</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="9" value={form.notre_buts_contre} onChange={e => set('notre_buts_contre', e.target.value)} /></div>
               </div>
             </div>
             <div>
-              <p style={{ ...label, color: '#f87171', marginBottom: '10px' }}>🔴 {form.adversaire || 'Adversaire'}</p>
+              <p style={{ ...label, marginBottom: '10px' }}><Icone icone={Circle} taille={12} style={{ display: 'inline', fill: 'currentColor' }} /> {form.adversaire || 'Adversaire'}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><label style={label}>Place</label><input type="number" style={numInp} placeholder="1" value={form.adversaire_classement} onChange={e => set('adversaire_classement', e.target.value)} /></div>
-                <div><label style={label}>Points</label><input type="number" style={numInp} placeholder="28" value={form.adversaire_points} onChange={e => set('adversaire_points', e.target.value)} /></div>
-                <div><label style={label}>Buts marqués</label><input type="number" style={numInp} placeholder="24" value={form.adversaire_buts_pour} onChange={e => set('adversaire_buts_pour', e.target.value)} /></div>
-                <div><label style={label}>Buts encaissés</label><input type="number" style={numInp} placeholder="7" value={form.adversaire_buts_contre} onChange={e => set('adversaire_buts_contre', e.target.value)} /></div>
+                <div><label style={label}>Place</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="1" value={form.adversaire_classement} onChange={e => set('adversaire_classement', e.target.value)} /></div>
+                <div><label style={label}>Points</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="28" value={form.adversaire_points} onChange={e => set('adversaire_points', e.target.value)} /></div>
+                <div><label style={label}>Buts marqués</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="24" value={form.adversaire_buts_pour} onChange={e => set('adversaire_buts_pour', e.target.value)} /></div>
+                <div><label style={label}>Buts encaissés</label><input type="number" className={CLASSE_CHAMP} style={numInp} placeholder="7" value={form.adversaire_buts_contre} onChange={e => set('adversaire_buts_contre', e.target.value)} /></div>
               </div>
             </div>
           </div>
@@ -951,19 +950,20 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
             {METEO_OPTIONS.map(m => (
               <button key={m.val} onClick={() => set('meteo', m.val)}
+                type="button" aria-pressed={form.meteo === m.val} className={CLASSE_BOUTON_SECONDAIRE}
                 style={{
-                  background: form.meteo === m.val ? 'rgba(251,191,36,0.15)' : colors.background.base,
-                  border: `1px solid ${form.meteo === m.val ? '#fbbf24' : colors.border.faint}`,
-                  borderRadius: '8px', color: form.meteo === m.val ? '#fbbf24' : colors.text.faint,
-                  fontSize: '13px', fontWeight: 600, padding: '8px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  ...styleBoutonSecondaire(colors),
+                  background: form.meteo === m.val ? colors.accent.brand : 'transparent',
+                  borderColor: form.meteo === m.val ? colors.accent.brand : colors.border.strong,
+                  color: form.meteo === m.val ? colors.accent.onBrand : colors.text.primary,
                 }}>
-                {m.icon} {m.label}
+                <Icone icone={m.icon} taille={16} /> {m.label}
               </button>
             ))}
           </div>
           <div style={{ maxWidth: '160px' }}>
             <label style={label}>Température (°C)</label>
-            <input type="number" style={inp} placeholder="18" value={form.temperature} onChange={e => set('temperature', e.target.value)} />
+            <input type="number" className={CLASSE_CHAMP} style={inp} placeholder="18" value={form.temperature} onChange={e => set('temperature', e.target.value)} />
           </div>
         </div>
 
@@ -989,59 +989,59 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           {sectionTitle('07', '#22d3ee', 'Coups de pied arrêtés')}
 
           <div style={{ marginBottom: '24px' }}>
-            <p style={{ ...label, color: '#4ade80', marginBottom: '10px' }}>⚽ Offensifs — Corners, CFL, Penalties</p>
+            <p style={{ ...label, marginBottom: '10px' }}>Offensifs : corners, coups francs, penalties</p>
             <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_offensifs} onChange={(i, v) => setLigne('cpa_offensifs', i, v)} onAjouter={() => ajouterLigne('cpa_offensifs')} onSupprimer={i => supprimerLigne('cpa_offensifs', i)} inputStyle={inp} placeholder="Ex: Corner entrant côté droit, n°9 au 1er poteau…" />
             </div>
-            <p style={{ margin: '0 0 10px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schémas CPA offensifs</p>
+            <p style={{ margin: '0 0 10px', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Schémas CPA offensifs</p>
             {form.schemas_cpa_offensif.map((board, i) => (
               <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <input value={board.nom || ''} onChange={e => majSchemaCpa('schemas_cpa_offensif', i, { ...board, nom: e.target.value })}
-                    placeholder={`Nom du schéma ${i + 1} (ex: Corner droit)`} style={{ ...inp, flex: 1 }} />
+                    placeholder={`Nom du schéma ${i + 1} (ex: Corner droit)`} className={CLASSE_CHAMP} style={{ ...inp, flex: 1 }} />
                   {form.schemas_cpa_offensif.length > 1 && (
                     <button onClick={() => supprimerSchemaCpa('schemas_cpa_offensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
                   )}
                 </div>
-                <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  🟢 {form.schemas_cpa_offensif.length > 1 ? `CPA offensif ${i + 1}` : 'CPA offensif'}
+                <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {form.schemas_cpa_offensif.length > 1 ? `CPA offensif ${i + 1}` : 'CPA offensif'}
                 </p>
                 <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_offensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="offensif" />
               </div>
             ))}
-            <button onClick={() => ajouterSchemaCpa('schemas_cpa_offensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={() => ajouterSchemaCpa('schemas_cpa_offensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Barlow, sans-serif' }}>
               + Nouveau schéma offensif
             </button>
           </div>
 
           <div style={{ marginBottom: '24px' }}>
-            <p style={{ ...label, color: '#f87171', marginBottom: '10px' }}>🛡️ Défensifs</p>
+            <p style={{ ...label, marginBottom: '10px' }}>Défensifs</p>
             <div style={{ marginBottom: '12px' }}>
               <ListeChamp valeurs={form.cpa_defensifs} onChange={(i, v) => setLigne('cpa_defensifs', i, v)} onAjouter={() => ajouterLigne('cpa_defensifs')} onSupprimer={i => supprimerLigne('cpa_defensifs', i)} inputStyle={inp} placeholder="Ex: Zone sur corner, le n°5 sur le 2ème poteau…" />
             </div>
-            <p style={{ margin: '0 0 10px', color: '#f87171', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Schémas CPA défensifs</p>
+            <p style={{ margin: '0 0 10px', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Schémas CPA défensifs</p>
             {form.schemas_cpa_defensif.map((board, i) => (
               <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <input value={board.nom || ''} onChange={e => majSchemaCpa('schemas_cpa_defensif', i, { ...board, nom: e.target.value })}
-                    placeholder={`Nom du schéma ${i + 1} (ex: Zone sur corner)`} style={{ ...inp, flex: 1 }} />
+                    placeholder={`Nom du schéma ${i + 1} (ex: Zone sur corner)`} className={CLASSE_CHAMP} style={{ ...inp, flex: 1 }} />
                   {form.schemas_cpa_defensif.length > 1 && (
                     <button onClick={() => supprimerSchemaCpa('schemas_cpa_defensif', i)} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>×</button>
                   )}
                 </div>
-                <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  🔴 {form.schemas_cpa_defensif.length > 1 ? `CPA défensif ${i + 1}` : 'CPA défensif'}
+                <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {form.schemas_cpa_defensif.length > 1 ? `CPA défensif ${i + 1}` : 'CPA défensif'}
                 </p>
                 <TacticalBoard data={board} onChange={val => majSchemaCpa('schemas_cpa_defensif', i, { ...board, etapes: val.etapes })} userId={userId} typeSchema="defensif" />
               </div>
             ))}
-            <button onClick={() => ajouterSchemaCpa('schemas_cpa_defensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={() => ajouterSchemaCpa('schemas_cpa_defensif')} style={{ background: 'none', border: `1px dashed ${colors.border.faint}`, borderRadius: '8px', color: colors.text.dim, fontSize: '12px', padding: '6px', cursor: 'pointer', width: '100%', fontFamily: 'Barlow, sans-serif' }}>
               + Nouveau schéma défensif
             </button>
           </div>
 
           <div>
-            <p style={{ ...label, color: '#fbbf24', marginBottom: '10px' }}>🎯 Tireurs</p>
+            <p style={{ ...label, marginBottom: '10px' }}>Tireurs</p>
             <ListeChamp valeurs={form.tireurs} onChange={(i, v) => setLigne('tireurs', i, v)} onAjouter={() => ajouterLigne('tireurs')} onSupprimer={i => supprimerLigne('tireurs', i)} inputStyle={inp} placeholder="Ex: Kevin (penaltys), Mehdi (CFL directs)…" />
           </div>
         </div>
@@ -1061,7 +1061,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         <div style={card}>
           {sectionTitle('10', '#a78bfa', 'Message du coach')}
           <p style={{ margin: '0 0 12px', color: colors.text.dim, fontSize: '12px' }}>Le mot de la fin, celui qu'on garde en tête en rentrant sur le terrain</p>
-          <textarea style={txa} placeholder="Ex: On a tout ce qu'il faut pour gagner ce match, on y croit du premier au dernier ballon…" value={form.message_coach} onChange={e => set('message_coach', e.target.value)} />
+          <textarea className={CLASSE_CHAMP} style={txa} placeholder="Ex: On a tout ce qu'il faut pour gagner ce match, on y croit du premier au dernier ballon…" value={form.message_coach} onChange={e => set('message_coach', e.target.value)} />
         </div>
 
         <div style={card}>
@@ -1081,12 +1081,12 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
                 return (
                   <label key={tp.id} style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
-                    background: selectionne ? '#0d1f2a' : colors.background.base, border: `1px solid ${selectionne ? '#38bdf866' : colors.border.faint}`,
+                    background: selectionne ? colors.background.raised : colors.background.base, border: `1px solid ${selectionne ? colors.accent.brand : colors.border.faint}`,
                     borderRadius: '8px', cursor: 'pointer',
                   }}>
-                    <input type="checkbox" checked={selectionne} onChange={() => toggleTactipad(tp.id)} style={{ accentColor: '#38bdf8' }} />
+                    <input type="checkbox" checked={selectionne} onChange={() => toggleTactipad(tp.id)} style={{ accentColor: colors.accent.brand }} />
                     <span style={{ color: colors.text.primary, fontSize: '13px', flex: 1 }}>{tp.nom || 'Sans titre'}</span>
-                    <span style={{ color: nbEtapes > 1 ? '#38bdf8' : colors.text.dim, fontSize: '11px', fontWeight: 600 }}>
+                    <span style={{ color: colors.text.dim, fontSize: '12px', fontWeight: 600 }}>
                       {nbEtapes > 1 ? `Animation · ${nbEtapes} étapes` : 'Schéma statique'}
                     </span>
                   </label>
@@ -1097,9 +1097,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '32px' }}>
-          <button onClick={() => setVue('liste')} style={btnO}>Annuler</button>
-          <button onClick={sauvegarder} disabled={saving} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
-            {saving ? 'Sauvegarde…' : '✅ Enregistrer la fiche'}
+          <button onClick={() => setVue('liste')} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}>Annuler</button>
+          <button onClick={sauvegarder} disabled={saving} className={CLASSE_BOUTON} style={{ ...btnG, opacity: saving ? 0.6 : 1 }}>
+            {saving ? 'Sauvegarde…' : <><Icone icone={Check} /> Enregistrer la fiche</>}
           </button>
         </div>
       </div>
@@ -1113,14 +1113,14 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   const dateLabel = f.date_match ? new Date(f.date_match + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
   const contenuFiche = (
-    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '20px', overflow: 'hidden', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '20px', overflow: 'hidden', fontFamily: "'Barlow', sans-serif", color: colors.text.primary }}>
       <div style={{ background: themeApp === 'claire' ? 'linear-gradient(135deg, #ecfdf3 0%, #f8fafc 60%)' : 'linear-gradient(135deg, #0f2010 0%, #080808 60%)', borderBottom: `1px solid ${colors.border.faint}`, padding: '28px 32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <span style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 700 }}>{typeLabel.toUpperCase()}</span>
               <span style={{ background: themeApp === 'claire' ? '#e2e8f0' : 'rgba(255,255,255,0.06)', color: colors.text.faint, borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 600 }}>
-                {f.domicile_exterieur === 'domicile' ? '🏠 Domicile' : '✈️ Extérieur'}
+                {f.domicile_exterieur === 'domicile' ? 'Domicile' : 'Extérieur'}
               </span>
               {f.match_aller_resultat && (
                 <span style={{ background: 'rgba(96,165,250,0.1)', color: '#60a5fa', borderRadius: '20px', padding: '3px 12px', fontSize: '12px', fontWeight: 600 }}>Aller : {f.match_aller_resultat}</span>
@@ -1131,7 +1131,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             </h1>
             <p style={{ margin: '8px 0 0', color: colors.text.faint, fontSize: '14px' }}>
               {dateLabel}{f.heure_match ? ` à ${f.heure_match.slice(0, 5)}` : ''}
-              {meteoObj ? `  ·  ${meteoObj.icon} ${meteoObj.label}` : ''}
+              {meteoObj ? `  ·  ${meteoObj.label}` : ''}
               {f.temperature != null ? ` ${f.temperature}°C` : ''}
             </p>
           </div>
@@ -1154,7 +1154,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
         {f.objectifs && (
           <div style={{ marginTop: '16px', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px', padding: '12px 16px' }}>
-            <p style={{ margin: '0 0 4px', color: '#4ade80', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Objectifs</p>
+            <p style={{ margin: '0 0 4px', color: colors.text.dim, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Objectifs</p>
             <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6 }}>{f.objectifs}</p>
           </div>
         )}
@@ -1162,7 +1162,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: `1px solid ${colors.border.faint}` }}>
         <div style={{ padding: '24px', borderRight: `1px solid ${colors.border.faint}` }}>
-          <p style={{ margin: '0 0 14px', color: '#818cf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>⚽ Avec ballon</p>
+          <p style={{ margin: '0 0 14px', color: '#818cf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Avec ballon</p>
           {(f.animation_avec_ballon || []).filter(Boolean).map((pt, i) => (
             <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <span style={{ color: '#818cf8', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
@@ -1173,7 +1173,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         </div>
 
         <div style={{ padding: '24px', borderRight: `1px solid ${colors.border.faint}` }}>
-          <p style={{ margin: '0 0 14px', color: '#f97316', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🛡️ Sans ballon</p>
+          <p style={{ margin: '0 0 14px', color: '#f97316', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Sans ballon</p>
           {(f.animation_sans_ballon || []).filter(Boolean).map((pt, i) => (
             <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <span style={{ color: '#f97316', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
@@ -1184,10 +1184,10 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         </div>
 
         <div style={{ padding: '24px' }}>
-          <p style={{ margin: '0 0 14px', color: '#22d3ee', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎯 Coups de pied arrêtés</p>
+          <p style={{ margin: '0 0 14px', color: '#22d3ee', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Coups de pied arrêtés</p>
           {(f.cpa_offensifs || []).filter(Boolean).length > 0 && (
             <div style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Offensifs</p>
+              <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Offensifs</p>
               {(f.cpa_offensifs || []).filter(Boolean).map((pt, i) => (
                 <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '7px' }}>
                   <span style={{ color: '#4ade80', fontWeight: 900, fontSize: '14px', flexShrink: 0 }}>›</span>
@@ -1198,13 +1198,13 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           )}
           {(f.schemas_cpa_offensif || []).filter(boardEstRempli).map((board, i) => (
             <div key={i} style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#4ade80', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{board.nom?.trim() || `Schéma offensif ${i + 1}`}</p>
+              <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{board.nom?.trim() || `Schéma offensif ${i + 1}`}</p>
               <TacticalBoard data={board} onChange={() => {}} readOnly />
             </div>
           ))}
           {(f.cpa_defensifs || []).filter(Boolean).length > 0 && (
             <div style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Défensifs</p>
+              <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Défensifs</p>
               {(f.cpa_defensifs || []).filter(Boolean).map((pt, i) => (
                 <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '7px' }}>
                   <span style={{ color: '#f87171', fontWeight: 900, fontSize: '14px', flexShrink: 0 }}>›</span>
@@ -1215,7 +1215,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
           )}
           {(f.schemas_cpa_defensif || []).filter(boardEstRempli).map((board, i) => (
             <div key={i} style={{ marginBottom: '14px' }}>
-              <p style={{ margin: '0 0 6px', color: '#f87171', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{board.nom?.trim() || `Schéma défensif ${i + 1}`}</p>
+              <p style={{ margin: '0 0 6px', color: colors.text.dim, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{board.nom?.trim() || `Schéma défensif ${i + 1}`}</p>
               <TacticalBoard data={board} onChange={() => {}} readOnly />
             </div>
           ))}
@@ -1236,7 +1236,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       {((f.transitions || []).filter(Boolean).length > 0 || (f.cles_du_match || []).filter(Boolean).length > 0 || (f.premieres_minutes || []).filter(Boolean).length > 0) && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: `1px solid ${colors.border.faint}` }}>
           <div style={{ padding: '24px', borderRight: `1px solid ${colors.border.faint}` }}>
-            <p style={{ margin: '0 0 14px', color: '#2dd4bf', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔄 Transitions</p>
+            <p style={{ margin: '0 0 14px', color: '#2dd4bf', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Transitions</p>
             {(f.transitions || []).filter(Boolean).map((pt, i) => (
               <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <span style={{ color: '#2dd4bf', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
@@ -1246,7 +1246,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             {!(f.transitions || []).filter(Boolean).length && <p style={{ color: colors.text.ghost, fontSize: '13px', fontStyle: 'italic' }}>—</p>}
           </div>
           <div style={{ padding: '24px', borderRight: `1px solid ${colors.border.faint}` }}>
-            <p style={{ margin: '0 0 14px', color: '#fbbf24', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔑 Nos clés du match</p>
+            <p style={{ margin: '0 0 14px', color: '#fbbf24', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Nos clés du match</p>
             {(f.cles_du_match || []).filter(Boolean).map((pt, i) => (
               <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <span style={{ color: '#fbbf24', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
@@ -1256,7 +1256,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
             {!(f.cles_du_match || []).filter(Boolean).length && <p style={{ color: colors.text.ghost, fontSize: '13px', fontStyle: 'italic' }}>—</p>}
           </div>
           <div style={{ padding: '24px' }}>
-            <p style={{ margin: '0 0 14px', color: '#60a5fa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>⏱️ Premières minutes</p>
+            <p style={{ margin: '0 0 14px', color: '#60a5fa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Premières minutes</p>
             {(f.premieres_minutes || []).filter(Boolean).map((pt, i) => (
               <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <span style={{ color: '#60a5fa', fontWeight: 900, fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>›</span>
@@ -1270,14 +1270,14 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
 
       {f.message_coach && (
         <div style={{ padding: '28px 32px', borderBottom: `1px solid ${colors.border.faint}`, background: 'rgba(167,139,250,0.04)' }}>
-          <p style={{ margin: '0 0 10px', color: '#a78bfa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎤 Message du coach</p>
+          <p style={{ margin: '0 0 10px', color: '#a78bfa', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Message du coach</p>
           <p style={{ margin: 0, color: colors.text.secondary, fontSize: '16px', lineHeight: 1.7, fontStyle: 'italic' }}>« {f.message_coach} »</p>
         </div>
       )}
 
       {(f.tactipad_ids || []).length > 0 && (
         <div style={{ padding: '28px 32px', borderBottom: `1px solid ${colors.border.faint}` }}>
-          <p style={{ margin: '0 0 16px', color: '#38bdf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎯 Mouvement tactique</p>
+          <p style={{ margin: '0 0 16px', color: '#38bdf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Mouvement tactique</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {f.tactipad_ids.map(id => {
               const tp = tactipadsDispo.find(t => t.id === id)
@@ -1303,14 +1303,14 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <button onClick={() => setVue('liste')} style={btnO}>← Fiches</button>
-        <button onClick={() => editer(f)} style={btnO}>Modifier</button>
-        <button onClick={async () => { await dupliquer(f); setVue('liste') }} style={btnO}>Dupliquer</button>
-        <button onClick={() => setPresentationOuverte(true)} disabled={!tactipadsLoaded} style={{ ...btnO, color: '#a78bfa', borderColor: '#a78bfa44', opacity: tactipadsLoaded ? 1 : 0.5, cursor: tactipadsLoaded ? 'pointer' : 'default' }}>
-          {tactipadsLoaded ? '📺 Présenter la causerie' : 'Chargement…'}
+        <button type="button" onClick={() => setVue('liste')} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={ChevronLeft} /> Fiches</button>
+        <button onClick={() => editer(f)} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}>Modifier</button>
+        <button onClick={async () => { await dupliquer(f); setVue('liste') }} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}>Dupliquer</button>
+        <button onClick={() => setPresentationOuverte(true)} disabled={!tactipadsLoaded} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, opacity: tactipadsLoaded ? 1 : 0.5, cursor: tactipadsLoaded ? 'pointer' : 'default' }}>
+          {tactipadsLoaded ? <><Icone icone={MonitorPlay} /> Présenter la causerie</> : 'Chargement…'}
         </button>
-        <button onClick={() => window.print()} style={{ ...btnO, color: '#4ade80', borderColor: '#4ade8044' }}>🖨️ Imprimer</button>
-        <button onClick={() => supprimer(f.id)} style={{ ...btnO, color: '#f87171', borderColor: '#f8717133' }}>Supprimer</button>
+        <button onClick={() => window.print()} className={CLASSE_BOUTON_SECONDAIRE} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={Printer} /> Imprimer</button>
+        <button onClick={() => supprimer(f.id)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, color: colors.accent.red, borderColor: colors.accent.red }}>Supprimer</button>
       </div>
 
       {/* Aperçu à l'écran */}
@@ -1322,11 +1322,9 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       <div style={{ ...card, marginTop: '20px', padding: '28px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', color: colors.text.primary }}>Composition</p>
-          <button onClick={toggleCompositionPubliee} disabled={savingCompo} style={{
-            background: f.composition_publiee ? '#4ade8022' : colors.background.raised,
-            border: `1px solid ${f.composition_publiee ? '#4ade80' : colors.border.default}`,
-            color: f.composition_publiee ? '#4ade80' : colors.text.faint,
-            borderRadius: '20px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+          <button type="button" onClick={toggleCompositionPubliee} disabled={savingCompo} aria-pressed={!!f.composition_publiee} className={CLASSE_BOUTON_SECONDAIRE} style={{
+            ...styleBoutonSecondaire(colors), minHeight: '36px', fontSize: '13px',
+            boxShadow: f.composition_publiee ? `inset ${forme.lisere} 0 0 ${colors.accent.success}` : 'none',
           }}>
             {f.composition_publiee ? 'Visible par les joueurs' : 'Masquée aux joueurs'}
           </button>

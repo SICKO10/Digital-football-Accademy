@@ -77,7 +77,7 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
                   color: f.misEnAvant ? colors.black : colors.accent.green,
                   border: f.misEnAvant ? 'none' : `1px solid ${colors.accent.green + alpha.light}`,
                   padding: `${spacing.lg} ${spacing['2xl']}`, borderRadius: radius.xl,
-                  fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 }}
               >
                 {f.libelleBouton}
@@ -94,7 +94,7 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
             marginTop: spacing['3xl'], width: isMobile ? '100%' : 'auto',
             background: colors.accent.green, color: colors.black, border: 'none',
             padding: `${spacing.lg} ${spacing['4xl']}`, borderRadius: radius.xl,
-            fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
           }}
         >
           {libelleBouton}

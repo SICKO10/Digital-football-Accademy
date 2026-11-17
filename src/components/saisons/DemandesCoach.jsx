@@ -233,7 +233,7 @@ const carte = (colors) => ({ background: colors.background.surface, border: `1px
 const titre = (colors) => ({ margin: '0 0 8px', fontWeight: 800, fontSize: 17, color: colors.text.primary })
 const texte = (colors) => ({ margin: '0 0 16px', fontSize: 13, lineHeight: 1.5, color: colors.text.secondary })
 const etiquette = (colors) => ({ fontSize: 11, color: colors.text.faint, marginBottom: 4, display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' })
-const champ = (colors) => ({ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 8, color: colors.text.primary, padding: '9px 12px', fontSize: 13, boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' })
+const champ = (colors) => ({ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 8, color: colors.text.primary, padding: '9px 12px', fontSize: 13, boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' })
 const bouton = (colors, plein) => plein
-  ? { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  : { background: 'transparent', color: colors.text.secondary, border: `1px solid ${colors.border.default}`, padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+  ? { background: colors.accent.blue, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }
+  : { background: 'transparent', color: colors.text.secondary, border: `1px solid ${colors.border.default}`, padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }

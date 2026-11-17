@@ -168,7 +168,7 @@ export default function HistoriqueIndividuel({ educateurId, saison, lignes, bles
     )
   }
 
-  const chip = (actif) => ({ padding: '6px 14px', borderRadius: 16, border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontWeight: actif ? 700 : 500, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' })
+  const chip = (actif) => ({ padding: '6px 14px', borderRadius: 16, border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontWeight: actif ? 700 : 500, fontFamily: 'Barlow, sans-serif', whiteSpace: 'nowrap' })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 18 }}>

@@ -69,7 +69,7 @@ export default function VeoStatsJoueur({ joueurId }) {
 
   const card = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px' }
   const label = { color: colors.text.faint, fontSize: '11px', display: 'block', marginBottom: '4px' }
-  const input = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' }
+  const input = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' }
 
   const champ = (lbl, key, placeholder = '0') => (
     <div>
@@ -89,7 +89,7 @@ export default function VeoStatsJoueur({ joueurId }) {
             </div>
           </div>
           <button onClick={() => setEditing(true)}
-            style={{ background: 'transparent', color: colors.accent.blue, border: `1px solid ${colors.accent.blue}`, borderRadius: '6px', padding: '5px 12px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: 'transparent', color: colors.accent.blue, border: `1px solid ${colors.accent.blue}`, borderRadius: '6px', padding: '5px 12px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Modifier
           </button>
         </div>
@@ -145,12 +145,12 @@ export default function VeoStatsJoueur({ joueurId }) {
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button onClick={sauvegarder} disabled={loading}
-          style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: loading ? 'default' : 'pointer', flex: 1, opacity: loading ? 0.6 : 1, fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: colors.accent.blue, color: colors.black, border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: loading ? 'default' : 'pointer', flex: 1, opacity: loading ? 0.6 : 1, fontFamily: 'Barlow, sans-serif' }}>
           {loading ? 'Enregistrement...' : 'Enregistrer mes stats Veo'}
         </button>
         {stats && (
           <button onClick={() => setEditing(false)}
-            style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 16px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Annuler
           </button>
         )}

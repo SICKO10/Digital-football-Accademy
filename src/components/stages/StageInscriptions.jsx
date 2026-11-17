@@ -99,16 +99,16 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
     URL.revokeObjectURL(url)
   }
 
-  if (chargement) return <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
+  if (chargement) return <p style={{ color: colors.text.dim, fontSize: '13px' }}>Chargement…</p>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {erreur && <p style={st.erreur}>{erreur}</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-        {[['Inscrits', actives.length, colors.text.primary], ['Encaissé', euros(totalPaye), accent], ['Reste à encaisser', euros(Math.max(totalDu - totalPaye, 0)), '#facc15']].map(([k, v, c]) => (
+        {[['Inscrits', actives.length, colors.text.primary], ['Encaissé', euros(totalPaye), accent], ['Reste à encaisser', euros(Math.max(totalDu - totalPaye, 0)), colors.accent.amber]].map(([k, v, c]) => (
           <div key={k} style={{ ...st.carte, padding: '14px 16px' }}>
-            <div style={{ fontSize: '11px', color: colors.text.faint }}>{k}</div>
+            <div style={{ fontSize: '11px', color: colors.text.dim }}>{k}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: c }}>{v}</div>
           </div>
         ))}
@@ -119,7 +119,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
         <div style={{ overflowX: 'auto', marginTop: '8px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', color: colors.text.secondary }}>
             <thead>
-              <tr style={{ color: colors.text.faint, textAlign: 'left' }}>
+              <tr style={{ color: colors.text.dim, textAlign: 'left' }}>
                 <th style={{ padding: '6px 8px' }}>Jour</th>
                 <th style={{ padding: '6px 8px' }}>Présents</th>
                 <th style={{ padding: '6px 8px' }}>Places restantes</th>
@@ -133,7 +133,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
                   <tr key={j} style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
                     <td style={{ padding: '6px 8px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{formatJourCourt(j)}</td>
                     <td style={{ padding: '6px 8px', fontWeight: 700, color: colors.text.primary }}>{presents.length}</td>
-                    <td style={{ padding: '6px 8px', color: stage.places_max - presents.length <= 0 ? '#f87171' : colors.text.dim }}>{Math.max(stage.places_max - presents.length, 0)}</td>
+                    <td style={{ padding: '6px 8px', color: stage.places_max - presents.length <= 0 ? colors.accent.red : colors.text.dim }}>{Math.max(stage.places_max - presents.length, 0)}</td>
                     {nomsFormules.map(id => <td key={id} style={{ padding: '6px 8px' }}>{presents.filter(i => i.formule_repas_id === id).length}</td>)}
                   </tr>
                 )
@@ -148,8 +148,8 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {FILTRES.map(([id, label]) => (
               <button key={id} onClick={() => setFiltre(id)} style={{
-                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                background: filtre === id ? accent + '18' : 'transparent', border: `1px solid ${filtre === id ? accent + '60' : colors.border.default}`, color: filtre === id ? accent : colors.text.dim,
+                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+                background: filtre === id ? colors.background.raised : 'transparent', border: `1px solid ${filtre === id ? accent : colors.border.default}`, color: filtre === id ? colors.text.primary : colors.text.dim,
               }}>{label}</button>
             ))}
           </div>
@@ -157,20 +157,20 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
         </div>
 
         {visibles.length === 0 ? (
-          <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>{inscriptions.length === 0 ? 'Aucune inscription pour l\'instant. Partage le lien public pour ouvrir les inscriptions.' : 'Aucune inscription dans cette catégorie.'}</p>
+          <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>{inscriptions.length === 0 ? 'Aucune inscription pour l\'instant. Partage le lien public pour ouvrir les inscriptions.' : 'Aucune inscription dans cette catégorie.'}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {visibles.map(i => {
-              const couleurStatut = i.statut_paiement === 'paye' ? accent : i.statut_paiement === 'annule' ? colors.text.faint : '#facc15'
+              const couleurStatut = i.statut_paiement === 'paye' ? accent : i.statut_paiement === 'annule' ? colors.text.dim : colors.accent.amber
               const a = age(i.date_naissance, stage.date_debut)
               const sante = i.allergies || i.medicaments || i.notes_medicales
               return (
-                <div key={i.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', opacity: i.statut_paiement === 'annule' ? 0.6 : 1 }}>
+                <div key={i.id} style={{ background: colors.background.raised, borderRadius: '6px', padding: '10px 12px', opacity: i.statut_paiement === 'annule' ? 0.6 : 1 }}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                       <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>
-                        {i.prenom} {i.nom}{a !== null && <span style={{ fontWeight: 400, color: colors.text.faint }}> · {a} ans</span>}
-                        {sante && <span style={{ marginLeft: '8px', fontSize: '10px', fontWeight: 700, color: '#f87171', border: '1px solid #f8717160', borderRadius: '6px', padding: '1px 6px' }}>SANTÉ</span>}
+                        {i.prenom} {i.nom}{a !== null && <span style={{ fontWeight: 400, color: colors.text.dim }}> · {a} ans</span>}
+                        {sante && <span style={{ marginLeft: '8px', fontSize: '10px', fontWeight: 700, color: colors.accent.red, border: `1px solid ${colors.accent.red}`, borderRadius: '6px', padding: '1px 6px' }}>SANTÉ</span>}
                       </div>
                       <div style={{ fontSize: '12px', color: colors.text.dim }}>
                         {offres[i.offre_id] || 'Offre'}{i.formule_repas_id ? ` · ${formules[i.formule_repas_id] || 'Repas'}` : ''} · {(i.jours || []).length} jour(s) · réf. {i.reference}{i.numero_dossard ? ` · dossard n°${i.numero_dossard}` : ''}
@@ -191,7 +191,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
                       <button onClick={() => setPaiement({ id: i.id, mode: (stage.modes_paiement || ['virement'])[0], montant: String(i.montant_du), date: dateStr(new Date()) })} style={{ ...st.bouton, padding: '4px 10px', fontSize: '12px' }}>Paiement reçu</button>
                     )}
                     {i.statut_paiement !== 'annule' && (
-                      <button onClick={() => annulerInscription(i)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: '#f87171' }}>Annuler</button>
+                      <button onClick={() => annulerInscription(i)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: colors.accent.red }}>Annuler</button>
                     )}
                   </div>
 
@@ -199,12 +199,12 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
                     <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', alignItems: 'end' }}>
                       <div>
                         <label style={st.label}>Mode</label>
-                        <select value={paiement.mode} onChange={e => setPaiement(p => ({ ...p, mode: e.target.value }))} style={st.input}>
+                        <select className="df-champ" value={paiement.mode} onChange={e => setPaiement(p => ({ ...p, mode: e.target.value }))} style={st.input}>
                           {Object.entries(MODES_PAIEMENT).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                         </select>
                       </div>
-                      <div><label style={st.label}>Montant reçu (total)</label><input type="number" min="0" step="0.01" value={paiement.montant} onChange={e => setPaiement(p => ({ ...p, montant: e.target.value }))} style={st.input} /></div>
-                      <div><label style={st.label}>Date</label><input type="date" value={paiement.date} onChange={e => setPaiement(p => ({ ...p, date: e.target.value }))} style={st.input} /></div>
+                      <div><label style={st.label}>Montant reçu (total)</label><input className="df-champ" type="number" min="0" step="0.01" value={paiement.montant} onChange={e => setPaiement(p => ({ ...p, montant: e.target.value }))} style={st.input} /></div>
+                      <div><label style={st.label}>Date</label><input className="df-champ" type="date" value={paiement.date} onChange={e => setPaiement(p => ({ ...p, date: e.target.value }))} style={st.input} /></div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button onClick={enregistrerPaiement} style={{ ...st.boutonPlein, padding: '9px 14px' }}>Valider</button>
                         <button onClick={() => setPaiement(null)} style={st.boutonDiscret}>Annuler</button>
@@ -218,7 +218,7 @@ export default function StageInscriptions({ st, colors, accent, stage }) {
                       <div><span style={st.label}>Joueur</span>{i.date_naissance ? `Né(e) le ${formatDate(i.date_naissance, { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Date de naissance non renseignée'}{i.club_appartenance ? <><br />Club : {i.club_appartenance}</> : null}</div>
                       <div><span style={st.label}>Jours</span><span style={{ textTransform: 'capitalize' }}>{(i.jours || []).map(j => formatJourCourt(j)).join(', ')}</span></div>
                       <div><span style={st.label}>Paiement</span>{i.mode_paiement ? `${MODES_PAIEMENT[i.mode_paiement]} · ${i.paye_le ? formatDate(i.paye_le, { day: 'numeric', month: 'short' }) : ''}` : 'Pas encore reçu'}</div>
-                      <div style={{ gridColumn: '1 / -1', background: sante ? '#f8717112' : 'transparent', border: sante ? '1px solid #f8717140' : 'none', borderRadius: '8px', padding: sante ? '8px 10px' : 0 }}>
+                      <div style={{ gridColumn: '1 / -1', background: sante ? '#f8717112' : 'transparent', border: sante ? '1px solid #f8717140' : 'none', borderRadius: '6px', padding: sante ? '8px 10px' : 0 }}>
                         <span style={st.label}>Santé (confidentiel)</span>
                         {sante ? (
                           <>

@@ -14,10 +14,10 @@ export default function BandeauPromo({ lang = 'fr', onClick }) {
   if (!promoActive()) return null
   const tx = TEXTES[lang] || TEXTES.fr
   return (
-    <div style={{ background: colors.accent.green, color: colors.background.base, padding: '10px 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px 14px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+    <div style={{ background: colors.accent.green, color: colors.background.base, padding: '10px 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px 14px', textAlign: 'center', fontFamily: 'Barlow, sans-serif', fontSize: '13px' }}>
       <span><strong style={{ fontWeight: 800 }}>{tx.titre}</strong> {tx.detail} · <strong style={{ fontWeight: 800, letterSpacing: '0.5px' }}>{PROMO_CODE}</strong></span>
       {onClick && (
-        <button onClick={onClick} style={{ background: colors.background.base, color: colors.accent.green, border: 'none', borderRadius: '20px', padding: '5px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{tx.cta}</button>
+        <button onClick={onClick} style={{ background: colors.background.base, color: colors.accent.green, border: 'none', borderRadius: '20px', padding: '5px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{tx.cta}</button>
       )}
     </div>
   )

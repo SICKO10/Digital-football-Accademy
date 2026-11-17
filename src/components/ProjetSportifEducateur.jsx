@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useColors } from '../lib/theme'
+import { coqueVars } from '../lib/menuLateral'
+import { TitreEcran } from './identite'
 import { getPoleDeCategorie } from '../constants/poles'
 import PlanificationAnnuelle from './club/PlanificationAnnuelle'
 import { SectionPrincipes, SectionRegles, SectionZones } from './club/ProjetSportif'
@@ -27,29 +29,19 @@ export default function ProjetSportifEducateur({ categorie, clubId, readOnlyProj
   const pole = categorie ? getPoleDeCategorie(categorie) : null
 
   if (!categorie) {
-    return <div style={{ padding: 40, color: colors.text.faint, textAlign: 'center' }}>Déclare d'abord ta catégorie dans "Mon équipe" pour voir le Projet Sportif.</div>
+    return <div style={{ padding: 40, color: colors.text.secondary, textAlign: 'center' }}>Déclare d'abord ta catégorie dans "Mon équipe" pour voir le Projet Sportif.</div>
   }
   if (!pole || !clubId) {
-    return <div style={{ padding: 40, color: colors.text.faint, textAlign: 'center' }}>Aucun pôle trouvé pour cette catégorie.</div>
+    return <div style={{ padding: 40, color: colors.text.secondary, textAlign: 'center' }}>Aucun pôle trouvé pour cette catégorie.</div>
   }
 
   return (
     <div style={{ maxWidth: 1100 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ color: pole.couleur, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>{pole.label}</div>
-        <h1 style={{ color: colors.text.primary, fontSize: 24, fontWeight: 900, margin: '0 0 4px' }}>Projet Sportif</h1>
-        <p style={{ color: colors.text.faint, fontSize: 13, margin: 0 }}>Catégorie {categorie} · Lecture seule (sauf ajout de tes séances aux semaines)</p>
-      </div>
+      <TitreEcran surTitre={pole.label} titre="Projet Sportif" sousTitre={`Catégorie ${categorie} · Lecture seule (sauf ajout de tes séances aux semaines)`} />
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.border.subtle}`, marginBottom: 24, overflowX: 'auto' }}>
+      <div role="tablist" aria-label="Rubriques du projet sportif" className="df-onglets" style={{ ...coqueVars(colors, colors.accent.blue), marginBottom: 24 }}>
         {ONGLETS.map(o => (
-          <button key={o.key} onClick={() => setOnglet(o.key)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 18px',
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
-              color: onglet === o.key ? pole.couleur : colors.text.faint,
-              borderBottom: onglet === o.key ? `2px solid ${pole.couleur}` : '2px solid transparent',
-            }}>
+          <button key={o.key} type="button" role="tab" aria-selected={onglet === o.key} className="df-onglet" onClick={() => setOnglet(o.key)}>
             {o.label}
           </button>
         ))}

@@ -46,10 +46,10 @@ export default function StageInscription() {
   const st = {
     carte: { background: '#111', border: '1px solid #1f1f1f', borderRadius: 16, padding: '20px 22px', marginTop: 16 },
     label: { display: 'block', fontSize: 12, fontWeight: 700, color: '#aaa', margin: '0 0 6px' },
-    input: { width: '100%', background: '#0a0a0a', border: '1px solid #262626', borderRadius: 10, color: '#fff', padding: '11px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
-    choix: (actif) => ({ display: 'block', width: '100%', textAlign: 'left', background: actif ? accent + '18' : '#0a0a0a', border: `1px solid ${actif ? accent : '#262626'}`, borderRadius: 12, padding: '12px 14px', color: '#fff', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: 8 }),
-    boutonPlein: { padding: '13px 26px', borderRadius: 12, border: 'none', background: accent, color: '#0a0a0a', fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-    boutonDiscret: { padding: '13px 20px', borderRadius: 12, border: '1px solid #262626', background: 'transparent', color: '#aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
+    input: { width: '100%', background: '#0a0a0a', border: '1px solid #262626', borderRadius: 10, color: '#fff', padding: '11px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' },
+    choix: (actif) => ({ display: 'block', width: '100%', textAlign: 'left', background: actif ? accent + '18' : '#0a0a0a', border: `1px solid ${actif ? accent : '#262626'}`, borderRadius: 12, padding: '12px 14px', color: '#fff', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginBottom: 8 }),
+    boutonPlein: { padding: '13px 26px', borderRadius: 12, border: 'none', background: accent, color: '#0a0a0a', fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
+    boutonDiscret: { padding: '13px 20px', borderRadius: 12, border: '1px solid #262626', background: 'transparent', color: '#aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' },
   }
 
   if (stage.statut !== 'ouvert' && !confirmation) {
@@ -205,7 +205,7 @@ export default function StageInscription() {
                   const actif = joursEffectifs.includes(j.date)
                   return (
                     <button key={j.date} type="button" disabled={tousLesJours || complet} onClick={() => basculerJour(j.date)} style={{
-                      padding: '9px 12px', borderRadius: 10, fontSize: 13, fontFamily: 'Inter, sans-serif', textTransform: 'capitalize',
+                      padding: '9px 12px', borderRadius: 10, fontSize: 13, fontFamily: 'Barlow, sans-serif', textTransform: 'capitalize',
                       cursor: tousLesJours || complet ? 'default' : 'pointer',
                       background: actif ? accent + '22' : '#0a0a0a', border: `1px solid ${complet ? '#3a1f1f' : actif ? accent : '#262626'}`,
                       color: complet ? '#664' : actif ? accent : '#ccc',
@@ -260,7 +260,7 @@ export default function StageInscription() {
           <div style={st.carte}>
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>
               <input type="checkbox" checked={reglementAccepte} onChange={e => setReglementAccepte(e.target.checked)} style={{ marginTop: 3 }} />
-              <span>J'ai lu et j'accepte le règlement du stage.{stage.reglement && <> <button type="button" onClick={() => setVoirReglement(v => !v)} style={{ background: 'none', border: 'none', color: accent, cursor: 'pointer', padding: 0, fontSize: 14, fontFamily: 'Inter, sans-serif' }}>{voirReglement ? 'Masquer' : 'Lire le règlement'}</button></>}</span>
+              <span>J'ai lu et j'accepte le règlement du stage.{stage.reglement && <> <button type="button" onClick={() => setVoirReglement(v => !v)} style={{ background: 'none', border: 'none', color: accent, cursor: 'pointer', padding: 0, fontSize: 14, fontFamily: 'Barlow, sans-serif' }}>{voirReglement ? 'Masquer' : 'Lire le règlement'}</button></>}</span>
             </label>
             {voirReglement && stage.reglement && <p style={{ margin: '10px 0 0 26px', fontSize: 13, color: '#aaa', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{stage.reglement}</p>}
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#ddd', cursor: 'pointer', marginTop: 12 }}>
@@ -292,7 +292,7 @@ export default function StageInscription() {
 function Cadre({ accent, stage, children }) {
   const { lien } = useParams()
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Barlow, sans-serif' }}>
       <style>{CSS_STAGE_PUBLIC}</style>
       <div className="sp-page">
         <Link to={`/stage/${lien}`} style={{ color: '#888', fontSize: 13, textDecoration: 'none' }}>← {stage.nom}</Link>

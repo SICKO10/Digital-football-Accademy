@@ -140,10 +140,10 @@ export default function LierTournoi() {
   }
 
   const st = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '16px', padding: '40px 32px', maxWidth: '440px', width: '100%', textAlign: 'center' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', marginTop: '10px', fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}33`, borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', marginTop: '10px', fontFamily: 'Inter, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', marginTop: '10px', fontFamily: 'Barlow, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}33`, borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', marginTop: '10px', fontFamily: 'Barlow, sans-serif' },
   }
 
   if (loading) return (

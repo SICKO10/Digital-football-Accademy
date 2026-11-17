@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha } from '../tokens'
+import { police, forme } from '../tokens'
+import { styleCarte, styleCarteLiseree, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleChiffreHeros, couleurCraie, couleurClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../lib/identite'
+import { coqueVars } from '../lib/menuLateral'
+import { Etiquette, EtiquetteStatut } from './identite'
 import { saisonActuelle } from '../lib/saison'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 
@@ -35,17 +38,17 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     en_cours: { label: 'En cours', color: colors.accent.orange },
     en_soin: { label: 'En soin', color: colors.accent.amber },
     retour_prog: { label: 'Retour programmé', color: colors.accent.info },
-    gueri: { label: 'Guéri', color: colors.accent.green },
+    gueri: { label: 'Guéri', color: colors.accent.success },
   }
   const GRAVITE_META = {
-    legere: { label: 'Légère', niveau: 1, color: colors.accent.green },
+    legere: { label: 'Légère', niveau: 1, color: colors.accent.success },
     moderee: { label: 'Modérée', niveau: 2, color: colors.accent.amber },
     grave: { label: 'Grave', niveau: 3, color: colors.accent.red },
   }
   const STATUT_ETAPE_META = {
     a_faire: { label: 'À faire', color: colors.text.disabled },
     en_cours: { label: 'En cours', color: colors.accent.orange },
-    validee: { label: 'Validée', color: colors.accent.green },
+    validee: { label: 'Validée', color: colors.accent.success },
   }
   const ONGLETS_DETAIL = [
     { id: 'retour', label: 'Retour compétition' },
@@ -126,12 +129,6 @@ export default function SanteEquipe({ joueurs, educateurId }) {
 
   const joueurDe = (equipeJoueurId) => joueurs.find(j => j.id === equipeJoueurId)
 
-  // Couleur d'avatar par défaut (pas de photo) dérivée du prénom, pour
-  // distinguer les joueurs d'un coup d'œil dans la liste plutôt qu'un gris
-  // uniforme partout.
-  const PALETTE_AVATAR = [colors.accent.green, colors.accent.blue, colors.accent.amber, colors.accent.purple, colors.accent.orange]
-  const couleurAvatar = (prenom) => PALETTE_AVATAR[(prenom?.charCodeAt(0) || 0) % PALETTE_AVATAR.length]
-
   const declarerBlessure = async () => {
     if (!form.equipe_joueur_id) { alert('Merci de choisir le joueur concerné.'); return }
     if (!form.type_blessure.trim()) { alert('Merci de renseigner le type de blessure.'); return }
@@ -196,15 +193,31 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     window.open(data.signedUrl, '_blank', 'noopener')
   }
 
+  // Styles du kit d'identité (cartes à coins 6 px, boutons et champs du kit, étiquettes en petites capitales).
+  // Les classes CSS (survol, focus visible) sont posées sur chaque bouton et champ.
   const s = {
-    card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', marginBottom: '16px' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
-    label: { color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', fontWeight: 700 },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' },
-    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', minHeight: '80px', resize: 'vertical', boxSizing: 'border-box' },
-    pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: '20px', padding: '3px 12px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }),
+    card: { ...styleCarte(colors), marginBottom: '16px', padding: '20px' },
+    btn: { ...styleBoutonPrincipal(colors), minHeight: '38px', fontSize: '13px' },
+    btnGhost: { ...styleBoutonSecondaire(colors), minHeight: '38px', fontSize: '13px' },
+    btnPetit: { ...styleBoutonSecondaire(colors), minHeight: '32px', padding: '0 12px', fontSize: '12px' },
+    btnPetitPlein: { ...styleBoutonPrincipal(colors), minHeight: '32px', padding: '0 12px', fontSize: '12px' },
+    label: { ...styleEtiquette(colors), fontSize: '11px', marginBottom: '4px', display: 'block' },
+    input: styleChamp(colors),
+    textarea: { ...styleChamp(colors), minHeight: '80px', resize: 'vertical' },
   }
+  // Choix à bascule (filtres, onglets) : plein à la couleur du club quand il est actif.
+  const choix = (actif) => ({
+    fontFamily: police.texte, fontWeight: actif ? 700 : 600, fontSize: '13px', lineHeight: 1.2, minHeight: '36px', padding: '0 14px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', borderRadius: forme.rayonCarte, cursor: 'pointer', boxSizing: 'border-box', flexShrink: 0,
+    border: `1px solid ${actif ? colors.accent.brand : colors.border.strong}`,
+    background: actif ? colors.accent.brand : 'transparent',
+    color: actif ? colors.accent.onBrand : colors.text.primary,
+  })
+  const marqueur = (couleur, actif = false, taille = 8) => (
+    <span aria-hidden="true" style={{ width: `${taille}px`, height: `${taille}px`, borderRadius: '1px', background: couleur, flexShrink: 0, display: 'inline-block', boxShadow: actif ? `0 0 0 1px ${colors.accent.onBrand}` : 'none' }} />
+  )
+  const chiffre = (taille = 16) => ({ fontFamily: police.titre, fontWeight: 700, fontSize: `${taille}px`, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', color: colors.text.primary })
+  const craie = `1px solid ${couleurCraie(colors)}`
 
   // ── Détail d'une blessure ──────────────────────────────────────────────
   if (blessureSelectionnee) {
@@ -216,10 +229,10 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           <button onClick={() => { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }} style={s.btnGhost}>
             ← Retour à l'équipe
           </button>
-          <button onClick={async e => {
+          <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={async e => {
             const supprimee = await supprimerBlessure(blessureSelectionnee.id, e)
             if (supprimee) { setBlessureSelectionnee(null); setShowFormSuivi(false); setShowFormEtape(false) }
-          }} style={{ ...s.btnGhost, color: colors.accent.red, borderColor: colors.accent.red + '40' }}>
+          }} style={{ ...s.btnGhost, color: colors.accent.red, borderColor: colors.accent.red }}>
             Supprimer cette blessure
           </button>
         </div>
@@ -227,12 +240,12 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         <div style={s.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
             <div>
-              <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '17px' }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</div>
+              <h2 style={{ margin: 0, fontFamily: police.titre, fontWeight: 700, fontSize: '26px', lineHeight: 1.1, letterSpacing: '0.01em', textTransform: 'uppercase', color: colors.text.primary }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</h2>
               <div style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '2px' }}>
                 {blessureSelectionnee.type_blessure}{blessureSelectionnee.zone_corps && ` — ${blessureSelectionnee.zone_corps}`}
               </div>
             </div>
-            <span style={s.pill(meta.color)}>{meta.label}</span>
+            <EtiquetteStatut couleur={meta.color}>{meta.label}</EtiquetteStatut>
           </div>
 
           {(() => {
@@ -240,59 +253,53 @@ export default function SanteEquipe({ joueurs, educateurId }) {
             if (!grav) return null
             return (
               <div style={{ marginTop: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ color: colors.text.faint, fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Gravité</span>
-                  <span style={{ color: grav.color, fontSize: '10px', fontWeight: 700 }}>{grav.label}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <Etiquette>Gravité</Etiquette>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: colors.text.primary, fontSize: '13px', fontWeight: 700 }}>{marqueur(grav.color)}{grav.label}</span>
                 </div>
-                <div style={{ height: '5px', background: colors.background.raised, borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(grav.niveau / 3) * 100}%`, height: '100%', background: grav.color, borderRadius: '3px' }} />
+                <div role="img" aria-label={`Gravité ${grav.label}`} style={{ height: '6px', background: colors.background.sunken, borderRadius: '1px', overflow: 'hidden' }}>
+                  <div style={{ width: `${(grav.niveau / 3) * 100}%`, height: '100%', background: grav.color }} />
                 </div>
               </div>
             )
           })()}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div className="df-onglets" role="tablist" aria-label="Détail de la blessure" style={{ ...coqueVars(colors), marginBottom: '16px' }}>
           {ONGLETS_DETAIL.map(o => (
-            <button key={o.id} onClick={() => setOngletDetail(o.id)}
-              style={{
-                background: ongletDetail === o.id ? colors.text.primary : colors.background.raised,
-                color: ongletDetail === o.id ? colors.background.base : colors.text.faint,
-                border: `1px solid ${ongletDetail === o.id ? colors.text.primary : colors.border.default}`,
-                borderRadius: '20px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Inter, sans-serif',
-              }}>{o.label}</button>
+            <button key={o.id} type="button" role="tab" aria-selected={ongletDetail === o.id} className="df-onglet" onClick={() => setOngletDetail(o.id)}>{o.label}</button>
           ))}
         </div>
 
         {ongletDetail === 'retour' && (
         <div style={s.card}>
-          <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', marginBottom: '14px' }}>RETOUR À LA COMPÉTITION</div>
+          <Etiquette as="p" style={{ marginBottom: '14px' }}>Retour à la compétition</Etiquette>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={s.label}>Date estimée</label>
-              <input type="date" style={s.input} value={blessureSelectionnee.date_retour_estimee || ''}
+              <input type="date" className={CLASSE_CHAMP} style={s.input} value={blessureSelectionnee.date_retour_estimee || ''}
                 onChange={e => setBlessureSelectionnee(p => ({ ...p, date_retour_estimee: e.target.value }))} />
             </div>
             <div>
               <label style={s.label}>Date effective</label>
-              <input type="date" style={s.input} value={blessureSelectionnee.date_retour_effective || ''}
+              <input type="date" className={CLASSE_CHAMP} style={s.input} value={blessureSelectionnee.date_retour_effective || ''}
                 onChange={e => setBlessureSelectionnee(p => ({ ...p, date_retour_effective: e.target.value }))} />
             </div>
           </div>
           <div style={{ marginBottom: '12px' }}>
             <label style={s.label}>Statut</label>
-            <select style={s.input} value={blessureSelectionnee.statut}
+            <select className={CLASSE_CHAMP} style={s.input} value={blessureSelectionnee.statut}
               onChange={e => setBlessureSelectionnee(p => ({ ...p, statut: e.target.value }))}>
               {Object.entries(STATUT_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label style={s.label}>Notes éducateur</label>
-            <textarea style={s.textarea} value={blessureSelectionnee.notes || ''}
+            <textarea className={CLASSE_CHAMP} style={s.textarea} value={blessureSelectionnee.notes || ''}
               onChange={e => setBlessureSelectionnee(p => ({ ...p, notes: e.target.value }))}
               placeholder="Programme de reprise, restrictions, observations..." />
           </div>
-          <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={mettreAJourBlessure}>Enregistrer</button>
+          <button className={CLASSE_BOUTON} style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={mettreAJourBlessure}>Enregistrer</button>
         </div>
         )}
 
@@ -303,47 +310,47 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               {etapes.length > 0 && (
                 <div style={s.card}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>Progression rééducation</span>
-                    <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>{progression}%</span>
+                    <Etiquette>Progression rééducation</Etiquette>
+                    <span style={chiffre(20)}>{progression}%</span>
                   </div>
-                  <div style={{ background: colors.background.raised, borderRadius: '4px', height: '8px' }}>
-                    <div style={{ background: colors.accent.green, width: `${progression}%`, height: '8px', borderRadius: '4px', transition: 'width 0.3s' }} />
+                  <div role="img" aria-label={`Progression ${progression} %`} style={{ background: colors.background.sunken, borderRadius: '1px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{ background: couleurClub(colors), width: `${progression}%`, height: '8px' }} />
                   </div>
-                  <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '6px' }}>{etapes.filter(e => e.statut === 'validee').length} / {etapes.length} étapes complétées</div>
+                  <div style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '6px' }}>{etapes.filter(e => e.statut === 'validee').length} / {etapes.length} étapes complétées</div>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ color: colors.text.secondary, fontSize: '13px' }}>Programme de retour au jeu</div>
-                {!showFormEtape && <button style={s.btn} onClick={() => setShowFormEtape(true)}>+ Ajouter une étape</button>}
+                <div style={{ color: colors.text.secondary, fontSize: '14px' }}>Programme de retour au jeu</div>
+                {!showFormEtape && <button type="button" className={CLASSE_BOUTON} style={s.btn} onClick={() => setShowFormEtape(true)}>+ Ajouter une étape</button>}
               </div>
 
               {showFormEtape && (
-                <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '16px', marginBottom: '16px', border: `1px solid ${colors.border.default}` }}>
+                <div style={{ background: colors.background.sunken, borderRadius: forme.rayonCarte, padding: '16px', marginBottom: '16px', border: craie }}>
                   <div style={{ marginBottom: '10px' }}>
                     <label style={s.label}>Titre de l'étape</label>
-                    <input style={s.input} placeholder="ex : Phase 1 — Repos actif, Reprise course légère..."
+                    <input className={CLASSE_CHAMP} style={s.input} placeholder="ex : Phase 1 — Repos actif, Reprise course légère..."
                       value={formEtape.titre} onChange={e => setFormEtape(p => ({ ...p, titre: e.target.value }))} />
                   </div>
                   <div style={{ marginBottom: '10px' }}>
                     <label style={s.label}>Durée estimée</label>
-                    <input style={s.input} placeholder="ex : 3 jours, 1 semaine..."
+                    <input className={CLASSE_CHAMP} style={s.input} placeholder="ex : 3 jours, 1 semaine..."
                       value={formEtape.duree_estimee} onChange={e => setFormEtape(p => ({ ...p, duree_estimee: e.target.value }))} />
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <label style={s.label}>Exercices / consignes détaillées</label>
-                    <textarea style={s.textarea} placeholder="Détaille les exercices, charges autorisées, restrictions, objectifs de la phase..."
+                    <textarea className={CLASSE_CHAMP} style={s.textarea} placeholder="Détaille les exercices, charges autorisées, restrictions, objectifs de la phase..."
                       value={formEtape.description} onChange={e => setFormEtape(p => ({ ...p, description: e.target.value }))} />
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterEtape}>Ajouter</button>
-                    <button style={s.btnGhost} onClick={() => { setShowFormEtape(false); setFormEtape({ titre: '', description: '', duree_estimee: '' }) }}>Annuler</button>
+                    <button className={CLASSE_BOUTON} style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterEtape}>Ajouter</button>
+                    <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={s.btnGhost} onClick={() => { setShowFormEtape(false); setFormEtape({ titre: '', description: '', duree_estimee: '' }) }}>Annuler</button>
                   </div>
                 </div>
               )}
 
               {etapes.length === 0 && !showFormEtape && (
-                <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '30px 0', border: `1px dashed ${colors.border.default}`, borderRadius: '8px' }}>
+                <div style={{ color: colors.text.secondary, fontSize: '14px', textAlign: 'center', padding: '30px 0', border: `1px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte }}>
                   Aucun programme défini — crée les étapes de rééducation
                 </div>
               )}
@@ -351,29 +358,30 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               {etapes.map((etape, idx) => {
                 const stMeta = STATUT_ETAPE_META[etape.statut] || STATUT_ETAPE_META.a_faire
                 return (
-                  <div key={etape.id} style={{ background: stMeta.color + alpha.faint, border: `1px solid ${stMeta.color}${alpha.light}`, borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+                  <div key={etape.id} style={{ ...styleCarte(colors), padding: '14px 14px 14px 17px', marginBottom: '10px', boxShadow: `inset ${forme.lisere} 0 0 ${stMeta.color}` }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                        <div style={{
-                          width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-                          background: etape.statut === 'validee' ? colors.accent.green : colors.background.raised,
-                          color: etape.statut === 'validee' ? colors.black : colors.text.faint,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px',
+                        <div aria-hidden="true" style={{
+                          width: '28px', height: '28px', borderRadius: forme.rayonPastille, flexShrink: 0,
+                          background: etape.statut === 'validee' ? couleurClub(colors) : colors.background.raised,
+                          color: etape.statut === 'validee' ? texteSur(couleurClub(colors)) : colors.text.primary,
+                          border: `1px solid ${etape.statut === 'validee' ? 'transparent' : colors.border.strong}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontWeight: 700, fontSize: '16px', fontVariantNumeric: 'tabular-nums',
                         }}>{idx + 1}</div>
                         <div>
-                          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>{etape.titre}</div>
-                          {etape.duree_estimee && <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px' }}>{etape.duree_estimee}</div>}
-                          {etape.description && <p style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '6px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
-                          {etape.date_validation && <div style={{ color: colors.accent.green, fontSize: '11px', marginTop: '4px' }}>Validée le {new Date(`${etape.date_validation}T12:00:00`).toLocaleDateString('fr-FR')}</div>}
+                          <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px' }}>{etape.titre}</div>
+                          {etape.duree_estimee && <div style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '2px' }}>{etape.duree_estimee}</div>}
+                          {etape.description && <p style={{ color: colors.text.secondary, fontSize: '13px', marginTop: '6px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{etape.description}</p>}
+                          {etape.date_validation && <div style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '4px' }}>Validée le {new Date(`${etape.date_validation}T12:00:00`).toLocaleDateString('fr-FR')}</div>}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
-                        <span style={{ color: stMeta.color, fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{stMeta.label}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                        <EtiquetteStatut couleur={stMeta.color}>{stMeta.label}</EtiquetteStatut>
                         {etape.statut === 'a_faire' && (
-                          <button onClick={() => passerEnCours(etape.id)} style={{ background: colors.background.raised, color: colors.accent.orange, border: `1px solid ${colors.accent.orange}`, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Démarrer</button>
+                          <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => passerEnCours(etape.id)} style={s.btnPetit}>Démarrer</button>
                         )}
                         {etape.statut === 'en_cours' && (
-                          <button onClick={() => validerEtape(etape.id)} style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Valider</button>
+                          <button type="button" className={CLASSE_BOUTON} onClick={() => validerEtape(etape.id)} style={s.btnPetitPlein}>Valider</button>
                         )}
                       </div>
                     </div>
@@ -387,21 +395,21 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         {ongletDetail === 'suivi' && (
         <div style={s.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px' }}>SUIVI MÉDICAL</div>
-            {!showFormSuivi && <button style={s.btn} onClick={() => setShowFormSuivi(true)}>+ Ajouter un suivi</button>}
+            <Etiquette as="p">Suivi médical</Etiquette>
+            {!showFormSuivi && <button type="button" className={CLASSE_BOUTON} style={s.btn} onClick={() => setShowFormSuivi(true)}>+ Ajouter un suivi</button>}
           </div>
 
           {showFormSuivi && (
-            <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '16px', marginBottom: '16px', border: `1px solid ${colors.border.default}` }}>
+            <div style={{ background: colors.background.sunken, borderRadius: forme.rayonCarte, padding: '16px', marginBottom: '16px', border: craie }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                 <div>
                   <label style={s.label}>Date</label>
-                  <input type="date" style={s.input} value={formSuivi.date_consultation}
+                  <input type="date" className={CLASSE_CHAMP} style={s.input} value={formSuivi.date_consultation}
                     onChange={e => setFormSuivi(p => ({ ...p, date_consultation: e.target.value }))} />
                 </div>
                 <div>
                   <label style={s.label}>Spécialiste</label>
-                  <select style={s.input} value={formSuivi.specialiste} onChange={e => setFormSuivi(p => ({ ...p, specialiste: e.target.value }))}>
+                  <select className={CLASSE_CHAMP} style={s.input} value={formSuivi.specialiste} onChange={e => setFormSuivi(p => ({ ...p, specialiste: e.target.value }))}>
                     <option value="">Choisir…</option>
                     {SPECIALISTES.map(sp => <option key={sp} value={sp}>{sp}</option>)}
                   </select>
@@ -409,49 +417,49 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={s.label}>Compte rendu</label>
-                <textarea style={s.textarea} value={formSuivi.compte_rendu}
+                <textarea className={CLASSE_CHAMP} style={s.textarea} value={formSuivi.compte_rendu}
                   onChange={e => setFormSuivi(p => ({ ...p, compte_rendu: e.target.value }))}
                   placeholder="Observations, protocole de soin, recommandations..." />
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterSuivi}>Enregistrer</button>
-                <button style={s.btnGhost} onClick={() => { setShowFormSuivi(false); setFormSuivi(FORM_SUIVI_VIDE) }}>Annuler</button>
+                <button className={CLASSE_BOUTON} style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={ajouterSuivi}>Enregistrer</button>
+                <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={s.btnGhost} onClick={() => { setShowFormSuivi(false); setFormSuivi(FORM_SUIVI_VIDE) }}>Annuler</button>
               </div>
             </div>
           )}
 
           {suivis.length === 0 && !showFormSuivi && (
-            <div style={{ color: colors.text.disabled, fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Aucun suivi médical enregistré</div>
+            <div style={{ color: colors.text.secondary, fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>Aucun suivi médical enregistré</div>
           )}
 
           {/* Rdv à venir — programmés par le joueur lui-même (statut='prevu',
               cf. supabase_sante_rdv_medical.sql), pas encore de compte-rendu. */}
           {suivis.filter(sv => sv.statut === 'prevu').map(sv => (
-            <div key={sv.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px 14px', marginBottom: '10px' }}>
+            <div key={sv.id} style={{ background: colors.background.sunken, borderRadius: forme.rayonCarte, padding: '12px 14px', marginBottom: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                 <div>
                   <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>
                     Rdv le {new Date(`${sv.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                     {sv.heure_rdv && ` à ${sv.heure_rdv.slice(0, 5)}`}
                   </span>
-                  {sv.specialiste && <span style={{ color: colors.accent.blue, fontSize: '12px', marginLeft: '8px' }}>{sv.specialiste}</span>}
+                  {sv.specialiste && <span style={{ color: colors.text.secondary, fontSize: '13px', marginLeft: '8px' }}>{sv.specialiste}</span>}
                 </div>
-                <span style={s.pill(colors.accent.blue)}>Prévu par le joueur</span>
+                <EtiquetteStatut couleur={colors.accent.info}>Prévu par le joueur</EtiquetteStatut>
               </div>
             </div>
           ))}
 
           {suivis.filter(sv => sv.statut === 'effectue').map(sv => (
-            <div key={sv.id} style={{ borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '12px', marginTop: '12px' }}>
+            <div key={sv.id} style={{ borderTop: craie, paddingTop: '12px', marginTop: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
                 <div>
                   <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '13px' }}>
                     {new Date(`${sv.date_consultation}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </span>
-                  {sv.specialiste && <span style={{ color: colors.accent.green, fontSize: '12px', marginLeft: '8px' }}>{sv.specialiste}</span>}
+                  {sv.specialiste && <span style={{ color: colors.text.secondary, fontSize: '13px', marginLeft: '8px' }}>{sv.specialiste}</span>}
                 </div>
                 {sv.document_path && (
-                  <button onClick={() => ouvrirDocument(sv.document_path)} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 }}>
+                  <button type="button" className="df-cliquable" onClick={() => ouvrirDocument(sv.document_path)} style={{ background: 'transparent', border: 'none', color: colors.text.primary, textDecoration: 'underline', fontSize: '13px', cursor: 'pointer', fontFamily: police.texte, padding: '6px 0' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoTrombone />{sv.document_nom || 'Document'}</span>
                   </button>
                 )}
@@ -490,7 +498,7 @@ export default function SanteEquipe({ joueurs, educateurId }) {
     return { total, enCours, dureeMoyenne, zonesTriees, joueursTries }
   }
 
-  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+  const eyebrow = { ...styleEtiquette(colors), margin: 0 }
 
   const renderRapport = () => {
     const r = genererRapport()
@@ -500,21 +508,21 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
           <div>
             <p style={eyebrow}>Rapport santé</p>
-            <p style={{ margin: '4px 0 0', color: colors.text.primary, fontWeight: 800, fontSize: '16px' }}>Saison {saisonActuelle()}</p>
+            <p style={{ margin: '4px 0 0', fontFamily: police.titre, fontWeight: 700, fontSize: '22px', textTransform: 'uppercase', color: colors.text.primary }}>Saison {saisonActuelle()}</p>
           </div>
-          <button onClick={() => setShowRapport(false)} title="Fermer" style={{ color: colors.text.faint, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoFermer /></button>
+          <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setShowRapport(false)} aria-label="Fermer" title="Fermer" style={{ ...s.btnPetit, width: '36px', minHeight: '36px', padding: 0 }}><IcoFermer /></button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: '10px', marginBottom: '20px' }}>
           {[
-            { label: 'Blessures', val: r.total, color: colors.text.primary },
-            { label: 'En cours', val: r.enCours, color: colors.accent.orange },
-            { label: 'Durée moyenne', val: r.dureeMoyenne != null ? r.dureeMoyenne : '–', unite: r.dureeMoyenne != null ? 'j' : '', color: colors.accent.blue, detail: r.dureeMoyenne == null ? 'aucun retour daté' : null },
+            { label: 'Blessures', val: r.total },
+            { label: 'En cours', val: r.enCours },
+            { label: 'Durée moyenne', val: r.dureeMoyenne != null ? r.dureeMoyenne : '–', unite: r.dureeMoyenne != null ? 'j' : '', detail: r.dureeMoyenne == null ? 'aucun retour daté' : null },
           ].map(k => (
-            <div key={k.label} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 14px' }}>
-              <p style={{ margin: 0, color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{k.label}</p>
-              <p style={{ margin: '6px 0 0', color: k.color, fontWeight: 800, fontSize: '24px', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{k.val}{k.unite && <span style={{ fontSize: '13px', color: colors.text.faint, marginLeft: '3px' }}>{k.unite}</span>}</p>
-              {k.detail && <p style={{ margin: '4px 0 0', color: colors.text.faint, fontSize: '11px' }}>{k.detail}</p>}
+            <div key={k.label} style={{ background: colors.background.sunken, border: craie, borderRadius: forme.rayonCarte, padding: '12px 14px' }}>
+              <Etiquette as="p" style={{ fontSize: '11px' }}>{k.label}</Etiquette>
+              <p style={{ ...styleChiffreHeros(colors, 30), margin: '8px 0 0' }}>{k.val}{k.unite && <span style={{ fontSize: '0.5em', fontWeight: 600, color: colors.text.secondary, marginLeft: '3px' }}>{k.unite}</span>}</p>
+              {k.detail && <p style={{ margin: '4px 0 0', color: colors.text.secondary, fontSize: '12px' }}>{k.detail}</p>}
             </div>
           ))}
         </div>
@@ -522,15 +530,15 @@ export default function SanteEquipe({ joueurs, educateurId }) {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) minmax(0,1fr)', gap: isMobile ? '20px' : '28px' }}>
           <div>
             <p style={{ ...eyebrow, marginBottom: '12px' }}>Zones les plus touchées</p>
-            {r.zonesTriees.length === 0 ? <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucune zone renseignée.</p> : (
+            {r.zonesTriees.length === 0 ? <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px' }}>Aucune zone renseignée.</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {r.zonesTriees.map(([zone, count]) => (
                   <div key={zone} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 130px) minmax(0,1fr) 24px', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ color: colors.text.secondary, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zone}</span>
-                    <div style={{ background: colors.background.base, borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
-                      <div style={{ background: colors.accent.orange, height: '100%', borderRadius: '4px', width: `${(count / maxZone) * 100}%` }} />
+                    <span style={{ color: colors.text.secondary, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zone}</span>
+                    <div role="img" aria-label={`${count}`} style={{ background: colors.background.sunken, borderRadius: '1px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ background: colors.accent.orange, height: '100%', width: `${(count / maxZone) * 100}%` }} />
                     </div>
-                    <span style={{ color: colors.accent.orange, fontSize: '13px', fontWeight: 800, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                    <span style={{ ...chiffre(16), textAlign: 'right' }}>{count}</span>
                   </div>
                 ))}
               </div>
@@ -538,12 +546,12 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           </div>
           <div>
             <p style={{ ...eyebrow, marginBottom: '12px' }}>Joueurs les plus touchés</p>
-            {r.joueursTries.length === 0 ? <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucune blessure.</p> : (
+            {r.joueursTries.length === 0 ? <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px' }}>Aucune blessure.</p> : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {r.joueursTries.map(([nom, count]) => (
-                  <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                    <span style={{ color: colors.text.secondary, fontSize: '13px' }}>{nom}</span>
-                    <span style={{ color: colors.accent.orange, fontWeight: 700, fontSize: '12px' }}>{count} blessure{count > 1 ? 's' : ''}</span>
+                  <div key={nom} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: craie }}>
+                    <span style={{ color: colors.text.secondary, fontSize: '14px' }}>{nom}</span>
+                    <span style={{ ...chiffre(16) }}>{count}<span style={{ fontFamily: police.texte, fontWeight: 600, fontSize: '12px', color: colors.text.secondary, marginLeft: '4px' }}>blessure{count > 1 ? 's' : ''}</span></span>
                   </div>
                 ))}
               </div>
@@ -557,10 +565,10 @@ export default function SanteEquipe({ joueurs, educateurId }) {
   const blessuresActives = blessures.filter(b => b.statut !== 'gueri')
   const joueursBlessesActifs = new Set(blessuresActives.map(b => b.equipe_joueur_id)).size
   const kpis = [
-    { val: joueursBlessesActifs, total: joueurs.length, label: 'Joueurs blessés', color: joueursBlessesActifs > 0 ? colors.accent.orange : colors.accent.green },
+    { val: joueursBlessesActifs, total: joueurs.length, label: 'Joueurs blessés', color: joueursBlessesActifs > 0 ? colors.accent.orange : colors.accent.success },
     { val: blessures.filter(b => b.statut === 'en_cours').length, label: 'En cours', color: colors.accent.orange },
     { val: blessures.filter(b => b.statut === 'en_soin').length, label: 'En soin', color: colors.accent.amber },
-    { val: blessures.filter(b => b.statut === 'gueri').length, label: 'Guéris (saison)', color: colors.accent.green },
+    { val: blessures.filter(b => b.statut === 'gueri').length, label: 'Guéris (saison)', color: colors.accent.success },
   ]
   // Blessures actives d'abord (par statut), puis guéries ; dans chaque statut,
   // la plus récente en premier (ordre déjà renvoyé par la requête).
@@ -573,14 +581,14 @@ export default function SanteEquipe({ joueurs, educateurId }) {
       {/* Chiffres clés */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap: '10px' }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ ...s.card, marginBottom: 0, padding: '16px 18px' }}>
-            <p style={{ margin: 0, color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{k.label}</p>
-            <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 800, color: k.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-              {k.val}{k.total ? <span style={{ fontSize: '14px', color: colors.text.faint, fontWeight: 600 }}> / {k.total}</span> : ''}
+          <div key={k.label} style={{ ...s.card, marginBottom: 0, padding: '16px 18px 16px 21px', boxShadow: `inset ${forme.lisere} 0 0 ${k.color}` }}>
+            <Etiquette as="p" style={{ fontSize: '11px' }}>{k.label}</Etiquette>
+            <p style={{ ...styleChiffreHeros(colors, 36), margin: '8px 0 0' }}>
+              {k.val}{k.total ? <span style={{ fontSize: '0.45em', color: colors.text.secondary, fontWeight: 600 }}> / {k.total}</span> : ''}
             </p>
             {k.total > 0 && (
-              <div style={{ height: '4px', background: colors.background.base, borderRadius: '2px', marginTop: '10px', overflow: 'hidden' }}>
-                <div style={{ width: `${(k.val / k.total) * 100}%`, height: '100%', background: k.color, borderRadius: '2px' }} />
+              <div role="img" aria-label={`${k.val} sur ${k.total}`} style={{ height: '4px', background: colors.background.sunken, borderRadius: '1px', marginTop: '10px', overflow: 'hidden' }}>
+                <div style={{ width: `${(k.val / k.total) * 100}%`, height: '100%', background: k.color }} />
               </div>
             )}
           </div>
@@ -589,81 +597,74 @@ export default function SanteEquipe({ joueurs, educateurId }) {
 
       {/* Barre d'actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>
+        <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0 }}>
           {blessuresActives.length === 0
             ? 'Tout le groupe est disponible.'
             : <><strong style={{ color: colors.text.primary }}>{blessuresActives.length}</strong> blessure{blessuresActives.length !== 1 ? 's' : ''} en cours de suivi</>}
         </p>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={{ ...s.btnGhost, background: showRapport ? colors.background.raised : 'transparent', color: showRapport ? colors.text.primary : colors.text.faint }} onClick={() => setShowRapport(v => !v)}>Rapport saison</button>
-          <button style={s.btn} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>
+          <button type="button" aria-pressed={showRapport} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...s.btnGhost, background: showRapport ? colors.background.raised : 'transparent' }} onClick={() => setShowRapport(v => !v)}>Rapport saison</button>
+          <button type="button" className={CLASSE_BOUTON} style={s.btn} onClick={() => setShowFormBlessure(true)}>+ Déclarer une blessure</button>
         </div>
       </div>
 
       {showRapport && renderRapport()}
 
       {showFormBlessure && (
-        <div style={{ ...s.card, marginBottom: 0, border: `1px solid ${colors.accent.green}40` }}>
+        <div style={{ ...styleCarteLiseree(colors), padding: '20px 20px 20px 23px' }}>
           <p style={{ ...eyebrow, marginBottom: '14px' }}>Nouvelle blessure</p>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={s.label}>Joueur</label>
-              <select style={s.input} value={form.equipe_joueur_id} onChange={e => setForm(p => ({ ...p, equipe_joueur_id: e.target.value }))}>
+              <select className={CLASSE_CHAMP} style={s.input} value={form.equipe_joueur_id} onChange={e => setForm(p => ({ ...p, equipe_joueur_id: e.target.value }))}>
                 <option value="">Choisir…</option>
                 {joueurs.map(j => <option key={j.id} value={j.id}>{j.prenom} {j.nom}</option>)}
               </select>
             </div>
             <div>
               <label style={s.label}>Type de blessure</label>
-              <input style={s.input} placeholder="ex : Entorse, Contracture, Fracture..."
+              <input className={CLASSE_CHAMP} style={s.input} placeholder="ex : Entorse, Contracture, Fracture..."
                 value={form.type_blessure} onChange={e => setForm(p => ({ ...p, type_blessure: e.target.value }))} />
             </div>
             <div>
               <label style={s.label}>Zone du corps</label>
-              <select style={s.input} value={form.zone_corps} onChange={e => setForm(p => ({ ...p, zone_corps: e.target.value }))}>
+              <select className={CLASSE_CHAMP} style={s.input} value={form.zone_corps} onChange={e => setForm(p => ({ ...p, zone_corps: e.target.value }))}>
                 <option value="">Choisir…</option>
                 {ZONES_CORPS.map(z => <option key={z} value={z}>{z}</option>)}
               </select>
             </div>
             <div>
               <label style={s.label}>Gravité</label>
-              <select style={s.input} value={form.gravite} onChange={e => setForm(p => ({ ...p, gravite: e.target.value }))}>
+              <select className={CLASSE_CHAMP} style={s.input} value={form.gravite} onChange={e => setForm(p => ({ ...p, gravite: e.target.value }))}>
                 {Object.entries(GRAVITE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
             <div>
               <label style={s.label}>Date de début</label>
-              <input type="date" style={s.input} value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} />
+              <input type="date" className={CLASSE_CHAMP} style={s.input} value={form.date_debut} onChange={e => setForm(p => ({ ...p, date_debut: e.target.value }))} />
             </div>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label style={s.label}>Notes initiales</label>
-            <textarea style={s.textarea} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Circonstances, observations..." />
+            <textarea className={CLASSE_CHAMP} style={s.textarea} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Circonstances, observations..." />
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={declarerBlessure}>Enregistrer</button>
-            <button style={s.btnGhost} onClick={() => { setShowFormBlessure(false); setForm(FORM_VIDE) }}>Annuler</button>
+            <button className={CLASSE_BOUTON} style={{ ...s.btn, opacity: envoiEnCours ? 0.6 : 1 }} disabled={envoiEnCours} onClick={declarerBlessure}>Enregistrer</button>
+            <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={s.btnGhost} onClick={() => { setShowFormBlessure(false); setForm(FORM_VIDE) }}>Annuler</button>
           </div>
         </div>
       )}
 
       {/* Filtres par statut */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div role="group" aria-label="Filtrer par statut" style={{ display: 'flex', gap: '6px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {[['tous', 'Tous', colors.text.secondary], ...Object.entries(STATUT_META).map(([k, v]) => [k, v.label, v.color])].map(([k, label, couleur]) => {
           const count = k === 'tous' ? blessures.length : blessures.filter(b => b.statut === k).length
           const actif = filtreStatut === k
           return (
-            <button key={k} onClick={() => setFiltreStatut(k)}
-              style={{
-                flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px',
-                background: actif ? couleur + '1f' : 'transparent',
-                color: actif ? (k === 'tous' ? colors.text.primary : couleur) : colors.text.faint,
-                border: `1px solid ${actif ? couleur + '70' : colors.border.default}`,
-                borderRadius: '18px', padding: '6px 13px', fontSize: '12px', cursor: 'pointer', fontWeight: actif ? 700 : 500, fontFamily: 'Inter, sans-serif', opacity: count === 0 && !actif ? 0.55 : 1,
-              }}>
-              {k !== 'tous' && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: couleur }} />}
+            <button key={k} type="button" aria-pressed={actif} onClick={() => setFiltreStatut(k)} className={CLASSE_BOUTON_SECONDAIRE} style={choix(actif)}>
+              {k !== 'tous' && marqueur(couleur, actif, 9)}
               {label}
-              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: actif ? 'inherit' : colors.text.faint }}>{count}</span>
+              <span style={{ fontFamily: police.titre, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: '15px' }}>{count}</span>
             </button>
           )
         })}
@@ -671,8 +672,8 @@ export default function SanteEquipe({ joueurs, educateurId }) {
 
       {blessuresAffichees.length === 0 && (
         <div style={{ ...s.card, marginBottom: 0, textAlign: 'center', padding: '32px 20px' }}>
-          <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>{filtreStatut === 'tous' ? 'Aucune blessure déclarée' : 'Aucune blessure dans cette catégorie'}</p>
-          {filtreStatut === 'tous' && <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Déclare une blessure pour suivre la rééducation et le retour à la compétition.</p>}
+          <p style={{ margin: 0, color: colors.text.primary, fontSize: '15px', fontWeight: 600 }}>{filtreStatut === 'tous' ? 'Aucune blessure déclarée' : 'Aucune blessure dans cette catégorie'}</p>
+          {filtreStatut === 'tous' && <p style={{ margin: '6px 0 0', color: colors.text.secondary, fontSize: '13px' }}>Déclare une blessure pour suivre la rééducation et le retour à la compétition.</p>}
         </div>
       )}
 
@@ -689,34 +690,32 @@ export default function SanteEquipe({ joueurs, educateurId }) {
           const retardRetour = avancement === 100 && joursDepuis > dureePrevue
           const initiales = `${joueur?.prenom?.[0] || ''}${joueur?.nom?.[0] || ''}`.toUpperCase() || '?'
           return (
-            <div key={b.id} onClick={() => ouvrirBlessure(b)} className="sante-carte"
-              style={{ ...s.card, marginBottom: 0, padding: '14px 16px', cursor: 'pointer', borderLeft: `3px solid ${meta.color}`, display: 'flex', flexDirection: 'column', gap: '12px', opacity: b.statut === 'gueri' ? 0.75 : 1 }}>
+            <div key={b.id} role="button" tabIndex={0} onClick={() => ouvrirBlessure(b)} className="sante-carte df-cliquable"
+              onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ouvrirBlessure(b) } }}
+              style={{ ...s.card, marginBottom: 0, padding: '14px 16px 14px 19px', cursor: 'pointer', boxShadow: `inset ${forme.lisere} 0 0 ${meta.color}`, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {joueur?.avatar_url
-                  ? <img src={joueur.avatar_url} alt="" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${meta.color}66`, flexShrink: 0 }} />
-                  : (() => {
-                      const c = couleurAvatar(joueur?.prenom)
-                      return <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: c + alpha.soft, border: `2px solid ${meta.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c, fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>{initiales}</div>
-                    })()}
+                  ? <img src={joueur.avatar_url} alt="" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${colors.border.strong}`, flexShrink: 0 }} />
+                  : <div aria-hidden="true" style={{ width: '42px', height: '42px', borderRadius: '50%', background: colors.background.raised, border: `2px solid ${colors.border.strong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.primary, fontFamily: police.titre, fontSize: '17px', fontWeight: 700, flexShrink: 0 }}>{initiales}</div>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur ? `${joueur.prenom} ${joueur.nom}` : 'Joueur'}</p>
                   <p style={{ margin: '2px 0 0', color: colors.text.secondary, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <span style={{ textTransform: 'capitalize' }}>{b.type_blessure}</span>{b.zone_corps ? <span style={{ color: colors.text.faint }}>{` · ${b.zone_corps}`}</span> : ''}
+                    <span style={{ textTransform: 'capitalize' }}>{b.type_blessure}</span>{b.zone_corps ? <span>{` · ${b.zone_corps}`}</span> : ''}
                   </p>
                 </div>
-                <button onClick={e => supprimerBlessure(b.id, e)} title="Supprimer cette blessure"
-                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
+                <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={e => supprimerBlessure(b.id, e)} title="Supprimer cette blessure" aria-label="Supprimer cette blessure"
+                  style={{ ...s.btnPetit, width: '36px', minHeight: '36px', padding: 0, flexShrink: 0 }}>
                   <IcoCorbeille />
                 </button>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: meta.color, background: meta.color + '1a', border: `1px solid ${meta.color}40` }}>{meta.label}</span>
-                {grav && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: colors.text.secondary, background: colors.background.raised, border: `1px solid ${colors.border.default}` }}>
-                  <span style={{ display: 'inline-flex', gap: '2px' }}>{[1, 2, 3].map(n => <span key={n} style={{ width: '4px', height: '8px', borderRadius: '1px', background: n <= grav.niveau ? grav.color : colors.border.strong }} />)}</span>
+                <EtiquetteStatut couleur={meta.color}>{meta.label}</EtiquetteStatut>
+                {grav && <span style={{ ...styleEtiquette(colors), fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: colors.background.raised, border: craie, borderRadius: forme.rayonPastille, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                  <span aria-hidden="true" style={{ display: 'inline-flex', gap: '2px' }}>{[1, 2, 3].map(n => <span key={n} style={{ width: '4px', height: '8px', borderRadius: '1px', background: n <= grav.niveau ? grav.color : colors.border.strong }} />)}</span>
                   {grav.label}
                 </span>}
-                <span style={{ fontSize: '12px', color: colors.text.faint, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontSize: '13px', color: colors.text.secondary, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
                   {joursDepuis <= 0 ? "Depuis aujourd'hui" : `J+${joursDepuis}`} · {formatDate(b.date_debut)}
                 </span>
               </div>
@@ -724,20 +723,20 @@ export default function SanteEquipe({ joueurs, educateurId }) {
               {b.date_retour_estimee && b.statut !== 'gueri' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', gap: '8px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: retardRetour ? colors.accent.red : colors.text.faint }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: retardRetour ? 700 : 400, color: retardRetour ? colors.text.primary : colors.text.secondary }}>
                       <IcoCalendrier /> Retour estimé {formatDate(b.date_retour_estimee)}{retardRetour ? ' · dépassé' : ''}
                     </span>
-                    {avancement != null && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{avancement}%</span>}
+                    {avancement != null && <span style={{ ...chiffre(15) }}>{avancement}%</span>}
                   </div>
                   {avancement != null && (
-                    <div style={{ height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
-                      <div style={{ width: `${avancement}%`, height: '100%', borderRadius: '3px', background: retardRetour ? colors.accent.red : colors.accent.blue }} />
+                    <div role="img" aria-label={`Avancement ${avancement} %`} style={{ height: '6px', borderRadius: '1px', background: colors.background.sunken, overflow: 'hidden' }}>
+                      <div style={{ width: `${avancement}%`, height: '100%', background: retardRetour ? colors.accent.red : colors.accent.info }} />
                     </div>
                   )}
                 </div>
               )}
               {b.statut === 'gueri' && b.date_retour_effective && (
-                <span style={{ fontSize: '11px', color: colors.accent.green }}>De retour le {formatDate(b.date_retour_effective)}</span>
+                <span style={{ fontSize: '12px', color: colors.text.secondary }}>De retour le {formatDate(b.date_retour_effective)}</span>
               )}
             </div>
           )

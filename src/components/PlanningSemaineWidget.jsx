@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useColors } from '../lib/theme'
+import { police } from '../tokens'
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -179,18 +180,18 @@ export default function PlanningSemaineWidget({ entrainements = [], matchs = [],
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
         <button onClick={() => setOffset(o => o - 1)}
-          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: police.texte }}>
           ‹
         </button>
         <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.faint, flex: 1, textAlign: 'center' }}>{label}</p>
         <button onClick={() => setOffset(o => o + 1)}
-          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: accentColor, borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', fontFamily: police.texte }}>
           ›
         </button>
         <div style={{ display: 'flex', background: colors.background.raised, borderRadius: '8px', padding: '2px', gap: '2px' }}>
           {[['semaine', 'Semaine'], ['mois', 'Mois']].map(([v, lbl]) => (
             <button key={v} onClick={() => changerVue(v)}
-              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: vue === v ? accentColor : 'transparent', color: vue === v ? colors.black : colors.text.faint }}>
+              style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: police.texte, background: vue === v ? accentColor : 'transparent', color: vue === v ? colors.black : colors.text.faint }}>
               {lbl}
             </button>
           ))}

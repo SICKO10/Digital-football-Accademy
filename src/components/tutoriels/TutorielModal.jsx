@@ -31,7 +31,7 @@ export default function TutorielModal({ titre, etapes, accent, onFermer }) {
   }, [etapes.length, onFermer])
 
   return createPortal(
-    <div onClick={onFermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Inter, sans-serif' }}>
+    <div onClick={onFermer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Barlow, sans-serif' }}>
       <div role="dialog" aria-modal="true" aria-label={titre} onClick={e => e.stopPropagation()}
         style={{ width: '100%', maxWidth: '580px', maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '18px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px 20px', borderBottom: `1px solid ${colors.border.subtle}` }}>

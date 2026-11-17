@@ -83,7 +83,7 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '700px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📋 Grille d'évaluation — {seance.theme || 'Séance'}</p>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Grille d'évaluation — {seance.theme || 'Séance'}</p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
         <p style={{ margin: '0 0 20px', fontSize: '12px', color: colors.text.faint }}>{seance.educateur?.prenom} {seance.educateur?.nom} — {seance.saison}</p>
@@ -111,7 +111,7 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
         ))}
 
         <div style={{ background: colors.background.surface, borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid #fbbf2430' }}>
-          <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>✨ Bonus</p>
+          <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#fbbf24' }}>Bonus</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {GRILLE_BONUS.map(c => (
               <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -143,14 +143,14 @@ export function ModalGrilleSeance({ seance, onClose, onSubmit, evaluateurType })
             <textarea
               value={grilleObservations[f.key]}
               onChange={e => setGrilleObservations(prev => ({ ...prev, [f.key]: e.target.value }))}
-              style={{ ...st.input, minHeight: '60px', resize: 'vertical', fontFamily: 'Inter, sans-serif' }}
+              style={{ ...st.input, minHeight: '60px', resize: 'vertical', fontFamily: 'Barlow, sans-serif' }}
             />
           </div>
         ))}
 
         <button onClick={handleSubmit} disabled={saving}
           style={{ width: '100%', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginTop: '10px' }}>
-          {saving ? '⏳ Envoi...' : '✅ Valider l\'évaluation'}
+          {saving ? 'Envoi...' : 'Valider l\'évaluation'}
         </button>
       </div>
     </div>

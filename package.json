@@ -28,6 +28,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "konva": "^10.3.0",
+    "lucide-react": "^1.73.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

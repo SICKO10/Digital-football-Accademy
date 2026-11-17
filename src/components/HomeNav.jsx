@@ -84,7 +84,7 @@ export default function HomeNav({ lang, setLang, navigate }) {
         style={{
           background: actif ? colors.accent.green + alpha.soft : 'transparent', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
           borderRadius: compact ? '6px' : '10px', padding: compact ? '3px 6px' : '10px 12px', cursor: 'pointer', fontSize: compact ? '12px' : '14px',
-          fontFamily: 'Inter, sans-serif', color: actif ? colors.text.primary : colors.text.secondary,
+          fontFamily: 'Barlow, sans-serif', color: actif ? colors.text.primary : colors.text.secondary,
           display: 'flex', alignItems: 'center', gap: '8px', justifyContent: compact ? 'center' : 'flex-start',
         }}>
         <span aria-hidden="true">{l.flag}</span>
@@ -93,7 +93,7 @@ export default function HomeNav({ lang, setLang, navigate }) {
     )
   })
 
-  const cta = { padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }
+  const cta = { padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Barlow, sans-serif' }
 
   return (
     <nav ref={navRef} aria-label={t('nav_principale', lang)} className="navbar-home"

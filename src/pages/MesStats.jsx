@@ -167,7 +167,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
   const tousMatchs = fusionnerMatchs(matchs, statsEquipe?.matchsOfficiels)
   const moy = calculerMoyennes(tousMatchs)
   const formulaireValide = !!form.adversaire.trim() && !!form.date
-  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
+  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
   const labelStyle = { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: spacing.xs }
   const grille = (colonnes) => ({ display: 'grid', gridTemplateColumns: `repeat(${colonnes}, minmax(0, 1fr))`, gap: spacing.lg })
   const pastille = (actif) => ({
@@ -175,13 +175,13 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
     border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
     background: actif ? colors.accent.green + alpha.subtle : 'transparent',
     color: actif ? colors.accent.green : colors.text.faint,
-    fontWeight: actif ? 700 : 500, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    fontWeight: actif ? 700 : 500, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   })
   const boutonPrincipal = (actif) => ({
     minHeight: '48px', padding: `0 ${spacing['4xl']}`, border: 'none', borderRadius: radius.xl,
     background: actif ? colors.accent.green : colors.background.raised,
     color: actif ? colors.black : colors.text.disabled,
-    fontWeight: 800, fontSize: fontSize['2xl'], cursor: actif ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif',
+    fontWeight: 800, fontSize: fontSize['2xl'], cursor: actif ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif',
   })
 
   const radarConfig = poste === 'Gardien'

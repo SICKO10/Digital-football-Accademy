@@ -88,8 +88,12 @@ import { notifierJoueur } from '../lib/notifications'
 import { estReconduction, NOTIF_RECONDUCTION } from '../lib/finSaisonJoueur'
 import { statutPresenceEffectif, seanceComptable } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
-import { colors, alpha } from '../tokens'
-import { useColors, useTheme } from '../lib/theme'
+import { colors, alpha, police, forme } from '../tokens'
+import { construireSt } from '../lib/useStFinance'
+import { useColors } from '../lib/theme'
+import { TitreEcran, Etiquette, CarteChiffre, Jauge, Icone, EtiquetteStatut } from '../components/identite'
+import { styleTitreEcran, styleCarte, styleCarteLiseree, styleEtiquette, styleChiffreHeros, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleTableau, styleLigneCraie, couleurCraie, couleurClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
+import { Plus, FileText, Link as LienIcone, CircleCheck, TriangleAlert, MapPin, Users, Target, CalendarDays, Clock, Save, ClipboardList, Star, X, IdCard, Activity, CircleX, Bandage, Thermometer, Goal, ShieldCheck, Timer, Medal, Pencil, FolderOpen, Trophy, Inbox, Camera, Landmark, Bot, Sparkles, Trash2, Printer, Folder, Video, Palette, Library, GraduationCap, CircleAlert, ChevronUp, ChevronDown, Check, Square, Lock, Download, Rocket, ChartColumn, Eye, ScanLine, Ellipsis, EllipsisVertical, ExternalLink, Package, ArrowRight, ChevronLeft, ChevronRight, Copy, Search, Zap, Megaphone, Mail, BadgeCheck, Send, Globe, MessageSquare, Mic, CreditCard, Smartphone, Paperclip } from 'lucide-react'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
@@ -129,7 +133,7 @@ const recrutementActif = (email) => email === 'asclubtest@gmail.com'
 const getEducateurOnboardingSteps = (email) => [
   {
     id: 1,
-    title: "Bienvenue sur Digital Football ! ⚽",
+    title: "Bienvenue sur Digital Football !",
     message: "Je suis Cedinho, ton guide. Je vais te montrer les grandes sections de ton espace éducateur en 2 minutes.",
     targetId: null,
     position: "center",
@@ -206,7 +210,7 @@ const getEducateurOnboardingSteps = (email) => [
   },
   {
     id: 13,
-    title: "C'est parti ! 🚀",
+    title: "C'est parti !",
     message: "Tu es prêt. Une question ? Clique sur le ballon en bas à droite — je suis toujours là.",
     targetId: null,
     position: "center",
@@ -283,11 +287,8 @@ const IcoLayout    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IcoVideo     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
 const IcoClipboard = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
 const IcoSearch    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-const IcoCompass   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-const IcoSend      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 const IcoBook      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
 const IcoBox       = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-const IcoMegaphone = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 01-5.8-1.6"/></svg>
 
 // ── Icônes page Accueil éducateur (même style que la sidebar, sans emoji) ────
 const IcoHome        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
@@ -308,8 +309,6 @@ const IcoCorbeille   = () => <svg width="14" height="14" viewBox="0 0 24 24" fil
 const IcoEtoileTrait = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
 const IcoChevronBas  = ({ ouvert }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: ouvert ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
 const IcoLink        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5"/></svg>
-const IcoCadenas     = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-const IcoCheckCircle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
 const IcoCible       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
 const IcoCoupe       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0z"/><path d="M17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3"/></svg>
 const IcoHorloge     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
@@ -327,8 +326,6 @@ const IcoImport = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="no
 const IcoDownload = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 const IcoBulle = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 01-9 8.4 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 1121 11.5z"/></svg>
 const IcoProfil = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-const IcoCamera = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-const IcoOeil = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 const IcoChrono = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14 15"/><line x1="10" y1="2" x2="14" y2="2"/></svg>
 const IcoGroupe = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
 // Terrain stylisé pour les procédés sans schéma (au lieu d'un bloc vide).
@@ -342,15 +339,6 @@ const TerrainMiniature = ({ couleur }) => (
       <rect x="8" y="33" width="24" height="44" />
       <rect x="168" y="33" width="24" height="44" />
     </g>
-  </svg>
-)
-const IcoBiblioTitre = ({ size = 22, color = colors.accent.green }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-    <line x1="12" y1="6" x2="16" y2="6"/>
-    <line x1="12" y1="10" x2="16" y2="10"/>
-    <line x1="12" y1="14" x2="14" y2="14"/>
   </svg>
 )
 const IcoTypeTous = ({ size = 16, color = 'currentColor' }) => (
@@ -388,16 +376,6 @@ const IcoTypeSituation = ({ size = 16, color = 'currentColor' }) => (
     <polygon points="3 11 22 2 13 21 11 13 3 11"/>
   </svg>
 )
-const IcoBiblioVide = ({ size = 56, color = colors.border.strong }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-    <line x1="12" y1="7" x2="16" y2="7"/>
-    <line x1="12" y1="11" x2="16" y2="11"/>
-    <line x1="12" y1="15" x2="14" y2="15"/>
-    <circle cx="9" cy="9" r="1" fill={color}/>
-  </svg>
-)
 
 // ── Annonces réseau (onglet Annonces d'Explorer) ─────────────────────────────
 const REGIONS_FRANCE = [
@@ -407,11 +385,11 @@ const REGIONS_FRANCE = [
   'Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte',
 ]
 const TYPES_ANNONCE = [
-  { key: 'recherche_educateur', label: '🔍 Recherche éducateur', color: colors.accent.green },
-  { key: 'recherche_club', label: '🏟️ Recherche club', color: '#60a5fa' },
-  { key: 'tournoi', label: '🏆 Tournoi', color: '#f59e0b' },
-  { key: 'detection', label: '⚡ Détection', color: '#a78bfa' },
-  { key: 'autre', label: '📢 Autre', color: '#6b7280' },
+  { key: 'recherche_educateur', label: 'Recherche éducateur', icone: Search },
+  { key: 'recherche_club', label: 'Recherche club', icone: Landmark },
+  { key: 'tournoi', label: 'Tournoi', icone: Trophy },
+  { key: 'detection', label: 'Détection', icone: Zap },
+  { key: 'autre', label: 'Autre', icone: Megaphone },
 ]
 
 
@@ -472,11 +450,11 @@ function RadialSkill({ value, max = 5, color, label, size = 80 }) {
           strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
           transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
-          fontSize={size * 0.22} fontWeight="800" fill={colors.text.primary} fontFamily="Inter,sans-serif">{value || 0}</text>
+          fontSize={size * 0.22} fontWeight="800" fill={colors.text.primary} fontFamily="Barlow,sans-serif">{value || 0}</text>
         <text x={cx} y={cy + size * 0.2} textAnchor="middle"
-          fontSize={size * 0.11} fill={colors.text.faint} fontFamily="Inter,sans-serif">/{max}</text>
+          fontSize={size * 0.11} fill={colors.text.faint} fontFamily="Barlow,sans-serif">/{max}</text>
       </svg>
-      <span style={{ fontSize: '11px', color: colors.text.faint, fontFamily: 'Inter,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: '11px', color: colors.text.faint, fontFamily: 'Barlow,sans-serif', textAlign: 'center', fontWeight: 600 }}>{label}</span>
     </div>
   )
 }
@@ -496,7 +474,7 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72, p
   )
   if (!total) return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: colors.background.raised, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Inter,sans-serif' }}>—</span>
+      <span style={{ color: colors.border.strong, fontSize: '10px', fontFamily: 'Barlow,sans-serif' }}>—</span>
     </div>
   )
   const p = (presents || 0) / total * 100
@@ -518,11 +496,11 @@ function DonutMulti({ presents, absents, blesses, malade, convoque, size = 72, p
           <div style={{ position: 'absolute', inset: `${size * 0.09}px`, borderRadius: '50%', background: colors.background.base, padding: '2px', boxSizing: 'border-box' }}>
             <Avatar person={person} size={size * 0.82 - 4} bg={colors.background.raised} border="none" textColor={colors.text.secondary} />
           </div>
-          <span style={{ position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)', padding: '1px 6px', borderRadius: '8px', background: colors.background.base, border: `1px solid ${color}`, fontSize: '10px', fontWeight: 800, color, lineHeight: 1.3, fontFamily: 'Inter,sans-serif', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{taux}%</span>
+          <span style={{ position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)', padding: '1px 6px', borderRadius: '8px', background: colors.background.base, border: `1px solid ${color}`, fontSize: '10px', fontWeight: 800, color, lineHeight: 1.3, fontFamily: 'Barlow,sans-serif', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{taux}%</span>
         </>
       ) : (
         <div style={{ position: 'absolute', inset: `${size * 0.18}px`, borderRadius: '50%', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-          <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Inter,sans-serif' }}>{taux}%</span>
+          <span style={{ fontSize: size * 0.19, fontWeight: 800, color, lineHeight: 1, fontFamily: 'Barlow,sans-serif' }}>{taux}%</span>
         </div>
       )}
     </div>
@@ -913,15 +891,15 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
           return (
             <button key={it.key} role="tab" aria-selected={actif} onClick={() => setActiveSection(it.key)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif', minWidth: 0, transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '14px 16px', borderRadius: 6, cursor: 'pointer',
+                fontFamily: 'Barlow, sans-serif', minWidth: 0, transition: 'all 0.15s',
                 background: actif ? colors.accent.blue + '1a' : colors.background.surface,
                 border: `${actif ? 2 : 1}px solid ${actif ? colors.accent.blue : colors.border.faint}`,
                 boxShadow: actif ? `0 0 0 3px ${colors.accent.blue}1f` : 'none',
                 margin: actif ? 0 : 1,
               }}>
               <span style={{
-                width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 40, height: 40, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: actif ? colors.accent.blue : colors.background.raised, color: actif ? colors.accent.onBrand : colors.text.faint,
               }}>{it.icon}</span>
               <span style={{ minWidth: 0 }}>
@@ -935,25 +913,50 @@ function SousOngletsBar({ items, activeSection, setActiveSection }) {
     )
   }
   return (
-    <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      {items.map(it => {
-        const actif = activeSection === it.key
-        return (
-          <button key={it.key} onClick={() => setActiveSection(it.key)}
-            style={{
-              padding: '9px 22px', borderRadius: 9, border: 'none', cursor: 'pointer',
-              background: actif ? colors.text.primary : 'transparent',
-              color: actif ? colors.background.base : colors.text.faint,
-              fontWeight: actif ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0,
-              fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-            }}>
-            {it.label}
-          </button>
-        )
-      })}
+    <div role="tablist" className="df-onglets" style={coqueVars(colors, colors.accent.blue)}>
+      {items.map(it => (
+        <button key={it.key} role="tab" aria-selected={activeSection === it.key} className="df-onglet" onClick={() => setActiveSection(it.key)}>
+          {it.label}
+        </button>
+      ))}
     </div>
   )
 }
+
+// Styles locaux de l'écran Mes séances (kit d'identité) : choix à bascule, petits
+// boutons, titre de carte condensé, étiquette neutre.
+const styleChoix = (colors, actif) => ({
+  fontFamily: police.texte, fontWeight: actif ? 700 : 600, fontSize: '13px', lineHeight: 1.2, minHeight: '40px', padding: '0 12px',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: forme.rayonCarte, cursor: 'pointer', boxSizing: 'border-box',
+  border: `1px solid ${actif ? colors.accent.brand : colors.border.strong}`,
+  background: actif ? colors.accent.brand : 'transparent',
+  color: actif ? colors.accent.onBrand : colors.text.primary,
+})
+// Petite icône au trait posée devant un texte (remplace l'emoji de début de ligne).
+const icoTexte = (Composant, taille = 16) => <Icone icone={Composant} taille={taille} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: '6px' }} />
+const styleBoutonPetit = (colors, extra) => ({ ...styleBoutonSecondaire(colors), minHeight: '32px', padding: '0 12px', fontSize: '12px', ...extra })
+const styleBoutonPetitDanger = colors => styleBoutonPetit(colors, { color: colors.accent.red, borderColor: colors.accent.red })
+const styleTitreCarte = colors => ({
+  fontFamily: police.titre, fontWeight: 700, fontSize: '20px', lineHeight: 1.1, letterSpacing: '0.01em', textTransform: 'uppercase',
+  color: colors.text.primary, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px',
+})
+const styleEtiquetteNeutre = colors => ({
+  ...styleEtiquette(colors), fontSize: '11px', display: 'inline-flex', alignItems: 'center', background: colors.background.raised,
+  border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonPastille, padding: '2px 8px', whiteSpace: 'nowrap',
+})
+
+// Aides communes des écrans Statistiques : texte réservé aux lecteurs d'écran, chiffre condensé
+// (tableau d'affichage) et petit marqueur carré de couleur (statut, poste).
+const masqueLecteur = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }
+const styleChiffreCond = (colors, taille = 16) => ({
+  fontFamily: police.titre, fontWeight: 700, fontSize: `${taille}px`, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', color: colors.text.primary,
+})
+const marqueurCarre = (couleur, taille = 8) => (
+  <span aria-hidden="true" style={{ width: `${taille}px`, height: `${taille}px`, borderRadius: '1px', background: couleur, flexShrink: 0, display: 'inline-block' }} />
+)
+// Fond des fenêtres (Bibliothèque et autres) et bouton « Fermer » en croix nommée.
+const styleFondModal = (colors, z = 200) => ({ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: z, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' })
+const styleBoutonFermer = colors => ({ background: 'transparent', border: 'none', color: colors.text.secondary, cursor: 'pointer', width: '44px', height: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 })
 
 // Bloc d'explication + tutoriel carrousel en tête de la rubrique "Pts Séance"
 // (statsSubTab === 'mois') — les images des slides sont volontairement des
@@ -966,37 +969,28 @@ function ExplicationPtsSeance() {
   const [slide, setSlide] = useState(0)
 
   const slides = [
-    { titre: 'Étape 1 — Ouvrir le Planning', texte: "Dans le menu, va dans Création entraînement → Planning.", icone: '📅' },
-    { titre: 'Étape 2 — Aller sur Mes séances', texte: "Dans le sous-onglet \"Mes séances\", retrouve la séance concernée.", icone: '📋' },
-    { titre: 'Étape 3 — Ouvrir la séance', texte: "Clique sur la carte de la séance pour ouvrir le détail des présences.", icone: '➡️' },
-    { titre: 'Étape 4 — Attribuer le point séance', texte: "Clique sur l'étoile à côté du ou des joueurs qui ont gagné le point séance.", icone: '⭐' },
+    { titre: 'Étape 1 — Ouvrir le Planning', texte: "Dans le menu, va dans Création entraînement → Planning.", Icone: CalendarDays },
+    { titre: 'Étape 2 — Aller sur Mes séances', texte: "Dans le sous-onglet \"Mes séances\", retrouve la séance concernée.", Icone: ClipboardList },
+    { titre: 'Étape 3 — Ouvrir la séance', texte: "Clique sur la carte de la séance pour ouvrir le détail des présences.", Icone: ArrowRight },
+    { titre: 'Étape 4 — Attribuer le point séance', texte: "Clique sur l'étoile à côté du ou des joueurs qui ont gagné le point séance.", Icone: Star },
   ]
+  const IconeSlide = slides[slide].Icone
+  const boutonFleche = { width: '40px', height: '40px', borderRadius: forme.rayonCarte, background: colors.background.surface, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, position: 'absolute', top: '50%', transform: 'translateY(-50%)' }
 
   return (
     <div>
-      <div style={{
-        background: `linear-gradient(135deg, ${colors.accent.green}15, ${colors.accent.green}05)`,
-        border: `1px solid ${colors.accent.green}30`,
-        borderRadius: '14px', padding: '20px',
-      }}>
+      <div style={{ ...styleCarteLiseree(colors), padding: '20px 20px 20px 23px' }}>
         <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '32px', flexShrink: 0 }}>⭐</div>
+          <Star size={28} strokeWidth={1.75} aria-hidden="true" focusable="false" style={{ flexShrink: 0, color: colors.text.primary }} />
           <div style={{ flex: 1 }}>
-            <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '15px', marginBottom: '8px' }}>
-              Qu'est-ce que les Points Séance ?
-            </div>
-            <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.7', margin: '0 0 14px' }}>
+            <h2 style={{ ...styleTitreCarte(colors), margin: '0 0 8px' }}>Qu'est-ce que les Points Séance ?</h2>
+            <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6, margin: '0 0 14px' }}>
               Challenge tes joueurs et offre-leur sur chaque séance un point séance sur un de tes procédés.
               Le joueur qui aura additionné le plus de points séance peut gagner une récompense ou un privilège.
               <strong style={{ color: colors.text.primary }}> À toi d'en faire de vrais compétiteurs.</strong>
             </p>
-            <button
-              onClick={() => { setShowTuto(true); setSlide(0) }}
-              style={{
-                background: 'none', border: `1px solid ${colors.accent.green}`, color: colors.accent.green,
-                borderRadius: '8px', padding: '8px 16px', fontSize: '13px',
-                fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              }}>
+            <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}
+              onClick={() => { setShowTuto(true); setSlide(0) }}>
               Comment inscrire les points séances ?
             </button>
           </div>
@@ -1004,54 +998,34 @@ function ExplicationPtsSeance() {
       </div>
 
       {showTuto && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 2000, padding: '20px',
-        }}>
-          <div style={{
-            background: colors.background.surface, borderRadius: '16px',
-            width: '100%', maxWidth: '520px', border: `1px solid ${colors.border.default}`,
-            overflow: 'hidden',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>
-                Comment inscrire les points séances
-              </div>
-              <button onClick={() => setShowTuto(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '20px' }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+          <div role="dialog" aria-modal="true" aria-label="Comment inscrire les points séances" style={{ ...styleCarte(colors), padding: 0, width: '100%', maxWidth: '520px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 12px 12px 20px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+              <Etiquette>Comment inscrire les points séances</Etiquette>
+              <button type="button" aria-label="Fermer" onClick={() => setShowTuto(false)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonPetit(colors), width: '36px', minHeight: '36px', padding: 0 }}>
+                <X size={18} strokeWidth={2} aria-hidden="true" focusable="false" />
+              </button>
             </div>
 
-            <div style={{
-              background: colors.background.base, height: '220px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              <div style={{ fontSize: '48px' }}>{slides[slide].icone}</div>
+            <div style={{ background: colors.background.sunken, height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              <IconeSlide size={56} strokeWidth={1.5} aria-hidden="true" focusable="false" style={{ color: colors.text.primary }} />
 
               {slide > 0 && (
-                <button onClick={() => setSlide(slide - 1)} style={{
-                  position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                  background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '50%',
-                  width: '36px', height: '36px', cursor: 'pointer', color: colors.text.primary, fontSize: '16px',
-                }}>‹</button>
+                <button type="button" aria-label="Étape précédente" onClick={() => setSlide(slide - 1)} style={{ ...boutonFleche, left: '12px' }}>
+                  <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" focusable="false" />
+                </button>
               )}
               {slide < slides.length - 1 && (
-                <button onClick={() => setSlide(slide + 1)} style={{
-                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                  background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '50%',
-                  width: '36px', height: '36px', cursor: 'pointer', color: colors.text.primary, fontSize: '16px',
-                }}>›</button>
+                <button type="button" aria-label="Étape suivante" onClick={() => setSlide(slide + 1)} style={{ ...boutonFleche, right: '12px' }}>
+                  <ChevronRight size={20} strokeWidth={2} aria-hidden="true" focusable="false" />
+                </button>
               )}
             </div>
 
             <div style={{ padding: '20px' }}>
-              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                Étape {slide + 1} / {slides.length}
-              </div>
-              <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
-                {slides[slide].titre}
-              </div>
-              <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+              <Etiquette as="p" style={{ marginBottom: '6px' }}>Étape {slide + 1} / {slides.length}</Etiquette>
+              <h3 style={{ ...styleTitreCarte(colors), margin: '0 0 8px' }}>{slides[slide].titre}</h3>
+              <p style={{ color: colors.text.secondary, fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
                 {slides[slide].texte}
               </p>
             </div>
@@ -1059,27 +1033,21 @@ function ExplicationPtsSeance() {
             <div style={{ padding: '0 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {slides.map((_, i) => (
-                  <button key={i} onClick={() => setSlide(i)} style={{
+                  <button key={i} type="button" aria-label={`Étape ${i + 1}`} aria-current={i === slide ? 'step' : undefined} onClick={() => setSlide(i)} style={{
                     width: i === slide ? '20px' : '8px', height: '8px',
-                    borderRadius: '4px', border: 'none', cursor: 'pointer',
-                    background: i === slide ? colors.accent.green : colors.border.default,
-                    transition: 'width 0.2s', padding: 0,
+                    borderRadius: '1px', border: 'none', cursor: 'pointer',
+                    background: i === slide ? couleurClub(colors) : colors.border.strong,
+                    padding: 0,
                   }} />
                 ))}
               </div>
               {slide === slides.length - 1 ? (
-                <button onClick={() => setShowTuto(false)} style={{
-                  background: colors.accent.green, color: colors.accent.onBrand, border: 'none',
-                  borderRadius: '8px', padding: '8px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                }}>
+                <button type="button" className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)} onClick={() => setShowTuto(false)}>
                   C'est parti !
                 </button>
               ) : (
-                <button onClick={() => setSlide(slide + 1)} style={{
-                  background: colors.accent.green, color: colors.accent.onBrand, border: 'none',
-                  borderRadius: '8px', padding: '8px 20px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                }}>
-                  Suivant →
+                <button type="button" className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)} onClick={() => setSlide(slide + 1)}>
+                  Suivant<ArrowRight size={16} strokeWidth={2} aria-hidden="true" focusable="false" />
                 </button>
               )}
             </div>
@@ -1105,19 +1073,19 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
   const aujourdhuiStr = dateStr(now)
   const dimanche = jours[6]
   const label = `${lundi.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} – ${dimanche.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}`
-  const navSt = { background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: '8px', width: '30px', height: '30px', cursor: 'pointer', fontSize: '15px', fontFamily: 'Inter, sans-serif' }
-  const puceBase = { borderRadius: '8px', padding: '5px 7px', fontSize: '11px', lineHeight: 1.3, minWidth: 0, textAlign: 'left', border: 'none', fontFamily: 'Inter, sans-serif', width: '100%', boxSizing: 'border-box' }
-  const heureSt = { display: 'block', fontSize: '11px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }
+  const navSt = { ...styleBoutonSecondaire(colors), width: '34px', minHeight: '34px', padding: 0 }
+  const puceBase = { borderRadius: forme.rayonPastille, padding: '5px 7px', fontSize: '12px', lineHeight: 1.3, minWidth: 0, textAlign: 'left', border: 'none', fontFamily: police.texte, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }
+  const heureSt = { display: 'block', fontFamily: police.titre, fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }
   const libelleSt = { display: 'block', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '16px 18px', marginBottom: '1.25rem' }}>
+    <div style={{ ...styleCarte(colors), padding: '16px 18px', marginBottom: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        <p style={{ fontWeight: 800, fontSize: '15px', margin: 0, color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}><IcoCalendar /> {t('planning_semaine_titre', lang)}</p>
-        <button aria-label="Semaine précédente" onClick={() => setOffset(o => o - 1)} style={navSt}>‹</button>
-        <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.faint, minWidth: '110px', textAlign: 'center' }}>{label}</span>
-        <button aria-label="Semaine suivante" onClick={() => setOffset(o => o + 1)} style={navSt}>›</button>
-        {offset !== 0 && <button onClick={() => setOffset(0)} style={{ ...navSt, width: 'auto', padding: '0 10px', fontSize: '12px', fontWeight: 600 }}>Aujourd'hui</button>}
-        <button onClick={onVoirTout} style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir tout →</button>
+        <Etiquette as="p" style={{ flex: 1, minWidth: 0 }}>{t('planning_semaine_titre', lang)}</Etiquette>
+        <button type="button" aria-label="Semaine précédente" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setOffset(o => o - 1)} style={navSt}><IcoChevronLeft /></button>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary, minWidth: '110px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{label}</span>
+        <button type="button" aria-label="Semaine suivante" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setOffset(o => o + 1)} style={navSt}><IcoChevronRight /></button>
+        {offset !== 0 && <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setOffset(0)} style={{ ...navSt, width: 'auto', padding: '0 12px', fontSize: '13px' }}>Aujourd'hui</button>}
+        <button type="button" onClick={onVoirTout} style={{ background: 'transparent', border: 'none', color: colors.text.primary, fontSize: '13px', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', fontFamily: police.texte, minHeight: '32px', padding: '0 2px' }}>Voir tout →</button>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(96px, 1fr))', gap: '6px' }}>
@@ -1126,31 +1094,24 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
             const ents = entrainements.filter(e => e.date === s)
             const mts = matchs.filter(m => m.date === s)
             const estAujourdhui = s === aujourdhuiStr
-            const weekEnd = i >= 5
             return (
-              <div key={s} style={{ minHeight: '96px', background: colors.background.sunken, borderRadius: '10px', padding: '6px', border: `1px solid ${estAujourdhui ? colors.accent.brand : colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: estAujourdhui ? colors.accent.blue : colors.text.faint }}>{JOURS[i]} {d.getDate()}</p>
-                {ents.map(e => {
-                  const plein = estAujourdhui
-                  return (
-                    <button key={`e-${e.id}`} onClick={() => onClickEntrainement(e)}
-                      style={{ ...puceBase, cursor: 'pointer', background: plein ? colors.accent.brand : 'var(--club-primary-soft)', color: plein ? colors.accent.onBrand : 'var(--club-primary-dark)' }}>
-                      {e.heure && <span style={heureSt}>{String(e.heure).slice(0, 5)}</span>}
-                      <span style={libelleSt}>{e.description || 'Entraînement'}</span>
-                    </button>
-                  )
-                })}
-                {mts.map(m => {
-                  const plein = weekEnd
-                  return (
-                    <button key={`m-${m.id}`} onClick={() => onClickMatch(m)}
-                      style={{ ...puceBase, cursor: 'pointer', background: plein ? colors.accent.brand : colors.background.raised, color: plein ? colors.accent.onBrand : colors.text.secondary, border: plein ? 'none' : `1px solid ${colors.border.strong}` }}>
-                      {m.heure && <span style={heureSt}>{String(m.heure).slice(0, 5)}</span>}
-                      <span style={libelleSt}>{m.adversaire || 'Match'}</span>
-                      <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, opacity: 0.85 }}>{m.domicile ? 'Domicile' : 'Extérieur'}</span>
-                    </button>
-                  )
-                })}
+              <div key={s} style={{ minHeight: '96px', background: colors.background.sunken, borderRadius: forme.rayonCarte, padding: '6px', border: `1px solid ${couleurCraie(colors)}`, boxShadow: estAujourdhui ? `inset 0 ${forme.lisere} 0 ${couleurClub(colors)}` : 'none', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                <p style={{ ...styleEtiquette(colors), margin: 0, fontSize: '11px', color: estAujourdhui ? colors.text.primary : colors.text.secondary, fontWeight: estAujourdhui ? 700 : 600 }}>{JOURS[i]} {d.getDate()}</p>
+                {ents.map(e => (
+                  <button key={`e-${e.id}`} type="button" className={CLASSE_CLIQUABLE} onClick={() => onClickEntrainement(e)}
+                    style={{ ...puceBase, background: colors.background.surface, color: colors.text.primary, boxShadow: `inset ${forme.lisere} 0 0 ${couleurClub(colors)}`, paddingLeft: '10px' }}>
+                    {e.heure && <span style={heureSt}>{String(e.heure).slice(0, 5)}</span>}
+                    <span style={libelleSt}>{e.description || 'Entraînement'}</span>
+                  </button>
+                ))}
+                {mts.map(m => (
+                  <button key={`m-${m.id}`} type="button" className={CLASSE_CLIQUABLE} onClick={() => onClickMatch(m)}
+                    style={{ ...puceBase, background: colors.accent.brand, color: colors.accent.onBrand }}>
+                    {m.heure && <span style={heureSt}>{String(m.heure).slice(0, 5)}</span>}
+                    <span style={libelleSt}>{m.adversaire || 'Match'}</span>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 600 }}>{m.domicile ? 'Domicile' : 'Extérieur'}</span>
+                  </button>
+                ))}
               </div>
             )
           })}
@@ -1162,7 +1123,6 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
 
 function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
   const colors = useColors()
-  const { theme } = useTheme()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
   // AccueilEducateur est un composant à part (pas une simple section du composant
@@ -1328,21 +1288,9 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
   const totalMatchsJoues = matchsJoues.length
   const pctBilan = (n) => totalMatchsJoues ? Math.round(n / totalMatchsJoues * 100) : 0
 
-  // ── V2 "Centre de commandement" (2026-10-12) — styles partagés ──────────
-  // Eyebrow éditorial (petites capitales + filet) : remplace les en-têtes de
-  // section avec icône répétée par un dispositif typographique, cohérent
-  // avec la direction "feuille de match" plutôt que "carte SaaS".
-  const eyebrowSt = { fontSize: '11px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint, margin: '0 0 12px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }
-  // Carte standard : angles modérés (8px, pas 14-16px), pas de halo ni de
-  // dégradé — seule la position dans la page porte la hiérarchie désormais.
-  const cardSt = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '1.25rem' }
-  // Segment de la bande de score : pas de bordure individuelle, la grille
-  // parente dessine les filets (1px de fond visible dans les interstices).
-  const segLabelSt = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint, margin: '0 0 6px' }
-  // Cartes des chiffres clés : même hauteur minimale, contenu réparti.
-  const kpiCardSt = { ...cardSt, padding: '16px 18px', minHeight: '116px', minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }
-  const kpiValeurSt = { fontSize: '32px', fontWeight: 800, margin: 0, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }
-  const kpiSousSt = { fontSize: '12px', color: colors.text.faint, margin: 0 }
+  // Styles de l'accueil : tout vient du kit d'identité (src/lib/identite.js).
+  // Titre de rubrique = étiquette en petites capitales sur une ligne de craie.
+  const eyebrowSt = { ...styleEtiquette(colors), margin: '0 0 12px', paddingBottom: '8px', borderBottom: `1px solid ${couleurCraie(colors)}` }
   // Le prochain match est « du week-end » s'il tombe ce samedi ou ce dimanche.
   const matchDuWeekEnd = !!prochainMatch && prochainMatch.date <= dimancheStr && [0, 6].includes(new Date(prochainMatch.date + 'T12:00:00').getDay())
   const dateDuJour = new Date().toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase())
@@ -1378,71 +1326,54 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
       <BandeauClub club={clubInfo} couleur={colors.accent.brand} isMobile={isMobile} />
 
       {/* 1. En-tête : date du jour, salutation, une seule action principale. */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ margin: '0 0 4px', fontSize: '13px', color: colors.text.faint }}>{dateDuJour}</p>
-          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Bonjour{prenom ? ` ${prenom}` : ''}</h1>
-        </div>
-        {peutVoir('entrainements') && <button onClick={onNouvelleSeance}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 18px', minHeight: '44px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-          <IcoPlus /> Nouvelle séance
-        </button>}
-      </div>
+      <TitreEcran
+        surTitre={dateDuJour}
+        titre={`Bonjour${prenom ? ` ${prenom}` : ''}`}
+        actions={peutVoir('entrainements') && (
+          <button type="button" onClick={onNouvelleSeance} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+            <Icone icone={Plus} /> Nouvelle séance
+          </button>
+        )}
+      />
 
       {/* 2. Quatre chiffres clés de même taille. Calculs inchangés (effectif,
           bilan V/N/D, présence de la semaine, prochain match). */}
       <div className="df-kpi-grid" style={{ marginBottom: '1.25rem' }}>
-        <div style={kpiCardSt}>
-          <p style={segLabelSt}>Effectif</p>
-          <p style={kpiValeurSt}>{totalJoueurs}</p>
-          <p style={kpiSousSt}>{totalJoueurs > 1 ? 'joueurs' : 'joueur'}</p>
-        </div>
+        <CarteChiffre liseree etiquette="Effectif" valeur={totalJoueurs} detail={totalJoueurs > 1 ? 'joueurs' : 'joueur'} style={{ height: '100%' }} />
 
-        <div style={kpiCardSt}>
-          <p style={segLabelSt}>Bilan</p>
-          <p style={kpiValeurSt}>{totalMatchsJoues > 0 ? <>{pctBilan(victoires)}<span style={{ fontSize: '16px', opacity: 0.6 }}>%</span></> : '—'}</p>
-          <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', background: colors.background.raised, margin: '2px 0 6px' }}>
-            {[
-              { n: victoires, couleur: colors.accent.success },
-              { n: nuls, couleur: colors.accent.orange },
-              { n: defaites, couleur: colors.accent.red },
-            ].filter(s => s.n > 0).map(s => <div key={s.couleur} style={{ flex: s.n, background: s.couleur }} />)}
-          </div>
-          <p style={kpiSousSt}>{totalMatchsJoues > 0 ? `${victoires} V · ${nuls} N · ${defaites} D` : 'Aucun match joué'}</p>
-        </div>
-
-        <div style={kpiCardSt}>
-          <p style={segLabelSt}>Présence</p>
-          <p style={{ ...kpiValeurSt, color: tauxPresenceSemaine != null ? colors.accent.success : colors.text.disabled }}>
-            {tauxPresenceSemaine != null ? <>{tauxPresenceSemaine}<span style={{ fontSize: '16px', opacity: 0.6 }}>%</span></> : '—'}
-          </p>
-          <p style={kpiSousSt}>{tauxPresenceSemaine != null ? 'cette semaine' : 'Pas de séance passée cette semaine'}</p>
-        </div>
-
-        <div style={{ ...kpiCardSt, background: colors.accent.brand, borderColor: colors.accent.brand, color: colors.accent.onBrand }}>
-          <p style={{ ...segLabelSt, color: 'inherit', opacity: 0.85 }}>{matchDuWeekEnd ? 'Match du week-end' : 'Prochain match'}</p>
-          {prochainMatch ? (
-            <>
-              <p style={{ ...kpiValeurSt, fontSize: '19px', letterSpacing: 0, lineHeight: 1.2 }}>
-                {new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}{prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}
-              </p>
-              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {prochainMatch.adversaire || '—'} <span style={{ opacity: 0.85, fontWeight: 500 }}>· {prochainMatch.domicile ? 'Domicile' : 'Extérieur'}</span>
-              </p>
-            </>
-          ) : (
-            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Aucun match planifié</p>
+        <div style={{ ...styleCarte(colors), height: '100%' }}>
+          <Etiquette as="span" style={{ display: 'block' }}>Bilan</Etiquette>
+          <span style={{ ...styleChiffreHeros(colors, 40), display: 'block', marginTop: '10px' }}>
+            {totalMatchsJoues > 0 ? <>{pctBilan(victoires)}<span style={{ fontSize: '0.55em', fontWeight: 600, marginLeft: '0.15em' }}>{'\u00A0'}%</span></> : '—'}
+          </span>
+          {totalMatchsJoues > 0 && (
+            <Jauge style={{ marginTop: '10px' }} legende={false} segments={[{ libelle: 'Victoires', valeur: victoires }, { libelle: 'Nuls', valeur: nuls }, { libelle: 'Défaites', valeur: defaites }]} />
           )}
+          <span style={{ display: 'block', marginTop: '8px', fontFamily: police.texte, fontSize: '13px', color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>
+            {totalMatchsJoues > 0 ? `${victoires} V · ${nuls} N · ${defaites} D` : 'Aucun match joué'}
+          </span>
         </div>
+
+        <CarteChiffre etiquette="Présence" valeur={tauxPresenceSemaine != null ? tauxPresenceSemaine : '—'} unite={tauxPresenceSemaine != null ? '%' : undefined}
+          detail={tauxPresenceSemaine != null ? 'cette semaine' : 'Pas de séance passée cette semaine'} style={{ height: '100%' }} />
+
+        <CarteChiffre
+          etiquette={matchDuWeekEnd ? 'Match du week-end' : 'Prochain match'}
+          taille={prochainMatch ? 28 : 40}
+          valeur={prochainMatch
+            ? `${new Date(prochainMatch.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}${prochainMatch.heure ? ` · ${prochainMatch.heure}` : ''}`
+            : '—'}
+          detail={prochainMatch ? `${prochainMatch.adversaire || '—'} · ${prochainMatch.domicile ? 'Domicile' : 'Extérieur'}` : 'Aucun match planifié'}
+          style={{ height: '100%' }} />
       </div>
 
       {/* 3. Prochaine séance : carte blanche, trait couleur du club à gauche.
           Les raccourcis réutilisent les mêmes mécanismes que le reste de l'app
           (setFicheApercu/setFicheApercuEnHaut ; même garde `if (s)` en cas de
           fiche_id orphelin). Compteurs : réponses au sondage de dispo. */}
-      {peutVoir('entrainements') && <div style={{ ...cardSt, borderLeft: `4px solid ${colors.accent.brand}`, marginBottom: '1.25rem' }}>
+      {peutVoir('entrainements') && <div style={{ ...styleCarteLiseree(colors), marginBottom: '1.25rem' }}>
         {!prochainEnt ? (
-          <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucune séance planifiée.</p>
+          <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0 }}>Aucune séance planifiée.</p>
         ) : (() => {
           const presents = compterStatutPresence('present') + compterStatutPresence('convoque')
           const absents = compterStatutPresence('absent') + compterStatutPresence('blesse') + compterStatutPresence('malade')
@@ -1453,10 +1384,10 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
           const demain = new Date(); demain.setDate(demain.getDate() + 1)
           const estDemain = prochainEnt.date === demain.toISOString().split('T')[0]
           const labelDate = estAujourdHui ? "Aujourd'hui" : estDemain ? 'Demain' : dateEntr.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-          const btnSeanceSt = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 16px', minHeight: '40px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flex: isMobile ? '1 1 auto' : 'none' }
+          const flexBtn = { flex: isMobile ? '1 1 auto' : 'none' }
           const compteur = (n, libelle, couleur) => (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: colors.text.secondary, whiteSpace: 'nowrap' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: couleur, flexShrink: 0 }} />
+              <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: couleur, flexShrink: 0 }} />
               <strong style={{ color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{n}</strong> {libelle}
             </span>
           )
@@ -1465,39 +1396,39 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0, flex: '1 1 340px' }}>
                 {/* Date en grand : le jour en couleur du club. */}
                 <div style={{ width: '64px', flexShrink: 0, textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                  <p style={{ margin: '2px 0', fontSize: '38px', fontWeight: 800, lineHeight: 1, color: colors.accent.green, fontVariantNumeric: 'tabular-nums' }}>{dateEntr.getDate()}</p>
-                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+                  <Etiquette as="p">{dateEntr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</Etiquette>
+                  <p style={{ ...styleChiffreHeros(colors, 40), margin: '4px 0' }}>{dateEntr.getDate()}</p>
+                  <Etiquette as="p">{dateEntr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</Etiquette>
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>Prochaine séance</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '17px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{prochainEnt.description || mesSeancesOuvertes.find(s => s.id === prochainEnt.fiche_id)?.theme || 'Entraînement'}</p>
-                  <p style={{ margin: '3px 0 10px', fontSize: '13px', color: colors.text.faint }}>{labelDate}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''} · {clos ? 'sondage clos' : 'sondage ouvert'}</p>
+                  <Etiquette as="p">Prochaine séance</Etiquette>
+                  <p style={{ margin: '3px 0 0', fontFamily: police.titre, fontSize: '22px', fontWeight: 700, letterSpacing: '0.01em', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{prochainEnt.description || mesSeancesOuvertes.find(s => s.id === prochainEnt.fiche_id)?.theme || 'Entraînement'}</p>
+                  <p style={{ margin: '3px 0 10px', fontSize: '13px', color: colors.text.secondary }}>{labelDate}{prochainEnt.heure ? ` · ${prochainEnt.heure}` : ''} · {clos ? 'sondage clos' : 'sondage ouvert'}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px 16px', flexWrap: 'wrap' }}>
                     {compteur(presents, presents > 1 ? 'présents' : 'présent', colors.accent.success)}
                     {compteur(absents, absents > 1 ? 'absents' : 'absent', colors.accent.red)}
-                    {compteur(enAttente, 'en attente', colors.text.disabled)}
+                    {compteur(enAttente, 'en attente', colors.text.dim)}
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
                 {prochainEnt.fiche_id ? (
-                  <button
+                  <button type="button" className={CLASSE_BOUTON}
                     onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochainEnt.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
-                    style={{ ...btnSeanceSt, background: colors.accent.brand, color: colors.accent.onBrand, border: `1px solid ${colors.accent.brand}` }}>
-                    <IcoFileText /> Fiche séance
+                    style={{ ...styleBoutonPrincipal(colors), ...flexBtn }}>
+                    <Icone icone={FileText} /> Fiche séance
                   </button>
                 ) : (
-                  <button
+                  <button type="button" className={CLASSE_BOUTON}
                     onClick={() => setModalImportFicheEntrainement(prochainEnt.id)}
-                    style={{ ...btnSeanceSt, background: colors.accent.brand, color: colors.accent.onBrand, border: `1px solid ${colors.accent.brand}` }}>
-                    <IcoLink /> Attacher une fiche
+                    style={{ ...styleBoutonPrincipal(colors), ...flexBtn }}>
+                    <Icone icone={LienIcone} /> Attacher une fiche
                   </button>
                 )}
-                <button onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
-                  style={{ ...btnSeanceSt, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary }}>
-                  <IcoCheckCircle /> Joueurs présents
+                <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => { setActiveSection('entrainements'); setSousOngletEnt('prochaine') }}
+                  style={{ ...styleBoutonSecondaire(colors), ...flexBtn }}>
+                  <Icone icone={CircleCheck} /> Joueurs présents
                 </button>
               </div>
             </div>
@@ -1519,13 +1450,13 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               "Voir" défile jusqu'au panneau détaillé, affiché plus bas. Rien
               n'est affiché s'il n'y a aucune alerte. */}
           {resumeAlertes && resumeAlertes.total > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', marginBottom: '1.25rem', borderRadius: '12px', background: theme === 'claire' ? '#FFF4E5' : colors.accent.amber + '1F', border: `1px solid ${theme === 'claire' ? '#F5DDB8' : colors.accent.amber + '40'}`, color: theme === 'claire' ? '#7A4A06' : colors.accent.amber }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-              <span style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.5, flex: 1, minWidth: 0 }}>
+            <div role="status" style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px 12px 19px', marginBottom: '1.25rem', boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.amber}` }}>
+              <span style={{ color: colors.accent.amber, display: 'inline-flex' }}><Icone icone={TriangleAlert} taille={20} /></span>
+              <span style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.5, flex: 1, minWidth: 0, color: colors.text.primary }}>
                 {`${phraseResumeAlertes(resumeAlertes.parCategorie)}.`}
               </span>
-              <button onClick={ouvrirPanneauAlertes}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', fontSize: '13px', fontWeight: 800, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: '6px 2px', minHeight: '32px', flexShrink: 0 }}>
+              <button type="button" onClick={ouvrirPanneauAlertes} className={CLASSE_BOUTON_SECONDAIRE}
+                style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', padding: '0 14px', flexShrink: 0 }}>
                 Voir
               </button>
             </div>
@@ -1582,26 +1513,26 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               <div style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                   <p style={{ ...eyebrowSt, margin: 0, border: 'none', padding: 0, flex: 1 }}>Classement du mois</p>
-                  <button onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
-                    style={{ background: 'transparent', border: 'none', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={() => { setActiveSection('stats'); setStatsSubTab('mois') }}
+                    style={{ background: 'transparent', border: 'none', color: colors.text.primary, fontSize: '13px', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', fontFamily: police.texte, minHeight: '32px', padding: '0 2px' }}>
                     Voir tout →
                   </button>
                 </div>
-                <div style={{ height: '1px', background: colors.border.subtle, marginBottom: '14px' }} />
+                <div aria-hidden="true" style={{ ...styleLigneCraie(colors), marginBottom: '14px' }} />
 
                 {podiumActuel.length === 0 ? (
-                  <p style={{ color: colors.text.disabled, fontSize: '13px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
+                  <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0 }}>Aucun point de séance attribué ce mois-ci.</p>
                 ) : (() => {
                   // Vrai podium : 2e à gauche, 1er au centre (avatar plus grand bordé
                   // couleur du club, marche haute pleine couleur du club), 3e à droite
                   // (marches grises plus basses). Toujours 3 emplacements : avec moins
                   // de 3 classés, les places vides restent vides. Mêmes données qu'avant.
-                  const Etoile = ({ taille = 14 }) => <svg width={taille} height={taille} viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
+                  const Etoile = ({ taille = 14 }) => <Star size={taille} strokeWidth={2} fill={colors.accent.amber} color={colors.accent.amber} aria-hidden="true" focusable="false" />
                   const parRang = podiumActuel.slice(0, 3).map((item, idx) => ({ ...item, rang: idx + 1 }))
                   const emplacements = [2, 1, 3].map(r => parRang.find(x => x.rang === r) || null)
                   const hauteurMarche = { 1: isMobile ? 64 : 84, 2: isMobile ? 46 : 60, 3: isMobile ? 34 : 44 }
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: isMobile ? '6px' : '10px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: isMobile ? '16px 10px 0' : '22px 20px 0', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: isMobile ? '6px' : '10px', ...styleCarte(colors), padding: isMobile ? '16px 10px 0' : '22px 20px 0', overflow: 'hidden' }}>
                       {emplacements.map((item, i) => {
                         if (!item) return <div key={`vide-${i}`} />
                         const premier = item.rang === 1
@@ -1609,16 +1540,16 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
                         return (
                           <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0 }}>
                             <div style={{ marginBottom: '8px' }}>
-                              <Avatar person={item.joueur} size={taille} bg={colors.background.raised} border={premier ? `3px solid ${colors.accent.brand}` : `2px solid ${colors.border.strong}`} textColor={premier ? colors.accent.blue : colors.text.secondary} />
+                              <Avatar person={item.joueur} size={taille} bg={colors.background.raised} border={premier ? `3px solid ${colors.accent.brand}` : `2px solid ${colors.border.strong}`} textColor={colors.text.primary} />
                             </div>
-                            <p style={{ margin: 0, fontSize: isMobile ? '12px' : (premier ? '15px' : '13px'), fontWeight: 800, color: colors.text.primary, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', maxWidth: '100%' }}>
+                            <p style={{ margin: 0, fontSize: isMobile ? '13px' : (premier ? '16px' : '14px'), fontWeight: 700, color: colors.text.primary, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', maxWidth: '100%' }}>
                               {item.joueur.prenom} {item.joueur.nom}
                             </p>
-                            {item.joueur.poste && !isMobile && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.joueur.poste}</p>}
-                            <p style={{ margin: '6px 0 10px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: isMobile ? '16px' : (premier ? '22px' : '18px'), fontWeight: 800, color: colors.text.primary, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            {item.joueur.poste && !isMobile && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.secondary }}>{item.joueur.poste}</p>}
+                            <p style={{ margin: '6px 0 10px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: police.titre, fontSize: isMobile ? '18px' : (premier ? '26px' : '20px'), fontWeight: 700, color: colors.text.primary, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                               {item.count} <Etoile taille={premier ? 18 : 14} />
                             </p>
-                            <div style={{ width: '100%', height: `${hauteurMarche[item.rang]}px`, borderRadius: '8px 8px 0 0', background: premier ? colors.accent.brand : colors.background.raised, color: premier ? colors.accent.onBrand : colors.text.faint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premier ? '28px' : '20px', fontWeight: 800 }}>
+                            <div style={{ width: '100%', height: `${hauteurMarche[item.rang]}px`, borderRadius: `${forme.rayonCarte} ${forme.rayonCarte} 0 0`, background: premier ? colors.accent.brand : colors.background.raised, color: premier ? colors.accent.onBrand : colors.text.secondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontSize: premier ? '30px' : '22px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                               {item.rang}
                             </div>
                           </div>
@@ -1629,13 +1560,13 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
                 })()}
 
                 {podiumPrecedent.length > 0 && (
-                  <p style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', margin: '10px 0 0', fontSize: '12px', color: colors.text.faint }}>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', margin: '10px 0 0', fontSize: '13px', color: colors.text.secondary }}>
                     <span style={{ textTransform: 'capitalize' }}>{moisPrecedentDate.toLocaleDateString(localeOf(lang), { month: 'long' })}</span>
                     <span>:</span>
                     <span style={{ fontWeight: 700, color: colors.text.secondary }}>{podiumPrecedent[0].joueur.prenom} {podiumPrecedent[0].joueur.nom}</span>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
                       {podiumPrecedent[0].count}
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.accent.amber} aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" /></svg>
+                      <Star size={12} strokeWidth={2} fill={colors.accent.amber} color={colors.accent.amber} aria-hidden="true" focusable="false" />
                     </span>
                   </p>
                 )}
@@ -1649,9 +1580,9 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               match) ; sinon aucun bouton n'est surligné. */}
           <p style={eyebrowSt}>Actions rapides</p>
           {(() => {
-            const raccourciSt = { display: 'flex', alignItems: 'center', gap: '10px', minHeight: '48px', padding: '10px 14px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', cursor: 'pointer', color: colors.text.primary, fontSize: '13px', fontWeight: 600, fontFamily: 'Inter, sans-serif', textAlign: 'left', minWidth: 0, boxSizing: 'border-box', width: '100%' }
-            const aPreparerSt = { background: 'var(--club-primary-soft)', border: `1px solid ${colors.accent.blue}` }
-            const survol = { onMouseEnter: e => { e.currentTarget.style.borderColor = colors.accent.blue }, onMouseLeave: e => { e.currentTarget.style.borderColor = colors.border.subtle } }
+            const raccourciSt = { ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '10px', minHeight: '48px', padding: '10px 14px', cursor: 'pointer', color: colors.text.primary, fontSize: '14px', fontWeight: 600, fontFamily: police.texte, textAlign: 'left', width: '100%' }
+            // « À préparer » : liseré à la couleur du club, jamais un fond coloré.
+            const aPreparerSt = { boxShadow: `inset ${forme.lisere} 0 0 ${couleurClub(colors)}`, paddingLeft: '17px' }
             return (
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '1.75rem' }}>
             {[
@@ -1659,8 +1590,8 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
               { Icon: IcoRun, label: 'Créer un entraînement', section: 'entrainements' },
               { Icon: IcoVideo, label: 'Analyse rapport', section: 'analyse_video' },
             ].filter(a => peutVoir(a.section)).map(a => (
-              <button key={a.section} onClick={() => setActiveSection(a.section)} style={raccourciSt} {...survol}>
-                <span style={{ display: 'inline-flex', color: colors.accent.blue, flexShrink: 0 }}><a.Icon /></span>
+              <button key={a.section} type="button" className={CLASSE_CLIQUABLE} onClick={() => setActiveSection(a.section)} style={raccourciSt}>
+                <span style={{ display: 'inline-flex', color: colors.text.secondary, flexShrink: 0 }}><a.Icon /></span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', lineHeight: 1.25, minWidth: 0 }}>{a.label}</span>
               </button>
             ))}
@@ -1688,65 +1619,65 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
 
       {deplacementFicheOuverte && (() => {
         const dep = deplacementFicheOuverte
-        const inputSt = { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginTop: '4px' }
+        const inputSt = { ...styleChamp(colors), marginTop: '4px' }
+        const libelleChamp = { ...styleEtiquette(colors), fontSize: '11px' }
         return (
           <div onClick={() => setDeplacementFicheOuverte(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
-              <p style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '16px' }}>📋 Fiche déplacement — {dep.lieu_destination}</p>
+            <div role="dialog" aria-modal="true" aria-labelledby="titre-fiche-deplacement" onClick={e => e.stopPropagation()} style={{ ...styleCarte(colors), background: colors.background.base, maxWidth: '480px', padding: '24px', margin: 'auto', maxHeight: '90vh', overflowY: 'auto' }}>
+              <p id="titre-fiche-deplacement" style={{ margin: '0 0 16px', fontFamily: police.titre, fontWeight: 700, fontSize: '22px', textTransform: 'uppercase', letterSpacing: '0.01em', color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={ClipboardList} taille={20} /> Fiche déplacement — {dep.lieu_destination}</p>
 
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
-                <p style={{ fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 700 }}>Données automatiques</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '12px', color: colors.text.secondary }}>
-                  <div>📍 <strong>{dep.lieu_destination || '—'}</strong></div>
-                  <div>👥 <strong>{dep.equipe || '—'}</strong></div>
-                  <div>🎯 <strong>{{ match: 'Match', tournoi: 'Tournoi', stage: 'Stage', autre: 'Autre' }[dep.nature] || 'Match'}</strong></div>
+              <div style={{ ...styleCarte(colors), padding: '12px', marginBottom: '16px' }}>
+                <Etiquette as="p" style={{ marginBottom: '8px' }}>Données automatiques</Etiquette>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '13px', color: colors.text.secondary }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={MapPin} taille={16} libelle="Lieu" /> <strong>{dep.lieu_destination || '—'}</strong></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={Users} taille={16} libelle="Équipe" /> <strong>{dep.equipe || '—'}</strong></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={Target} taille={16} libelle="Nature" /> <strong>{{ match: 'Match', tournoi: 'Tournoi', stage: 'Stage', autre: 'Autre' }[dep.nature] || 'Match'}</strong></div>
                   <div><strong>{dep.vehicule || '—'}</strong></div>
-                  <div>📅 <strong>{new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}</strong></div>
-                  <div>🕐 <strong>{dep.heure_depart || '—'}</strong></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={CalendarDays} taille={16} libelle="Date" /> <strong>{new Date(dep.date_depart + 'T12:00:00').toLocaleDateString('fr-FR')}</strong></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={Clock} taille={16} libelle="Heure" /> <strong>{dep.heure_depart || '—'}</strong></div>
                 </div>
               </div>
 
               {fichesBus.length === 0 ? (
-                <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
+                <p style={{ color: colors.text.secondary, fontSize: '13px', margin: '0 0 12px' }}>Aucun bus assigné à ce déplacement — assigne un véhicule dans Déplacements avant de remplir la fiche.</p>
               ) : (
                 fichesBus.map((f, idx) => (
-                  <div key={f.immat} style={{ background: colors.background.surface, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: `1px solid ${colors.border.subtle}` }}>
-                    <div style={{ fontWeight: 700, color: colors.accent.green, marginBottom: '10px', fontSize: '13px' }}>{f.immat}</div>
+                  <div key={f.immat} style={{ ...styleCarteLiseree(colors), padding: '14px 14px 14px 17px', marginBottom: '12px' }}>
+                    <div style={{ fontFamily: police.titre, fontWeight: 700, color: colors.text.primary, marginBottom: '10px', fontSize: '18px', letterSpacing: '0.04em' }}>{f.immat}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Km avant
-                        <input type="number" placeholder="ex: 45230" value={f.km_avant} onChange={e => modifierFicheBus(idx, 'km_avant', e.target.value)} style={inputSt} />
+                      <label style={libelleChamp}>Km avant
+                        <input className={CLASSE_CHAMP} type="number" placeholder="ex: 45230" value={f.km_avant} onChange={e => modifierFicheBus(idx, 'km_avant', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Km après
-                        <input type="number" placeholder="ex: 45380" value={f.km_apres} onChange={e => modifierFicheBus(idx, 'km_apres', e.target.value)} style={inputSt} />
+                      <label style={libelleChamp}>Km après
+                        <input className={CLASSE_CHAMP} type="number" placeholder="ex: 45380" value={f.km_apres} onChange={e => modifierFicheBus(idx, 'km_apres', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Gasoil avant
-                        <input type="text" placeholder="ex: 4/4" value={f.gasoil_avant} onChange={e => modifierFicheBus(idx, 'gasoil_avant', e.target.value)} style={inputSt} />
+                      <label style={libelleChamp}>Gasoil avant
+                        <input className={CLASSE_CHAMP} type="text" placeholder="ex: 4/4" value={f.gasoil_avant} onChange={e => modifierFicheBus(idx, 'gasoil_avant', e.target.value)} style={inputSt} />
                       </label>
-                      <label style={{ fontSize: '11px', color: colors.text.muted }}>Gasoil après
-                        <input type="text" placeholder="ex: 2/4" value={f.gasoil_apres} onChange={e => modifierFicheBus(idx, 'gasoil_apres', e.target.value)} style={inputSt} />
+                      <label style={libelleChamp}>Gasoil après
+                        <input className={CLASSE_CHAMP} type="text" placeholder="ex: 2/4" value={f.gasoil_apres} onChange={e => modifierFicheBus(idx, 'gasoil_apres', e.target.value)} style={inputSt} />
                       </label>
                     </div>
-                    <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block', marginTop: '10px' }}>Nom du conducteur
-                      <input type="text" placeholder="Prénom Nom" value={f.conducteur} onChange={e => modifierFicheBus(idx, 'conducteur', e.target.value)} style={inputSt} />
+                    <label style={{ ...libelleChamp, display: 'block', marginTop: '10px' }}>Nom du conducteur
+                      <input className={CLASSE_CHAMP} type="text" placeholder="Prénom Nom" value={f.conducteur} onChange={e => modifierFicheBus(idx, 'conducteur', e.target.value)} style={inputSt} />
                     </label>
-                    <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block', marginTop: '10px' }}>Remarques sur le véhicule
-                      <textarea placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={f.remarques_vehicule} onChange={e => modifierFicheBus(idx, 'remarques_vehicule', e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+                    <label style={{ ...libelleChamp, display: 'block', marginTop: '10px' }}>Remarques sur le véhicule
+                      <textarea className={CLASSE_CHAMP} placeholder="Ex: pneu avant gauche à vérifier, clim en panne..." value={f.remarques_vehicule} onChange={e => modifierFicheBus(idx, 'remarques_vehicule', e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
                     </label>
                   </div>
                 ))
               )}
 
-              <label style={{ fontSize: '11px', color: colors.text.muted, display: 'block' }}>Remarques générales
-                <textarea placeholder="Observations sur le déplacement..." value={remarquesGenerales} onChange={e => setRemarquesGenerales(e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
+              <label style={{ ...libelleChamp, display: 'block' }}>Remarques générales
+                <textarea className={CLASSE_CHAMP} placeholder="Observations sur le déplacement..." value={remarquesGenerales} onChange={e => setRemarquesGenerales(e.target.value)} rows={2} style={{ ...inputSt, resize: 'vertical' }} />
               </label>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
-                <button onClick={sauvegarderFiche} disabled={savingFiche}
-                  style={{ flex: 1, background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, cursor: savingFiche ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingFiche ? 0.6 : 1 }}>
-                  {savingFiche ? 'Enregistrement...' : '💾 Enregistrer la fiche'}
+                <button type="button" onClick={sauvegarderFiche} disabled={savingFiche} className={CLASSE_BOUTON}
+                  style={{ ...styleBoutonPrincipal(colors), flex: 1, cursor: savingFiche ? 'wait' : 'pointer' }}>
+                  {savingFiche ? 'Enregistrement...' : <><Icone icone={Save} /> Enregistrer la fiche</>}
                 </button>
-                <button onClick={() => setDeplacementFicheOuverte(null)}
-                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.muted, borderRadius: '10px', padding: '12px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button type="button" onClick={() => setDeplacementFicheOuverte(null)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                   Annuler
                 </button>
               </div>
@@ -1761,6 +1692,28 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
 // educateurIdOverride/permissions : utilisés quand ce dashboard est rendu pour un
 // dirigeant délégué (DashboardDirigeant.jsx) plutôt que pour l'éducateur lui-même —
 // voir canEdit()/canView() et sidebarSections plus bas pour le gating par section.
+// Tranche d'âge de la bibliothèque (ex. 'U10-U11') qui correspond au nom d'une
+// équipe (« U11 », « U11 A », « U10-U11 », « Seniors »). Vide si le nom ne se
+// lit pas : le filtre reste alors sur « toutes les catégories ».
+function trancheAgeDepuisNomEquipe(nom) {
+  const texte = String(nom || '')
+  if (/s[eé]niors?|v[eé]t[eé]rans?/i.test(texte)) return 'Senior'
+  const m = texte.match(/U\s?-?(\d{1,2})/i)
+  if (!m) return ''
+  const age = parseInt(m[1], 10)
+  if (!age || age > 19) return ''
+  const debut = age < 6 ? 6 : age - (age % 2 === 0 ? 0 : 1)
+  return `U${debut}-U${debut + 1}`
+}
+
+// « Nouveau » : ajouté depuis moins de 14 jours. Calculé ici, hors du composant,
+// pour que l'affichage ne dépende pas de l'horloge à chaque rendu.
+const JOURS_NOUVEAU = 14
+function estNouveauProcede(dateIso) {
+  const t0 = dateIso ? new Date(dateIso).getTime() : NaN
+  return Number.isFinite(t0) && Date.now() - t0 < JOURS_NOUVEAU * 24 * 3600 * 1000
+}
+
 export default function DashboardEducateur({ educateurIdOverride, permissions } = {}) {
   const navigate = useNavigate()
   const colors = useColors()
@@ -1777,7 +1730,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Le menu suit aussi les réglages Mon club du club d'affiliation acceptée
   // (tous modèles ; sans réglage, rien ne change).
   const outils = useOutils({ role: 'educateur', userId, modeleOutils: profil?.modele_outils, desactive: !!educateurIdOverride, clubId: clubAffiliation?.statut === 'accepte' ? clubAffiliation.club_id : null })
-  const activeSection = outils.verrouillee(activeSectionBrut) ? 'outil_verrouille' : activeSectionBrut
+  // Bibliothèque du club offerte : un éducateur affilié (accepté) lit la
+  // bibliothèque de son club même sans l'outil Bibliothèque payant. Il n'ouvre
+  // alors que cette partie (ni « Ma bibliothèque » ni Digital Football).
+  const biblioClubSeule = outils.verrouillee('bibliotheque') && clubAffiliation?.statut === 'accepte' && !!clubAffiliation?.club_id
+  const activeSection = outils.verrouillee(activeSectionBrut) && !(activeSectionBrut === 'bibliotheque' && biblioClubSeule) ? 'outil_verrouille' : activeSectionBrut
   const [loading, setLoading] = useState(true)
   // Tablette alignée sur le comportement téléphone (menu en tiroir), sur
   // demande explicite — auparavant un troisième mode dédié (sidebar réduite
@@ -2625,7 +2582,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [biblioFiltrePhase, setBiblioFiltrePhase] = useState('tous') // 'tous' | 'offensif' | 'defensif' — club/platform uniquement
   const [biblioFiltreTheme, setBiblioFiltreTheme] = useState('')
   const [biblioFiltreCategorieAge, setBiblioFiltreCategorieAge] = useState('')
+  // Le filtre d'âge de la partie club démarre sur la catégorie de l'éducateur ;
+  // dès qu'il touche au menu, son choix (même « toutes ») prend le dessus.
+  const [biblioAgeChoisi, setBiblioAgeChoisi] = useState(false)
   const [biblioRubrique, setBiblioRubrique] = useState('personal') // 'personal' | 'club' | 'platform' | 'videos'
+  const trancheAgeEducateur = trancheAgeDepuisNomEquipe(equipeActive?.nom || profilEdu?.categorie)
+  const filtreAgeParDefaut = !biblioAgeChoisi && biblioRubrique === 'club' ? trancheAgeEducateur : ''
+  const filtreAgeEffectif = biblioAgeChoisi ? biblioFiltreCategorieAge : filtreAgeParDefaut
   const PROCEDE_VIDE = { type: 'exercice', nom: '', theme: '', objectif: '', but: '', criteres_realisation: '', description: '', consignes: '', variables: '', duree: '', nb_joueurs: '', tags: '', schema_png: '', schema_data: null, categorie_age: ['Pour tous'], partage_club: false, partage_platform: false }
   // Filet de secours si l'enregistrement d'un procédé échoue (session expirée,
   // coupure réseau...) : la modale se ferme en optimiste AVANT la réponse
@@ -2854,7 +2817,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               onChange={e => setNewDirigeantEmail(e.target.value)}
               placeholder={t('dir_email_placeholder', lang)}
               type="email"
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
             />
   
             {/* Grille permissions */}
@@ -2874,7 +2837,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     {['aucun', 'lecture', 'edition'].map(val => (
                       <button key={val} onClick={() => setNewDirigeantPerms(prev => ({ ...prev, [key]: val }))}
                         style={{
-                          padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                          padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                           background: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft) : colors.background.raised,
                           color: newDirigeantPerms[key] === val ? (val === 'edition' ? colors.accent.success : val === 'lecture' ? colors.accent.info : colors.accent.red) : colors.text.disabled,
                         }}>
@@ -2887,7 +2850,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             </div>
   
             <button onClick={inviterDirigeant} disabled={invitingDirigeant || !newDirigeantEmail.trim()}
-              style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
+              style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: newDirigeantEmail.trim() ? 1 : 0.4 }}>
               {invitingDirigeant ? 'Envoi...' : `${t('dir_envoyer_invitation', lang)}`}
             </button>
           </div>
@@ -2926,7 +2889,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <button key={val}
                           onClick={() => modifierPermissions(d.id, key, val)}
                           style={{
-                            padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                            padding: '3px 8px', borderRadius: 5, border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                             background: (d.permissions?.[key] || 'aucun') === val
                               ? (val === 'edition' ? colors.accent.success + alpha.soft : val === 'lecture' ? colors.accent.info + alpha.soft : colors.accent.red + alpha.soft)
                               : colors.background.raised,
@@ -2945,11 +2908,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               {d.statut === 'en_attente' && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
                   <button onClick={() => renvoyerInvitationDirigeant(d)}
-                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.blue, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {t('dir_renvoyer', lang)}
                   </button>
                   <button onClick={() => supprimerDirigeant(d.id)}
-                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {t('btn_supprimer', lang)}
                   </button>
                 </div>
@@ -3290,6 +3253,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   }
 
   const chargerBiblio = async (uid, rubrique = 'personal') => {
+    if (biblioClubSeule && rubrique !== 'club') return
     setBiblioLoading(true)
     const requete = ++requeteBiblioRef.current
     if (rubrique === 'club' && !clubAffiliation?.club_id) { setBiblio([]); setBiblioLoading(false); return }
@@ -3297,6 +3261,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     // dans "Ma bibliothèque" (pas de rubrique exclusive) — "Ma bibliothèque"
     // montre donc tout ce que ce coach a créé, peu importe ses partages.
     // Paginé : la bibliothèque partagée de toute la plateforme dépasse 1000 procédés.
+    // Rubrique club : en tête, la bibliothèque officielle du club (table
+    // bibliotheque_club_procedes, lecture seule ici), puis les procédés que les
+    // autres éducateurs ont partagés. Sans l'outil Bibliothèque payant, seule la
+    // partie officielle est lue (la base refuse le reste).
+    let officiels = []
+    if (rubrique === 'club') {
+      const { data: lignesClub, error: erreurClub } = await supabase.from('bibliotheque_club_procedes').select('*').eq('club_id', clubAffiliation.club_id).order('type').order('nom').order('id')
+      if (requete !== requeteBiblioRef.current) return
+      if (erreurClub) console.error('bibliotheque club', erreurClub.message)
+      officiels = (lignesClub || []).map(p => ({ ...p, officiel: true }))
+      if (biblioClubSeule) { setBiblio(officiels); setBiblioLoading(false); return }
+    }
     const colonnes = await colonnesBiblioLegeres()
     const lire = (base) => fetchToutesLignes(() => {
       let query = supabase.from('bibliotheque_exercices').select(rubrique === 'personal' ? base : `${base}, educateur:profiles_public!bibliotheque_exercices_educateur_id_fkey(prenom, nom)`)
@@ -3322,7 +3298,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         procedes = procedes.map(p => p.educateur ? { ...p, educateur: { ...p.educateur, diplome: profilParId[p.educateur_id]?.diplome, categorie: profilParId[p.educateur_id]?.categorie } } : p)
       }
     }
-    setBiblio(procedes)
+    setBiblio([...officiels, ...procedes])
     setBiblioLoading(false)
     if (allegee && procedes.length) chargerMiniaturesBiblio(procedes, requete)
   }
@@ -3333,6 +3309,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // que via l'onglet Bibliothèque ; un éducateur arrivant directement sur
   // Création entraînement sans jamais être passé par cet onglet dans la
   // session voyait donc toujours une bibliothèque vide depuis cette modale.
+  // Sans l'outil Bibliothèque payant : seules « club » et « vidéos du club »
+  // existent, on ne reste jamais sur une rubrique fermée.
+  useEffect(() => {
+    if (biblioClubSeule && !['club', 'videos'].includes(biblioRubrique)) setBiblioRubrique('club')
+    if (biblioClubSeule && biblioVideoTab !== 'club') setBiblioVideoTab('club')
+  }, [biblioClubSeule, biblioRubrique, biblioVideoTab])
+
   useEffect(() => {
     if ((activeSection !== 'bibliotheque' && modalBiblioImport === null) || biblioRubrique === 'videos' || !userId) return
     chargerBiblio(userId, biblioRubrique)
@@ -4673,7 +4656,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           {j.numero_licence && <span style={{ fontSize: 11, color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '3px 9px', borderRadius: 6, fontWeight: 700 }}>Licencié</span>}
           {canEdit('effectif') && (
             <button onClick={() => reinitialiserAccesJoueur(j)}
-              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}
               title="Envoyer un email de réinitialisation de mot de passe">
               <IcoCle /> Accès
             </button>
@@ -5428,7 +5411,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerWarning(
         nbLus > 0 && nbDetectes < nbLus * 0.7
-          ? `⚠️ ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées). Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
+          ? `${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Vérifiez la liste ci-dessous et complétez les joueurs manquants (lignes grisées). Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
           : null
       )
     } catch (e) {
@@ -5461,7 +5444,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const nbDetectes = Object.keys(statsParJoueur).length
       setScannerModalWarning(
         nbLus > 0 && nbDetectes < nbLus * 0.7
-          ? `⚠️ ${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Le score a bien été lu — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous pour les joueurs non reconnus. Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
+          ? `${nbDetectes} joueur${nbDetectes > 1 ? 's' : ''} reconnu${nbDetectes > 1 ? 's' : ''} sur ${nbLus} lu${nbLus > 1 ? 's' : ''} par l'IA sur la photo. Le score a bien été lu — vérifiez la netteté de la photo et complétez minutes/buts/cartons manuellement ci-dessous pour les joueurs non reconnus. Noms lus par l'IA : ${nosNomsIA.join(', ')}.`
           : null
       )
     } catch (e) {
@@ -5640,12 +5623,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Statuts disponibles (cycle au clic)
   const STATUTS = ['absent', 'present', 'blesse', 'malade', 'convoque']
   const STATUT_CONFIG = {
-    present:  { label: t('ent_present', lang),   emoji: '✅', bg: colors.accent.success + alpha.subtle, border: colors.accent.success + alpha.medium, color: colors.accent.success },
-    absent:   { label: t('ent_absent', lang),    emoji: '❌', bg: colors.accent.red + alpha.subtle, border: colors.accent.red + alpha.medium, color: colors.accent.red },
-    blesse:   { label: t('ent_blesse', lang),    emoji: '🤕', bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.medium, color: colors.accent.orange },
-    malade:   { label: t('ent_malade', lang),    emoji: '🤒', bg: colors.accent.purple + alpha.subtle, border: colors.accent.purple + alpha.medium, color: colors.accent.purple },
-    convoque: { label: t('ent_convoque', lang),  emoji: '🏆', bg: colors.accent.info + alpha.subtle, border: colors.accent.info + alpha.medium, color: colors.accent.info },
+    present:  { label: t('ent_present', lang),   icone: Check, bg: colors.accent.success + alpha.subtle, border: colors.accent.success + alpha.medium, color: colors.accent.success },
+    absent:   { label: t('ent_absent', lang),    icone: X, bg: colors.accent.red + alpha.subtle, border: colors.accent.red + alpha.medium, color: colors.accent.red },
+    blesse:   { label: t('ent_blesse', lang),    icone: Bandage, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.medium, color: colors.accent.orange },
+    malade:   { label: t('ent_malade', lang),    icone: Thermometer, bg: colors.accent.purple + alpha.subtle, border: colors.accent.purple + alpha.medium, color: colors.accent.purple },
+    convoque: { label: t('ent_convoque', lang),  icone: Trophy, bg: colors.accent.info + alpha.subtle, border: colors.accent.info + alpha.medium, color: colors.accent.info },
   }
+
+  // Libellé de champ des formulaires de l'espace Entraînements (kit d'identité).
+  const labelEnt = { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }
 
   // Réponses des joueurs à la dispo d'un match (disponibilites.match_id), triées
   // ✅ → 🏆 → ❌ → 🤕 → 🤒 → ⏳ pour la modale résultats du sondage.
@@ -5730,7 +5716,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
     setConvocationExistante(conv)
     setPubliantConvocation(false)
-    afficherToast(`✅ Convocation publiée — ${joueurIds.length} joueur${joueurIds.length > 1 ? 's' : ''}`)
+    afficherToast(`Convocation publiée — ${joueurIds.length} joueur${joueurIds.length > 1 ? 's' : ''}`)
   }
 
   // sondageEstClos importée de ../lib/sondage — partagée avec DashboardJoueur.jsx
@@ -5882,22 +5868,37 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
   const postes = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant']
 
+  // Anciens écrans (profil, fenêtres de scan et de liaison) : mêmes clés, branchées sur le kit.
   const st = {
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
-    label: { fontSize: '11px', color: colors.text.faint, marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
-    card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' },
-    btn: (color = colors.accent.blue) => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
-    btnSolid: { background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
-    // Bouton icône discret — pour les actions secondaires groupées sur une
-    // carte (sondage/convocation/édition/suppression) : fond quasi
-    // transparent, icône teintée mais atténuée, moins voyant qu'un st.btn
-    // plein avec libellé texte à côté du CTA principal de la carte.
-    iconBtnDiscret: (color) => ({ background: color + '0d', border: `1px solid ${color}25`, color: color + 'cc', width: '30px', height: '30px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
+    input: styleChamp(colors),
+    label: { ...styleEtiquette(colors), marginBottom: '4px', display: 'block' },
+    card: styleCarte(colors),
+    btn: () => styleBoutonSecondaire(colors),
+    btnSolid: styleBoutonPrincipal(colors),
   }
+
+  // Tableau « feuille de match » du kit (liste des joueurs de Mon équipe).
+  const tabEq = styleTableau(colors)
+  // Filtre de compétition des Statistiques (Tableau, Classement, Graphiques) : choix à bascule.
+  const filtresCompetition = (competitions) => competitions.length > 1 && (
+    <div role="group" aria-label="Compétition" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+      {[{ key: 'all', label: 'Toutes compétitions' }, ...competitions.map(c => ({ key: c, label: c }))].map(f => (
+        <button key={f.key} type="button" aria-pressed={filtreCompTableau === f.key} onClick={() => setFiltreCompTableau(f.key)} className={CLASSE_BOUTON_SECONDAIRE}
+          style={{ ...styleChoix(colors, filtreCompTableau === f.key), minHeight: '36px', padding: '0 14px' }}>
+          {f.label}
+        </button>
+      ))}
+    </div>
+  )
+  // `st` du kit pour les écrans Matchs (mêmes clés que useSt, sans hook : retours anticipés plus bas).
+  const stK = construireSt(colors)
+  // Titre d'un sous-écran (sous le titre de page) et ligne d'un menu d'actions « ··· » (écrans Matchs).
+  const titreSousEcran = { ...styleTitreEcran(colors), fontSize: '22px' }
+  const itemMenu = danger => ({ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', minHeight: '44px', textAlign: 'left', background: 'none', border: 'none', color: danger ? colors.accent.red : colors.text.primary, fontFamily: police.texte, fontSize: '14px', padding: '10px 14px', cursor: 'pointer' })
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: couleurChargement, fontFamily: 'Inter, sans-serif' }}>{t('btn_chargement', lang)}</p>
+      <p style={{ color: couleurChargement, fontFamily: 'Barlow, sans-serif' }}>{t('btn_chargement', lang)}</p>
     </div>
   )
 
@@ -5914,14 +5915,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const clubAffilieAccepte = clubAffiliation?.statut === 'accepte'
   if (!profil?.abonnement_actif && !clubAffilieAccepte) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
           <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_mensuel', lang)}</button>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('edu_offre_annuel', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Activer — {t('edu_offre_mensuel', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Activer — {t('edu_offre_annuel', lang)}</button>
           </div>
           <span onClick={() => { signOutSafe(); navigate('/') }} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>{t('btn_deconnexion', lang)}</span>
         </div>
@@ -5980,6 +5981,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     entrainements: 'entrainements', prep_physique: 'prep_physique', notes: 'notes',
   }
   const canView = (sidebarKey) => {
+    if (sidebarKey === 'bibliotheque' && biblioClubSeule) return !permissions
     if (!outils.menuVisible(sidebarKey)) return false
     if (!permissions) return true
     if (SECTIONS_MASQUEES_DIRIGEANT.includes(sidebarKey)) return false
@@ -6156,15 +6158,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>{notifEquipementPret.contenu}</p>
           )}
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
-            <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.accent.onBrand, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon matériel</button>
+            <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Fermer</button>
+            <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setActiveSection('materiel') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.blue, color: colors.accent.onBrand, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Voir mon matériel</button>
           </div>
         </div>
       </div>
     )}
     {toastMsg && (
       <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toastMsg.type === 'erreur' ? colors.accent.red : colors.accent.success, color: toastMsg.type === 'erreur' ? colors.text.primary : colors.black, padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '360px' }}>
-        {toastMsg.type === 'erreur' ? '⚠️' : '✓'} {toastMsg.msg}
+        <Icone icone={toastMsg.type === 'erreur' ? TriangleAlert : Check} />{toastMsg.msg}
       </div>
     )}
     <Suspense fallback={null}>
@@ -6193,7 +6195,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       {!educateurIdOverride && <Suspense fallback={null}><PublierParcours educateurId={userId} /></Suspense>}
       <FloatingHelper userId={userId} onReplayOnboarding={replayOnboarding} faq={EDUCATEUR_FAQ} accentColor={colors.accent.blue} estAccueil={activeSection === 'accueil'} />
     </Suspense>
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', overflowX: 'hidden' }}>
 
       {/* Overlay mobile */}
       {isMobile && sidebarOpen && (
@@ -6288,7 +6290,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <span className="df-nav-icone">{item.icon}</span>
                   {!isTablet && <span style={{ flex: 1 }}>{item.label}</span>}
                   {!!item.badge && <span className="df-nav-badge">{item.badge}</span>}
-                  {item.locked && !isTablet && <span style={{ fontSize: '12px' }}>🔒</span>}
+                  {item.locked && !isTablet && <Icone icone={Lock} taille={13} libelle="Outil non activé" />}
                 </button>
                 )
               })}
@@ -6303,17 +6305,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           </button>
           {mesRoles?.club && !isTablet && (
             <button className="df-menu-contour" onClick={() => navigate('/club')} style={{ marginTop: '4px' }}>
-              🏢 Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}
+              <Icone icone={Landmark} taille={16} />Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}
             </button>
           )}
           {mesRoles?.joueur && !isTablet && (
             <button className="df-menu-contour" onClick={() => navigate('/dashboard-joueur')} style={{ marginTop: '4px' }}>
-              ⚽ Vue Joueur
+              <Icone icone={Goal} taille={16} />Vue Joueur
             </button>
           )}
           {mesRoles?.parent && !isTablet && (
             <button className="df-menu-contour" onClick={() => navigate('/dashboard-parent')} style={{ marginTop: '4px' }}>
-              👁️ Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}
+              <Icone icone={Eye} taille={16} />Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}
             </button>
           )}
 
@@ -6366,7 +6368,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {equipementPretEduc && (
               <div style={{ ...st.card, marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>Alertes</p>
-                <button onClick={() => setActiveSection('materiel')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, border: 'none', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'Inter, sans-serif' }}>
+                <button onClick={() => setActiveSection('materiel')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.raised, border: 'none', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'Barlow, sans-serif' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.amber, flexShrink: 0 }} />
                   <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>Ton équipement est prêt</p>
                 </button>
@@ -6461,7 +6463,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ]
               const nbLies = joueurs.filter(j => j.joueur_id).length
               const nbLicencies = joueurs.filter(j => j.numero_licence).length
-              const eyebrowEq = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
+              const eyebrowEq = { ...styleEtiquette(colors), margin: 0 }
               const aujourdHui = new Date().toISOString().split('T')[0]
               const dans7jours = new Date(new Date().getTime() + 7 * 86400000).toISOString().split('T')[0]
               const events = [
@@ -6470,37 +6472,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ].sort((a, b) => new Date(a.date) - new Date(b.date))
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '22px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-                    <div>
-                      <h1 style={{ fontSize: '26px', fontWeight: 800, color: colors.text.primary, margin: 0 }}>{t('equipe_titre', lang)}</h1>
-                      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{joueurs.length} {t('equipe_joueurs', lang)} {t('equipe_dans_effectif', lang)}{equipeActive ? ` · ${labelCategorie(equipeActive.nom)} ${equipeActive.equipe || ''}` : ''}</p>
-                    </div>
-                    {canEdit('effectif') && (
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <TitreEcran
+                    style={{ marginBottom: 0 }}
+                    titre={t('equipe_titre', lang)}
+                    sousTitre={`${joueurs.length} ${t('equipe_joueurs', lang)} ${t('equipe_dans_effectif', lang)}${equipeActive ? ` · ${labelCategorie(equipeActive.nom)} ${equipeActive.equipe || ''}` : ''}`}
+                    actions={canEdit('effectif') && (
+                      <>
                         <BoutonTutoriel onClick={() => setTutoOuvert('equipe')} />
-                        <button onClick={telechargerTemplate} title="Télécharger le modèle Excel" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button type="button" onClick={telechargerTemplate} title="Télécharger le modèle Excel" className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                           <IcoDownload /> {t('equipe_template', lang)}
                         </button>
-                        <button onClick={() => importRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button type="button" onClick={() => importRef.current?.click()} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                           <IcoImport /> {t('equipe_importer_excel_csv', lang)}
                         </button>
-                        <button onClick={() => setShowAddJoueur(true)} style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          + {t('equipe_ajouter', lang)}
+                        <button type="button" onClick={() => setShowAddJoueur(true)} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+                          <Icone icone={Plus} /> {t('equipe_ajouter', lang)}
                         </button>
                         <input ref={importRef} type="file" accept=".xlsx,.xls,.csv,.numbers" style={{ display: 'none' }} onChange={handleImportFile} />
-                      </div>
+                      </>
                     )}
-                  </div>
+                  />
 
                   {permissions?.effectif === 'lecture' && (
-                    <div style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>
-                      {t('equipe_mode_lecture', lang)}
-                    </div>
+                    <div style={{ alignSelf: 'flex-start' }}><EtiquetteStatut couleur={colors.accent.info}>{t('equipe_mode_lecture', lang)}</EtiquetteStatut></div>
                   )}
 
                   <BandeauEffectifCommun effectif={effectifCommun} />
                   {effectifCommun && (
-                    <button onClick={() => setGrilleOuverte(true)} style={{ alignSelf: 'flex-start', padding: '10px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button type="button" onClick={() => setGrilleOuverte(true)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), alignSelf: 'flex-start' }}>
                       Convocations {labelCategorie(effectifCommun.categorie.nom)}
                     </button>
                   )}
@@ -6515,19 +6514,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   {/* Synthèse de l'effectif */}
                   {joueurs.length > 0 && (
-                    <div style={{ ...st.card, margin: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: isMobile ? '16px' : '28px', alignItems: 'center' }}>
+                    <div style={{ ...styleCarte(colors), margin: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: isMobile ? '16px' : '28px', alignItems: 'center' }}>
                       <div>
                         <p style={{ ...eyebrowEq, marginBottom: '10px' }}>Répartition par ligne</p>
-                        <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', gap: '2px', background: colors.background.base }}>
-                          {LIGNES_EFF.map(l => {
-                            const nb = joueurs.filter(j => l.match(j.poste)).length
-                            return nb > 0 && <div key={l.label} style={{ width: `${(nb / joueurs.length) * 100}%`, background: l.color }} />
-                          })}
-                        </div>
+                        <Jauge legende={false} hauteur={8} segments={LIGNES_EFF.map(l => ({ libelle: l.label, valeur: joueurs.filter(j => l.match(j.poste)).length, couleur: l.color }))} />
                         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '10px' }}>
                           {LIGNES_EFF.map(l => (
-                            <span key={l.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.faint }}>
-                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: l.color }} />
+                            <span key={l.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: colors.text.secondary }}>
+                              <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: l.color }} />
                               <strong style={{ color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{joueurs.filter(j => l.match(j.poste)).length}</strong> {l.label}
                             </span>
                           ))}
@@ -6539,11 +6533,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           { label: 'Licenciés', val: nbLicencies, couleur: colors.accent.info },
                         ].map(k => (
                           <div key={k.label}>
-                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.faint }}>{k.label}</p>
-                            <p style={{ margin: '4px 0 6px', fontSize: '22px', fontWeight: 800, lineHeight: 1, color: k.couleur, fontVariantNumeric: 'tabular-nums' }}>{k.val}<span style={{ fontSize: '13px', color: colors.text.faint, fontWeight: 600 }}> / {joueurs.length}</span></p>
-                            <div style={{ height: '4px', borderRadius: '2px', background: colors.background.base, overflow: 'hidden' }}>
-                              <div style={{ width: `${(k.val / joueurs.length) * 100}%`, height: '100%', background: k.couleur }} />
-                            </div>
+                            <Etiquette as="p">{k.label}</Etiquette>
+                            <p style={{ ...styleChiffreHeros(colors, 28), margin: '4px 0 8px' }}>{k.val}<span style={{ fontFamily: police.texte, fontSize: '13px', color: colors.text.secondary, fontWeight: 600 }}> / {joueurs.length}</span></p>
+                            <Jauge legende={false} hauteur={4} libelle={null} segments={[{ libelle: k.label, valeur: k.val, couleur: k.couleur }, { libelle: 'Autres', valeur: joueurs.length - k.val, couleur: colors.border.strong }]} />
                           </div>
                         ))}
                       </div>
@@ -6553,7 +6545,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {/* Cette semaine + groupe */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile || events.length === 0 ? '1fr' : 'minmax(0,2fr) minmax(0,1fr)', gap: '12px', alignItems: 'stretch' }}>
                     {events.length > 0 && (
-                      <div style={{ ...st.card, margin: 0 }}>
+                      <div style={{ ...styleCarte(colors), margin: 0 }}>
                         <p style={{ ...eyebrowEq, marginBottom: '12px' }}>{t('ent_cette_semaine', lang)}</p>
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
                           {events.map((ev, i) => {
@@ -6564,19 +6556,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             const couleurEv = ev.type === 'match' ? colors.accent.amber : colors.accent.blue
                             return (
                               <div key={i}
-                                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${couleurEv}`, borderRadius: '10px', cursor: ev.type === 'entrainement' ? 'pointer' : 'default', minWidth: 0 }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px 10px 15px', background: colors.background.base, border: `1px solid ${couleurCraie(colors)}`, boxShadow: `inset ${forme.lisere} 0 0 ${couleurEv}`, borderRadius: forme.rayonCarte, cursor: ev.type === 'entrainement' ? 'pointer' : 'default', minWidth: 0 }}
                                 onClick={() => { if (ev.type === 'entrainement') { setActiveSection('entrainements'); setSousOngletEnt('prochaine') } }}>
                                 <div style={{ width: '42px', textAlign: 'center', flexShrink: 0 }}>
-                                  <p style={{ margin: 0, fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: isToday ? couleurEv : colors.text.faint }}>{date.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
-                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1.1 }}>{date.getDate()}</p>
+                                  <Etiquette as="p" style={{ fontSize: '11px', color: isToday ? colors.text.primary : colors.text.secondary }}>{date.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</Etiquette>
+                                  <p style={{ ...styleChiffreHeros(colors, 26), margin: '2px 0 0' }}>{date.getDate()}</p>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: couleurEv }}>{ev.type === 'match' ? 'Match' : 'Entraînement'}</p>
-                                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
-                                  <p style={{ margin: '1px 0 0', color: colors.text.faint, fontSize: '11px', textTransform: 'capitalize' }}>{labelJour}{ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}</p>
+                                  <Etiquette as="p" style={{ fontSize: '11px' }}>{ev.type === 'match' ? 'Match' : 'Entraînement'}</Etiquette>
+                                  <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.titre}</p>
+                                  <p style={{ margin: '1px 0 0', color: colors.text.secondary, fontSize: '12px', textTransform: 'capitalize' }}>{labelJour}{ev.heure ? ` · ${ev.heure.slice(0, 5)}` : ''}</p>
                                 </div>
                                 {ev.type === 'entrainement' && !ev.sondage_clos && (
-                                  <span title={t('ent_sondage_ouvert', lang)} style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.success, flexShrink: 0 }} />
+                                  <span title={t('ent_sondage_ouvert', lang)} role="img" aria-label={t('ent_sondage_ouvert', lang)} style={{ width: '8px', height: '8px', borderRadius: '1px', background: colors.accent.success, flexShrink: 0 }} />
                                 )}
                               </div>
                             )
@@ -6586,34 +6578,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     )}
 
                     {/* Groupe équipe (WhatsApp/Discord/Slack) */}
-                    <div style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ ...styleCarte(colors), margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1f', color: colors.accent.green, flexShrink: 0 }}><IcoBulle /></span>
+                        <span style={{ width: '34px', height: '34px', borderRadius: forme.rayonCarte, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.background.raised, color: colors.text.primary, flexShrink: 0 }}><IcoBulle /></span>
                         <div style={{ minWidth: 0 }}>
                           <p style={eyebrowEq}>{t('equipe_groupe', lang)}</p>
-                          {!profilEdu?.lien_groupe && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('equipe_colle_lien_groupe', lang)}</p>}
+                          {!profilEdu?.lien_groupe && <p style={{ margin: '2px 0 0', fontSize: '13px', color: colors.text.secondary }}>{t('equipe_colle_lien_groupe', lang)}</p>}
                         </div>
                       </div>
                       {profilEdu?.lien_groupe ? (
                         <>
                           <a href={profilEdu.lien_groupe} target="_blank" rel="noopener noreferrer"
-                            style={{ padding: '10px', borderRadius: '10px', border: `1px solid ${colors.accent.green}40`, background: colors.accent.green + '10', color: colors.accent.green, fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}>
+                            className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), textDecoration: 'none' }}>
                             {t('equipe_ouvrir_groupe', lang)} →
                           </a>
                           <button onClick={() => supabase.from('profil_educateur').update({ lien_groupe: null }).eq('user_id', userId).then(() => chargerProfilEdu(userId))}
-                            style={{ alignSelf: 'flex-start', fontSize: 11, color: colors.text.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Inter, sans-serif' }}>
+                            style={{ alignSelf: 'flex-start', fontSize: 13, color: colors.text.secondary, background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: '6px 0', minHeight: 32, fontFamily: police.texte }}>
                             {t('equipe_modifier_lien', lang)}
                           </button>
                         </>
                       ) : (
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <input placeholder="https://chat.whatsapp.com/..." value={lienGroupe} onChange={e => setLienGroupe(e.target.value)}
-                            style={{ flex: 1, minWidth: 0, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                            className={CLASSE_CHAMP} aria-label={t('equipe_groupe', lang)} style={{ ...styleChamp(colors), flex: 1, minWidth: 0, width: 'auto' }} />
                           <button onClick={async () => {
                             await supabase.from('profil_educateur').update({ lien_groupe: lienGroupe }).eq('user_id', userId)
                             await chargerProfilEdu(userId)
                           }}
-                            style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                            className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
                             {t('btn_sauvegarder', lang)}
                           </button>
                         </div>
@@ -6623,10 +6615,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   {/* Vue : Postes / Liste */}
                   {joueurs.length > 0 && (
-                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+                    <div className="df-onglets" role="tablist" aria-label="Vue de l'effectif" style={{ ...coqueVars(colors), alignSelf: 'flex-start', marginBottom: 0 }}>
                       {[{ key: 'poste', label: t('equipe_vue_postes', lang) }, { key: 'liste', label: t('equipe_vue_liste', lang) }].map(tab => (
-                        <button key={tab.key} onClick={() => setVueEquipe(tab.key)}
-                          style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: vueEquipe === tab.key ? 700 : 500, fontFamily: 'Inter, sans-serif', background: vueEquipe === tab.key ? colors.background.raised : 'transparent', color: vueEquipe === tab.key ? colors.text.primary : colors.text.faint }}>
+                        <button key={tab.key} type="button" role="tab" aria-selected={vueEquipe === tab.key} className="df-onglet" onClick={() => setVueEquipe(tab.key)}>
                           {tab.label}
                         </button>
                       ))}
@@ -6642,26 +6633,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const tx = tauxPresence(j.id)
               const s = statsGlobalesJoueur(j.id)
               const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
-              const posColor = j.poste?.toLowerCase().includes('gardien') ? '#f59e0b' : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.info : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
+              const posColor = j.poste?.toLowerCase().includes('gardien') ? colors.accent.amber : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.info : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : colors.accent.green
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setJoueurProfil(null)}>
-                  <div style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                  <div role="dialog" aria-modal="true" aria-label={`${j.prenom} ${j.nom}`} style={{ ...styleCarte(colors), background: colors.background.sunken, padding: 0, maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
 
                     {/* Header */}
-                    <div style={{ background: `linear-gradient(135deg, ${posColor}15, transparent)`, borderBottom: `1px solid ${colors.border.subtle}`, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ borderBottom: `1px solid ${couleurCraie(colors)}`, boxShadow: `inset ${forme.lisere} 0 0 ${posColor}`, padding: '1.5rem 1.5rem 1.5rem calc(1.5rem + 3px)', display: 'flex', alignItems: 'center', gap: '16px' }}>
                       {j.numero_maillot ? (
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: posColor + '25', border: `2px solid ${posColor}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: posColor, fontWeight: 800, fontSize: '20px', flexShrink: 0 }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: colors.background.surface, border: `3px solid ${posColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.primary, fontFamily: police.titre, fontWeight: 700, fontSize: '28px', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                           {j.numero_maillot}
                         </div>
                       ) : (
                         <Avatar person={j} size={64} bg={posColor + '25'} border={`2px solid ${posColor}50`} textColor={posColor} style={{ fontSize: '20px' }} />
                       )}
                       <div style={{ flex: 1 }}>
-                        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{j.prenom} {j.nom}</h2>
-                        <p style={{ margin: '4px 0 0', color: posColor, fontSize: '13px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${labelCategorie(j.categorie)}` : ''}</p>
-                        {j.numero_licence && <span style={{ fontSize: '11px', color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '2px 8px', borderRadius: '10px', marginTop: '4px', display: 'inline-block' }}>🪪 Licencié {j.numero_licence}</span>}
+                        <h2 style={{ margin: 0, fontFamily: police.titre, fontSize: '28px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', lineHeight: 1.05, color: colors.text.primary }}>{j.prenom} {j.nom}</h2>
+                        <p style={{ margin: '4px 0 0', color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}{j.categorie ? ` · ${labelCategorie(j.categorie)}` : ''}</p>
+                        {j.numero_licence && <div style={{ marginTop: '6px' }}><EtiquetteStatut couleur={colors.accent.info}><Icone icone={IdCard} taille={14} /> Licencié {j.numero_licence}</EtiquetteStatut></div>}
                       </div>
-                      <button onClick={() => setJoueurProfil(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>✕</button>
+                      <button type="button" onClick={() => setJoueurProfil(null)} aria-label="Fermer" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0, flexShrink: 0 }}><Icone icone={X} /></button>
                     </div>
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -6669,28 +6660,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {blocInvitationJoueur(j)}
 
                       {/* Présence - Donut multi + stats */}
-                      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-                        <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏃 {t('equipe_presence_entrainements', lang)}</p>
+                      <div style={{ ...styleCarte(colors), padding: '1.25rem' }}>
+                        <p style={{ ...styleEtiquette(colors), margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Activity} /> {t('equipe_presence_entrainements', lang)}</p>
                         {tx ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                             <DonutMulti presents={tx.presents} absents={tx.absents} blesses={tx.blesses} malade={tx.malade} convoque={tx.convoque} size={110} />
                             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                               {[
-                                { emoji: '✅', label: t('ent_present', lang), val: tx.presents, color: colors.accent.success },
-                                { emoji: '🏆', label: t('ent_convoque', lang), val: tx.convoque, color: colors.accent.info },
-                                { emoji: '❌', label: t('ent_absent', lang), val: tx.absents, color: colors.accent.red },
-                                { emoji: '🤕', label: t('ent_blesse', lang), val: tx.blesses, color: colors.accent.orange },
-                                { emoji: '🤒', label: t('ent_malade', lang), val: tx.malade, color: colors.accent.purple },
-                                { emoji: '📅', label: t('nav_seances', lang), val: tx.total, color: colors.text.primary },
+                                { icone: CircleCheck, label: t('ent_present', lang), val: tx.presents, color: colors.accent.success },
+                                { icone: Trophy, label: t('ent_convoque', lang), val: tx.convoque, color: colors.accent.info },
+                                { icone: CircleX, label: t('ent_absent', lang), val: tx.absents, color: colors.accent.red },
+                                { icone: Bandage, label: t('ent_blesse', lang), val: tx.blesses, color: colors.accent.orange },
+                                { icone: Thermometer, label: t('ent_malade', lang), val: tx.malade, color: colors.accent.purple },
+                                { icone: CalendarDays, label: t('nav_seances', lang), val: tx.total, color: colors.text.primary },
                               ].map(s => (
-                                <div key={s.label} style={{ background: colors.background.base, borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '12px', color: colors.text.faint }}>{s.emoji} {s.label}</span>
-                                  <span style={{ fontWeight: 700, color: s.color, fontSize: '14px' }}>{s.val}</span>
+                                <div key={s.label} style={{ background: colors.background.base, borderRadius: forme.rayonPastille, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text.secondary }}><span style={{ color: s.color, display: 'inline-flex' }}><Icone icone={s.icone} taille={16} /></span> {s.label}</span>
+                                  <span style={{ fontFamily: police.titre, fontWeight: 700, color: colors.text.primary, fontSize: '18px', fontVariantNumeric: 'tabular-nums' }}>{s.val}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        ) : <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('equipe_aucune_presence', lang)}</p>}
+                        ) : <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0 }}>{t('equipe_aucune_presence', lang)}</p>}
                       </div>
 
                       {/* Dernière évaluation (evaluations_joueur.note_globale_saison, /20) —
@@ -6699,8 +6690,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {(() => {
                         const evalJoueur = derniereEvaluation(j.id)
                         return evalJoueur ? (
-                          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-                            <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>⭐ {t('equipe_evaluation_educateur', lang)}</p>
+                          <div style={{ ...styleCarte(colors), padding: '1.25rem' }}>
+                            <p style={{ ...styleEtiquette(colors), margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Star} /> {t('equipe_evaluation_educateur', lang)}</p>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                               <RadialSkill value={evalJoueur.note_globale_saison} max={20} color={colors.accent.amber} label="Note globale" size={90} />
                             </div>
@@ -6721,16 +6712,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           return `${label}${isTie ? ' ex æquo' : ''}`
                         }
                         const rangStats = [
-                          { emoji: '🏆', label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: colors.accent.amber },
-                          { emoji: '⚽', label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: colors.accent.green },
-                          { emoji: '🎯', label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: colors.accent.info },
-                          { emoji: '🧤', label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: colors.accent.purpleLight },
-                          { emoji: '⏱️', label: 'Temps de jeu', val: `${s.minutes}'`, rang: rang(id => statsGlobalesJoueur(id).minutes), color: '#f59e0b' },
-                          { emoji: '🏃', label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: colors.accent.success },
+                          { icone: Trophy, label: 'Victoires', val: s.victoires, rang: rang(id => statsGlobalesJoueur(id).victoires), color: colors.accent.amber },
+                          { icone: Goal, label: 'Buteur', val: s.buts, rang: rang(id => statsGlobalesJoueur(id).buts), color: colors.accent.green },
+                          { icone: Target, label: 'Passeur', val: s.passes_dec, rang: rang(id => statsGlobalesJoueur(id).passes_dec), color: colors.accent.info },
+                          { icone: ShieldCheck, label: 'Clean Sheet', val: s.clean_sheets, rang: rang(id => statsGlobalesJoueur(id).clean_sheets), color: colors.accent.purpleLight },
+                          { icone: Timer, label: 'Temps de jeu', val: `${s.minutes}'`, rang: rang(id => statsGlobalesJoueur(id).minutes), color: colors.accent.amber },
+                          { icone: Activity, label: 'Présence entr.', val: tx ? `${tx.taux}%` : '—', rang: rang(id => tauxPresence(id)?.taux || 0), color: colors.accent.success },
                         ]
                         return (
-                          <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '1.25rem' }}>
-                            <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>⚽ {t('equipe_stats_matchs', lang)}</p>
+                          <div style={{ ...styleCarte(colors), padding: '1.25rem' }}>
+                            <p style={{ ...styleEtiquette(colors), margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Goal} /> {t('equipe_stats_matchs', lang)}</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                               {[
                                 { label: 'Matchs', val: s.matchs, color: colors.text.primary },
@@ -6739,24 +6730,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 { label: 'Buts', val: s.buts, color: colors.accent.green },
                                 { label: 'Passes D.', val: s.passes_dec, color: colors.accent.info },
                                 { label: 'Clean S.', val: s.clean_sheets, color: colors.accent.purpleLight },
-                                { label: '🟨', val: s.cartons_j, color: '#f59e0b' },
-                                { label: '🟥', val: s.cartons_r, color: colors.accent.red },
+                                { label: 'Jaunes', val: s.cartons_j, color: colors.accent.amber },
+                                { label: 'Rouges', val: s.cartons_r, color: colors.accent.red },
                               ].map(c => (
-                                <div key={c.label} style={{ background: colors.background.base, borderRadius: '8px', padding: '10px 8px', textAlign: 'center' }}>
-                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: c.color }}>{c.val}</p>
-                                  <p style={{ margin: '3px 0 0', fontSize: '10px', color: colors.text.faint, textTransform: 'uppercase' }}>{c.label}</p>
+                                <div key={c.label} style={{ background: colors.background.base, borderRadius: forme.rayonPastille, padding: '10px 8px', textAlign: 'center', boxShadow: ['Jaunes', 'Rouges'].includes(c.label) ? `inset 0 ${forme.lisere} 0 ${c.color}` : 'none' }}>
+                                  <p style={{ ...styleChiffreHeros(colors, 26), margin: 0 }}>{c.val}</p>
+                                  <Etiquette as="p" style={{ margin: '3px 0 0', fontSize: '11px' }}>{c.label}</Etiquette>
                                 </div>
                               ))}
                             </div>
                             {/* Classements dans l'équipe */}
-                            <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '12px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏅 {t('equipe_classements_equipe', lang)}</p>
+                            <p style={{ ...styleEtiquette(colors), margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Medal} /> {t('equipe_classements_equipe', lang)}</p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {rangStats.filter(r => r.rang).map(r => (
-                                <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: colors.background.base, borderRadius: '8px' }}>
-                                  <span style={{ fontSize: '14px', width: '22px' }}>{r.emoji}</span>
-                                  <span style={{ fontSize: '12px', color: colors.text.faint, flex: 1 }}>{r.label}</span>
-                                  <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>{r.val}</span>
-                                  <span style={{ fontSize: '12px', fontWeight: 800, color: r.rang.startsWith('1er') ? colors.accent.amber : r.rang.startsWith('2') ? '#9ca3af' : r.rang.startsWith('3') ? '#d97706' : colors.text.faint, background: colors.background.surface, padding: '2px 8px', borderRadius: '10px' }}>{r.rang}</span>
+                                <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', background: colors.background.base, borderRadius: forme.rayonPastille }}>
+                                  <span style={{ color: colors.text.secondary, display: 'inline-flex', width: '22px' }}><Icone icone={r.icone} taille={16} /></span>
+                                  <span style={{ fontSize: '13px', color: colors.text.secondary, flex: 1 }}>{r.label}</span>
+                                  <span style={{ fontFamily: police.titre, fontSize: '16px', fontWeight: 700, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{r.val}</span>
+                                  <EtiquetteStatut couleur={r.rang.startsWith('1er') ? colors.accent.amber : colors.border.strong}>{r.rang}</EtiquetteStatut>
                                 </div>
                               ))}
                             </div>
@@ -6787,12 +6778,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               if (!palmares.length) return null
                               return (
                                 <div style={{ marginTop: '12px' }}>
-                                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '12px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>🌟 {t('equipe_joueur_du_mois', lang)}</p>
+                                  <p style={{ ...styleEtiquette(colors), margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Star} /> {t('equipe_joueur_du_mois', lang)}</p>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                     {palmares.map((p, i) => (
-                                      <span key={i} style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2440', color: colors.accent.amber, fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
-                                        🥇 {p.label}{p.tie ? ' (ex æquo)' : ''} · {p.pts}⭐
-                                      </span>
+                                      <EtiquetteStatut key={i} couleur={colors.accent.amber}>
+                                        <Icone icone={Trophy} taille={14} /> {p.label}{p.tie ? ' (ex æquo)' : ''} · {p.pts} <Icone icone={Star} taille={12} libelle="étoiles" />
+                                      </EtiquetteStatut>
                                     ))}
                                   </div>
                                 </div>
@@ -6806,7 +6797,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null); setJoursActifsEdit(affiliations.find(a => a.equipe_joueur_id === j.id)?.jours_actifs || []) }} style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>✏️ {t('tactic_modifier_infos', lang)}</button>
+                          <button onClick={() => { setJoueurEnEdition({ ...j }); setJoueurProfil(null); setJoursActifsEdit(affiliations.find(a => a.equipe_joueur_id === j.id)?.jours_actifs || []) }} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}><Icone icone={Pencil} /> {t('tactic_modifier_infos', lang)}</button>
                         </div>
                       )}
                     </div>
@@ -6820,8 +6811,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
                 <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
-                    <button onClick={() => setJoueurEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <p style={{ margin: 0, fontFamily: police.titre, fontWeight: 700, fontSize: '22px', textTransform: 'uppercase', color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={Pencil} taille={20} /> Modifier {joueurEnEdition.prenom} {joueurEnEdition.nom}</p>
+                    <button type="button" onClick={() => setJoueurEnEdition(null)} aria-label="Fermer" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0 }}><Icone icone={X} /></button>
                   </div>
                   {/* Photo du joueur : celle du coach prime sur celle du compte. */}
                   {(() => {
@@ -6831,12 +6822,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <Avatar person={{ ...joueurEnEdition, avatar_url: photo }} size={64} />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <label style={{ ...st.btn(colors.accent.blue), display: 'inline-flex', alignItems: 'center', cursor: envoiPhotoJoueur ? 'wait' : 'pointer', opacity: envoiPhotoJoueur ? 0.6 : 1 }}>
+                            <label className={CLASSE_BOUTON_SECONDAIRE} style={{ ...st.btn(), display: 'inline-flex', alignItems: 'center', cursor: envoiPhotoJoueur ? 'wait' : 'pointer', opacity: envoiPhotoJoueur ? 0.6 : 1 }}>
                               {envoiPhotoJoueur ? 'Envoi…' : joueurEnEdition.photo_url ? 'Changer la photo' : 'Ajouter une photo'}
                               <input type="file" accept="image/*" style={{ display: 'none' }} disabled={envoiPhotoJoueur} onChange={e => { choisirPhotoJoueur(e.target.files?.[0]); e.target.value = '' }} />
                             </label>
                             {joueurEnEdition.photo_url && (
-                              <button type="button" onClick={() => setJoueurEnEdition(p => ({ ...p, photo_url: null }))} style={st.btn(colors.text.dim)}>Retirer</button>
+                              <button type="button" onClick={() => setJoueurEnEdition(p => ({ ...p, photo_url: null }))} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Retirer</button>
                             )}
                           </div>
                           <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>
@@ -6847,23 +6838,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     )
                   })()}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                    <div><label style={st.label}>{t('equipe_prenom', lang)}</label><input style={st.input} value={joueurEnEdition.prenom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, prenom: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('equipe_nom', lang)}</label><input style={st.input} value={joueurEnEdition.nom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, nom: e.target.value }))} /></div>
+                    <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_prenom', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={joueurEnEdition.prenom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, prenom: e.target.value }))} /></div>
+                    <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_nom', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={joueurEnEdition.nom || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, nom: e.target.value }))} /></div>
                     <div>
-                      <label style={st.label}>{t('equipe_poste', lang)}</label>
-                      <select style={st.input} value={joueurEnEdition.poste || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, poste: e.target.value }))}>
+                      <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_poste', lang)}</label>
+                      <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={joueurEnEdition.poste || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, poste: e.target.value }))}>
                         <option value="">{t('equipe_choisir', lang)}</option>
                         {postes.map(po => <option key={po}>{po}</option>)}
                       </select>
                     </div>
-                    <div><label style={st.label}>{t('equipe_numero', lang)}</label><input style={st.input} type="number" value={joueurEnEdition.numero_maillot || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_maillot: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('equipe_date_naissance', lang)}</label><input style={st.input} type="date" value={joueurEnEdition.date_naissance || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, date_naissance: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('equipe_categorie', lang)}</label><input style={st.input} placeholder="U17, U18..." value={joueurEnEdition.categorie || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, categorie: e.target.value }))} /></div>
-                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('equipe_licence_fff', lang)}</label><input style={st.input} placeholder={t('equipe_numero_licence', lang)} value={joueurEnEdition.numero_licence || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_licence: e.target.value }))} /></div>
+                    <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_numero', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="number" value={joueurEnEdition.numero_maillot || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_maillot: e.target.value }))} /></div>
+                    <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_date_naissance', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={joueurEnEdition.date_naissance || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, date_naissance: e.target.value }))} /></div>
+                    <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_categorie', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="U17, U18..." value={joueurEnEdition.categorie || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, categorie: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_licence_fff', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder={t('equipe_numero_licence', lang)} value={joueurEnEdition.numero_licence || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, numero_licence: e.target.value }))} /></div>
                     {clubCategories.length > 0 && (
                       <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={st.label}>{t('equipe_categorie_club', lang)}</label>
-                        <select style={st.input} value={joueurEnEdition.club_categorie_id || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, club_categorie_id: e.target.value }))}>
+                        <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_categorie_club', lang)}</label>
+                        <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={joueurEnEdition.club_categorie_id || ''} onChange={e => setJoueurEnEdition(p => ({ ...p, club_categorie_id: e.target.value }))}>
                           <option value="">{t('equipe_non_assigne', lang)}</option>
                           {clubCategories.map(c => <option key={c.id} value={c.id}>{c.nom} — Équipe {c.equipe}</option>)}
                         </select>
@@ -6872,7 +6863,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                   {affiliations.some(a => a.equipe_joueur_id === joueurEnEdition.id) && (
                     <div style={{ marginBottom: '16px' }}>
-                      <label style={st.label}>Jours actifs sur cette équipe (optionnel)</label>
+                      <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>Jours actifs sur cette équipe (optionnel)</label>
                       <p style={{ color: colors.text.faint, fontSize: '11px', margin: '0 0 8px' }}>
                         Utile seulement si ce joueur est aussi affilié à une autre équipe — restreint son planning à ces jours-là pour celle-ci. Laisser vide = tous les jours.
                       </p>
@@ -6883,7 +6874,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             <button key={j.key} type="button"
                               onClick={() => setJoursActifsEdit(prev => actif ? prev.filter(k => k !== j.key) : [...prev, j.key])}
                               style={{
-                                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                                 background: actif ? colors.accent.blue : colors.background.raised,
                                 color: actif ? colors.black : colors.text.faint,
                                 border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`,
@@ -6894,8 +6885,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={sauvegarderJoueur} disabled={savingEdit} style={st.btnSolid}>{savingEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={() => setJoueurEnEdition(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                    <button onClick={sauvegarderJoueur} disabled={savingEdit} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{savingEdit ? 'Sauvegarde...' : <><Icone icone={Save} /> {t('btn_sauvegarder', lang)}</>}</button>
+                    <button onClick={() => setJoueurEnEdition(null)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -6909,14 +6900,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Modal prévisualisation import ── */}
             {importPreview && (
-              <div style={{ ...st.card, border: '1px solid #a78bfa40', marginBottom: '1.5rem' }}>
+              <div style={{ ...styleCarte(colors), border: '1px solid #a78bfa40', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, color: colors.accent.purpleLight, fontSize: '15px' }}>📂 {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''} détecté{importPreview.rows.length > 1 ? 's' : ''}</p>
+                    <p style={{ margin: 0, fontWeight: 700, color: colors.text.primary, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={FolderOpen} taille={18} /> {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''} détecté{importPreview.rows.length > 1 ? 's' : ''}</p>
                     <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('equipe_verifie_donnees', lang)}</p>
                   </div>
                   {!importPreview.importing && (
-                    <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '18px' }}>✕</button>
+                    <button type="button" onClick={() => setImportPreview(null)} aria-label="Fermer" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0 }}><Icone icone={X} /></button>
                   )}
                 </div>
 
@@ -6955,29 +6946,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={confirmerImport} style={st.btnSolid}>Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
-                    <button onClick={() => setImportPreview(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                    <button onClick={confirmerImport} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>Importer {importPreview.rows.length} joueur{importPreview.rows.length > 1 ? 's' : ''}</button>
+                    <button onClick={() => setImportPreview(null)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                   </div>
                 )}
               </div>
             )}
 
             {showAddJoueur && (
-              <div style={{ ...st.card, border: `1px solid ${colors.accent.green}30`, marginBottom: '1.5rem' }}>
+              <div style={{ ...styleCarte(colors), border: `1px solid ${colors.accent.green}30`, marginBottom: '1.5rem' }}>
                 <p style={{ fontWeight: 700, marginBottom: '1rem', color: colors.accent.green }}>{t('equipe_nouveau_joueur', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
-                  <div><label style={st.label}>{t('equipe_prenom', lang)} *</label><input style={st.input} value={newJoueur.prenom} onChange={e => setNewJoueur({ ...newJoueur, prenom: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('equipe_nom', lang)} *</label><input style={st.input} value={newJoueur.nom} onChange={e => setNewJoueur({ ...newJoueur, nom: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('equipe_numero', lang)}</label><input style={st.input} type="number" value={newJoueur.numero_maillot} onChange={e => setNewJoueur({ ...newJoueur, numero_maillot: e.target.value })} /></div>
+                  <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_prenom', lang)} *</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={newJoueur.prenom} onChange={e => setNewJoueur({ ...newJoueur, prenom: e.target.value })} /></div>
+                  <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_nom', lang)} *</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={newJoueur.nom} onChange={e => setNewJoueur({ ...newJoueur, nom: e.target.value })} /></div>
+                  <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_numero', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="number" value={newJoueur.numero_maillot} onChange={e => setNewJoueur({ ...newJoueur, numero_maillot: e.target.value })} /></div>
                   <div>
-                    <label style={st.label}>{t('equipe_poste', lang)}</label>
-                    <select style={st.input} value={newJoueur.poste} onChange={e => setNewJoueur({ ...newJoueur, poste: e.target.value })}>
+                    <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_poste', lang)}</label>
+                    <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={newJoueur.poste} onChange={e => setNewJoueur({ ...newJoueur, poste: e.target.value })}>
                       <option value="">{t('equipe_choisir', lang)}</option>
                       {postes.map(p => <option key={p}>{p}</option>)}
                     </select>
                   </div>
-                  <div><label style={st.label}>{t('equipe_date_naissance', lang)}</label><input style={st.input} type="date" value={newJoueur.date_naissance} onChange={e => setNewJoueur({ ...newJoueur, date_naissance: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('equipe_licence_fff', lang)}</label><input style={st.input} placeholder={t('equipe_numero_licence', lang)} value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
+                  <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_date_naissance', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={newJoueur.date_naissance} onChange={e => setNewJoueur({ ...newJoueur, date_naissance: e.target.value })} /></div>
+                  <div><label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '4px' }}>{t('equipe_licence_fff', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder={t('equipe_numero_licence', lang)} value={newJoueur.numero_licence} onChange={e => setNewJoueur({ ...newJoueur, numero_licence: e.target.value })} /></div>
                 </div>
                 {equipeActive && (
                   <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>
@@ -6985,24 +6976,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </p>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} style={st.btnSolid}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
-                  <button onClick={() => setShowAddJoueur(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                  <button onClick={ajouterJoueur} disabled={savingJoueur || !newJoueur.prenom || !newJoueur.nom} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{savingJoueur ? 'Ajout...' : t('btn_ajouter', lang)}</button>
+                  <button onClick={() => setShowAddJoueur(false)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
 
             {joueurs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem 1.5rem' }}>
+              <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '3rem 1.5rem' }}>
                 <p style={{ margin: 0, color: colors.text.secondary, fontWeight: 600 }}>{t('equipe_aucun_joueur_effectif', lang)}</p>
                 {canEdit('effectif') && <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Ajoute tes joueurs un par un ou importe un fichier Excel.</p>}
               </div>
             ) : vueEquipe === 'liste' ? (
-              <div style={{ ...st.card, padding: 0, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '640px' }}>
+              <div style={{ ...styleCarte(colors), padding: 0, overflow: 'auto' }}>
+                <table style={{ ...tabEq.tableau, minWidth: '640px' }}>
+                  <caption style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Effectif de l'équipe</caption>
                   <thead>
                     <tr>
                       {['#', t('equipe_col_joueur', lang), t('equipe_col_age', lang), 'Statut', ''].map((h, i) => (
-                        <th key={i} style={{ padding: '11px 14px', textAlign: i === 0 ? 'center' : 'left', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
+                        <th key={i} scope="col" style={{ ...tabEq.entete, padding: '11px 14px', textAlign: i === 0 ? 'center' : 'left', background: colors.background.raised }}>{h || <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Actions</span>}</th>
                       ))}
                     </tr>
                   </thead>
@@ -7015,39 +7007,39 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       .map((j) => {
                         const age = j.date_naissance ? Math.floor((new Date() - new Date(j.date_naissance)) / (365.25 * 24 * 3600 * 1000)) : null
                         const posColor = j.poste?.toLowerCase().includes('gardien') ? colors.accent.amber : j.poste && ['défenseur','defenseur','latéral','lateral'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.info : j.poste?.toLowerCase().includes('milieu') ? colors.accent.purpleLight : j.poste && ['attaquant','ailier'].some(k => j.poste.toLowerCase().includes(k)) ? colors.accent.green : colors.text.faint
-                        const td = { padding: '9px 14px', borderBottom: `1px solid ${colors.border.subtle}` }
+                        const td = { ...tabEq.cellule, padding: '9px 14px' }
                         return (
                           <tr key={j.id} className="effectif-ligne">
-                            <td style={{ ...td, textAlign: 'center', color: colors.text.faint, fontWeight: 800, width: '44px', fontVariantNumeric: 'tabular-nums' }}>{j.numero_maillot || '–'}</td>
-                            <td style={{ ...td, boxShadow: `inset 3px 0 0 ${posColor}` }}>
+                            <td style={{ ...td, ...tabEq.celluleChiffre, textAlign: 'center', color: colors.text.secondary, fontSize: '18px', width: '44px' }}>{j.numero_maillot || '–'}</td>
+                            <td style={{ ...td, boxShadow: `inset ${forme.lisere} 0 0 ${posColor}` }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setJoueurProfil(j)}>
                                 <Avatar person={j} size={30} bg={posColor + '22'} border="none" textColor={posColor} />
                                 <div style={{ minWidth: 0 }}>
                                   <p style={{ margin: 0, fontWeight: 700 }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}</p>
+                                  <p style={{ margin: '1px 0 0', fontSize: '12px', color: colors.text.secondary }}>{j.poste || '—'}</p>
                                 </div>
                               </div>
                             </td>
-                            <td style={{ ...td, color: colors.text.secondary, fontSize: '12px' }}>{age ? `${age} ans` : '–'}</td>
+                            <td style={{ ...td, color: colors.text.secondary, fontSize: '13px' }}>{age ? `${age} ans` : '–'}</td>
                             <td style={td}>
                               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                 {j.joueur_id ? (
-                                  <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.success, background: colors.accent.success + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Compte lié</span>
+                                  <EtiquetteStatut couleur={colors.accent.success}>Compte lié</EtiquetteStatut>
                                 ) : j.email ? (
-                                  <span title={j.email} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: colors.accent.amber, background: colors.accent.amber + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}><IcoMail />Invité</span>
+                                  <span title={j.email}><EtiquetteStatut couleur={colors.accent.amber}>Invité</EtiquetteStatut></span>
                                 ) : (
-                                  <span style={{ fontSize: '11px', color: colors.text.faint }}>Sans compte</span>
+                                  <span style={{ fontSize: '12px', color: colors.text.secondary }}>Sans compte</span>
                                 )}
-                                {j.numero_licence && <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.info, background: colors.accent.info + alpha.subtle, padding: '2px 8px', borderRadius: '6px' }}>Licencié</span>}
+                                {j.numero_licence && <EtiquetteStatut couleur={colors.accent.info}>Licencié</EtiquetteStatut>}
                               </div>
                             </td>
                             <td style={{ ...td, textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                                <button onClick={() => setJoueurProfil(j)} title={t('equipe_profil', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', cursor: 'pointer' }}><IcoProfil /></button>
+                                <button onClick={() => setJoueurProfil(j)} title={t('equipe_profil', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: forme.rayonPastille, cursor: 'pointer' }}><IcoProfil /></button>
                                 {canEdit('effectif') && (
                                   <>
-                                    <button onClick={() => setJoueurEnEdition({ ...j })} title={t('btn_modifier', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', cursor: 'pointer' }}><IcoCrayon /></button>
-                                    <button onClick={() => supprimerJoueur(j.id)} title="Retirer de l'équipe" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', background: 'transparent', border: `1px solid ${colors.accent.red}40`, color: colors.accent.red, borderRadius: '8px', cursor: 'pointer' }}><IcoCorbeille /></button>
+                                    <button onClick={() => setJoueurEnEdition({ ...j })} title={t('btn_modifier', lang)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: forme.rayonPastille, cursor: 'pointer' }}><IcoCrayon /></button>
+                                    <button onClick={() => supprimerJoueur(j.id)} title="Retirer de l'équipe" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', border: `1px solid ${colors.accent.red}`, color: colors.accent.red, borderRadius: forme.rayonPastille, cursor: 'pointer' }}><IcoCorbeille /></button>
                                   </>
                                 )}
                               </div>
@@ -7072,10 +7064,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   if (!groupJoueurs.length) return null
                   return (
                     <div key={groupe.label}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.color }} />
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{groupe.label}</p>
-                        <span style={{ fontSize: '11px', color: colors.text.faint }}>{groupJoueurs.length}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+                        <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: groupe.color }} />
+                        <Etiquette as="p">{groupe.label}</Etiquette>
+                        <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '15px', color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{groupJoueurs.length}</span>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px' }}>
                         {groupJoueurs.map(j => {
@@ -7085,20 +7077,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           // (sinon même étiquette répétée sur chaque carte).
                           const autreCat = cat && cat.id !== equipeActive?.id
                           return (
-                            <div key={j.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${groupe.color}`, borderRadius: '12px', padding: '12px 14px' }}>
+                            <div key={j.id} style={{ ...styleCarte(colors), padding: '12px 14px 12px 17px', boxShadow: `inset ${forme.lisere} 0 0 ${groupe.color}` }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <button onClick={() => setJoueurProfil(j)} title={t('equipe_profil', lang)} style={{ position: 'relative', flexShrink: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                                   <Avatar person={j} size={46} bg={groupe.color + '22'} border={`2px solid ${groupe.color}55`} textColor={groupe.color} />
                                   {j.numero_maillot != null && j.numero_maillot !== '' && (
-                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontSize: '10px', fontWeight: 800, color: colors.text.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>{j.numero_maillot}</span>
+                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: forme.rayonPastille, background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontFamily: police.titre, fontSize: '12px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: colors.text.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>{j.numero_maillot}</span>
                                   )}
                                 </button>
                                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setJoueurProfil(j)}>
                                   <p style={{ margin: 0, fontWeight: 700, color: colors.text.primary, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', color: colors.text.faint, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
+                                  <p style={{ margin: '2px 0 0', color: colors.text.secondary, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}{age ? ` · ${age} ans` : ''}</p>
                                 </div>
                                 {autreCat && (
-                                  <span style={{ padding: '3px 8px', borderRadius: '6px', background: colors.accent.green + '1a', color: colors.accent.green, fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>{cat.nom}-{cat.equipe}</span>
+                                  <EtiquetteStatut couleur={couleurClub(colors)} style={{ flexShrink: 0 }}>{cat.nom}-{cat.equipe}</EtiquetteStatut>
                                 )}
                                 <div className="joueur-menu-wrapper" style={{ position: 'relative', flexShrink: 0 }}>
                                   <button onClick={() => setOpenMenuJoueurId(openMenuJoueurId === j.id ? null : j.id)} title="Actions"
@@ -7113,7 +7105,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                         ...(canEdit('effectif') ? [{ Icone: IcoCorbeille, label: 'Retirer de l\'équipe', action: () => supprimerJoueur(j.id), danger: true }] : []),
                                       ].map(item => (
                                         <button key={item.label} onClick={() => { item.action(); setOpenMenuJoueurId(null) }}
-                                          style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '9px 12px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
+                                          style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '9px 12px', background: 'transparent', border: 'none', color: item.danger ? '#f87171' : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}
                                           onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
                                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                         >
@@ -7147,20 +7139,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== STATS JOUEURS ===== */}
         {activeSection === 'stats' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('nav_stats', lang)}</h1>
-            </div>
+            <TitreEcran titre={t('nav_stats', lang)} />
 
             {/* Sous-onglets */}
-            <div className="sous-onglets" style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, paddingBottom: '0', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+            <div className="df-onglets" role="tablist" aria-label={t('nav_stats', lang)} style={{ ...coqueVars(colors), marginBottom: '20px' }}>
               {[['tableau',t('stats_tab_tableau', lang)],['classement',t('stats_tab_classement', lang)],['graphiques',t('stats_tab_graphiques', lang)],['presence',t('stats_tab_presences', lang)],['mois',t('stats_tab_mois', lang)],['notes',t('stats_tab_notes', lang)]].filter(([k]) => ongletsStatsOk.includes(k)).map(([k, label]) => (
-                <button key={k} onClick={() => setStatsSubTab(k)} style={{ background: 'transparent', border: 'none', borderBottom: statsSubTab === k ? `2px solid ${colors.accent.blue}` : '2px solid transparent', color: statsSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</button>
+                <button key={k} type="button" role="tab" aria-selected={statsSubTab === k} className="df-onglet" onClick={() => setStatsSubTab(k)}>{label}</button>
               ))}
             </div>
 
             {joueurs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                <p style={{ color: colors.text.faint }}>Ajoute d'abord des joueurs dans "Mon équipe"</p>
+              <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '3rem' }}>
+                <p style={{ color: colors.text.secondary, margin: 0 }}>Ajoute d'abord des joueurs dans "Mon équipe"</p>
               </div>
             ) : (
               <>
@@ -7172,7 +7162,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     : null
                   return (
                   <div>
-                    <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Bilan de l'équipe</p>
+                    <Etiquette as="p" style={{ marginBottom: '12px' }}>Bilan de l'équipe</Etiquette>
                     <Suspense fallback={<SectionLoader />}><StatsEquipe matchs={matchs} noteEquipe={noteEquipe} /></Suspense>
                   </div>
                   )
@@ -7211,7 +7201,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const nbParLigne = (idx) => joueurs.filter(j => ligneDuPoste(j.poste) === idx).length
                   const nbMatchsJoues = matchsTableauFiltres.filter(m => m.score_nous !== null && m.score_nous !== '').length
                   // Cartons dessinés en CSS (pas d'emoji) : petit rectangle coloré.
-                  const carton = (c) => <span style={{ display: 'inline-block', width: '9px', height: '12px', borderRadius: '2px', background: c, verticalAlign: 'middle' }} />
+                  const carton = (c) => <span aria-hidden="true" style={{ display: 'inline-block', width: '9px', height: '12px', borderRadius: '2px', background: c, verticalAlign: 'middle' }} />
                   const COLONNES = [
                     { k: 'joueur', l: t('equipe_col_joueur', lang), align: 'left' },
                     { k: 'mj', l: 'MJ', titre: 'Matchs joués' },
@@ -7219,14 +7209,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     { k: 'buts', l: t('comp_buts', lang) },
                     { k: 'pd', l: 'PD', titre: 'Passes décisives' },
                     { k: 'cs', l: 'CS', titre: 'Clean sheets' },
-                    { k: 'cj', l: carton(colors.accent.amber), titre: 'Cartons jaunes' },
-                    { k: 'cr', l: carton(colors.accent.red), titre: 'Cartons rouges' },
+                    { k: 'cj', l: <>{carton(colors.accent.amber)}<span style={masqueLecteur}>Cartons jaunes</span></>, titre: 'Cartons jaunes' },
+                    { k: 'cr', l: <>{carton(colors.accent.red)}<span style={masqueLecteur}>Cartons rouges</span></>, titre: 'Cartons rouges' },
                     { k: 'presence', l: t('stats_col_presence', lang), align: 'left' },
                     { k: 'note', l: 'Note', titre: 'Note moyenne de match' },
                   ]
-                  const tdBase = { padding: '10px 12px', textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${colors.border.subtle}`, whiteSpace: 'nowrap' }
-                  const chiffre = (val, couleur, gras) => (
-                    <td style={{ ...tdBase, color: val > 0 ? couleur : colors.text.ghost, fontWeight: val > 0 && gras ? 700 : 500 }}>{val > 0 ? val : '–'}</td>
+                  const tdBase = { ...tabEq.cellule, padding: '9px 12px', whiteSpace: 'nowrap' }
+                  const tdChiffre = { ...tabEq.celluleChiffre, padding: '9px 12px', whiteSpace: 'nowrap' }
+                  const chiffre = (val, gras) => (
+                    <td style={{ ...tdChiffre, color: val > 0 ? colors.text.primary : colors.text.dim, fontWeight: val > 0 && gras ? 700 : 500 }}>{val > 0 ? val : '–'}</td>
                   )
                   const premiereCol = { position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface }
                   // Cumul de jaunes sur 3 mois : date à laquelle chaque carton cesse de compter.
@@ -7237,33 +7228,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     aujourdHuiIso,
                   )
                   return (
-                  <div style={{ ...st.card, padding: 0, overflow: 'hidden', marginTop: '22px' }}>
+                  <div style={{ ...styleCarte(colors), padding: 0, overflow: 'hidden', marginTop: '22px' }}>
                     <style>{`.stats-ligne-joueur:hover td { background: ${colors.background.raised} !important; }`}</style>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: isMobile ? '14px' : '16px 18px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: isMobile ? '14px' : '16px 18px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
                       <div>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Statistiques individuelles</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} · {nbMatchsJoues} match{nbMatchsJoues > 1 ? 's' : ''} joué{nbMatchsJoues > 1 ? 's' : ''}</p>
+                        <Etiquette as="p">Statistiques individuelles</Etiquette>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.secondary }}>{joueurs.length} joueur{joueurs.length > 1 ? 's' : ''} · {nbMatchsJoues} match{nbMatchsJoues > 1 ? 's' : ''} joué{nbMatchsJoues > 1 ? 's' : ''}</p>
                       </div>
-                      {competitionsDispo.length > 1 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
-                            const actif = filtreCompTableau === f.key
-                            return (
-                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
-                                style={{ padding: '6px 14px', borderRadius: '16px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
-                                {f.label}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                      {filtresCompetition(competitionsDispo)}
                     </div>
                     <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px', minWidth: '760px' }}>
+                    <table style={{ ...tabEq.tableau, borderCollapse: 'separate', borderSpacing: 0, minWidth: '760px' }}>
+                      <caption style={masqueLecteur}>Statistiques individuelles de l'équipe</caption>
                       <thead>
                         <tr>
                           {COLONNES.map((c, idx) => (
-                            <th key={c.k} title={c.titre} style={{ padding: '10px 12px', textAlign: c.align || 'center', color: colors.text.faint, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}`, ...(idx === 0 ? { ...premiereCol, background: colors.background.raised, zIndex: 2 } : {}) }}>{c.l}</th>
+                            <th key={c.k} scope="col" title={c.titre} style={{ ...(c.align === 'left' ? tabEq.entete : tabEq.enteteChiffre), padding: '10px 12px', background: colors.background.raised, ...(idx === 0 ? { ...premiereCol, background: colors.background.raised, zIndex: 2 } : {}) }}>{c.l}</th>
                           ))}
                         </tr>
                       </thead>
@@ -7274,69 +7254,69 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           const note = noteMoyenne(j.id)
                           const ligne = ligneDuPoste(j.poste)
                           const nouvelleLigne = i === 0 || ligneDuPoste(joueursTries[i - 1].poste) !== ligne
-                          const groupe = ligne === -1 ? { label: 'Autres', couleur: colors.text.faint } : LIGNES_POSTE[ligne]
+                          const groupe = ligne === -1 ? { label: 'Autres', couleur: colors.text.dim } : LIGNES_POSTE[ligne]
                           const couleurTx = tx ? (tx.taux >= 80 ? colors.accent.success : tx.taux >= 50 ? colors.accent.amber : colors.accent.red) : null
                           const couleurNote = note ? (note.moyenne >= 7 ? colors.accent.success : note.moyenne >= 5 ? colors.accent.amber : colors.accent.red) : null
                           return (
                             <Fragment key={j.id}>
                               {nouvelleLigne && (
                                 <tr>
-                                  <td colSpan={COLONNES.length} style={{ padding: '14px 14px 8px', borderBottom: `1px solid ${colors.border.subtle}`, background: colors.background.surface }}>
+                                  <td colSpan={COLONNES.length} style={{ padding: '14px 14px 8px', borderBottom: `1px solid ${couleurCraie(colors)}`, background: colors.background.surface }}>
                                     <span style={{ position: 'sticky', left: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.couleur }} />
-                                      <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{groupe.label}</span>
-                                      <span style={{ fontSize: '11px', color: colors.text.faint }}>{ligne === -1 ? joueurs.length - LIGNES_POSTE.reduce((acc, _, k) => acc + nbParLigne(k), 0) : nbParLigne(ligne)}</span>
+                                      {marqueurCarre(groupe.couleur)}
+                                      <Etiquette>{groupe.label}</Etiquette>
+                                      <span style={{ ...styleChiffreCond(colors, 14), color: colors.text.dim }}>{ligne === -1 ? joueurs.length - LIGNES_POSTE.reduce((acc, _, k) => acc + nbParLigne(k), 0) : nbParLigne(ligne)}</span>
                                     </span>
                                   </td>
                                 </tr>
                               )}
                               <tr className="stats-ligne-joueur">
-                                <td style={{ ...tdBase, ...premiereCol, textAlign: 'left', boxShadow: `inset 3px 0 0 ${groupe.couleur}` }}>
+                                <td style={{ ...tdBase, ...premiereCol, textAlign: 'left', boxShadow: `inset ${forme.lisere} 0 0 ${groupe.couleur}` }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '170px' }}>
-                                    <Avatar person={j} size={32} bg={groupe.couleur + '22'} border={`1px solid ${groupe.couleur}55`} textColor={groupe.couleur} />
+                                    <Avatar person={j} size={32} />
                                     <div style={{ minWidth: 0 }}>
-                                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{j.prenom} {j.nom}</p>
-                                      <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{j.prenom} {j.nom}</p>
+                                      <p style={{ margin: '1px 0 0', fontSize: '12px', color: colors.text.secondary }}>{j.poste || 'Poste non renseigné'}</p>
                                     </div>
                                   </div>
                                 </td>
-                                {chiffre(s.matchs, colors.text.primary)}
-                                <td style={{ ...tdBase, color: s.minutes > 0 ? colors.text.secondary : colors.text.ghost }}>{s.minutes > 0 ? `${s.minutes}'` : '–'}</td>
-                                {chiffre(s.buts, colors.accent.green, true)}
-                                {chiffre(s.passes_dec, colors.accent.info, true)}
-                                {chiffre(s.clean_sheets, colors.accent.purpleLight, true)}
+                                {chiffre(s.matchs)}
+                                <td style={{ ...tdChiffre, color: s.minutes > 0 ? colors.text.primary : colors.text.dim, fontWeight: 500 }}>{s.minutes > 0 ? `${s.minutes}'` : '–'}</td>
+                                {chiffre(s.buts, true)}
+                                {chiffre(s.passes_dec, true)}
+                                {chiffre(s.clean_sheets, true)}
                                 {(() => {
                                   const cj = cartonsDuJoueur(j.id)
                                   const info = cj.detail.map(c => `Jaune du ${dateCourteCj(c.date)} : compte jusqu'au ${dateCourteCj(c.jusqua)}`).join('\n')
                                   return (
-                                    <td title={info || undefined} style={{ ...tdBase, color: s.cartons_j > 0 ? colors.accent.amber : colors.text.ghost, fontWeight: s.cartons_j > 0 ? 700 : 500 }}>
+                                    <td title={info || undefined} style={{ ...tdChiffre, color: s.cartons_j > 0 ? colors.text.primary : colors.text.dim, fontWeight: s.cartons_j > 0 ? 700 : 500 }}>
                                       {s.cartons_j > 0 ? s.cartons_j : '–'}
                                       {(cj.etat === 'menace' || cj.etat === 'trois') && (
-                                        <span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: cj.etat === 'trois' ? colors.accent.red : colors.accent.amber }}>
-                                          sort le {dateCourteCj(cj.echeance)}
+                                        <span style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                          <EtiquetteStatut couleur={cj.etat === 'trois' ? colors.accent.red : colors.accent.amber} style={{ fontSize: '10px', padding: '1px 6px' }}>sort le {dateCourteCj(cj.echeance)}</EtiquetteStatut>
                                         </span>
                                       )}
                                     </td>
                                   )
                                 })()}
-                                {chiffre(s.cartons_r, colors.accent.red, true)}
+                                {chiffre(s.cartons_r, true)}
                                 <td style={{ ...tdBase, textAlign: 'left' }}>
                                   {tx !== null ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <div style={{ width: '56px', height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden' }}>
+                                      <div role="img" aria-label={`Présence ${tx.taux} %`} style={{ width: '56px', height: '6px', borderRadius: '1px', background: colors.background.sunken, overflow: 'hidden' }}>
                                         <div style={{ width: `${tx.taux}%`, height: '100%', background: couleurTx }} />
                                       </div>
-                                      <span style={{ color: couleurTx, fontWeight: 700, fontSize: '12px', minWidth: '34px' }}>{tx.taux}%</span>
+                                      <span style={{ ...styleChiffreCond(colors, 16), minWidth: '38px' }}>{tx.taux}%</span>
                                     </div>
-                                  ) : <span style={{ color: colors.text.ghost }}>–</span>}
+                                  ) : <span style={{ color: colors.text.dim }}>–</span>}
                                 </td>
-                                <td style={tdBase}>
+                                <td style={{ ...tdChiffre, color: note ? colors.text.primary : colors.text.dim }}>
                                   {note ? (
-                                    <span title={`${note.nb} match${note.nb > 1 ? 's' : ''} noté${note.nb > 1 ? 's' : ''}`}
-                                      style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px', padding: '3px 9px', borderRadius: '8px', background: couleurNote + '1a', border: `1px solid ${couleurNote}40`, color: couleurNote, fontWeight: 800, fontSize: '13px' }}>
-                                      {note.moyenne}<span style={{ fontSize: '10px', fontWeight: 600, color: colors.text.faint }}>/10</span>
+                                    <span title={`${note.nb} match${note.nb > 1 ? 's' : ''} noté${note.nb > 1 ? 's' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                      {marqueurCarre(couleurNote)}
+                                      {note.moyenne}<span style={{ fontFamily: police.texte, fontSize: '12px', fontWeight: 600, color: colors.text.secondary }}>/10</span>
                                     </span>
-                                  ) : <span style={{ color: colors.text.ghost }}>–</span>}
+                                  ) : '–'}
                                 </td>
                               </tr>
                             </Fragment>
@@ -7345,7 +7325,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       </tbody>
                     </table>
                     </div>
-                    <p style={{ margin: 0, padding: '10px 18px', fontSize: '11px', color: colors.text.faint, borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                    <p style={{ ...styleEtiquette(colors), textTransform: 'none', letterSpacing: 'normal', fontSize: '12px', fontWeight: 500, margin: 0, padding: '10px 18px', borderTop: `1px solid ${couleurCraie(colors)}`, display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                       <span>MJ matchs joués</span><span>PD passes décisives</span><span>CS clean sheets</span><span>Note : moyenne des notes de match</span>
                     </p>
                   </div>
@@ -7366,45 +7346,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const matchIdsFiltresClassement = new Set(matchsFiltres.map(m => m.id))
                   const withStats = joueurs.map(j => ({ ...j, s: statsGlobalesJoueur(j.id, matchsFiltres), tx: tauxPresence(j.id), note: noteMoyenneMatch(j.id, matchIdsFiltresClassement) }))
                   const TRIS = [
-                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, color: colors.accent.green, unite: v => v > 1 ? 'buts' : 'but', Icone: IcoBallon },
-                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, color: colors.accent.info, unite: v => v > 1 ? 'passes' : 'passe', Icone: IcoCible },
-                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, color: colors.accent.amber, unite: v => v > 1 ? 'victoires' : 'victoire', Icone: IcoCoupe },
-                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, color: colors.accent.purpleLight, unite: () => 'min', Icone: IcoHorloge },
-                    { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, color: '#34d399', unite: () => '%', Icone: IcoPresence },
-                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.moyenne ?? 0, color: colors.accent.amber, unite: () => '/10', Icone: IcoStar },
+                    { key: 'buts', label: t('stats_filtre_buteurs', lang), get: j => j.s.buts, unite: v => v > 1 ? 'buts' : 'but', Icone: IcoBallon },
+                    { key: 'passes_dec', label: t('stats_filtre_passeurs', lang), get: j => j.s.passes_dec, unite: v => v > 1 ? 'passes' : 'passe', Icone: IcoCible },
+                    { key: 'victoires', label: t('stats_filtre_victoires', lang), get: j => j.s.victoires, unite: v => v > 1 ? 'victoires' : 'victoire', Icone: IcoCoupe },
+                    { key: 'minutes', label: t('stats_filtre_temps', lang), get: j => j.s.minutes, unite: () => 'min', Icone: IcoHorloge },
+                    { key: 'presence', label: t('stats_filtre_presence', lang), get: j => j.tx?.taux ?? 0, unite: () => '%', Icone: IcoPresence },
+                    { key: 'note', label: t('stats_filtre_note_edu', lang), get: j => j.note?.moyenne ?? 0, unite: () => '/10', Icone: IcoStar },
                   ]
                   const triActif = TRIS.find(t => t.key === statsTri) || TRIS[0]
                   const sorted = [...withStats].sort((a, b) => triActif.get(b) - triActif.get(a))
                   const formater = (val) => typeof val === 'number' && !Number.isInteger(val) ? val.toFixed(1) : val
                   const podium = sorted.slice(0, 3)
                   const { Icone: IconeTri } = triActif
+                  const fondClub = couleurClub(colors)
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <style>{`.classement-ligne:hover td { background: ${colors.background.raised}; }`}</style>
                       {/* Filtre compétition */}
-                      {competitionsDispo.length > 1 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
-                            const actif = filtreCompTableau === f.key
-                            return (
-                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
-                                style={{ padding: '7px 16px', borderRadius: '18px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
-                                {f.label}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                      {filtresCompetition(competitionsDispo)}
 
                       {/* Sélecteur de critère */}
-                      <div className="filtres-scroll" style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+                      <div className="filtres-scroll" role="group" aria-label="Critère du classement" style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
                         {TRIS.map(tr => {
                           const actif = triActif.key === tr.key
                           const { Icone } = tr
                           return (
-                            <button key={tr.key} onClick={() => setStatsTri(tr.key)}
-                              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '7px', background: actif ? tr.color + '1f' : colors.background.surface, border: `1px solid ${actif ? tr.color + '70' : colors.border.default}`, color: actif ? tr.color : colors.text.secondary, padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                              <span style={{ display: 'inline-flex', color: actif ? tr.color : colors.text.faint }}><Icone /></span>{tr.label}
+                            <button key={tr.key} type="button" aria-pressed={actif} onClick={() => setStatsTri(tr.key)} className={CLASSE_BOUTON_SECONDAIRE}
+                              style={{ ...styleChoix(colors, actif), flexShrink: 0, gap: '7px', padding: '0 14px' }}>
+                              <span aria-hidden="true" style={{ display: 'inline-flex' }}><Icone /></span>{tr.label}
                             </button>
                           )
                         })}
@@ -7412,11 +7381,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                       {/* Podium : le n°1 au centre, en avant ; le n°2 à gauche, le n°3 à droite. */}
                       {podium.length > 0 && (
-                        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: isMobile ? '14px 10px 16px' : '18px 24px 22px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '14px' : '20px', color: colors.text.primary }}>
-                            <span style={{ display: 'inline-flex', color: triActif.color }}><IconeTri /></span>
-                            <span style={{ fontSize: '15px', fontWeight: 800 }}>Meilleurs {triActif.label.toLowerCase()}</span>
-                          </div>
+                        <div style={{ ...styleCarte(colors), padding: isMobile ? '14px 10px 16px' : '18px 24px 22px' }}>
+                          <h2 style={{ ...styleTitreCarte(colors), fontSize: '18px', margin: `0 0 ${isMobile ? 14 : 20}px` }}>
+                            <span aria-hidden="true" style={{ display: 'inline-flex' }}><IconeTri /></span>Meilleurs {triActif.label.toLowerCase()}
+                          </h2>
                           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${[1, 0, 2].filter(r => podium[r]).length}, minmax(0,1fr))`, alignItems: 'end', gap: isMobile ? '6px' : '20px' }}>
                             {[1, 0, 2].filter(r => podium[r]).map(rang => {
                               const j = podium[rang]
@@ -7425,16 +7393,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               const taille = isMobile ? (premier ? 64 : 46) : (premier ? 92 : 64)
                               return (
                                 <div key={j.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0, paddingBottom: premier ? 0 : (isMobile ? 4 : 10) }}>
-                                  <div style={{ position: 'relative', marginBottom: '10px' }}>
-                                    <span style={{ display: 'flex', borderRadius: '50%', padding: '3px', border: `2px solid ${premier ? triActif.color : colors.border.default}`, boxShadow: premier ? `0 0 0 4px ${triActif.color}22` : 'none' }}>
-                                      <Avatar person={j} size={taille} bg={triActif.color + '20'} border="none" textColor={triActif.color} />
+                                  <div style={{ position: 'relative', marginBottom: '14px' }}>
+                                    <span style={{ display: 'flex', borderRadius: '50%', padding: '3px', border: `2px solid ${premier ? fondClub : colors.border.strong}` }}>
+                                      <Avatar person={j} size={taille} />
                                     </span>
-                                    <span style={{ position: 'absolute', top: premier ? '-6px' : '-4px', left: '50%', transform: 'translateX(-50%)', minWidth: premier ? '26px' : '22px', height: premier ? '26px' : '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premier ? '13px' : '12px', fontWeight: 800, color: premier ? colors.black : colors.text.secondary, background: premier ? triActif.color : colors.background.raised, border: `1px solid ${premier ? triActif.color : colors.border.default}` }}>{rang + 1}</span>
+                                    <span style={{ position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)', minWidth: premier ? '28px' : '24px', height: premier ? '28px' : '24px', borderRadius: forme.rayonPastille, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontWeight: 700, fontSize: premier ? '16px' : '14px', fontVariantNumeric: 'tabular-nums', color: premier ? texteSur(fondClub) : colors.text.primary, background: premier ? fondClub : colors.background.raised, border: `1px solid ${premier ? 'transparent' : colors.border.strong}` }}>{rang + 1}</span>
                                   </div>
-                                  <p style={{ margin: 0, maxWidth: '100%', fontWeight: 800, fontSize: isMobile ? (premier ? '13px' : '11px') : (premier ? '16px' : '14px'), lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', maxWidth: '100%', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || 'Poste non renseigné'}</p>
-                                  <p style={{ margin: '8px 0 0', fontSize: isMobile ? (premier ? '28px' : '22px') : (premier ? '40px' : '30px'), fontWeight: 800, lineHeight: 1, color: triActif.color, fontVariantNumeric: 'tabular-nums' }}>{formater(val)}</p>
-                                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.text.faint }}>{triActif.unite(Number(val))}</p>
+                                  <p style={{ margin: 0, maxWidth: '100%', fontWeight: 700, fontSize: isMobile ? (premier ? '14px' : '12px') : (premier ? '16px' : '14px'), lineHeight: 1.25, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                  <p style={{ margin: '2px 0 0', maxWidth: '100%', fontSize: '12px', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || 'Poste non renseigné'}</p>
+                                  <p style={{ ...styleChiffreHeros(colors, isMobile ? (premier ? 32 : 26) : (premier ? 44 : 34)), margin: '8px 0 0' }}>{formater(val)}</p>
+                                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.secondary }}>{triActif.unite(Number(val))}</p>
                                 </div>
                               )
                             })}
@@ -7443,21 +7411,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       )}
 
                       {/* Classement complet */}
-                      <div style={{ ...st.card, margin: 0, padding: 0, overflow: 'hidden' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
+                      <div style={{ ...styleCarte(colors), margin: 0, padding: 0, overflow: 'hidden' }}>
+                        <table style={{ ...tabEq.tableau, tableLayout: 'fixed' }}>
+                          <caption style={masqueLecteur}>Classement des joueurs : {triActif.label}</caption>
                           <colgroup>
                             <col style={{ width: isMobile ? '36px' : '64px' }} />
                             <col />
                             {!isMobile && <col style={{ width: '30%' }} />}
-                            <col style={{ width: isMobile ? '70px' : '140px' }} />
+                            <col style={{ width: isMobile ? '84px' : '150px' }} />
                           </colgroup>
                           <thead>
                             <tr>
                               {['#', t('equipe_col_joueur', lang), ...(isMobile ? [] : [t('equipe_poste', lang)])].map((h, idx) => (
-                                <th key={idx} style={{ padding: '12px', color: colors.text.faint, fontWeight: 700, fontSize: '11px', letterSpacing: '0.6px', textTransform: 'uppercase', textAlign: idx === 0 ? 'center' : 'left', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
+                                <th key={idx} scope="col" style={{ ...tabEq.entete, padding: '12px', textAlign: idx === 0 ? 'center' : 'left', background: colors.background.raised }}>{h}</th>
                               ))}
-                              <th style={{ padding: '12px 16px', color: triActif.color, fontWeight: 700, fontSize: '11px', letterSpacing: '0.6px', textTransform: 'uppercase', textAlign: 'right', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconeTri />{isMobile ? '' : triActif.label}</span>
+                              <th scope="col" style={{ ...tabEq.enteteChiffre, padding: '12px 16px', background: colors.background.raised, color: colors.text.primary }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span aria-hidden="true" style={{ display: 'inline-flex' }}><IconeTri /></span>{isMobile ? <span style={masqueLecteur}>{triActif.label}</span> : triActif.label}</span>
                               </th>
                             </tr>
                           </thead>
@@ -7467,18 +7436,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               const nul = !Number(val)
                               return (
                                 <tr key={j.id} className="classement-ligne">
-                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: i < 3 ? colors.text.secondary : colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>{i + 1}</td>
-                                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                  <td style={{ ...tabEq.celluleChiffre, padding: '10px 12px', textAlign: 'center', color: i < 3 ? colors.text.primary : colors.text.dim }}>{i + 1}</td>
+                                  <td style={{ ...tabEq.cellule, padding: '8px 12px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                                       <Avatar person={j} size={30} />
                                       <div style={{ minWidth: 0 }}>
                                         <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                        {isMobile && <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>}
+                                        {isMobile && <p style={{ margin: '1px 0 0', fontSize: '12px', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</p>}
                                       </div>
                                     </div>
                                   </td>
-                                  {!isMobile && <td style={{ padding: '10px 12px', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</td>}
-                                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 800, fontSize: '15px', fontVariantNumeric: 'tabular-nums', color: nul ? colors.text.ghost : triActif.color, borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                  {!isMobile && <td style={{ ...tabEq.cellule, padding: '10px 12px', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.poste || '—'}</td>}
+                                  <td style={{ ...tabEq.celluleChiffre, padding: '10px 16px', fontSize: '20px', fontWeight: 700, color: nul ? colors.text.dim : colors.text.primary }}>
                                     {formater(val)}{triActif.key === 'presence' ? '%' : triActif.key === 'minutes' && !nul ? "'" : ''}
                                   </td>
                                 </tr>
@@ -7502,15 +7471,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const competitionsDispo = [...new Set(matchs.map(m => m.competition).filter(Boolean))]
                   const matchsFiltres = filtreCompTableau === 'all' ? matchs : matchs.filter(m => m.competition === filtreCompTableau)
                   const withStats = joueurs.map(j => ({ j, label: `${j.prenom} ${j.nom?.[0] || ''}.`, ...statsGlobalesJoueur(j.id, matchsFiltres) }))
-                  const carton = (c) => <span style={{ display: 'inline-block', width: '11px', height: '15px', borderRadius: '2px', background: c }} />
+                  const carton = (c) => <span aria-hidden="true" style={{ display: 'inline-block', width: '11px', height: '15px', borderRadius: '2px', background: c }} />
                   const SECTIONS = [
                     { titre: 'Attaque', graphiques: [
-                      { title: t('stats_graph_buteurs', lang), key: 'buts', color: colors.accent.green, icone: <IcoBallon /> },
-                      { title: t('stats_graph_passes', lang), key: 'passes_dec', color: colors.accent.info, icone: <IcoCible /> },
+                      { title: t('stats_graph_buteurs', lang), key: 'buts', icone: <IcoBallon /> },
+                      { title: t('stats_graph_passes', lang), key: 'passes_dec', icone: <IcoCible /> },
                     ] },
                     { titre: 'Temps de jeu', graphiques: [
-                      { title: t('stats_graph_minutes', lang), key: 'minutes', color: colors.accent.purpleLight, unit: "'", icone: <IcoHorloge />, moyenne: true },
-                      { title: t('stats_graph_matchs', lang), key: 'matchs', color: colors.accent.amber, icone: <IcoCalendar />, moyenne: true },
+                      { title: t('stats_graph_minutes', lang), key: 'minutes', unit: "'", icone: <IcoHorloge />, moyenne: true },
+                      { title: t('stats_graph_matchs', lang), key: 'matchs', icone: <IcoCalendar />, moyenne: true },
                     ] },
                     { titre: 'Discipline', graphiques: [
                       { title: t('stats_graph_cartons_j', lang), key: 'cartons_j', color: colors.accent.amber, icone: carton(colors.accent.amber), vide: 'Aucun carton jaune' },
@@ -7518,7 +7487,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     ] },
                   ]
                   const LIMITE = 8
-                  const carteGraphique = ({ title, key, color, unit = '', icone, moyenne, vide }) => {
+                  const carteGraphique = ({ title, key, color = couleurClub(colors), unit = '', icone, moyenne, vide }) => {
                     const data = [...withStats].sort((a, b) => b[key] - a[key]).filter(d => d[key] > 0)
                     const totalVal = data.reduce((acc, d) => acc + d[key], 0)
                     const max = data[0]?.[key] || 1
@@ -7528,32 +7497,32 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       : moyenne ? `Moyenne ${Math.round(totalVal / data.length)}${unit} · ${data.length} joueurs`
                       : `Total ${totalVal} · ${data.length} joueur${data.length > 1 ? 's' : ''}`
                     return (
-                      <div key={key} style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+                      <div key={key} style={{ ...styleCarte(colors), margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: color + '1f', color, flexShrink: 0 }}>{icone}</span>
+                          <span style={{ width: '34px', height: '34px', borderRadius: forme.rayonCarte, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.background.raised, color: colors.text.primary, flexShrink: 0 }}>{icone}</span>
                           <div style={{ minWidth: 0, flex: 1 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{sansEmoji(title)}</p>
-                            {resume && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{resume}</p>}
+                            <h3 style={{ ...styleTitreCarte(colors), margin: 0, fontSize: '18px' }}>{sansEmoji(title)}</h3>
+                            {resume && <p style={{ margin: '2px 0 0', fontSize: '13px', color: colors.text.secondary }}>{resume}</p>}
                           </div>
                         </div>
                         {data.length === 0 ? (
-                          <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '13px', textAlign: 'center' }}>{vide || t('msg_aucune_donnee', lang)}</p>
+                          <p style={{ margin: 0, padding: '14px', borderRadius: forme.rayonCarte, background: colors.background.sunken, color: colors.text.secondary, fontSize: '13px', textAlign: 'center' }}>{vide || t('msg_aucune_donnee', lang)}</p>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {visibles.map((d, i) => (
-                              <div key={d.j.id} style={{ display: 'grid', gridTemplateColumns: `18px 26px ${isMobile ? '84px' : '110px'} minmax(0,1fr) 48px`, alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: i === 0 ? color : colors.text.faint, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                              <div key={d.j.id} style={{ display: 'grid', gridTemplateColumns: `22px 26px ${isMobile ? '84px' : '110px'} minmax(0,1fr) 52px`, alignItems: 'center', gap: '8px' }}>
+                                <span style={{ ...styleChiffreCond(colors, 14), color: i === 0 ? colors.text.primary : colors.text.dim, textAlign: 'right' }}>{i + 1}</span>
                                 <Avatar person={d.j} size={26} />
-                                <span title={`${d.j.prenom} ${d.j.nom}`} style={{ fontSize: '13px', fontWeight: i === 0 ? 700 : 500, color: i === 0 ? colors.text.primary : colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
-                                <div style={{ height: '8px', borderRadius: '4px', background: colors.background.base, overflow: 'hidden' }}>
-                                  <div style={{ width: `${(d[key] / max) * 100}%`, minWidth: '6px', height: '100%', borderRadius: '4px', background: color, opacity: i === 0 ? 1 : 0.7, transition: 'width 0.4s ease' }} />
+                                <span title={`${d.j.prenom} ${d.j.nom}`} style={{ fontSize: '14px', fontWeight: i === 0 ? 700 : 500, color: i === 0 ? colors.text.primary : colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
+                                <div role="img" aria-label={`${d[key]}${unit}`} style={{ height: '6px', borderRadius: '1px', background: colors.background.sunken, overflow: 'hidden' }}>
+                                  <div style={{ width: `${(d[key] / max) * 100}%`, minWidth: '6px', height: '100%', background: color, opacity: i === 0 ? 1 : 0.7 }} />
                                 </div>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: i === 0 ? color : colors.text.primary, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{d[key]}{unit}</span>
+                                <span style={{ ...styleChiffreCond(colors, 16), textAlign: 'right' }}>{d[key]}{unit}</span>
                               </div>
                             ))}
                             {data.length > LIMITE && (
-                              <button onClick={() => setGraphDeplies(prev => ({ ...prev, [key]: !prev[key] }))}
-                                style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '2px', background: 'transparent', border: 'none', padding: '4px 0', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              <button type="button" aria-expanded={deplie} onClick={() => setGraphDeplies(prev => ({ ...prev, [key]: !prev[key] }))} className={CLASSE_BOUTON_SECONDAIRE}
+                                style={{ ...styleBoutonPetit(colors), alignSelf: 'flex-start', marginTop: '2px', gap: '6px' }}>
                                 {deplie ? 'Réduire' : `Voir les ${data.length} joueurs`}<IcoChevronBas ouvert={deplie} />
                               </button>
                             )}
@@ -7564,22 +7533,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   }
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                      {competitionsDispo.length > 1 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {[{ key: 'all', label: 'Toutes compétitions' }, ...competitionsDispo.map(c => ({ key: c, label: c }))].map(f => {
-                            const actif = filtreCompTableau === f.key
-                            return (
-                              <button key={f.key} onClick={() => setFiltreCompTableau(f.key)}
-                                style={{ padding: '7px 16px', borderRadius: '18px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', background: actif ? colors.accent.green + '1f' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 500, whiteSpace: 'nowrap' }}>
-                                {f.label}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                      {filtresCompetition(competitionsDispo)}
                       {SECTIONS.map(sec => (
                         <div key={sec.titre}>
-                          <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{sec.titre}</p>
+                          <Etiquette as="p" style={{ marginBottom: '12px' }}>{sec.titre}</Etiquette>
                           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0,1fr))', gap: '16px', alignItems: 'start' }}>
                             {sec.graphiques.map(carteGraphique)}
                           </div>
@@ -7647,36 +7604,40 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     { label: t('stats_pres_attaquants', lang), color: colors.accent.green, match: p => p && ['attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                     { label: 'Autres', color: colors.text.faint, match: p => !p || !['gardien','défenseur','defenseur','latéral','lateral','milieu','attaquant','ailier'].some(k => p.toLowerCase().includes(k)) },
                   ]
-                  const eyebrowPres = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
                   const classementPres = joueurs.map(j => ({ j, tx: tauxPresence(j.id) })).filter(d => d.tx).sort((a, b) => b.tx.taux - a.tx.taux)
                   const presDeplie = !!graphDeplies.classement_presence
+                  // Barre fine du taux : la couleur de statut (vert / ambre / rouge) reste sur le graphique, le chiffre est en texte plein.
+                  const barreTaux = (taux, couleur) => (
+                    <div role="img" aria-label={`${taux} %`} style={{ height: '6px', width: '100%', borderRadius: '1px', background: colors.background.sunken, overflow: 'hidden' }}>
+                      <div style={{ width: `${taux}%`, height: '100%', background: couleur }} />
+                    </div>
+                  )
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
                       {/* Synthèse */}
-                      <div style={{ ...st.card, margin: 0 }}>
+                      <div style={{ ...styleCarte(colors), margin: 0 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto minmax(0,1fr)', gap: isMobile ? '14px' : '32px', alignItems: 'center' }}>
                           <div>
-                            <p style={eyebrowPres}>{t('stats_pres_presence', lang)}</p>
-                            <p style={{ margin: '6px 0 0', fontSize: '36px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: totPres ? couleurTaux(tauxGlobal) : colors.text.faint }}>
-                              {tauxGlobal}<span style={{ fontSize: '16px', color: colors.text.faint, marginLeft: '2px' }}>%</span>
+                            <Etiquette as="p">{t('stats_pres_presence', lang)}</Etiquette>
+                            <p style={{ ...styleChiffreHeros(colors, 48), margin: '8px 0 0', color: totPres ? colors.text.primary : colors.text.dim }}>
+                              {tauxGlobal}<span style={{ fontSize: '0.45em', fontWeight: 600, color: colors.text.dim, marginLeft: '2px' }}>%</span>
                             </p>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{totalPresents + totalConvoques} présences sur {totPres} réponses</p>
+                            <p style={{ margin: '6px 0 0', fontSize: '13px', color: colors.text.secondary }}>{totalPresents + totalConvoques} présences sur {totPres} réponses</p>
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ display: 'flex', height: '10px', borderRadius: '6px', overflow: 'hidden', background: colors.background.base, gap: totPres ? '2px' : 0 }}>
-                              {STATUTS_PRES.map(sp => totauxPres[sp.key] > 0 && <div key={sp.key} style={{ width: `${(totauxPres[sp.key] / totPres) * 100}%`, background: sp.color }} />)}
-                            </div>
+                            <Jauge hauteur={10} legende={false} libelle={null}
+                              segments={STATUTS_PRES.map(sp => ({ libelle: sp.label, valeur: totauxPres[sp.key], couleur: sp.color }))} />
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, minmax(0,1fr))' : 'repeat(5, minmax(0,1fr))', gap: '10px', marginTop: '14px' }}>
                               {STATUTS_PRES.map(sp => (
-                                <div key={sp.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: totauxPres[sp.key] ? 1 : 0.45 }}>
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
-                                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sp.color, flexShrink: 0 }} />{sp.label}
+                                <div key={sp.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.secondary, whiteSpace: 'nowrap' }}>
+                                    {marqueurCarre(sp.color)}{sp.label}
                                   </span>
                                   {/* Compteur brut affiché même si l'arrondi tombe à 0 % (1 ou 2 cas
                                       sur des centaines de réponses), sinon le statut paraît absent. */}
-                                  <span style={{ fontSize: '17px', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: totauxPres[sp.key] ? sp.color : colors.text.faint }}>
+                                  <span style={{ ...styleChiffreCond(colors, 20), color: totauxPres[sp.key] ? colors.text.primary : colors.text.dim }}>
                                     {totPres ? Math.round(totauxPres[sp.key] / totPres * 100) : 0}%
-                                    <span style={{ fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginLeft: '4px' }}>{totauxPres[sp.key]}</span>
+                                    <span style={{ fontFamily: police.texte, fontSize: '12px', fontWeight: 600, color: colors.text.secondary, marginLeft: '4px' }}>{totauxPres[sp.key]}</span>
                                   </span>
                                 </div>
                               ))}
@@ -7691,39 +7652,39 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         if (!gJoueurs.length) return null
                         return (
                           <div key={groupe.label}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: groupe.color }} />
-                              <p style={eyebrowPres}>{groupe.label}</p>
-                              <span style={{ fontSize: '11px', color: colors.text.faint }}>{gJoueurs.length}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+                              {marqueurCarre(groupe.color)}
+                              <Etiquette as="p">{groupe.label}</Etiquette>
+                              <span style={{ ...styleChiffreCond(colors, 14), color: colors.text.dim }}>{gJoueurs.length}</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px', alignItems: 'start' }}>
                               {gJoueurs.map(j => {
                                 const tx = tauxPresence(j.id)
                                 const ouvert = joueurMoisDetail === j.id
                                 return (
-                                  <div key={j.id} style={{ ...st.card, margin: 0, padding: '14px 16px', borderLeft: `3px solid ${groupe.color}` }}>
+                                  <div key={j.id} style={{ ...styleCarte(colors), margin: 0, padding: '14px 16px 14px 19px', boxShadow: `inset ${forme.lisere} 0 0 ${groupe.color}` }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                       <DonutMulti presents={tx?.presents || 0} absents={tx?.absents || 0} blesses={tx?.blesses || 0} malade={tx?.malade || 0} convoque={tx?.convoque || 0} size={64} person={j} />
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.secondary }}>{j.poste || '—'}{tx ? ` · ${tx.total} ${tx.total > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}` : ''}</p>
                                         {tx ? (
                                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginTop: '8px' }}>
                                             {STATUTS_PRES.filter(sp => tx[sp.key] > 0).map(sp => (
-                                              <span key={sp.key} title={sp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: colors.text.secondary }}>
-                                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sp.color }} />
-                                                <strong style={{ color: sp.color, fontVariantNumeric: 'tabular-nums' }}>{tx[sp.key]}</strong>{sp.label}
+                                              <span key={sp.key} title={sp.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: colors.text.secondary }}>
+                                                {marqueurCarre(sp.color, 7)}
+                                                <strong style={{ ...styleChiffreCond(colors, 15) }}>{tx[sp.key]}</strong>{sp.label}
                                               </span>
                                             ))}
                                           </div>
                                         ) : (
-                                          <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>Aucune présence saisie</p>
+                                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.secondary }}>Aucune présence saisie</p>
                                         )}
                                       </div>
                                     </div>
                                     {tx && (
-                                      <button onClick={() => setJoueurMoisDetail(ouvert ? null : j.id)}
-                                        style={{ marginTop: '12px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: ouvert ? colors.background.raised : 'transparent', border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', color: colors.text.faint, fontSize: '12px', fontWeight: 600, padding: '6px 10px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                      <button type="button" aria-expanded={ouvert} onClick={() => setJoueurMoisDetail(ouvert ? null : j.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                                        style={{ ...styleBoutonPetit(colors), marginTop: '12px', width: '100%', gap: '6px' }}>
                                         Détail par mois <IcoChevronBas ouvert={ouvert} />
                                       </button>
                                     )}
@@ -7732,19 +7693,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                       if (!moisData.length) return null
                                       return (
                                         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                          {moisData.map(m => {
-                                            const color = couleurTaux(m.taux)
-                                            return (
-                                              <div key={m.key} style={{ display: 'grid', gridTemplateColumns: '96px minmax(0,1fr) 38px 36px', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
-                                                <div style={{ height: '6px', background: colors.background.base, borderRadius: '3px', overflow: 'hidden' }}>
-                                                  <div style={{ width: `${m.taux}%`, height: '100%', background: color, borderRadius: '3px' }} />
-                                                </div>
-                                                <span style={{ fontSize: '12px', fontWeight: 700, color, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{m.taux}%</span>
-                                                <span style={{ fontSize: '10px', color: colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>{m.presents + m.convoque}/{m.total}</span>
-                                              </div>
-                                            )
-                                          })}
+                                          {moisData.map(m => (
+                                            <div key={m.key} style={{ display: 'grid', gridTemplateColumns: '96px minmax(0,1fr) 44px 40px', alignItems: 'center', gap: '8px' }}>
+                                              <span style={{ fontSize: '12px', color: colors.text.secondary, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
+                                              {barreTaux(m.taux, couleurTaux(m.taux))}
+                                              <span style={{ ...styleChiffreCond(colors, 15), textAlign: 'right' }}>{m.taux}%</span>
+                                              <span style={{ fontSize: '12px', color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{m.presents + m.convoque}/{m.total}</span>
+                                            </div>
+                                          ))}
                                         </div>
                                       )
                                     })()}
@@ -7757,35 +7713,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       })}
 
                       {/* Classement par taux de présence */}
-                      <div style={{ ...st.card, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ ...styleCarte(colors), margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ width: '34px', height: '34px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1f', color: colors.accent.green, flexShrink: 0 }}><IcoPresence /></span>
+                          <span style={{ width: '34px', height: '34px', borderRadius: forme.rayonCarte, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.background.raised, color: colors.text.primary, flexShrink: 0 }}><IcoPresence /></span>
                           <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Classement par taux de présence</p>
-                            {classementPres.length > 0 && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{classementPres.filter(d => d.tx.taux >= 80).length} joueur{classementPres.filter(d => d.tx.taux >= 80).length > 1 ? 's' : ''} à 80 % ou plus</p>}
+                            <h3 style={{ ...styleTitreCarte(colors), margin: 0, fontSize: '18px' }}>Classement par taux de présence</h3>
+                            {classementPres.length > 0 && <p style={{ margin: '2px 0 0', fontSize: '13px', color: colors.text.secondary }}>{classementPres.filter(d => d.tx.taux >= 80).length} joueur{classementPres.filter(d => d.tx.taux >= 80).length > 1 ? 's' : ''} à 80 % ou plus</p>}
                           </div>
                         </div>
                         {classementPres.length === 0 ? (
-                          <p style={{ margin: 0, padding: '14px', borderRadius: '10px', background: colors.background.base, color: colors.text.faint, fontSize: '13px', textAlign: 'center' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
+                          <p style={{ margin: 0, padding: '14px', borderRadius: forme.rayonCarte, background: colors.background.sunken, color: colors.text.secondary, fontSize: '13px', textAlign: 'center' }}>Commence à saisir les présences dans l'onglet Entraînements</p>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {(presDeplie ? classementPres : classementPres.slice(0, 10)).map(({ j, tx }, i) => {
-                              const color = couleurTaux(tx.taux)
-                              return (
-                                <div key={j.id} style={{ display: 'grid', gridTemplateColumns: `20px 26px ${isMobile ? '90px' : '160px'} minmax(0,1fr) 46px`, alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
-                                  <Avatar person={j} size={26} />
-                                  <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? `${j.prenom} ${j.nom?.[0] || ''}.` : `${j.prenom} ${j.nom}`}</span>
-                                  <div style={{ height: '8px', borderRadius: '4px', background: colors.background.base, overflow: 'hidden' }}>
-                                    <div style={{ width: `${tx.taux}%`, height: '100%', borderRadius: '4px', background: color }} />
-                                  </div>
-                                  <span style={{ fontSize: '13px', fontWeight: 800, color, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{tx.taux}%</span>
-                                </div>
-                              )
-                            })}
+                            {(presDeplie ? classementPres : classementPres.slice(0, 10)).map(({ j, tx }, i) => (
+                              <div key={j.id} style={{ display: 'grid', gridTemplateColumns: `22px 26px ${isMobile ? '90px' : '160px'} minmax(0,1fr) 50px`, alignItems: 'center', gap: '8px' }}>
+                                <span style={{ ...styleChiffreCond(colors, 14), color: colors.text.dim, textAlign: 'right' }}>{i + 1}</span>
+                                <Avatar person={j} size={26} />
+                                <span style={{ fontSize: '14px', fontWeight: 600, color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? `${j.prenom} ${j.nom?.[0] || ''}.` : `${j.prenom} ${j.nom}`}</span>
+                                {barreTaux(tx.taux, couleurTaux(tx.taux))}
+                                <span style={{ ...styleChiffreCond(colors, 16), textAlign: 'right' }}>{tx.taux}%</span>
+                              </div>
+                            ))}
                             {classementPres.length > 10 && (
-                              <button onClick={() => setGraphDeplies(prev => ({ ...prev, classement_presence: !prev.classement_presence }))}
-                                style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', padding: '4px 0', color: colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              <button type="button" aria-expanded={presDeplie} onClick={() => setGraphDeplies(prev => ({ ...prev, classement_presence: !prev.classement_presence }))} className={CLASSE_BOUTON_SECONDAIRE}
+                                style={{ ...styleBoutonPetit(colors), alignSelf: 'flex-start', gap: '6px' }}>
                                 {presDeplie ? 'Réduire' : `Voir les ${classementPres.length} joueurs`}<IcoChevronBas ouvert={presDeplie} />
                               </button>
                             )}
@@ -7852,32 +7803,40 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const moisActif = (moisPointsSeanceSelectionne && pointsParJoueurMois[moisPointsSeanceSelectionne]) ? moisPointsSeanceSelectionne : moisCourant
               const podiumActuel = getPodium(moisActif)
               const topAll = totalPoints()
-              const medals = ['🥇', '🥈', '🥉']
+              const fondClub = couleurClub(colors)
+              // Rang : carré condensé (le n°1 à la couleur du club, texte recalculé), à la place des médailles.
+              const carreRang = (idx, taille = 28) => (
+                <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${taille}px`, height: `${taille}px`, flexShrink: 0, borderRadius: forme.rayonPastille, fontFamily: police.titre, fontWeight: 700, fontSize: taille >= 28 ? '16px' : '14px', fontVariantNumeric: 'tabular-nums', background: idx === 0 ? fondClub : colors.background.raised, color: idx === 0 ? texteSur(fondClub) : colors.text.primary, border: `1px solid ${idx === 0 ? 'transparent' : colors.border.strong}` }}>{idx + 1}</span>
+              )
+              const points = (n, taille = 18) => (
+                <span style={{ ...styleChiffreCond(colors, taille), display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                  {n}<Star size={taille - 2} strokeWidth={2} aria-hidden="true" focusable="false" /><span style={masqueLecteur}>points séance</span>
+                </span>
+              )
+              const ligneListe = (cle, dernier, contenu) => (
+                <li key={cle} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 2px', borderBottom: dernier ? 'none' : `1px solid ${couleurCraie(colors)}` }}>{contenu}</li>
+              )
+              const listeReset = { listStyle: 'none', margin: 0, padding: 0 }
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <ExplicationPtsSeance />
                   {/* Historique des mois — clique un mois pour voir son classement */}
                   {moisKeys.length > 1 && (
-                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div role="group" aria-label="Mois" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                       {moisKeys.map(k => (
-                        <button key={k} onClick={() => setMoisPointsSeanceSelectionne(k)} style={{
-                          flexShrink: 0, padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                          whiteSpace: 'nowrap', textTransform: 'capitalize',
-                          background: k === moisActif ? colors.accent.amber : colors.background.surface,
-                          color: k === moisActif ? colors.black : colors.text.secondary,
-                          border: `1px solid ${k === moisActif ? colors.accent.amber : colors.border.subtle}`,
-                        }}>
+                        <button key={k} type="button" aria-pressed={k === moisActif} onClick={() => setMoisPointsSeanceSelectionne(k)} className={CLASSE_BOUTON_SECONDAIRE}
+                          style={{ ...styleChoix(colors, k === moisActif), flexShrink: 0, whiteSpace: 'nowrap', textTransform: 'capitalize', padding: '0 16px' }}>
                           {k === moisCourant ? t('stats_mois_en_cours', lang) : moisLabel(k)}
                         </button>
                       ))}
                     </div>
                   )}
                   {/* Mois sélectionné (en cours par défaut) */}
-                  <div style={st.card}>
-                    <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '16px' }}>🌟 {t('stats_joueur_du_mois', lang)} — {moisLabel(moisActif)}</p>
+                  <div style={styleCarte(colors)}>
+                    <h2 style={styleTitreCarte(colors)}><Star size={20} strokeWidth={2} aria-hidden="true" focusable="false" />{t('stats_joueur_du_mois', lang)} — {moisLabel(moisActif)}</h2>
                     {podiumActuel.length === 0 ? (
-                      <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
+                      <p style={{ color: colors.text.secondary, fontSize: '14px', margin: 0, textAlign: 'center', padding: '1rem' }}>{t('stats_aucun_point_mois', lang)}</p>
                     ) : (
                       <>
                         {/* Podium top 3 */}
@@ -7886,18 +7845,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             {[0, 1, 2].filter(i => podiumActuel[i]).map((i) => {
                               const item = podiumActuel[i]
                               const heights = [130, 100, 80]
-                              const medalColors = [colors.accent.amber, '#9ca3af', '#cd7f32']
+                              const premier = i === 0
                               return (
                                 <div key={item.joueur.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontSize: '20px' }}>{medals[i]}</span>
-                                  <Avatar person={item.joueur} size={70} bg={`${medalColors[i]}20`} border={`2px solid ${medalColors[i]}`} textColor={medalColors[i]} />
+                                  <Avatar person={item.joueur} size={70} border={`2px solid ${premier ? fondClub : colors.border.strong}`} />
                                   <div style={{ textAlign: 'center' }}>
-                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom}</p>
-                                    <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.nom}</p>
-                                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: medalColors[i] }}>{item.count}⭐</p>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{item.joueur.prenom}</p>
+                                    <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary }}>{item.joueur.nom}</p>
+                                    <p style={{ margin: '4px 0 0' }}>{points(item.count, 22)}</p>
                                   </div>
-                                  <div style={{ width: '80px', height: `${heights[i]}px`, background: `${medalColors[i]}30`, border: `1px solid ${medalColors[i]}50`, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
-                                    <span style={{ fontWeight: 800, color: medalColors[i], fontSize: '18px' }}>{i === 0 ? '1er' : i === 1 ? '2ème' : '3ème'}</span>
+                                  <div style={{ width: '80px', height: `${heights[i]}px`, background: premier ? fondClub : colors.background.raised, border: `1px solid ${premier ? 'transparent' : colors.border.strong}`, borderRadius: `${forme.rayonCarte} ${forme.rayonCarte} 0 0`, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '8px' }}>
+                                    <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '20px', color: premier ? texteSur(fondClub) : colors.text.primary }}>{i === 0 ? '1er' : i === 1 ? '2ème' : '3ème'}</span>
                                   </div>
                                 </div>
                               )
@@ -7905,61 +7863,59 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </div>
                         )}
                         {/* Liste complète */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {podiumActuel.map((item, idx) => (
-                            <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: idx === 0 ? '1px solid #fbbf2440' : `1px solid ${colors.border.subtle}` }}>
-                              <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
-                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{item.joueur.poste || 'Joueur'}</p>
+                        <ul style={listeReset}>
+                          {podiumActuel.map((item, idx) => ligneListe(item.joueur.id, idx === podiumActuel.length - 1, (
+                            <>
+                              {carreRang(idx)}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
+                                <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary }}>{item.joueur.poste || 'Joueur'}</p>
                               </div>
-                              <span style={{ fontSize: '18px', fontWeight: 800, color: colors.accent.amber }}>{item.count} ⭐</span>
-                            </div>
-                          ))}
-                        </div>
+                              {points(item.count, 20)}
+                            </>
+                          )))}
+                        </ul>
                       </>
                     )}
                   </div>
 
                   {/* Classement historique total */}
                   {topAll.length > 0 && (
-                    <div style={st.card}>
-                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>🏅 {t('stats_classement_general', lang)}</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {topAll.map((item, idx) => (
-                          <div key={item.joueur.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: colors.background.surface, borderRadius: '8px' }}>
-                            <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>{medals[idx] || `${idx + 1}.`}</span>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
-                            </div>
-                            <span style={{ fontSize: '16px', fontWeight: 800, color: colors.accent.amber }}>{item.pts} ⭐</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div style={styleCarte(colors)}>
+                      <h2 style={{ ...styleTitreCarte(colors), fontSize: '18px', margin: '0 0 12px' }}><Trophy size={18} strokeWidth={2} aria-hidden="true" focusable="false" />{t('stats_classement_general', lang)}</h2>
+                      <ul style={listeReset}>
+                        {topAll.map((item, idx) => ligneListe(item.joueur.id, idx === topAll.length - 1, (
+                          <>
+                            {carreRang(idx, 24)}
+                            <p style={{ flex: 1, minWidth: 0, margin: 0, fontWeight: 600, fontSize: '14px' }}>{item.joueur.prenom} {item.joueur.nom}</p>
+                            {points(item.pts, 18)}
+                          </>
+                        )))}
+                      </ul>
                     </div>
                   )}
 
                   {/* Historique par mois */}
                   {moisKeys.filter(k => k !== moisCourant).length > 0 && (
-                    <div style={st.card}>
-                      <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: '14px' }}>📅 Historique des joueurs du mois</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {moisKeys.filter(k => k !== moisCourant).map(k => {
+                    <div style={styleCarte(colors)}>
+                      <h2 style={{ ...styleTitreCarte(colors), fontSize: '18px', margin: '0 0 12px' }}><CalendarDays size={18} strokeWidth={2} aria-hidden="true" focusable="false" />Historique des joueurs du mois</h2>
+                      <ul style={listeReset}>
+                        {moisKeys.filter(k => k !== moisCourant).map((k, pos, tous) => {
                           const podium = getPodium(k)
                           if (!podium.length) return null
                           const winner = podium[0]
-                          return (
-                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
-                              <span style={{ fontSize: '20px' }}>🥇</span>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{winner.joueur.prenom} {winner.joueur.nom}</p>
-                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize' }}>{moisLabel(k)}</p>
+                          return ligneListe(k, pos === tous.length - 1, (
+                            <>
+                              <Trophy size={20} strokeWidth={2} aria-hidden="true" focusable="false" style={{ flexShrink: 0, color: colors.text.dim }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{winner.joueur.prenom} {winner.joueur.nom}</p>
+                                <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary, textTransform: 'capitalize' }}>{moisLabel(k)}</p>
                               </div>
-                              <span style={{ fontSize: '15px', fontWeight: 700, color: colors.accent.amber }}>{winner.count} ⭐</span>
-                            </div>
-                          )
+                              {points(winner.count, 18)}
+                            </>
+                          ))
                         })}
-                      </div>
+                      </ul>
                     </div>
                   )}
                 </div>
@@ -7972,39 +7928,39 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               // Légende de l'échelle RPE (cf. lib/rpe) — repliable, ouverte
               // tant que l'éducateur n'a encore aucune demande de ressenti.
               const legendeRpe = (
-                <details open={demandesTriees.length === 0} style={{ ...st.card, margin: '0 0 12px', padding: '14px 18px' }}>
+                <details open={demandesTriees.length === 0} style={{ ...styleCarte(colors), margin: '0 0 12px', padding: '14px 18px' }}>
                   <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', listStyle: 'none' }}>
                     <span>
-                      <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>Échelle RPE · effort perçu</span>
-                      <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{DEFINITION_RPE}</span>
+                      <Etiquette as="span" style={{ display: 'block' }}>Échelle RPE · effort perçu</Etiquette>
+                      <span style={{ display: 'block', marginTop: '4px', fontSize: '13px', color: colors.text.secondary, lineHeight: 1.5 }}>{DEFINITION_RPE}</span>
                     </span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: colors.accent.blue, whiteSpace: 'nowrap' }}>Légende</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: 'underline', whiteSpace: 'nowrap' }}>Légende</span>
                   </summary>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: '8px', marginTop: '12px' }}>
                     {ZONES_RPE.map(z => {
                       const c = colors.accent[z.couleur]
                       return (
-                        <div key={z.min} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', background: c + '12', border: `1px solid ${c}33` }}>
-                          <span style={{ minWidth: '42px', padding: '4px 0', textAlign: 'center', borderRadius: '7px', background: c, color: colors.black, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{z.min === z.max ? z.min : `${z.min}-${z.max}`}</span>
+                        <div key={z.min} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: forme.rayonCarte, background: colors.background.sunken, border: `1px solid ${couleurCraie(colors)}` }}>
+                          <span style={{ minWidth: '42px', padding: '2px 0', textAlign: 'center', borderRadius: forme.rayonPastille, background: c, color: texteSur(c), fontFamily: police.titre, fontWeight: 700, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>{z.min === z.max ? z.min : `${z.min}-${z.max}`}</span>
                           <span style={{ minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: colors.text.primary }}>{z.label}</span>
-                            {z.exemple && <span style={{ display: 'block', fontSize: '11px', color: colors.text.faint }}>{z.exemple}</span>}
+                            <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{z.label}</span>
+                            {z.exemple && <span style={{ display: 'block', fontSize: '12px', color: colors.text.secondary }}>{z.exemple}</span>}
                           </span>
                         </div>
                       )
                     })}
                   </div>
-                  <p style={{ margin: '10px 0 0', fontSize: '11px', color: colors.text.faint }}>Le plaisir reste noté de 1 à 5. Les réponses données avant le passage au RPE (charge de travail sur 5) sont converties sur 10 et marquées « ≈ ».</p>
+                  <p style={{ margin: '10px 0 0', fontSize: '12px', color: colors.text.secondary }}>Le plaisir reste noté de 1 à 5. Les réponses données avant le passage au RPE (charge de travail sur 5) sont converties sur 10 et marquées « ≈ ».</p>
                 </details>
               )
               if (demandesTriees.length === 0) {
                 return (
                   <>
-                  <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>Saison {libelleSaison(saisonActuelle())}</p>
+                  <Etiquette as="p" style={{ marginBottom: '12px' }}>Saison {libelleSaison(saisonActuelle())}</Etiquette>
                   {legendeRpe}
-                  <div style={{ ...st.card, textAlign: 'center', padding: '40px 20px' }}>
-                    <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px', fontWeight: 600 }}>Aucune demande de ressenti envoyée cette saison</p>
-                    <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Demande le ressenti RPE depuis une séance, dans l'onglet Entraînements.</p>
+                  <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '40px 20px' }}>
+                    <p style={{ margin: 0, color: colors.text.primary, fontSize: '15px', fontWeight: 600 }}>Aucune demande de ressenti envoyée cette saison</p>
+                    <p style={{ margin: '6px 0 0', color: colors.text.secondary, fontSize: '13px' }}>Demande le ressenti RPE depuis une séance, dans l'onglet Entraînements.</p>
                   </div>
                   </>
                 )
@@ -8024,19 +7980,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const score = r.notion_plaisir - ((rpeDeReponse(r)?.valeur ?? 0) >= 8 && r.notion_plaisir <= 3 ? 1 : 0)
                 return NIVEAUX_RESSENTI[score >= 4 ? 0 : score >= 3 ? 1 : score >= 2 ? 2 : 3]
               }
-              const couleurRpe = (v) => colors.accent[zoneRpe(v)?.couleur] || colors.text.faint
+              const couleurRpe = (v) => colors.accent[zoneRpe(v)?.couleur] || colors.text.dim
               // RPE d'une réponse : jauge sur 10 colorée selon la zone de
-              // l'échelle, « ≈ » si convertie depuis l'ancienne charge sur 5.
+              // l'échelle (la couleur reste sur les segments), « ≈ » si convertie
+              // depuis l'ancienne charge sur 5.
               const jaugeRpe = (r) => {
                 const rp = rpeDeReponse(r)
-                if (!rp) return <span style={{ color: colors.text.ghost, fontSize: '12px' }}>—</span>
+                if (!rp) return <span style={{ color: colors.text.dim, fontSize: '13px' }}>—</span>
                 const c = couleurRpe(rp.valeur)
                 return (
                   <div title={rp.estime ? 'Converti depuis l’ancienne charge de travail sur 5' : zoneRpe(rp.valeur)?.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ display: 'flex', gap: '2px' }}>
-                      {Array.from({ length: 10 }, (_, k) => <span key={k} style={{ width: '5px', height: '6px', borderRadius: '2px', background: k < rp.valeur ? c : colors.background.base }} />)}
+                      {Array.from({ length: 10 }, (_, k) => <span key={k} style={{ width: '5px', height: '8px', borderRadius: '1px', background: k < rp.valeur ? c : colors.background.sunken }} />)}
                     </div>
-                    <span style={{ color: c, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{rp.estime ? '≈' : ''}{rp.valeur}</span>
+                    <span style={styleChiffreCond(colors, 16)}>{rp.estime ? '≈' : ''}{rp.valeur}</span>
                   </div>
                 )
               }
@@ -8044,16 +8001,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const jauge = (val, color) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '2px' }}>
-                    {[1, 2, 3, 4, 5].map(n => <span key={n} style={{ width: '9px', height: '6px', borderRadius: '2px', background: n <= val ? color : colors.background.base }} />)}
+                    {[1, 2, 3, 4, 5].map(n => <span key={n} style={{ width: '9px', height: '8px', borderRadius: '1px', background: n <= val ? color : colors.background.sunken }} />)}
                   </div>
-                  <span style={{ color, fontSize: '13px', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{val}</span>
+                  <span style={styleChiffreCond(colors, 16)}>{val}</span>
                 </div>
               )
               const GRID_RESSENTI = 'minmax(170px, 1.1fr) minmax(0, 1.6fr) 110px 110px 104px'
+              const craieRessenti = `1px solid ${couleurCraie(colors)}`
               const ouvertParDefaut = demandesTriees[0].id
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: colors.text.secondary }}>Saison {libelleSaison(saisonActuelle())}</p>
+                  <Etiquette as="p">Saison {libelleSaison(saisonActuelle())}</Etiquette>
                   {legendeRpe}
                   {demandesTriees.map(d => {
                     const reponses = reponsesNote.filter(r => r.demande_id === d.id)
@@ -8067,86 +8025,85 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     const repartition = NIVEAUX_RESSENTI.map(n => ({ ...n, nb: reponses.filter(r => ressenti(r).label === n.label).length }))
                     const ouverte = d.statut === 'ouverte'
                     return (
-                      <div key={d.id} style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${colors.border.subtle}`, overflow: 'hidden' }}>
-                        <button onClick={() => setRessentiOuverts(prev => ({ ...prev, [d.id]: !ouvert }))}
-                          style={{ width: '100%', display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr) auto' : 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: isMobile ? '12px' : '20px', padding: isMobile ? '12px 14px' : '14px 18px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          <div style={{ width: '52px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                            <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: ouverte ? colors.black : colors.text.faint, background: ouverte ? colors.accent.success : colors.background.raised }}>{dateD.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                            <p style={{ margin: 0, padding: '4px 0 0', fontSize: '20px', fontWeight: 800, lineHeight: 1 }}>{dateD.getDate()}</p>
-                            <p style={{ margin: 0, padding: '1px 0 4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateD.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
+                      <div key={d.id} style={{ ...styleCarte(colors), padding: 0, overflow: 'hidden' }}>
+                        <button type="button" aria-expanded={ouvert} className={CLASSE_CLIQUABLE} onClick={() => setRessentiOuverts(prev => ({ ...prev, [d.id]: !ouvert }))}
+                          style={{ width: '100%', display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr) auto' : 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: isMobile ? '12px' : '20px', padding: isMobile ? '12px 14px' : '14px 18px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontFamily: police.texte }}>
+                          <div style={{ width: '52px', textAlign: 'center', border: `1px solid ${colors.border.strong}`, borderRadius: forme.rayonCarte, overflow: 'hidden', flexShrink: 0 }}>
+                            <p style={{ ...styleEtiquette(colors), margin: 0, padding: '2px 0', fontSize: '10px', color: ouverte ? texteSur(colors.accent.success) : colors.text.dim, background: ouverte ? colors.accent.success : colors.background.raised }}>{dateD.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                            <p style={{ ...styleChiffreCond(colors, 24), margin: 0, padding: '4px 0 0', lineHeight: 1 }}>{dateD.getDate()}</p>
+                            <p style={{ ...styleEtiquette(colors), margin: 0, padding: '1px 0 4px', fontSize: '10px' }}>{dateD.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.titre}</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.titre}</p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '6px', color: ouverte ? colors.accent.success : colors.text.faint, background: ouverte ? colors.accent.success + '1a' : colors.background.raised, border: `1px solid ${ouverte ? colors.accent.success + '40' : colors.border.default}` }}>{ouverte ? 'En cours' : 'Fermée'}</span>
-                              <span style={{ fontSize: '12px', color: colors.text.faint }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}{(d.joueurs_cibles?.length || joueurs.length) ? ` / ${d.joueurs_cibles?.length || joueurs.length}` : ''}</span>
+                              <EtiquetteStatut couleur={ouverte ? colors.accent.success : colors.text.dim}>{ouverte ? 'En cours' : 'Fermée'}</EtiquetteStatut>
+                              <span style={{ fontSize: '13px', color: colors.text.secondary }}>{reponses.length} réponse{reponses.length !== 1 ? 's' : ''}{(d.joueurs_cibles?.length || joueurs.length) ? ` / ${d.joueurs_cibles?.length || joueurs.length}` : ''}</span>
                             </div>
                             {reponses.length > 0 && (
-                              <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', gap: '2px', marginTop: '8px', maxWidth: '260px' }}>
-                                {repartition.map(n => n.nb > 0 && <div key={n.label} title={`${n.nb} ${n.label}`} style={{ width: `${(n.nb / reponses.length) * 100}%`, background: n.color }} />)}
-                              </div>
+                              <Jauge hauteur={5} legende={false} style={{ marginTop: '8px', maxWidth: '260px' }}
+                                segments={repartition.map(n => ({ libelle: n.label, valeur: n.nb, couleur: n.color }))} />
                             )}
                           </div>
                           {!isMobile && reponses.length > 0 && (
                             <div style={{ display: 'flex', gap: '18px' }}>
-                              {[['RPE', mRpe, couleurRpe, 10, rpeEstime], ['Plaisir', mPlaisir, couleurPlaisir, 5, false]].filter(([, val]) => val != null).map(([lab, val, coul, sur, estime]) => (
+                              {[['RPE', mRpe, 10, rpeEstime], ['Plaisir', mPlaisir, 5, false]].filter(([, val]) => val != null).map(([lab, val, sur, estime]) => (
                                 <div key={lab} style={{ textAlign: 'center' }}>
-                                  <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, lineHeight: 1, color: coul(val), fontVariantNumeric: 'tabular-nums' }}>{estime ? '≈' : ''}{val.toFixed(1)}<span style={{ fontSize: '11px', color: colors.text.faint, fontWeight: 600 }}>/{sur}</span></p>
-                                  <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.faint }}>{lab}</p>
+                                  <p style={{ ...styleChiffreHeros(colors, 26), margin: 0 }}>{estime ? '≈' : ''}{val.toFixed(1)}<span style={{ fontFamily: police.texte, fontSize: '12px', color: colors.text.secondary, fontWeight: 600 }}>/{sur}</span></p>
+                                  <Etiquette as="p" style={{ marginTop: '4px', fontSize: '11px' }}>{lab}</Etiquette>
                                 </div>
                               ))}
                             </div>
                           )}
-                          <span style={{ color: colors.text.faint, display: 'inline-flex' }}><IcoChevronBas ouvert={ouvert} /></span>
+                          <span aria-hidden="true" style={{ color: colors.text.dim, display: 'inline-flex' }}><IcoChevronBas ouvert={ouvert} /></span>
                         </button>
 
                         {ouvert && (
                           reponses.length === 0 ? (
-                            <p style={{ margin: 0, padding: '16px 18px', borderTop: `1px solid ${colors.border.subtle}`, fontSize: '13px', color: colors.text.faint }}>Aucune réponse pour l'instant.</p>
+                            <p style={{ margin: 0, padding: '16px 18px', borderTop: craieRessenti, fontSize: '14px', color: colors.text.secondary }}>Aucune réponse pour l'instant.</p>
                           ) : isMobile ? (
-                            <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
-                              <div style={{ display: 'flex', gap: '18px', padding: '12px 14px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                                {mRpe != null && <span style={{ fontSize: '12px', color: colors.text.faint }}>RPE moy. <strong style={{ color: couleurRpe(mRpe) }}>{rpeEstime ? '≈' : ''}{mRpe.toFixed(1)}/10</strong></span>}
-                                <span style={{ fontSize: '12px', color: colors.text.faint }}>Plaisir moy. <strong style={{ color: couleurPlaisir(mPlaisir) }}>{mPlaisir.toFixed(1)}</strong></span>
+                            <div style={{ borderTop: craieRessenti }}>
+                              <div style={{ display: 'flex', gap: '18px', padding: '12px 14px', borderBottom: craieRessenti }}>
+                                {mRpe != null && <span style={{ fontSize: '13px', color: colors.text.secondary }}>RPE moy. <strong style={{ color: colors.text.primary }}>{rpeEstime ? '≈' : ''}{mRpe.toFixed(1)}/10</strong></span>}
+                                <span style={{ fontSize: '13px', color: colors.text.secondary }}>Plaisir moy. <strong style={{ color: colors.text.primary }}>{mPlaisir.toFixed(1)}</strong></span>
                               </div>
                               {reponses.map(r => {
                                 const res = ressenti(r)
                                 return (
-                                  <div key={r.joueur_id} style={{ padding: '12px 14px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div key={r.joueur_id} style={{ padding: '12px 14px', borderBottom: craieRessenti, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                       <Avatar person={r.profiles || {}} size={30} />
-                                      <span style={{ flex: 1, minWidth: 0, fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
-                                      <span style={{ padding: '3px 8px', borderRadius: '6px', background: res.color + '1a', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}40` }}>{res.label}</span>
+                                      <span style={{ flex: 1, minWidth: 0, fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                                      <EtiquetteStatut couleur={res.color}>{res.label}</EtiquetteStatut>
                                     </div>
-                                    {r.mots_cles && r.mots_cles.replace(/[\s./]/g, '') && <p style={{ margin: 0, fontSize: '12px', color: colors.text.secondary, fontStyle: 'italic' }}>« {r.mots_cles} »</p>}
+                                    {r.mots_cles && r.mots_cles.replace(/[\s./]/g, '') && <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, fontStyle: 'italic' }}>« {r.mots_cles} »</p>}
                                     <div style={{ display: 'flex', gap: '18px' }}>
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>RPE {jaugeRpe(r)}</span>
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint }}>Plaisir {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}</span>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.secondary }}>RPE {jaugeRpe(r)}</span>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: colors.text.secondary }}>Plaisir {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}</span>
                                     </div>
                                   </div>
                                 )
                               })}
                             </div>
                           ) : (
-                            <div style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
-                              <div style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '14px', background: colors.background.raised, borderBottom: `1px solid ${colors.border.subtle}` }}>
+                            <div style={{ borderTop: craieRessenti }}>
+                              <div style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, gap: '14px', background: colors.background.raised, borderBottom: craieRessenti }}>
                                 {['Joueur', 'Thème retenu', 'RPE', 'Plaisir', 'Ressenti'].map(h => (
-                                  <span key={h} style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{h}</span>
+                                  <Etiquette key={h} style={{ fontSize: '11px' }}>{h}</Etiquette>
                                 ))}
                               </div>
                               {reponses.map(r => {
                                 const res = ressenti(r)
                                 const motsUtiles = r.mots_cles && r.mots_cles.replace(/[\s./]/g, '')
                                 return (
-                                  <div key={r.joueur_id} className="ressenti-ligne" style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, alignItems: 'center', gap: '14px', borderBottom: `1px solid ${colors.border.subtle}` }}>
+                                  <div key={r.joueur_id} className="ressenti-ligne" style={{ padding: '10px 18px', display: 'grid', gridTemplateColumns: GRID_RESSENTI, alignItems: 'center', gap: '14px', borderBottom: craieRessenti }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                                       <Avatar person={r.profiles || {}} size={30} />
-                                      <span style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
+                                      <span style={{ fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profiles?.prenom} {r.profiles?.nom}</span>
                                     </div>
-                                    <span title={r.mots_cles || ''} style={{ color: motsUtiles ? colors.text.secondary : colors.text.ghost, fontSize: '12px', fontStyle: motsUtiles ? 'italic' : 'normal', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{motsUtiles ? r.mots_cles : '–'}</span>
+                                    <span title={r.mots_cles || ''} style={{ color: motsUtiles ? colors.text.secondary : colors.text.dim, fontSize: '13px', fontStyle: motsUtiles ? 'italic' : 'normal', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{motsUtiles ? r.mots_cles : '–'}</span>
                                     {jaugeRpe(r)}
                                     {jauge(r.notion_plaisir, couleurPlaisir(r.notion_plaisir))}
-                                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: res.color + '1a', color: res.color, fontSize: '11px', fontWeight: 700, border: `1px solid ${res.color}40`, textAlign: 'center' }}>{res.label}</span>
+                                    <EtiquetteStatut couleur={res.color} style={{ justifySelf: 'start' }}>{res.label}</EtiquetteStatut>
                                   </div>
                                 )
                               })}
@@ -8165,13 +8122,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ===== SANTÉ ===== */}
         {activeSection === 'sante' && (
-          <Suspense fallback={<SectionLoader />}><SanteEquipe joueurs={joueurs} educateurId={userId} /></Suspense>
+          <>
+            <TitreEcran titre={t('nav_sante', lang)} />
+            <Suspense fallback={<SectionLoader />}><SanteEquipe joueurs={joueurs} educateurId={userId} /></Suspense>
+          </>
         )}
 
         {/* ===== HISTORIQUE (saisons) ===== */}
         {activeSection === 'historique' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 1.5rem' }}>Historique</h1>
+            <TitreEcran titre="Historique" />
             <Suspense fallback={<SectionLoader />}><HistoriqueCollectif educateurId={userId} equipeId={equipeActive?.id || null} joueurs={joueurs} /></Suspense>
           </>
         )}
@@ -8179,21 +8139,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== COMPÉTITION ===== */}
         {activeSection === 'matchs' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: permissions?.competition === 'lecture' ? '0.5rem' : '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('comp_competition', lang)}</h1>
-            </div>
+            <TitreEcran titre={t('comp_competition', lang)} style={{ marginBottom: permissions?.competition === 'lecture' ? '12px' : '20px' }} />
 
             {permissions?.competition === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                {t('equipe_mode_lecture', lang)}
+              <div style={{ marginBottom: '16px' }}>
+                <EtiquetteStatut couleur={colors.accent.info}>{t('equipe_mode_lecture', lang)}</EtiquetteStatut>
               </div>
             )}
 
             {/* Sous-onglets */}
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: `1px solid ${colors.border.subtle}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+            <div className="df-onglets" role="tablist" aria-label={t('comp_competition', lang)} style={{ ...coqueVars(colors), marginBottom: '20px' }}>
               {/* Icônes au trait à la place des emojis (même style que la navigation). */}
-              {[['causerie', IcoMicro, t('nav_causerie', lang)], ['resultats', IcoBallon, t('comp_resultats', lang)], ['classement', IcoTrophy, t('comp_classement', lang)], ['calendrier', IcoCalendar, t('comp_calendrier', lang)]].map(([k, Icone, label]) => (
-                <button key={k} onClick={() => setCompetitionSubTab(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', borderBottom: competitionSubTab === k ? `2px solid ${colors.accent.blue}` : '2px solid transparent', color: competitionSubTab === k ? colors.accent.blue : colors.text.faint, padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', flexShrink: 0 }}><Icone />{label}</button>
+              {[['causerie', IcoMicro, t('nav_causerie', lang)], ['resultats', IcoBallon, t('comp_resultats', lang)], ['classement', IcoTrophy, t('comp_classement', lang)], ['calendrier', IcoCalendar, t('comp_calendrier', lang)]].map(([k, Ico, label]) => (
+                <button key={k} type="button" role="tab" aria-selected={competitionSubTab === k} className="df-onglet" onClick={() => setCompetitionSubTab(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Ico />{label}</button>
               ))}
             </div>
 
@@ -8209,61 +8167,59 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Résultats ── */}
             {competitionSubTab === 'resultats' && (
               <div style={{ maxWidth: '1100px' }}>
-                {/* V3 : en-tête façon feuille de match — titre à gauche, Scanner
-                    et + Match à droite (en dessous sur mobile). Mêmes actions. */}
+                {/* En-tête façon feuille de match : titre à gauche, Scanner et + Match à droite. Mêmes actions. */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                  <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('comp_resultats', lang)}</h2>
+                  <h2 style={titreSousEcran}>{t('comp_resultats', lang)}</h2>
                   {canEdit('competition') && (
-                    <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <BoutonTutoriel onClick={() => setTutoOuvert('resultats')} />
                       {canEdit('stats') && outils.outilActif('stats_collectives') && (
-                        <button onClick={() => setShowScanner(true)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${colors.border.strong}`, background: 'transparent', color: colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                          {t('seance_scanner', lang)}
+                        <button type="button" onClick={() => setShowScanner(true)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
+                          <Icone icone={ScanLine} /> {t('seance_scanner', lang)}
                         </button>
                       )}
-                      <button onClick={() => setShowAddMatch(true)} style={{ flex: isMobile ? 1 : 'none', padding: '10px 22px', minHeight: '40px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                        + {t('comp_bouton_match', lang)}
+                      <button type="button" onClick={() => setShowAddMatch(true)} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+                        <Icone icone={Plus} /> {t('comp_bouton_match', lang)}
                       </button>
                     </div>
                   )}
                 </div>
 
                 {showAddMatch && canEdit('competition') && (
-                  <div style={{ ...st.card, border: `1px solid ${colors.accent.green}30`, marginBottom: '1rem' }}>
+                  <div style={{ ...styleCarteLiseree(colors), marginBottom: '1rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                      <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
-                      <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newMatch.heure} onChange={e => setNewMatch({ ...newMatch, heure: e.target.value })} /></div>
-                      <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
+                      <div><label style={stK.label}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} type="date" value={newMatch.date} onChange={e => setNewMatch({ ...newMatch, date: e.target.value })} /></div>
+                      <div><label style={stK.label}>{t('ent_heure_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} type="time" value={newMatch.heure} onChange={e => setNewMatch({ ...newMatch, heure: e.target.value })} /></div>
+                      <div><label style={stK.label}>{t('comp_adversaire', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} placeholder="Nom de l'équipe" value={newMatch.adversaire} onChange={e => setNewMatch({ ...newMatch, adversaire: e.target.value })} /></div>
                       <div>
-                        <label style={st.label}>{t('comp_type_match', lang)}</label>
-                        <select style={st.input} value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })}>
+                        <label style={stK.label}>{t('comp_type_match', lang)}</label>
+                        <select className={CLASSE_CHAMP} style={stK.input} value={newMatch.competition} onChange={e => setNewMatch({ ...newMatch, competition: e.target.value })}>
                           <option value="">—</option>
                           <option value="Championnat">{t('comp_type_championnat', lang)}</option>
                           <option value="Coupe">{t('comp_type_coupe', lang)}</option>
                           <option value="Amical">{t('comp_type_amical', lang)}</option>
                         </select>
                       </div>
-                      <div><label style={st.label}>{t('comp_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newMatch.lieu} onChange={e => setNewMatch({ ...newMatch, lieu: e.target.value })} /></div>
+                      <div><label style={stK.label}>{t('comp_lieu', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} placeholder="Ex: Stade municipal" value={newMatch.lieu} onChange={e => setNewMatch({ ...newMatch, lieu: e.target.value })} /></div>
                       {!newMatch.domicile && (
-                        <div><label style={st.label}>Ville (pour calculer le trajet)</label><input style={st.input} placeholder="Ex: Lyon" value={newMatch.ville} onChange={e => setNewMatch({ ...newMatch, ville: e.target.value })} /></div>
+                        <div><label style={stK.label}>Ville (pour calculer le trajet)</label><input className={CLASSE_CHAMP} style={stK.input} placeholder="Ex: Lyon" value={newMatch.ville} onChange={e => setNewMatch({ ...newMatch, ville: e.target.value })} /></div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-                        <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
-                        <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
-                        <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={newMatch.score_eux} onChange={e => setNewMatch({ ...newMatch, score_eux: e.target.value })} /></div>
+                        <div style={{ flex: 1 }}><label style={stK.label}>Score (nous)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={newMatch.score_nous} onChange={e => setNewMatch({ ...newMatch, score_nous: e.target.value })} /></div>
+                        <span style={{ color: colors.text.secondary, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                        <div style={{ flex: 1 }}><label style={stK.label}>Score (eux)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={newMatch.score_eux} onChange={e => setNewMatch({ ...newMatch, score_eux: e.target.value })} /></div>
                       </div>
                       {estCoupe(newMatch.competition) && (
                         <div>
-                          <label style={{ ...st.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <label style={{ ...stK.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <input type="checkbox" checked={newMatch.tab_nous !== '' || newMatch.tab_eux !== '' || !!newMatch.avecTab} onChange={e => setNewMatch({ ...newMatch, avecTab: e.target.checked, ...(e.target.checked ? {} : { tab_nous: '', tab_eux: '' }) })} />
                             Tirs au but
                           </label>
                           {(newMatch.avecTab || newMatch.tab_nous !== '' || newMatch.tab_eux !== '') && (
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-                              <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (nous)</label><input style={st.input} type="number" min="0" value={newMatch.tab_nous} onChange={e => setNewMatch({ ...newMatch, tab_nous: e.target.value })} /></div>
-                              <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
-                              <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (eux)</label><input style={st.input} type="number" min="0" value={newMatch.tab_eux} onChange={e => setNewMatch({ ...newMatch, tab_eux: e.target.value })} /></div>
+                              <div style={{ flex: 1 }}><label style={stK.label}>T.a.b. (nous)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={newMatch.tab_nous} onChange={e => setNewMatch({ ...newMatch, tab_nous: e.target.value })} /></div>
+                              <span style={{ color: colors.text.secondary, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                              <div style={{ flex: 1 }}><label style={stK.label}>T.a.b. (eux)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={newMatch.tab_eux} onChange={e => setNewMatch({ ...newMatch, tab_eux: e.target.value })} /></div>
                             </div>
                           )}
                         </div>
@@ -8276,20 +8232,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       </label>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={ajouterMatch} disabled={savingMatch} style={st.btnSolid}>{savingMatch ? 'Ajout...' : t('btn_ajouter', lang)}</button>
-                      <button onClick={() => setShowAddMatch(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                      <button className={CLASSE_BOUTON} onClick={ajouterMatch} disabled={savingMatch} style={stK.btnSolid()}>{savingMatch ? 'Ajout...' : t('btn_ajouter', lang)}</button>
+                      <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setShowAddMatch(false)} style={stK.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                     </div>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   {FILTRES_COMPETITION.map(f => (
-                    <button key={f.id} onClick={() => setFiltreCompResultats(f.id)} style={{
-                      padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                      background: filtreCompResultats === f.id ? colors.accent.green : '#1a1a1a',
-                      color: filtreCompResultats === f.id ? colors.accent.onBrand : '#888',
-                      border: `1px solid ${filtreCompResultats === f.id ? colors.accent.green : '#333'}`,
-                    }}>{f.label}</button>
+                    <button key={f.id} type="button" aria-pressed={filtreCompResultats === f.id} onClick={() => setFiltreCompResultats(f.id)}
+                      className={filtreCompResultats === f.id ? CLASSE_BOUTON : CLASSE_BOUTON_SECONDAIRE}
+                      style={{ ...(filtreCompResultats === f.id ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors)), minHeight: '36px', padding: '0 14px', fontSize: '13px' }}>
+                      {f.label}
+                    </button>
                   ))}
                 </div>
 
@@ -8303,17 +8258,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const nuls = matchsJoues.filter(m => resultatMatch(m) === 'N').length
                   const defaites = matchsJoues.filter(m => resultatMatch(m) === 'D').length
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px', marginBottom: '22px' }}>
-                      {[
-                        { label: 'Victoires', count: victoires, color: colors.accent.success },
-                        { label: 'Nuls', count: nuls, color: colors.text.secondary, fond: colors.background.raised, cadre: colors.border.strong },
-                        { label: 'Défaites', count: defaites, color: colors.accent.red },
-                      ].map(item => (
-                        <div key={item.label} style={{ background: item.fond || item.color + '14', border: `1px solid ${item.cadre || item.color + '40'}`, borderRadius: '10px', padding: isMobile ? '12px 8px' : '18px 12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: isMobile ? '26px' : '34px', fontWeight: 800, color: item.color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{item.count}</div>
-                          <div style={{ fontSize: isMobile ? '12px' : '14px', color: item.color, fontWeight: 600, marginTop: '6px' }}>{item.label}</div>
-                        </div>
-                      ))}
+                    <div style={{ ...styleCarte(colors), marginBottom: '22px' }}>
+                      <Jauge libelle={`Bilan · ${matchsJoues.length} match${matchsJoues.length > 1 ? 's' : ''} joué${matchsJoues.length > 1 ? 's' : ''}`}
+                        segments={[
+                          { libelle: 'Victoires', valeur: victoires },
+                          { libelle: 'Nuls', valeur: nuls },
+                          { libelle: 'Défaites', valeur: defaites },
+                        ]} />
                     </div>
                   )
                 })()}
@@ -8324,7 +8275,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     const dernierMatchId = [...joues].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.heure || '').localeCompare(a.heure || ''))[0]?.id
                     return grouperMatchsParMois(joues, true).map(([moisKey, { label, items }]) => (
                     <div key={moisKey}>
-                      <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{label}</p>
+                      <Etiquette as="p" style={{ margin: '0 0 10px' }}>{label}</Etiquette>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {items.map(m => {
                           return (
@@ -8343,24 +8294,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           onRapport={() => setRapportMatchOuvert(m)}
                           menu={canEdit('competition') ? (
                             <div style={{ position: 'relative', flexShrink: 0 }} onClick={ev => ev.stopPropagation()}>
-                              <button
-                                onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
-                                style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '16px', padding: '6px 10px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}
-                              >···</button>
+                              <button type="button" onClick={() => setMenuResultatOuvert(menuResultatOuvert === m.id ? null : m.id)}
+                                aria-label="Plus d'actions" aria-haspopup="menu" aria-expanded={menuResultatOuvert === m.id}
+                                className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0 }}>
+                                <Icone icone={Ellipsis} />
+                              </button>
                               {menuResultatOuvert === m.id && (
                                 <>
                                   <div onClick={() => setMenuResultatOuvert(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />
-                                  <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', overflow: 'hidden', zIndex: 11, minWidth: '170px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                                  <div style={{ position: 'absolute', top: '38px', right: 0, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonCarte, overflow: 'hidden', zIndex: 11, minWidth: '170px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
                                     <button onClick={() => { setMenuResultatOuvert(null); setRapportMatchOuvert(m) }}
-                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                                      📄 {matchIdsAvecRapport.has(m.id) ? 'Voir le rapport de match' : 'Rapport de match'}
+                                      className={CLASSE_CLIQUABLE} style={itemMenu()}>
+                                      <Icone icone={FileText} taille={16} /> {matchIdsAvecRapport.has(m.id) ? 'Voir le rapport de match' : 'Rapport de match'}
                                     </button>
                                     <button onClick={() => { setMenuResultatOuvert(null); exporterRapportMatchPdf(m) }}
-                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
-                                      ⬇️ Extraire en PDF
+                                      className={CLASSE_CLIQUABLE} style={{ ...itemMenu(), borderTop: `1px solid ${couleurCraie(colors)}` }}>
+                                      <Icone icone={Download} taille={16} /> Extraire en PDF
                                     </button>
                                     <button onClick={() => { setMenuResultatOuvert(null); ouvrirModalMatchJoue(m) }}
-                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: colors.text.secondary, fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
+                                      className={CLASSE_CLIQUABLE} style={{ ...itemMenu(), borderTop: `1px solid ${couleurCraie(colors)}` }}>
                                       Modifier
                                     </button>
                                     <button onClick={async () => {
@@ -8374,7 +8326,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                         if (matchActif?.id === m.id) setMatchActif(null)
                                         supprimerDeplacementLieAuMatch(m)
                                       }}
-                                      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#f87171', fontSize: '13px', padding: '10px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderTop: `1px solid ${colors.border.faint}` }}>
+                                      className={CLASSE_CLIQUABLE} style={{ ...itemMenu(true), borderTop: `1px solid ${couleurCraie(colors)}` }}>
                                       Supprimer
                                     </button>
                                   </div>
@@ -8386,8 +8338,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                         {/* Feuille de match (édition des stats_match — gouvernée par la permission 'stats', pas 'competition') */}
                         {matchActif?.id === m.id && canEdit('stats') && (
-                          <div style={{ marginTop: '6px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '14px' }}>
-                            <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
+                          <div style={{ ...styleCarte(colors), marginTop: '6px', padding: '14px' }}>
+                            <Etiquette as="p" style={{ marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</Etiquette>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                               {lignesFeuilleMatch(joueurs, renfortsParMatch[m.id]).map(j => {
                                 const key = m.id
@@ -8398,37 +8350,32 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                   <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center' }}>
                                     <span style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                       {j.prenom} {j.nom?.[0] || ""}.
-                                      {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.faint }}>{j.mentionRenfort}</small>}
+                                      {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.secondary }}>{j.mentionRenfort}</small>}
                                     </span>
-                                    <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
+                                    <input className={CLASSE_CHAMP} type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), minutes: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <input type="number" placeholder="Buts" min="0" value={val('buts')}
+                                      style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                                    <input className={CLASSE_CHAMP} type="number" placeholder="Buts" min="0" value={val('buts')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), buts: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
+                                      style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                                    <input className={CLASSE_CHAMP} type="number" placeholder="PD" min="0" value={val('passes_dec')}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), passes_dec: parseInt(e.target.value) || 0 } } }))}
-                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
+                                      style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                                    <input className={CLASSE_CHAMP} type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
                                       onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), clean_sheet: parseInt(e.target.value) > 0 } } }))}
-                                      style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                                    <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
-                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))} />
-                                    <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
-                                      onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } }))} />
+                                      style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                                    <button type="button" aria-pressed={!!val('carton_jaune')} aria-label={t('comp_carton_jaune', lang)} title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_jaune: !val('carton_jaune') } } }))} />
+                                    <button type="button" aria-pressed={!!val('carton_rouge')} aria-label={t('comp_carton_rouge', lang)} title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
+                            onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || existingStat), carton_rouge: !val('carton_rouge') } } }))} />
                                   </div>
                                 )
                               })}
                             </div>
                             <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
-                              <p style={{ fontSize: '13px', color: colors.text.faint, margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
-                              <button onClick={() => setMatchANoter(m)} style={{
-                                marginLeft: 'auto', padding: '7px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700,
-                                background: m.notations_match?.length > 0 ? colors.accent.success + alpha.subtle : colors.background.raised,
-                                border: `1px solid ${m.notations_match?.length > 0 ? colors.accent.success : colors.border.strong}`,
-                                color: m.notations_match?.length > 0 ? colors.accent.success : colors.text.secondary,
-                              }}>{m.notations_match?.length > 0 ? 'Noté' : 'Noter'}</button>
-                              <button onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...st.btnSolid, padding: '7px 16px', fontSize: '12px' }}>{t('btn_sauvegarder', lang)}</button>
+                              <p style={{ fontSize: '13px', color: colors.text.secondary, margin: '0', alignSelf: 'center' }}>Min · Buts · PD · CS</p>
+                              <button type="button" onClick={() => setMatchANoter(m)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), marginLeft: 'auto', minHeight: '36px' }}>{m.notations_match?.length > 0 && <Icone icone={Check} taille={16} />}{m.notations_match?.length > 0 ? 'Noté' : 'Noter'}</button>
+                              <button className={CLASSE_BOUTON} onClick={() => sauvegarderStatsMatch(m.id)} style={{ ...stK.btnSolid(), padding: '7px 16px', fontSize: '12px' }}>{t('btn_sauvegarder', lang)}</button>
                             </div>
                           </div>
                         )}
@@ -8439,7 +8386,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                   ))
                   })()}
-                  {matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)).length === 0 && <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('comp_aucun_match', lang)}</p></div>}
+                  {matchs.filter(matchJoue).filter(m => matchCorrespondFiltreComp(m, filtreCompResultats)).length === 0 && <div style={{ ...stK.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.secondary }}>{t('comp_aucun_match', lang)}</p></div>}
                 </div>
               </div>
             )}
@@ -8472,18 +8419,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                       <div>
-                        <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('comp_matchs_a_venir', lang)}</h2>
-                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>{nbAVenir === 0 ? 'Aucun match programmé' : `${nbAVenir} match${nbAVenir > 1 ? 's' : ''} programmé${nbAVenir > 1 ? 's' : ''}`}</p>
+                        <h2 style={titreSousEcran}>{t('comp_matchs_a_venir', lang)}</h2>
+                        <p style={{ margin: '4px 0 0', fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary }}>{nbAVenir === 0 ? 'Aucun match programmé' : `${nbAVenir} match${nbAVenir > 1 ? 's' : ''} programmé${nbAVenir > 1 ? 's' : ''}`}</p>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <BoutonTutoriel onClick={() => setTutoOuvert('competition')} />
-                        <button onClick={() => setAfficherScanCalendrier(v => !v)} style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 18px', minHeight: '40px', borderRadius: '8px', border: `1px solid ${afficherScanCalendrier ? colors.accent.blue : colors.border.strong}`, background: 'transparent', color: afficherScanCalendrier ? colors.accent.blue : colors.text.primary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                          {t('seance_scanner', lang)}
+                        <button type="button" aria-pressed={afficherScanCalendrier} onClick={() => setAfficherScanCalendrier(v => !v)} className={CLASSE_BOUTON_SECONDAIRE}
+                          style={{ ...styleBoutonSecondaire(colors), ...(afficherScanCalendrier ? { borderColor: colors.text.primary } : {}) }}>
+                          <Icone icone={ScanLine} /> {t('seance_scanner', lang)}
                         </button>
                         {canEdit('competition') && (
-                          <button onClick={ouvrirModalCreerMatch} style={{ flex: isMobile ? 1 : 'none', padding: '10px 22px', minHeight: '40px', borderRadius: '8px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            + {t('comp_bouton_match', lang)}
+                          <button type="button" onClick={ouvrirModalCreerMatch} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+                            <Icone icone={Plus} /> {t('comp_bouton_match', lang)}
                           </button>
                         )}
                       </div>
@@ -8493,11 +8440,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                 {/* Zone de scan : à la demande, ou tant qu'un scan est en cours / à publier */}
                 {(afficherScanCalendrier || calendarImages.length > 0 || calendarMatchs.length > 0 || calendarLoading) && (
-                <div style={st.card}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{t('comp_scanner_calendrier', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_uploade_photos', lang)}</p>
+                <div style={stK.card}>
+                  <p style={{ ...styleTitreCarte(colors), margin: '0 0 4px' }}>{t('comp_scanner_calendrier', lang)}</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.secondary }}>{t('comp_uploade_photos', lang)}</p>
 
-                  <label style={{ display: 'block', border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
+                  <label style={{ display: 'block', border: `1px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte, padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: '12px' }}>
                     <input type="file" accept="image/*" multiple style={{ display: 'none' }}
                       onChange={e => {
                         const files = Array.from(e.target.files)
@@ -8511,7 +8458,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         })
                         e.target.value = ''
                       }} />
-                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>{t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: colors.border.strong }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
+                    <p style={{ margin: 0, color: colors.text.secondary, fontSize: '13px' }}>{t('comp_cliquer_photos', lang)}<br/><span style={{ fontSize: '11px', color: colors.text.dim }}>{t('comp_jpg_png_plusieurs', lang)}</span></p>
                   </label>
 
                   {/* Thumbnails */}
@@ -8519,8 +8466,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
                       {calendarImages.map((img, i) => (
                         <div key={i} style={{ position: 'relative' }}>
-                          <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: `1px solid ${colors.border.default}` }} />
-                          <button onClick={() => setCalendarImages(prev => prev.filter((_, idx) => idx !== i))}
+                          <img src={img.preview} alt={img.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: forme.rayonCarte, border: `1px solid ${colors.border.default}` }} />
+                          <button aria-label="Retirer cette photo" onClick={() => setCalendarImages(prev => prev.filter((_, idx) => idx !== i))}
                             style={{ position: 'absolute', top: '-6px', right: '-6px', background: colors.accent.red, border: 'none', borderRadius: '50%', width: '18px', height: '18px', color: colors.text.primary, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoX /></button>
                         </div>
                       ))}
@@ -8530,13 +8477,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {calendarError && <p style={{ color: colors.accent.red, fontSize: '12px', margin: '0 0 10px' }}>{calendarError}</p>}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={scannerCalendrier} disabled={calendarLoading || !calendarImages.length}
-                      style={{ ...st.btnSolid, opacity: calendarImages.length ? 1 : 0.4 }}>
+                    <button className={CLASSE_BOUTON} onClick={scannerCalendrier} disabled={calendarLoading || !calendarImages.length}
+                      style={{ ...stK.btnSolid(), opacity: calendarImages.length ? 1 : 0.4 }}>
                       {calendarLoading ? `${libelleStatutGroq(calendarStatus)}` : `${t('comp_extraire_matchs', lang)}${calendarImages.length ? ` (${calendarImages.length} photo${calendarImages.length > 1 ? 's' : ''})` : ''}`}
                     </button>
                     {calendarMatchs.length > 0 && (
-                      <button onClick={() => { setCalendarMatchs([]); localStorage.removeItem('calendarMatchs') }}
-                        style={st.btn(colors.accent.red)}>{t('comp_reinitialiser', lang)}</button>
+                      <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => { setCalendarMatchs([]); localStorage.removeItem('calendarMatchs') }}
+                        style={stK.btn(colors.accent.red)}>{t('comp_reinitialiser', lang)}</button>
                     )}
                   </div>
                 </div>
@@ -8544,11 +8491,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                 {/* Calendrier extrait */}
                 {calendarMatchs.length > 0 && (
-                  <div style={st.card}>
+                  <div style={stK.card}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{t('comp_calendrier', lang)} — {calendarMatchs.length} match{calendarMatchs.length > 1 ? 's' : ''}</p>
                       {calendarMatchs.some(m => m.date) && (
-                        <button onClick={publierCalendrierVersMatchs} disabled={publishingCalendrier} style={st.btnSolid}>
+                        <button className={CLASSE_BOUTON} onClick={publierCalendrierVersMatchs} disabled={publishingCalendrier} style={stK.btnSolid()}>
                           {publishingCalendrier ? 'Publication...' : `${t('comp_publier_calendrier', lang)} (${calendarMatchs.filter(m => m.date).length})`}
                         </button>
                       )}
@@ -8557,28 +8504,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {calendarMatchs.map((m, i) => {
                         const isPast = m.date && new Date(m.date) < new Date()
                         return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: colors.background.surface, borderRadius: '10px', border: `1px solid ${isPast ? colors.background.raised : colors.border.default}`, opacity: isPast ? 0.5 : 1 }}>
+                          <div key={i} style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', opacity: isPast ? 0.6 : 1 }}>
                             <div style={{ minWidth: '90px', textAlign: 'center' }}>
                               {m.date ? (
                                 <>
-                                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: isPast ? colors.text.faint : colors.text.primary }}>
+                                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: isPast ? colors.text.secondary : colors.text.primary }}>
                                     {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                   </p>
-                                  {m.heure && <p style={{ margin: 0, fontSize: '10px', color: colors.text.faint }}>{m.heure}</p>}
+                                  {m.heure && <p style={{ margin: 0, fontSize: '10px', color: colors.text.secondary }}>{m.heure}</p>}
                                 </>
                               ) : (
-                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.disabled }}>{t('comp_date_tbd', lang)}</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>{t('comp_date_tbd', lang)}</p>
                               )}
-                              {m.journee && <p style={{ margin: 0, fontSize: '10px', color: colors.accent.green, fontWeight: 700 }}>{m.journee}</p>}
+                              {m.journee && <p style={{ margin: 0, fontSize: '10px', color: colors.text.secondary, fontWeight: 700 }}>{m.journee}</p>}
                             </div>
                             <div style={{ flex: 1, textAlign: 'center' }}>
                               <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>
-                                {m.equipe_domicile} <span style={{ color: colors.text.faint, fontWeight: 400 }}>vs</span> {m.equipe_exterieur}
+                                {m.equipe_domicile} <span style={{ color: colors.text.secondary, fontWeight: 400 }}>vs</span> {m.equipe_exterieur}
                               </p>
-                              {m.competition && <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.faint }}>{m.competition}</p>}
+                              {m.competition && <p style={{ margin: '2px 0 0', fontSize: '10px', color: colors.text.secondary }}>{m.competition}</p>}
                             </div>
                             <button onClick={() => { const updated = calendarMatchs.filter((_, idx) => idx !== i); setCalendarMatchs(updated); localStorage.setItem('calendarMatchs', JSON.stringify(updated)) }}
-                              style={{ background: 'none', border: 'none', color: colors.border.strong, fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}><IcoX /></button>
+                              aria-label="Retirer ce match" style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', flexShrink: 0, padding: '8px' }}><IcoX /></button>
                           </div>
                         )
                       })}
@@ -8593,7 +8540,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     const prochainId = [...aVenir].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.heure || '').localeCompare(b.heure || ''))[0]?.id
                     return grouperMatchsParMois(aVenir, false).map(([moisKey, { label, items }]) => (
                       <div key={moisKey}>
-                        <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{label}</p>
+                        <Etiquette as="p" style={{ margin: '0 0 10px' }}>{label}</Etiquette>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(m => {
                             const itemsMenu = [
@@ -8614,17 +8561,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             ]
                             const menu = (
                               <div className="match-menu-wrapper" style={{ position: 'relative' }}>
-                                <button onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)} aria-label="Plus d'actions"
-                                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.faint, fontSize: '18px', padding: '6px 12px', minHeight: '36px', cursor: 'pointer', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>
-                                  ⋮
+                                <button type="button" onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)} aria-label="Plus d'actions" aria-haspopup="menu" aria-expanded={openMenuId === m.id}
+                                  className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '40px', padding: 0 }}>
+                                  <Icone icone={EllipsisVertical} />
                                 </button>
                                 {openMenuId === m.id && (
-                                  <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '10px', zIndex: 100, minWidth: '190px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                                  <div style={{ position: 'absolute', right: 0, top: '110%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonCarte, zIndex: 100, minWidth: '190px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                                     {itemsMenu.map((item, idx) => (
-                                      <button key={item.label} onClick={() => { item.action(); setOpenMenuId(null) }}
-                                        style={{ display: 'block', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderTop: idx > 0 ? `1px solid ${colors.border.faint}` : 'none', color: item.danger ? colors.accent.red : colors.text.secondary, fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}
-                                        onMouseEnter={e => { e.currentTarget.style.background = colors.border.default }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                                      <button key={item.label} onClick={() => { item.action(); setOpenMenuId(null) }} className={CLASSE_CLIQUABLE}
+                                        style={{ ...itemMenu(item.danger), ...(idx > 0 ? { borderTop: `1px solid ${couleurCraie(colors)}` } : {}) }}>
                                         {item.label}
                                       </button>
                                     ))}
@@ -8644,8 +8589,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 locale={localeOf(lang)}
                                 dispo={statsDispoMatch(m.id)}
                                 actionPrincipale={canEdit('stats') ? (
-                                  <button onClick={() => ouvrirModalMatchJoue(m)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', minHeight: '36px', borderRadius: '8px', border: `1px solid ${colors.accent.green}60`, background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                  <button type="button" onClick={() => ouvrirModalMatchJoue(m)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', padding: '0 12px', fontSize: '13px' }}>
+                                    <Icone icone={Check} taille={16} />
                                     {t('comp_marquer_joue', lang)}
                                   </button>
                                 ) : null}
@@ -8658,8 +8603,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     ))
                   })()}
                   {matchs.filter(m => !matchJoue(m)).length === 0 && (
-                    <div style={{ ...st.card, textAlign: 'center', padding: '2rem' }}>
-                      <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
+                    <div style={{ ...stK.card, textAlign: 'center', padding: '2rem' }}>
+                      <p style={{ color: colors.text.secondary, fontSize: '13px', margin: 0 }}>{t('comp_aucun_match_a_venir', lang)}</p>
                     </div>
                   )}
                 </div>
@@ -8674,17 +8619,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     (même champ que "Profil" et que ce que voient les joueurs sur leur
                     dashboard ; avant ce fix, stocké seulement en localStorage donc perdu
                     d'un navigateur/appareil à l'autre, et jamais visible des joueurs). */}
-                <div style={st.card}>
-                  <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>{t('comp_classement_officiel', lang)}</p>
-                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint }}>{t('comp_colle_lien_classement', lang)}</p>
+                <div style={stK.card}>
+                  <p style={{ ...styleTitreCarte(colors), margin: '0 0 8px' }}>{t('comp_classement_officiel', lang)}</p>
+                  <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.secondary }}>{t('comp_colle_lien_classement', lang)}</p>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      style={{ ...st.input, flex: 1 }}
+                    <input className={CLASSE_CHAMP}
+                      style={{ ...stK.input, flex: 1 }}
                       placeholder="https://fff.fr/... ou https://footeo.com/..."
                       value={ligueUrl || profilEdu?.ligue_url || ''}
                       onChange={e => setLigueUrl(e.target.value)}
                     />
-                    <button
+                    <button className={CLASSE_BOUTON}
                       disabled={savingLigueUrl}
                       onClick={async () => {
                         const url = (ligueUrl || profilEdu?.ligue_url || '').trim()
@@ -8702,14 +8647,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           alert('Erreur : ' + error.message)
                         }
                       }}
-                      style={{ ...st.btnSolid, opacity: savingLigueUrl ? 0.6 : 1 }}>
+                      style={{ ...stK.btnSolid(), opacity: savingLigueUrl ? 0.6 : 1 }}>
                       {savingLigueUrl ? '...' : t('btn_sauvegarder', lang)}
                     </button>
                   </div>
                   {profilEdu?.ligue_url && (
-                    <a href={profilEdu.ligue_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '14px', background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, color: colors.accent.green, padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                      {t('comp_voir_classement', lang)} ↗
+                    <a href={profilEdu.ligue_url} target="_blank" rel="noopener noreferrer" className={CLASSE_BOUTON_SECONDAIRE}
+                      style={{ ...styleBoutonSecondaire(colors), textDecoration: 'none', marginTop: '14px' }}>
+                      {t('comp_voir_classement', lang)} <Icone icone={ExternalLink} taille={16} />
                     </a>
                   )}
                 </div>
@@ -8731,12 +8676,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               }
               return (
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                  <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <div role="dialog" aria-modal="true" aria-label="Sondage de disponibilité" style={{ ...styleCarte(colors), border: `1px solid ${colors.border.default}`, padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
-                      <button onClick={() => setModalSondageMatch(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
+                      <p style={{ ...styleTitreCarte(colors), margin: 0 }}>Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                      <button type="button" onClick={() => setModalSondageMatch(null)} aria-label="Fermer" className={CLASSE_CLIQUABLE} style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', padding: '8px', minWidth: '40px', minHeight: '40px' }}><IcoX /></button>
                     </div>
-                    <p style={{ fontSize: '12px', color: colors.text.faint, margin: '0 0 16px' }}>
+                    <p style={{ fontSize: '12px', color: colors.text.secondary, margin: '0 0 16px' }}>
                       {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                       {m.heure ? ` · ${m.heure}` : ''}
                     </p>
@@ -8745,26 +8690,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {reponses.map(j => {
                         const cfg = j.statut ? STATUT_CONFIG[j.statut] : null
                         return (
-                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.surfaceAlt, borderRadius: '10px' }}>
+                          <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: colors.background.sunken, borderRadius: forme.rayonCarte }}>
                             <Avatar person={j} size={32} />
                             <div style={{ flex: 1 }}>
                               <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{j.prenom} {j.nom}</p>
-                              {j.poste && <p style={{ fontSize: '10px', color: colors.text.faint, margin: 0 }}>{j.poste}</p>}
+                              {j.poste && <p style={{ fontSize: '10px', color: colors.text.secondary, margin: 0 }}>{j.poste}</p>}
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg?.color || colors.border.strong, background: cfg?.bg || colors.background.raised, border: `1px solid ${cfg?.border || colors.border.faint}`, padding: '3px 10px', borderRadius: '20px' }}>
-                              {cfg ? cfg.label : t('ent_en_attente', lang)}
-                            </span>
+                            <EtiquetteStatut couleur={cfg?.color || colors.text.dim}>{cfg ? cfg.label : t('ent_en_attente', lang)}</EtiquetteStatut>
                           </div>
                         )
                       })}
                       {reponses.length === 0 && (
-                        <p style={{ color: colors.text.disabled, fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
+                        <p style={{ color: colors.text.dim, fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
                       )}
                     </div>
 
-                    <div style={{ ...st.card, background: colors.background.sunken }}>
+                    <div style={{ ...stK.card, background: colors.background.sunken }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Générer les convocations</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ou déjà convoqués. Décoche/coche pour ajuster, puis copie la liste.</p>
+                      <p style={{ fontSize: '11px', color: colors.text.secondary, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ou déjà convoqués. Décoche/coche pour ajuster, puis copie la liste.</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px', maxHeight: '200px', overflowY: 'auto' }}>
                         {reponses.map(j => {
                           const coche = convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')
@@ -8777,59 +8720,59 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         })}
                       </div>
                       <RenfortConvocation clubCategorieId={m.club_categorie_id} joueursEquipe={joueurs} renforts={renfortsConvoc} onChange={setRenfortsConvoc} />
-                      <button onClick={copierConvocations} style={st.btnSolid} disabled={nomsCoches.length === 0}>
+                      <button className={CLASSE_BOUTON} onClick={copierConvocations} style={stK.btnSolid()} disabled={nomsCoches.length === 0}>
                         Copier la liste ({nomsCoches.length})
                       </button>
                     </div>
 
                     {/* ── Convocation officielle — publiée, visible en widget sur le
                         dashboard de chaque joueur convoqué jusqu'à expiration ── */}
-                    <div ref={convocationSectionRef} style={{ ...st.card, background: colors.background.sunken, marginTop: '16px' }}>
+                    <div ref={convocationSectionRef} style={{ ...stK.card, background: colors.background.sunken, marginTop: '16px' }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Convocation officielle</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint, margin: '0 0 12px' }}>
+                      <p style={{ fontSize: '11px', color: colors.text.secondary, margin: '0 0 12px' }}>
                         {convocationExistante ? `Publiée — disparaît du dashboard des joueurs le dimanche à 20h.` : `Reprend le groupe coché ci-dessus. Publier l'affiche comme un widget sur le dashboard de chaque joueur convoqué.`}
                       </p>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
                         <div>
-                          <label style={st.label}>Terrain</label>
-                          <select style={st.input} value={convocationForm.type_terrain} onChange={e => setConvocationForm(f => ({ ...f, type_terrain: e.target.value }))}>
+                          <label style={stK.label}>Terrain</label>
+                          <select className={CLASSE_CHAMP} style={stK.input} value={convocationForm.type_terrain} onChange={e => setConvocationForm(f => ({ ...f, type_terrain: e.target.value }))}>
                             <option>Herbe</option>
                             <option>Synthétique</option>
                             <option>Indoor</option>
                           </select>
                         </div>
                         <div>
-                          <label style={st.label}>Arbitre</label>
-                          <input style={st.input} placeholder="Nom de l'arbitre" value={convocationForm.arbitre_nom} onChange={e => setConvocationForm(f => ({ ...f, arbitre_nom: e.target.value }))} />
+                          <label style={stK.label}>Arbitre</label>
+                          <input className={CLASSE_CHAMP} style={stK.input} placeholder="Nom de l'arbitre" value={convocationForm.arbitre_nom} onChange={e => setConvocationForm(f => ({ ...f, arbitre_nom: e.target.value }))} />
                         </div>
                       </div>
 
-                      <label style={st.label}>Programme de la journée</label>
+                      <label style={stK.label}>Programme de la journée</label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
                         {convocationForm.timeline.map((step, i) => (
                           <div key={i} style={{ display: 'flex', gap: '6px' }}>
-                            <input placeholder="19h15" value={step.heure}
+                            <input className={CLASSE_CHAMP} placeholder="19h15" value={step.heure}
                               onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, heure: e.target.value } : s) }))}
-                              style={{ ...st.input, width: '80px', flexShrink: 0 }} />
-                            <input placeholder="Étape" value={step.label}
+                              style={{ ...stK.input, width: '80px', flexShrink: 0 }} />
+                            <input className={CLASSE_CHAMP} placeholder="Étape" value={step.label}
                               onChange={e => setConvocationForm(f => ({ ...f, timeline: f.timeline.map((s, idx) => idx === i ? { ...s, label: e.target.value } : s) }))}
-                              style={{ ...st.input, flex: 1 }} />
+                              style={{ ...stK.input, flex: 1 }} />
                             <button onClick={() => setConvocationForm(f => ({ ...f, timeline: f.timeline.filter((_, idx) => idx !== i) }))}
-                              style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '13px' }}><IcoX /></button>
+                              aria-label="Retirer cette étape" style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.accent.red, borderRadius: forme.rayonPastille, padding: '0 10px', cursor: 'pointer' }}><IcoX /></button>
                           </div>
                         ))}
                         <button onClick={() => setConvocationForm(f => ({ ...f, timeline: [...f.timeline, { heure: '', label: '', icone: '' }] }))}
-                          style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, padding: '6px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                          className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), borderStyle: 'dashed', minHeight: '36px', fontSize: '13px' }}>
                           + Ajouter une étape
                         </button>
                       </div>
 
-                      <label style={st.label}>Notes (facultatif)</label>
-                      <textarea style={{ ...st.input, minHeight: '50px', resize: 'vertical', marginBottom: '12px' }} placeholder="Infos utiles pour les joueurs (adversaire, consignes...)"
+                      <label style={stK.label}>Notes (facultatif)</label>
+                      <textarea className={CLASSE_CHAMP} style={{ ...stK.input, minHeight: '50px', resize: 'vertical', marginBottom: '12px' }} placeholder="Infos utiles pour les joueurs (adversaire, consignes...)"
                         value={convocationForm.notes} onChange={e => setConvocationForm(f => ({ ...f, notes: e.target.value }))} />
 
-                      <button onClick={() => publierConvocation(m)} disabled={publiantConvocation} style={{ ...st.btnSolid, background: colors.accent.green, width: '100%', opacity: publiantConvocation ? 0.6 : 1 }}>
+                      <button className={CLASSE_BOUTON} onClick={() => publierConvocation(m)} disabled={publiantConvocation} style={{ ...stK.btnSolid(), background: colors.accent.green, width: '100%', opacity: publiantConvocation ? 0.6 : 1 }}>
                         {publiantConvocation ? '...' : convocationExistante ? 'Mettre à jour la convocation' : 'Publier la convocation'}
                       </button>
                     </div>
@@ -8859,23 +8802,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Modale "Marquer comme joué" ── */}
             {modalMatchJoue && (
               <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div role="dialog" aria-modal="true" aria-label="Résultat du match" style={{ ...styleCarte(colors), border: `1px solid ${colors.border.default}`, padding: '1.5rem', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{matchJoue(modalMatchJoue) ? 'Modifier le résultat' : t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
-                    <button onClick={fermerModalMatchJoue} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
+                    <p style={{ ...styleTitreCarte(colors), margin: 0 }}>{matchJoue(modalMatchJoue) ? 'Modifier le résultat' : t('comp_marquer_joue', lang)} — {modalMatchJoue.domicile ? 'vs' : '@'} {modalMatchJoue.adversaire}</p>
+                    <button type="button" onClick={fermerModalMatchJoue} aria-label="Fermer" className={CLASSE_CLIQUABLE} style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', padding: '8px', minWidth: '40px', minHeight: '40px' }}><IcoX /></button>
                   </div>
 
                   {/* ── Scanner la feuille (pré-remplit score + stats ci-dessous) ── */}
                   {outils.outilActif('stats_collectives') && <>
-                  <div style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '10px', padding: '14px', marginBottom: '18px', background: colors.background.base }}>
+                  <div style={{ border: `1px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte, padding: '14px', marginBottom: '18px', background: colors.background.base }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       {scannerModalImagePreview
                         ? <img src={scannerModalImagePreview} alt="Feuille" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: `1px solid ${colors.border.default}` }} />
-                        : <span style={{ color: colors.text.faint }}><IcoFileText /></span>
+                        : <span style={{ color: colors.text.secondary }}><IcoFileText /></span>
                       }
                       <div style={{ flex: 1, minWidth: '180px' }}>
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{t('scan_feuille_titre', lang)}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.secondary }}>{t('scan_feuille_desc', lang)}</p>
                       </div>
                       <input id="scanner-modal-input" type="file" accept="image/*" style={{ display: 'none' }}
                         onChange={async e => {
@@ -8883,37 +8826,37 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           const { base64, preview } = await redimensionnerImagePourScan(file)
                           setScannerModalImageBase64(base64); setScannerModalImagePreview(preview)
                         }} />
-                      <button onClick={() => document.getElementById('scanner-modal-input').click()} style={st.btn(colors.accent.blue)}>{t('seance_scanner', lang)}</button>
-                      <button onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...st.btnSolid, opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
+                      <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => document.getElementById('scanner-modal-input').click()} style={stK.btn(colors.accent.blue)}>{t('seance_scanner', lang)}</button>
+                      <button className={CLASSE_BOUTON} onClick={scannerFeuilleModal} disabled={!scannerModalImageBase64 || scannerModalLoading} style={{ ...stK.btnSolid(), opacity: !scannerModalImageBase64 ? 0.4 : 1 }}>
                         {scannerModalLoading ? `${libelleStatutGroq(scannerModalStatus)}` : `${t('seance_analyser_ia', lang)}`}
                       </button>
                     </div>
-                    {scannerModalError && <p style={{ color: '#f87171', fontSize: '12px', margin: '10px 0 0' }}>{scannerModalError}</p>}
+                    {scannerModalError && <p style={{ color: colors.accent.red, fontSize: '12px', margin: '10px 0 0' }}>{scannerModalError}</p>}
                     {scannerModalWarning && <p style={{ color: colors.accent.amber, fontSize: '12px', margin: '10px 0 0' }}>{scannerModalWarning}</p>}
                   </div>
 
-                  <div style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '18px', fontSize: '12px', color: colors.text.secondary, lineHeight: 1.5 }}>
-                    <strong style={{ color: colors.accent.blue }}>Après le scan : </strong>
+                  <div style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.info}`, padding: '10px 14px 10px 17px', marginBottom: '18px', fontSize: '13px', color: colors.text.secondary, lineHeight: 1.5 }}>
+                    <strong style={{ color: colors.text.primary }}>Après le scan : </strong>
                     vérifiez que les informations détectées sont correctes. Les minutes sont pré-remplies à 90, à corriger selon les remplacements. Les passes décisives ne sont pas lues par le scan, à compléter manuellement. Pensez aussi à ajouter les buts avec leur nature et leur côté ci-dessous : ces infos alimentent les statistiques d'équipe sur les périodes et les zones où l'équipe marque ou encaisse.
                   </div>
                   </>}
 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '18px' }}>
-                    <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
-                    <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
-                    <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
+                    <div style={{ flex: 1 }}><label style={stK.label}>Score (nous)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={scoreJoueForm.score_nous} onChange={e => setScoreJoueForm(f => ({ ...f, score_nous: e.target.value }))} /></div>
+                    <span style={{ color: colors.text.secondary, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                    <div style={{ flex: 1 }}><label style={stK.label}>Score (eux)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={scoreJoueForm.score_eux} onChange={e => setScoreJoueForm(f => ({ ...f, score_eux: e.target.value }))} /></div>
                   </div>
                   {estCoupe(modalMatchJoue?.competition) && (
                     <div style={{ marginBottom: '18px' }}>
-                      <label style={{ ...st.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <label style={{ ...stK.label, display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <input type="checkbox" checked={scoreJoueForm.tab_nous !== '' || scoreJoueForm.tab_eux !== '' || !!scoreJoueForm.avecTab} onChange={e => setScoreJoueForm(f => ({ ...f, avecTab: e.target.checked, ...(e.target.checked ? {} : { tab_nous: '', tab_eux: '' }) }))} />
                         Tirs au but
                       </label>
                       {(scoreJoueForm.avecTab || scoreJoueForm.tab_nous !== '' || scoreJoueForm.tab_eux !== '') && (
                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-                          <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (nous)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.tab_nous} onChange={e => setScoreJoueForm(f => ({ ...f, tab_nous: e.target.value }))} /></div>
-                          <span style={{ color: colors.text.faint, paddingBottom: '10px', fontWeight: 700 }}>-</span>
-                          <div style={{ flex: 1 }}><label style={st.label}>T.a.b. (eux)</label><input style={st.input} type="number" min="0" value={scoreJoueForm.tab_eux} onChange={e => setScoreJoueForm(f => ({ ...f, tab_eux: e.target.value }))} /></div>
+                          <div style={{ flex: 1 }}><label style={stK.label}>T.a.b. (nous)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={scoreJoueForm.tab_nous} onChange={e => setScoreJoueForm(f => ({ ...f, tab_nous: e.target.value }))} /></div>
+                          <span style={{ color: colors.text.secondary, paddingBottom: '10px', fontWeight: 700 }}>-</span>
+                          <div style={{ flex: 1 }}><label style={stK.label}>T.a.b. (eux)</label><input className={CLASSE_CHAMP} style={stK.input} type="number" min="0" value={scoreJoueForm.tab_eux} onChange={e => setScoreJoueForm(f => ({ ...f, tab_eux: e.target.value }))} /></div>
                         </div>
                       )}
                     </div>
@@ -8921,26 +8864,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   {/* ── Minutes des buts (manuel, ou pré-rempli par le scan IA ci-dessus) ── */}
                   <div style={{ marginBottom: '18px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Minutes des buts</p>
+                    <Etiquette as="p" style={{ marginBottom: '10px' }}>Minutes des buts</Etiquette>
                     {scannerModalButsDetail.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
                         {scannerModalButsDetail.map((b, idx) => (
                           <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <input type="number" min="0" max="120" placeholder="Min" value={b.minute}
+                            <input className={CLASSE_CHAMP} type="number" min="0" max="120" placeholder="Min" value={b.minute}
                               onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, minute: e.target.value === '' ? '' : parseInt(e.target.value) } : x))}
-                              style={{ ...st.input, width: '70px', padding: '6px 8px', fontSize: '13px' }} />
-                            <select value={b.equipe} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, equipe: e.target.value } : x))}
-                              style={{ ...st.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
+                              style={{ ...stK.input, width: '70px', padding: '6px 8px', fontSize: '13px' }} />
+                            <select className={CLASSE_CHAMP} value={b.equipe} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, equipe: e.target.value } : x))}
+                              style={{ ...stK.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
                               <option value="nous">Nous</option>
                               <option value="eux">Eux</option>
                             </select>
-                            <select value={b.nature || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, nature: e.target.value } : x))}
-                              style={{ ...st.input, width: '160px', padding: '6px 8px', fontSize: '13px' }}>
+                            <select className={CLASSE_CHAMP} value={b.nature || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, nature: e.target.value } : x))}
+                              style={{ ...stK.input, width: '160px', padding: '6px 8px', fontSize: '13px' }}>
                               <option value="">Nature —</option>
                               {NATURES_BUT.map(n => <option key={n.value} value={n.value}>{n.label}</option>)}
                             </select>
-                            <select value={b.cote || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, cote: e.target.value } : x))}
-                              style={{ ...st.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
+                            <select className={CLASSE_CHAMP} value={b.cote || ''} onChange={e => setScannerModalButsDetail(prev => prev.map((x, i) => i === idx ? { ...x, cote: e.target.value } : x))}
+                              style={{ ...stK.input, width: '110px', padding: '6px 8px', fontSize: '13px' }}>
                               <option value="">Côté —</option>
                               {COTES_BUT.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </select>
@@ -8949,10 +8892,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         ))}
                       </div>
                     )}
-                    <button onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous', nature: '', cote: '' }])} style={{ ...st.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
+                    <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setScannerModalButsDetail(prev => [...prev, { minute: '', equipe: 'nous', nature: '', cote: '' }])} style={{ ...stK.btn(colors.text.dim), padding: '6px 12px', fontSize: '12px' }}>+ Ajouter un but</button>
                   </div>
 
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</p>
+                  <Etiquette as="p" style={{ marginBottom: '10px' }}>{t('comp_feuille_match', lang)}</Etiquette>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowX: 'auto' }}>
                     {lignesFeuilleMatch(joueurs, renfortsParMatch[modalMatchJoue.id]).map(j => {
                       const key = modalMatchJoue.id
@@ -8966,36 +8909,36 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       const detected = Object.keys(s).length > 0
                       const val = (field) => s[field] !== undefined ? s[field] : ''
                       return (
-                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? `${colors.accent.green}1f` : 'transparent', borderRadius: '6px', border: `1px solid ${detected ? `${colors.accent.green}55` : 'transparent'}` }}>
-                          <span style={{ fontSize: '14px', fontWeight: detected ? 700 : 600, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ""}.
-                            {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.faint }}>{j.mentionRenfort}</small>}
+                        <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '140px 64px 64px 64px 64px 36px 36px', gap: '6px', alignItems: 'center', padding: '4px 6px', background: detected ? colors.background.sunken : 'transparent', borderRadius: forme.rayonCarte, border: `1px solid ${detected ? colors.border.strong : 'transparent'}` }}>
+                          <span style={{ fontSize: '14px', fontWeight: detected ? 700 : 600, color: detected ? colors.text.primary : colors.text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {detected && <Icone icone={Check} taille={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} />}{j.prenom} {j.nom?.[0] || ""}.
+                            {j.mentionRenfort && <small style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: colors.text.secondary }}>{j.mentionRenfort}</small>}
                           </span>
-                          <input type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
+                          <input className={CLASSE_CHAMP} type="number" placeholder="Min" min="0" max="120" value={val('minutes')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), minutes: parseInt(e.target.value) || 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
-                          <input type="number" placeholder="Buts" min="0" value={val('buts')}
+                            style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                          <input className={CLASSE_CHAMP} type="number" placeholder="Buts" min="0" value={val('buts')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), buts: parseInt(e.target.value) || 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
-                          <input type="number" placeholder="PD" min="0" value={val('passes_dec')}
+                            style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                          <input className={CLASSE_CHAMP} type="number" placeholder="PD" min="0" value={val('passes_dec')}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), passes_dec: parseInt(e.target.value) || 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
-                          <input type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
+                            style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center' }} />
+                          <input className={CLASSE_CHAMP} type="number" placeholder="CS" min="0" max="1" value={val('clean_sheet') ? 1 : ''}
                             onChange={e => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), clean_sheet: parseInt(e.target.value) > 0 } } }))}
-                            style={{ ...st.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
-                          <span title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
+                            style={{ ...stK.input, padding: '8px', fontSize: '15px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                          <button type="button" aria-pressed={!!val('carton_jaune')} aria-label={t('comp_carton_jaune', lang)} title={t('comp_carton_jaune', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.amber, opacity: val('carton_jaune') ? 1 : 0.25 }}
                             onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_jaune: !val('carton_jaune') } } }))} />
-                          <span title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
+                          <button type="button" aria-pressed={!!val('carton_rouge')} aria-label={t('comp_carton_rouge', lang)} title={t('comp_carton_rouge', lang)} style={{ cursor: 'pointer', display: 'inline-block', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.red, opacity: val('carton_rouge') ? 1 : 0.25 }}
                             onClick={() => setStatsMatch(prev => ({ ...prev, [key]: { ...(prev[key] || {}), [j.id]: { ...(prev[key]?.[j.id] || {}), carton_rouge: !val('carton_rouge') } } }))} />
                         </div>
                       )
                     })}
                   </div>
-                  <p style={{ fontSize: '13px', color: colors.text.faint, margin: '10px 0 0' }}>✓ = ligne avec une donnée (scan ou saisie manuelle) · Min · Buts · PD · CS</p>
+                  <p style={{ fontSize: '13px', color: colors.text.secondary, margin: '10px 0 0' }}>Coche = ligne avec une donnée (scan ou saisie manuelle) · Min · Buts · PD · CS</p>
 
                   <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
-                    <button onClick={marquerMatchJoue} disabled={savingMatchJoue} style={st.btnSolid}>{savingMatchJoue ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={fermerModalMatchJoue} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                    <button className={CLASSE_BOUTON} onClick={marquerMatchJoue} disabled={savingMatchJoue} style={stK.btnSolid()}>{savingMatchJoue ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}</button>
+                    <button className={CLASSE_BOUTON_SECONDAIRE} onClick={fermerModalMatchJoue} style={stK.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -9004,20 +8947,20 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Modale "Ajouter / Modifier un match" ── */}
             {modalMatchForm && (
               <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div role="dialog" aria-modal="true" aria-label="Match" style={{ ...styleCarte(colors), border: `1px solid ${colors.border.default}`, padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>
+                    <p style={{ ...styleTitreCarte(colors), margin: 0 }}>
                       {modalMatchForm.id ? `${t('comp_modifier_match', lang)}` : `+ ${t('comp_ajouter_match', lang)}`}
                     </p>
-                    <button onClick={() => setModalMatchForm(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}><IcoX /></button>
+                    <button type="button" onClick={() => setModalMatchForm(null)} aria-label="Fermer" className={CLASSE_CLIQUABLE} style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', padding: '8px', minWidth: '40px', minHeight: '40px' }}><IcoX /></button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} placeholder="Nom de l'équipe" value={modalMatchForm.adversaire} onChange={e => setModalMatchForm(f => ({ ...f, adversaire: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={modalMatchForm.date} onChange={e => setModalMatchForm(f => ({ ...f, date: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={modalMatchForm.heure} onChange={e => setModalMatchForm(f => ({ ...f, heure: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={stK.label}>{t('comp_adversaire', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} placeholder="Nom de l'équipe" value={modalMatchForm.adversaire} onChange={e => setModalMatchForm(f => ({ ...f, adversaire: e.target.value }))} /></div>
+                    <div><label style={stK.label}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} type="date" value={modalMatchForm.date} onChange={e => setModalMatchForm(f => ({ ...f, date: e.target.value }))} /></div>
+                    <div><label style={stK.label}>{t('ent_heure_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={stK.input} type="time" value={modalMatchForm.heure} onChange={e => setModalMatchForm(f => ({ ...f, heure: e.target.value }))} /></div>
                     <div>
-                      <label style={st.label}>{t('comp_type_match', lang)}</label>
-                      <select style={st.input} value={modalMatchForm.competition} onChange={e => setModalMatchForm(f => ({ ...f, competition: e.target.value }))}>
+                      <label style={stK.label}>{t('comp_type_match', lang)}</label>
+                      <select className={CLASSE_CHAMP} style={stK.input} value={modalMatchForm.competition} onChange={e => setModalMatchForm(f => ({ ...f, competition: e.target.value }))}>
                         <option value="">—</option>
                         <option value="Championnat">{t('comp_type_championnat', lang)}</option>
                         <option value="Coupe">{t('comp_type_coupe', lang)}</option>
@@ -9025,13 +8968,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       </select>
                     </div>
                     <div>
-                      <label style={st.label}>{t('comp_lieu', lang)}</label>
-                      <input style={st.input} placeholder="Ex: Stade municipal" value={modalMatchForm.lieu} onChange={e => setModalMatchForm(f => ({ ...f, lieu: e.target.value }))} />
+                      <label style={stK.label}>{t('comp_lieu', lang)}</label>
+                      <input className={CLASSE_CHAMP} style={stK.input} placeholder="Ex: Stade municipal" value={modalMatchForm.lieu} onChange={e => setModalMatchForm(f => ({ ...f, lieu: e.target.value }))} />
                     </div>
                     {!modalMatchForm.domicile && (
                       <div>
-                        <label style={st.label}>Ville (pour calculer le trajet)</label>
-                        <input style={st.input} placeholder="Ex: Lyon" value={modalMatchForm.ville} onChange={e => setModalMatchForm(f => ({ ...f, ville: e.target.value }))} />
+                        <label style={stK.label}>Ville (pour calculer le trajet)</label>
+                        <input className={CLASSE_CHAMP} style={stK.input} placeholder="Ex: Lyon" value={modalMatchForm.ville} onChange={e => setModalMatchForm(f => ({ ...f, ville: e.target.value }))} />
                       </div>
                     )}
                     <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -9042,10 +8985,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={sauvegarderMatchForm} disabled={savingMatchForm || !modalMatchForm.adversaire || !modalMatchForm.date} style={st.btnSolid}>
+                    <button className={CLASSE_BOUTON} onClick={sauvegarderMatchForm} disabled={savingMatchForm || !modalMatchForm.adversaire || !modalMatchForm.date} style={stK.btnSolid()}>
                       {savingMatchForm ? 'Sauvegarde...' : `${t('btn_sauvegarder', lang)}`}
                     </button>
-                    <button onClick={() => setModalMatchForm(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                    <button className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setModalMatchForm(null)} style={stK.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -9066,8 +9009,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <Suspense fallback={<SectionLoader />}><Deplacements clubId={clubAffiliation.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} accentColor={colors.accent.blue} readOnly retourEditable /></Suspense>
           ) : (
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_deplacements', lang)}</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
+              <TitreEcran titre={t('nav_deplacements', lang)} />
+              <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px', margin: 0 }}>
                 {clubAffiliation?.statut === 'en_attente'
                   ? `Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder aux déplacements.'}
@@ -9082,8 +9025,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <Suspense fallback={<SectionLoader />}><PlanningTerrains clubId={clubAffiliation.club_id} mode="educateur" userId={userId} equipeActiveId={equipeActive?.id} accentColor={colors.accent.blue} /></Suspense>
           ) : (
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_terrains', lang)}</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', marginTop: '1rem' }}>
+              <TitreEcran titre={t('nav_terrains', lang)} />
+              <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px', margin: 0 }}>
                 {clubAffiliation?.statut === 'en_attente'
                   ? `Ta demande d'affiliation à ${clubAffiliation.club?.club || 'ce club'} est en attente d'acceptation — le club doit d'abord la valider (onglet Éducateurs).`
                   : 'Rejoins un club (code club, dans ton profil) pour accéder au planning des terrains.'}
@@ -9095,27 +9038,28 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== ACTUALITÉS DU CLUB ===== */}
         {activeSection === 'annonces' && (
           <div style={{ maxWidth: 700 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoMegaphone /> Actualités du club</h2>
-            <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 20 }}>Communiqués publiés par {profilEdu?.club || 'ton club'}.</p>
+            <TitreEcran titre="Actualités du club" sousTitre={`Communiqués publiés par ${profilEdu?.club || 'ton club'}.`} />
             {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Rejoins un club pour voir ses actualités.</p>
+              <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px', margin: 0 }}>Rejoins un club pour voir ses actualités.</p>
             ) : annoncesClub.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune actualité pour le moment.</p>
+              <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px', margin: 0 }}>Aucune actualité pour le moment.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {annoncesClub.map(a => {
                   const lue = annoncesLuesIds.has(a.id)
                   return (
                     <div key={a.id} onClick={() => marquerAnnonceLue(a.id)}
-                      style={{ background: colors.background.sunken, border: `1px solid ${lue ? colors.border.faint : colors.accent.blue}`, borderRadius: '12px', padding: '18px', cursor: lue ? 'default' : 'pointer' }}>
+                      onKeyDown={e => { if (!lue && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); marquerAnnonceLue(a.id) } }}
+                      {...(lue ? {} : { role: 'button', tabIndex: 0, className: CLASSE_CLIQUABLE, 'aria-label': `${a.titre} (nouveau, marquer comme lu)` })}
+                      style={{ ...(lue ? styleCarte(colors) : styleCarteLiseree(colors)), padding: lue ? '18px' : '18px 18px 18px 21px', cursor: lue ? 'default' : 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                        <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '14px', fontWeight: 700 }}>{a.titre}</h3>
-                        {!lue && <span style={{ background: colors.accent.blue + '22', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700 }}>Nouveau</span>}
+                        <h3 style={{ ...styleTitreCarte(colors), margin: 0 }}>{a.titre}</h3>
+                        {!lue && <EtiquetteStatut couleur={couleurClub(colors)}>Nouveau</EtiquetteStatut>}
                       </div>
-                      <div style={{ color: colors.text.faint, fontSize: '11px', marginBottom: '8px' }}>
+                      <div style={{ ...styleEtiquette(colors), textTransform: 'none', letterSpacing: 0, fontWeight: 500, fontSize: '13px', marginBottom: '10px' }}>
                         {a.auteur_nom} · {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </div>
-                      <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
+                      <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>{a.contenu}</p>
                     </div>
                   )
                 })}
@@ -9145,52 +9089,47 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           // de tuiles avec compteur de progression, matériel confié en cartes.
           const champsAvecTaille = champsEquipementEduc.filter(c => !c.taille_unique)
           const nbTaillesOk = champsAvecTaille.filter(c => mesTaillesEduc.find(t => t.champ_id === c.id)?.valeur).length
-          const eyebrowMat = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
           const bandeau = (couleur, titre, texte, action) => (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', background: couleur + '12', border: `1px solid ${couleur}40`, borderLeft: `4px solid ${couleur}`, borderRadius: '12px', padding: '14px 18px' }}>
-              <span style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: couleur + '22', color: couleur, flexShrink: 0 }}><IcoBox /></span>
+            <div style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', boxShadow: `inset ${forme.lisere} 0 0 ${couleur}`, padding: '14px 18px 14px 21px' }}>
+              <span aria-hidden="true" style={{ width: '36px', height: '36px', borderRadius: forme.rayonCarte, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.background.raised, color: colors.text.primary, flexShrink: 0 }}><Icone icone={Package} taille={20} /></span>
               <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: couleur }}>{titre}</p>
-                {texte && <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{texte}</p>}
+                <p style={{ ...styleTitreCarte(colors), margin: 0 }}>{titre}</p>
+                {texte && <p style={{ margin: '2px 0 0', fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary }}>{texte}</p>}
               </div>
               {action}
             </div>
           )
+          const sousTexteMat = { margin: 0, fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary }
           return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>Mon matériel</h1>
-              <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Matériel confié par le club — demande la remise en fin de saison, le club valide.</p>
-            </div>
+            <TitreEcran titre="Mon matériel" sousTitre="Matériel confié par le club. Demande la remise en fin de saison, le club valide." style={{ marginBottom: 0 }} />
             {!clubAffiliation?.club_id || clubAffiliation.statut !== 'accepte' ? (
-              <div style={{ ...st.card, margin: 0, textAlign: 'center', padding: '32px 20px' }}>
-                <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
+              <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '32px 20px' }}>
+                <p style={sousTexteMat}>Rejoins un club (code club, dans ton profil) pour voir ton matériel.</p>
               </div>
             ) : (
               <>
               {equipementPretEduc && bandeau(colors.accent.amber, 'Ton équipement est prêt',
                 `${equipementPretEduc.jours || 'Passe le récupérer auprès du club'}${equipementPretEduc.heure_debut && equipementPretEduc.heure_fin ? ` · entre ${equipementPretEduc.heure_debut} et ${equipementPretEduc.heure_fin}` : ''}${equipementPretEduc.heure_debut_2 && equipementPretEduc.heure_fin_2 ? ` puis entre ${equipementPretEduc.heure_debut_2} et ${equipementPretEduc.heure_fin_2}` : ''}`,
-                <button onClick={marquerEquipementRecupereEduc} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>J'ai récupéré</button>
+                <button type="button" onClick={marquerEquipementRecupereEduc} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>J'ai récupéré</button>
               )}
 
               {equipementCommandeEduc?.statut === 'recupere' && equipementCommandeEduc?.recupere_le && bandeau(colors.accent.success, 'Équipement remis',
                 `Le ${new Date(equipementCommandeEduc.recupere_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} à ${new Date(equipementCommandeEduc.recupere_le).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`)}
 
               {champsEquipementEduc.length > 0 && (
-                <div style={{ ...st.card, margin: 0 }}>
+                <div style={styleCarte(colors)}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <div>
-                      <p style={eyebrowMat}>Mes tailles{packAttribueEduc?.nom ? ` · ${packAttribueEduc.nom}` : ''}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
+                      <Etiquette as="p">Mes tailles{packAttribueEduc?.nom ? ` · ${packAttribueEduc.nom}` : ''}</Etiquette>
+                      <p style={{ ...sousTexteMat, margin: '4px 0 0' }}>Renseigne tes tailles pour que le club puisse préparer ton équipement.</p>
                     </div>
                     {champsAvecTaille.length > 0 && (
-                      <div style={{ minWidth: '150px' }}>
-                        <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint, textAlign: 'right' }}>
-                          <strong style={{ color: nbTaillesOk === champsAvecTaille.length ? colors.accent.success : colors.text.primary }}>{nbTaillesOk}</strong> / {champsAvecTaille.length} renseignées
+                      <div style={{ minWidth: '170px' }}>
+                        <p style={{ ...sousTexteMat, textAlign: 'right', marginBottom: '6px' }}>
+                          <strong style={{ ...styleChiffreHeros(colors, 20) }}>{nbTaillesOk}</strong> / {champsAvecTaille.length} renseignées
                         </p>
-                        <div style={{ height: '5px', borderRadius: '3px', background: colors.background.base, overflow: 'hidden', marginTop: '6px' }}>
-                          <div style={{ width: `${(nbTaillesOk / champsAvecTaille.length) * 100}%`, height: '100%', background: colors.accent.success }} />
-                        </div>
+                        <Jauge legende={false} libelle={null} segments={[{ libelle: 'Renseignées', valeur: nbTaillesOk }, { libelle: 'À renseigner', valeur: champsAvecTaille.length - nbTaillesOk }]} />
                       </div>
                     )}
                   </div>
@@ -9199,16 +9138,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       const valeur = mesTaillesEduc.find(t => t.champ_id === c.id)?.valeur || ''
                       const ok = c.taille_unique || !!valeur
                       return (
-                        <div key={c.id} style={{ background: colors.background.base, border: `1px solid ${ok ? colors.accent.success + '40' : colors.border.subtle}`, borderRadius: '10px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+                        <div key={c.id} style={{ ...styleCarte(colors), background: colors.background.sunken, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</span>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: ok ? colors.accent.success : colors.border.strong, flexShrink: 0 }} />
+                            <Etiquette style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</Etiquette>
+                            {ok && <Icone icone={Check} taille={16} libelle="Renseignée" style={{ color: colors.accent.success }} />}
                           </div>
                           {c.taille_unique ? (
-                            <p style={{ margin: 0, padding: '8px 0', fontSize: '13px', color: colors.text.faint }}>Taille unique</p>
+                            <p style={{ ...sousTexteMat, padding: '8px 0' }}>Taille unique</p>
                           ) : (
-                            <select value={valeur} onChange={e => sauvegarderMaTailleEduc(c.id, e.target.value)}
-                              style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 10px', color: valeur ? colors.text.primary : colors.text.faint, fontSize: '14px', fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', cursor: 'pointer' }}>
+                            <select value={valeur} onChange={e => sauvegarderMaTailleEduc(c.id, e.target.value)} aria-label={`Taille : ${c.nom}`} className={CLASSE_CHAMP}
+                              style={{ ...styleChamp(colors), fontWeight: 600, cursor: 'pointer' }}>
                               <option value="">Choisir…</option>
                               {c.options.map(o => <option key={o} value={o}>{o}</option>)}
                             </select>
@@ -9221,10 +9160,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )}
 
               <div>
-                <p style={{ ...eyebrowMat, marginBottom: '10px' }}>Matériel confié</p>
+                <Etiquette as="p" style={{ marginBottom: '10px' }}>Matériel confié</Etiquette>
                 {lotsMateriel.length === 0 ? (
-                  <div style={{ ...st.card, margin: 0, textAlign: 'center', padding: '24px 20px' }}>
-                    <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucun matériel confié pour l'instant.</p>
+                  <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '24px 20px' }}>
+                    <p style={sousTexteMat}>Aucun matériel confié pour l'instant.</p>
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: '10px' }}>
@@ -9232,25 +9171,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       const d = lot.ref
                       const conf = STATUT_MATERIEL[d.statut] || STATUT_MATERIEL.distribue
                       return (
-                        <div key={lot.cle} style={{ ...st.card, margin: 0, borderLeft: `3px solid ${conf.color}`, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div key={lot.cle} style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${conf.color}`, paddingLeft: '19px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
                             <div style={{ minWidth: 0 }}>
-                              <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{d.equipe_nom || 'Matériel'}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>Saison {d.saison}</p>
+                              <p style={{ ...styleTitreCarte(colors), margin: 0 }}>{d.equipe_nom || 'Matériel'}</p>
+                              <p style={{ ...sousTexteMat, margin: '2px 0 0' }}>Saison {d.saison}</p>
                             </div>
-                            <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: conf.color, background: conf.color + '1a', border: `1px solid ${conf.color}40`, whiteSpace: 'nowrap' }}>{conf.label}</span>
+                            <EtiquetteStatut couleur={conf.color}>{conf.label}</EtiquetteStatut>
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {lot.items.map(item => (
-                              <span key={item.id} style={{ fontSize: '12px', color: colors.text.secondary, background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '8px', padding: '4px 10px' }}>
+                              <span key={item.id} style={{ fontFamily: police.texte, fontSize: '13px', color: colors.text.secondary, background: colors.background.sunken, border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonPastille, padding: '4px 10px' }}>
                                 {item.nom_materiel} <strong style={{ color: colors.text.primary }}>× {item.quantite}</strong>
                               </span>
                             ))}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '12px', color: colors.text.faint }}>{conf.desc}</span>
+                            <span style={sousTexteMat}>{conf.desc}</span>
                             {d.statut === 'distribue' && (
-                              <button onClick={() => demanderRemiseMateriel(d)} style={st.btn(colors.accent.amber)}>Demander la remise</button>
+                              <button type="button" onClick={() => demanderRemiseMateriel(d)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Demander la remise</button>
                             )}
                           </div>
                         </div>
@@ -9278,33 +9217,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== ENTRAÎNEMENTS ===== */}
         {activeSection === 'entrainements' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{t('ent_titre', lang)}</h1>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{entrainements.length} {t('ent_seances_count', lang)} · {t('ent_sous_titre', lang)}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <BoutonTutoriel onClick={() => setTutoOuvert('planning')} />
-              {canEdit('entrainements') && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {/* Les deux formulaires vivent dans le sous-onglet "Mes séances" :
-                      on y bascule puis on défile jusqu'au formulaire ouvert, sinon
-                      le clic depuis "Prochaine séance" semblait sans effet. */}
-                  <button onClick={() => { setSousOngletEnt('liste'); setShowPlanificateur(true); setShowAddEntrainement(false); setTimeout(() => document.getElementById('ent-form-planificateur')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={{ ...st.btn(colors.accent.blue), display: 'inline-flex', alignItems: 'center', gap: '8px' }}><IcoCalendar /> {t('ent_planifier_saison', lang)}</button>
-                  <button onClick={() => { setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false); setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }} style={st.btnSolid}>+ {t('ent_bouton_seance', lang)}</button>
-                </div>
-              )}
-              </div>
-            </div>
+            <TitreEcran
+              titre={t('ent_titre', lang)}
+              sousTitre={`${entrainements.length} ${t('ent_seances_count', lang)} · ${t('ent_sous_titre', lang)}`}
+              actions={<>
+                <BoutonTutoriel onClick={() => setTutoOuvert('planning')} />
+                {canEdit('entrainements') && (
+                  <>
+                    {/* Les deux formulaires vivent dans le sous-onglet "Mes séances" :
+                        on y bascule puis on défile jusqu'au formulaire ouvert, sinon
+                        le clic depuis "Prochaine séance" semblait sans effet. */}
+                    <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)} onClick={() => { setSousOngletEnt('liste'); setShowPlanificateur(true); setShowAddEntrainement(false); setTimeout(() => document.getElementById('ent-form-planificateur')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }}><Icone icone={CalendarDays} /> {t('ent_planifier_saison', lang)}</button>
+                    <button type="button" className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)} onClick={() => { setSousOngletEnt('liste'); setShowAddEntrainement(true); setShowPlanificateur(false); setTimeout(() => document.getElementById('ent-form-seance')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60) }}><Icone icone={Plus} /> {t('ent_bouton_seance', lang)}</button>
+                  </>
+                )}
+              </>}
+            />
 
             {/* ── Sous-onglets ── */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+            <div className="df-onglets" role="tablist" aria-label="Entraînements" style={{ ...coqueVars(colors), marginBottom: '20px' }}>
               {[
                 { id: 'prochaine', label: t('ent_sous_onglet_prochaine', lang) },
                 { id: 'liste', label: t('ent_sous_onglet_liste', lang) },
               ].map(tab => (
-                <button key={tab.id} onClick={() => setSousOngletEnt(tab.id)}
-                  style={{ background: sousOngletEnt === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${sousOngletEnt === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: sousOngletEnt === tab.id ? colors.accent.blue : colors.text.faint, padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button key={tab.id} type="button" role="tab" aria-selected={sousOngletEnt === tab.id} className="df-onglet" onClick={() => setSousOngletEnt(tab.id)}>
                   {tab.label}
                 </button>
               ))}
@@ -9321,8 +9257,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
               if (!prochaineSeance) {
                 return (
-                  <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                    <p style={{ color: colors.text.faint, margin: '0 0 8px' }}>{t('ent_aucune_prochaine_seance', lang)}</p>
+                  <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '3rem' }}>
+                    <p style={{ color: colors.text.secondary, margin: '0 0 8px' }}>{t('ent_aucune_prochaine_seance', lang)}</p>
                   </div>
                 )
               }
@@ -9393,7 +9329,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const nbRepondu = total - stats.sans_reponse
               const tauxReponse = total > 0 ? Math.round(nbRepondu / total * 100) : 0
               const STATUTS_ORDRE = [
-                { key: 'sans_reponse', label: t('ent_en_attente', lang), color: colors.text.faint },
+                { key: 'sans_reponse', label: t('ent_en_attente', lang), color: colors.text.dim },
                 { key: 'present', label: t('ent_stat_presents', lang), color: colors.accent.success },
                 { key: 'convoque', label: t('ent_stat_convoques', lang), color: colors.accent.info },
                 { key: 'absent', label: t('ent_stat_absents', lang), color: colors.accent.red },
@@ -9404,41 +9340,40 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               const groupesReponses = STATUTS_ORDRE
                 .map(g => ({ ...g, joueurs: reponses.filter(j => (j.statut || 'sans_reponse') === g.key).sort((a, b) => (a.nom || '').localeCompare(b.nom || '')) }))
                 .filter(g => g.joueurs.length)
-              const eyebrowEnt = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-              const btnFiche = { display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
+              const eyebrowEnt = { ...styleEtiquette(colors), margin: 0 }
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* En-tête séance */}
-                  <div style={{ ...st.card, margin: 0, borderLeft: `4px solid ${colors.accent.success}` }}>
+                  <div style={{ ...styleCarteLiseree(colors), margin: 0 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr)' : 'auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '14px' : '20px' }}>
-                      <div style={{ width: isMobile ? '58px' : '68px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden' }}>
-                        <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.black, background: colors.accent.success }}>
+                      <div style={{ width: isMobile ? '58px' : '68px', textAlign: 'center', border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonPastille, overflow: 'hidden' }}>
+                        <p style={{ ...styleEtiquette(colors), margin: 0, padding: '3px 0', fontSize: '11px', color: texteSur(couleurClub(colors)), background: couleurClub(colors) }}>
                           {dateSeance.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}
                         </p>
-                        <p style={{ margin: 0, padding: '5px 0 0', fontSize: isMobile ? '22px' : '26px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{dateSeance.getDate()}</p>
-                        <p style={{ margin: 0, padding: '2px 0 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateSeance.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
-                        {prochaineSeance.heure && <p style={{ margin: 0, padding: '3px 0', fontSize: '11px', fontWeight: 800, borderTop: `1px solid ${colors.border.default}`, fontVariantNumeric: 'tabular-nums' }}>{prochaineSeance.heure.slice(0, 5)}</p>}
+                        <p style={{ ...styleChiffreHeros(colors, isMobile ? 28 : 34), margin: 0, padding: '5px 0 0' }}>{dateSeance.getDate()}</p>
+                        <p style={{ ...styleEtiquette(colors), margin: 0, padding: '2px 0 4px', fontSize: '11px' }}>{dateSeance.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
+                        {prochaineSeance.heure && <p style={{ margin: 0, padding: '3px 0', fontFamily: police.titre, fontSize: '14px', fontWeight: 700, borderTop: `1px solid ${couleurCraie(colors)}`, fontVariantNumeric: 'tabular-nums' }}>{prochaineSeance.heure.slice(0, 5)}</p>}
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <p style={eyebrowEnt}>{t('ent_sous_onglet_prochaine', lang)}</p>
-                        <h2 style={{ margin: '4px 0 8px', fontSize: isMobile ? '18px' : '21px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
+                        <h2 style={{ margin: '4px 0 8px', fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: isMobile ? '22px' : '28px', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochaineSeance.description || t('ent_seance_generique', lang)}</h2>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: colors.accent.success, background: colors.accent.success + '1a', border: `1px solid ${colors.accent.success}40` }}>{echeance}</span>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', color: clos ? colors.accent.red : colors.text.secondary, background: clos ? colors.accent.red + '1a' : colors.background.raised, border: `1px solid ${clos ? colors.accent.red + '40' : colors.border.default}` }}>
-                            {clos ? <IcoCadenas /> : <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colors.accent.success }} />}
+                          <EtiquetteStatut couleur={couleurClub(colors)}>{echeance}</EtiquetteStatut>
+                          <EtiquetteStatut couleur={clos ? colors.accent.red : colors.accent.success}>
+                            {clos && <Icone icone={Lock} taille={14} />}
                             {clos ? t('ent_sondage_clos', lang) : t('ent_sondage_ouvert', lang)}
-                          </span>
-                          {prochaineSeance.lieu && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: colors.text.faint }}><IcoPin />{prochaineSeance.lieu}</span>}
+                          </EtiquetteStatut>
+                          {prochaineSeance.lieu && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: colors.text.dim }}><IcoPin />{prochaineSeance.lieu}</span>}
                         </div>
                       </div>
                       <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                         {prochaineSeance.fiche_id ? (
-                          <button onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} style={btnFiche}>
+                          <button type="button" onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                             <IcoFileText /> Voir la fiche
                           </button>
                         ) : canEdit('entrainements') && (
-                          <button onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)} style={btnFiche}>
+                          <button type="button" onClick={() => setModalImportFicheEntrainement(prochaineSeance.id)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                             <IcoLink /> Attacher une fiche
                           </button>
                         )}
@@ -9447,55 +9382,40 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
 
                   {/* Synthèse des réponses */}
-                  <div style={{ ...st.card, margin: 0 }}>
+                  <div style={{ ...styleCarte(colors), margin: 0 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto minmax(0,1fr)', gap: isMobile ? '14px' : '28px', alignItems: 'center' }}>
                       <div>
                         <p style={eyebrowEnt}>{t('ent_taux_reponse', lang)}</p>
-                        <p style={{ margin: '6px 0 0', fontSize: '32px', fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: tauxReponse >= 80 ? colors.accent.success : tauxReponse >= 50 ? colors.accent.amber : colors.text.primary }}>
-                          {tauxReponse}<span style={{ fontSize: '15px', color: colors.text.faint, marginLeft: '2px' }}>%</span>
+                        <p style={{ ...styleChiffreHeros(colors, 44), margin: '6px 0 0' }}>
+                          {tauxReponse}<span style={{ fontFamily: police.texte, fontSize: '16px', fontWeight: 600, color: colors.text.dim, marginLeft: '2px' }}>%</span>
                         </p>
-                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{nbRepondu}/{total} {t('equipe_joueurs', lang)}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.dim }}>{nbRepondu}/{total} {t('equipe_joueurs', lang)}</p>
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', height: '10px', borderRadius: '6px', overflow: 'hidden', background: colors.background.base, gap: '2px' }}>
-                          {SEGMENTS_BARRE.map(g => stats[g.key] > 0 && (
-                            <div key={g.key} title={`${stats[g.key]} ${g.label}`} style={{ width: `${(stats[g.key] / total) * 100}%`, background: g.key === 'sans_reponse' ? colors.border.strong : g.color, transition: 'width 0.3s' }} />
-                          ))}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, minmax(0,1fr))' : 'repeat(6, minmax(0,1fr))', gap: '8px', marginTop: '14px' }}>
-                          {SEGMENTS_BARRE.map(g => (
-                            <div key={g.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: stats[g.key] ? 1 : 0.45 }}>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
-                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: g.key === 'sans_reponse' ? colors.border.strong : g.color, flexShrink: 0 }} />{g.label}
-                              </span>
-                              <span style={{ fontSize: '18px', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: stats[g.key] ? (g.key === 'sans_reponse' ? colors.text.primary : g.color) : colors.text.faint }}>{stats[g.key] || 0}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <Jauge hauteur={8} libelle={null}
+                        segments={SEGMENTS_BARRE.map(g => ({ libelle: g.label, valeur: stats[g.key] || 0, couleur: g.key === 'sans_reponse' ? colors.border.strong : g.color }))} />
                     </div>
                   </div>
 
                   {/* Réponses individuelles, regroupées par statut */}
-                  <div style={{ ...st.card, margin: 0 }}>
+                  <div style={{ ...styleCarte(colors), margin: 0 }}>
                     <p style={{ ...eyebrowEnt, marginBottom: '16px' }}>{t('ent_reponses_individuelles', lang)}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                       {groupesReponses.map(g => {
                         const c = g.key === 'sans_reponse' ? colors.border.strong : g.color
                         return (
                           <div key={g.key}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c }} />
-                              <span style={{ fontSize: '12px', fontWeight: 700, color: g.key === 'sans_reponse' ? colors.text.secondary : g.color }}>{g.label}</span>
-                              <span style={{ fontSize: '11px', color: colors.text.faint }}>{g.joueurs.length}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+                              <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: c }} />
+                              <span style={styleEtiquette(colors)}>{g.label}</span>
+                              <span style={{ ...styleChiffreHeros(colors, 16), color: colors.text.dim }}>{g.joueurs.length}</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(230px, 1fr))', gap: '8px' }}>
                               {g.joueurs.map(j => (
-                                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: colors.background.surfaceAlt || colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${c}`, borderRadius: '10px', minWidth: 0, opacity: g.key === 'sans_reponse' ? 0.85 : 1 }}>
+                                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px 8px 15px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, boxShadow: `inset ${forme.lisere} 0 0 ${c}`, borderRadius: forme.rayonCarte, minWidth: 0 }}>
                                   <Avatar person={j} size={32} />
                                   <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                    <p style={{ margin: '1px 0 0', fontSize: '11px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                    <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
+                                    <p style={{ margin: '1px 0 0', fontSize: '12px', color: colors.text.dim }}>{j.poste || 'Poste non renseigné'}</p>
                                   </div>
                                 </div>
                               ))}
@@ -9508,11 +9428,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                   {/* Paramètres clôture */}
                   {canEdit('entrainements') && (
-                    <div style={{ ...st.card, margin: 0 }}>
+                    <div style={{ ...styleCarte(colors), margin: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
                         <div style={{ minWidth: 0, flex: '1 1 320px' }}>
                           <p style={eyebrowEnt}>{t('ent_cloture_auto_titre', lang)}</p>
-                          <div style={{ display: 'inline-flex', flexWrap: 'wrap', padding: '3px', marginTop: '12px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+                          <div role="group" aria-label={t('ent_cloture_auto_titre', lang)} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
                             {[
                               { val: null, label: t('ent_pas_de_cloture', lang) },
                               { val: 1, label: `1h ${t('ent_avant', lang)}` },
@@ -9521,38 +9441,36 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             ].map(opt => {
                               const actif = delaiCloture === opt.val
                               return (
-                                <button key={String(opt.val)} onClick={() => sauvegarderDelaiCloture(opt.val)}
-                                  style={{ background: actif ? colors.background.raised : 'transparent', border: 'none', color: actif ? colors.text.primary : colors.text.faint, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                                <button key={String(opt.val)} type="button" onClick={() => sauvegarderDelaiCloture(opt.val)} aria-pressed={actif} className={CLASSE_BOUTON_SECONDAIRE} style={styleChoix(colors, actif)}>
                                   {opt.label}
                                 </button>
                               )
                             })}
                           </div>
-                          <p style={{ fontSize: '12px', color: colors.text.faint, margin: '10px 0 0' }}>
+                          <p style={{ fontSize: '13px', color: colors.text.dim, margin: '10px 0 0' }}>
                             {delaiCloture ? t('ent_cloture_desc', lang).replace('{h}', delaiCloture) : t('ent_pas_de_cloture_desc', lang)}
                             {delaiCloture && heureCloture && (
-                              <> — clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
+                              <> : clôture à {heureCloture.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })} {heureCloture.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</>
                             )}
                           </p>
                         </div>
                         {!clos ? (
-                          <button onClick={cloturerSondage} disabled={savingCloture}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.red + alpha.subtle, border: `1px solid ${colors.accent.red}40`, color: colors.accent.red, padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: savingCloture ? 0.5 : 1 }}>
-                            <IcoCadenas /> {t('ent_cloturer_maintenant', lang)}
+                          <button type="button" onClick={cloturerSondage} disabled={savingCloture} className={CLASSE_BOUTON_SECONDAIRE}
+                            style={{ ...styleBoutonSecondaire(colors), color: colors.accent.red, borderColor: colors.accent.red }}>
+                            <Icone icone={Lock} /> {t('ent_cloturer_maintenant', lang)}
                           </button>
                         ) : (
-                          <button onClick={rouvrirSondage}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                          <button type="button" onClick={rouvrirSondage} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                             {t('ent_rouvrir_sondage', lang)}
                           </button>
                         )}
                       </div>
                       {delaiCloture && !prochaineSeance.heure && (
-                        <div style={{ background: colors.accent.orange + alpha.subtle, border: `1px solid ${colors.accent.orange}40`, borderRadius: '10px', padding: '10px 14px', marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <p style={{ fontSize: '12px', color: colors.accent.orange, margin: 0, flex: 1, minWidth: '200px' }}>
+                        <div style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.orange}`, paddingLeft: '19px', marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '13px', color: colors.text.primary, margin: 0, flex: 1, minWidth: '200px' }}>
                             Cette séance n'a pas d'heure renseignée : la clôture auto ne peut pas se déclencher tant qu'elle est absente.
                           </p>
-                          <input type="time" style={{ ...st.input, width: 'auto' }} disabled={savingHeureSeance}
+                          <input type="time" className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: 'auto' }} disabled={savingHeureSeance} aria-label="Heure de la séance"
                             onChange={e => e.target.value && sauvegarderHeureSeance(e.target.value)} />
                         </div>
                       )}
@@ -9565,83 +9483,79 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {sousOngletEnt === 'liste' && (
             <>
             {permissions?.entrainements === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                👁 {t('equipe_mode_lecture', lang)}
-              </div>
+              <div style={{ marginBottom: '16px' }}><EtiquetteStatut couleur={colors.accent.info}><Icone icone={Eye} taille={14} /> {t('equipe_mode_lecture', lang)}</EtiquetteStatut></div>
             )}
 
             {/* ── Ajout séance unique ── */}
             {showAddEntrainement && canEdit('entrainements') && (
-              <div id="ent-form-seance" style={{ ...st.card, border: `1px solid ${colors.accent.green}30`, marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
-                <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '14px' }}>➕ {t('seance_nouvelle', lang)}</p>
+              <div id="ent-form-seance" style={{ ...styleCarteLiseree(colors), marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
+                <p style={styleTitreCarte(colors)}><Icone icone={Plus} taille={20} /> {t('seance_nouvelle', lang)}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '12px' }}>
-                  <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={newEntrainement.heure} onChange={e => setNewEntrainement({ ...newEntrainement, heure: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
-                  <div><label style={st.label}>{t('ent_lieu', lang)}</label><input style={st.input} placeholder="Ex: Stade municipal" value={newEntrainement.lieu} onChange={e => setNewEntrainement({ ...newEntrainement, lieu: e.target.value })} /></div>
+                  <div><label style={labelEnt}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={newEntrainement.date} onChange={e => setNewEntrainement({ ...newEntrainement, date: e.target.value })} /></div>
+                  <div><label style={labelEnt}>{t('ent_heure_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="time" value={newEntrainement.heure} onChange={e => setNewEntrainement({ ...newEntrainement, heure: e.target.value })} /></div>
+                  <div><label style={labelEnt}>{t('ent_theme_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="Ex: Travail défensif, Jeu de transition..." value={newEntrainement.description} onChange={e => setNewEntrainement({ ...newEntrainement, description: e.target.value })} /></div>
+                  <div><label style={labelEnt}>{t('ent_lieu', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="Ex: Stade municipal" value={newEntrainement.lieu} onChange={e => setNewEntrainement({ ...newEntrainement, lieu: e.target.value })} /></div>
                 </div>
 
                 {/* ── Import d'une fiche archivée ── */}
                 <div style={{ marginBottom: '12px' }}>
                   {newEntrainement.fiche_id ? (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa30', color: colors.accent.purpleLight, fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px' }}>
-                      📄 {t('ent_fiche_importee', lang)}
-                      <span onClick={() => setNewEntrainement({ ...newEntrainement, fiche_id: null })} style={{ cursor: 'pointer', fontWeight: 900 }}>✕</span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <EtiquetteStatut couleur={colors.accent.success}><Icone icone={FileText} taille={14} /> {t('ent_fiche_importee', lang)}</EtiquetteStatut>
+                      <button type="button" onClick={() => setNewEntrainement({ ...newEntrainement, fiche_id: null })} className={CLASSE_CLIQUABLE} aria-label="Retirer la fiche importée" style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', display: 'flex', padding: '6px' }}><Icone icone={X} taille={16} /></button>
                     </div>
                   ) : (
-                    <button onClick={() => setShowImportFiche(v => !v)} style={{ background: 'transparent', border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      📥 {t('ent_importer_fiche', lang)}
+                    <button type="button" onClick={() => setShowImportFiche(v => !v)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
+                      <Icone icone={Download} taille={16} /> {t('ent_importer_fiche', lang)}
                     </button>
                   )}
 
                   {showImportFiche && (
-                    <div style={{ marginTop: '10px', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    <div style={{ marginTop: '10px', background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonCarte, padding: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                       {mesSeancesOuvertes.length === 0 ? (
-                        <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
+                        <p style={{ fontSize: '13px', color: colors.text.dim, padding: '8px', margin: 0 }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
                       ) : mesSeancesOuvertes.map(s => (
-                        <div key={s.id} onClick={() => importerFicheDansEntrainement(s)}
-                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
-                          onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
-                          </div>
-                          <span style={{ fontSize: '11px', color: colors.accent.purpleLight, flexShrink: 0 }}>{t('ent_choisir', lang)}</span>
-                        </div>
+                        <button type="button" key={s.id} onClick={() => importerFicheDansEntrainement(s)} className={CLASSE_CLIQUABLE}
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: forme.rayonPastille, cursor: 'pointer', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', fontFamily: police.texte, color: colors.text.primary }}>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</span>
+                            <span style={{ display: 'block', fontSize: '12px', color: colors.text.dim }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</span>
+                          </span>
+                          <span style={{ ...styleEtiquette(colors), fontSize: '11px', flexShrink: 0 }}>{t('ent_choisir', lang)}</span>
+                        </button>
                       ))}
                     </div>
                   )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={ajouterEntrainement} style={st.btnSolid}>{t('ent_creer_seance', lang)}</button>
-                  <button onClick={() => { setShowAddEntrainement(false); setShowImportFiche(false) }} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                  <button type="button" onClick={ajouterEntrainement} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{t('ent_creer_seance', lang)}</button>
+                  <button type="button" onClick={() => { setShowAddEntrainement(false); setShowImportFiche(false) }} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
 
             {/* ── Planificateur récurrent ── */}
             {showPlanificateur && canEdit('entrainements') && (
-              <div id="ent-form-planificateur" style={{ ...st.card, border: `1px solid ${colors.accent.blue}30`, marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: colors.accent.blue }}>📅 {t('ent_planifier_saison', lang)}</p>
-                <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('ent_choisis_jours', lang)}</p>
+              <div id="ent-form-planificateur" style={{ ...styleCarteLiseree(colors), marginBottom: '1.5rem', scrollMarginTop: '16px' }}>
+                <p style={{ ...styleTitreCarte(colors), margin: '0 0 4px' }}><Icone icone={CalendarDays} taille={20} /> {t('ent_planifier_saison', lang)}</p>
+                <p style={{ margin: '0 0 16px', fontSize: '13px', color: colors.text.dim }}>{t('ent_choisis_jours', lang)}</p>
 
                 {/* Jours de la semaine — chacun avec sa propre heure (ex: mar/jeu 20h, ven 19h) */}
-                <label style={st.label}>{t('ent_jours_entrainement', lang)}</label>
+                <label style={labelEnt}>{t('ent_jours_entrainement', lang)}</label>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
                   {[['Lun',1],['Mar',2],['Mer',3],['Jeu',4],['Ven',5],['Sam',6],['Dim',0]].map(([label, num]) => {
                     const actif = planSaison.joursActifs.includes(num)
                     return (
                       <div key={num} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button onClick={() => toggleJourPlan(num)}
-                          style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.soft : colors.background.raised, color: actif ? colors.accent.blue : colors.text.dim, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s' }}>
+                        <button type="button" onClick={() => toggleJourPlan(num)} aria-pressed={actif} className={CLASSE_BOUTON_SECONDAIRE}
+                          style={styleChoix(colors, actif)}>
                           {label}
                         </button>
                         {actif && (
                           <input type="time" value={planSaison.heuresParJour[num] || ''}
                             onChange={e => setPlanSaison(p => ({ ...p, heuresParJour: { ...p.heuresParJour, [num]: e.target.value } }))}
-                            style={{ ...st.input, width: '110px', padding: '6px 8px' }} />
+                            className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '120px' }} />
                         )}
                       </div>
                     )
@@ -9650,9 +9564,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                 {/* Dates + thème */}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '12px', marginBottom: '16px' }}>
-                  <div><label style={st.label}>{t('ent_debut_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} /></div>
-                  <div><label style={st.label}>{t('ent_fin_saison', lang)}</label><input style={st.input} type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} /></div>
-                  <div><label style={st.label}>{t('ent_theme_defaut', lang)}</label><input style={st.input} placeholder="Ex: Entraînement, Préparation physique..." value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} /></div>
+                  <div><label style={labelEnt}>{t('ent_debut_saison', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} /></div>
+                  <div><label style={labelEnt}>{t('ent_fin_saison', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} /></div>
+                  <div><label style={labelEnt}>{t('ent_theme_defaut', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="Ex: Entraînement, Préparation physique..." value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} /></div>
                 </div>
 
                 {/* Aperçu du nombre de séances */}
@@ -9666,28 +9580,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const cur2 = new Date(planSaison.dateDebut)
                   while (cur2 <= end) { if (planSaison.joursActifs.includes(cur2.getDay()) && !existingDates.has(cur2.toISOString().split('T')[0])) newCount++; cur2.setDate(cur2.getDate() + 1) }
                   return (
-                    <div style={{ background: `${colors.accent.blue}10`, border: `1px solid ${colors.accent.blue}20`, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: colors.accent.blue }}>
-                      📊 <strong>{count}</strong> séances au total · <strong>{newCount}</strong> nouvelles à créer ({count - newCount} déjà existantes)
+                    <div style={{ background: colors.background.raised, border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonCarte, padding: '10px 14px', marginBottom: '14px', fontSize: '14px', color: colors.text.primary, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Icone icone={ChartColumn} /> <span><strong>{count}</strong> séances au total · <strong>{newCount}</strong> nouvelles à créer ({count - newCount} déjà existantes)</span>
                     </div>
                   )
                 })()}
 
                 {/* Progression */}
                 {generatingPlan && (
-                  <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: colors.accent.blue }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
-                    <div style={{ background: colors.background.raised, borderRadius: '4px', height: '6px' }}>
-                      <div style={{ background: colors.accent.blue, borderRadius: '4px', height: '6px', width: `${planProgress.total > 0 ? (planProgress.done / planProgress.total) * 100 : 0}%`, transition: 'width 0.2s' }} />
-                    </div>
+                  <div style={{ background: colors.background.raised, borderRadius: forme.rayonCarte, padding: '10px 14px', marginBottom: '14px' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', color: colors.text.secondary }}>Création en cours... {planProgress.done}/{planProgress.total}</p>
+                    <Jauge hauteur={6} libelle={null} legende={false} segments={[{ libelle: 'Créées', valeur: planProgress.done }, { libelle: 'Restantes', valeur: Math.max(planProgress.total - planProgress.done, 0) }]} />
                   </div>
                 )}
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={genererSaison} disabled={generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length}
-                    style={{ ...st.btnSolid, background: colors.accent.blue, opacity: (generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length) ? 0.5 : 1 }}>
-                    {generatingPlan ? 'Génération...' : `🚀 ${t('ent_generer_seances', lang)}`}
+                  <button type="button" onClick={genererSaison} disabled={generatingPlan || !planSaison.dateDebut || !planSaison.dateFin || !planSaison.joursActifs.length}
+                    className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+                    {generatingPlan ? 'Génération...' : <><Icone icone={Rocket} /> {t('ent_generer_seances', lang)}</>}
                   </button>
-                  <button onClick={() => setShowPlanificateur(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                  <button type="button" onClick={() => setShowPlanificateur(false)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                 </div>
               </div>
             )}
@@ -9724,30 +9636,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 }
                 return sections.filter(([, g]) => g.length).map(([titreSection, g, ordre]) => (
                   <div key={titreSection}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, color: colors.accent.blue, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>{titreSection}</p>
+                    <p style={{ ...styleEtiquette(colors), margin: '0 0 10px' }}>{titreSection}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {g.map(([moisKey, { label, items }]) => {
                 const moisOuvert = moisOuverts.has(moisKey)
                 const taux = tauxMois(items)
                 return (
                   <div key={moisKey}>
-                    <div
+                    <button type="button" aria-expanded={moisOuvert} className={CLASSE_CLIQUABLE}
                       onClick={() => setMoisOuverts(prev => { const next = new Set(prev); next.has(moisKey) ? next.delete(moisKey) : next.add(moisKey); return next })}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 16px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: moisOuvert ? '10px 10px 0 0' : '10px', cursor: 'pointer', userSelect: 'none' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flexWrap: 'wrap' }}>
-                        <span style={{ color: colors.accent.blue, display: 'inline-flex' }}><IcoCalendar /></span>
-                        <span style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', textTransform: 'capitalize' }}>{label}</span>
-                        <span style={{ background: colors.background.raised, color: colors.text.muted, fontSize: '12px', padding: '2px 8px', borderRadius: '20px' }}>
+                      style={{ ...styleCarte(colors), width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 16px', borderRadius: moisOuvert ? `${forme.rayonCarte} ${forme.rayonCarte} 0 0` : forme.rayonCarte, cursor: 'pointer', textAlign: 'left', fontFamily: police.texte, color: colors.text.primary }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flexWrap: 'wrap' }}>
+                        <span style={{ color: colors.text.dim, display: 'inline-flex' }}><Icone icone={CalendarDays} /></span>
+                        <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '18px', textTransform: 'capitalize' }}>{label}</span>
+                        <span style={styleEtiquetteNeutre(colors)}>
                           {items.length} {items.length > 1 ? t('stats_seances_plural', lang) : t('stats_seance_singular', lang)}
                         </span>
                         {taux != null && (
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: taux >= 80 ? colors.accent.success : taux >= 60 ? colors.accent.amber : colors.accent.red }}>Présence {taux}%</span>
+                          <span style={{ ...styleEtiquette(colors), fontSize: '11px' }}>Présence <span style={{ ...styleChiffreHeros(colors, 16), color: colors.text.primary }}>{taux}&nbsp;%</span></span>
                         )}
-                      </div>
-                      <span style={{ color: colors.text.faint, display: 'inline-flex' }}><IcoChevronBas ouvert={moisOuvert} /></span>
-                    </div>
+                      </span>
+                      <span style={{ color: colors.text.dim, display: 'inline-flex' }}><IcoChevronBas ouvert={moisOuvert} /></span>
+                    </button>
                     {moisOuvert && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: `1px solid ${colors.border.subtle}`, borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: `1px solid ${couleurCraie(colors)}`, borderTop: 'none', borderRadius: `0 0 ${forme.rayonCarte} ${forme.rayonCarte}`, padding: '10px' }}>
                         {[...items].sort((a, b) => ordre === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)).map(e => {
                 const ouvert = entrainementActif === e.id
                 const getStatutJoueur = (j) => {
@@ -9765,7 +9677,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const dateObj = new Date(e.date + 'T12:00:00')
                 const estFuture = dateObj > new Date()
                 return (
-                  <div key={e.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${estFuture ? colors.accent.blue : colors.accent.green}`, borderRadius: '10px', padding: isMobile ? '12px' : '12px 16px' }}>
+                  <div key={e.id} style={{ ...(estFuture ? styleCarteLiseree(colors) : styleCarte(colors)), padding: isMobile ? '12px' : '12px 16px', paddingLeft: estFuture ? '19px' : (isMobile ? '12px' : '16px') }}>
                     {/* V3 : pavé date, titre, heure/lieu, fiche, présences en barre
                         segmentée + légende, actions en icônes au trait. Mêmes actions. */}
                     {(() => {
@@ -9782,45 +9694,46 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         [nbMalades, colors.accent.purple, 'malade', 'malades'],
                       ]
                       const sansReponse = Math.max(0, total - segments.reduce((x, [n]) => x + n, 0))
-                      const btnIcone = (couleur) => ({ background: 'transparent', border: `1px solid ${colors.border.default}`, color: couleur, width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 })
+                      const btnIcone = () => ({ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, width: '36px', height: '36px', borderRadius: forme.rayonCarte, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 })
                       const actions = (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }} onClick={ev => ev.stopPropagation()}>
                           {!estFuture && total > 0 && (
-                            <span style={{ background: (taux >= 0.8 ? colors.accent.success : colors.accent.amber) + '1a', border: `1px solid ${(taux >= 0.8 ? colors.accent.success : colors.accent.amber)}40`, color: taux >= 0.8 ? colors.accent.success : colors.accent.amber, fontSize: '12px', fontWeight: 800, padding: '5px 10px', borderRadius: '8px', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                            <EtiquetteStatut couleur={taux >= 0.8 ? colors.accent.success : colors.accent.amber} style={{ fontFamily: police.titre, fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}>
                               {nbPresents}/{total}
-                            </span>
+                            </EtiquetteStatut>
                           )}
                           {canEdit('entrainements') && (
                             demandesNote[e.id] ? (
-                              <span onClick={() => fermerDemandeNote(demandesNote[e.id].id, e.id)}
-                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti RPE demandé — clique pour annuler' : 'Ressenti RPE fermé — clique pour rouvrir'}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '1a' : 'transparent', border: `1px solid ${demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber + '55' : colors.border.default}`, color: demandesNote[e.id].statut === 'ouverte' ? colors.accent.amber : colors.text.disabled, padding: '5px 9px', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              <button type="button" onClick={() => fermerDemandeNote(demandesNote[e.id].id, e.id)}
+                                title={demandesNote[e.id].statut === 'ouverte' ? 'Ressenti RPE demandé : clique pour annuler' : 'Ressenti RPE fermé : clique pour rouvrir'}
+                                className={CLASSE_CLIQUABLE}
+                                style={{ ...styleEtiquetteNeutre(colors), gap: '6px', cursor: 'pointer', color: demandesNote[e.id].statut === 'ouverte' ? colors.text.primary : colors.text.dim, boxShadow: demandesNote[e.id].statut === 'ouverte' ? `inset ${forme.lisere} 0 0 ${colors.accent.amber}` : 'none' }}>
                                 <IcoEtoileTrait /> {demandesNote[e.id].statut === 'ouverte' ? 'RPE en cours' : 'RPE fermé'}
-                              </span>
+                              </button>
                             ) : (
                               <button onClick={() => outils.outilActif('suivi_joueurs') ? demanderNoteSeance(e) : setOutilPayantOuvert({ outilId: 'suivi_joueurs', detail: 'Le ressenti RPE de tes joueurs fait partie de l\'outil Suivi des joueurs.' })} disabled={demandeNoteEnCours === e.id}
                                 title="Demander le ressenti RPE aux joueurs présents à cette séance" aria-label="Demander le ressenti RPE"
-                                style={btnIcone(colors.accent.amber)}>
+                                style={btnIcone()}>
                                 {demandeNoteEnCours === e.id ? '…' : <IcoEtoileTrait />}
                               </button>
                             )
                           )}
                           {canEdit('entrainements') && !e.fiche_id && (
-                            <button onClick={() => setModalImportFicheEntrainement(e.id)} title={t('ent_importer_fiche', lang)} aria-label={t('ent_importer_fiche', lang)} style={btnIcone(colors.accent.green)}>
+                            <button onClick={() => setModalImportFicheEntrainement(e.id)} title={t('ent_importer_fiche', lang)} aria-label={t('ent_importer_fiche', lang)} style={btnIcone()}>
                               <IcoLink />
                             </button>
                           )}
                           {canEdit('entrainements') && (
-                            <button onClick={() => setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' })} title="Modifier la séance" aria-label="Modifier la séance" style={btnIcone(colors.accent.blue)}>
+                            <button onClick={() => setEntrainementEnEdition({ id: e.id, date: e.date || '', heure: e.heure || '', description: e.description || '', lieu: e.lieu || '' })} title="Modifier la séance" aria-label="Modifier la séance" style={btnIcone()}>
                               <IcoCrayon />
                             </button>
                           )}
                           {canEdit('entrainements') && (
-                            <button onClick={() => supprimerEntrainement(e.id)} title="Supprimer la séance" aria-label="Supprimer la séance" style={btnIcone(colors.text.faint)}>
+                            <button onClick={() => supprimerEntrainement(e.id)} title="Supprimer la séance" aria-label="Supprimer la séance" style={btnIcone()}>
                               <IcoCorbeille />
                             </button>
                           )}
-                          <button onClick={() => setEntrainementActif(ouvert ? null : e.id)} title={ouvert ? 'Replier' : 'Saisir les présences'} aria-label={ouvert ? 'Replier' : 'Saisir les présences'} style={{ ...btnIcone(colors.text.secondary), border: 'none' }}>
+                          <button onClick={() => setEntrainementActif(ouvert ? null : e.id)} title={ouvert ? 'Replier' : 'Saisir les présences'} aria-label={ouvert ? 'Replier' : 'Saisir les présences'} aria-expanded={ouvert} style={{ ...btnIcone(), border: 'none' }}>
                             <IcoChevronBas ouvert={ouvert} />
                           </button>
                         </div>
@@ -9828,33 +9741,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       return (
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'auto minmax(0,1fr)' : 'auto minmax(0,1fr) auto', alignItems: 'center', gap: isMobile ? '12px' : '16px' }}>
                           {/* Pavé date */}
-                          <div onClick={() => setEntrainementActif(ouvert ? null : e.id)} style={{ width: '54px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', alignSelf: 'start' }}>
-                            <p style={{ margin: 0, padding: '3px 0', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: estFuture ? colors.accent.onBrand : colors.text.faint, background: estFuture ? colors.accent.blue : colors.background.raised }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
-                            <p style={{ margin: 0, padding: '4px 0 0', fontSize: '20px', fontWeight: 800, lineHeight: 1, color: colors.text.primary }}>{dateObj.getDate()}</p>
-                            <p style={{ margin: 0, padding: '2px 0 4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: colors.text.faint }}>{dateObj.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
+                          <div onClick={() => setEntrainementActif(ouvert ? null : e.id)} style={{ width: '54px', textAlign: 'center', border: `1px solid ${couleurCraie(colors)}`, borderRadius: forme.rayonPastille, overflow: 'hidden', cursor: 'pointer', alignSelf: 'start' }}>
+                            <p style={{ ...styleEtiquette(colors), margin: 0, padding: '3px 0', fontSize: '10px', color: estFuture ? texteSur(couleurClub(colors)) : colors.text.dim, background: estFuture ? couleurClub(colors) : colors.background.raised }}>{dateObj.toLocaleDateString(localeOf(lang), { weekday: 'short' }).replace('.', '')}</p>
+                            <p style={{ ...styleChiffreHeros(colors, 24), margin: 0, padding: '5px 0 0' }}>{dateObj.getDate()}</p>
+                            <p style={{ ...styleEtiquette(colors), margin: 0, padding: '2px 0 4px', fontSize: '10px' }}>{dateObj.toLocaleDateString(localeOf(lang), { month: 'short' }).replace('.', '')}</p>
                           </div>
 
                           {/* Titre, infos, présences */}
                           <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setEntrainementActif(ouvert ? null : e.id)}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              <p style={{ margin: 0, fontWeight: 800, fontSize: '14px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{titre}</p>
+                              <p style={{ margin: 0, fontFamily: police.titre, fontWeight: 700, fontSize: '19px', lineHeight: 1.15, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{titre}</p>
                               {estFuture && (
-                                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '6px', color: colors.accent.blue, background: colors.accent.blue + '1a', border: `1px solid ${colors.accent.blue}40` }}>
+                                <EtiquetteStatut couleur={couleurClub(colors)}>
                                   {joursRestants <= 0 ? "Aujourd'hui" : joursRestants === 1 ? 'Demain' : `Dans ${joursRestants} j`}
-                                </span>
+                                </EtiquetteStatut>
                               )}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flexWrap: 'wrap', fontSize: '12px', color: colors.text.faint }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flexWrap: 'wrap', fontSize: '13px', color: colors.text.dim }}>
                               {e.heure && <span style={{ fontWeight: 700, color: colors.text.secondary, fontVariantNumeric: 'tabular-nums' }}>{String(e.heure).slice(0, 5)}</span>}
                               {e.lieu && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IcoPin /> {e.lieu}</span>}
                               {e.fiche_id && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center' }} onClick={ev => ev.stopPropagation()}>
-                                  <span
+                                  <button type="button"
                                     onClick={() => { const s2 = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s2) { setFicheApercu(s2); setFicheApercuEnHaut(true) } }}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', padding: '2px 8px', borderRadius: '6px 0 0 6px', cursor: 'pointer' }}>
+                                    className={CLASSE_CLIQUABLE}
+                                    style={{ ...styleEtiquetteNeutre(colors), gap: '6px', color: colors.text.primary, borderRadius: `${forme.rayonPastille} 0 0 ${forme.rayonPastille}`, cursor: 'pointer' }}>
                                     <IcoFileText /> {t('ent_voir_fiche', lang)}
-                                  </span>
-                                  <span
+                                  </button>
+                                  <button type="button"
                                     onClick={async () => {
                                       if (!confirm('Détacher cette fiche de la séance ?')) return
                                       // Optimiste : la fiche reste dans "Mes séances sauvegardées",
@@ -9866,39 +9780,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                         alert('Erreur : ' + error.message)
                                       }
                                     }}
-                                    title="Détacher cette fiche"
-                                    style={{ fontSize: '11px', color: colors.accent.purpleLight, background: '#a78bfa10', border: '1px solid #a78bfa30', borderLeft: 'none', padding: '2px 7px', borderRadius: '0 6px 6px 0', cursor: 'pointer', lineHeight: 1.5 }}>
-                                    ×
-                                  </span>
+                                    title="Détacher cette fiche" aria-label="Détacher cette fiche"
+                                    className={CLASSE_CLIQUABLE}
+                                    style={{ ...styleEtiquetteNeutre(colors), color: colors.text.primary, borderLeft: 'none', borderRadius: `0 ${forme.rayonPastille} ${forme.rayonPastille} 0`, padding: '2px 6px', cursor: 'pointer' }}>
+                                    <Icone icone={X} taille={14} />
+                                  </button>
                                 </span>
                               )}
                               {canEdit('entrainements') && e.date >= dateParisAujourdhui() && (e.fiche_id || publicationsSeance[e.id]) && (
-                                <span
+                                <button type="button"
                                   onClick={ev => { ev.stopPropagation(); setEntrainementAPublier(e) }}
                                   title={publicationsSeance[e.id] ? 'Voir, modifier ou retirer la séance publiée aux joueurs' : 'Choisir les procédés visibles par les joueurs'}
-                                  style={publicationsSeance[e.id]
-                                    ? { fontSize: '11px', fontWeight: 700, color: colors.accent.green, background: colors.accent.green + '1a', border: `1px solid ${colors.accent.green}55`, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }
-                                    : { fontSize: '11px', fontWeight: 600, color: colors.accent.blue, background: colors.accent.blue + '10', border: `1px solid ${colors.accent.blue}40`, padding: '2px 8px', borderRadius: '6px', cursor: 'pointer' }}>
+                                  className={CLASSE_CLIQUABLE}
+                                  style={{ ...styleEtiquetteNeutre(colors), gap: '6px', cursor: 'pointer', color: colors.text.primary, boxShadow: publicationsSeance[e.id] ? `inset ${forme.lisere} 0 0 ${colors.accent.success}` : 'none' }}>
                                   {publicationsSeance[e.id]
                                     ? `Publiée · ${publicationsSeance[e.id].destinataires.length} joueur${publicationsSeance[e.id].destinataires.length > 1 ? 's' : ''}`
                                     : 'Publier aux joueurs'}
-                                </span>
+                                </button>
                               )}
                             </div>
                             {!estFuture && total > 0 && (
-                              <div style={{ marginTop: '8px', maxWidth: '460px' }}>
-                                <div style={{ display: 'flex', height: '5px', borderRadius: '3px', overflow: 'hidden', background: colors.background.base }}>
-                                  {segments.map(([n, c], i) => n > 0 && <div key={i} style={{ width: `${(n / total) * 100}%`, background: c }} />)}
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '5px', fontSize: '11px', color: colors.text.faint }}>
-                                  {segments.filter(([n]) => n > 0).map(([n, c, un, plusieurs]) => (
-                                    <span key={un} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: c }} />
-                                      <strong style={{ color: colors.text.secondary }}>{n}</strong> {n > 1 ? plusieurs : un}
-                                    </span>
-                                  ))}
-                                  {sansReponse > 0 && <span><strong style={{ color: colors.text.secondary }}>{sansReponse}</strong> sans réponse</span>}
-                                </div>
+                              <div style={{ marginTop: '10px', maxWidth: '460px' }}>
+                                <Jauge hauteur={6} libelle={null}
+                                  segments={[...segments.filter(([n]) => n > 0).map(([n, c, un, plusieurs]) => ({ libelle: n > 1 ? plusieurs : un, valeur: n, couleur: c })),
+                                    ...(sansReponse > 0 ? [{ libelle: 'sans réponse', valeur: sansReponse, couleur: colors.border.strong }] : [])]} />
                               </div>
                             )}
                           </div>
@@ -9910,24 +9815,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     })()}
 
                     {ouvert && (
-                      <div style={{ marginTop: '14px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '14px' }}>
+                      <div style={{ marginTop: '14px', borderTop: `1px solid ${couleurCraie(colors)}`, paddingTop: '14px' }}>
                         {joueurs.length === 0 ? (
-                          <p style={{ color: colors.text.faint, fontSize: '13px', margin: 0 }}>{t('ent_ajoute_joueurs', lang)}</p>
+                          <p style={{ color: colors.text.dim, fontSize: '13px', margin: 0 }}>{t('ent_ajoute_joueurs', lang)}</p>
                         ) : (
                           <>
                             {/* Légende */}
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
                               {Object.entries(STATUT_CONFIG).map(([key, s]) => (
-                                <span key={key} style={{ fontSize: '11px', color: s.color, background: s.bg, border: `1px solid ${s.border}`, padding: '2px 8px', borderRadius: '10px' }}>
-                                  {s.emoji} {s.label}
-                                </span>
+                                <EtiquetteStatut key={key} couleur={s.color}><Icone icone={s.icone} taille={14} /> {s.label}</EtiquetteStatut>
                               ))}
-                              <span style={{ fontSize: '11px', color: colors.border.strong }}>· {t('ent_clique_statut', lang)}</span>
+                              <span style={{ fontSize: '12px', color: colors.text.dim }}>· {t('ent_clique_statut', lang)}</span>
                             </div>
                             {canEdit('entrainements') && (
-                              <button onClick={() => importerReponsesSondage(e.id)}
-                                style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}>
-                                📥 Importer les réponses au sondage
+                              <button type="button" onClick={() => importerReponsesSondage(e.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                                style={{ ...styleBoutonPetit(colors), marginBottom: '12px' }}>
+                                <Icone icone={Download} taille={16} /> Importer les réponses au sondage
                               </button>
                             )}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '7px' }}>
@@ -9941,31 +9844,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 const cfg = nonSaisi
                                   ? (dispoAuto
                                       ? { ...(STATUT_CONFIG[dispoAuto] || STATUT_CONFIG.absent) }
-                                      : { emoji: '⬜', label: t('ent_non_saisi', lang), bg: '#ffffff05', border: colors.border.default, color: colors.text.disabled })
+                                      : { icone: Square, label: t('ent_non_saisi', lang), bg: 'transparent', border: colors.border.default, color: colors.text.dim })
                                   : (STATUT_CONFIG[statut] || STATUT_CONFIG.absent)
                                 const hasPoint = !!p?.point_seance
                                 return (
                                   <div key={j.id}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: cfg.bg, border: `1px solid ${hasPoint ? '#fbbf2460' : cfg.border}`, borderRadius: '8px', transition: 'all 0.15s', position: 'relative' }}>
-                                    <span onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ fontSize: '15px', flexShrink: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>{cfg.emoji}</span>
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: colors.background.surface, border: `1px solid ${hasPoint ? colors.accent.amber : colors.border.subtle}`, boxShadow: `inset ${forme.lisere} 0 0 ${cfg.color}`, paddingLeft: '13px', borderRadius: forme.rayonCarte, position: 'relative' }}>
+                                    <span onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flexShrink: 0, display: 'flex', color: cfg.color, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}><Icone icone={cfg.icone} taille={18} /></span>
                                     <div onClick={() => canEdit('entrainements') && cyclerPresence(e.id, j.id, nonSaisi ? 'non_saisi' : statut)} style={{ flex: 1, minWidth: 0, cursor: canEdit('entrainements') ? 'pointer' : 'default' }}>
-                                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
-                                      <p style={{ margin: 0, fontSize: '10px', color: cfg.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j?.nom || ''}</p>
+                                      <p style={{ ...styleEtiquette(colors), fontSize: '11px', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         {cfg.label}
-                                        {dispoAuto && (
-                                          <span style={{ fontSize: '8px', color: colors.accent.blue, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, borderRadius: '20px', padding: '1px 6px', fontWeight: 700 }}>
-                                            {t('ent_dispo_auto', lang)}
-                                          </span>
-                                        )}
+                                        {dispoAuto && <span style={styleEtiquetteNeutre(colors)}>{t('ent_dispo_auto', lang)}</span>}
                                       </p>
                                     </div>
                                     {(canEdit('entrainements') || hasPoint) && (
-                                      <span
+                                      <button type="button"
                                         title={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
+                                        aria-label={hasPoint ? 'Retirer le point séance' : 'Attribuer un point séance'}
+                                        aria-pressed={hasPoint}
+                                        disabled={!canEdit('entrainements')}
                                         onClick={ev => { ev.stopPropagation(); canEdit('entrainements') && togglePointSeance(e.id, j.id, p) }}
-                                        style={{ fontSize: '14px', cursor: canEdit('entrainements') ? 'pointer' : 'default', opacity: hasPoint ? 1 : 0.2, flexShrink: 0, transition: 'opacity 0.15s' }}>
-                                        ⭐
-                                      </span>
+                                        style={{ background: 'none', border: 'none', padding: '4px', display: 'flex', color: hasPoint ? colors.accent.amber : colors.text.dim, opacity: hasPoint ? 1 : 0.5, cursor: canEdit('entrainements') ? 'pointer' : 'default', flexShrink: 0 }}>
+                                        <Icone icone={Star} taille={18} style={hasPoint ? { fill: 'currentColor' } : undefined} />
+                                      </button>
                                     )}
                                   </div>
                                 )
@@ -9988,9 +9890,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 ))
               })()}
               {entrainements.length === 0 && (
-                <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}>
-                  <p style={{ color: colors.text.faint, margin: '0 0 8px' }}>{t('ent_aucune_seance', lang)}</p>
-                  <p style={{ color: colors.border.strong, fontSize: '13px', margin: 0 }}>{t('ent_utilise_planificateur', lang)}</p>
+                <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '3rem' }}>
+                  <p style={{ color: colors.text.secondary, margin: '0 0 8px' }}>{t('ent_aucune_seance', lang)}</p>
+                  <p style={{ color: colors.text.dim, fontSize: '13px', margin: 0 }}>{t('ent_utilise_planificateur', lang)}</p>
                 </div>
               )}
             </div>
@@ -9999,21 +9901,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {/* ── Modale "Modifier la séance" ── */}
             {entrainementEnEdition && (
-              <div style={{ position: 'fixed', inset: 0, background: '#000000aa', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                <div role="dialog" aria-modal="true" aria-label={t('ent_modifier_seance', lang)} style={{ ...styleCarte(colors), padding: '24px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>✏️ {t('ent_modifier_seance', lang)}</p>
-                    <button onClick={() => setEntrainementEnEdition(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                    <p style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Pencil} taille={20} /> {t('ent_modifier_seance', lang)}</p>
+                    <button type="button" onClick={() => setEntrainementEnEdition(null)} className={CLASSE_CLIQUABLE} aria-label="Fermer" style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', display: 'flex', padding: '8px' }}><Icone icone={X} taille={20} /></button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                    <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={entrainementEnEdition.date} onChange={e => setEntrainementEnEdition(p => ({ ...p, date: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('ent_heure_optionnel', lang)}</label><input style={st.input} type="time" value={entrainementEnEdition.heure} onChange={e => setEntrainementEnEdition(p => ({ ...p, heure: e.target.value }))} /></div>
-                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('ent_theme_optionnel', lang)}</label><input style={st.input} value={entrainementEnEdition.description} onChange={e => setEntrainementEnEdition(p => ({ ...p, description: e.target.value }))} /></div>
-                    <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>{t('ent_lieu', lang)}</label><input style={st.input} value={entrainementEnEdition.lieu} onChange={e => setEntrainementEnEdition(p => ({ ...p, lieu: e.target.value }))} /></div>
+                    <div><label style={labelEnt}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={entrainementEnEdition.date} onChange={e => setEntrainementEnEdition(p => ({ ...p, date: e.target.value }))} /></div>
+                    <div><label style={labelEnt}>{t('ent_heure_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} type="time" value={entrainementEnEdition.heure} onChange={e => setEntrainementEnEdition(p => ({ ...p, heure: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={labelEnt}>{t('ent_theme_optionnel', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={entrainementEnEdition.description} onChange={e => setEntrainementEnEdition(p => ({ ...p, description: e.target.value }))} /></div>
+                    <div style={{ gridColumn: '1 / -1' }}><label style={labelEnt}>{t('ent_lieu', lang)}</label><input className={CLASSE_CHAMP} style={styleChamp(colors)} value={entrainementEnEdition.lieu} onChange={e => setEntrainementEnEdition(p => ({ ...p, lieu: e.target.value }))} /></div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={sauvegarderEntrainementEdite} disabled={savingEntrainementEdit} style={st.btnSolid}>{savingEntrainementEdit ? 'Sauvegarde...' : `💾 ${t('btn_sauvegarder', lang)}`}</button>
-                    <button onClick={() => setEntrainementEnEdition(null)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button type="button" onClick={sauvegarderEntrainementEdite} disabled={savingEntrainementEdit} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{savingEntrainementEdit ? 'Sauvegarde...' : <><Icone icone={Save} /> {t('btn_sauvegarder', lang)}</>}</button>
+                    <button type="button" onClick={() => setEntrainementEnEdition(null)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                   </div>
                 </div>
               </div>
@@ -10035,15 +9937,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== ÉVALUATIONS ===== */}
         {activeSection === 'notes' && (
           <>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('eval_titre_joueurs', lang)}</h1>
-            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: permissions?.notes === 'lecture' ? '0.5rem' : '1.5rem' }}>Fiche d'évaluation par saison — début, mi-saison, fin de saison.</p>
+            <TitreEcran titre={t('eval_titre_joueurs', lang)} sousTitre="Fiche d'évaluation par saison : début, mi-saison, fin de saison." style={permissions?.notes === 'lecture' ? { marginBottom: '12px' } : undefined} />
             {permissions?.notes === 'lecture' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}30`, color: colors.accent.blue, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
-                {t('equipe_mode_lecture', lang)}
-              </div>
+              <div style={{ marginBottom: '16px' }}><EtiquetteStatut couleur={colors.accent.info}>{t('equipe_mode_lecture', lang)}</EtiquetteStatut></div>
             )}
             {joueurs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.faint }}>{t('eval_ajoute_joueurs', lang)}</p></div>
+              <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '3rem' }}><p style={{ color: colors.text.dim, margin: 0 }}>{t('eval_ajoute_joueurs', lang)}</p></div>
             ) : (
               (() => {
                 // V3 : regroupement par ligne, même règle que Mon équipe
@@ -10056,7 +9955,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   { label: 'Milieux', postes: ['Milieu défensif', 'Milieu central', 'Milieu offensif'], couleur: colors.accent.purpleLight },
                   { label: 'Attaquants', postes: ['Ailier droit', 'Ailier gauche', 'Attaquant'], couleur: colors.accent.green },
                 ]
-                const groupes = [...LIGNES.map(l => ({ ...l, joueurs: [] })), { label: 'Autres', couleur: colors.text.faint, joueurs: [] }]
+                const groupes = [...LIGNES.map(l => ({ ...l, joueurs: [] })), { label: 'Autres', couleur: colors.text.dim, joueurs: [] }]
                 joueurs.forEach(j => {
                   const idx = LIGNES.findIndex(l => l.postes.includes(j.poste))
                   groupes[idx === -1 ? LIGNES.length : idx].joueurs.push(j)
@@ -10065,47 +9964,42 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const nbEvalues = joueurs.filter(j => derniereEvaluation(j.id)).length
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '12px', color: colors.text.faint }}><strong style={{ color: colors.text.primary }}>{nbEvalues}</strong> / {joueurs.length} joueurs évalués</span>
-                      <div style={{ flex: '0 1 220px', height: '5px', borderRadius: '3px', background: colors.background.raised, overflow: 'hidden' }}>
-                        <div style={{ width: `${joueurs.length ? (nbEvalues / joueurs.length) * 100 : 0}%`, height: '100%', background: colors.accent.success }} />
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', color: colors.text.secondary }}><strong style={{ ...styleChiffreHeros(colors, 20), verticalAlign: 'baseline' }}>{nbEvalues}</strong> / {joueurs.length} joueurs évalués</span>
+                      <Jauge libelle={null} legende={false} hauteur={6} style={{ flex: '0 1 220px' }} segments={[{ libelle: 'Évalués', valeur: nbEvalues }, { libelle: 'À évaluer', valeur: joueurs.length - nbEvalues }]} />
                     </div>
                     {groupes.filter(g => g.joueurs.length).map(g => (
                       <div key={g.label}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px', paddingBottom: '8px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: g.couleur }} />
-                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{g.label}</p>
-                          <span style={{ fontSize: '11px', color: colors.text.faint }}>{g.joueurs.length}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px', paddingBottom: '8px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+                          <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: g.couleur }} />
+                          <p style={{ ...styleEtiquette(colors), margin: 0 }}>{g.label}</p>
+                          <span style={{ ...styleChiffreHeros(colors, 16), color: colors.text.dim }}>{g.joueurs.length}</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
                           {g.joueurs.map(j => {
                             const ev = derniereEvaluation(j.id)
                             const note = ev ? Number(ev.note_globale_saison) : null
-                            const couleurNote = note == null ? colors.text.faint : note >= 14 ? colors.accent.success : note >= 10 ? colors.accent.amber : colors.accent.red
-                            return (
-                              <button key={j.id} onClick={() => setEvalJoueurOuverte(j)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${g.couleur}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}
-                                onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised }}
-                                onMouseLeave={e => { e.currentTarget.style.background = colors.background.surface }}>
+                                                        return (
+                              <button key={j.id} type="button" onClick={() => setEvalJoueurOuverte(j)} className={CLASSE_CLIQUABLE}
+                                style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', width: '100%', boxShadow: `inset ${forme.lisere} 0 0 ${g.couleur}`, padding: '12px 14px 12px 17px', cursor: 'pointer', fontFamily: police.texte, color: colors.text.primary }}>
                                 <div style={{ position: 'relative', flexShrink: 0 }}>
                                   <Avatar person={j} size={48} bg={g.couleur + '22'} border={`2px solid ${g.couleur}55`} textColor={g.couleur} />
                                   {j.numero_maillot != null && j.numero_maillot !== '' && (
-                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>{j.numero_maillot}</span>
+                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', minWidth: '20px', height: '20px', padding: '0 4px', borderRadius: forme.rayonPastille, background: colors.background.base, border: `1px solid ${colors.border.strong}`, fontFamily: police.titre, fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', fontVariantNumeric: 'tabular-nums' }}>{j.numero_maillot}</span>
                                   )}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.prenom} {j.nom}</p>
-                                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint }}>{j.poste || 'Poste non renseigné'}</p>
+                                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.dim }}>{j.poste || 'Poste non renseigné'}</p>
                                 </div>
                                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                   {note != null ? (
                                     <>
-                                      <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: couleurNote, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{note}<span style={{ fontSize: '10px', color: colors.text.faint, fontWeight: 600 }}>/20</span></p>
-                                      <p style={{ margin: '3px 0 0', fontSize: '10px', color: colors.text.faint }}>{new Date(ev.updated_at).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
+                                      <p style={{ ...styleChiffreHeros(colors, 26), margin: 0 }}>{note}<span style={{ fontFamily: police.texte, fontSize: '11px', color: colors.text.dim, fontWeight: 600 }}>/20</span></p>
+                                      <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.dim }}>{new Date(ev.updated_at).toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short' })}</p>
                                     </>
                                   ) : (
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: colors.accent.blue, border: `1px solid ${colors.accent.blue}55`, borderRadius: '6px', padding: '4px 8px', whiteSpace: 'nowrap' }}>À évaluer</span>
+                                    <span style={styleEtiquetteNeutre(colors)}>À évaluer</span>
                                   )}
                                 </div>
                               </button>
@@ -10139,39 +10033,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ===== MES SÉANCES ===== */}
         {activeSection === 'mes_seances' && (
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              <button
-                onClick={() => setModeSeance('rediger')}
-                style={{ background: modeSeance === 'rediger' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'rediger' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                ✏️ {t('seance_rediger_fiche', lang)}
-              </button>
-              <button
-                onClick={() => setModeSeance('enregistrer')}
-                style={{ background: modeSeance === 'enregistrer' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'enregistrer' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                📥 {t('seance_enregistrer_une', lang)}
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px 12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <div className="df-onglets" role="tablist" aria-label="Mode de création de séance" style={{ ...coqueVars(colors), marginBottom: 0 }}>
+                {[
+                  { key: 'rediger', icone: Pencil, label: t('seance_rediger_fiche', lang), visible: true },
+                  { key: 'enregistrer', icone: Inbox, label: t('seance_enregistrer_une', lang), visible: true },
+                  { key: 'scanner', icone: Camera, label: t('seance_scanner', lang), visible: true },
+                  { key: 'club', icone: Landmark, label: t('seance_eval_club', lang), visible: SEANCE_IA_BETA_EMAILS.includes(profil?.email) },
+                ].filter(o => o.visible).map(o => (
+                  <button key={o.key} type="button" role="tab" aria-selected={modeSeance === o.key} className="df-onglet" onClick={() => setModeSeance(o.key)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Icone icone={o.icone} /> {o.label}
+                  </button>
+                ))}
+              </div>
               {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
-                <button
-                  onClick={() => setModalGenerationIA(true)}
-                  style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-                >
-                  🤖 Générer avec l'IA
-                </button>
-              )}
-              <button
-                onClick={() => setModeSeance('scanner')}
-                style={{ background: modeSeance === 'scanner' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'scanner' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                📷 {t('seance_scanner', lang)}
-              </button>
-              {SEANCE_IA_BETA_EMAILS.includes(profil?.email) && (
-                <button
-                  onClick={() => setModeSeance('club')}
-                  style={{ background: modeSeance === 'club' ? colors.accent.blue : colors.background.raised, color: modeSeance === 'club' ? colors.accent.onBrand : colors.text.dim, border: 'none', padding: '10px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
-                >
-                  🏟️ {t('seance_eval_club', lang)}
+                <button type="button" onClick={() => setModalGenerationIA(true)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
+                  <Icone icone={Bot} /> Générer avec l'IA
                 </button>
               )}
               <BoutonTutoriel onClick={() => setTutoOuvert('seance')} style={{ marginLeft: 'auto', minHeight: 0, padding: '10px 14px' }} />
@@ -10180,42 +10057,42 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {modalGenerationIA && (
               <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 onClick={() => !generatingIA && setModalGenerationIA(false)}>
-                <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
+                <div role="dialog" aria-modal="true" aria-label="Générer une séance avec l'IA" style={{ ...styleCarte(colors), padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
                   onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🤖 Générer une séance avec l'IA</p>
+                    <p style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Bot} taille={20} /> Générer une séance avec l'IA</p>
                     {!generatingIA && (
-                      <button onClick={() => setModalGenerationIA(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      <button type="button" onClick={() => setModalGenerationIA(false)} className={CLASSE_CLIQUABLE} aria-label="Fermer" style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', display: 'flex', padding: '8px' }}><Icone icone={X} taille={20} /></button>
                     )}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
                     <div>
-                      <label style={st.label}>Objectif tactique</label>
-                      <input style={st.input} placeholder="Ex: pressing, conservation, transition..." value={generationIAForm.objectif}
+                      <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Objectif tactique</label>
+                      <input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="Ex: pressing, conservation, transition..." value={generationIAForm.objectif}
                         onChange={e => setGenerationIAForm(f => ({ ...f, objectif: e.target.value }))} disabled={generatingIA} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
                       <div>
-                        <label style={st.label}>Durée totale</label>
-                        <select style={st.input} value={generationIAForm.duree} onChange={e => setGenerationIAForm(f => ({ ...f, duree: e.target.value }))} disabled={generatingIA}>
+                        <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Durée totale</label>
+                        <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={generationIAForm.duree} onChange={e => setGenerationIAForm(f => ({ ...f, duree: e.target.value }))} disabled={generatingIA}>
                           {['45', '60', '90'].map(d => <option key={d} value={d}>{d} min</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={st.label}>Nombre de joueurs</label>
-                        <input style={st.input} type="number" min="1" placeholder="Ex: 16" value={generationIAForm.nb_joueurs}
+                        <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Nombre de joueurs</label>
+                        <input className={CLASSE_CHAMP} style={styleChamp(colors)} type="number" min="1" placeholder="Ex: 16" value={generationIAForm.nb_joueurs}
                           onChange={e => setGenerationIAForm(f => ({ ...f, nb_joueurs: e.target.value }))} disabled={generatingIA} />
                       </div>
                       <div>
-                        <label style={st.label}>Catégorie d'âge</label>
-                        <select style={st.input} value={generationIAForm.categorie_age} onChange={e => setGenerationIAForm(f => ({ ...f, categorie_age: e.target.value }))} disabled={generatingIA}>
+                        <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Catégorie d'âge</label>
+                        <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={generationIAForm.categorie_age} onChange={e => setGenerationIAForm(f => ({ ...f, categorie_age: e.target.value }))} disabled={generatingIA}>
                           {['U10', 'U13', 'U15', 'U18', 'Senior'].map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={st.label}>Niveau</label>
-                        <select style={st.input} value={generationIAForm.niveau} onChange={e => setGenerationIAForm(f => ({ ...f, niveau: e.target.value }))} disabled={generatingIA}>
+                        <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>Niveau</label>
+                        <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={generationIAForm.niveau} onChange={e => setGenerationIAForm(f => ({ ...f, niveau: e.target.value }))} disabled={generatingIA}>
                           {['Débutant', 'Intermédiaire', 'Compétitif'].map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
                       </div>
@@ -10223,52 +10100,52 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
 
                   {generationIAError && (
-                    <p style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px' }}>❌ {generationIAError}</p>
+                    <p role="alert" style={{ color: colors.accent.red, fontSize: '13px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={CircleAlert} /> {generationIAError}</p>
                   )}
 
                   <button onClick={genererSeanceIA} disabled={generatingIA || !generationIAForm.objectif.trim()}
-                    style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: colors.text.primary, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: (generatingIA || !generationIAForm.objectif.trim()) ? 0.6 : 1 }}>
-                    {generatingIA ? libelleStatutGroq(generationIAStatus) : '✨ Générer la séance'}
+                    className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), width: '100%' }}>
+                    {generatingIA ? libelleStatutGroq(generationIAStatus) : <><Icone icone={Sparkles} /> Générer la séance</>}
                   </button>
                 </div>
               </div>
             )}
 
             {modeSeance === 'club' && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
+            <div style={{ ...styleCarte(colors), padding: '24px', marginBottom: '24px' }}>
               {clubAffiliation?.statut === 'accepte' ? (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
-                      <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px' }}>🏟️ {t('seance_eval_club_titre', lang)}</p>
+                      <p style={{ ...styleTitreCarte(colors), margin: '0 0 4px' }}><Icone icone={Landmark} taille={20} /> {t('seance_eval_club_titre', lang)}</p>
                       <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary }}>{t('seance_uploade_2', lang)}</p>
                     </div>
-                    <button onClick={() => setShowUploadSeance(true)} style={st.btnSolid}>+ {t('seance_uploader_une', lang)}</button>
+                    <button onClick={() => setShowUploadSeance(true)} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}><Icone icone={Plus} /> {t('seance_uploader_une', lang)}</button>
                   </div>
 
                   {showUploadSeance && (
-                    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                    <div style={{ ...styleCarte(colors), background: colors.background.base, marginBottom: '16px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                         <div>
-                          <label style={st.label}>{t('profil_saison', lang)}</label>
-                          <select style={st.input} value={seanceSaison} onChange={e => setSeanceSaison(e.target.value)}>
+                          <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('profil_saison', lang)}</label>
+                          <select className={CLASSE_CHAMP} style={styleChamp(colors)} value={seanceSaison} onChange={e => setSeanceSaison(e.target.value)}>
                             {['2025-2026', '2024-2025', '2026-2027'].map(s => <option key={s}>{s}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label style={st.label}>{t('seance_date_seance', lang)}</label>
-                          <input style={st.input} type="date" value={seanceDate} onChange={e => setSeanceDate(e.target.value)} />
+                          <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('seance_date_seance', lang)}</label>
+                          <input className={CLASSE_CHAMP} style={styleChamp(colors)} type="date" value={seanceDate} onChange={e => setSeanceDate(e.target.value)} />
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={st.label}>{t('seance_theme_seance', lang)}</label>
-                          <input style={st.input} placeholder="Ex: Travail défensif, transition rapide..." value={seanceTheme} onChange={e => setSeanceTheme(e.target.value)} />
+                          <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('seance_theme_seance', lang)}</label>
+                          <input className={CLASSE_CHAMP} style={styleChamp(colors)} placeholder="Ex: Travail défensif, transition rapide..." value={seanceTheme} onChange={e => setSeanceTheme(e.target.value)} />
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={st.label}>{t('seance_video_seance', lang)}</label>
+                          <label style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('seance_video_seance', lang)}</label>
                           <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                            {[{ val: 'upload', label: `📁 ${t('seance_uploader_fichier', lang)}` }, { val: 'veo', label: `🎥 ${t('seance_lien_veo', lang)}` }].map(opt => (
-                              <button key={opt.val} onClick={() => setSeanceVideoMode(opt.val)}
-                                style={{ flex: 1, background: seanceVideoMode === opt.val ? colors.accent.blue + alpha.subtle : colors.background.raised, border: `1px solid ${seanceVideoMode === opt.val ? colors.accent.blue : colors.border.strong}`, color: seanceVideoMode === opt.val ? colors.accent.blue : colors.text.secondary, padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                            {[{ val: 'upload', label: <><Icone icone={FolderOpen} /> {t('seance_uploader_fichier', lang)}</> }, { val: 'veo', label: <><Icone icone={Video} /> {t('seance_lien_veo', lang)}</> }].map(opt => (
+                              <button key={opt.val} type="button" onClick={() => setSeanceVideoMode(opt.val)}
+                                aria-pressed={seanceVideoMode === opt.val} style={{ ...styleChoix(colors, seanceVideoMode === opt.val), flex: 1 }}>
                                 {opt.label}
                               </button>
                             ))}
@@ -10276,52 +10153,48 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           {seanceVideoMode === 'upload' ? (
                             <input type="file" accept="video/*" onChange={e => setSeanceVideoFile(e.target.files[0])} style={{ color: colors.text.secondary, fontSize: '13px' }} />
                           ) : (
-                            <input style={st.input} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
+                            <input className={CLASSE_CHAMP} style={styleChamp(colors)} type="url" placeholder="https://app.veo.co/matches/..." value={seanceVeoUrl} onChange={e => setSeanceVeoUrl(e.target.value)} />
                           )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} style={st.btnSolid}>{uploadingSeance ? 'Upload...' : t('seance_envoyer_club', lang)}</button>
-                        <button onClick={() => setShowUploadSeance(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                        <button onClick={uploaderSeance} disabled={uploadingSeance || (seanceVideoMode === 'upload' ? !seanceVideoFile : !seanceVeoUrl.trim())} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{uploadingSeance ? 'Upload...' : t('seance_envoyer_club', lang)}</button>
+                        <button onClick={() => setShowUploadSeance(false)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
 
                   {mesSeances.length === 0 ? (
-                    <p style={{ color: colors.border.strong, fontSize: '13px' }}>{t('seance_aucune_uploadee', lang)}</p>
+                    <p style={{ color: colors.text.dim, fontSize: '13px' }}>{t('seance_aucune_uploadee', lang)}</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {mesSeances.map(s => {
                         return (
-                        <div key={s.id} style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <div key={s.id} style={{ ...styleCarte(colors), background: colors.background.base, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{s.theme || t('seance_fallback', lang)} — {s.saison}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.dim }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString('fr-FR') : ''}</p>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{
-                              fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
-                              background: s.statut === 'analyse' ? colors.accent.success + alpha.subtle : s.statut === 'transfere_coach' ? colors.accent.info + alpha.subtle : '#f59e0b15',
-                              color: s.statut === 'analyse' ? colors.accent.success : s.statut === 'transfere_coach' ? colors.accent.info : '#f59e0b',
-                            }}>
-                              {s.statut === 'analyse' ? `✅ ${t('etat_analyse', lang)}` : s.statut === 'transfere_coach' ? `🎙️ ${t('seance_chez_coach', lang)}` : `⏳ ${t('etat_en_attente', lang)}`}
-                            </span>
+                            <EtiquetteStatut couleur={s.statut === 'analyse' ? colors.accent.success : s.statut === 'transfere_coach' ? colors.accent.info : colors.accent.warning}>
+                              {s.statut === 'analyse' ? t('etat_analyse', lang) : s.statut === 'transfere_coach' ? t('seance_chez_coach', lang) : t('etat_en_attente', lang)}
+                            </EtiquetteStatut>
                             {confirmSuppr === s.id ? (
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
-                                <button onClick={() => supprimerDemande(s.id)}
-                                  style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                                <button type="button" onClick={() => supprimerDemande(s.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                                  style={styleBoutonPetitDanger(colors)}>
                                   {t('etat_oui', lang)}
                                 </button>
-                                <button onClick={() => setConfirmSuppr(null)}
-                                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                <button type="button" onClick={() => setConfirmSuppr(null)} className={CLASSE_BOUTON_SECONDAIRE}
+                                  style={styleBoutonPetit(colors)}>
                                   {t('etat_non', lang)}
                                 </button>
                               </div>
                             ) : (
-                              <button onClick={() => setConfirmSuppr(s.id)}
-                                style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                                🗑
+                              <button type="button" onClick={() => setConfirmSuppr(s.id)} className={CLASSE_BOUTON_SECONDAIRE} aria-label="Supprimer" title="Supprimer"
+                                style={styleBoutonPetitDanger(colors)}>
+                                <Icone icone={Trash2} />
                               </button>
                             )}
                           </div>
@@ -10332,34 +10205,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   )}
                 </>
               ) : (
-                <p style={{ color: colors.text.faint, fontSize: '13px' }}>{t('seance_rejoins_club', lang)}</p>
+                <p style={{ color: colors.text.dim, fontSize: '13px' }}>{t('seance_rejoins_club', lang)}</p>
               )}
             </div>
             )}
 
             {modeSeance === 'scanner' && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
-              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '6px' }}>📷 {t('seance_scanner_titre', lang)}</p>
+            <div style={{ ...styleCarte(colors), padding: '24px', marginBottom: '24px' }}>
+              <p style={{ ...styleTitreCarte(colors), margin: '0 0 6px' }}><Icone icone={Camera} taille={20} /> {t('seance_scanner_titre', lang)}</p>
               <p style={{ color: colors.text.secondary, fontSize: '13px', marginBottom: '16px' }}>
                 {t('seance_prends_photo', lang)}
               </p>
 
               {/* Fiches vierges officielles — plus fiables à scanner que du manuscrit
                   libre, mais n'excluent pas le scan libre ci-dessous. */}
-              <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '14px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ ...styleCarte(colors), background: colors.background.base, padding: '14px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '13px', margin: 0 }}>{t('seance_fiche_officielle_titre', lang)}</p>
-                  <p style={{ color: colors.text.faint, fontSize: '12px', margin: '2px 0 0' }}>{t('seance_fiche_officielle_desc', lang)}</p>
+                  <p style={{ ...styleEtiquette(colors), color: colors.text.primary, margin: 0 }}>{t('seance_fiche_officielle_titre', lang)}</p>
+                  <p style={{ color: colors.text.dim, fontSize: '12px', margin: '2px 0 0' }}>{t('seance_fiche_officielle_desc', lang)}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
-                    { mode: null, label: 'Libre', color: colors.accent.green },
-                    { mode: 'BMF', label: 'BMF', color: colors.accent.info },
-                    { mode: 'BEF', label: 'BEF', color: colors.accent.purple },
-                    { mode: 'DEF', label: 'DEF', color: colors.accent.orange },
+                    { mode: null, label: 'Libre' },
+                    { mode: 'BMF', label: 'BMF' },
+                    { mode: 'BEF', label: 'BEF' },
+                    { mode: 'DEF', label: 'DEF' },
                   ].map(f => (
                     <button key={f.label} type="button" onClick={() => genererFicheVierge(f.mode)}
-                      style={{ background: f.color, border: 'none', borderRadius: '8px', padding: '8px 14px', color: colors.black, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                       {f.label}
                     </button>
                   ))}
@@ -10367,15 +10240,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </div>
 
               <div
+                role="button" tabIndex={0}
                 onClick={() => document.getElementById('scan-fiche-input').click()}
-                style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '12px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); document.getElementById('scan-fiche-input').click() } }}
+                className={CLASSE_CLIQUABLE}
+                style={{ border: `2px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte, padding: '32px', textAlign: 'center', cursor: 'pointer', background: colors.background.base }}
               >
                 {scanImagePreview
-                  ? <img src={scanImagePreview} alt="Fiche scannée" style={{ maxHeight: '360px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
+                  ? <img src={scanImagePreview} alt="Fiche scannée" style={{ maxHeight: '360px', maxWidth: '100%', borderRadius: forme.rayonCarte, objectFit: 'contain' }} />
                   : <div>
-                      <p style={{ fontSize: '36px', margin: '0 0 10px' }}>📄</p>
+                      <div style={{ margin: '0 0 10px', display: 'flex', justifyContent: 'center', color: colors.text.dim }}><Icone icone={FileText} taille={32} /></div>
                       <p style={{ margin: 0, fontWeight: 600, color: colors.text.secondary }}>{t('seance_clique_photo', lang)}</p>
-                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.disabled }}>{t('seance_jpg_png', lang)}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.dim }}>{t('seance_jpg_png', lang)}</p>
                     </div>
                 }
               </div>
@@ -10399,43 +10275,43 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 }}
               />
               {scanFicheError && (
-                <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px' }}>❌ {scanFicheError}</p>
+                <p role="alert" style={{ color: colors.accent.red, fontSize: '13px', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={CircleAlert} /> {scanFicheError}</p>
               )}
               <button
                 onClick={analyserFicheScan}
                 disabled={!scanImageFile || scanningFiche}
-                style={{ ...st.btnSolid, marginTop: '16px', opacity: !scanImageFile || scanningFiche ? 0.5 : 1 }}
+                className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), marginTop: '16px' }}
               >
-                {scanningFiche ? `🔄 ${libelleStatutGroq(scanFicheStatus)}` : `🤖 ${t('seance_analyser_ia', lang)}`}
+                {scanningFiche ? libelleStatutGroq(scanFicheStatus) : <><Icone icone={Bot} /> {t('seance_analyser_ia', lang)}</>}
               </button>
               {scanningFiche && (
-                <div style={{ marginTop: '14px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: colors.accent.success }}>
-                  🤖 {t('seance_ia_lit_fiche', lang)}
+                <div role="status" style={{ ...styleCarte(colors), marginTop: '14px', background: colors.background.raised, boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.info}`, paddingLeft: '19px', fontSize: '13px', color: colors.text.secondary, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Icone icone={Bot} /> {t('seance_ia_lit_fiche', lang)}
                 </div>
               )}
             </div>
             )}
 
             {modeSeance === 'enregistrer' && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
-              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>💾 {t('seance_enregistrer_une', lang)}</p>
+            <div style={{ ...styleCarte(colors), padding: '24px', marginBottom: '24px' }}>
+              <p style={styleTitreCarte(colors)}><Icone icone={Inbox} taille={20} /> {t('seance_enregistrer_une', lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input
                   placeholder={t('seance_placeholder_theme', lang)}
                   value={uploadSeanceOuverteForm.theme}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, theme: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 />
                 <input
                   type="date"
                   value={uploadSeanceOuverteForm.date_seance}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, date_seance: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 />
                 <select
                   value={uploadSeanceOuverteForm.categorie_tactique}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_tactique: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
@@ -10449,7 +10325,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <select
                   value={uploadSeanceOuverteForm.categorie_age}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, categorie_age: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 >
                   <option value="">Catégorie d'âge (optionnel)</option>
                   <optgroup label="Masculin">
@@ -10462,7 +10338,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {['collectif', 'individuel'].map(ty => (
                     <button key={ty} type="button" onClick={() => setUploadSeanceOuverteForm(prev => ({ ...prev, type_seance: ty }))}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue : colors.border.faint}`, background: uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue + alpha.subtle : colors.background.base, color: uploadSeanceOuverteForm.type_seance === ty ? colors.accent.blue : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      aria-pressed={uploadSeanceOuverteForm.type_seance === ty} style={{ ...styleChoix(colors, uploadSeanceOuverteForm.type_seance === ty), flex: 1 }}>
                       {ty === 'collectif' ? 'Collectif' : 'Individuel'}
                     </button>
                   ))}
@@ -10471,7 +10347,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   placeholder={t('seance_placeholder_video', lang)}
                   value={uploadSeanceOuverteForm.video_url}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, video_url: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors) }}
                 />
                 <div>
                   <p style={{ fontSize: '12px', color: colors.text.dim, marginBottom: '6px' }}>{t('seance_ou_upload', lang)}</p>
@@ -10486,10 +10362,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       setUploadSeanceOuverteForm(prev => ({ ...prev, fichier_url: url }))
                       setUploadingSeanceOuverte(false)
                     }}
-                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', width: '100%' }}
+                    className={CLASSE_CHAMP} style={styleChamp(colors)}
                   />
                   {uploadSeanceOuverteForm.fichier_url && (
-                    <p style={{ fontSize: '12px', color: colors.accent.success, marginTop: '6px' }}>✅ {t('seance_fichier_pret', lang)}</p>
+                    <p style={{ fontSize: '12px', color: colors.accent.success, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={CircleCheck} /> {t('seance_fichier_pret', lang)}</p>
                   )}
                 </div>
                 <textarea
@@ -10497,12 +10373,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   value={uploadSeanceOuverteForm.commentaire_perso}
                   onChange={e => setUploadSeanceOuverteForm(prev => ({ ...prev, commentaire_perso: e.target.value }))}
                   rows={3}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit' }}
                 />
                 <button
                   onClick={uploaderMaSeance}
                   disabled={uploadingSeanceOuverte}
-                  style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: uploadingSeanceOuverte ? 0.6 : 1 }}
+                  className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}
                 >
                   {uploadingSeanceOuverte ? 'Envoi...' : t('seance_enregistrer_ma', lang)}
                 </button>
@@ -10511,29 +10387,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             )}
 
             {modeSeance === 'rediger' && (
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '28px', marginBottom: '24px' }}>
-              <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>✏️ {t('seance_rediger_titre', lang)}</p>
+            <div style={{ ...styleCarte(colors), padding: '24px', marginBottom: '24px' }}>
+              <p style={styleTitreCarte(colors)}><Icone icone={Pencil} taille={20} /> {t('seance_rediger_titre', lang)}</p>
               {brouillonFiche && (
-                <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}44`, borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div role="status" style={{ ...styleCarteLiseree(colors), padding: '12px 14px 12px 19px', marginBottom: '16px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <span style={{ color: colors.text.secondary }}>
                     Un brouillon non enregistré du {new Date(brouillonFiche.savedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} a été retrouvé.
                   </span>
                   <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                    <button onClick={() => { setFiche(brouillonFiche.fiche); setSport(brouillonFiche.sport || 'football'); setBrouillonFiche(null) }}
-                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => { setFiche(brouillonFiche.fiche); setSport(brouillonFiche.sport || 'football'); setBrouillonFiche(null) }}
+                      className={CLASSE_BOUTON} style={styleBoutonPetit(colors, { background: colors.accent.brand, color: colors.accent.onBrand, borderColor: 'transparent' })}>
                       Restaurer
                     </button>
-                    <button onClick={() => { try { localStorage.removeItem(`df_fiche_brouillon_${userId}`) } catch { /* ignore */ } setBrouillonFiche(null) }}
-                      style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '7px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => { try { localStorage.removeItem(`df_fiche_brouillon_${userId}`) } catch { /* ignore */ } setBrouillonFiche(null) }}
+                      className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                       Ignorer
                     </button>
                   </div>
                 </div>
               )}
               {ficheExtraite && (
-                <div style={{ background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: colors.accent.success, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                  <span>✅ {t('seance_fiche_extraite', lang)}</span>
-                  <button onClick={() => setFicheExtraite(false)} style={{ background: 'none', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}>✕</button>
+                <div role="status" style={{ ...styleCarte(colors), background: colors.background.raised, boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.success}`, padding: '12px 14px 12px 19px', marginBottom: '16px', fontSize: '13px', color: colors.text.primary, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Icone icone={CircleCheck} /> {t('seance_fiche_extraite', lang)}</span>
+                  <button type="button" onClick={() => setFicheExtraite(false)} className={CLASSE_CLIQUABLE} aria-label="Fermer" style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', display: 'flex', padding: '8px' }}><Icone icone={X} /></button>
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
@@ -10541,23 +10417,23 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   placeholder={t('seance_theme_intitule', lang)}
                   value={fiche.theme}
                   onChange={e => setFiche(f => ({ ...f, theme: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 />
                 <div>
-                  <label style={{ fontSize: '12px', color: colors.text.secondary, marginBottom: '4px', display: 'block' }}>
+                  <label style={{ ...styleEtiquette(colors), marginBottom: '4px', display: 'block' }}>
                     {t('seance_date_seance', lang)}
                   </label>
                   <input
                     type="date"
                     value={fiche.date}
                     onChange={e => setFiche(f => ({ ...f, date: e.target.value }))}
-                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <select
                   value={fiche.categorie_tactique}
                   onChange={e => setFiche(f => ({ ...f, categorie_tactique: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
@@ -10576,7 +10452,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <select
                     value={fiche.principe_jeu || ''}
                     onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))}
-                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                   >
                     <option value="">{t('biblio_principe_optionnel', lang)}</option>
                     {(themeSeanceInfo(fiche.categorie_tactique).phase === 'offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
@@ -10587,7 +10463,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <select
                   value={fiche.categorie_age}
                   onChange={e => setFiche(f => ({ ...f, categorie_age: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 >
                   <option value="">Catégorie d'âge (optionnel)</option>
                   <optgroup label="Masculin">
@@ -10600,7 +10476,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {['collectif', 'individuel'].map(ty => (
                     <button key={ty} type="button" onClick={() => setFiche(f => ({ ...f, type_seance: ty }))}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${fiche.type_seance === ty ? colors.accent.blue : colors.border.faint}`, background: fiche.type_seance === ty ? colors.accent.blue + alpha.subtle : colors.background.base, color: fiche.type_seance === ty ? colors.accent.blue : colors.text.faint, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      aria-pressed={fiche.type_seance === ty} style={{ ...styleChoix(colors, fiche.type_seance === ty), flex: 1 }}>
                       {ty === 'collectif' ? 'Collectif' : 'Individuel'}
                     </button>
                   ))}
@@ -10609,29 +10485,31 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <button
                     type="button"
                     onClick={() => setSport('football')}
-                    style={{ flex: 1, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', ...(sport === 'football' ? { background: colors.accent.green, color: colors.accent.onBrand, border: 'none' } : { background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }) }}
+                    aria-pressed={sport === 'football'}
+                    style={{ ...styleChoix(colors, sport === 'football'), flex: 1 }}
                   >
-                    ⚽ Football
+                    Football
                   </button>
                   <button
                     type="button"
                     onClick={() => setSport('futsal')}
-                    style={{ flex: 1, borderRadius: '10px', padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', ...(sport === 'futsal' ? { background: colors.accent.green, color: colors.accent.onBrand, border: 'none' } : { background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a' }) }}
+                    aria-pressed={sport === 'futsal'}
+                    style={{ ...styleChoix(colors, sport === 'futsal'), flex: 1 }}
                   >
-                    🏟️ Futsal
+                    Futsal
                   </button>
                 </div>
                 <input
                   placeholder={t('seance_nb_joueurs', lang)}
                   value={fiche.nb_joueurs}
                   onChange={e => setFiche(f => ({ ...f, nb_joueurs: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 />
                 <input
                   placeholder={t('seance_duree_totale', lang)}
                   value={fiche.duree_totale}
                   onChange={e => setFiche(f => ({ ...f, duree_totale: e.target.value }))}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                 />
 
                 {/* ── Mode diplôme (BMF/BEF/DEF) — objectif_general existe déjà comme champ
@@ -10639,19 +10517,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     l'encart officiel ci-dessous plutôt que dupliqué, pour ne pas avoir deux
                     champs "objectif" à la fois. */}
                 <div>
-                  <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>🎓 Mode diplôme (optionnel)</p>
+                  <p style={{ ...styleEtiquette(colors), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><Icone icone={GraduationCap} /> Mode diplôme (optionnel)</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     {[null, 'BMF', 'BEF', 'DEF'].map(m => (
                       <button
                         key={m ?? 'libre'}
                         type="button"
                         onClick={() => setFiche(f => ({ ...f, mode_diplome: f.mode_diplome === m ? null : m }))}
-                        style={{
-                          padding: '10px 8px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                          border: fiche.mode_diplome === m ? `2px solid ${colors.accent.green}` : '1px solid #2a2a2a',
-                          background: fiche.mode_diplome === m ? colors.accent.green + '1a' : '#1a1a1a',
-                          color: fiche.mode_diplome === m ? colors.accent.green : '#888',
-                        }}>
+                        aria-pressed={fiche.mode_diplome === m}
+                        style={{ ...styleChoix(colors, fiche.mode_diplome === m), fontSize: '12px', padding: '6px 8px' }}>
                         {m === null ? 'Libre' : m}
                         {m === 'BMF' && ' — Moniteur'}
                         {m === 'BEF' && ' — Éducateur'}
@@ -10662,63 +10536,63 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 </div>
 
                 {fiche.mode_diplome ? (() => {
-                  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '10px 12px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }
-                  const labelStyle = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', marginTop: '10px' }
+                  const inputStyle = styleChamp(colors)
+                  const labelStyle = { ...styleEtiquette(colors), marginBottom: '4px', display: 'block', marginTop: '10px' }
                   return (
-                    <div style={{ background: '#071a0e', border: '1px solid #1a3a1a', borderRadius: '12px', padding: '18px' }}>
-                      <p style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>📋 Fiche officielle {fiche.mode_diplome}</p>
+                    <div style={{ ...styleCarteLiseree(colors), background: colors.background.base, padding: '18px 18px 18px 21px' }}>
+                      <p style={{ ...styleTitreCarte(colors), fontSize: '17px', margin: '0 0 4px' }}><Icone icone={ClipboardList} /> Fiche officielle {fiche.mode_diplome}</p>
 
                       {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF') && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div>
                             <label style={labelStyle}>Séance N°</label>
-                            <input type="text" placeholder="Ex: 1" value={fiche.numero_seance || ''} onChange={e => setFiche(f => ({ ...f, numero_seance: e.target.value }))} style={inputStyle} />
+                            <input type="text" placeholder="Ex: 1" value={fiche.numero_seance || ''} onChange={e => setFiche(f => ({ ...f, numero_seance: e.target.value }))} className={CLASSE_CHAMP} style={inputStyle} />
                           </div>
                           {fiche.mode_diplome === 'BEF' && <div>
                             <label style={labelStyle}>Heure de début</label>
-                            <input type="time" value={fiche.heure_debut || ''} onChange={e => setFiche(f => ({ ...f, heure_debut: e.target.value }))} style={inputStyle} />
+                            <input type="time" value={fiche.heure_debut || ''} onChange={e => setFiche(f => ({ ...f, heure_debut: e.target.value }))} className={CLASSE_CHAMP} style={inputStyle} />
                           </div>}
                         </div>
                       )}
 
                       <label style={labelStyle}>Phase de jeu *</label>
-                      <select value={fiche.phase_jeu || ''} onChange={e => setFiche(f => ({ ...f, phase_jeu: e.target.value }))} style={inputStyle}>
+                      <select value={fiche.phase_jeu || ''} onChange={e => setFiche(f => ({ ...f, phase_jeu: e.target.value }))} className={CLASSE_CHAMP} style={inputStyle}>
                         <option value="">— Choisir —</option>
                         {['Attaque', 'Défense', 'Transition offensive', 'Transition défensive', 'Animation collective'].map(o => <option key={o}>{o}</option>)}
                       </select>
 
                       <label style={labelStyle}>Principe de jeu *</label>
-                      <input type="text" placeholder="Ex: Conservation du ballon, Pressing haut…" value={fiche.principe_jeu || ''} onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))} style={inputStyle} />
+                      <input type="text" placeholder="Ex: Conservation du ballon, Pressing haut…" value={fiche.principe_jeu || ''} onChange={e => setFiche(f => ({ ...f, principe_jeu: e.target.value }))} className={CLASSE_CHAMP} style={inputStyle} />
 
                       <label style={labelStyle}>Objectif de séance *</label>
-                      <textarea placeholder={t('seance_objectif_general', lang)} value={fiche.objectif_general} onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))} rows={2} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+                      <textarea placeholder={t('seance_objectif_general', lang)} value={fiche.objectif_general} onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))} rows={2} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
 
                       {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'DEF') && (
                         <>
-                          <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
-                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs complémentaires {fiche.mode_diplome}</p>
+                          <div aria-hidden="true" style={{ ...styleLigneCraie(colors), margin: '14px 0 4px' }} />
+                          <p style={{ ...styleEtiquette(colors), margin: '0 0 4px' }}>Champs complémentaires {fiche.mode_diplome}</p>
 
                           <label style={labelStyle}>Constats réalisés (observation des joueurs)</label>
-                          <textarea placeholder="Décris ce que tu as observé lors des matchs ou séances précédentes…" value={fiche.constats || ''} onChange={e => setFiche(f => ({ ...f, constats: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                          <textarea placeholder="Décris ce que tu as observé lors des matchs ou séances précédentes…" value={fiche.constats || ''} onChange={e => setFiche(f => ({ ...f, constats: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical' }} />
 
                           <label style={labelStyle}>Justification des choix pédagogiques</label>
-                          <textarea placeholder="Pourquoi ces exercices ? Quel lien avec les constats ?" value={fiche.justification_pedagogique || ''} onChange={e => setFiche(f => ({ ...f, justification_pedagogique: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                          <textarea placeholder="Pourquoi ces exercices ? Quel lien avec les constats ?" value={fiche.justification_pedagogique || ''} onChange={e => setFiche(f => ({ ...f, justification_pedagogique: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical' }} />
 
                           <label style={labelStyle}>Auto-évaluation de la séance</label>
-                          <textarea placeholder="Bilan post-séance : ce qui a fonctionné, ce qui n'a pas fonctionné…" value={fiche.auto_evaluation || ''} onChange={e => setFiche(f => ({ ...f, auto_evaluation: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                          <textarea placeholder="Bilan post-séance : ce qui a fonctionné, ce qui n'a pas fonctionné…" value={fiche.auto_evaluation || ''} onChange={e => setFiche(f => ({ ...f, auto_evaluation: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical' }} />
                         </>
                       )}
 
                       {fiche.mode_diplome === 'DEF' && (
                         <>
-                          <div style={{ borderTop: '1px solid #1a3a1a', margin: '14px 0 4px' }} />
-                          <p style={{ color: colors.accent.orange, fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>Champs DEF — Analyse avancée</p>
+                          <div aria-hidden="true" style={{ ...styleLigneCraie(colors), margin: '14px 0 4px' }} />
+                          <p style={{ ...styleEtiquette(colors), margin: '0 0 4px' }}>Champs DEF — Analyse avancée</p>
 
                           <label style={labelStyle}>Analyse de l'équipe / Contexte (lien match → entraînement)</label>
-                          <textarea placeholder="Situation de l'équipe, problèmes collectifs observés en match…" value={fiche.analyse_equipe || ''} onChange={e => setFiche(f => ({ ...f, analyse_equipe: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                          <textarea placeholder="Situation de l'équipe, problèmes collectifs observés en match…" value={fiche.analyse_equipe || ''} onChange={e => setFiche(f => ({ ...f, analyse_equipe: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical' }} />
 
                           <label style={labelStyle}>Bilan et projection (prochaine séance)</label>
-                          <textarea placeholder="Analyse post-séance approfondie et ce qui sera travaillé ensuite…" value={fiche.bilan_projection || ''} onChange={e => setFiche(f => ({ ...f, bilan_projection: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                          <textarea placeholder="Analyse post-séance approfondie et ce qui sera travaillé ensuite…" value={fiche.bilan_projection || ''} onChange={e => setFiche(f => ({ ...f, bilan_projection: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inputStyle, resize: 'vertical' }} />
                         </>
                       )}
                     </div>
@@ -10729,35 +10603,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     value={fiche.objectif_general}
                     onChange={e => setFiche(f => ({ ...f, objectif_general: e.target.value }))}
                     rows={2}
-                    style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', color: colors.text.primary, fontSize: '14px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                    className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                   />
                 )}
               </div>
 
               {fiche.procedes.map((p, i) => (
-                <div key={i} style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px', marginBottom: '14px' }}>
+                <div key={i} style={{ ...styleCarte(colors), background: colors.background.base, padding: '18px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: 0, color: colors.accent.green }}>{t('seance_procede', lang)} {p.numero}</p>
+                    <p style={{ ...styleTitreCarte(colors), fontSize: '17px', margin: 0 }}>{t('seance_procede', lang)} {p.numero}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {fiche.procedes.length > 1 && (
                         <>
                           <button type="button" onClick={() => deplacerProcedeFiche(i, -1)} disabled={i === 0}
-                            style={{ background: 'none', border: 'none', color: i === 0 ? colors.text.disabled : colors.text.faint, cursor: i === 0 ? 'default' : 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                            className={CLASSE_CLIQUABLE} aria-label="Monter" style={{ background: 'none', border: 'none', color: i === 0 ? colors.text.disabled : colors.text.secondary, cursor: i === 0 ? 'default' : 'pointer', display: 'flex', padding: '8px' }}
                             title="Monter">
-                            ↑
+                            <Icone icone={ChevronUp} />
                           </button>
                           <button type="button" onClick={() => deplacerProcedeFiche(i, 1)} disabled={i === fiche.procedes.length - 1}
-                            style={{ background: 'none', border: 'none', color: i === fiche.procedes.length - 1 ? colors.text.disabled : colors.text.faint, cursor: i === fiche.procedes.length - 1 ? 'default' : 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                            className={CLASSE_CLIQUABLE} aria-label="Descendre" style={{ background: 'none', border: 'none', color: i === fiche.procedes.length - 1 ? colors.text.disabled : colors.text.secondary, cursor: i === fiche.procedes.length - 1 ? 'default' : 'pointer', display: 'flex', padding: '8px' }}
                             title="Descendre">
-                            ↓
+                            <Icone icone={ChevronDown} />
                           </button>
                         </>
                       )}
                       {fiche.procedes.length > 1 && (
                         <button type="button" onClick={() => retirerProcedeFiche(i)}
-                          style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
+                          className={CLASSE_CLIQUABLE} aria-label={t('btn_supprimer', lang)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', display: 'flex', padding: '8px' }}
                           title={t('btn_supprimer', lang)}>
-                          ✕
+                          <Icone icone={X} />
                         </button>
                       )}
                     </div>
@@ -10767,85 +10641,82 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       placeholder={t('seance_titre_procede', lang)}
                       value={p.titre}
                       onChange={e => updateProcede(i, 'titre', e.target.value)}
-                      style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                      className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                     />
                     <div className="procede-duree-joueurs" style={{ display: 'flex', gap: '10px' }}>
                       <input
                         placeholder={t('seance_duree_min', lang)}
                         value={p.duree}
                         onChange={e => updateProcede(i, 'duree', e.target.value)}
-                        style={{ flex: 1, background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, width: '100%', boxSizing: 'border-box' }}
                       />
                       <input
                         placeholder={t('seance_nb_joueurs', lang)}
                         value={p.nb_joueurs}
                         onChange={e => updateProcede(i, 'nb_joueurs', e.target.value)}
-                        style={{ flex: 1, background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                        className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {[
-                        { icon: '🎨', label: p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang), action: () => setTactipadModal(i), color: '#a78bfa' },
-                        { icon: '📚', label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i), color: colors.accent.blue },
-                        { icon: '💾', label: t('biblio_sauvegarder_procede', lang), action: () => { setShowVisibilityPicker(p); setMetaProc({ ...METAPROC_VIDE, nom: p.titre || '' }) }, color: colors.accent.green },
+                        { icon: <Icone icone={Palette} taille={20} />, label: p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang), action: () => setTactipadModal(i) },
+                        { icon: <Icone icone={Library} taille={20} />, label: t('biblio_importer_procede', lang), action: () => setModalBiblioImport(i) },
+                        { icon: <Icone icone={Save} taille={20} />, label: t('biblio_sauvegarder_procede', lang), action: () => { setShowVisibilityPicker(p); setMetaProc({ ...METAPROC_VIDE, nom: p.titre || '' }) } },
                       ].map(btn => (
-                        <button key={btn.label} type="button" onClick={btn.action} style={{
-                          flex: 1, padding: '10px 6px', borderRadius: '10px',
-                          border: `1px solid ${btn.color}40`,
-                          background: `${btn.color}10`,
-                          color: btn.color, fontWeight: 600, fontSize: '12px',
-                          cursor: 'pointer', textAlign: 'center', lineHeight: 1.4,
+                        <button key={btn.label} type="button" onClick={btn.action} className={CLASSE_BOUTON_SECONDAIRE} style={{
+                          ...styleBoutonSecondaire(colors), flex: 1, flexDirection: 'column', gap: '4px', padding: '8px 6px', minHeight: '64px',
+                          fontSize: '12px', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'normal',
                         }}>
-                          <div style={{ fontSize: '20px', marginBottom: '4px' }}>{btn.icon}</div>
+                          {btn.icon}
                           {btn.label}
                         </button>
                       ))}
                       {p.schema_png && (
-                        <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
+                        <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: forme.rayonCarte, border: `1px solid ${colors.border.faint}`, flexShrink: 0 }} />
                       )}
                     </div>
                     {fiche.mode_diplome === 'BEF' ? (() => {
-                      const befInput = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
-                      const befLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', marginTop: '10px', display: 'block' }
+                      const befInput = { ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
+                      const befLabel = { ...styleEtiquette(colors), marginBottom: '4px', marginTop: '10px', display: 'block' }
                       return (
                         <>
-                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '4px 0 0' }}>Gabarit officiel BEF — Organisation</p>
+                          <p style={{ ...styleEtiquette(colors), margin: '4px 0 0' }}>Gabarit officiel BEF — Organisation</p>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                             {[['Tps de travail', 'tps_travail'], ['Tps de récup', 'tps_recup'], ['Nbr de séries', 'nb_series'], ['Nbr de répét', 'nb_repet'], ['Rpe', 'rpe']].map(([label, key]) => (
-                              <input key={key} placeholder={label} value={p[key]} onChange={e => updateProcede(i, key, e.target.value)} style={befInput} />
+                              <input key={key} placeholder={label} value={p[key]} onChange={e => updateProcede(i, key, e.target.value)} className={CLASSE_CHAMP} style={befInput} />
                             ))}
                           </div>
                           <label style={befLabel}>Pédagogie</label>
-                          <textarea value={p.pedagogie} onChange={e => updateProcede(i, 'pedagogie', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.pedagogie} onChange={e => updateProcede(i, 'pedagogie', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Surface (zone de terrain, aménagements)</label>
-                          <textarea value={p.surface} onChange={e => updateProcede(i, 'surface', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.surface} onChange={e => updateProcede(i, 'surface', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Comportements attendus (individuels et collectifs)</label>
-                          <textarea value={p.comportements_attendus} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={3} style={befInput} />
+                          <textarea value={p.comportements_attendus} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={3} className={CLASSE_CHAMP} style={befInput} />
 
-                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Descriptif</p>
+                          <p style={{ ...styleEtiquette(colors), margin: '10px 0 0' }}>Descriptif</p>
                           <label style={befLabel}>But</label>
-                          <textarea value={p.but_bef} onChange={e => updateProcede(i, 'but_bef', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.but_bef} onChange={e => updateProcede(i, 'but_bef', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Consignes (départ, déroulé)</label>
-                          <textarea value={p.consignes_bef} onChange={e => updateProcede(i, 'consignes_bef', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.consignes_bef} onChange={e => updateProcede(i, 'consignes_bef', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Systèmes de jeu (et postes)</label>
-                          <textarea value={p.systemes_jeu} onChange={e => updateProcede(i, 'systemes_jeu', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.systemes_jeu} onChange={e => updateProcede(i, 'systemes_jeu', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Variantes</label>
-                          <textarea value={p.variantes_bef} onChange={e => updateProcede(i, 'variantes_bef', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.variantes_bef} onChange={e => updateProcede(i, 'variantes_bef', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
 
-                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Critères</p>
+                          <p style={{ ...styleEtiquette(colors), margin: '10px 0 0' }}>Critères</p>
                           <label style={befLabel}>Critères de réalisation (comment faire)</label>
-                          <textarea value={p.criteres_realisation} onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.criteres_realisation} onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Critères de réussite (2 max)</label>
-                          <textarea value={p.criteres_reussite} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.criteres_reussite} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Dominantes-Impacts Athlétiques</label>
-                          <textarea value={p.dominantes_impacts} onChange={e => updateProcede(i, 'dominantes_impacts', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.dominantes_impacts} onChange={e => updateProcede(i, 'dominantes_impacts', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
 
-                          <p style={{ color: colors.accent.blue, fontSize: '12px', fontWeight: 700, margin: '10px 0 0' }}>Bilan</p>
+                          <p style={{ ...styleEtiquette(colors), margin: '10px 0 0' }}>Bilan</p>
                           <label style={befLabel}>Posture, engagement des joueurs, efficacité de la séance</label>
-                          <textarea value={p.bilan_posture} onChange={e => updateProcede(i, 'bilan_posture', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.bilan_posture} onChange={e => updateProcede(i, 'bilan_posture', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                           <label style={befLabel}>Remédiations (aménagement et/ou consignes)</label>
-                          <textarea value={p.bilan_remediations} onChange={e => updateProcede(i, 'bilan_remediations', e.target.value)} rows={2} style={befInput} />
+                          <textarea value={p.bilan_remediations} onChange={e => updateProcede(i, 'bilan_remediations', e.target.value)} rows={2} className={CLASSE_CHAMP} style={befInput} />
                         </>
                       )
                     })() : fiche.mode_diplome === 'BMF' ? (() => {
@@ -10853,34 +10724,34 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       // papier (cf. FicheBMFContenu). Consignes et Variables
                       // restent deux champs (partagés avec la bibliothèque) mais
                       // s'impriment dans la même case « Consignes/Variables ».
-                      const bmfInput = { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
-                      const bmfLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', marginTop: '10px', display: 'block' }
+                      const bmfInput = { ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }
+                      const bmfLabel = { ...styleEtiquette(colors), marginBottom: '4px', marginTop: '10px', display: 'block' }
                       return (
                         <>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div>
                               <label style={bmfLabel}>Surface</label>
-                              <input value={p.surface || ''} onChange={e => updateProcede(i, 'surface', e.target.value)} placeholder="Ex: 30 × 20 m" style={bmfInput} />
+                              <input value={p.surface || ''} onChange={e => updateProcede(i, 'surface', e.target.value)} placeholder="Ex: 30 × 20 m" className={CLASSE_CHAMP} style={bmfInput} />
                             </div>
                             <div>
                               <label style={bmfLabel}>Séquence</label>
-                              <input value={p.sequence || ''} onChange={e => updateProcede(i, 'sequence', e.target.value)} placeholder="Ex: 4 × 5 min" style={bmfInput} />
+                              <input value={p.sequence || ''} onChange={e => updateProcede(i, 'sequence', e.target.value)} placeholder="Ex: 4 × 5 min" className={CLASSE_CHAMP} style={bmfInput} />
                             </div>
                           </div>
                           <label style={bmfLabel}>Objectif</label>
-                          <textarea value={p.objectif || ''} onChange={e => updateProcede(i, 'objectif', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.objectif || ''} onChange={e => updateProcede(i, 'objectif', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>But(s)</label>
-                          <textarea value={p.but || ''} onChange={e => updateProcede(i, 'but', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.but || ''} onChange={e => updateProcede(i, 'but', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>Consignes</label>
-                          <textarea value={p.consignes || ''} onChange={e => updateProcede(i, 'consignes', e.target.value)} rows={3} style={bmfInput} />
+                          <textarea value={p.consignes || ''} onChange={e => updateProcede(i, 'consignes', e.target.value)} rows={3} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>Variables</label>
-                          <textarea value={p.variables || ''} onChange={e => updateProcede(i, 'variables', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.variables || ''} onChange={e => updateProcede(i, 'variables', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>Gestion des rotations</label>
-                          <textarea value={p.gestion_rotations || ''} onChange={e => updateProcede(i, 'gestion_rotations', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.gestion_rotations || ''} onChange={e => updateProcede(i, 'gestion_rotations', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>Comportements attendus</label>
-                          <textarea value={p.comportements_attendus || ''} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.comportements_attendus || ''} onChange={e => updateProcede(i, 'comportements_attendus', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                           <label style={bmfLabel}>Critères de réussite</label>
-                          <textarea value={p.criteres_reussite || ''} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} style={bmfInput} />
+                          <textarea value={p.criteres_reussite || ''} onChange={e => updateProcede(i, 'criteres_reussite', e.target.value)} rows={2} className={CLASSE_CHAMP} style={bmfInput} />
                         </>
                       )
                     })() : (
@@ -10890,35 +10761,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           value={p.but}
                           onChange={e => updateProcede(i, 'but', e.target.value)}
                           rows={2}
-                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                         <textarea
                           placeholder={t('seance_organisation', lang)}
                           value={p.organisation}
                           onChange={e => updateProcede(i, 'organisation', e.target.value)}
                           rows={2}
-                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                         <textarea
                           placeholder={t('seance_consignes', lang)}
                           value={p.consignes}
                           onChange={e => updateProcede(i, 'consignes', e.target.value)}
                           rows={2}
-                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                         <textarea
                           placeholder={t('seance_criteres_realisation', lang)}
                           value={p.criteres_realisation}
                           onChange={e => updateProcede(i, 'criteres_realisation', e.target.value)}
                           rows={2}
-                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                         <textarea
                           placeholder={t('seance_variables', lang)}
                           value={p.variables}
                           onChange={e => updateProcede(i, 'variables', e.target.value)}
                           rows={2}
-                          style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
                         />
                       </>
                     )}
@@ -10927,25 +10798,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               ))}
 
               {showVisibilityPicker && (() => {
-                const champLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
-                const champInput = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '14px', boxSizing: 'border-box' }
-                const pastilleMeta = (actif) => ({ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + alpha.subtle : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' })
+                const champLabel = { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }
+                const champInput = styleChamp(colors)
+                const pastilleMeta = (actif) => ({ ...styleChoix(colors, actif), minHeight: '36px' })
                 const invalide = !metaProc.nom.trim() || !metaProc.theme || !metaProc.categorie_age?.length
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
                     onClick={() => setShowVisibilityPicker(null)}>
-                    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '460px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
+                    <div role="dialog" aria-modal="true" aria-label={t('biblio_sauver_titre', lang)} style={{ ...styleCarte(colors), padding: '24px', width: '460px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' }}
                       onClick={e => e.stopPropagation()}>
-                      <h2 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: '18px', fontWeight: 800 }}>💾 {t('biblio_sauver_titre', lang)}</h2>
+                      <h2 style={{ ...styleTitreCarte(colors), margin: '0 0 20px' }}><Icone icone={Save} taille={20} /> {t('biblio_sauver_titre', lang)}</h2>
 
                       <div style={{ marginBottom: '16px' }}>
                         <label style={champLabel}>{t('biblio_champ_type', lang)}</label>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {[
-                            { val: 'echauffement', label: `🔥 ${t('biblio_tab_echauffement', lang)}` },
-                            { val: 'jeu', label: `⚽ ${t('biblio_tab_jeu', lang)}` },
-                            { val: 'exercice', label: `🔄 ${t('biblio_tab_exercice', lang)}` },
-                            { val: 'situation', label: `🎯 ${t('biblio_tab_situation', lang)}` },
+                            { val: 'echauffement', label: t('biblio_tab_echauffement', lang) },
+                            { val: 'jeu', label: t('biblio_tab_jeu', lang) },
+                            { val: 'exercice', label: t('biblio_tab_exercice', lang) },
+                            { val: 'situation', label: t('biblio_tab_situation', lang) },
                           ].map(opt => (
                             <button key={opt.val} type="button" onClick={() => setMetaProc(p => ({ ...p, type: opt.val }))} style={pastilleMeta(metaProc.type === opt.val)}>
                               {opt.label}
@@ -10957,7 +10828,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <div style={{ marginBottom: '16px' }}>
                         <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
                         <input value={metaProc.nom} onChange={e => setMetaProc(p => ({ ...p, nom: e.target.value }))}
-                          placeholder={t('biblio_nom_procede_placeholder', lang)} style={champInput} />
+                          placeholder={t('biblio_nom_procede_placeholder', lang)} className={CLASSE_CHAMP} style={champInput} />
                       </div>
 
                       <div style={{ marginBottom: '16px' }}>
@@ -10981,7 +10852,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {(metaProc.theme === 'Offensif' || metaProc.theme === 'Défensif') && (
                         <div style={{ marginBottom: '16px' }}>
                           <label style={champLabel}>{t('biblio_principe_label', lang)}</label>
-                          <select value={metaProc.principe} onChange={e => setMetaProc(p => ({ ...p, principe: e.target.value }))} style={champInput}>
+                          <select value={metaProc.principe} onChange={e => setMetaProc(p => ({ ...p, principe: e.target.value }))} className={CLASSE_CHAMP} style={champInput}>
                             <option value="">{t('biblio_choisir_principe', lang)}</option>
                             {(metaProc.theme === 'Offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
                               <option key={p.id} value={p.label}>{t(`principe_${p.id}`, lang)}</option>
@@ -11001,26 +10872,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         </div>
                       </div>
 
-                      <div style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, borderRadius: '10px', padding: '12px 14px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <div style={{ ...styleCarteLiseree(colors), background: colors.background.raised, padding: '12px 14px 12px 19px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                         <input type="checkbox" id="partage-platform-proc" checked={metaProc.partage_platform}
                           onChange={e => setMetaProc(p => ({ ...p, partage_platform: e.target.checked }))}
-                          style={{ marginTop: '2px', accentColor: colors.accent.green, width: '15px', height: '15px', flexShrink: 0, cursor: 'pointer' }} />
+                          style={{ marginTop: '2px', accentColor: colors.accent.brand, width: '18px', height: '18px', flexShrink: 0, cursor: 'pointer' }} />
                         <label htmlFor="partage-platform-proc" style={{ cursor: 'pointer' }}>
-                          <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>{t('biblio_partage_communaute_titre', lang)}</div>
-                          <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px', lineHeight: 1.4 }}>
+                          <div style={{ color: colors.text.primary, fontSize: '13px', fontWeight: 700 }}>{t('biblio_partage_communaute_titre', lang)}</div>
+                          <div style={{ color: colors.text.secondary, fontSize: '12px', marginTop: '2px', lineHeight: 1.4 }}>
                             {t('biblio_partage_communaute_desc', lang)}
                           </div>
                         </label>
                       </div>
 
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={() => setShowVisibilityPicker(null)}
-                          style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px', color: colors.text.faint, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button type="button" onClick={() => setShowVisibilityPicker(null)} className={CLASSE_BOUTON_SECONDAIRE}
+                          style={{ ...styleBoutonSecondaire(colors), flex: 1 }}>
                           {t('btn_annuler', lang)}
                         </button>
-                        <button onClick={sauvegarderProcedeBibliotheque} disabled={invalide}
-                          style={{ flex: 2, background: invalide ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px', color: invalide ? colors.text.disabled : colors.accent.onBrand, fontWeight: 800, cursor: invalide ? 'default' : 'pointer', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
-                          💾 {t('biblio_sauvegarder_bouton', lang)}
+                        <button type="button" onClick={sauvegarderProcedeBibliotheque} disabled={invalide} className={CLASSE_BOUTON}
+                          style={{ ...styleBoutonPrincipal(colors), flex: 2 }}>
+                          <Icone icone={Save} /> {t('biblio_sauvegarder_bouton', lang)}
                         </button>
                       </div>
                     </div>
@@ -11031,24 +10902,24 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <button
                 type="button"
                 onClick={ajouterProcedeFiche}
-                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: `2px dashed ${colors.accent.green}40`, background: 'transparent', color: colors.accent.green, fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '8px' }}
+                className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), width: '100%', minHeight: '48px', borderStyle: 'dashed', marginBottom: '8px' }}
               >
-                + {t('seance_ajouter_procede', lang)}
+                <Icone icone={Plus} /> {t('seance_ajouter_procede', lang)}
               </button>
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '20px' }}>
                 <button
                   onClick={sauvegarderFiche}
                   disabled={savingFiche}
-                  style={{ flex: 2, minWidth: '160px', padding: '13px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: savingFiche ? 0.6 : 1 }}
+                  className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 2, minWidth: '160px' }}
                 >
-                  {savingFiche ? 'Enregistrement...' : `💾 ${t('seance_sauvegarder_fiche', lang)}`}
+                  {savingFiche ? 'Enregistrement...' : <><Icone icone={Save} /> {t('seance_sauvegarder_fiche', lang)}</>}
                 </button>
                 <button
                   onClick={() => window.print()}
-                  style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                  className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: 1, minWidth: '110px' }}
                 >
-                  🖨️ {t('seance_imprimer_fiche', lang)}
+                  <Icone icone={Printer} /> {t('seance_imprimer_fiche', lang)}
                 </button>
                 {derniereGenerationIA && (
                   <button
@@ -11060,14 +10931,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       educateur: `${profilEdu?.prenom || ''} ${profilEdu?.nom || ''}`.trim(),
                       phases: derniereGenerationIA.phases,
                     })}
-                    style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: 'none', background: '#003893', color: colors.text.primary, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                    className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: 1, minWidth: '110px' }}
                   >
-                    📋 Format FFF
+                    <Icone icone={ClipboardList} /> Format FFF
                   </button>
                 )}
                 <button
                   onClick={() => { setApercuFicheEnCoursOuvert(true); setApercuEnCoursEnHaut(true) }}
-                  style={{ flex: 1, minWidth: '110px', padding: '13px', borderRadius: '10px', border: '1px solid #2a2a2a', background: '#1a1a1a', color: '#ccc', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                  className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: 1, minWidth: '110px' }}
                 >
                   {t('seance_apercu', lang)}
                 </button>
@@ -11075,16 +10946,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             </div>
             )}
 
-            <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>📋 {t('seance_mes_seances', lang)} ({mesSeancesOuvertes.length})</p>
+            <h2 style={{ ...styleTitreCarte(colors), margin: '0 0 12px' }}><Icone icone={ClipboardList} taille={20} /> {t('seance_mes_seances', lang)} ({mesSeancesOuvertes.length})</h2>
             {mesSeancesOuvertes.length === 0 ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px' }}>{t(mesSeancesOuvertesChargees ? 'seance_aucune_envoyee' : 'seance_chargement_fiches', lang)}</p>
+              <p style={{ color: colors.text.dim, fontSize: '13px' }}>{t(mesSeancesOuvertesChargees ? 'seance_aucune_envoyee' : 'seance_chargement_fiches', lang)}</p>
             ) : (
               (() => {
-                const pastille = (actif, couleur) => ({
-                  padding: '6px 14px', border: `1px solid ${actif ? couleur : colors.border.default}`, borderRadius: '20px', cursor: 'pointer',
-                  fontWeight: actif ? 700 : 500, fontSize: '12px', fontFamily: 'Inter, sans-serif',
-                  background: actif ? couleur + alpha.subtle : 'transparent', color: actif ? couleur : colors.text.faint,
-                })
+                const pastille = (actif) => ({ ...styleChoix(colors, actif), minHeight: '32px', fontSize: '12px', padding: '0 12px' })
 
                 const themesDeLaPhase = filtrePhase !== 'tous' ? THEMES_SEANCE[filtrePhase].themes : []
                 const filtresActifs = filtrePhase !== 'tous' || !!filtreTheme || !!filtreCategorieAge || filtreTypeSeance !== 'tous' || filtreAnime
@@ -11103,35 +10970,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const eval_ = Array.isArray(s.evaluation) ? s.evaluation[0] : s.evaluation
                   const infoTheme = themeSeanceInfo(s.categorie_tactique)
                   return (
-                    <div key={s.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div key={s.id} style={{ ...styleCarte(colors), display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>
                           {infoTheme && (
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', marginRight: '8px', background: infoTheme.color + alpha.subtle, color: infoTheme.color }}>
+                            <EtiquetteStatut couleur={infoTheme.color} style={{ marginRight: '8px' }}>
                               {labelTheme(s.categorie_tactique)}
-                            </span>
+                            </EtiquetteStatut>
                           )}
                           {s.theme || t('seance_sans_theme', lang)}
                           {s.fiche_seance?.mode_diplome && (
-                            <span style={{
-                              fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', marginLeft: '8px',
-                              background: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green + '26' : s.fiche_seance.mode_diplome === 'BEF' ? 'rgba(96,165,250,0.15)' : 'rgba(249,115,22,0.15)',
-                              color: s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange,
-                              border: `1px solid ${s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange}`,
-                            }}>
+                            <EtiquetteStatut couleur={s.fiche_seance.mode_diplome === 'BMF' ? colors.accent.green : s.fiche_seance.mode_diplome === 'BEF' ? colors.accent.info : colors.accent.orange} style={{ marginLeft: '8px' }}>
                               {s.fiche_seance.mode_diplome}
-                            </span>
+                            </EtiquetteStatut>
                           )}
                         </p>
                         {(s.categorie_age || s.type_seance === 'individuel') && (
                           <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                             {s.categorie_age && (
-                              <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: colors.background.raised, color: colors.text.secondary, border: `1px solid ${colors.border.default}` }}>
+                              <span style={styleEtiquetteNeutre(colors)}>
                                 {labelCategorie(s.categorie_age)}
                               </span>
                             )}
                             {s.type_seance === 'individuel' && (
-                              <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', background: colors.background.raised, color: colors.text.secondary, border: `1px solid ${colors.border.default}` }}>
+                              <span style={styleEtiquetteNeutre(colors)}>
                                 Individuel
                               </span>
                             )}
@@ -11143,51 +11005,49 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           </p>
                         )}
                         {s.commentaire_perso && (
-                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>💭 {s.commentaire_perso}</p>
+                          <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.dim, fontStyle: 'italic' }}>{s.commentaire_perso}</p>
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button onClick={() => { setFicheApercu(s); setFicheApercuEnHaut(true) }}
-                          style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}30`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          📋 {t('seance_voir', lang)}
+                        <button type="button" onClick={() => { setFicheApercu(s); setFicheApercuEnHaut(true) }} className={CLASSE_BOUTON}
+                          style={styleBoutonPetit(colors, { background: colors.accent.brand, color: colors.accent.onBrand, borderColor: 'transparent' })}>
+                          <Icone icone={ClipboardList} /> {t('seance_voir', lang)}
                         </button>
                         {eval_ ? (
-                          <>
-                            <span style={{ background: colors.accent.green + alpha.subtle, color: colors.accent.green, border: `1px solid ${colors.accent.green}40`, fontSize: '13px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                              ✅ {Math.round(eval_.note_totale)}/100
-                            </span>
-                          </>
+                          <EtiquetteStatut couleur={colors.accent.success}>
+                            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(eval_.note_totale)}/100</span>
+                          </EtiquetteStatut>
                         ) : (
-                          <span style={{ background: '#ffffff08', color: colors.text.muted, border: `1px solid ${colors.border.strong}`, fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px' }}>
-                            📁 {t('seance_archivee', lang)}
-                          </span>
+                          <EtiquetteStatut couleur={colors.text.dim}>
+                            {t('seance_archivee', lang)}
+                          </EtiquetteStatut>
                         )}
                         {s.video_url && (
-                          <a href={s.video_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>🎬 {t('seance_voir', lang)}</a>
+                          <a href={s.video_url} target="_blank" rel="noreferrer" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonPetit(colors), textDecoration: 'none' }}><Icone icone={Video} /> {t('seance_voir', lang)}</a>
                         )}
                         {s.fichier_url && (
-                          <a href={s.fichier_url} target="_blank" rel="noreferrer" style={{ background: colors.accent.purpleLight + alpha.subtle, border: '1px solid #a78bfa40', color: colors.accent.purpleLight, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>📄 {t('seance_fichier', lang)}</a>
+                          <a href={s.fichier_url} target="_blank" rel="noreferrer" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonPetit(colors), textDecoration: 'none' }}><Icone icone={FileText} /> {t('seance_fichier', lang)}</a>
                         )}
-                        <button onClick={(ev) => { ev.stopPropagation(); if (s.fichier_url) { partagerFiche(s.fichier_url, s.theme) } else { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
-                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button type="button" onClick={(ev) => { ev.stopPropagation(); if (s.fichier_url) { partagerFiche(s.fichier_url, s.theme) } else { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
+                          className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                           Partager
                         </button>
                         {confirmSuppr === s.id ? (
                           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                             <span style={{ fontSize: '12px', color: colors.accent.red }}>{t('seance_supprimer_q', lang)}</span>
-                            <button onClick={() => supprimerDemande(s.id)}
-                              style={{ background: colors.accent.red + alpha.subtle, border: '1px solid #ef444440', color: colors.accent.red, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                            <button type="button" onClick={() => supprimerDemande(s.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                              style={styleBoutonPetitDanger(colors)}>
                               {t('etat_oui', lang)}
                             </button>
-                            <button onClick={() => setConfirmSuppr(null)}
-                              style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.dim, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                            <button type="button" onClick={() => setConfirmSuppr(null)} className={CLASSE_BOUTON_SECONDAIRE}
+                              style={styleBoutonPetit(colors)}>
                               {t('etat_non', lang)}
                             </button>
                           </div>
                         ) : (
-                          <button onClick={() => setConfirmSuppr(s.id)}
-                            style={{ background: '#ef444410', border: '1px solid #ef444430', color: colors.accent.red, padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                            🗑
+                          <button type="button" onClick={() => setConfirmSuppr(s.id)} className={CLASSE_BOUTON_SECONDAIRE} aria-label="Supprimer" title="Supprimer"
+                            style={styleBoutonPetitDanger(colors)}>
+                            <Icone icone={Trash2} />
                           </button>
                         )}
                       </div>
@@ -11198,12 +11058,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 return (
                   <>
                     {/* Barre de filtres */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ ...styleCarte(colors), display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
+                        <span style={{ ...styleEtiquette(colors), marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
                         {['tous', 'offensif', 'defensif'].map(p => (
-                          <button key={p} onClick={() => { setFiltrePhase(p); setFiltreTheme('') }}
-                            style={pastille(filtrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
+                          <button key={p} type="button" aria-pressed={filtrePhase === p} onClick={() => { setFiltrePhase(p); setFiltreTheme('') }}
+                            style={pastille(filtrePhase === p)}>
                             {p === 'tous' ? t('theme_phase_toutes', lang) : labelPhase(p)}
                           </button>
                         ))}
@@ -11211,11 +11071,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                       {filtrePhase !== 'tous' && (
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</span>
-                          <button onClick={() => setFiltreTheme('')} style={pastille(!filtreTheme, colors.accent.green)}>{t('biblio_tab_tous', lang)}</button>
+                          <span style={{ ...styleEtiquette(colors), marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</span>
+                          <button type="button" aria-pressed={!filtreTheme} onClick={() => setFiltreTheme('')} style={pastille(!filtreTheme)}>{t('biblio_tab_tous', lang)}</button>
                           {themesDeLaPhase.map(th => (
-                            <button key={th.value} onClick={() => setFiltreTheme(th.value === filtreTheme ? '' : th.value)}
-                              style={pastille(filtreTheme === th.value, THEMES_SEANCE[filtrePhase].color)}>
+                            <button key={th.value} type="button" aria-pressed={filtreTheme === th.value} onClick={() => setFiltreTheme(th.value === filtreTheme ? '' : th.value)}
+                              style={pastille(filtreTheme === th.value)}>
                               {labelTheme(th.value)}
                             </button>
                           ))}
@@ -11223,10 +11083,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       )}
 
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Filtres</span>
+                        <span style={{ ...styleEtiquette(colors) }}>Filtres</span>
 
                         <select value={filtreCategorieAge} onChange={e => setFiltreCategorieAge(e.target.value)}
-                          style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.primary, fontSize: '12px', cursor: 'pointer' }}>
+                          className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: 'auto', minHeight: '32px', padding: '4px 10px', cursor: 'pointer' }}>
                           <option value="">{t('toutes_categories', lang)}</option>
                           <optgroup label={t('categorie_masculin', lang)}>
                             {CATEGORIES_MASCULIN.map(c => <option key={c} value={c}>{labelCategorie(c)}</option>)}
@@ -11237,25 +11097,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         </select>
 
                         {['tous', 'collectif', 'individuel'].map(ty => (
-                          <button key={ty} onClick={() => setFiltreTypeSeance(ty)} style={pastille(filtreTypeSeance === ty, colors.accent.green)}>
+                          <button key={ty} type="button" aria-pressed={filtreTypeSeance === ty} onClick={() => setFiltreTypeSeance(ty)} style={pastille(filtreTypeSeance === ty)}>
                             {ty === 'tous' ? 'Collectif + Individuel' : ty === 'collectif' ? 'Collectif' : 'Individuel'}
                           </button>
                         ))}
 
-                        <button onClick={() => setFiltreAnime(!filtreAnime)} style={pastille(filtreAnime, colors.accent.purpleLight)}>
+                        <button type="button" aria-pressed={filtreAnime} onClick={() => setFiltreAnime(!filtreAnime)} style={pastille(filtreAnime)}>
                           Séances animées
                         </button>
 
                         {filtresActifs && (
-                          <button onClick={() => { setFiltrePhase('tous'); setFiltreTheme(''); setFiltreCategorieAge(''); setFiltreTypeSeance('tous'); setFiltreAnime(false) }}
-                            style={pastille(false, colors.accent.red)}>
+                          <button type="button" onClick={() => { setFiltrePhase('tous'); setFiltreTheme(''); setFiltreCategorieAge(''); setFiltreTypeSeance('tous'); setFiltreAnime(false) }}
+                            style={{ ...pastille(false), color: colors.accent.red, borderColor: colors.accent.red }}>
                             Réinitialiser
                           </button>
                         )}
                       </div>
 
                       {filtresActifs && (
-                        <div style={{ color: colors.text.faint, fontSize: '12px' }}>
+                        <div style={{ color: colors.text.secondary, fontSize: '12px' }}>
                           {seancesFiltrees.length} séance{seancesFiltrees.length > 1 ? 's' : ''} trouvée{seancesFiltrees.length > 1 ? 's' : ''} sur {mesSeancesOuvertes.length}
                         </div>
                       )}
@@ -11264,14 +11124,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     {filtresActifs ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {seancesFiltrees.length === 0 ? (
-                          <p style={{ color: colors.text.disabled, fontSize: '13px' }}>Aucune séance ne correspond à ces filtres.</p>
+                          <p style={{ color: colors.text.dim, fontSize: '13px' }}>Aucune séance ne correspond à ces filtres.</p>
                         ) : seancesFiltrees.map(renderCarteSeance)}
                       </div>
                     ) : (() => {
                       const DOSSIERS_PHASE = [
                         { key: 'offensif', label: labelPhase('offensif'), color: THEMES_SEANCE.offensif.color },
                         { key: 'defensif', label: labelPhase('defensif'), color: THEMES_SEANCE.defensif.color },
-                        { key: 'aucune', label: t('seance_sans_categorie', lang), color: colors.text.faint },
+                        { key: 'aucune', label: t('seance_sans_categorie', lang), color: colors.text.dim },
                       ]
                       const seancesParPhase = mesSeancesOuvertes.reduce((acc, s) => {
                         const phase = themeSeanceInfo(s.categorie_tactique)?.phase || 'aucune'
@@ -11289,11 +11149,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               const ouvert = !!dossiersOuverts[d.key]
                               return (
                                 <div key={d.key}
+                                  role="button" tabIndex={0} aria-expanded={ouvert}
+                                  className={CLASSE_CLIQUABLE}
                                   onClick={() => setDossiersOuverts(prev => ({ ...prev, [d.key]: !prev[d.key] }))}
-                                  style={{ background: d.color + alpha.faint, border: `1px solid ${ouvert ? d.color : d.color + alpha.medium}`, borderRadius: '14px', padding: '22px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', transition: 'border-color 0.15s' }}
+                                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDossiersOuverts(prev => ({ ...prev, [d.key]: !prev[d.key] })) } }}
+                                  style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${d.color}`, paddingLeft: '19px', borderColor: ouvert ? colors.border.strong : undefined, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}
                                 >
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: colors.text.primary }}>{d.label}</p>
-                                  <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{items.length}</span>
+                                  <span style={styleEtiquette(colors)}>{d.label}</span>
+                                  <span style={styleChiffreHeros(colors, 32)}>{items.length}</span>
                                 </div>
                               )
                             })}
@@ -11308,8 +11171,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             if (!principes) {
                               return (
                                 <div key={d.key} style={{ marginBottom: '20px' }}>
-                                  <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
-                                    📁 {d.label} ({items.length})
+                                  <p style={{ ...styleEtiquette(colors), marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Icone icone={Folder} /> {d.label} ({items.length})
                                   </p>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     {items.map(renderCarteSeance)}
@@ -11335,8 +11198,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             const nonClasses = items.filter(s => !principes.some(p => matchePrincipe(s, p)))
                             return (
                               <div key={d.key} style={{ marginBottom: '20px' }}>
-                                <p style={{ fontWeight: 700, fontSize: '13px', color: colors.text.muted, marginBottom: '10px' }}>
-                                  📁 {d.label} ({items.length})
+                                <p style={{ ...styleEtiquette(colors), marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Icone icone={Folder} /> {d.label} ({items.length})
                                 </p>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
                                   {principesAvecItems.map(p => {
@@ -11344,25 +11207,31 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                     const ouvertP = !!principesOuverts[clePrincipe]
                                     return (
                                       <div key={p.id}
+                                        role="button" tabIndex={0} aria-expanded={ouvertP}
+                                        className={CLASSE_CLIQUABLE}
                                         onClick={() => setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] }))}
-                                        style={{ background: colors.background.surface, border: `1px solid ${ouvertP ? d.color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
-                                        <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.dim }}>📁 {t(`principe_${p.id}`, lang)}</span>
-                                        <span style={{ background: d.color, color: '#0a0a0a', fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{p.items.length}</span>
+                                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPrincipesOuverts(prev => ({ ...prev, [clePrincipe]: !prev[clePrincipe] })) } }}
+                                        style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${d.color}`, padding: '10px 14px 10px 19px', borderColor: ouvertP ? colors.border.strong : undefined, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.primary, display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icone icone={Folder} /> {t(`principe_${p.id}`, lang)}</span>
+                                        <span style={{ ...styleChiffreHeros(colors, 20), flexShrink: 0 }}>{p.items.length}</span>
                                       </div>
                                     )
                                   })}
                                   {nonClasses.length > 0 && (
                                     <div
+                                      role="button" tabIndex={0} aria-expanded={!!principesOuverts[`${d.key}:_non_classe`]}
+                                      className={CLASSE_CLIQUABLE}
                                       onClick={() => setPrincipesOuverts(prev => ({ ...prev, [`${d.key}:_non_classe`]: !prev[`${d.key}:_non_classe`] }))}
-                                      style={{ background: colors.background.surface, border: `1px solid ${principesOuverts[`${d.key}:_non_classe`] ? colors.text.faint : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', transition: 'border-color 0.15s' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 600, color: colors.text.faint }}>📁 {t('biblio_non_classe', lang)}</span>
-                                      <span style={{ background: colors.background.raised, color: colors.text.faint, fontWeight: 700, fontSize: '11px', padding: '2px 9px', borderRadius: '20px', flexShrink: 0 }}>{nonClasses.length}</span>
+                                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPrincipesOuverts(prev => ({ ...prev, [`${d.key}:_non_classe`]: !prev[`${d.key}:_non_classe`] })) } }}
+                                      style={{ ...styleCarte(colors), padding: '10px 14px', borderColor: principesOuverts[`${d.key}:_non_classe`] ? colors.border.strong : undefined, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                                      <span style={{ fontSize: '13px', fontWeight: 600, color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Icone icone={Folder} /> {t('biblio_non_classe', lang)}</span>
+                                      <span style={{ ...styleChiffreHeros(colors, 20), flexShrink: 0 }}>{nonClasses.length}</span>
                                     </div>
                                   )}
                                 </div>
                                 {principesAvecItems.filter(p => principesOuverts[`${d.key}:${p.id}`]).map(p => (
                                   <div key={p.id} style={{ marginTop: '16px' }}>
-                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{t(`principe_${p.id}`, lang)} ({p.items.length})</p>
+                                    <p style={{ ...styleEtiquette(colors), marginBottom: '8px' }}>{t(`principe_${p.id}`, lang)} ({p.items.length})</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                       {p.items.map(renderCarteSeance)}
                                     </div>
@@ -11370,7 +11239,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                 ))}
                                 {principesOuverts[`${d.key}:_non_classe`] && nonClasses.length > 0 && (
                                   <div style={{ marginTop: '16px' }}>
-                                    <p style={{ fontWeight: 600, fontSize: '12px', color: colors.text.faint, marginBottom: '8px' }}>{t('biblio_non_classe', lang)} ({nonClasses.length})</p>
+                                    <p style={{ ...styleEtiquette(colors), marginBottom: '8px' }}>{t('biblio_non_classe', lang)} ({nonClasses.length})</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                       {nonClasses.map(renderCarteSeance)}
                                     </div>
@@ -11397,76 +11266,72 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {activeSection === 'bibliotheque' && (
           <div>
-            <div style={{ display: 'flex', gap: 0, background: colors.background.sunken, borderRadius: 12, padding: 4, maxWidth: '100%', width: 'fit-content', marginBottom: 24, border: `1px solid ${colors.border.faint}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div role="tablist" aria-label={t('nav_bibliotheque', lang)} className="df-onglets" style={{ ...coqueVars(colors), marginBottom: '20px' }}>
               {[
                 { id: 'personal', label: 'Ma bibliothèque' },
                 { id: 'club', label: 'Bibliothèque club' },
                 { id: 'platform', label: 'Digital Football' },
-                { id: 'videos', label: 'Vidéos' },
-              ].map(r => (
-                <button key={r.id} onClick={() => setBiblioRubrique(r.id)}
-                  style={{
-                    padding: '9px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                    background: biblioRubrique === r.id ? colors.text.primary : 'transparent',
-                    color: biblioRubrique === r.id ? colors.background.base : colors.text.faint,
-                    fontWeight: biblioRubrique === r.id ? 700 : 400, fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0,
-                    fontFamily: 'Inter, sans-serif', transition: 'all 0.15s',
-                  }}>
+                { id: 'videos', label: biblioClubSeule ? 'Vidéos du club' : 'Vidéos' },
+              ].filter(r => !biblioClubSeule || ['club', 'videos'].includes(r.id)).map(r => (
+                <button key={r.id} role="tab" aria-selected={biblioRubrique === r.id} className="df-onglet" onClick={() => setBiblioRubrique(r.id)}>
                   {r.label}
                 </button>
               ))}
             </div>
 
+            {biblioClubSeule && (
+              <p style={{ margin: '-8px 0 20px', fontSize: '13px', color: colors.text.secondary, fontFamily: police.texte }}>
+                Offert par ton club : tu consultes sa bibliothèque et tu reprends ses procédés dans tes séances. Le club garde l'original, ta fiche reste modifiable.
+              </p>
+            )}
+
             {['personal', 'club', 'platform'].includes(biblioRubrique) && (
             <>
             {biblioRubrique === 'club' && !clubAffiliation?.club_id ? (
-              <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Rejoins un club (code club, dans ton profil) pour accéder à sa bibliothèque partagée.</p>
+              <p style={{ color: colors.text.secondary, fontSize: '14px', fontFamily: police.texte }}>Rejoins un club (code club, dans ton profil) pour accéder à sa bibliothèque partagée.</p>
             ) : (
             <>
             {biblioRubrique === 'personal' && procedeBrouillon && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
-                <p style={{ margin: 0, fontSize: '13px', color: colors.text.primary }}>
-                  Un procédé n'a pas pu être enregistré (« {procedeBrouillon.form?.nom || 'sans titre'} ») — conservé en brouillon sur cet appareil.
+              <div role="alert" style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.amber}`, paddingLeft: '19px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '14px', color: colors.text.primary, fontFamily: police.texte }}>
+                  Un procédé n'a pas pu être enregistré (« {procedeBrouillon.form?.nom || 'sans titre'} »). Il est conservé en brouillon sur cet appareil.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                  <button onClick={restaurerProcedeBrouillon} style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={restaurerProcedeBrouillon} className={CLASSE_BOUTON} style={styleBoutonPetit(colors, { background: colors.accent.brand, color: colors.accent.onBrand, borderColor: 'transparent' })}>
                     Restaurer
                   </button>
-                  <button onClick={ignorerProcedeBrouillon} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={ignorerProcedeBrouillon} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                     Ignorer
                   </button>
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <IcoBiblioTitre size={24} color={colors.accent.green} />
-                  {t('nav_bibliotheque', lang)}
-                </h1>
-                <p style={{ fontSize: '13px', color: colors.text.faint }}>{biblio.length} {biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button onClick={() => { setBiblioSelectionMode(m => !m); if (biblioSelectionMode) setBiblioSelection([]) }}
-                  style={{ background: biblioSelectionMode ? colors.accent.green + alpha.subtle : 'transparent', border: `1px solid ${biblioSelectionMode ? colors.accent.green : colors.border.default}`, color: biblioSelectionMode ? colors.accent.green : colors.text.faint, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  {biblioSelectionMode ? t('biblio_annuler_selection', lang) : t('biblio_selection_multiple', lang)}
-                </button>
-                {biblioRubrique === 'personal' && canEdit('entrainements') && (
-                  <>
-                    <button onClick={() => setModalScannerProc(true)}
-                      style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                      <IcoCamera /> {t('scanproc_bouton', lang)}
-                    </button>
-                    <button onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }}
-                      style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                      + {t('biblio_nouveau_procede', lang)}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
 
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <TitreEcran
+              titre={t('nav_bibliotheque', lang)}
+              sousTitre={`${biblio.length} ${biblio.length !== 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}`}
+              actions={(
+                <>
+                  <button type="button" aria-pressed={biblioSelectionMode} className={CLASSE_BOUTON_SECONDAIRE}
+                    onClick={() => { setBiblioSelectionMode(m => !m); if (biblioSelectionMode) setBiblioSelection([]) }}
+                    style={styleChoix(colors, biblioSelectionMode)}>
+                    {biblioSelectionMode ? t('biblio_annuler_selection', lang) : t('biblio_selection_multiple', lang)}
+                  </button>
+                  {biblioRubrique === 'personal' && canEdit('entrainements') && (
+                    <>
+                      <button type="button" onClick={() => setModalScannerProc(true)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), gap: '8px' }}>
+                        <Icone icone={Camera} /> {t('scanproc_bouton', lang)}
+                      </button>
+                      <button type="button" onClick={() => { setProcedeEnEdition(null); setProcedeForm(PROCEDE_VIDE); setModalProcede(true) }} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), gap: '8px' }}>
+                        <Icone icone={Plus} /> {t('biblio_nouveau_procede', lang)}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            />
+
+            <div role="group" aria-label="Type de procédé" style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
               {[
                 { id: 'tous', label: t('biblio_tab_tous', lang), Icon: IcoTypeTous },
                 { id: 'echauffement', label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement },
@@ -11477,11 +11342,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const nb = tab.id === 'tous' ? biblio.length : biblio.filter(p => p.type === tab.id).length
                 const actif = biblioTab === tab.id
                 return (
-                  <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                    style={{ background: actif ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${actif ? colors.accent.blue + alpha.medium : colors.border.default}`, color: actif ? colors.accent.blue : colors.text.secondary, padding: '7px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: actif ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '7px', opacity: nb === 0 && !actif ? 0.55 : 1 }}>
-                    <tab.Icon size={14} color={actif ? colors.accent.blue : colors.text.faint} />
+                  <button key={tab.id} type="button" aria-pressed={actif} onClick={() => setBiblioTab(tab.id)} className={CLASSE_BOUTON_SECONDAIRE}
+                    style={{ ...styleChoix(colors, actif), padding: '0 14px', gap: '8px' }}>
+                    <tab.Icon size={16} color="currentColor" />
                     {tab.label}
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: actif ? colors.accent.blue : colors.text.faint, fontVariantNumeric: 'tabular-nums' }}>{nb}</span>
+                    <span style={styleChiffreCond(colors, 15)}>{nb}</span>
                   </button>
                 )
               })}
@@ -11489,45 +11354,39 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{ flex: 2, minWidth: '200px', position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.faint, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
-                <input value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
-                  style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px 10px 38px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                <span aria-hidden="true" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.text.secondary, display: 'flex', pointerEvents: 'none' }}><IcoSearch /></span>
+                <input type="search" aria-label={t('biblio_rechercher_placeholder', lang)} value={biblioSearch} onChange={e => setBiblioSearch(e.target.value)} placeholder={t('biblio_rechercher_placeholder', lang)}
+                  className={CLASSE_CHAMP} style={{ ...styleChamp(colors), paddingLeft: '38px' }} />
               </div>
-              <select value={biblioFiltreCategorieAge} onChange={e => setBiblioFiltreCategorieAge(e.target.value)}
-                style={{ flex: 1, minWidth: '160px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
+              <select aria-label={t('biblio_toutes_categories_age', lang)} value={filtreAgeEffectif} onChange={e => { setBiblioFiltreCategorieAge(e.target.value); setBiblioAgeChoisi(true) }}
+                className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, minWidth: '160px', width: 'auto' }}>
                 <option value="">{t('biblio_toutes_categories_age', lang)}</option>
                 {CATEGORIES_AGE_PROCEDE.map(c => <option key={c} value={c}>{labelAgeProcede(c)}</option>)}
               </select>
             </div>
 
             {biblioLoading ? (
-              <p style={{ textAlign: 'center', color: colors.text.disabled, padding: '48px 0' }}>{t('jexp_chargement', lang)}</p>
+              <p role="status" style={{ textAlign: 'center', color: colors.text.secondary, padding: '48px 0', fontFamily: police.texte }}>{t('jexp_chargement', lang)}</p>
             ) : (() => {
+              // Le type se reconnaît à son icône et à son libellé, jamais à une couleur.
               const TYPE_CONFIG = {
-                jeu: { label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu, color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.light },
-                exercice: { label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice, color: colors.accent.blue, bg: colors.accent.blue + alpha.subtle, border: colors.accent.blue + alpha.light },
-                situation: { label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation, color: colors.accent.orange, bg: colors.accent.orange + alpha.subtle, border: colors.accent.orange + alpha.light },
-                echauffement: { label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement, color: '#f0c030', bg: '#f0c03015', border: '#f0c03030' },
+                jeu: { label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu },
+                exercice: { label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice },
+                situation: { label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
+                echauffement: { label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement },
               }
-              const pastille = (actif, couleur) => ({
-                padding: '6px 14px', border: `1px solid ${actif ? couleur : colors.border.default}`, borderRadius: '20px', cursor: 'pointer',
-                fontWeight: actif ? 700 : 500, fontSize: '12px', fontFamily: 'Inter, sans-serif',
-                background: actif ? couleur + alpha.subtle : 'transparent', color: actif ? couleur : colors.text.faint,
-              })
+              const choixPetit = (actif) => ({ ...styleChoix(colors, actif), minHeight: '36px', padding: '0 14px' })
               // Filtre thème (phase Offensif/Défensif + thème officiel FFF, cf.
-              // src/lib/themesSeance.js — même système que "Mes séances") :
-              // disponible partout, y compris "Ma bibliothèque", dès qu'elle
-              // contient assez de procédés pour en justifier le tri. Le
-              // classement en dossiers reste réservé aux bibliothèques
-              // partagées (avecDossiers, plus bas) — une liste perso reste en
-              // général trop réduite pour ça, mais le filtre seul s'applique
-              // bien à tout volume.
+              // src/lib/themesSeance.js, même système que "Mes séances") :
+              // disponible partout, y compris "Ma bibliothèque". Le classement en
+              // dossiers reste réservé aux bibliothèques partagées (avecDossiers,
+              // plus bas) : une liste perso reste en général trop réduite pour ça.
               const avecThemes = ['personal', 'club', 'platform'].includes(biblioRubrique)
               const themesDeLaPhase = biblioFiltrePhase !== 'tous' ? THEMES_SEANCE[biblioFiltrePhase].themes : []
               // Deux échelles de thème coexistent sur `theme` : les valeurs FFF (cf.
               // THEMES_SEANCE, ex. 'conservation') pour les procédés créés via le
               // formulaire complet, et depuis la modale de sauvegarde enrichie les
-              // libellés de phase bruts 'Offensif'/'Défensif' — les deux doivent
+              // libellés de phase bruts 'Offensif'/'Défensif' : les deux doivent
               // alimenter les mêmes filtres et dossiers par phase.
               const phaseDuTheme = theme => theme === 'Offensif' ? 'offensif' : theme === 'Défensif' ? 'defensif' : themeSeanceInfo(theme)?.phase
               const filtres = biblio.filter(p => {
@@ -11535,27 +11394,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const matchSearch = !biblioSearch.trim() || `${p.nom} ${p.theme} ${p.tags} ${p.description}`.toLowerCase().includes(biblioSearch.toLowerCase())
                 const matchPhase = !avecThemes || biblioFiltrePhase === 'tous' || phaseDuTheme(p.theme) === biblioFiltrePhase
                 const matchTheme = !avecThemes || !biblioFiltreTheme || p.theme === biblioFiltreTheme
-                const matchCategorieAge = !biblioFiltreCategorieAge || (p.categorie_age || []).includes(biblioFiltreCategorieAge)
+                // Filtre prérempli : les procédés « Pour tous » restent visibles (ils conviennent à cette catégorie aussi).
+                const matchCategorieAge = !filtreAgeEffectif || (p.categorie_age || []).includes(filtreAgeEffectif) || (!biblioAgeChoisi && (p.categorie_age || []).includes('Pour tous'))
                 return matchTab && matchSearch && matchPhase && matchTheme && matchCategorieAge
               })
               const barreThemes = avecThemes && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', paddingBottom: '16px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('theme_phase_label', lang)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', paddingBottom: '16px', borderBottom: `1px solid ${couleurCraie(colors)}` }}>
+                  <div role="group" aria-label={t('theme_phase_label', lang)} style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Etiquette style={{ marginRight: '4px' }}>{t('theme_phase_label', lang)}</Etiquette>
                     {['tous', 'offensif', 'defensif'].map(p => (
-                      <button key={p} onClick={() => { setBiblioFiltrePhase(p); setBiblioFiltreTheme('') }}
-                        style={pastille(biblioFiltrePhase === p, p === 'offensif' ? THEMES_SEANCE.offensif.color : p === 'defensif' ? THEMES_SEANCE.defensif.color : colors.accent.green)}>
+                      <button key={p} type="button" aria-pressed={biblioFiltrePhase === p} className={CLASSE_BOUTON_SECONDAIRE}
+                        onClick={() => { setBiblioFiltrePhase(p); setBiblioFiltreTheme('') }} style={{ ...choixPetit(biblioFiltrePhase === p), gap: '8px' }}>
+                        {p !== 'tous' && marqueurCarre(THEMES_SEANCE[p].color)}
                         {p === 'tous' ? t('theme_phase_toutes', lang) : labelPhase(p)}
                       </button>
                     ))}
                   </div>
                   {biblioFiltrePhase !== 'tous' && (
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</span>
-                      <button onClick={() => setBiblioFiltreTheme('')} style={pastille(!biblioFiltreTheme, colors.accent.green)}>{t('biblio_tab_tous', lang)}</button>
+                    <div role="group" aria-label={t('biblio_champ_theme', lang)} style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Etiquette style={{ marginRight: '4px' }}>{t('biblio_champ_theme', lang)}</Etiquette>
+                      <button type="button" aria-pressed={!biblioFiltreTheme} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setBiblioFiltreTheme('')} style={choixPetit(!biblioFiltreTheme)}>{t('biblio_tab_tous', lang)}</button>
                       {themesDeLaPhase.map(th => (
-                        <button key={th.value} onClick={() => setBiblioFiltreTheme(th.value === biblioFiltreTheme ? '' : th.value)}
-                          style={pastille(biblioFiltreTheme === th.value, THEMES_SEANCE[biblioFiltrePhase].color)}>
+                        <button key={th.value} type="button" aria-pressed={biblioFiltreTheme === th.value} className={CLASSE_BOUTON_SECONDAIRE}
+                          onClick={() => setBiblioFiltreTheme(th.value === biblioFiltreTheme ? '' : th.value)} style={choixPetit(biblioFiltreTheme === th.value)}>
                           {labelTheme(th.value)}
                         </button>
                       ))}
@@ -11566,12 +11427,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               if (filtres.length === 0) return (
                 <>
                   {barreThemes}
-                  <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.4 }}>
-                      <IcoBiblioVide size={56} color={colors.accent.green} />
+                  <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '48px 16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: colors.text.dim }}>
+                      <Icone icone={Library} taille={40} />
                     </div>
-                    <p style={{ fontSize: '14px', color: colors.text.disabled, marginBottom: '4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
-                    <p style={{ fontSize: '12px', color: colors.border.strong }}>{t('biblio_creer_premier', lang)}</p>
+                    <p style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '20px', textTransform: 'uppercase', letterSpacing: '0.01em', color: colors.text.primary, margin: '0 0 4px' }}>{t('biblio_aucun_procede_trouve', lang)}</p>
+                    <p style={{ fontSize: '14px', color: colors.text.secondary, margin: 0, fontFamily: police.texte }}>{biblioRubrique === 'club' ? 'Ton club n\'a pas encore ajouté de procédé, ou aucun ne correspond à ta recherche.' : t('biblio_creer_premier', lang)}</p>
                   </div>
                 </>
               )
@@ -11580,105 +11441,86 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 const estSelectionne = biblioSelection.some(x => x.id === p.id)
                 // Pas de colonne "source" en base : le badge Digital Football/Club se
                 // déduit du rubrique actif (biblioRubrique), qui détermine déjà quelle
-                // requête a chargé `biblio` (partage_platform vs partage_club) — inutile
-                // de dupliquer cette info dans une colonne, cf. bibliotheque_exercices.
-                const sourceBadge = biblioRubrique === 'platform' ? { label: 'Digital Football', couleur: true }
-                  : biblioRubrique === 'club' ? { label: 'Club', couleur: false } : null
-                const ombreBase = estSelectionne ? `0 0 0 2px ${colors.accent.green}` : 'none'
-                const ombreHover = `${estSelectionne ? `0 0 0 2px ${colors.accent.green}, ` : ''}0 10px 28px rgba(0,0,0,0.35)`
+                // requête a chargé `biblio` (partage_platform vs partage_club).
+                const sourceBadge = biblioRubrique === 'platform' ? 'Digital Football' : biblioRubrique === 'club' ? (p.officiel ? 'Officiel du club' : 'Partagé par un éducateur') : null
+                const peutEditer = p.educateur_id === userId && canEdit('entrainements')
+                const boutonIcone = { ...styleBoutonSecondaire(colors), minHeight: '36px', width: '36px', padding: 0, flexShrink: 0 }
                 return (
                   <div key={p.id} onClick={() => biblioSelectionMode && basculerSelectionBiblio(p)}
-                    style={{ background: colors.background.surface, borderRadius: '14px', border: `1px solid ${estSelectionne ? colors.accent.green : colors.border.subtle}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: ombreBase, transition: 'transform 0.15s, box-shadow 0.15s', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = ombreHover }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ombreBase }}>
+                    style={{ ...styleCarte(colors), padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', cursor: biblioSelectionMode ? 'pointer' : 'default',
+                      border: `1px solid ${estSelectionne ? colors.accent.brand : colors.border.default}`, boxShadow: estSelectionne ? `0 0 0 2px ${colors.accent.brand}` : 'none' }}>
 
                     {/* Image (schéma tactique) ou terrain stylisé */}
-                    <div style={{ height: '140px', background: colors.background.base, position: 'relative', overflow: 'hidden', flexShrink: 0, borderBottom: `2px solid ${cfg.color}` }}>
+                    <div style={{ height: '140px', background: colors.background.base, position: 'relative', overflow: 'hidden', flexShrink: 0, borderBottom: `1px solid ${couleurCraie(colors)}` }}>
                       {p.schema_png ? (
                         <img src={miniatureSchema(p.schema_png, 500)} loading="lazy" alt="Schéma tactique" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <>
-                          <TerrainMiniature couleur="#ffffff" />
-                          <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: cfg.color + '30', border: `1px solid ${cfg.color}70` }}>
-                            <cfg.Icon size={18} color={cfg.color} />
-                          </span>
-                        </>
-                      )}
-
-                      {sourceBadge && (
-                        <div style={{ position: 'absolute', top: '8px', left: '8px' }}>
-                          <span style={{ padding: '3px 8px', borderRadius: '6px', background: sourceBadge.couleur ? colors.accent.green + '20' : '#00000080', color: sourceBadge.couleur ? colors.accent.green : colors.text.secondary, fontSize: '10px', fontWeight: 700, backdropFilter: 'blur(4px)', border: `1px solid ${sourceBadge.couleur ? colors.accent.green + '30' : colors.border.strong}` }}>
-                            {sourceBadge.label}
-                          </span>
-                        </div>
-                      )}
-
-                      <div style={{ position: 'absolute', bottom: '8px', right: '8px', display: 'flex', gap: '6px' }}>
-                        {p.duree && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#000000b3', color: '#e5e7eb', fontSize: '11px', fontWeight: 600, backdropFilter: 'blur(4px)' }}><IcoChrono />{p.duree} min</span>}
-                        {p.nb_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#000000b3', color: '#e5e7eb', fontSize: '11px', fontWeight: 600, backdropFilter: 'blur(4px)', maxWidth: '130px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoGroupe />{p.nb_joueurs}</span>}
-                      </div>
-
-                      {biblioSelectionMode && (
-                        <span style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${estSelectionne ? colors.accent.green : colors.border.default}`, background: estSelectionne ? colors.accent.green : colors.background.overlay, color: colors.accent.onBrand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
-                          {estSelectionne ? '✓' : ''}
-                        </span>
-                      )}
-
-                      {!biblioSelectionMode && (
-                        p.educateur_id === userId ? (
-                          canEdit('entrainements') && (
-                            <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
-                              <button onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }} style={{ background: '#000000b3', border: 'none', borderRadius: '8px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb', cursor: 'pointer', backdropFilter: 'blur(4px)' }} title={t('btn_modifier', lang)}><IcoCrayon /></button>
-                              <button onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }} style={{ background: '#000000b3', border: 'none', borderRadius: '8px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', cursor: 'pointer', backdropFilter: 'blur(4px)' }} title={t('btn_supprimer', lang)}><IcoCorbeille /></button>
-                            </div>
-                          )
-                        ) : (
-                          <button onClick={(e) => { e.stopPropagation(); copierProcede(p) }}
-                            style={{ position: 'absolute', top: '8px', right: '8px', background: colors.accent.blue + alpha.subtle, border: `1px solid ${colors.accent.blue}50`, color: colors.accent.blue, borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                            Copier
-                          </button>
-                        )
+                        <TerrainMiniature couleur="#ffffff" />
                       )}
                     </div>
 
                     {/* Corps */}
                     <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: cfg.color + '1a', color: cfg.color, fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
-                        <cfg.Icon size={11} color={cfg.color} /> {cfg.label}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
+                          <span style={{ ...styleEtiquetteNeutre(colors), gap: '6px' }}><cfg.Icon size={12} color="currentColor" /> {cfg.label}</span>
+                          {sourceBadge && <span style={styleEtiquetteNeutre(colors)}>{sourceBadge}</span>}
+                          {p.officiel && estNouveauProcede(p.created_at) && <span style={{ ...styleEtiquetteNeutre(colors), background: colors.accent.brand, color: colors.accent.onBrand, borderColor: colors.accent.brand, fontWeight: 700 }}>Nouveau</span>}
+                        </div>
+                        {biblioSelectionMode ? (
+                          <span aria-hidden="true" style={{ width: '22px', height: '22px', borderRadius: forme.rayonPastille, flexShrink: 0, border: `2px solid ${estSelectionne ? colors.accent.brand : colors.border.strong}`, background: estSelectionne ? colors.accent.brand : 'transparent', color: colors.accent.onBrand, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {estSelectionne && <Icone icone={Check} taille={14} />}
+                          </span>
+                        ) : peutEditer ? (
+                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                            <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={boutonIcone} aria-label={`${t('btn_modifier', lang)} : ${p.nom}`} title={t('btn_modifier', lang)}
+                              onClick={(e) => { e.stopPropagation(); ouvrirEditionProcede(p) }}><Icone icone={Pencil} taille={16} /></button>
+                            <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...boutonIcone, color: colors.accent.red, borderColor: colors.accent.red }} aria-label={`${t('btn_supprimer', lang)} : ${p.nom}`} title={t('btn_supprimer', lang)}
+                              onClick={(e) => { e.stopPropagation(); supprimerProcede(p.id) }}><Icone icone={Trash2} taille={16} /></button>
+                          </div>
+                        ) : p.educateur_id !== userId && !p.officiel ? (
+                          <button type="button" className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors, { gap: '6px', flexShrink: 0 })}
+                            onClick={(e) => { e.stopPropagation(); copierProcede(p) }}>
+                            <Icone icone={Copy} taille={14} /> Copier
+                          </button>
+                        ) : null}
+                      </div>
 
-                      <h4 style={{ color: colors.text.primary, fontWeight: 800, fontSize: '14px', margin: 0, lineHeight: 1.3 }}>{p.nom}</h4>
+                      <h4 style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '20px', lineHeight: 1.15, letterSpacing: '0.01em', textTransform: 'uppercase', color: colors.text.primary, margin: 0 }}>{p.nom}</h4>
 
-                      {p.objectif && <p style={{ color: cfg.color, fontSize: '12px', margin: 0, fontWeight: 600 }}>{p.objectif}</p>}
+                      {p.objectif && <p style={{ color: colors.text.primary, fontSize: '14px', margin: 0, fontWeight: 600, fontFamily: police.texte }}>{p.objectif}</p>}
 
+                      {p.officiel && p.auteur_nom && (
+                        <p style={{ fontSize: '12px', color: colors.text.secondary, margin: 0, fontFamily: police.texte }}>Par {p.auteur_nom}</p>
+                      )}
                       {p.educateur_id !== userId && p.educateur && (
-                        <p style={{ fontSize: '11px', color: colors.text.faint, margin: 0 }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
+                        <p style={{ fontSize: '12px', color: colors.text.secondary, margin: 0, fontFamily: police.texte }}>Par {p.educateur.prenom} {p.educateur.nom}</p>
                       )}
 
-                      {p.theme && p.theme !== 'Sans thème' && <p style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.text.faint, fontSize: '12px', margin: 0 }}><IcoPin />{labelThemeProcede(p.theme)}</p>}
+                      {(p.duree || p.nb_joueurs || (p.theme && p.theme !== 'Sans thème')) && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', color: colors.text.secondary, fontSize: '13px', fontFamily: police.texte }}>
+                          {p.duree && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoChrono /><span style={styleChiffreCond(colors, 15)}>{p.duree}</span> min</span>}
+                          {p.nb_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoGroupe />{p.nb_joueurs}</span>}
+                          {p.theme && p.theme !== 'Sans thème' && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IcoPin />{labelThemeProcede(p.theme)}</span>}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Actions footer — toujours visibles mais discrètes */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${colors.border.subtle}` }}>
-                      <button onClick={(e) => { e.stopPropagation(); ouvrirApercuProcede(p) }}
-                        style={{ padding: '11px', border: 'none', borderRight: `1px solid ${colors.border.subtle}`, background: 'transparent', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Inter, sans-serif' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = colors.background.raised; e.currentTarget.style.color = colors.text.primary }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.text.secondary }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IcoOeil />{t('biblio_voir', lang)}</span>
+                    {/* Actions de pied de carte */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid ${couleurCraie(colors)}` }}>
+                      <button type="button" className={CLASSE_CLIQUABLE} onClick={(e) => { e.stopPropagation(); ouvrirApercuProcede(p) }}
+                        style={{ minHeight: '44px', padding: '0 12px', border: 'none', borderRight: `1px solid ${couleurCraie(colors)}`, background: 'transparent', color: colors.text.primary, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: police.texte, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <Icone icone={Eye} taille={16} />{t('biblio_voir', lang)}
                       </button>
                       {biblioSelectionMode ? (
-                        <button onClick={(e) => { e.stopPropagation(); basculerSelectionBiblio(p) }}
-                          style={{ padding: '11px', border: 'none', background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = colors.accent.green + '10'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <button type="button" className={CLASSE_CLIQUABLE} aria-pressed={estSelectionne} onClick={(e) => { e.stopPropagation(); basculerSelectionBiblio(p) }}
+                          style={{ minHeight: '44px', padding: '0 12px', border: 'none', background: 'transparent', color: colors.text.primary, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: police.texte }}>
                           {estSelectionne ? t('biblio_selectionne', lang) : t('biblio_selectionner', lang)}
                         </button>
                       ) : (
-                        <button onClick={(e) => { e.stopPropagation(); importerProcedeVersNouvelleSeance(p) }}
-                          style={{ padding: '11px', border: 'none', background: 'transparent', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = colors.accent.green + '10'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          + {t('biblio_importer_ma_seance', lang)}
+                        <button type="button" className={CLASSE_CLIQUABLE} onClick={(e) => { e.stopPropagation(); importerProcedeVersNouvelleSeance(p) }}
+                          style={{ minHeight: '44px', padding: '0 12px', border: 'none', background: 'transparent', color: colors.text.primary, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: police.texte, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <Icone icone={Plus} taille={16} />{t('biblio_importer_ma_seance', lang)}
                         </button>
                       )}
                     </div>
@@ -11688,46 +11530,75 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               // Dossiers par phase (Offensif/Défensif, comme "Mes séances") : pour
               // les bibliothèques partagées (club/platform), potentiellement
               // fournies par plusieurs éducateurs ; "Ma bibliothèque" reste une
-              // liste plate (le filtre thème ci-dessus y suffit), en général
-              // trop réduite pour justifier des dossiers en plus.
-              // Masqués dès qu'un type précis (pastilles au-dessus) ou un
-              // thème/phase (barre ci-dessus) est déjà sélectionné — le
-              // classement ferait alors doublon avec le filtre.
+              // liste plate (le filtre thème ci-dessus y suffit).
+              // Masqués dès qu'un type précis ou un thème/phase est sélectionné :
+              // le classement ferait alors doublon avec le filtre.
               const avecDossiers = ['club', 'platform'].includes(biblioRubrique) && biblioTab === 'tous' && biblioFiltrePhase === 'tous' && !biblioFiltreTheme
-              if (!avecDossiers) return (
-                <>
-                  {barreThemes}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
-                    {filtres.map(renderCarteProcede)}
-                  </div>
-                </>
-              )
               const DOSSIERS_PHASE = [
                 { key: 'offensif', label: labelPhase('offensif'), color: THEMES_SEANCE.offensif.color },
                 { key: 'defensif', label: labelPhase('defensif'), color: THEMES_SEANCE.defensif.color },
-                { key: 'aucun', label: t('biblio_theme_sans', lang), color: colors.text.faint },
+                { key: 'aucun', label: t('biblio_theme_sans', lang), color: colors.text.dim },
               ]
-              const parPhase = filtres.reduce((acc, p) => {
-                const phase = phaseDuTheme(p.theme) || 'aucun'
-                if (!acc[phase]) acc[phase] = []
-                acc[phase].push(p)
-                return acc
-              }, {})
-              const dossiersVisibles = DOSSIERS_PHASE.filter(d => parPhase[d.key]?.length > 0)
+              const rendreListe = (liste) => {
+                if (!avecDossiers) return (
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                    {liste.map(renderCarteProcede)}
+                  </div>
+                )
+                const parPhase = liste.reduce((acc, p) => {
+                  const phase = phaseDuTheme(p.theme) || 'aucun'
+                  if (!acc[phase]) acc[phase] = []
+                  acc[phase].push(p)
+                  return acc
+                }, {})
+                return DOSSIERS_PHASE.filter(d => parPhase[d.key]?.length > 0).map(d => (
+                  <section key={d.key} aria-label={d.label} style={{ marginBottom: '28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                      {marqueurCarre(d.color, 10)}
+                      <h2 style={{ ...styleTitreCarte(colors), margin: 0 }}>{d.label}</h2>
+                      <span style={{ color: colors.text.secondary, fontSize: '13px', fontFamily: police.texte }}>{parPhase[d.key].length} {parPhase[d.key].length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                      {parPhase[d.key].map(renderCarteProcede)}
+                    </div>
+                  </section>
+                ))
+              }
+              // Rubrique club : la bibliothèque officielle du club d'abord, puis ce que
+              // les éducateurs ont partagé, deux parties bien distinctes.
+              if (biblioRubrique === 'club') {
+                const officiels = filtres.filter(p => p.officiel)
+                const partages = filtres.filter(p => !p.officiel)
+                const titreSection = (titre, sous) => (
+                  <div style={{ marginBottom: '14px' }}>
+                    <h2 style={{ ...styleTitreCarte(colors), margin: '0 0 4px' }}>{titre}</h2>
+                    <p style={{ margin: 0, fontSize: '13px', color: colors.text.secondary, fontFamily: police.texte }}>{sous}</p>
+                  </div>
+                )
+                return (
+                  <>
+                    {barreThemes}
+                    <section aria-label="Bibliothèque du club" style={{ marginBottom: '36px' }}>
+                      {titreSection('Bibliothèque du club', 'Les procédés officiels de ton club, choisis par ses responsables. Tu peux les lire et les reprendre dans tes séances, sans toucher à l\'original.')}
+                      {officiels.length === 0
+                        ? <p style={{ fontSize: '14px', color: colors.text.secondary, fontFamily: police.texte, margin: 0 }}>{biblio.some(p => p.officiel) ? t('biblio_aucun_procede_trouve', lang) : 'Ton club n\'a pas encore ajouté de procédé.'}</p>
+                        : rendreListe(officiels)}
+                    </section>
+                    {!biblioClubSeule && (
+                      <section aria-label="Partagés par les éducateurs du club">
+                        {titreSection('Partagés par les éducateurs du club', 'Des procédés que d\'autres éducateurs du club ont choisi de partager. Ils ne sont pas validés par le club.')}
+                        {partages.length === 0
+                          ? <p style={{ fontSize: '14px', color: colors.text.secondary, fontFamily: police.texte, margin: 0 }}>{t('biblio_aucun_procede_trouve', lang)}</p>
+                          : rendreListe(partages)}
+                      </section>
+                    )}
+                  </>
+                )
+              }
               return (
                 <>
                   {barreThemes}
-                  {dossiersVisibles.map(d => (
-                    <div key={d.key} style={{ marginBottom: '28px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <p style={{ color: d.color, fontWeight: 800, fontSize: '15px', margin: 0 }}>{d.label}</p>
-                        <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{parPhase[d.key].length} {parPhase[d.key].length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
-                        {parPhase[d.key].map(renderCarteProcede)}
-                      </div>
-                    </div>
-                  ))}
+                  {rendreListe(filtres)}
                 </>
               )
             })()}
@@ -11738,21 +11609,25 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             {biblioRubrique === 'videos' && (
               <div>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div role="group" aria-label="Vidéos" style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   {[
+                    ...(clubAffiliation?.statut === 'accepte' && clubAffiliation?.club_id ? [{ id: 'club', label: 'Vidéos du club' }] : []),
                     { id: 'df', label: 'Digital Football' },
                     { id: 'favoris', label: 'Mes favoris' },
-                  ].map(t2 => (
-                    <button key={t2.id} onClick={() => setBiblioVideoTab(t2.id)}
-                      style={{ padding: '8px 16px', borderRadius: '8px', border: biblioVideoTab === t2.id ? `1px solid ${colors.accent.blue}` : `1px solid ${colors.border.default}`, background: biblioVideoTab === t2.id ? colors.accent.blue + '20' : colors.background.surface, color: biblioVideoTab === t2.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ].filter(t2 => !biblioClubSeule || t2.id === 'club').map(t2 => (
+                    <button key={t2.id} type="button" aria-pressed={biblioVideoTab === t2.id} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setBiblioVideoTab(t2.id)}
+                      style={{ ...styleChoix(colors, biblioVideoTab === t2.id), padding: '0 16px' }}>
                       {t2.label}
                     </button>
                   ))}
                 </div>
-                {biblioVideoTab === 'favoris' && (
+                {biblioVideoTab === 'favoris' && !biblioClubSeule && (
                   <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="favoris" favorisId={userId} peutAjouter accentColor={colors.accent.blue} /></Suspense>
                 )}
-                {biblioVideoTab === 'df' && (
+                {biblioVideoTab === 'club' && clubAffiliation?.club_id && (
+                  <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="club" clubId={clubAffiliation.club_id} peutAjouter={false} accentColor={colors.accent.blue} /></Suspense>
+                )}
+                {biblioVideoTab === 'df' && !biblioClubSeule && (
                   <Suspense fallback={<SectionLoader />}><BibliothequeVideos type="df" favorisId={userId} peutAjouter={false} accentColor={colors.accent.blue} /></Suspense>
                 )}
               </div>
@@ -11762,16 +11637,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ── Barre flottante : sélection multiple de procédés → créer une séance ── */}
         {biblioSelectionMode && biblioSelection.length > 0 && (
-          <div style={{ position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 250, background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '14px', maxWidth: 'calc(100vw - 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, whiteSpace: 'nowrap' }}>
-              {biblioSelection.length} {biblioSelection.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}
+          <div role="region" aria-label="Sélection de procédés" style={{ ...styleCarte(colors), position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 250, padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', gap: '14px', maxWidth: 'calc(100vw - 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '18px', textTransform: 'uppercase', letterSpacing: '0.01em', color: colors.text.primary, whiteSpace: 'nowrap' }}>
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{biblioSelection.length}</span> {biblioSelection.length > 1 ? t('biblio_procedes_plural', lang) : t('biblio_procede_singular', lang)}
             </span>
-            <button onClick={() => { setBiblioSelectionMode(false); setBiblioSelection([]) }}
-              style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.faint, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+            <button type="button" onClick={() => { setBiblioSelectionMode(false); setBiblioSelection([]) }} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), whiteSpace: 'nowrap' }}>
               {t('biblio_annuler_selection', lang)}
             </button>
-            <button onClick={importerSelectionVersNouvelleSeance}
-              style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+            <button type="button" onClick={importerSelectionVersNouvelleSeance} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), whiteSpace: 'nowrap' }}>
               {t('biblio_creer_seance_selection', lang)}
             </button>
           </div>
@@ -11779,9 +11652,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ── Modal Scanner un procédé (photo → IA → bibliothèque) ── */}
         {modalScannerProc && (
-          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
-            onClick={() => setModalScannerProc(false)}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}
+          <div style={styleFondModal(colors)} onClick={() => setModalScannerProc(false)}>
+            <div role="dialog" aria-modal="true" aria-label={t('scanproc_bouton', lang)} style={{ ...styleCarte(colors), padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}>
               <Suspense fallback={<SectionLoader />}>
               <ScannerProc
@@ -11798,73 +11670,68 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ── Modal Créer / Éditer un procédé ── */}
         {modalProcede && (
-          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}
-            onClick={() => setModalProcede(false)}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+          <div style={styleFondModal(colors)} onClick={() => setModalProcede(false)}>
+            <div role="dialog" aria-modal="true" aria-labelledby="titre-modal-procede" style={{ ...styleCarte(colors), padding: '24px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '17px', fontWeight: 800 }}>{procedeEnEdition ? t('biblio_modifier_procede_titre', lang) : t('biblio_nouveau_procede_titre', lang)}</h2>
-                <button onClick={() => setModalProcede(false)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '8px' }}>
+                <h2 id="titre-modal-procede" style={{ ...styleTitreCarte(colors), margin: 0 }}>{procedeEnEdition ? t('biblio_modifier_procede_titre', lang) : t('biblio_nouveau_procede_titre', lang)}</h2>
+                <button type="button" onClick={() => setModalProcede(false)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} taille={20} /></button>
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>{t('biblio_champ_type', lang)}</label>
+              <div role="group" aria-labelledby="proc-label-type" style={{ marginBottom: '14px' }}>
+                <Etiquette as="p" style={{ marginBottom: '8px' }}><span id="proc-label-type">{t('biblio_champ_type', lang)}</span></Etiquette>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {[
-                    { val: 'echauffement', label: `🔥 ${t('biblio_tab_echauffement', lang)}` },
-                    { val: 'jeu', label: `⚽ ${t('biblio_tab_jeu', lang)}` },
-                    { val: 'exercice', label: `🔄 ${t('biblio_tab_exercice', lang)}` },
-                    { val: 'situation', label: `🎯 ${t('biblio_tab_situation', lang)}` },
+                    { val: 'echauffement', label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement },
+                    { val: 'jeu', label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu },
+                    { val: 'exercice', label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice },
+                    { val: 'situation', label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
                   ].map(opt => (
-                    <button key={opt.val} onClick={() => setProcedeForm(f => ({ ...f, type: opt.val }))}
-                      style={{ background: procedeForm.type === opt.val ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${procedeForm.type === opt.val ? colors.accent.blue + alpha.medium : colors.border.default}`, color: procedeForm.type === opt.val ? colors.accent.blue : colors.text.faint, padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      {opt.label}
+                    <button key={opt.val} type="button" aria-pressed={procedeForm.type === opt.val} className={CLASSE_BOUTON_SECONDAIRE}
+                      onClick={() => setProcedeForm(f => ({ ...f, type: opt.val }))}
+                      style={{ ...styleChoix(colors, procedeForm.type === opt.val), padding: '0 14px', gap: '8px' }}>
+                      <opt.Icon size={16} color="currentColor" /> {opt.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>Visible dans</label>
+              <div role="group" aria-labelledby="proc-label-visible" style={{ marginBottom: '14px' }}>
+                <Etiquette as="p" style={{ marginBottom: '8px' }}><span id="proc-label-visible">Visible dans</span></Etiquette>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px', border: `2px solid ${colors.accent.blue}`, borderRadius: '10px', background: colors.accent.blue + alpha.subtle, fontFamily: 'Inter, sans-serif' }}>
-                    <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '13px', marginBottom: '3px' }}>Ma bibliothèque</div>
-                    <div style={{ color: colors.text.faint, fontSize: '11px' }}>Toujours visible par toi</div>
+                  <div style={{ ...styleCarte(colors), flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px 12px 12px 15px', boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.brand}`, background: colors.background.surfaceAlt }}>
+                    <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '14px', marginBottom: '3px', fontFamily: police.texte }}>Ma bibliothèque</div>
+                    <div style={{ color: colors.text.secondary, fontSize: '12px', fontFamily: police.texte }}>Toujours visible par toi</div>
                   </div>
                   {[
                     { key: 'partage_club', label: 'Bibliothèque club', desc: 'Partagé avec ton club', disabled: !clubAffiliation?.club_id },
                     { key: 'partage_platform', label: 'Digital Football', desc: 'Partagé avec tous les éducateurs' },
                   ].map(opt => (
-                    <button key={opt.key} type="button" disabled={opt.disabled}
+                    <button key={opt.key} type="button" disabled={opt.disabled} aria-pressed={!!procedeForm[opt.key]} className={CLASSE_CLIQUABLE}
                       onClick={() => !opt.disabled && setProcedeForm(f => ({ ...f, [opt.key]: !f[opt.key] }))}
-                      style={{
-                        flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px',
-                        border: `2px solid ${procedeForm[opt.key] ? colors.accent.blue : colors.border.default}`,
-                        borderRadius: '10px', cursor: opt.disabled ? 'not-allowed' : 'pointer',
-                        background: procedeForm[opt.key] ? colors.accent.blue + alpha.subtle : colors.background.surfaceAlt,
-                        opacity: opt.disabled ? 0.4 : 1, fontFamily: 'Inter, sans-serif',
-                      }}>
-                      <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '13px', marginBottom: '3px' }}>{opt.label}</div>
-                      <div style={{ color: colors.text.faint, fontSize: '11px' }}>{opt.desc}</div>
+                      style={{ ...styleCarte(colors), flex: '1 1 140px', minWidth: '140px', textAlign: 'left', padding: '12px 12px 12px 15px', cursor: opt.disabled ? 'not-allowed' : 'pointer',
+                        border: `1px solid ${procedeForm[opt.key] ? colors.accent.brand : colors.border.default}`,
+                        boxShadow: procedeForm[opt.key] ? `inset ${forme.lisere} 0 0 ${colors.accent.brand}` : 'none',
+                        background: colors.background.surfaceAlt, opacity: opt.disabled ? 0.5 : 1, fontFamily: police.texte }}>
+                      <div style={{ fontWeight: 700, color: colors.text.primary, fontSize: '14px', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {opt.label}{procedeForm[opt.key] && <Icone icone={Check} taille={16} libelle="Activé" />}
+                      </div>
+                      <div style={{ color: colors.text.secondary, fontSize: '12px' }}>{opt.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {[
-                { key: 'nom', label: t('biblio_champ_nom', lang), placeholder: t('biblio_placeholder_nom', lang), required: true },
-              ].map(field => (
-                <div key={field.key} style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
-                  <input type="text" value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                    style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-              ))}
+              <div style={{ marginBottom: '12px' }}>
+                <label htmlFor="proc-nom" style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('biblio_champ_nom', lang)}</label>
+                <input id="proc-nom" type="text" value={procedeForm.nom} onChange={e => setProcedeForm(f => ({ ...f, nom: e.target.value }))} placeholder={t('biblio_placeholder_nom', lang)}
+                  className={CLASSE_CHAMP} style={styleChamp(colors)} />
+              </div>
 
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{t('biblio_champ_theme', lang)}</label>
-                <select value={procedeForm.theme} onChange={e => setProcedeForm(f => ({ ...f, theme: e.target.value }))}
-                  style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}>
+                <label htmlFor="proc-theme" style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{t('biblio_champ_theme', lang)}</label>
+                <select id="proc-theme" value={procedeForm.theme} onChange={e => setProcedeForm(f => ({ ...f, theme: e.target.value }))}
+                  className={CLASSE_CHAMP} style={styleChamp(colors)}>
                   <option value="">{t('seance_choisis_categorie', lang)}</option>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
                     <optgroup label={labelPhase(phase)} key={phase}>
@@ -11876,16 +11743,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 </select>
               </div>
 
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>
-                  {t('biblio_categorie_age_label', lang)} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span>
-                </label>
+              <div role="group" aria-labelledby="proc-label-age" style={{ marginBottom: '12px' }}>
+                <Etiquette as="p" style={{ marginBottom: '6px' }}>
+                  <span id="proc-label-age">{t('biblio_categorie_age_label', lang)}</span> <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span>
+                </Etiquette>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {CATEGORIES_AGE_PROCEDE.map(c => {
                     const actif = procedeForm.categorie_age?.includes(c)
                     return (
-                      <button key={c} type="button" onClick={() => setProcedeForm(f => ({ ...f, categorie_age: toggleDansListe(f.categorie_age, c) }))}
-                        style={{ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' }}>
+                      <button key={c} type="button" aria-pressed={!!actif} className={CLASSE_BOUTON_SECONDAIRE}
+                        onClick={() => setProcedeForm(f => ({ ...f, categorie_age: toggleDansListe(f.categorie_age, c) }))}
+                        style={{ ...styleChoix(colors, !!actif), minHeight: '36px', padding: '0 14px' }}>
                         {labelAgeProcede(c)}
                       </button>
                     )
@@ -11905,36 +11773,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 { key: 'tags', label: t('biblio_champ_tags', lang), placeholder: t('biblio_placeholder_tags', lang) },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>{field.label}</label>
+                  <label htmlFor={`proc-${field.key}`} style={{ ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }}>{field.label}</label>
                   {field.multiline ? (
-                    <textarea value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                    <textarea id={`proc-${field.key}`} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
+                      className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical', minHeight: '80px' }} />
                   ) : (
-                    <input type={field.type || 'text'} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                      style={{ width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                    <input id={`proc-${field.key}`} type={field.type || 'text'} value={procedeForm[field.key]} onChange={e => setProcedeForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder}
+                      className={CLASSE_CHAMP} style={styleChamp(colors)} />
                   )}
                 </div>
               ))}
 
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '6px' }}>🎨 Schéma tactique</label>
+              <div role="group" aria-labelledby="proc-label-schema" style={{ marginBottom: '12px' }}>
+                <Etiquette as="p" style={{ marginBottom: '6px' }}><span id="proc-label-schema">Schéma tactique</span></Etiquette>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => setShowTactipadBiblio(true)}
-                    style={{ background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={() => setShowTactipadBiblio(true)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), gap: '8px' }}>
+                    <Icone icone={Palette} taille={16} />
                     {procedeForm.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                   </button>
                   {procedeForm.schema_png && (
                     <>
-                      <img src={miniatureSchema(procedeForm.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
-                      <button type="button" onClick={() => setProcedeForm(f => ({ ...f, schema_png: '' }))}
-                        style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>✕</button>
+                      <img src={miniatureSchema(procedeForm.schema_png, 200)} alt="Schéma tactique" style={{ height: '44px', borderRadius: forme.rayonPastille, border: `1px solid ${couleurCraie(colors)}` }} />
+                      <button type="button" onClick={() => setProcedeForm(f => ({ ...f, schema_png: '' }))} aria-label="Retirer le schéma" style={styleBoutonFermer(colors)}><Icone icone={X} taille={18} /></button>
                     </>
                   )}
                 </div>
               </div>
 
-              <button onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()}
-                style={{ width: '100%', background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginTop: '8px', opacity: (savingProcede || !procedeForm.nom.trim()) ? 0.5 : 1 }}>
+              <button type="button" onClick={sauvegarderProcede} disabled={savingProcede || !procedeForm.nom.trim()} className={CLASSE_BOUTON}
+                style={{ ...styleBoutonPrincipal(colors), width: '100%', marginTop: '8px' }}>
                 {savingProcede ? t('biblio_enregistrement_cours', lang) : procedeEnEdition ? t('biblio_mettre_a_jour', lang) : t('biblio_enregistrer', lang)}
               </button>
             </div>
@@ -11944,10 +11811,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ── Modal schéma tactique d'un procédé de bibliothèque (réutilise Tactipad, cf. tactipadModal pour le même mécanisme côté fiche de séance) ── */}
         {showTactipadBiblio && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-            <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedeForm.nom || ''}</p>
-                <button onClick={() => setShowTactipadBiblio(false)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            <div role="dialog" aria-modal="true" aria-labelledby="titre-schema-procede" style={{ ...styleCarte(colors), background: colors.background.base, width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '8px' }}>
+                <h2 id="titre-schema-procede" style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Palette} taille={20} /> {t('schema_procede', lang)} {procedeForm.nom || ''}</h2>
+                <button type="button" onClick={() => setShowTactipadBiblio(false)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} taille={20} /></button>
               </div>
               <Suspense fallback={null}><Tactipad
                 userId={userId}
@@ -11970,15 +11837,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ── Modal import rapide depuis la bibliothèque (dans un bloc procédé de la fiche) ── */}
         {modalBiblioImport !== null && (
-          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-            onClick={() => setModalBiblioImport(null)}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+          <div style={styleFondModal(colors, 300)} onClick={() => setModalBiblioImport(null)}>
+            <div role="dialog" aria-modal="true" aria-labelledby="titre-import-procede" style={{ ...styleCarte(colors), padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📚 {t('biblio_importer_titre', lang)}</h3>
-                <button onClick={() => setModalBiblioImport(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '8px' }}>
+                <h2 id="titre-import-procede" style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Library} taille={20} /> {t('biblio_importer_titre', lang)}</h2>
+                <button type="button" onClick={() => setModalBiblioImport(null)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} taille={20} /></button>
               </div>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <div role="group" aria-label="Type de procédé" style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
                 {[
                   { id: 'tous', label: t('biblio_tab_tous', lang) },
                   { id: 'echauffement', label: t('biblio_tab_echauffement', lang) },
@@ -11986,30 +11852,29 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   { id: 'exercice', label: t('biblio_tab_exercice', lang) },
                   { id: 'situation', label: t('biblio_tab_situation', lang) },
                 ].map(tab => (
-                  <button key={tab.id} onClick={() => setBiblioTab(tab.id)}
-                    style={{ background: biblioTab === tab.id ? colors.accent.blue + alpha.subtle : 'transparent', border: `1px solid ${biblioTab === tab.id ? colors.accent.blue + alpha.medium : colors.border.default}`, color: biblioTab === tab.id ? colors.accent.blue : colors.text.faint, padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button key={tab.id} type="button" aria-pressed={biblioTab === tab.id} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setBiblioTab(tab.id)}
+                    style={{ ...styleChoix(colors, biblioTab === tab.id), minHeight: '36px', padding: '0 12px', fontSize: '12px' }}>
                     {tab.label}
                   </button>
                 ))}
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).length === 0 ? (
-                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t('biblio_aucun_dans_categorie', lang)}</p>
+                  <p style={{ fontSize: '13px', color: colors.text.secondary, padding: '8px', fontFamily: police.texte }}>{t('biblio_aucun_dans_categorie', lang)}</p>
                 ) : biblio.filter(p => biblioTab === 'tous' || p.type === biblioTab).map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px' }}>
+                  <div key={p.id} style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surfaceAlt }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: '13px', marginBottom: '2px' }}>{p.nom}</p>
-                      <p style={{ fontSize: '11px', color: colors.text.faint }}>{labelThemeProcede(p.theme) || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
+                      <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 2px', color: colors.text.primary, fontFamily: police.texte }}>{p.nom}</p>
+                      <p style={{ fontSize: '12px', color: colors.text.secondary, margin: 0, fontFamily: police.texte }}>{labelThemeProcede(p.theme) || p.type}{p.duree ? ` · ${p.duree} min` : ''}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                      <button onClick={() => ouvrirApercuProcede(p)}
-                        style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '6px 12px', color: colors.text.dim, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button type="button" onClick={() => ouvrirApercuProcede(p)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                         {t('biblio_voir', lang)}
                       </button>
-                      <button onClick={() => importerProcedeDansBloc(modalBiblioImport, p)}
-                        style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', width: '32px', height: '32px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}
-                        title={t('biblio_importer_action', lang)}>
-                        +
+                      <button type="button" onClick={() => importerProcedeDansBloc(modalBiblioImport, p)} className={CLASSE_BOUTON}
+                        style={{ ...styleBoutonPrincipal(colors), minHeight: '40px', width: '40px', padding: 0 }}
+                        aria-label={`${t('biblio_importer_action', lang)} : ${p.nom}`} title={t('biblio_importer_action', lang)}>
+                        <Icone icone={Plus} taille={18} />
                       </button>
                     </div>
                   </div>
@@ -12022,51 +11887,58 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {/* ── Modal aperçu en grand d'un procédé de bibliothèque (bouton "Voir") ── */}
         {procedeActif && (() => {
           const APERCU_TYPE = {
-            jeu: { label: t('biblio_tab_jeu', lang), emoji: '⚽', color: colors.accent.green },
-            exercice: { label: t('biblio_tab_exercice', lang), emoji: '🔄', color: colors.accent.blue },
-            situation: { label: t('biblio_tab_situation', lang), emoji: '🎯', color: colors.accent.orange },
-            echauffement: { label: t('biblio_tab_echauffement', lang), emoji: '🔥', color: '#f0c030' },
+            jeu: { label: t('biblio_tab_jeu', lang), Icon: IcoTypeJeu },
+            exercice: { label: t('biblio_tab_exercice', lang), Icon: IcoTypeExercice },
+            situation: { label: t('biblio_tab_situation', lang), Icon: IcoTypeSituation },
+            echauffement: { label: t('biblio_tab_echauffement', lang), Icon: IcoTypeEchauffement },
           }
           const cfg = APERCU_TYPE[procedeActif.type] || APERCU_TYPE.exercice
           const champ = (label, valeur) => valeur && (
             <div style={{ marginBottom: '14px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{label}</p>
-              <p style={{ fontSize: '13px', color: colors.text.dim, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{valeur}</p>
+              <Etiquette as="p" style={{ marginBottom: '4px' }}>{label}</Etiquette>
+              <p style={{ fontSize: '14px', color: colors.text.primary, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: police.texte }}>{valeur}</p>
             </div>
           )
           return (
-            <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-              onClick={() => setProcedeActif(null)}>
-              <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '28px', maxWidth: '640px', width: '100%', maxHeight: '88vh', overflowY: 'auto' }}
+            <div style={styleFondModal(colors, 300)} onClick={() => setProcedeActif(null)}>
+              <div role="dialog" aria-modal="true" aria-labelledby="titre-apercu-procede" style={{ ...styleCarte(colors), padding: '24px', maxWidth: '640px', width: '100%', maxHeight: '88vh', overflowY: 'auto' }}
                 onClick={e => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
-                  <div>
-                    <span style={{ background: cfg.color + alpha.subtle, border: `1px solid ${cfg.color}40`, color: cfg.color, fontSize: '10px', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                      {cfg.emoji} {cfg.label}
-                    </span>
-                    <h2 style={{ fontSize: '19px', fontWeight: 800, marginBottom: '2px' }}>{procedeActif.nom}</h2>
-                    {procedeActif.theme && <p style={{ fontSize: '12px', color: themeSeanceInfo(procedeActif.theme)?.color || cfg.color, fontWeight: 600 }}>{labelThemeProcede(procedeActif.theme)}</p>}
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ ...styleEtiquetteNeutre(colors), gap: '6px', marginBottom: '8px' }}><cfg.Icon size={12} color="currentColor" /> {cfg.label}</span>
+                    <h2 id="titre-apercu-procede" style={{ ...styleTitreCarte(colors), fontSize: '26px', margin: '0 0 4px' }}>{procedeActif.nom}</h2>
+                    {procedeActif.theme && (
+                      <p style={{ fontSize: '13px', color: colors.text.secondary, fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: police.texte }}>
+                        {themeSeanceInfo(procedeActif.theme)?.color && marqueurCarre(themeSeanceInfo(procedeActif.theme).color)}
+                        {labelThemeProcede(procedeActif.theme)}
+                      </p>
+                    )}
+                    {procedeActif.officiel && (
+                      <p style={{ fontSize: '13px', color: colors.text.secondary, margin: '4px 0 0', fontFamily: police.texte }}>
+                        Bibliothèque du club{procedeActif.auteur_nom ? `, par ${procedeActif.auteur_nom}` : ''}
+                      </p>
+                    )}
                     {procedeActif.educateur_id !== userId && procedeActif.educateur && (
                       <div style={{ marginTop: '4px' }}>
-                        <p style={{ fontSize: '12px', color: colors.text.faint, margin: 0 }}>Par {procedeActif.educateur.prenom} {procedeActif.educateur.nom}</p>
+                        <p style={{ fontSize: '13px', color: colors.text.secondary, margin: 0, fontFamily: police.texte }}>Par {procedeActif.educateur.prenom} {procedeActif.educateur.nom}</p>
                         {(procedeActif.educateur.diplome && procedeActif.educateur.diplome !== 'Aucun diplôme' || procedeActif.educateur.categorie) && (
-                          <p style={{ fontSize: '11px', color: colors.text.disabled, margin: '1px 0 0' }}>
+                          <p style={{ fontSize: '12px', color: colors.text.dim, margin: '1px 0 0', fontFamily: police.texte }}>
                             {[procedeActif.educateur.diplome && procedeActif.educateur.diplome !== 'Aucun diplôme' ? procedeActif.educateur.diplome : null, procedeActif.educateur.categorie].filter(Boolean).join(' · ')}
                           </p>
                         )}
                       </div>
                     )}
                   </div>
-                  <button onClick={() => setProcedeActif(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer', flexShrink: 0 }}>✕</button>
+                  <button type="button" onClick={() => setProcedeActif(null)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} taille={20} /></button>
                 </div>
 
                 {procedeActif.schema_png && (
-                  <img src={procedeActif.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '10px', border: `1px solid ${colors.border.faint}`, background: colors.background.base, marginBottom: '16px' }} />
+                  <img src={procedeActif.schema_png} alt="Schéma tactique" style={{ width: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: forme.rayonCarte, border: `1px solid ${couleurCraie(colors)}`, background: colors.background.base, marginBottom: '16px' }} />
                 )}
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                  {procedeActif.duree && <span style={{ fontSize: '11px', color: colors.text.faint, background: colors.background.raised, padding: '3px 10px', borderRadius: '6px' }}>⏱️ {procedeActif.duree} min</span>}
-                  {procedeActif.nb_joueurs && <span style={{ fontSize: '11px', color: colors.text.faint, background: colors.background.raised, padding: '3px 10px', borderRadius: '6px' }}>👥 {procedeActif.nb_joueurs}</span>}
+                  {procedeActif.duree && <span style={{ ...styleEtiquetteNeutre(colors), gap: '6px' }}><Icone icone={Timer} taille={14} /> {procedeActif.duree} min</span>}
+                  {procedeActif.nb_joueurs && <span style={{ ...styleEtiquetteNeutre(colors), gap: '6px' }}><Icone icone={Users} taille={14} /> {procedeActif.nb_joueurs}</span>}
                 </div>
 
                 {champ(t('biblio_champ_objectif', lang), procedeActif.objectif)}
@@ -12079,7 +11951,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {procedeActif.tags && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '18px' }}>
                     {procedeActif.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                      <span key={tag} style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, padding: '2px 8px', borderRadius: '20px' }}>{tag}</span>
+                      <span key={tag} style={styleEtiquetteNeutre(colors)}>{tag}</span>
                     ))}
                   </div>
                 )}
@@ -12088,26 +11960,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {modalBiblioImport !== null ? (
                     // Ouverte depuis "Importer un procédé" (dans un bloc précis d'une fiche
                     // en rédaction) : l'action doit remplir CE bloc, pas créer une séance.
-                    <button onClick={() => { importerProcedeDansBloc(modalBiblioImport, procedeActif); setProcedeActif(null); setModalBiblioImport(null) }}
-                      style={{ flex: 1, background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                      + {t('biblio_importer_action', lang)}
+                    <button type="button" onClick={() => { importerProcedeDansBloc(modalBiblioImport, procedeActif); setProcedeActif(null); setModalBiblioImport(null) }}
+                      className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 1, gap: '8px' }}>
+                      <Icone icone={Plus} taille={16} /> {t('biblio_importer_action', lang)}
                     </button>
                   ) : (
-                    <button onClick={() => importerProcedeVersNouvelleSeance(procedeActif)}
-                      style={{ flex: 1, background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button type="button" onClick={() => importerProcedeVersNouvelleSeance(procedeActif)}
+                      className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 1 }}>
                       {t('biblio_importer_ma_seance', lang)}
                     </button>
                   )}
                   {procedeActif.educateur_id === userId ? (
                     canEdit('entrainements') && (
-                      <button onClick={() => { const p = procedeActif; setProcedeActif(null); ouvrirEditionProcede(p) }}
-                        style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button type="button" onClick={() => { const p = procedeActif; setProcedeActif(null); ouvrirEditionProcede(p) }}
+                        className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                         {t('btn_modifier', lang)}
                       </button>
                     )
-                  ) : (
-                    <button onClick={() => { copierProcede(procedeActif); setProcedeActif(null) }}
-                      style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  ) : procedeActif.officiel ? null : (
+                    <button type="button" onClick={() => { copierProcede(procedeActif); setProcedeActif(null) }}
+                      className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                       Copier
                     </button>
                   )}
@@ -12138,16 +12010,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {/* ── Modal import d'une fiche archivée sur un entraînement déjà créé ── */}
         {modalImportFicheEntrainement !== null && (
-          <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-            onClick={() => setModalImportFicheEntrainement(null)}>
-            <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px', padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+          <div style={styleFondModal(colors, 300)} onClick={() => setModalImportFicheEntrainement(null)}>
+            <div role="dialog" aria-modal="true" aria-labelledby="titre-import-fiche" style={{ ...styleCarte(colors), padding: '24px', maxWidth: '520px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
               onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>📥 {t('ent_importer_fiche', lang)}</h3>
-                <button onClick={() => setModalImportFicheEntrainement(null)} style={{ background: 'transparent', border: 'none', color: colors.text.faint, fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '8px' }}>
+                <h2 id="titre-import-fiche" style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Download} taille={20} /> {t('ent_importer_fiche', lang)}</h2>
+                <button type="button" onClick={() => setModalImportFicheEntrainement(null)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} taille={20} /></button>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <button
+                <button type="button" className={CLASSE_BOUTON}
                   onClick={() => {
                     const cible = entrainements.find(x => x.id === modalImportFicheEntrainement)
                     setFiche({ ...ficheVide, date: cible?.date || '' })
@@ -12158,23 +12029,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     setActiveSection('mes_seances')
                     setModalImportFicheEntrainement(null)
                   }}
-                  style={{ padding: '12px 14px', marginBottom: '6px', background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}40`, borderRadius: '10px', color: colors.accent.blue, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ ...styleBoutonPrincipal(colors), marginBottom: '6px', width: '100%' }}>
                   {t('ent_rediger_nouvelle_fiche_jour', lang)}
                 </button>
-                <p style={{ margin: '4px 0 2px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('ent_ou_choisir_fiche', lang)}</p>
+                <Etiquette as="p" style={{ margin: '4px 0 2px' }}>{t('ent_ou_choisir_fiche', lang)}</Etiquette>
                 {mesSeancesOuvertes.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: colors.text.disabled, padding: '8px' }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
+                  <p style={{ fontSize: '13px', color: colors.text.secondary, padding: '8px', fontFamily: police.texte }}>{t(mesSeancesOuvertesChargees ? 'ent_aucune_fiche_archivee' : 'seance_chargement_fiches', lang)}</p>
                 ) : mesSeancesOuvertes.map(s => (
-                  <div key={s.id} onClick={() => importerFicheDansEntrainementExistant(s)}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 14px', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = colors.background.raised}
-                    onMouseLeave={e => e.currentTarget.style.background = colors.background.surfaceAlt}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</p>
-                    </div>
-                    <span style={{ color: colors.accent.green, fontSize: '18px', flexShrink: 0 }}>→</span>
-                  </div>
+                  <button key={s.id} type="button" onClick={() => importerFicheDansEntrainementExistant(s)} className={CLASSE_CLIQUABLE}
+                    style={{ ...styleCarte(colors), background: colors.background.surfaceAlt, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: police.texte, color: colors.text.primary }}>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.theme || t('seance_sans_theme', lang)}</span>
+                      <span style={{ display: 'block', marginTop: '2px', fontSize: '12px', color: colors.text.secondary }}>{s.date_seance ? new Date(s.date_seance).toLocaleDateString(localeOf(lang)) : ''}</span>
+                    </span>
+                    <Icone icone={ArrowRight} taille={18} />
+                  </button>
                 ))}
               </div>
             </div>
@@ -12195,8 +12064,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {activeSection === 'tactipad' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>{t('nav_tacticboard', lang)}</h1>
-            <p style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '1.5rem' }}>{t('tactic_dessine_schemas', lang)}</p>
+            <TitreEcran titre={t('nav_tacticboard', lang)} sousTitre={t('tactic_dessine_schemas', lang)} />
             <Suspense fallback={null}><Tactipad userId={userId} lang={lang} equipeActiveId={equipeActive?.id} categories={mesEquipes} lectureSeule={!!permissions} /></Suspense>
           </div>
         )}
@@ -12230,37 +12098,46 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             if (!q) return true
             return `${p.prenom || ''} ${p.nom || ''} ${p.club || ''}`.toLowerCase().includes(q)
           })
+          const vide = (icone, titre, description) => (
+            <div style={{ ...styleCarte(colors), textAlign: 'center', padding: '40px 24px' }}>
+              <Icone icone={icone} taille={28} style={{ margin: '0 auto 10px', color: colors.text.secondary }} />
+              <p style={{ margin: 0, fontFamily: police.titre, fontWeight: 700, fontSize: '18px', textTransform: 'uppercase', color: colors.text.primary }}>{titre}</p>
+              {description && <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.text.secondary }}>{description}</p>}
+            </div>
+          )
+          const texteVide = { color: colors.text.secondary, fontSize: '14px', margin: 0 }
+          const onglets = [
+            { id: 'educateurs', label: `Éducateurs (${educateursExplorer.length})` },
+            { id: 'clubs', label: `Clubs (${clubsExplorer.length})` },
+            { id: 'messages', label: `Messages (${conversations.length})` },
+            { id: 'annonces', label: `Annonces (${annonces.length})` },
+            { id: 'dirigeants', label: t('nav_dirigeants', lang) },
+          ].filter(o => o.id !== 'dirigeants' || canView('dirigeants'))
+          const fermerChat = () => setChatOuvert(null)
+          const fermerAnnonce = () => setShowNouvelleAnnonce(false)
+          const annonceIncomplete = !nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0
 
           return (
             <div style={{ maxWidth: 1100 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><IcoCompass /> Explorer</h2>
-              <p style={{ color: colors.text.faint, fontSize: 13, marginBottom: 20 }}>
-                Trouve d'autres éducateurs et des clubs pour organiser un amical, te renseigner sur un tournoi ou postuler — et échange directement par message.
-              </p>
+              <TitreEcran
+                titre="Explorer"
+                sousTitre="Trouve d'autres éducateurs et des clubs pour organiser un amical, te renseigner sur un tournoi ou postuler, et échange directement par message."
+              />
 
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'educateurs', label: `Éducateurs (${educateursExplorer.length})` },
-                  { id: 'clubs', label: `Clubs (${clubsExplorer.length})` },
-                  { id: 'messages', label: `Messages (${conversations.length})` },
-                  { id: 'annonces', label: `Annonces (${annonces.length})` },
-                  { id: 'dirigeants', label: t('nav_dirigeants', lang) },
-                ].filter(o => o.id !== 'dirigeants' || canView('dirigeants')).map(o => (
-                  <button key={o.id} onClick={() => setExplorerOnglet(o.id)}
-                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${explorerOnglet === o.id ? colors.accent.blue : colors.border.default}`, background: explorerOnglet === o.id ? colors.accent.blue + alpha.subtle : 'transparent', color: explorerOnglet === o.id ? colors.accent.blue : colors.text.faint, fontSize: '13px', fontWeight: explorerOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                    {o.label}
-                  </button>
+              <div className="df-onglets" role="tablist" aria-label="Explorer" style={{ ...coqueVars(colors), marginBottom: '20px' }}>
+                {onglets.map(o => (
+                  <button key={o.id} type="button" role="tab" aria-selected={explorerOnglet === o.id} className="df-onglet" onClick={() => setExplorerOnglet(o.id)}>{o.label}</button>
                 ))}
               </div>
 
               {!['messages', 'dirigeants', 'annonces'].includes(explorerOnglet) && (
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <input value={explorerRecherche} onChange={e => setExplorerRecherche(e.target.value)}
-                    placeholder="Rechercher un nom, un club..."
-                    style={{ ...st.input, flex: 1, minWidth: '200px' }} />
+                    aria-label="Rechercher un nom ou un club" placeholder="Rechercher un nom, un club..."
+                    className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, minWidth: '200px', width: 'auto' }} />
                   <input value={explorerRegion} onChange={e => setExplorerRegion(e.target.value)}
-                    placeholder="Toute région"
-                    style={{ ...st.input, width: '180px' }} />
+                    aria-label="Filtrer par région" placeholder="Toute région"
+                    className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '180px' }} />
                 </div>
               )}
 
@@ -12272,61 +12149,70 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   if (filtreRegionAnnonce && !(a.regions || []).includes(filtreRegionAnnonce)) return false
                   return true
                 })
+                const puceFiltre = (actif) => ({ ...styleChoix(colors, actif), minHeight: '36px', padding: '0 14px' })
                 return (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button onClick={() => setFiltreTypeAnnonce('tous')} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === 'tous' ? colors.accent.blue : colors.background.raised, color: filtreTypeAnnonce === 'tous' ? colors.accent.onBrand : colors.text.faint }}>Toutes</button>
+                      <div role="group" aria-label="Type d'annonce" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button type="button" aria-pressed={filtreTypeAnnonce === 'tous'} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setFiltreTypeAnnonce('tous')} style={puceFiltre(filtreTypeAnnonce === 'tous')}>Toutes</button>
                         {TYPES_ANNONCE.map(ty => (
-                          <button key={ty.key} onClick={() => setFiltreTypeAnnonce(ty.key)} style={{ padding: '6px 14px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: filtreTypeAnnonce === ty.key ? ty.color : colors.background.raised, color: filtreTypeAnnonce === ty.key ? colors.black : colors.text.faint }}>{ty.label}</button>
+                          <button key={ty.key} type="button" aria-pressed={filtreTypeAnnonce === ty.key} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setFiltreTypeAnnonce(ty.key)} style={puceFiltre(filtreTypeAnnonce === ty.key)}>
+                            <Icone icone={ty.icone} taille={16} />{ty.label}
+                          </button>
                         ))}
                       </div>
-                      <button onClick={() => setShowNouvelleAnnonce(true)} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-                        📢 Publier une annonce
+                      <button type="button" onClick={() => setShowNouvelleAnnonce(true)} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), whiteSpace: 'nowrap' }}>
+                        <Icone icone={Megaphone} />Publier une annonce
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
-                      <button onClick={() => setFiltreRegionAnnonce(null)} style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: !filtreRegionAnnonce ? colors.accent.blue + alpha.soft : colors.background.raised, color: !filtreRegionAnnonce ? colors.accent.blue : colors.text.faint }}>🇫🇷 Toute la France</button>
+                    <div role="group" aria-label="Région" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+                      <button type="button" aria-pressed={!filtreRegionAnnonce} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setFiltreRegionAnnonce(null)} style={{ ...styleChoix(colors, !filtreRegionAnnonce), minHeight: '32px', padding: '0 10px', fontSize: '12px' }}>Toutes les régions</button>
                       {REGIONS_FRANCE.map(r => (
-                        <button key={r} onClick={() => setFiltreRegionAnnonce(r === filtreRegionAnnonce ? null : r)} style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: filtreRegionAnnonce === r ? colors.accent.blue + alpha.soft : colors.background.raised, color: filtreRegionAnnonce === r ? colors.accent.blue : colors.text.faint }}>{r}</button>
+                        <button key={r} type="button" aria-pressed={filtreRegionAnnonce === r} className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setFiltreRegionAnnonce(r === filtreRegionAnnonce ? null : r)} style={{ ...styleChoix(colors, filtreRegionAnnonce === r), minHeight: '32px', padding: '0 10px', fontSize: '12px' }}>{r}</button>
                       ))}
                     </div>
 
                     {annoncesLoading ? (
-                      <p style={{ color: colors.text.faint, fontSize: 13 }}>Chargement...</p>
+                      <p style={texteVide}>Chargement...</p>
                     ) : annoncesFiltrees.length === 0 ? (
-                      <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune annonce pour l'instant.</p>
+                      vide(Megaphone, "Aucune annonce pour l'instant")
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {annoncesFiltrees.map(a => {
                           const ty = TYPES_ANNONCE.find(x => x.key === a.type_annonce) || TYPES_ANNONCE[4]
                           const isOwner = a.auteur_id === userId
                           return (
-                            <div key={a.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderLeft: `3px solid ${ty.color}`, borderRadius: 12, padding: 18 }}>
+                            <div key={a.id} style={styleCarteLiseree(colors)}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-                                <div>
-                                  <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: 15 }}>{a.titre}</div>
-                                  <div style={{ color: colors.text.faint, fontSize: 12, marginTop: 2 }}>
-                                    {a.auteur_nom}{a.auteur_region ? ` · 📍 ${a.auteur_region}` : ''} · {new Date(a.created_at).toLocaleDateString('fr-FR')}
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ ...styleTitreCarte(colors), margin: 0, fontSize: '18px' }}>{a.titre}</div>
+                                  <div style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                                    {a.auteur_nom}
+                                    {a.auteur_region && <><span aria-hidden="true">·</span><Icone icone={MapPin} taille={13} />{a.auteur_region}</>}
+                                    <span aria-hidden="true">·</span>{new Date(a.created_at).toLocaleDateString('fr-FR')}
                                   </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                  <span style={{ background: ty.color + '22', color: ty.color, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{ty.label}</span>
+                                  <span style={{ ...styleEtiquetteNeutre(colors), gap: '4px' }}><Icone icone={ty.icone} taille={13} />{ty.label}</span>
                                   {isOwner && (
-                                    <button onClick={() => supprimerAnnonce(a.id)} style={{ background: 'none', border: 'none', color: colors.text.disabled, cursor: 'pointer', fontSize: 18 }}>×</button>
+                                    <button type="button" onClick={() => supprimerAnnonce(a.id)} className={CLASSE_BOUTON_SECONDAIRE} aria-label={`Supprimer l'annonce ${a.titre}`} title="Supprimer l'annonce" style={styleBoutonFermer(colors)}>
+                                      <Icone icone={Trash2} />
+                                    </button>
                                   )}
                                 </div>
                               </div>
-                              {a.description && <p style={{ color: colors.text.secondary, fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>{a.description}</p>}
+                              {a.description && <p style={{ color: colors.text.secondary, fontSize: 14, margin: '12px 0 0', lineHeight: 1.6 }}>{a.description}</p>}
                               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                                {a.date_evenement && <span style={{ color: colors.text.faint, fontSize: 12 }}>📅 {new Date(a.date_evenement).toLocaleDateString('fr-FR')}</span>}
+                                {a.date_evenement && <span style={{ ...styleEtiquetteNeutre(colors), gap: '4px' }}><Icone icone={CalendarDays} taille={13} />{new Date(a.date_evenement).toLocaleDateString('fr-FR')}</span>}
                                 {(a.regions || []).slice(0, 3).map(r => (
-                                  <span key={r} style={{ background: colors.background.raised, color: colors.text.faint, fontSize: 11, padding: '2px 8px', borderRadius: 4 }}>📍 {r}</span>
+                                  <span key={r} style={{ ...styleEtiquetteNeutre(colors), gap: '4px' }}><Icone icone={MapPin} taille={13} />{r}</span>
                                 ))}
-                                {(a.regions || []).length > 3 && <span style={{ color: colors.text.faint, fontSize: 11 }}>+{a.regions.length - 3} régions</span>}
+                                {(a.regions || []).length > 3 && <span style={{ color: colors.text.secondary, fontSize: 12 }}>+{a.regions.length - 3} régions</span>}
                                 {a.contact && (
-                                  <a href={a.contact.includes('@') ? `mailto:${a.contact}` : `tel:${a.contact}`} style={{ color: colors.accent.blue, fontSize: 12, fontWeight: 700, textDecoration: 'none', marginLeft: 'auto' }}>✉️ Contacter</a>
+                                  <a href={a.contact.includes('@') ? `mailto:${a.contact}` : `tel:${a.contact}`} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', marginLeft: 'auto', textDecoration: 'none' }}>
+                                    <Icone icone={Mail} taille={16} />Contacter
+                                  </a>
                                 )}
                               </div>
                             </div>
@@ -12338,71 +12224,74 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 )
               })() : explorerOnglet === 'messages' ? (
                 conversations.length === 0 ? (
-                  <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucune conversation pour l'instant — écris à un éducateur ou un club depuis les onglets ci-dessus.</p>
+                  vide(MessageSquare, "Aucune conversation pour l'instant", "Écris à un éducateur ou un club depuis les onglets ci-dessus.")
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {conversations.map(c => {
                       const dernier = c.msgs.at(-1)
                       return (
-                        <div key={c.id} onClick={() => ouvrirChatExplorer(c)}
-                          style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                          <Avatar person={c} size={40} border={`2px solid ${colors.accent.blue}40`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                        <button key={c.id} type="button" onClick={() => ouvrirChatExplorer(c)} className={CLASSE_CLIQUABLE}
+                          style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: police.texte, color: colors.text.primary }}>
+                          <Avatar person={c} size={40} border={`2px solid ${colors.border.strong}`} textColor={colors.text.primary} bg={colors.background.raised} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{c.prenom} {c.nom}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{c.prenom} {c.nom}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '13px', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {dernier?.sender_id === userId ? 'Toi : ' : ''}{dernier?.content}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
                 )
               ) : explorerLoading ? (
-                <p style={{ color: colors.text.disabled, textAlign: 'center' }}>Chargement...</p>
+                <p style={texteVide}>Chargement...</p>
               ) : listeFiltree.length === 0 ? (
-                <p style={{ color: colors.text.disabled, fontSize: '13px', fontStyle: 'italic' }}>Aucun résultat.</p>
+                vide(Search, "Aucun résultat")
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {listeFiltree.map(p => {
                     const recrutements = explorerOnglet === 'clubs' ? (recrutementsParClubExplorer[p.id] || []) : []
                     const nomAffiche = explorerOnglet === 'clubs' ? (p.club || `${p.prenom || ''} ${p.nom || ''}`.trim()) : `${p.prenom || ''} ${p.nom || ''}`.trim()
                     return (
-                      <div key={p.id} onClick={() => ouvrirChatExplorer(p)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile || parcoursOuvertExplorer === p.id ? 'wrap' : 'nowrap', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '10px 16px', cursor: 'pointer' }}>
-                        <Avatar person={{ ...p, nom: nomAffiche }} size={40} border={`2px solid ${colors.accent.blue}30`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
+                      <div key={p.id}
+                        style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '14px', flexWrap: isMobile || parcoursOuvertExplorer === p.id ? 'wrap' : 'nowrap', padding: '10px 16px' }}>
+                        <Avatar person={{ ...p, nom: nomAffiche }} size={40} border={`2px solid ${colors.border.strong}`} textColor={colors.text.primary} bg={colors.background.raised} />
                         <div style={{ flex: 1, minWidth: '180px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
-                            {explorerOnglet === 'clubs' && p.verified && <span title="Profil vérifié" style={{ fontSize: '12px' }}>✅</span>}
-                            <span style={{ fontSize: '11px', color: colors.text.faint, whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche || '—'}</p>
+                            {explorerOnglet === 'clubs' && p.verified && <Icone icone={BadgeCheck} taille={16} libelle="Profil vérifié" style={{ color: colors.accent.success }} />}
+                            <span style={{ fontSize: '12px', color: colors.text.secondary, whiteSpace: 'nowrap' }}>
                               {explorerOnglet === 'educateurs' ? [p.niveau_equipe, p.region].filter(Boolean).join(' · ') : p.region}
                             </span>
                           </div>
                           {(p.description || p.bio) && (
-                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
+                            <p style={{ margin: '2px 0 0', fontSize: '13px', color: colors.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.bio}</p>
                           )}
                           {recrutements.length > 0 && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
                               {recrutements.map((r, i) => (
-                                <span key={i} style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}50`, color: colors.accent.green, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>
+                                <span key={i} style={styleEtiquetteNeutre(colors)}>
                                   Recrute · {labelCategorie(r.categorie)} · {r.poste}
                                 </span>
                               ))}
                             </div>
                           )}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, paddingLeft: isMobile ? '54px' : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
                           {explorerOnglet === 'educateurs' && (
-                            <button onClick={e => { e.stopPropagation(); setParcoursOuvertExplorer(id => (id === p.id ? null : p.id)) }}
-                              style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+                            <button type="button" aria-expanded={parcoursOuvertExplorer === p.id} onClick={() => setParcoursOuvertExplorer(id => (id === p.id ? null : p.id))}
+                              className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonPetit(colors)}>
                               {parcoursOuvertExplorer === p.id ? 'Masquer le parcours' : 'Parcours et stats'}
                             </button>
                           )}
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.accent.blue, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}><IcoSend /> Message</span>
+                          <button type="button" onClick={() => ouvrirChatExplorer(p)} aria-label={`Écrire à ${nomAffiche || 'ce contact'}`}
+                            className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), minHeight: '36px', padding: '0 14px', fontSize: '13px' }}>
+                            <Icone icone={Send} taille={16} />Message
+                          </button>
                         </div>
                         {explorerOnglet === 'educateurs' && parcoursOuvertExplorer === p.id && (
-                          <div onClick={e => e.stopPropagation()} style={{ flexBasis: '100%', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: 12, cursor: 'default' }}>
+                          <div style={{ flexBasis: '100%', borderTop: `1px solid ${couleurCraie(colors)}`, paddingTop: 12 }}>
                             <Suspense fallback={<SectionLoader />}><ParcoursCoach educateurId={p.id} /></Suspense>
                           </div>
                         )}
@@ -12413,26 +12302,27 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )}
 
               {chatOuvert && (
-                <div onClick={() => setChatOuvert(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                  <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                <div onClick={fermerChat} style={{ ...styleFondModal(colors, 1000), alignItems: 'flex-end', padding: 0 }}>
+                  <div role="dialog" aria-modal="true" aria-label={`Conversation avec ${chatOuvert.club || `${chatOuvert.prenom || ''} ${chatOuvert.nom || ''}`.trim()}`} onClick={e => e.stopPropagation()}
+                    style={{ ...styleCarte(colors), borderRadius: `${forme.rayonCarte} ${forme.rayonCarte} 0 0`, padding: '20px', width: '100%', maxWidth: '520px', maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Avatar person={chatOuvert} size={36} border={`2px solid ${colors.accent.blue}40`} textColor={colors.accent.blue} bg={colors.accent.blue + '15'} />
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{chatOuvert.club || `${chatOuvert.prenom || ''} ${chatOuvert.nom || ''}`.trim()}</p>
+                        <Avatar person={chatOuvert} size={36} border={`2px solid ${colors.border.strong}`} textColor={colors.text.primary} bg={colors.background.raised} />
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{chatOuvert.club || `${chatOuvert.prenom || ''} ${chatOuvert.nom || ''}`.trim()}</p>
                       </div>
-                      <button onClick={() => setChatOuvert(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      <button type="button" onClick={fermerChat} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} /></button>
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
                       {explorerMessages.filter(m => m.sender_id === chatOuvert.id || m.receiver_id === chatOuvert.id).length === 0 ? (
-                        <p style={{ color: colors.text.disabled, fontSize: '12px', fontStyle: 'italic', textAlign: 'center' }}>Aucun message pour l'instant — dis bonjour !</p>
+                        <p style={{ ...texteVide, textAlign: 'center' }}>Aucun message pour l'instant. Dis bonjour !</p>
                       ) : (
                         explorerMessages.filter(m => m.sender_id === chatOuvert.id || m.receiver_id === chatOuvert.id).map(m => (
                           <div key={m.id} style={{ alignSelf: m.sender_id === userId ? 'flex-end' : 'flex-start', maxWidth: '78%' }}>
                             <div style={{
-                              background: m.sender_id === userId ? colors.accent.blue : colors.background.raised,
-                              color: m.sender_id === userId ? colors.black : colors.text.primary,
-                              borderRadius: '12px', padding: '8px 12px', fontSize: '13px', lineHeight: 1.4,
+                              background: m.sender_id === userId ? colors.accent.brand : colors.background.raised,
+                              color: m.sender_id === userId ? colors.accent.onBrand : colors.text.primary,
+                              borderRadius: forme.rayonCarte, padding: '8px 12px', fontSize: '14px', lineHeight: 1.4,
                             }}>{m.content}</div>
                           </div>
                         ))
@@ -12442,10 +12332,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                       <input value={nouveauMessageExplorer} onChange={e => setNouveauMessageExplorer(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && envoyerMessageExplorer()}
-                        placeholder="Écrire un message..." style={{ ...st.input, flex: 1 }} />
-                      <button onClick={envoyerMessageExplorer} disabled={envoyingMessageExplorer || !nouveauMessageExplorer.trim()}
-                        style={{ ...st.btnSolid, opacity: (envoyingMessageExplorer || !nouveauMessageExplorer.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <IcoSend />
+                        aria-label="Ton message" placeholder="Écrire un message..." className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, width: 'auto' }} />
+                      <button type="button" onClick={envoyerMessageExplorer} disabled={envoyingMessageExplorer || !nouveauMessageExplorer.trim()} aria-label="Envoyer le message"
+                        className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+                        <Icone icone={Send} />
                       </button>
                     </div>
                   </div>
@@ -12453,64 +12343,72 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               )}
 
               {showNouvelleAnnonce && (
-                <div onClick={() => setShowNouvelleAnnonce(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                  <div onClick={e => e.stopPropagation()} style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: 16, padding: 28, width: '100%', maxWidth: 580, maxHeight: '85vh', overflowY: 'auto' }}>
-                    <h3 style={{ color: colors.text.primary, margin: '0 0 20px', fontSize: 18 }}>📢 Publier une annonce</h3>
+                <div onClick={fermerAnnonce} style={styleFondModal(colors, 1000)}>
+                  <div role="dialog" aria-modal="true" aria-labelledby="titre-nouvelle-annonce" onClick={e => e.stopPropagation()}
+                    style={{ ...styleCarte(colors), padding: 28, width: '100%', maxWidth: 580, maxHeight: '85vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                      <h3 id="titre-nouvelle-annonce" style={{ ...styleTitreCarte(colors), margin: 0 }}><Icone icone={Megaphone} taille={20} />Publier une annonce</h3>
+                      <button type="button" onClick={fermerAnnonce} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} /></button>
+                    </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      <div>
-                        <label style={st.label}>Type d'annonce</label>
+                      <div role="group" aria-labelledby="lbl-annonce-type">
+                        <label id="lbl-annonce-type" style={st.label}>Type d'annonce</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {TYPES_ANNONCE.map(ty => (
-                            <button key={ty.key} onClick={() => setNouvelleAnnonce(f => ({ ...f, type_annonce: ty.key }))} style={{ padding: '6px 12px', border: 'none', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.type_annonce === ty.key ? ty.color : colors.background.raised, color: nouvelleAnnonce.type_annonce === ty.key ? colors.black : colors.text.faint }}>{ty.label}</button>
+                            <button key={ty.key} type="button" aria-pressed={nouvelleAnnonce.type_annonce === ty.key} className={CLASSE_BOUTON_SECONDAIRE}
+                              onClick={() => setNouvelleAnnonce(f => ({ ...f, type_annonce: ty.key }))} style={{ ...styleChoix(colors, nouvelleAnnonce.type_annonce === ty.key), minHeight: '36px', padding: '0 12px' }}>
+                              <Icone icone={ty.icone} taille={16} />{ty.label}
+                            </button>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <label style={st.label}>Titre *</label>
-                        <input value={nouvelleAnnonce.titre} onChange={e => setNouvelleAnnonce(f => ({ ...f, titre: e.target.value }))}
-                          placeholder="Ex : Tournoi U15 recherche équipes" style={st.input} />
+                        <label htmlFor="annonce-titre" style={st.label}>Titre *</label>
+                        <input id="annonce-titre" value={nouvelleAnnonce.titre} onChange={e => setNouvelleAnnonce(f => ({ ...f, titre: e.target.value }))}
+                          placeholder="Ex : Tournoi U15 recherche équipes" className={CLASSE_CHAMP} style={styleChamp(colors)} />
                       </div>
 
                       <div>
-                        <label style={st.label}>Description</label>
-                        <textarea value={nouvelleAnnonce.description} onChange={e => setNouvelleAnnonce(f => ({ ...f, description: e.target.value }))}
-                          rows={3} placeholder="Détails de ton annonce..." style={{ ...st.input, resize: 'vertical' }} />
+                        <label htmlFor="annonce-description" style={st.label}>Description</label>
+                        <textarea id="annonce-description" value={nouvelleAnnonce.description} onChange={e => setNouvelleAnnonce(f => ({ ...f, description: e.target.value }))}
+                          rows={3} placeholder="Détails de ton annonce..." className={CLASSE_CHAMP} style={{ ...styleChamp(colors), resize: 'vertical' }} />
                       </div>
 
-                      <div>
-                        <label style={st.label}>Régions de diffusion * <span style={{ color: colors.text.disabled, fontWeight: 400, textTransform: 'none' }}>(clique où diffuser)</span></label>
+                      <div role="group" aria-labelledby="lbl-annonce-regions">
+                        <label id="lbl-annonce-regions" style={st.label}>Régions de diffusion * <span style={{ color: colors.text.secondary, fontWeight: 400, textTransform: 'none' }}>(clique où diffuser)</span></label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          <button onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.length === REGIONS_FRANCE.length ? [] : [...REGIONS_FRANCE] }))}
-                            style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 700, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.length === REGIONS_FRANCE.length ? colors.accent.onBrand : colors.text.faint }}>
-                            🇫🇷 Toute la France
+                          <button type="button" aria-pressed={nouvelleAnnonce.regions.length === REGIONS_FRANCE.length} className={CLASSE_BOUTON_SECONDAIRE}
+                            onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.length === REGIONS_FRANCE.length ? [] : [...REGIONS_FRANCE] }))}
+                            style={{ ...styleChoix(colors, nouvelleAnnonce.regions.length === REGIONS_FRANCE.length), minHeight: '36px', padding: '0 12px', fontSize: '12px' }}>
+                            <Icone icone={Globe} taille={16} />Toute la France
                           </button>
                           {REGIONS_FRANCE.map(r => (
-                            <button key={r} onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.includes(r) ? f.regions.filter(x => x !== r) : [...f.regions, r] }))}
-                              style={{ padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11, fontFamily: 'Inter, sans-serif', background: nouvelleAnnonce.regions.includes(r) ? colors.accent.blue : colors.background.raised, color: nouvelleAnnonce.regions.includes(r) ? colors.accent.onBrand : colors.text.faint }}>
+                            <button key={r} type="button" aria-pressed={nouvelleAnnonce.regions.includes(r)} className={CLASSE_BOUTON_SECONDAIRE}
+                              onClick={() => setNouvelleAnnonce(f => ({ ...f, regions: f.regions.includes(r) ? f.regions.filter(x => x !== r) : [...f.regions, r] }))}
+                              style={{ ...styleChoix(colors, nouvelleAnnonce.regions.includes(r)), minHeight: '36px', padding: '0 10px', fontSize: '12px' }}>
                               {r}
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                         <div>
-                          <label style={st.label}>Date (si événement)</label>
-                          <input type="date" value={nouvelleAnnonce.date_evenement} onChange={e => setNouvelleAnnonce(f => ({ ...f, date_evenement: e.target.value }))} style={st.input} />
+                          <label htmlFor="annonce-date" style={st.label}>Date (si événement)</label>
+                          <input id="annonce-date" type="date" value={nouvelleAnnonce.date_evenement} onChange={e => setNouvelleAnnonce(f => ({ ...f, date_evenement: e.target.value }))} className={CLASSE_CHAMP} style={styleChamp(colors)} />
                         </div>
                         <div>
-                          <label style={st.label}>Contact (email ou tél.)</label>
-                          <input value={nouvelleAnnonce.contact} onChange={e => setNouvelleAnnonce(f => ({ ...f, contact: e.target.value }))} style={st.input} />
+                          <label htmlFor="annonce-contact" style={st.label}>Contact (email ou tél.)</label>
+                          <input id="annonce-contact" value={nouvelleAnnonce.contact} onChange={e => setNouvelleAnnonce(f => ({ ...f, contact: e.target.value }))} className={CLASSE_CHAMP} style={styleChamp(colors)} />
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
-                      <button onClick={() => setShowNouvelleAnnonce(false)} style={st.btn(colors.text.dim)}>Annuler</button>
-                      <button onClick={publierAnnonce} disabled={savingAnnonce || !nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0}
-                        style={{ ...st.btnSolid, opacity: (savingAnnonce || !nouvelleAnnonce.titre.trim() || nouvelleAnnonce.regions.length === 0) ? 0.5 : 1 }}>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={fermerAnnonce} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Annuler</button>
+                      <button type="button" onClick={publierAnnonce} disabled={savingAnnonce || annonceIncomplete} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
                         {savingAnnonce ? 'Publication...' : 'Publier'}
                       </button>
                     </div>
@@ -12524,7 +12422,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {activeSection === 'profil' && profilEduEdit && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>👤 {t('profil_titre', lang)}</h1>
+              <h1 style={{ ...styleTitreEcran(colors), margin: 0 }}>{t('profil_titre', lang)}</h1>
             </div>
 
             <div style={{ maxWidth: '900px', marginBottom: '1.5rem' }}>
@@ -12554,44 +12452,44 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       {avatarUploadingEdu ? 'Envoi en cours...' : "Photo visible par le club et sur ta page publique."}
                     </p>
                   </div>
-                  <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>📋 {t('profil_informations', lang)}</p>
+                  <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: '14px' }}>{icoTexte(ClipboardList)}{t('profil_informations', lang)}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
                       <div>
                         <label style={st.label}>{t('equipe_prenom', lang)}</label>
-                        <input style={st.input} value={profilEduEdit.prenom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, prenom: e.target.value }))} placeholder="Ton prénom" />
+                        <input className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.prenom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, prenom: e.target.value }))} placeholder="Ton prénom" />
                       </div>
                       <div>
                         <label style={st.label}>{t('equipe_nom', lang)}</label>
-                        <input style={st.input} value={profilEduEdit.nom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, nom: e.target.value }))} placeholder="Ton nom" />
+                        <input className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.nom || ''} onChange={e => setProfilEduEdit(p => ({ ...p, nom: e.target.value }))} placeholder="Ton nom" />
                       </div>
                     </div>
                     <div>
                       <label style={st.label}>{t('profil_club', lang)}</label>
-                      <input style={st.input} value={profilEduEdit.club || ''} onChange={e => setProfilEduEdit(p => ({ ...p, club: e.target.value }))} placeholder="Nom du club" />
+                      <input className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.club || ''} onChange={e => setProfilEduEdit(p => ({ ...p, club: e.target.value }))} placeholder="Nom du club" />
                     </div>
                     <div>
                       <label style={st.label}>Téléphone</label>
-                      <input style={st.input} type="tel" value={profilEduEdit.telephone || ''} onChange={e => setProfilEduEdit(p => ({ ...p, telephone: e.target.value }))} placeholder="06 00 00 00 00" />
+                      <input className={CLASSE_CHAMP} style={st.input} type="tel" value={profilEduEdit.telephone || ''} onChange={e => setProfilEduEdit(p => ({ ...p, telephone: e.target.value }))} placeholder="06 00 00 00 00" />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
                       <div>
                         <label style={st.label}>{t('profil_categorie_entrainee', lang)}</label>
-                        <select style={st.input} value={profilEduEdit.categorie || ''} onChange={e => setProfilEduEdit(p => ({ ...p, categorie: e.target.value }))}>
+                        <select className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.categorie || ''} onChange={e => setProfilEduEdit(p => ({ ...p, categorie: e.target.value }))}>
                           <option value="">{t('equipe_choisir', lang)}</option>
                           {[...CATEGORIES, 'Vétérans'].map(c => <option key={c}>{c}</option>)}
                         </select>
                       </div>
                       <div>
                         <label style={st.label}>{t('profil_niveau_championnat', lang)}</label>
-                        <select style={st.input} value={profilEduEdit.niveau_championnat || ''} onChange={e => setProfilEduEdit(p => ({ ...p, niveau_championnat: e.target.value }))}>
+                        <select className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.niveau_championnat || ''} onChange={e => setProfilEduEdit(p => ({ ...p, niveau_championnat: e.target.value }))}>
                           <option value="">{t('equipe_choisir', lang)}</option>
                           {['National 3','Régional 1','Régional 2','Régional 3','Départemental 1','Départemental 2','Départemental 3','District','Loisir'].map(n => <option key={n}>{n}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={st.label}>🏆 {t('profil_lien_classement', lang)}</label>
-                        <input style={st.input} type="url" placeholder="https://fff.fr/..." value={profilEduEdit.ligue_url || ''} onChange={e => setProfilEduEdit(p => ({ ...p, ligue_url: e.target.value }))} />
+                        <label style={st.label}>{icoTexte(Trophy)}{t('profil_lien_classement', lang)}</label>
+                        <input className={CLASSE_CHAMP} style={st.input} type="url" placeholder="https://fff.fr/..." value={profilEduEdit.ligue_url || ''} onChange={e => setProfilEduEdit(p => ({ ...p, ligue_url: e.target.value }))} />
                       </div>
                     </div>
                   </div>
@@ -12600,18 +12498,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {/* Diplôme */}
                 <div className="profil-diplome" style={st.card}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>🎓 {t('profil_diplome', lang)}</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{icoTexte(GraduationCap)}{t('profil_diplome', lang)}</p>
                     {profilEdu?.diplome_verifie && (
-                      <span style={{ background: colors.accent.success + alpha.soft, border: '1px solid #4ade8040', color: colors.accent.success, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>✅ {t('profil_certifie', lang)}</span>
+                      <span style={{ background: colors.accent.success + alpha.soft, border: '1px solid #4ade8040', color: colors.accent.success, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{icoTexte(CircleCheck)}{t('profil_certifie', lang)}</span>
                     )}
                     {profilEdu?.diplome_url && !profilEdu?.diplome_verifie && (
-                      <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>⏳ {t('profil_en_attente_verif', lang)}</span>
+                      <span style={{ background: '#f59e0b20', border: '1px solid #f59e0b40', color: '#f59e0b', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{icoTexte(Clock)}{t('profil_en_attente_verif', lang)}</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div>
                       <label style={st.label}>{t('profil_diplome_obtenu', lang)}</label>
-                      <select style={st.input} value={profilEduEdit.diplome || ''} onChange={e => setProfilEduEdit(p => ({ ...p, diplome: e.target.value }))}>
+                      <select className={CLASSE_CHAMP} style={st.input} value={profilEduEdit.diplome || ''} onChange={e => setProfilEduEdit(p => ({ ...p, diplome: e.target.value }))}>
                         <option value="">{t('equipe_choisir', lang)}</option>
                         {['UEFA A','UEFA B','UEFA C','BEF (Brevet d\'État)','BMF','CFF1','CFF2','Animateur','Initiateur','Éducateur Sportif','Aucun diplôme'].map(d => <option key={d}>{d}</option>)}
                       </select>
@@ -12620,7 +12518,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <label style={st.label}>{t('profil_preuve_diplome', lang)}</label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.base, border: `1px dashed ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', cursor: 'pointer' }}>
                         <input type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => uploadDiplome(e.target.files[0])} />
-                        <span style={{ fontSize: '13px', color: colors.text.faint }}>{uploadingDiplome ? '⏳ Upload...' : profilEdu?.diplome_url ? `✅ ${t('profil_preuve_uploadee', lang)}` : `📎 ${t('profil_uploader_preuve', lang)}`}</span>
+                        <span style={{ fontSize: '13px', color: colors.text.faint }}>{uploadingDiplome ? <>{icoTexte(Clock)}Envoi en cours...</> : profilEdu?.diplome_url ? <>{icoTexte(CircleCheck)}{t('profil_preuve_uploadee', lang)}</> : <>{icoTexte(Paperclip)}{t('profil_uploader_preuve', lang)}</>}</span>
                       </label>
                       {profilEdu?.diplome_url && (
                         <a href={profilEdu.diplome_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: colors.accent.green, marginTop: '4px', display: 'block' }}>{t('profil_voir_document', lang)} ↗</a>
@@ -12629,8 +12527,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                 </div>
 
-                <button className="profil-save" onClick={sauvegarderProfilEdu} disabled={savingProfil} style={st.btnSolid}>
-                  {savingProfil ? '⏳ Sauvegarde...' : `💾 ${t('profil_sauvegarder_profil', lang)}`}
+                <button className={`${CLASSE_BOUTON} profil-save`} onClick={sauvegarderProfilEdu} disabled={savingProfil} style={st.btnSolid}>
+                  {savingProfil ? <>{icoTexte(Clock)}Sauvegarde...</> : <>{icoTexte(Save)}{t('profil_sauvegarder_profil', lang)}</>}
                 </button>
               </div>
 
@@ -12638,8 +12536,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <div className="profil-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="profil-parcours" style={st.card}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>⚽ {t('profil_parcours_football', lang)}</p>
-                    <button onClick={() => setShowAddParcours(true)} style={st.btn()}>+ {t('btn_ajouter', lang)}</button>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{icoTexte(Goal)}{t('profil_parcours_football', lang)}</p>
+                    <button onClick={() => setShowAddParcours(true)} className={CLASSE_BOUTON_SECONDAIRE} style={st.btn()}>+ {t('btn_ajouter', lang)}</button>
                   </div>
 
                   {showAddParcours && (
@@ -12647,35 +12545,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={st.label}>{t('profil_type', lang)}</label>
-                          <select style={st.input} value={newParcours.type} onChange={e => setNewParcours(p => ({ ...p, type: e.target.value }))}>
-                            <option value="coach">🎙️ Coach</option>
-                            <option value="joueur">⚽ Joueur</option>
+                          <select className={CLASSE_CHAMP} style={st.input} value={newParcours.type} onChange={e => setNewParcours(p => ({ ...p, type: e.target.value }))}>
+                            <option value="coach">{icoTexte(Mic)}Coach</option>
+                            <option value="joueur">{icoTexte(Goal)}Joueur</option>
                           </select>
                         </div>
                         <div>
                           <label style={st.label}>{t('profil_club', lang)} *</label>
-                          <input style={st.input} placeholder="Nom du club" value={newParcours.club} onChange={e => setNewParcours(p => ({ ...p, club: e.target.value }))} />
+                          <input className={CLASSE_CHAMP} style={st.input} placeholder="Nom du club" value={newParcours.club} onChange={e => setNewParcours(p => ({ ...p, club: e.target.value }))} />
                         </div>
                         <div>
                           <label style={st.label}>{t('profil_role_poste', lang)}</label>
-                          <input style={st.input} placeholder="Attaquant, Entraîneur principal..." value={newParcours.poste} onChange={e => setNewParcours(p => ({ ...p, poste: e.target.value }))} />
+                          <input className={CLASSE_CHAMP} style={st.input} placeholder="Attaquant, Entraîneur principal..." value={newParcours.poste} onChange={e => setNewParcours(p => ({ ...p, poste: e.target.value }))} />
                         </div>
                         <div>
                           <label style={st.label}>{t('profil_niveau_parcours', lang)}</label>
-                          <input style={st.input} placeholder="National, Régional..." value={newParcours.niveau} onChange={e => setNewParcours(p => ({ ...p, niveau: e.target.value }))} />
+                          <input className={CLASSE_CHAMP} style={st.input} placeholder="National, Régional..." value={newParcours.niveau} onChange={e => setNewParcours(p => ({ ...p, niveau: e.target.value }))} />
                         </div>
                         <div>
                           <label style={st.label}>{t('profil_saison_debut', lang)}</label>
-                          <input style={st.input} placeholder="2018" value={newParcours.saison_debut} onChange={e => setNewParcours(p => ({ ...p, saison_debut: e.target.value }))} />
+                          <input className={CLASSE_CHAMP} style={st.input} placeholder="2018" value={newParcours.saison_debut} onChange={e => setNewParcours(p => ({ ...p, saison_debut: e.target.value }))} />
                         </div>
                         <div>
                           <label style={st.label}>{t('profil_saison_fin', lang)}</label>
-                          <input style={st.input} placeholder="2022 ou En cours" value={newParcours.saison_fin} onChange={e => setNewParcours(p => ({ ...p, saison_fin: e.target.value }))} />
+                          <input className={CLASSE_CHAMP} style={st.input} placeholder="2022 ou En cours" value={newParcours.saison_fin} onChange={e => setNewParcours(p => ({ ...p, saison_fin: e.target.value }))} />
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={ajouterParcours} style={st.btnSolid}>{t('btn_ajouter', lang)}</button>
-                        <button onClick={() => setShowAddParcours(false)} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                        <button onClick={ajouterParcours} className={CLASSE_BOUTON} style={st.btnSolid}>{t('btn_ajouter', lang)}</button>
+                        <button onClick={() => setShowAddParcours(false)} className={CLASSE_BOUTON_SECONDAIRE} style={st.btn()}>{t('btn_annuler', lang)}</button>
                       </div>
                     </div>
                   )}
@@ -12687,7 +12585,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {parcoursEdu.map(p => (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
-                        <span style={{ fontSize: '18px' }}>{p.type === 'coach' ? '🎙️' : '⚽'}</span>
+                        <span style={{ color: colors.text.secondary, display: 'inline-flex' }}><Icone icone={p.type === 'coach' ? Mic : Goal} libelle={p.type === 'coach' ? 'Coach' : 'Joueur'} /></span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.club}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint }}>
@@ -12695,7 +12593,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                             {p.saison_debut && p.saison_fin ? `${p.saison_debut} → ${p.saison_fin}` : p.saison_debut || ''}
                           </p>
                         </div>
-                        <button onClick={() => supprimerParcours(p.id)} style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
+                        <button type="button" onClick={() => supprimerParcours(p.id)} aria-label={`Supprimer le parcours ${p.club}`} style={styleBoutonFermer(colors)}><Icone icone={X} /></button>
                       </div>
                     ))}
                   </div>
@@ -12704,7 +12602,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {/* Aperçu profil public */}
                 {profilEdu && (
                   <div className="profil-apercu" style={{ ...st.card, border: `1px solid ${colors.accent.green}20` }}>
-                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>👁️ {t('profil_apercu_public', lang)}</p>
+                    <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>{icoTexte(Eye)}{t('profil_apercu_public', lang)}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
                       <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: colors.accent.green + alpha.soft, border: `2px solid ${colors.accent.green}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: colors.accent.green, flexShrink: 0 }}>
                         {profilEdu.prenom?.[0]}{profilEdu.nom?.[0]}
@@ -12717,12 +12615,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {profilEdu.diplome && (
                         <span style={{ background: profilEdu.diplome_verifie ? colors.accent.success + alpha.subtle : colors.background.raised, border: `1px solid ${profilEdu.diplome_verifie ? colors.accent.success + alpha.medium : colors.border.default}`, color: profilEdu.diplome_verifie ? colors.accent.success : colors.text.dim, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
-                          {profilEdu.diplome_verifie ? '✅' : '🎓'} {profilEdu.diplome}
+                          {icoTexte(profilEdu.diplome_verifie ? CircleCheck : GraduationCap, 14)}{profilEdu.diplome}
                         </span>
                       )}
                       {profilEdu.niveau_championnat && (
                         <span style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.muted, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>
-                          🏆 {profilEdu.niveau_championnat}
+                          {icoTexte(Trophy)}{profilEdu.niveau_championnat}
                         </span>
                       )}
                     </div>
@@ -12731,7 +12629,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
                 {/* Abonnement */}
                 <div className="profil-abonnement" style={st.card}>
-                  <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>💳 {t('edu_offre_titre', lang)}</p>
+                  <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px' }}>{icoTexte(CreditCard)}{t('edu_offre_titre', lang)}</p>
                   {profil?.abonnement_actif ? (
                     cancelDone ? (
                       <div>
@@ -12741,7 +12639,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     ) : (
                       <div>
                         <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
-                        <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: cancelling ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: '1px solid #ef444425', color: cancelling ? colors.text.disabled : colors.accent.red, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: cancelling ? 'wait' : 'pointer', fontFamily: police.texte }}>
                           {cancelling ? 'Résiliation en cours...' : 'Résilier mon abonnement'}
                         </button>
                       </div>
@@ -12750,8 +12648,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <>
                       <p style={{ margin: '0 0 14px', fontSize: '12px', color: colors.text.faint, lineHeight: 1.6 }}>{t('edu_offre_desc', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_mensuel', lang)}</button>
-                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('edu_offre_annuel', lang)}</button>
+                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_mensuel, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: police.texte }}>{t('edu_offre_mensuel', lang)}</button>
+                        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS_EDU.edu_annuel, userId, profil?.email), '_blank')} style={{ background: colors.accent.blue, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: police.texte }}>{t('edu_offre_annuel', lang)}</button>
                       </div>
                     </>
                   )}
@@ -12764,7 +12662,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <div style={st.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
-                    <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>👥 {t('profil_joueurs_affilies', lang)}</p>
+                    <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{icoTexte(Users)}{t('profil_joueurs_affilies', lang)}</p>
                     <p style={{ margin: 0, fontSize: '12px', color: colors.text.faint }}>{t('profil_seuls_joueurs', lang)}</p>
                   </div>
                   {profilEdu?.code_equipe && (
@@ -12774,10 +12672,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <span style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, fontWeight: 800, fontSize: '16px', padding: '6px 14px', borderRadius: '8px', letterSpacing: '2px', fontFamily: 'monospace' }}>
                           {profilEdu.code_equipe.toUpperCase()}
                         </span>
-                        <button onClick={() => navigator.clipboard.writeText(profilEdu.code_equipe.toUpperCase())}
-                          style={{ background: colors.background.raised, border: `1px solid ${colors.border.default}`, color: colors.text.secondary, padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                          📋
-                        </button>
+                        <button type="button" onClick={() => navigator.clipboard.writeText(profilEdu.code_equipe.toUpperCase())} aria-label="Copier le code équipe" title="Copier le code" className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), padding: 0, width: '44px' }}><Icone icone={Copy} /></button>
                       </div>
                     </div>
                   )}
@@ -12786,7 +12681,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {/* Demandes en attente */}
                 {affiliations.filter(a => a.statut === 'en_attente').length > 0 && (
                   <div style={{ marginBottom: '16px' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>⏳ {t('profil_demandes_attente', lang)} ({affiliations.filter(a => a.statut === 'en_attente').length})</p>
+                    <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>{icoTexte(Clock)}{t('profil_demandes_attente', lang)} ({affiliations.filter(a => a.statut === 'en_attente').length})</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {affiliations.filter(a => a.statut === 'en_attente').map(a => (
                         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f59e0b08', border: '1px solid #f59e0b20', borderRadius: '10px' }}>
@@ -12803,11 +12698,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => { setAffiliationEnCours(a); setJoueurLieId('') }}
                               style={{ background: colors.accent.blue + alpha.soft, border: `1px solid ${colors.accent.blue}40`, color: colors.accent.blue, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                              ✅ {t('equipe_accepter', lang)}
+                              {icoTexte(CircleCheck)}{t('equipe_accepter', lang)}
                             </button>
                             <button onClick={() => gererAffiliation(a.id, 'refuse')}
                               style={{ background: colors.accent.red + alpha.soft, border: '1px solid #ef444440', color: colors.accent.red, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                              ✕ {t('equipe_refuser', lang)}
+                              {icoTexte(X)}{t('equipe_refuser', lang)}
                             </button>
                           </div>
                         </div>
@@ -12819,7 +12714,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {/* Joueurs acceptés */}
                 <div>
                   <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: colors.accent.green }}>
-                    ✅ {t('profil_joueurs_affilies_count', lang)} ({affiliations.filter(a => a.statut === 'accepte').length})
+                    {icoTexte(CircleCheck)}{t('profil_joueurs_affilies_count', lang)} ({affiliations.filter(a => a.statut === 'accepte').length})
                   </p>
                   {affiliations.filter(a => a.statut === 'accepte').length === 0 ? (
                     <p style={{ color: colors.border.strong, fontSize: '12px', margin: 0 }}>{t('profil_aucun_affilie', lang)}</p>
@@ -12830,7 +12725,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <Avatar person={{ ...a.joueur, avatar_url: a.joueur_profil?.avatar_url }} size={24} bg={colors.accent.green + alpha.soft} border="none" textColor={colors.accent.green} />
                           <span style={{ fontSize: '12px', fontWeight: 600 }}>{a.joueur ? `${a.joueur.prenom} ${a.joueur.nom}` : t('profil_compte_joueur', lang)}</span>
                           <button onClick={() => gererAffiliation(a.id, 'refuse')}
-                            style={{ background: 'none', border: 'none', color: colors.border.strong, cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
+                            aria-label="Retirer ce joueur de l'équipe" style={{ ...styleBoutonFermer(colors), width: '32px', height: '32px' }}><Icone icone={X} taille={14} /></button>
                         </div>
                       ))}
                     </div>
@@ -12842,7 +12737,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Mon club ── */}
             <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
               <div style={st.card}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>🏟️ {t('profil_mon_club', lang)}</p>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '14px' }}>{icoTexte(Landmark)}{t('profil_mon_club', lang)}</p>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: colors.text.faint }}>{t('profil_rejoins_club_code', lang)}</p>
 
                 {clubAffiliation ? (
@@ -12853,26 +12748,26 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{clubAffiliation.club?.club || `${clubAffiliation.club?.prenom} ${clubAffiliation.club?.nom}`}</p>
                       <p style={{ margin: '2px 0 0', fontSize: '12px', color: clubAffiliation.statut === 'accepte' ? colors.accent.success : '#f59e0b' }}>
-                        {clubAffiliation.statut === 'accepte' ? `✅ ${t('profil_affilie', lang)}` : clubAffiliation.statut === 'en_attente' ? `⏳ ${t('profil_en_attente_club', lang)}` : `✕ ${t('profil_refuse', lang)}`}
+                        {clubAffiliation.statut === 'accepte' ? <>{icoTexte(CircleCheck, 14)}{t('profil_affilie', lang)}</> : clubAffiliation.statut === 'en_attente' ? <>{icoTexte(Clock, 14)}{t('profil_en_attente_club', lang)}</> : <>{icoTexte(X, 14)}{t('profil_refuse', lang)}</>}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
-                      style={{ ...st.input, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'monospace' }}
+                      className={CLASSE_CHAMP} style={{ ...st.input, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'monospace' }}
                       placeholder="CODE CLUB"
                       value={codeClubInput}
                       onChange={e => { setCodeClubInput(e.target.value.toUpperCase()); setCodeClubError(null) }}
                       onKeyDown={e => e.key === 'Enter' && rejoindreClub()}
                     />
-                    <button onClick={rejoindreClub} disabled={sendingCodeClub || !codeClubInput.trim()} style={st.btnSolid}>
+                    <button onClick={rejoindreClub} disabled={sendingCodeClub || !codeClubInput.trim()} className={CLASSE_BOUTON} style={st.btnSolid}>
                       {sendingCodeClub ? '...' : t('profil_rejoindre', lang)}
                     </button>
                   </div>
                 )}
-                {codeClubError && <p style={{ color: colors.accent.red, fontSize: '12px', marginTop: '8px' }}>⚠️ {codeClubError}</p>}
-                {codeClubSuccess && <p style={{ color: colors.accent.success, fontSize: '12px', marginTop: '8px' }}>✅ {t('profil_demande_envoyee', lang)}</p>}
+                {codeClubError && <p style={{ color: colors.accent.red, fontSize: '12px', marginTop: '8px' }}>{icoTexte(TriangleAlert)}{codeClubError}</p>}
+                {codeClubSuccess && <p style={{ color: colors.accent.success, fontSize: '12px', marginTop: '8px' }}>{icoTexte(CircleCheck)}{t('profil_demande_envoyee', lang)}</p>}
               </div>
             </div>
 
@@ -12902,12 +12797,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div style={{ maxWidth: '900px', marginTop: '1.5rem' }}>
                   {/* En-tête score global */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>⭐ {t('profil_evaluations_recues', lang)}</h2>
+                    <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{icoTexte(Star)}{t('profil_evaluations_recues', lang)}</h2>
                     {moyGlobale !== null ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', borderRadius: '12px', padding: '6px 16px' }}>
                         <span style={{ fontSize: '24px', fontWeight: 900, color: colors.accent.amber }}>{moyGlobale.toFixed(1)}</span>
                         <div>
-                          <div style={{ color: colors.accent.amber, fontSize: '14px', lineHeight: 1 }}>{'★'.repeat(Math.round(moyGlobale))}{'☆'.repeat(5 - Math.round(moyGlobale))}</div>
+                          <div role="img" aria-label={`${Math.round(moyGlobale)} sur 5`} style={{ color: colors.accent.amber, display: 'flex', gap: '2px' }}>{[1, 2, 3, 4, 5].map(n => <Star key={n} size={14} strokeWidth={2} fill={n <= Math.round(moyGlobale) ? 'currentColor' : 'none'} aria-hidden="true" />)}</div>
                           <div style={{ fontSize: '10px', color: colors.text.faint, marginTop: '2px' }}>{notesEdu.length} évaluation{notesEdu.length > 1 ? 's' : ''}</div>
                         </div>
                       </div>
@@ -12958,17 +12853,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   {/* Commentaires par saison */}
                   {notesEdu.filter(n => n.commentaire).length > 0 && (
                     <div style={st.card}>
-                      <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px' }}>💬 {t('profil_commentaires', lang)}</p>
+                      <p style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '13px' }}>{icoTexte(MessageSquare)}{t('profil_commentaires', lang)}</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {notesEdu.filter(n => n.commentaire).map(n => (
                           <div key={n.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: colors.background.base, borderRadius: '10px', border: `1px solid ${colors.border.subtle}` }}>
-                            <span style={{ fontSize: '18px', flexShrink: 0 }}>{n.auteur_type === 'club' ? '🏟️' : '⚽'}</span>
+                            <span style={{ flexShrink: 0, color: colors.text.secondary, display: 'inline-flex' }}><Icone icone={n.auteur_type === 'club' ? Landmark : Goal} libelle={n.auteur_type === 'club' ? 'Club' : 'Joueur'} /></span>
                             <div style={{ flex: 1 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 700 }}>{n.profiles?.prenom} {n.profiles?.nom}</span>
                                 <span style={{ fontSize: '10px', color: n.auteur_type === 'club' ? colors.accent.blue : colors.accent.success }}>{n.auteur_type === 'club' ? t('profil_club_label', lang) : t('profil_joueur_label', lang)}</span>
                                 {n.saison && <span style={{ fontSize: '10px', color: colors.text.disabled }}>{n.saison}</span>}
-                                {!n.visible_public && <span style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.surface, padding: '1px 6px', borderRadius: '6px', marginLeft: 'auto' }}>🔒 {t('profil_prive', lang)}</span>}
+                                {!n.visible_public && <span style={{ fontSize: '10px', color: colors.text.disabled, background: colors.background.surface, padding: '1px 6px', borderRadius: '6px', marginLeft: 'auto' }}>{icoTexte(Lock, 11)}{t('profil_prive', lang)}</span>}
                               </div>
                               <p style={{ margin: 0, fontSize: '12px', color: colors.text.muted, fontStyle: 'italic' }}>"{n.commentaire}"</p>
                             </div>
@@ -12998,11 +12893,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>📸 {t('scan_feuille_titre', lang)}</h2>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{icoTexte(Camera)}{t('scan_feuille_titre', lang)}</h2>
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>{t('scan_feuille_desc', lang)}</p>
             </div>
             <button onClick={() => { setShowScanner(false); setScannerResult(null); setScannerImageBase64(null); setScannerImagePreview(null); setScannerError(null); setScannerWarning(null) }}
-              style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '22px', cursor: 'pointer' }}>✕</button>
+              aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} /></button>
           </div>
 
           {!scannerResult ? (
@@ -13020,7 +12915,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 {scannerImagePreview
                   ? <img src={scannerImagePreview} alt="Feuille" style={{ maxHeight: '400px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                   : <div>
-                      <p style={{ fontSize: '40px', margin: '0 0 10px' }}>📄</p>
+                      <Icone icone={FileText} taille={40} style={{ margin: '0 auto 10px', color: colors.text.secondary }} />
                       <p style={{ margin: 0, fontWeight: 600, color: colors.text.secondary }}>{t('scan_clique_glisse', lang)}</p>
                       <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.disabled }}>{t('seance_jpg_png', lang)}</p>
                     </div>
@@ -13032,16 +12927,16 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   const { base64, preview } = await redimensionnerImagePourScan(file)
                   setScannerImageBase64(base64); setScannerImagePreview(preview)
                 }} />
-              {scannerError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '12px' }}>⚠️ {scannerError}</p>}
+              {scannerError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '12px' }}>{icoTexte(TriangleAlert)}{scannerError}</p>}
               <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
-                  {scannerLoading ? `🔍 ${libelleStatutGroq(scannerStatus)}` : `✨ ${t('seance_analyser_ia', lang)}`}
+                <button onClick={scannerMatch} disabled={!scannerImageBase64 || scannerLoading} className={CLASSE_BOUTON} style={{ ...st.btnSolid, flex: 1, opacity: !scannerImageBase64 ? 0.4 : 1 }}>
+                  {scannerLoading ? <>{icoTexte(Search)}{libelleStatutGroq(scannerStatus)}</> : <>{icoTexte(Sparkles)}{t('seance_analyser_ia', lang)}</>}
                 </button>
-                <button onClick={() => { setShowScanner(false); setScannerError(null) }} style={st.btn(colors.text.dim)}>{t('btn_annuler', lang)}</button>
+                <button onClick={() => { setShowScanner(false); setScannerError(null) }} className={CLASSE_BOUTON_SECONDAIRE} style={st.btn()}>{t('btn_annuler', lang)}</button>
               </div>
               {scannerLoading && (
                 <div style={{ marginTop: '16px', background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '14px', fontSize: '13px', color: colors.accent.success }}>
-                  🤖 {t('scan_ia_lit_feuille', lang)}
+                  {icoTexte(Bot)}{t('scan_ia_lit_feuille', lang)}
                 </div>
               )}
             </div>
@@ -13051,12 +12946,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div>
                   <img src={scannerImagePreview} alt="Feuille" style={{ width: '100%', borderRadius: '8px', objectFit: 'contain', maxHeight: '300px', background: colors.background.base }} />
                   <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div><label style={st.label}>{t('ent_date', lang)}</label><input style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('comp_competition', lang)}</label><input style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input className={CLASSE_CHAMP} style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
+                    <div><label style={st.label}>{t('comp_competition', lang)}</label><input className={CLASSE_CHAMP} style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))} /></div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>
-                      <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input style={st.input} type="number" value={scannerMatchData.score_eux} onChange={e => setScannerMatchData(d => ({ ...d, score_eux: e.target.value }))} /></div>
+                      <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input className={CLASSE_CHAMP} style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>
+                      <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input className={CLASSE_CHAMP} style={st.input} type="number" value={scannerMatchData.score_eux} onChange={e => setScannerMatchData(d => ({ ...d, score_eux: e.target.value }))} /></div>
                     </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text.secondary, cursor: 'pointer' }}>
                       <input type="checkbox" checked={scannerMatchData.domicile} onChange={e => setScannerMatchData(d => ({ ...d, domicile: e.target.checked }))} />
@@ -13072,11 +12967,11 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     </div>
                   )}
                   <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>
-                    ✅ {Object.keys(scannerStats).length} joueur{Object.keys(scannerStats).length > 1 ? 's' : ''} détecté{Object.keys(scannerStats).length > 1 ? 's' : ''} automatiquement
+                    {icoTexte(CircleCheck)}{Object.keys(scannerStats).length} joueur{Object.keys(scannerStats).length > 1 ? 's' : ''} détecté{Object.keys(scannerStats).length > 1 ? 's' : ''} automatiquement
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', marginBottom: '6px', minWidth: '380px' }}>
-                    {['Joueur', 'Min', 'Buts', 'PD ✏️', 'CS', '🟨', '🟥'].map(h => (
-                      <span key={h} style={{ fontSize: '10px', color: colors.text.disabled, textAlign: h === 'Joueur' ? 'left' : 'center', textTransform: 'uppercase' }}>{h}</span>
+                    {['Joueur', 'Min', 'Buts', 'PD', 'CS', 'Jaune', 'Rouge'].map(h => (
+                      <span key={h} style={{ fontSize: '10px', color: colors.text.disabled, textAlign: h === 'Joueur' ? 'left' : 'center', textTransform: 'uppercase' }}>{h === 'Jaune' || h === 'Rouge' ? <span role="img" aria-label={h === 'Jaune' ? 'Carton jaune' : 'Carton rouge'} style={{ display: 'inline-block', width: '12px', height: '16px', borderRadius: '2px', background: h === 'Jaune' ? colors.accent.amber : colors.accent.red }} /> : h}</span>
                     ))}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '460px', overflowY: 'auto' }}>
@@ -13090,35 +12985,35 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       return (
                         <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '1fr 55px 55px 55px 55px 32px 32px', gap: '4px', alignItems: 'center', padding: '6px 8px', background: detected ? `${colors.accent.green}1f` : colors.background.base, borderRadius: '6px', border: `1px solid ${detected ? `${colors.accent.green}55` : colors.background.surface}`, minWidth: '380px' }}>
                           <span style={{ fontSize: '12px', fontWeight: detected ? 700 : 500, color: detected ? colors.text.primary : colors.text.disabled, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {detected ? '✓ ' : ''}{j.prenom} {j.nom?.[0] || ''}.
+                            {detected && icoTexte(Check, 13)}{j.prenom} {j.nom?.[0] || ''}.
                           </span>
                           <input type="number" min="0" max="120" value={s.minutes ?? ''} placeholder="—"
                             onChange={e => setS('minutes', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                            className={CLASSE_CHAMP} style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" min="0" value={s.buts ?? ''} placeholder="—"
                             onChange={e => setS('buts', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                            className={CLASSE_CHAMP} style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
                           <input type="number" min="0" value={s.passes_dec ?? ''} placeholder="—"
                             onChange={e => setS('passes_dec', parseInt(e.target.value) || 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
+                            className={CLASSE_CHAMP} style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center' }} />
                           <input type="number" min="0" max="1" value={s.clean_sheet ? 1 : ''} placeholder="—"
                             onChange={e => setS('clean_sheet', parseInt(e.target.value) > 0)}
-                            style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
-                          <span onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_jaune ? 1 : 0.2 }}>🟨</span>
-                          <span onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ textAlign: 'center', cursor: 'pointer', fontSize: '16px', opacity: s.carton_rouge ? 1 : 0.2 }}>🟥</span>
+                            className={CLASSE_CHAMP} style={{ ...st.input, padding: '4px 6px', fontSize: '12px', textAlign: 'center', background: detected ? colors.background.surface : colors.background.sunken }} />
+                          <button type="button" aria-pressed={!!s.carton_jaune} aria-label="Carton jaune" onClick={() => setS('carton_jaune', !s.carton_jaune)} style={{ justifySelf: 'center', alignSelf: 'center', cursor: 'pointer', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.amber, opacity: s.carton_jaune ? 1 : 0.25 }} />
+                          <button type="button" aria-pressed={!!s.carton_rouge} aria-label="Carton rouge" onClick={() => setS('carton_rouge', !s.carton_rouge)} style={{ justifySelf: 'center', alignSelf: 'center', cursor: 'pointer', width: '14px', height: '18px', padding: 0, border: 'none', borderRadius: '2px', background: colors.accent.red, opacity: s.carton_rouge ? 1 : 0.25 }} />
                         </div>
                       )
                     })}
                   </div>
-                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.border.strong }}>✏️ PD (passes décisives) et CS (clean sheet) sont à compléter manuellement</p>
+                  <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.border.strong }}>PD (passes décisives) et CS (clean sheet) sont à compléter manuellement</p>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: `1px solid ${colors.border.subtle}`, paddingTop: '16px' }}>
-                <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} style={{ ...st.btnSolid, flex: 1 }}>
-                  {scannerSaving ? 'Enregistrement...' : `💾 ${t('scan_enregistrer_match', lang)}`}
+                <button onClick={sauvegarderMatchScanne} disabled={scannerSaving || !scannerMatchData.adversaire} className={CLASSE_BOUTON} style={{ ...st.btnSolid, flex: 1 }}>
+                  {scannerSaving ? 'Enregistrement...' : <>{icoTexte(Save)}{t('scan_enregistrer_match', lang)}</>}
                 </button>
-                <button onClick={() => { setScannerResult(null); setScannerError(null); setScannerWarning(null) }} style={st.btn(colors.text.dim)}>← {t('scan_rescanner', lang)}</button>
+                <button onClick={() => { setScannerResult(null); setScannerError(null); setScannerWarning(null) }} className={CLASSE_BOUTON_SECONDAIRE} style={st.btn()}>← {t('scan_rescanner', lang)}</button>
               </div>
             </div>
           )}
@@ -13129,7 +13024,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     {affiliationEnCours && (
       <div style={{ position: 'fixed', inset: 0, background: '#000000ee', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', width: '100%', maxWidth: '460px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
-          <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>✅ {t('liaison_accepter_demande', lang)}</p>
+          <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '16px' }}>{icoTexte(CircleCheck)}{t('liaison_accepter_demande', lang)}</p>
           <p style={{ margin: '0 0 20px', fontSize: '12px', color: colors.text.dim }}>
             {t('liaison_lier_joueur', lang)} <strong style={{ color: colors.text.secondary }}>({affiliationEnCours.joueur_id?.slice(0, 8)}…)</strong> {t('liaison_a_joueur_effectif', lang)}
           </p>
@@ -13152,7 +13047,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               disabled={!joueurLieId}
               style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.accent.blue}40`, background: joueurLieId ? colors.accent.blue + alpha.soft : colors.background.raised, color: joueurLieId ? colors.accent.blue : colors.text.disabled, fontWeight: 700, fontSize: '13px', cursor: joueurLieId ? 'pointer' : 'not-allowed' }}
             >
-              ✅ {t('liaison_confirmer', lang)}
+              {icoTexte(CircleCheck)}{t('liaison_confirmer', lang)}
             </button>
             <button
               onClick={() => { setAffiliationEnCours(null); setJoueurLieId('') }}
@@ -13183,19 +13078,19 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
           {apercuEnCoursEnHaut ? (
             <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
-              <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                ✕ {t('btn_fermer', lang)}
+              <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: police.texte }}>
+                {icoTexte(X)}{t('btn_fermer', lang)}
               </button>
             </div>
           ) : (
             <button onClick={() => setApercuFicheEnCoursOuvert(false)} title={t('btn_fermer', lang)}
               style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-              ✕
+              <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
             </button>
           )}
           {(fiche.mode_diplome === 'BEF' || fiche.mode_diplome === 'BMF') && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
-              📱 Tourne ton téléphone en paysage pour une meilleure lecture
+              {icoTexte(Smartphone)}Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
           )}
           <ApercuFicheResponsive>
@@ -13229,10 +13124,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <>
                   <a href={ficheApercu.fichier_url} target="_blank" rel="noreferrer"
                     style={{ background: colors.accent.blue, color: colors.accent.onBrand, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    ⬇️ {t('seance_fichier', lang)}
+                    {icoTexte(Download)}{t('seance_fichier', lang)}
                   </a>
                   <button onClick={() => partagerFiche(ficheApercu.fichier_url, ficheApercu.theme)}
-                    style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: police.texte }}>
                     Partager
                   </button>
                 </>
@@ -13241,7 +13136,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 // fiche rédigée avant l'ajout de la génération automatique) —
                 // on le génère à la volée à partir de l'aperçu affiché.
                 <button onClick={genererEtPartagerFicheApercu} disabled={generantPartage}
-                  style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: generantPartage ? 0.6 : 1 }}>
+                  style={{ background: 'transparent', border: `1px solid ${colors.accent.blue}`, color: colors.accent.blue, padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: police.texte, opacity: generantPartage ? 0.6 : 1 }}>
                   {generantPartage ? 'Génération...' : 'Partager'}
                 </button>
               )
@@ -13250,21 +13145,21 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               <>
                 <button onClick={sauvegarderFicheApercuEdit} disabled={savingFicheApercu}
                   style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: savingFicheApercu ? 0.6 : 1 }}>
-                  {savingFicheApercu ? 'Enregistrement...' : `✓ ${t('btn_sauvegarder', lang)}`}
+                  {savingFicheApercu ? 'Enregistrement...' : <>{icoTexte(Check)}{t('btn_sauvegarder', lang)}</>}
                 </button>
                 <button onClick={annulerEditionApercu}
-                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontFamily: police.texte }}>
                   {t('btn_annuler', lang)}
                 </button>
               </>
             ) : (
               <>
                 <button onClick={ouvrirEditionApercu}
-                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ✏️ {t('btn_modifier', lang)}
+                  style={{ background: colors.background.surface, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: police.texte }}>
+                  {icoTexte(Pencil)}{t('btn_modifier', lang)}
                 </button>
-                <button onClick={() => setFicheApercu(null)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ✕ {t('btn_fermer', lang)}
+                <button onClick={() => setFicheApercu(null)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: police.texte }}>
+                  {icoTexte(X)}{t('btn_fermer', lang)}
                 </button>
               </>
             )}
@@ -13272,12 +13167,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           ) : (
             <button onClick={() => setFicheApercu(null)} title={t('btn_fermer', lang)}
               style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-              ✕
+              <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
             </button>
           )}
           {!modeEditionApercu && ['BEF', 'BMF'].includes(ficheApercu.fiche_seance?.mode_diplome) && (
             <p className="fiche-apercu-hint-paysage" style={{ display: 'none', color: colors.accent.amber, fontSize: '12px', textAlign: 'center', margin: '0 0 10px' }}>
-              📱 Tourne ton téléphone en paysage pour une meilleure lecture
+              {icoTexte(Smartphone)}Tourne ton téléphone en paysage pour une meilleure lecture
             </p>
           )}
           <ApercuFicheResponsive>
@@ -13365,7 +13260,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <h3 style={{ margin: 0 }}>Procédé {p.numero}</h3>
                         {ficheApercuEdit.procedes.length > 1 && (
-                          <button type="button" onClick={() => retirerProcedeApercu(i)} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                          <button type="button" onClick={() => retirerProcedeApercu(i)} aria-label="Retirer ce procédé" style={{ ...styleBoutonFermer(colors), width: '32px', height: '32px' }}><Icone icone={X} taille={14} /></button>
                         )}
                       </div>
                       <div className="procede-grid">
@@ -13415,7 +13310,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <div className="procede-field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <button type="button" onClick={() => setTactipadModal(i)}
                             style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #a78bfa40', background: '#a78bfa10', color: '#a78bfa', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}>
-                            🎨 {p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
+                            {icoTexte(Palette)}{p.schema_png ? t('tactic_modifier_schema', lang) : t('tactic_ajouter_schema', lang)}
                           </button>
                           {p.schema_png && (
                             <img src={miniatureSchema(p.schema_png, 200)} alt="Schéma tactique" style={{ height: '48px', borderRadius: '6px', border: `1px solid ${colors.border.faint}` }} />
@@ -13467,8 +13362,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
         <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', width: '100%', maxWidth: '95vw', padding: '24px', margin: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>🎨 {t('schema_procede', lang)} {procedesActifs[tactipadModal]?.numero}</p>
-            <button onClick={() => setTactipadModal(null)} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{icoTexte(Palette)}{t('schema_procede', lang)} {procedesActifs[tactipadModal]?.numero}</p>
+            <button type="button" onClick={() => setTactipadModal(null)} aria-label="Fermer" style={styleBoutonFermer(colors)}><Icone icone={X} /></button>
           </div>
           <Suspense fallback={null}><Tactipad
             userId={userId}

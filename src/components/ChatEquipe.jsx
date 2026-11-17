@@ -56,7 +56,7 @@ function BulleMessage({ msg, auteurs, userId, onVote, sondages, reponses }) {
                       border: `1px solid ${voted ? '#4ade8060' : '#2a2a2a'}`,
                       borderRadius: 8, padding: '8px 12px',
                       cursor: sondage.cloture ? 'default' : 'pointer',
-                      textAlign: 'left', fontFamily: 'Inter, sans-serif',
+                      textAlign: 'left', fontFamily: 'Barlow, sans-serif',
                       transition: 'all 0.15s',
                     }}>
                     <div style={{ position: 'absolute', inset: 0, background: voted ? '#4ade8015' : '#ffffff08', width: `${pct}%`, transition: 'width 0.4s ease', pointerEvents: 'none' }} />
@@ -125,11 +125,11 @@ function FormSondage({ onSubmit, onCancel }) {
     <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 14, padding: 16, marginBottom: 10 }}>
       <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#4ade80' }}>📊 Nouveau sondage</p>
       <input value={question} onChange={e => setQuestion(e.target.value)} placeholder="Question..."
-        style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+        style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
       {options.map((opt, i) => (
         <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
           <input value={opt} onChange={e => majOption(i, e.target.value)} placeholder={`Option ${i + 1}...`}
-            style={{ flex: 1, background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 10px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+            style={{ flex: 1, background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 10px', color: '#fff', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
           {options.length > 2 && (
             <button onClick={() => supprimerOption(i)}
               style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, color: '#555', cursor: 'pointer', padding: '0 10px' }}>✕</button>
@@ -138,17 +138,17 @@ function FormSondage({ onSubmit, onCancel }) {
       ))}
       {options.length < 5 && (
         <button onClick={ajouterOption}
-          style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 8, color: '#555', cursor: 'pointer', fontSize: 12, padding: '6px 12px', width: '100%', marginBottom: 10, fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 8, color: '#555', cursor: 'pointer', fontSize: 12, padding: '6px 12px', width: '100%', marginBottom: 10, fontFamily: 'Barlow, sans-serif' }}>
           + Ajouter une option
         </button>
       )}
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => onSubmit(question.trim(), options.filter(o => o.trim()))} disabled={!valide}
-          style={{ flex: 1, background: '#4ade80', color: '#000', border: 'none', borderRadius: 8, padding: '8px', fontWeight: 700, fontSize: 13, cursor: valide ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif', opacity: valide ? 1 : 0.4 }}>
+          style={{ flex: 1, background: '#4ade80', color: '#000', border: 'none', borderRadius: 8, padding: '8px', fontWeight: 700, fontSize: 13, cursor: valide ? 'pointer' : 'default', fontFamily: 'Barlow, sans-serif', opacity: valide ? 1 : 0.4 }}>
           Envoyer
         </button>
         <button onClick={onCancel}
-          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#555', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
+          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#555', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', fontSize: 13 }}>
           Annuler
         </button>
       </div>
@@ -349,7 +349,7 @@ export default function ChatEquipe({ educateurId, userId, isEducateur = false })
           <textarea value={texte} onChange={e => setTexte(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerMessage() } }}
             placeholder="Message..." rows={1}
-            style={{ flex: 1, background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'none', lineHeight: 1.4 }} />
+            style={{ flex: 1, background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '9px 12px', color: '#fff', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none', resize: 'none', lineHeight: 1.4 }} />
           <button onClick={envoyerMessage} disabled={!texte.trim() || envoi}
             style={{ background: texte.trim() ? '#4ade80' : '#1a1a1a', border: 'none', borderRadius: 10, padding: '9px 14px', color: texte.trim() ? '#000' : '#555', cursor: texte.trim() ? 'pointer' : 'default', fontWeight: 700, fontSize: 16, flexShrink: 0, transition: 'all 0.15s' }}>
             ➤

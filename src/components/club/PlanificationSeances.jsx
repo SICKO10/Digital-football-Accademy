@@ -3,6 +3,10 @@ import { supabase } from '../../supabase'
 import { bornesDatesSaison, saisonActuelle } from '../../lib/saison'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
+import { Trash2 } from 'lucide-react'
+import { TitreEcran, Etiquette, Icone } from '../identite'
+import { styleCarte, styleChiffreHeros, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, couleurCraie, couleurClub, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../../lib/identite'
+import { police, forme } from '../../tokens'
 
 // Planifie des séances au calendrier (table entrainements) pour une équipe du
 // club, à la place de — ou en avance sur — l'éducateur qui la gère : mêmes
@@ -16,7 +20,7 @@ const JOURS = [
   { num: 4, label: 'Jeu' }, { num: 5, label: 'Ven' }, { num: 6, label: 'Sam' }, { num: 0, label: 'Dim' },
 ]
 
-export default function PlanificationSeances({ categories, readOnly, accentColor }) {
+export default function PlanificationSeances({ categories, readOnly }) {
   const colors = useColors()
   const equipesAvecEducateur = categories.filter(c => c.educateur_id)
   const [equipeId, setEquipeId] = useState(equipesAvecEducateur[0]?.id || '')
@@ -99,19 +103,24 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
     await charger(equipeId)
   }
 
-  // V2 : équipe choisie en cartes, générateur avec aperçu du nombre de
-  // séances, séances à venir groupées par mois (passées repliées).
-  const accent = accentColor || colors.accent.green
-  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
-  const labelStyle = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }
-  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px 20px' }
+  // Bloc 9 du chantier design : kit d'identité, aucun changement de comportement.
+  const carte = { ...styleCarte(colors), padding: '18px 20px' }
+  const craie = `1px solid ${couleurCraie(colors)}`
+  const labelStyle = { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }
+  const boutonChoix = actif => ({
+    minHeight: '36px', padding: '0 14px', borderRadius: forme.rayonCarte, cursor: 'pointer',
+    fontFamily: police.texte, fontSize: '13px', fontWeight: 600,
+    background: actif ? colors.accent.brand : 'transparent',
+    color: actif ? colors.accent.onBrand : colors.text.primary,
+    border: `1px solid ${actif ? 'transparent' : colors.border.strong}`,
+  })
+  const petitBouton = { ...styleBoutonSecondaire(colors), minHeight: '34px', fontSize: '13px', padding: '0 12px' }
 
   if (equipesAvecEducateur.length === 0) {
     return (
       <div style={{ ...carte, textAlign: 'center', padding: '32px 20px' }}>
-        <p style={{ margin: 0, color: colors.text.secondary, fontWeight: 600 }}>Aucune équipe avec un éducateur affecté</p>
-        <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: '12px' }}>Affecte d'abord un éducateur à une équipe dans Catégories & Équipes.</p>
+        <p style={{ margin: 0, fontFamily: police.texte, color: colors.text.primary, fontWeight: 600 }}>Aucune équipe avec un éducateur affecté</p>
+        <p style={{ margin: '6px 0 0', fontFamily: police.texte, color: colors.text.dim, fontSize: '13px' }}>Affecte d'abord un éducateur à une équipe dans Catégories & Équipes.</p>
       </div>
     )
   }
@@ -143,20 +152,17 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      <div>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Planifier séance</h1>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Les séances créées ici apparaissent dans le planning de l'éducateur de l'équipe.</p>
-      </div>
+      <TitreEcran titre="Planifier séance" sousTitre="Les séances créées ici apparaissent dans le planning de l'éducateur de l'équipe." style={{ marginBottom: 0 }} />
 
       {/* Choix de l'équipe */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+      <div role="group" aria-label="Choisir une équipe" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
         {equipesAvecEducateur.map(c => {
           const actif = c.id === equipeId
           return (
-            <button key={c.id} onClick={() => setEquipeId(c.id)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '10px 14px', borderRadius: '12px', border: `1px solid ${actif ? accent + '80' : colors.border.default}`, background: actif ? accent + '14' : colors.background.surface, cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', minWidth: 0 }}>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: actif ? accent : colors.text.primary }}>{labelCategorie(c.nom)} {c.equipe}</span>
-              <span style={{ fontSize: '11px', color: colors.text.faint, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{c.educateur ? `${c.educateur.prenom || ''} ${c.educateur.nom || ''}`.toLowerCase() : '—'}</span>
+            <button type="button" key={c.id} className={CLASSE_CLIQUABLE} aria-pressed={actif} onClick={() => setEquipeId(c.id)}
+              style={{ ...styleCarte(colors), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '10px 14px', paddingLeft: actif ? '17px' : '14px', boxShadow: actif ? `inset 3px 0 0 ${couleurClub(colors)}` : 'none', borderColor: actif ? colors.border.strong : undefined, textAlign: 'left', cursor: 'pointer' }}>
+              <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '19px', textTransform: 'uppercase', color: colors.text.primary }}>{labelCategorie(c.nom)} {c.equipe}</span>
+              <span style={{ fontFamily: police.texte, fontSize: '12px', color: colors.text.dim, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{c.educateur ? `${c.educateur.prenom || ''} ${c.educateur.nom || ''}`.trim() : ''}</span>
             </button>
           )
         })}
@@ -164,10 +170,9 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
 
       {!readOnly && (
         <div style={carte}>
-          <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, marginBottom: '18px' }}>
+          <div role="group" aria-label="Type de planification" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '18px' }}>
             {[{ key: 'saison', label: 'Générer une saison' }, { key: 'ponctuelle', label: 'Séance ponctuelle' }].map(o => (
-              <button key={o.key} onClick={() => setVue(o.key)}
-                style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', background: vue === o.key ? colors.background.raised : 'transparent', color: vue === o.key ? colors.text.primary : colors.text.faint, fontWeight: vue === o.key ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button type="button" key={o.key} className={CLASSE_CLIQUABLE} aria-pressed={vue === o.key} onClick={() => setVue(o.key)} style={boutonChoix(vue === o.key)}>
                 {o.label}
               </button>
             ))}
@@ -177,24 +182,23 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label style={labelStyle}>Date *</label>
-                  <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
+                  <label htmlFor="ps-date" style={labelStyle}>Date *</label>
+                  <input id="ps-date" type="date" className={CLASSE_CHAMP} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={styleChamp(colors)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Heure</label>
-                  <input type="time" value={form.heure} onChange={e => setForm(f => ({ ...f, heure: e.target.value }))} style={inputStyle} />
+                  <label htmlFor="ps-heure" style={labelStyle}>Heure</label>
+                  <input id="ps-heure" type="time" className={CLASSE_CHAMP} value={form.heure} onChange={e => setForm(f => ({ ...f, heure: e.target.value }))} style={styleChamp(colors)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Lieu</label>
-                  <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Stade municipal" style={inputStyle} />
+                  <label htmlFor="ps-lieu" style={labelStyle}>Lieu</label>
+                  <input id="ps-lieu" className={CLASSE_CHAMP} value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} placeholder="Stade municipal" style={styleChamp(colors)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Thème / description</label>
-                  <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Conservation du ballon" style={inputStyle} />
+                  <label htmlFor="ps-desc" style={labelStyle}>Thème / description</label>
+                  <input id="ps-desc" className={CLASSE_CHAMP} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Conservation du ballon" style={styleChamp(colors)} />
                 </div>
               </div>
-              <button onClick={ajouterSeance} disabled={saving || !form.date}
-                style={{ background: (saving || !form.date) ? colors.background.raised : accent, border: 'none', borderRadius: '10px', padding: '10px 20px', color: (saving || !form.date) ? colors.text.disabled : colors.black, fontWeight: 700, fontSize: '13px', cursor: (saving || !form.date) ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button type="button" className={CLASSE_BOUTON} onClick={ajouterSeance} disabled={saving || !form.date} style={styleBoutonPrincipal(colors)}>
                 {saving ? 'Ajout...' : 'Ajouter la séance'}
               </button>
             </>
@@ -202,20 +206,19 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
 
           {vue === 'saison' && (
             <>
-              <p style={{ ...eyebrow, marginBottom: '10px' }}>Jours et heures d'entraînement</p>
+              <Etiquette as="p" style={{ margin: '0 0 10px' }}>Jours et heures d'entraînement</Etiquette>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
                 {JOURS.map(j => {
                   const actif = planSaison.joursActifs.includes(j.num)
                   return (
-                    <div key={j.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '6px', borderRadius: '12px', background: actif ? accent + '10' : 'transparent', border: `1px solid ${actif ? accent + '50' : 'transparent'}` }}>
-                      <button onClick={() => toggleJour(j.num)}
-                        style={{ width: '56px', padding: '8px 0', borderRadius: '9px', border: `1px solid ${actif ? accent : colors.border.default}`, background: actif ? accent : 'transparent', color: actif ? colors.black : colors.text.secondary, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <div key={j.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <button type="button" className={CLASSE_CLIQUABLE} aria-pressed={actif} onClick={() => toggleJour(j.num)} style={{ ...boutonChoix(actif), width: '60px', padding: 0, justifyContent: 'center' }}>
                         {j.label}
                       </button>
                       {actif && (
-                        <input type="time" value={planSaison.heuresParJour[j.num] || ''}
+                        <input type="time" className={CLASSE_CHAMP} aria-label={`Heure du ${j.label}`} value={planSaison.heuresParJour[j.num] || ''}
                           onChange={e => setPlanSaison(p => ({ ...p, heuresParJour: { ...p.heuresParJour, [j.num]: e.target.value } }))}
-                          style={{ ...inputStyle, width: '72px', padding: '5px 4px', fontSize: '11px', textAlign: 'center' }} />
+                          style={{ ...styleChamp(colors), width: '96px', padding: '5px 6px', textAlign: 'center' }} />
                       )}
                     </div>
                   )
@@ -223,25 +226,24 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                  <label style={labelStyle}>Du</label>
-                  <input type="date" value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} style={inputStyle} />
+                  <label htmlFor="ps-du" style={labelStyle}>Du</label>
+                  <input id="ps-du" type="date" className={CLASSE_CHAMP} value={planSaison.dateDebut} onChange={e => setPlanSaison(p => ({ ...p, dateDebut: e.target.value }))} style={styleChamp(colors)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Au</label>
-                  <input type="date" value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} style={inputStyle} />
+                  <label htmlFor="ps-au" style={labelStyle}>Au</label>
+                  <input id="ps-au" type="date" className={CLASSE_CHAMP} value={planSaison.dateFin} onChange={e => setPlanSaison(p => ({ ...p, dateFin: e.target.value }))} style={styleChamp(colors)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Thème / description</label>
-                  <input value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} placeholder="Entraînement hebdomadaire" style={inputStyle} />
+                  <label htmlFor="ps-theme" style={labelStyle}>Thème / description</label>
+                  <input id="ps-theme" className={CLASSE_CHAMP} value={planSaison.theme} onChange={e => setPlanSaison(p => ({ ...p, theme: e.target.value }))} placeholder="Entraînement hebdomadaire" style={styleChamp(colors)} />
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                <button onClick={genererSaison} disabled={saisonInvalide}
-                  style={{ background: saisonInvalide ? colors.background.raised : accent, border: 'none', borderRadius: '10px', padding: '10px 20px', color: saisonInvalide ? colors.text.disabled : colors.black, fontWeight: 700, fontSize: '13px', cursor: saisonInvalide ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button type="button" className={CLASSE_BOUTON} onClick={genererSaison} disabled={saisonInvalide} style={styleBoutonPrincipal(colors)}>
                   {generatingPlan ? `Génération... ${planProgress.done}/${planProgress.total}` : 'Générer les séances'}
                 </button>
-                <span style={{ fontSize: '12px', color: apercuSaison ? colors.text.secondary : colors.text.faint }}>
-                  {apercuSaison == null ? 'Choisis au moins un jour et une période.' : apercuSaison === 0 ? 'Aucune nouvelle séance : ces dates sont déjà planifiées.' : <><strong style={{ color: accent }}>{apercuSaison}</strong> séance{apercuSaison > 1 ? 's' : ''} seront créée{apercuSaison > 1 ? 's' : ''}</>}
+                <span role="status" style={{ fontFamily: police.texte, fontSize: '13px', color: colors.text.secondary }}>
+                  {apercuSaison == null ? 'Choisis au moins un jour et une période.' : apercuSaison === 0 ? 'Aucune nouvelle séance : ces dates sont déjà planifiées.' : <><strong style={{ fontFamily: police.titre, fontSize: '18px', color: colors.text.primary }}>{apercuSaison}</strong> séance{apercuSaison > 1 ? 's' : ''} seront créée{apercuSaison > 1 ? 's' : ''}</>}
                 </span>
               </div>
             </>
@@ -251,48 +253,50 @@ export default function PlanificationSeances({ categories, readOnly, accentColor
 
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <p style={eyebrow}>Séances planifiées · {aVenir.length} à venir</p>
-          {nbAnciennes > 0 && (
-            <button onClick={() => setAfficherAnciennes(v => !v)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {afficherAnciennes ? `Repartir à zéro (masquer les ${nbAnciennes} des saisons passées)` : `Voir les ${nbAnciennes} séances des saisons passées`}
-            </button>
-          )}
-          {passees.length > 0 && (
-            <button onClick={() => setAfficherPassees(v => !v)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.secondary, fontSize: '12px', fontWeight: 600, padding: '5px 12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {afficherPassees ? 'Masquer les passées' : `Afficher les ${passees.length} passées`}
-            </button>
-          )}
+          <Etiquette as="h2" style={{ margin: 0 }}>Séances planifiées · {aVenir.length} à venir</Etiquette>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {nbAnciennes > 0 && (
+              <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setAfficherAnciennes(v => !v)} aria-pressed={afficherAnciennes} style={petitBouton}>
+                {afficherAnciennes ? `Repartir à zéro (masquer les ${nbAnciennes} des saisons passées)` : `Voir les ${nbAnciennes} séances des saisons passées`}
+              </button>
+            )}
+            {passees.length > 0 && (
+              <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setAfficherPassees(v => !v)} aria-pressed={afficherPassees} style={petitBouton}>
+                {afficherPassees ? 'Masquer les passées' : `Afficher les ${passees.length} passées`}
+              </button>
+            )}
+          </div>
         </div>
         {loading ? (
-          <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p>
+          <p role="status" style={{ margin: 0, fontFamily: police.texte, color: colors.text.secondary, fontSize: '14px' }}>Chargement...</p>
         ) : visibles.length === 0 ? (
           <div style={{ ...carte, textAlign: 'center', padding: '24px' }}>
-            <p style={{ margin: 0, color: colors.text.faint, fontSize: '13px' }}>Aucune séance à venir pour cette équipe.</p>
+            <p style={{ margin: 0, fontFamily: police.texte, color: colors.text.secondary, fontSize: '14px' }}>Aucune séance à venir pour cette équipe.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {Object.keys(parMois).sort().map(k => (
               <div key={k}>
-                <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.primary }}>
-                  {new Date(`${k}-01T12:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} <span style={{ fontWeight: 500, letterSpacing: 0, textTransform: 'none', color: colors.text.faint }}>· {parMois[k].length} séance{parMois[k].length > 1 ? 's' : ''}</span>
+                <p style={{ margin: '0 0 8px', fontFamily: police.titre, fontWeight: 700, fontSize: '20px', textTransform: 'uppercase', color: colors.text.primary, letterSpacing: '0.01em' }}>
+                  {new Date(`${k}-01T12:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} <span style={{ fontFamily: police.texte, fontWeight: 400, fontSize: '13px', letterSpacing: 0, textTransform: 'none', color: colors.text.dim }}>· {parMois[k].length} séance{parMois[k].length > 1 ? 's' : ''}</span>
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }}>
                   {parMois[k].map(x => {
                     const d = new Date(x.date + 'T12:00:00')
                     const passee = x.date < aujourdHui
                     return (
-                      <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '10px', opacity: passee ? 0.6 : 1, minWidth: 0 }}>
-                        <div style={{ width: '44px', textAlign: 'center', border: `1px solid ${colors.border.default}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                          <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: colors.text.faint, background: colors.background.raised }}>{d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
-                          <p style={{ margin: 0, padding: '4px 0', fontSize: '17px', fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</p>
+                      <div key={x.id} style={{ ...styleCarte(colors), display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', opacity: passee ? 0.7 : 1 }}>
+                        <div style={{ width: '48px', textAlign: 'center', border: craie, borderRadius: forme.rayonPastille, overflow: 'hidden', flexShrink: 0 }}>
+                          <p style={{ ...styleEtiquette(colors), fontSize: '10px', margin: 0, padding: '2px 0', background: colors.background.raised }}>{d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+                          <p style={{ ...styleChiffreHeros(colors, 22), margin: 0, padding: '4px 0' }}>{d.getDate()}</p>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.description || 'Entraînement'}</p>
-                          <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.text.faint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[x.heure?.slice(0, 5), x.lieu].filter(Boolean).join(' · ') || 'Horaire à définir'}</p>
+                          <p style={{ margin: 0, fontFamily: police.texte, fontSize: '14px', fontWeight: 600, color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.description || 'Entraînement'}</p>
+                          <p style={{ margin: '2px 0 0', fontFamily: police.texte, fontSize: '12px', color: colors.text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[x.heure?.slice(0, 5), x.lieu].filter(Boolean).join(' · ') || 'Horaire à définir'}</p>
                         </div>
                         {!readOnly && (
-                          <button onClick={() => supprimerSeance(x.id)} title="Supprimer" style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '4px', display: 'flex' }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                          <button type="button" className={CLASSE_CLIQUABLE} onClick={() => supprimerSeance(x.id)} title="Supprimer" aria-label={`Supprimer la séance du ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`} style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', padding: '8px', display: 'flex' }}>
+                            <Icone icone={Trash2} />
                           </button>
                         )}
                       </div>

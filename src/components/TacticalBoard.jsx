@@ -356,7 +356,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
     background: active ? `${c}22` : colors.background.raised,
     border: `1px solid ${active ? c : colors.border.subtle}`,
     borderRadius: '7px', color: active ? c : colors.text.dim,
-    fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   })
 
   const showEtapesRow = !readOnly || etapes.length > 1
@@ -377,7 +377,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
                   borderRadius: !readOnly && etapes.length > 1 ? '6px 0 0 6px' : '6px',
                   color: displayIdx === i ? '#a78bfa' : colors.text.faint,
                   fontSize: '11px', fontWeight: 700, padding: '5px 9px',
-                  cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif',
+                  cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Barlow, sans-serif',
                 }}
               >{i + 1}</button>
               {!readOnly && etapes.length > 1 && (
@@ -388,7 +388,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
           ))}
           {!readOnly && (
             <button onClick={ajouterEtape} disabled={playIdx !== null}
-              style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '6px', color: '#a78bfa', fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>+ Étape</button>
+              style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, borderRadius: '6px', color: '#a78bfa', fontSize: '11px', fontWeight: 700, padding: '5px 9px', cursor: playIdx !== null ? 'default' : 'pointer', fontFamily: 'Barlow, sans-serif' }}>+ Étape</button>
           )}
           {etapes.length > 1 && (
             <button onClick={playAnim} style={{ ...tb(playIdx !== null, '#a78bfa'), marginLeft: 'auto' }}>
@@ -434,7 +434,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
             <div style={{ display: 'flex', gap: '4px', padding: '3px', background: colors.background.sunken, borderRadius: '7px' }}>
               <button style={tb(showGrid)} onClick={() => setShowGrid(v => !v)} title="Quadrillage">⊞</button>
               <select value={zonesH} onChange={e => setZonesH(Number(e.target.value))} title="Zones horizontales"
-                style={{ background: zonesH > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesH > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesH > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: zonesH > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesH > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesH > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 <option value={0}>⬛ Zones H</option>
                 <option value={2}>2 zones</option>
                 <option value={3}>3 zones</option>
@@ -442,7 +442,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
                 <option value={5}>5 zones</option>
               </select>
               <select value={zonesV} onChange={e => setZonesV(Number(e.target.value))} title="Colonnes verticales"
-                style={{ background: zonesV > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesV > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesV > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: zonesV > 0 ? '#4ade8020' : colors.background.raised, border: `1px solid ${zonesV > 0 ? '#4ade80' : colors.border.subtle}`, color: zonesV > 0 ? '#4ade80' : colors.text.faint, borderRadius: '6px', fontSize: '11px', padding: '5px 6px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 <option value={0}>⬛ Colonnes V</option>
                 <option value={2}>2 colonnes</option>
                 <option value={3}>3 colonnes</option>
@@ -455,7 +455,7 @@ export default function TacticalBoard({ data, onChange, readOnly = false, userId
             {/* Groupe 5 — séries + actions */}
             <div style={{ display: 'flex', gap: '4px', padding: '3px', background: colors.background.sunken, borderRadius: '7px', alignItems: 'center' }}>
               <input type="number" min={1} max={15} value={serieN} onChange={e => setSerieN(e.target.value)}
-                style={{ width: '36px', background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', color: colors.text.primary, fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
+                style={{ width: '36px', background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, borderRadius: '6px', color: colors.text.primary, fontSize: '11px', padding: '5px 4px', textAlign: 'center', fontFamily: 'Barlow, sans-serif' }} />
               <button style={tb(false, '#4ade80')} onClick={() => ajouterSerie('nous')}>+ Série 🟢</button>
               <button style={tb(false, '#f87171')} onClick={() => ajouterSerie('adverse')}>+ Série 🔴</button>
             </div>

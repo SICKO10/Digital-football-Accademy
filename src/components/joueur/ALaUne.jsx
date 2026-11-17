@@ -37,7 +37,7 @@ const Bouton = ({ children, onClick }) => {
       style={{
         marginTop: spacing['2xl'], background: colors.accent.green, color: colors.accent.onBrand, border: 'none',
         borderRadius: radius.xl, padding: `${spacing.lg} ${spacing['3xl']}`, fontWeight: 700, fontSize: fontSize.xl,
-        cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
       }}
     >
       {children}
@@ -98,11 +98,11 @@ export default function ALaUne({ choix, isMobile = false, lang = 'fr', repConvoc
 
         <div style={{ display: 'flex', gap: isMobile ? spacing.base : spacing.lg, marginTop: spacing['2xl'] }}>
           <button onClick={() => onRepondreConvocation('present')}
-            style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : colors.background.raised, color: repConvoc === 'present' ? colors.accent.onBrand : colors.text.primary, border: 'none', borderRadius: radius.xl, padding: isMobile ? `${spacing.base} ${spacing['3xl']}` : `${spacing.xl} ${spacing['3xl']}`, fontWeight: 700, fontSize: fontSize['2xl'], cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ flex: 1, background: repConvoc === 'present' ? colors.accent.green : colors.background.raised, color: repConvoc === 'present' ? colors.accent.onBrand : colors.text.primary, border: 'none', borderRadius: radius.xl, padding: isMobile ? `${spacing.base} ${spacing['3xl']}` : `${spacing.xl} ${spacing['3xl']}`, fontWeight: 700, fontSize: fontSize['2xl'], cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Présent
           </button>
           <button onClick={() => onRepondreConvocation('absent')}
-            style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : colors.background.raised, color: colors.text.primary, border: 'none', borderRadius: radius.xl, padding: isMobile ? `${spacing.base} ${spacing['3xl']}` : `${spacing.xl} ${spacing['3xl']}`, fontWeight: 700, fontSize: fontSize['2xl'], cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ flex: 1, background: repConvoc === 'absent' ? colors.accent.red : colors.background.raised, color: colors.text.primary, border: 'none', borderRadius: radius.xl, padding: isMobile ? `${spacing.base} ${spacing['3xl']}` : `${spacing.xl} ${spacing['3xl']}`, fontWeight: 700, fontSize: fontSize['2xl'], cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Absent
           </button>
         </div>

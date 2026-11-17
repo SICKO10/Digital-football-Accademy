@@ -495,7 +495,7 @@ export default function AnalyseurIA() {
               <button key={s.id} onClick={() => setSource(s.id)}
                 style={{
                   flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'Barlow, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   background: source === s.id ? '#4ade80' : '#1a1a1a',
                   color: source === s.id ? '#000' : '#555',
                   transition: 'all 0.15s',
@@ -550,7 +550,7 @@ export default function AnalyseurIA() {
                 style={{
                   width: '100%', background: '#0a0a0a', border: `1px solid ${youtubeUrl ? '#4ade8060' : '#2a2a2a'}`,
                   borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 13,
-                  fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+                  fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box',
                 }} />
               <p style={{ margin: '8px 0 0', fontSize: 11, color: '#444' }}>
                 ⚠️ La vidéo doit avoir des sous-titres automatiques activés sur YouTube.
@@ -566,7 +566,7 @@ export default function AnalyseurIA() {
               value={nomJoueur}
               onChange={e => setNomJoueur(e.target.value)}
               placeholder="Ex : Rayan Attia"
-              style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -579,7 +579,7 @@ export default function AnalyseurIA() {
               value={nomCoach}
               onChange={e => setNomCoach(e.target.value)}
               placeholder="Ex : Kevin Amorim"
-              style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -592,7 +592,7 @@ export default function AnalyseurIA() {
               background: peutAnalyser && !loading ? '#4ade80' : '#1a1a1a',
               color: peutAnalyser && !loading ? '#000' : '#555',
               fontWeight: 700, fontSize: 14, cursor: peutAnalyser && !loading ? 'pointer' : 'default',
-              fontFamily: 'Inter, sans-serif', transition: 'all 0.2s',
+              fontFamily: 'Barlow, sans-serif', transition: 'all 0.2s',
             }}>
             {loading ? etape || 'Analyse en cours…' : '🚀 Analyser et générer le rapport'}
           </button>
@@ -616,15 +616,15 @@ export default function AnalyseurIA() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => setEnEdition(!enEdition)}
-                style={{ background: enEdition ? '#f59e0b' : '#1a1a1a', border: '1px solid #2a2a2a', color: enEdition ? '#000' : '#888', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: enEdition ? '#f59e0b' : '#1a1a1a', border: '1px solid #2a2a2a', color: enEdition ? '#000' : '#888', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 {enEdition ? '✓ Fin édition' : '✏️ Modifier'}
               </button>
               <button onClick={telechargerPDF}
-                style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: '#4ade80', color: '#000', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 📄 Télécharger PDF
               </button>
               <button onClick={() => { setResultat(null); setFichier(null); setYoutubeUrl(''); setNomJoueur(''); setNomCoach(''); setEtape(''); setEnEdition(false) }}
-                style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888', borderRadius: 10, padding: '10px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 Nouvelle analyse
               </button>
             </div>
@@ -637,7 +637,7 @@ export default function AnalyseurIA() {
               <input type="number" min="1" max="10"
                 value={resultat.rapport?.note_globale || ''}
                 onChange={e => majRapport('note_globale', parseInt(e.target.value) || 0)}
-                style={{ width: 60, background: '#0a0a0a', border: '1px solid #4ade80', borderRadius: 6, padding: '4px 8px', color: '#4ade80', fontSize: 18, fontWeight: 800, textAlign: 'center', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                style={{ width: 60, background: '#0a0a0a', border: '1px solid #4ade80', borderRadius: 6, padding: '4px 8px', color: '#4ade80', fontSize: 18, fontWeight: 800, textAlign: 'center', fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
             ) : (
               <span style={{ fontSize: 22, fontWeight: 800, color: '#4ade80' }}>{resultat.rapport?.note_globale}<span style={{ fontSize: 13, color: '#555' }}>/10</span></span>
             )}
@@ -648,7 +648,7 @@ export default function AnalyseurIA() {
             <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Résumé</p>
             {enEdition ? (
               <textarea value={resultat.rapport?.resume || ''} onChange={e => majRapport('resume', e.target.value)} rows={3}
-                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
             ) : (
               <p style={{ margin: 0, fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport?.resume}</p>
             )}
@@ -662,7 +662,7 @@ export default function AnalyseurIA() {
                 {enEdition ? (
                   <>
                     <input value={pt} onChange={e => majPointFort(i, e.target.value)}
-                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
                     <button onClick={() => supprimerPointFort(i)}
                       style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
                   </>
@@ -673,7 +673,7 @@ export default function AnalyseurIA() {
             ))}
             {enEdition && (
               <button onClick={ajouterPointFort}
-                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Barlow, sans-serif' }}>
                 + Ajouter
               </button>
             )}
@@ -687,7 +687,7 @@ export default function AnalyseurIA() {
                 {enEdition ? (
                   <>
                     <input value={ax} onChange={e => majAxe(i, e.target.value)}
-                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                      style={{ flex: 1, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
                     <button onClick={() => supprimerAxe(i)}
                       style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
                   </>
@@ -698,7 +698,7 @@ export default function AnalyseurIA() {
             ))}
             {enEdition && (
               <button onClick={ajouterAxe}
-                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 6, color: '#555', cursor: 'pointer', fontSize: 12, padding: '5px 12px', width: '100%', marginTop: 4, fontFamily: 'Barlow, sans-serif' }}>
                 + Ajouter
               </button>
             )}
@@ -709,7 +709,7 @@ export default function AnalyseurIA() {
             <p style={{ margin: '0 0 6px', fontSize: 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Conseils coach</p>
             {enEdition ? (
               <textarea value={resultat.rapport?.conseils || ''} onChange={e => majRapport('conseils', e.target.value)} rows={3}
-                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
             ) : (
               <p style={{ margin: 0, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>{resultat.rapport?.conseils}</p>
             )}
@@ -721,11 +721,11 @@ export default function AnalyseurIA() {
               {enEdition ? (
                 <>
                   <input value={sec.titre || ''} onChange={e => majSection(i, 'titre', e.target.value)} placeholder="Titre de la section"
-                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'Inter, sans-serif', outline: 'none', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'Barlow, sans-serif', outline: 'none', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, boxSizing: 'border-box' }} />
                   <textarea value={sec.description || ''} onChange={e => majSection(i, 'description', e.target.value)} rows={2} placeholder="Description..."
-                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', resize: 'vertical', marginBottom: 6, boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', resize: 'vertical', marginBottom: 6, boxSizing: 'border-box' }} />
                   <input value={sec.repere || ''} onChange={e => majSection(i, 'repere', e.target.value)} placeholder="Repère pratique..."
-                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#888', fontSize: 12, fontStyle: 'italic', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#888', fontSize: 12, fontStyle: 'italic', fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                 </>
               ) : (
                 <>
@@ -743,7 +743,7 @@ export default function AnalyseurIA() {
               <p style={{ margin: '0 0 6px', fontSize: 10, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Priorité d'entraînement</p>
               {enEdition ? (
                 <input value={resultat.rapport?.priorite || ''} onChange={e => majRapport('priorite', e.target.value)}
-                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 10px', color: '#ccc', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
               ) : (
                 <p style={{ margin: 0, fontSize: 13, color: '#ccc' }}>{resultat.rapport?.priorite}</p>
               )}

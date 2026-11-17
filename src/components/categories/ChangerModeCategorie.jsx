@@ -8,13 +8,16 @@ import {
   regrouperJoueurs, proposerEquipe, equipeAutorisee, texteRaison, joueursSansEquipe, construireRepartition,
   resumeRepartition, resumeFusion, texteLienReste, nomEquipe,
 } from '../../lib/categoriesMode'
+import { styleCarte, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, couleurCraie, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { TitreEcran, Etiquette } from '../identite'
+import { FilAriane, Message, Pastille } from './UiCategories'
 
 // Réglages d'une catégorie : passer d'un mode à l'autre (compte principal du
 // club seulement, décision 2 du brief). Commun → par équipe : une équipe est
 // proposée à chaque joueur, corrigeable, puis confirmation. Par équipe →
 // commun : confirmation seule. Le changement se fait en une fois dans la base
 // (categorie_changer_mode) : tout ou rien.
-export default function ChangerModeCategorie({ categorie, accentColor, filAriane, onRetour, onTermine }) {
+export default function ChangerModeCategorie({ categorie, filAriane, onRetour, onTermine }) {
   const colors = useColors()
   const equipes = useMemo(() => categorie.equipes || [], [categorie.equipes])
   const libelle = labelCategorie(categorie.nom)
@@ -69,40 +72,30 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
     setEtape('fait')
   }
 
-  const btnLien = { background: 'none', border: 'none', padding: 0, color: accentColor, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  const btnPrincipal = (bloque) => ({ padding: '11px 18px', borderRadius: '10px', border: 'none', background: accentColor, color: colors.accent.onBrand, fontWeight: 700, fontSize: '14px', cursor: bloque ? 'not-allowed' : 'pointer', opacity: bloque ? 0.45 : 1, fontFamily: 'Inter, sans-serif' })
-  const btnSecondaire = { padding: '11px 18px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.secondary, fontWeight: 600, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '14px 16px' }
-  const pastille = { padding: '6px 12px', borderRadius: '9px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, fontSize: '13px', fontWeight: 700 }
+  const carte = styleCarte(colors)
   const point = { margin: 0, fontSize: '14px', lineHeight: 1.5, color: colors.text.secondary }
 
   const effectifs = (liste) => (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       {liste.map(({ equipe, nb }) => (
-        <span key={equipe.id} style={pastille}>{nomEquipe(equipe)} · {nb} joueur{nb > 1 ? 's' : ''}</span>
+        <Pastille key={equipe.id}>{nomEquipe(equipe)} · {nb} joueur{nb > 1 ? 's' : ''}</Pastille>
       ))}
     </div>
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '760px', minWidth: 0 }}>
-      <nav style={{ fontSize: '13px', color: colors.text.faint }}>
-        {(filAriane || []).map((e, i) => (
-          <span key={i}><button style={btnLien} onClick={e.onClick}>{e.label}</button> / </span>
-        ))}
-        Mode {libelle}
-      </nav>
-      <div>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Mode de {libelle}</h1>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>
-          {etape === 'fait'
-            ? `Maintenant : ${MODES_CATEGORIE[cible].label}`
-            : `Actuellement : ${MODES_CATEGORIE[categorie.mode]?.label || categorie.mode} · passer en ${MODES_CATEGORIE[cible].label.toLowerCase()}`}
-        </p>
-      </div>
+      <FilAriane etapes={(filAriane || []).map(e => ({ label: e.label, onClick: e.onClick }))} courant={`Mode ${libelle}`} />
+      <TitreEcran
+        titre={`Mode de ${libelle}`}
+        sousTitre={etape === 'fait'
+          ? `Maintenant : ${MODES_CATEGORIE[cible].label}`
+          : `Actuellement : ${MODES_CATEGORIE[categorie.mode]?.label || categorie.mode} · passer en ${MODES_CATEGORIE[cible].label.toLowerCase()}`}
+        style={{ marginBottom: 0 }}
+      />
 
-      {erreur && <p role="alert" style={{ margin: 0, color: colors.accent.red, fontSize: '13px' }}>{erreur}</p>}
-      {!fiches && !erreur && <p style={{ margin: 0, color: colors.text.faint, fontSize: '14px' }}>Chargement des joueurs</p>}
+      {erreur && <Message ton="erreur">{erreur}</Message>}
+      {!fiches && !erreur && <p style={{ margin: 0, color: colors.text.secondary, fontSize: '14px' }}>Chargement des joueurs</p>}
 
       {fiches && etape === 'repartition' && (
         <>
@@ -113,9 +106,9 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
             </p>
             <div style={{ marginTop: '12px' }}>{effectifs(resume.parEquipe)}</div>
             {equipesSansCoach.length > 0 && (
-              <p style={{ ...point, marginTop: '10px', fontSize: '13px', color: colors.accent.amber }}>
+              <Message ton="alerte" style={{ marginTop: '12px' }}>
                 {equipesSansCoach.map(nomEquipe).join(', ')} {equipesSansCoach.length > 1 ? 'n\'ont' : 'n\'a'} pas d'éducateur : seuls les joueurs qui y sont déjà peuvent y rester. Pour y placer d'autres joueurs, nomme d'abord son éducateur.
-              </p>
+              </Message>
             )}
           </div>
           {joueurs.length === 0 ? (
@@ -127,18 +120,18 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
                 const equipeProp = equipes.find(e => e.id === prop?.equipe_id)
                 const sans = !equipeAutorisee(j, equipes.find(e => e.id === choix[j.cle]))
                 return (
-                  <div key={j.cle} style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '12px 16px', borderTop: i ? `1px solid ${colors.border.subtle}` : 'none' }}>
+                  <div key={j.cle} style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '12px 16px', borderTop: i ? `1px solid ${couleurCraie(colors)}` : 'none' }}>
                     <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{j.nom}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: sans ? colors.accent.amber : colors.text.faint }}>
+                      <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: sans ? 600 : 400, color: sans ? colors.text.primary : colors.text.secondary }}>
                         {!sans ? (choix[j.cle] === prop?.equipe_id ? texteRaison(prop?.raison, equipeProp) : 'Choisi par toi')
                           : equipeProp && !equipeProp.educateur_id ? `Le plus souvent en ${nomEquipe(equipeProp)}, qui n'a pas d'éducateur : choisis une équipe`
                           : 'Aucune équipe choisie'}
                         {!j.principale.joueur_id && ' · sans compte'}
                       </p>
                     </div>
-                    <select aria-label={`Équipe de ${j.nom}`} value={choix[j.cle] || ''} onChange={e => setChoix(p => ({ ...p, [j.cle]: e.target.value }))}
-                      style={{ flex: '0 1 180px', minWidth: '140px', padding: '9px 10px', borderRadius: '10px', border: `1px solid ${sans ? colors.accent.amber : colors.border.default}`, background: colors.background.base, color: colors.text.primary, fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+                    <select aria-label={`Équipe de ${j.nom}`} value={choix[j.cle] || ''} onChange={e => setChoix(p => ({ ...p, [j.cle]: e.target.value }))} className={CLASSE_CHAMP}
+                      style={{ ...styleChamp(colors), flex: '0 1 200px', width: 'auto', minWidth: '150px', ...(sans ? { borderColor: colors.accent.orange, borderWidth: '2px' } : {}) }}>
                       <option value="">Choisir une équipe</option>
                       {equipes.map(e => (
                         <option key={e.id} value={e.id} disabled={!equipeAutorisee(j, e)}>
@@ -153,11 +146,11 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
           )}
           <div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button type="button" disabled={manquants.length > 0} onClick={() => setEtape('confirmation')} style={btnPrincipal(manquants.length > 0)}>Continuer</button>
-              <button type="button" onClick={onRetour} style={btnSecondaire}>Annuler</button>
+              <button type="button" className={CLASSE_BOUTON} disabled={manquants.length > 0} onClick={() => setEtape('confirmation')} style={styleBoutonPrincipal(colors)}>Continuer</button>
+              <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={onRetour} style={styleBoutonSecondaire(colors)}>Annuler</button>
             </div>
             {manquants.length > 0 && (
-              <p style={{ margin: '8px 0 0', fontSize: '12px', color: colors.text.faint }}>
+              <p style={{ margin: '8px 0 0', fontSize: '13px', color: colors.text.secondary }}>
                 {manquants.length} joueur{manquants.length > 1 ? 's' : ''} sans équipe : choisis une équipe pour {manquants.length > 1 ? 'chacun' : 'lui'}.
               </p>
             )}
@@ -168,7 +161,7 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
       {fiches && etape === 'confirmation' && (
         <>
           <div style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <p style={{ ...point, color: colors.text.primary, fontWeight: 800, fontSize: '15px' }}>Ce qui va changer</p>
+            <Etiquette as="p">Ce qui va changer</Etiquette>
             {versCommun ? (
               <>
                 {effectifs(fusion.parEquipe)}
@@ -209,10 +202,10 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button type="button" disabled={enCours} onClick={appliquer} style={btnPrincipal(enCours)}>
+            <button type="button" className={CLASSE_BOUTON} disabled={enCours} onClick={appliquer} style={styleBoutonPrincipal(colors)}>
               {enCours ? 'Changement en cours' : versCommun ? `Passer ${libelle} en effectif commun` : `Passer ${libelle} en effectifs par équipe`}
             </button>
-            <button type="button" onClick={versCommun ? onRetour : () => setEtape('repartition')} style={btnSecondaire}>
+            <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={versCommun ? onRetour : () => setEtape('repartition')} style={styleBoutonSecondaire(colors)}>
               {versCommun ? 'Annuler' : 'Modifier la répartition'}
             </button>
           </div>
@@ -222,7 +215,7 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
       {etape === 'fait' && resultat && (
         <>
           <div style={{ ...carte, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ ...point, color: colors.text.primary, fontWeight: 800, fontSize: '15px' }}>
+            <p style={{ ...point, color: colors.text.primary, fontWeight: 700, fontSize: '16px' }}>
               {libelle} est maintenant en {MODES_CATEGORIE[cible].label.toLowerCase()}.
             </p>
             {!versCommun && (
@@ -234,7 +227,7 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
             )}
             {(resultat.affiliations_restees || []).length > 0 && (
               <>
-                <p style={{ ...point, color: colors.accent.amber }}>À regarder :</p>
+                <p style={{ ...point, color: colors.text.primary, fontWeight: 700 }}>À regarder :</p>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: 1.6, color: colors.text.secondary }}>
                   {resultat.affiliations_restees.map(r => <li key={r.fiche_id}>{texteLienReste(r)}</li>)}
                 </ul>
@@ -242,7 +235,7 @@ export default function ChangerModeCategorie({ categorie, accentColor, filAriane
             )}
           </div>
           <div>
-            <button type="button" onClick={onTermine} style={btnPrincipal(false)}>Retour aux catégories</button>
+            <button type="button" className={CLASSE_BOUTON} onClick={onTermine} style={styleBoutonPrincipal(colors)}>Retour aux catégories</button>
           </div>
         </>
       )}

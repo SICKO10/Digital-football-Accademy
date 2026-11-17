@@ -1,0 +1,10 @@
+.env
+.env.*
+*.local
+.git
+node_modules
+*.sql.bak
+PLAN*.md
+BRIEF*.md
+supabase_*.sql
+*.csv

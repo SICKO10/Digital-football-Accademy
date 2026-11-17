@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { makeUseSt } from '../../lib/theme'
+import { useSt } from '../../lib/useStFinance'
+import { Message } from '../categories/UiCategories'
 
 const CATEGORIES_OFFRE = [
   { val: 'maillot', label: 'Maillot' },
@@ -22,27 +23,6 @@ const DUREES_OFFRE = [
   { val: 'stage', label: 'Stage' },
 ]
 
-const stSombre = {
-  card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-  input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
-  label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  modalBg: '#0a0a0a', modalBorder: '#1a1a1a',
-  bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
-  text: '#fff', textDim: '#ccc', textFaint: '#666', textGhost: '#444',
-}
-const stClaire = {
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  btnSecondary: { background: 'transparent', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-  input: { background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
-  label: { fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  modalBg: '#ffffff', modalBorder: '#e2e8f0',
-  bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
-  text: '#0f172a', textDim: '#334155', textFaint: '#64748b', textGhost: '#94a3b8',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 function ModalOffre({ offre, onClose, onSave, saving, accentColor = '#4ade80' }) {
   const st = useSt()
@@ -62,10 +42,10 @@ function ModalOffre({ offre, onClose, onSave, saving, accentColor = '#4ade80' })
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{offre ? 'Modifier l\'offre' : 'Nouvelle offre'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }} aria-label="Fermer">✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -180,9 +160,9 @@ export default function CatalogueOffres({ clubId, readOnly = false, accentColor 
 
   if (tableMissing) {
     return (
-      <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '16px 20px', color: '#f59e0b', fontSize: '13px' }}>
+      <Message ton="alerte">
         La table <code>offres_sponsoring</code> n'existe pas encore en base — exécute la migration SQL dans Supabase avant d'utiliser cette rubrique.
-      </div>
+      </Message>
     )
   }
 
@@ -209,11 +189,11 @@ export default function CatalogueOffres({ clubId, readOnly = false, accentColor 
                   <span style={{ position: 'absolute', top: '14px', right: '14px', background: st.bgRaised, color: st.textFaint, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>INACTIVE</span>
                 )}
                 {dispo === 0 && o.actif && (
-                  <span style={{ position: 'absolute', top: '14px', right: '14px', background: '#ef444420', color: '#ef4444', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>ÉPUISÉ</span>
+                  <span style={{ position: 'absolute', top: '14px', right: '14px', background: st.bgRaised, border: '1px solid #ef4444', color: st.text, fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>ÉPUISÉ</span>
                 )}
                 <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '15px' }}>{o.nom}</p>
                 <p style={{ margin: '0 0 12px', color: st.textFaint, fontSize: '12px' }}>{CATEGORIE_LABEL(o.categorie)} · {DUREES_OFFRE.find(d => d.val === o.duree)?.label || o.duree}</p>
-                <p style={{ margin: '0 0 10px', color: accentColor, fontWeight: 900, fontSize: '20px' }}>{Number(o.prix).toLocaleString('fr-FR')} €</p>
+                <p style={{ margin: '0 0 10px', color: st.text, fontFamily: st.police.titre, fontWeight: 700, fontSize: '24px', fontVariantNumeric: 'tabular-nums' }}>{Number(o.prix).toLocaleString('fr-FR')} €</p>
                 {o.description && <p style={{ margin: '0 0 10px', color: st.textDim, fontSize: '13px', lineHeight: 1.5 }}>{o.description}</p>}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${st.border}` }}>
                   <span style={{ color: st.textFaint, fontSize: '11px' }}>
@@ -223,7 +203,7 @@ export default function CatalogueOffres({ clubId, readOnly = false, accentColor 
                   {!readOnly && (
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={() => setModal(o)} style={st.btnSecondary}>Modifier</button>
-                      <button onClick={() => supprimerOffre(o)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>Suppr.</button>
+                      <button onClick={() => supprimerOffre(o)} style={{ background: 'none', border: 'none', color: st.text, textDecoration: 'underline', cursor: 'pointer', fontSize: '13px' }}>Suppr.</button>
                     </div>
                   )}
                 </div>

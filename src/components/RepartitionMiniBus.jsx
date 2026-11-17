@@ -11,7 +11,7 @@ const NATURES = [
 ]
 
 const st = {
-  input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+  input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
   th: { padding: '8px 10px', textAlign: 'left', color: '#555', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', whiteSpace: 'nowrap' },
@@ -343,7 +343,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
       {publishSuccess && (
         <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '10px', padding: '14px 16px', marginBottom: '1.5rem', color: accentColor, fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span>✅ Planning publié — les déplacements apparaissent dans l'onglet Déplacements et chez les éducateurs concernés.</span>
-          <button onClick={recommencer} style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={recommencer} style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Nouveau planning
           </button>
         </div>
@@ -354,7 +354,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>Parc de véhicules</p>
           <button onClick={() => setShowAddVehicule(v => !v)}
-            style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             {showAddVehicule ? '✕ Fermer' : '+ Ajouter un véhicule'}
           </button>
         </div>
@@ -363,7 +363,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
             <input style={{ ...st.input, maxWidth: '180px' }} placeholder="Plaque (ex: AB-123-CD)" value={newVehicule.plaque} onChange={e => setNewVehicule(v => ({ ...v, plaque: e.target.value }))} />
             <input style={{ ...st.input, maxWidth: '140px' }} type="number" min="1" placeholder="Capacité (places)" value={newVehicule.capacite} onChange={e => setNewVehicule(v => ({ ...v, capacite: e.target.value }))} />
             <button onClick={ajouterVehicule} disabled={savingVehicule || !newVehicule.plaque.trim() || !newVehicule.capacite}
-              style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               {savingVehicule ? 'Ajout...' : 'Ajouter'}
             </button>
           </div>
@@ -394,16 +394,16 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} id="input-scan-excel" />
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={chargerDeplacementsAVenir} disabled={loadingDeplacements}
-            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loadingDeplacements ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: loadingDeplacements ? 0.6 : 1 }}>
+            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loadingDeplacements ? 'wait' : 'pointer', fontFamily: 'Barlow, sans-serif', opacity: loadingDeplacements ? 0.6 : 1 }}>
             {loadingDeplacements ? '⏳ Chargement...' : '🔄 Charger les déplacements à venir'}
           </button>
           <label htmlFor="input-scan-excel"
-            style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
+            style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: scanning ? 'wait' : 'pointer', fontFamily: 'Barlow, sans-serif', opacity: scanning ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}>
             {scanning ? '⏳ Import en cours...' : '📊 Importer un fichier Excel / CSV'}
           </label>
           {lignes.length > 0 && (
             <button onClick={ajouterLigneManuelle}
-              style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               + Ajouter une ligne manuellement
             </button>
           )}
@@ -450,7 +450,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
               </tbody>
             </table>
             <button onClick={() => { setValide(true); setSuggestions(null) }}
-              style={{ marginTop: '14px', background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ marginTop: '14px', background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               ✓ Valider ces déplacements
             </button>
           </div>
@@ -465,7 +465,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
             {lignes.length} déplacement{lignes.length > 1 ? 's' : ''} à couvrir avec {vehicules.length} véhicule{vehicules.length > 1 ? 's' : ''} disponible{vehicules.length > 1 ? 's' : ''}.
           </p>
           <button onClick={repartir} disabled={vehicules.length === 0}
-            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
+            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Barlow, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
             🧮 Répartir les mini-bus
           </button>
 
@@ -537,7 +537,7 @@ export default function RepartitionMiniBus({ clubId, accentColor = '#4ade80', re
 
               {/* ── Étape 3 — Publication ── */}
               <button onClick={publierPlanning} disabled={publishing}
-                style={{ marginTop: '18px', background: accentColor, color: '#000', border: 'none', padding: '12px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: publishing ? 0.6 : 1 }}>
+                style={{ marginTop: '18px', background: accentColor, color: '#000', border: 'none', padding: '12px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: publishing ? 0.6 : 1 }}>
                 {publishing ? 'Publication...' : '📤 Publier le planning'}
               </button>
             </div>

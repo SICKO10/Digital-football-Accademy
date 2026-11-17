@@ -49,7 +49,7 @@ export default function PaiementForfaitClub({ clubId, nomClub, nbEquipes, peutPa
     }
   }
 
-  const police = 'Inter, sans-serif'
+  const police = 'Barlow, sans-serif'
   const champ = { padding: '11px 14px', borderRadius: 10, border: `1px solid ${colors.border.default}`, background: colors.background.raised, color: colors.text.primary, fontSize: 14, fontFamily: police }
   return (
     <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: police, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}>

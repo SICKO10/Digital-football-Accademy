@@ -14,7 +14,7 @@ import { CarteChoix, PasEquipes } from './ElementsOffre'
 // suit le thème du dashboard et rendrait des cartes claires dans cette page).
 // Le prix vient toujours de compositionPaiement et du catalogue, jamais d'ici.
 const PERIODES = [['mensuel', 'Mensuel', 'par mois'], ['annuel', 'Annuel', 'par an']]
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 
 function Question({ question, valeur, onChoix }) {
   return (

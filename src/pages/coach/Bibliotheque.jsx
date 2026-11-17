@@ -77,7 +77,7 @@ export default function Bibliotheque({ coachId }) {
 
   const champ = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }))
 
-  const inputStyle = { width: '100%', background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', color: c.text, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
+  const inputStyle = { width: '100%', background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', color: c.text, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
   const labelStyle = { fontSize: '11px', color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }
 
   return (
@@ -85,7 +85,7 @@ export default function Bibliotheque({ coachId }) {
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         {[['exercices', 'Exercices'], ['videos', 'Vidéos']].map(([v, label]) => (
           <button key={v} onClick={() => setVue(v)}
-            style={{ padding: '8px 18px', borderRadius: '8px', border: `1px solid ${vue === v ? c.accent : c.border}`, background: vue === v ? rgba(c.accent, 0.12) : c.surface, color: vue === v ? c.accent : c.textMuted, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ padding: '8px 18px', borderRadius: '8px', border: `1px solid ${vue === v ? c.accent : c.border}`, background: vue === v ? rgba(c.accent, 0.12) : c.surface, color: vue === v ? c.accent : c.textMuted, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             {label}
           </button>
         ))}

@@ -30,7 +30,7 @@ function ChampTexte({ label, value, onChange, readOnly, colors }) {
         </p>
       ) : (
         <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2}
-          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+          style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
       )}
     </div>
   )
@@ -139,7 +139,7 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
           {PERIODES.map(p => (
             <button key={p.key} onClick={() => setPeriodeActive(p.key)}
               style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif',
+                background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'Barlow, sans-serif',
                 color: periodeActive === p.key ? colors.accent.blue : colors.text.faint,
                 borderBottom: periodeActive === p.key ? `2px solid ${colors.accent.blue}` : '2px solid transparent',
               }}>
@@ -236,7 +236,7 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
                 <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>Note globale de saison</span>
                 {peutEditer ? (
                   <input type="number" min={0} max={20} step={0.5} value={form.note_globale_saison ?? ''} onChange={e => champ('note_globale_saison')(e.target.value === '' ? null : parseFloat(e.target.value))}
-                    style={{ width: 80, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '6px 10px', color: colors.text.primary, fontSize: 14, fontWeight: 700, textAlign: 'center', fontFamily: 'Inter, sans-serif' }} />
+                    style={{ width: 80, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '6px 10px', color: colors.text.primary, fontSize: 14, fontWeight: 700, textAlign: 'center', fontFamily: 'Barlow, sans-serif' }} />
                 ) : (
                   <span style={{ color: colors.accent.green, fontWeight: 800, fontSize: 16 }}>{form.note_globale_saison != null ? `${form.note_globale_saison}/20` : '—'}</span>
                 )}

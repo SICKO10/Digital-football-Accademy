@@ -173,7 +173,21 @@ export const radius = {
   circle: '50%', // avatars (72)
 }
 
-export default { colors, alpha, spacing, fontSize, radius }
+// Identité « Maison de club » (chantier PLAN-design-identite.md) : police et formes
+// signature. Rien ne les utilise avant le bloc 1.
+export const police = {
+  texte: "'Barlow', sans-serif",
+  titre: "'Barlow Condensed', sans-serif",
+}
+
+export const forme = {
+  rayonCarte: '6px',
+  rayonPastille: '4px',
+  lisere: '3px',
+  opaciteLigneCraie: 0.12,
+}
+
+export default { colors, alpha, spacing, fontSize, radius, police, forme }
 
 // ─── Note ────────────────────────────────────────────────────────────────────
 // src/App.css contient en réalité un composant React complet (avec sa propre

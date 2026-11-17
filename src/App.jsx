@@ -48,6 +48,8 @@ const TournoiPublic = lazy(() => import('./pages/TournoiPublic'))
 const TournoiInscription = lazy(() => import('./pages/TournoiInscription'))
 const TournoiVote = lazy(() => import('./pages/TournoiVote'))
 const LierTournoi = lazy(() => import('./pages/LierTournoi'))
+// Vitrine du kit d'identité : n'existe qu'en développement (absente du site construit).
+const DevIdentite = import.meta.env.DEV ? lazy(() => import('./pages/DevIdentite')) : null
 
 function ChargementPage() {
   const couleur = useCouleurChargement()
@@ -153,6 +155,7 @@ function App() {
         <Route path="/lier-tournoi/:code/:prenom/:nom" element={<LierTournoi />} />
         <Route path="/stage/:lien" element={<StagePublic />} />
         <Route path="/stage/:lien/inscription" element={<StageInscription />} />
+        {DevIdentite && <Route path="/dev/identite" element={<DevIdentite />} />}
       </Routes>
       </Suspense>
       <InstallAppBanner />

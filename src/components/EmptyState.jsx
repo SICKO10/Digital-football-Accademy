@@ -14,7 +14,7 @@ const ctaStyle = {
   fontSize: '13px',
   fontWeight: 700,
   cursor: 'pointer',
-  fontFamily: 'Inter, sans-serif',
+  fontFamily: 'Barlow, sans-serif',
 }
 
 // État vide générique (liste vide, fonctionnalité verrouillée, aucun résultat...).

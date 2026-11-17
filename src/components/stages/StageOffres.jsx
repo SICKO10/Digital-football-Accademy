@@ -30,7 +30,7 @@ export default function StageOffres({ st, colors, accent, stage, onMisAJour }) {
     return () => { annule = true }
   }, [stage.id])
 
-  if (chargement) return <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
+  if (chargement) return <p style={{ color: colors.text.dim, fontSize: '13px' }}>Chargement…</p>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -47,7 +47,7 @@ function Section({ st, colors, titre, aide, children }) {
   return (
     <div style={st.carte}>
       <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: colors.text.primary }}>{titre}</p>
-      {aide && <p style={{ margin: '4px 0 12px', fontSize: '12px', color: colors.text.faint }}>{aide}</p>}
+      {aide && <p style={{ margin: '4px 0 12px', fontSize: '12px', color: colors.text.dim }}>{aide}</p>}
       {children}
     </div>
   )
@@ -75,9 +75,9 @@ function JoursStage({ st, colors, accent, stage, onMisAJour }) {
           const actif = choisis.includes(j)
           return (
             <button key={j} type="button" onClick={() => basculer(j)} style={{
-              padding: '6px 10px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize',
-              background: actif ? accent + '20' : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`,
-              color: actif ? accent : colors.text.faint, textDecoration: actif ? 'none' : 'line-through',
+              padding: '6px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', textTransform: 'capitalize',
+              background: actif ? colors.background.raised : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`,
+              color: actif ? colors.text.primary : colors.text.dim, textDecoration: actif ? 'none' : 'line-through',
             }}>{formatJourCourt(j)}</button>
           )
         })}
@@ -127,27 +127,27 @@ function Offres({ st, colors, stage, offres, setOffres }) {
 
   return (
     <Section st={st} colors={colors} titre="Offres et tarifs" aide="Exemples : « Semaine complète » (forfait, tous les jours), « 3 jours » (forfait de 3 jours au choix), « À la journée » (prix par jour, jours libres).">
-      {offres.length === 0 && !edition && <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#facc15' }}>Aucune offre : les familles ne peuvent pas encore s'inscrire.</p>}
+      {offres.length === 0 && !edition && <p style={{ margin: '0 0 10px', fontSize: '13px', color: colors.accent.amber }}>Aucune offre : les familles ne peuvent pas encore s'inscrire.</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {offres.map(o => (
-          <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', opacity: o.actif ? 1 : 0.5, flexWrap: 'wrap' }}>
+          <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '6px', padding: '10px 12px', opacity: o.actif ? 1 : 0.5, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '180px' }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{o.nom}{!o.actif && <span style={{ fontWeight: 400, color: colors.text.faint }}> · désactivée</span>}</div>
+              <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{o.nom}{!o.actif && <span style={{ fontWeight: 400, color: colors.text.dim }}> · désactivée</span>}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim }}>{o.type === 'journee' ? `${euros(o.prix)} par jour` : `${euros(o.prix)} · ${o.nb_jours ? `${o.nb_jours} jour(s) au choix` : 'tout le stage'}`}</div>
             </div>
             <button onClick={() => { setErreur(''); setEdition({ ...OFFRE_VIDE, ...o, tousLesJours: !o.nb_jours, nb_jours: o.nb_jours || 1, prix: String(o.prix) }) }} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
             <button onClick={() => basculerActif(o)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>{o.actif ? 'Désactiver' : 'Réactiver'}</button>
-            <button onClick={() => supprimer(o)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: '#f87171' }}>Supprimer</button>
+            <button onClick={() => supprimer(o)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: colors.accent.red }}>Supprimer</button>
           </div>
         ))}
       </div>
 
       {edition ? (
         <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', alignItems: 'end' }}>
-          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Nom de l'offre</label><input value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Semaine complète" /></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Nom de l'offre</label><input className="df-champ" value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Semaine complète" /></div>
           <div>
             <label style={st.label}>Type</label>
-            <select value={edition.type} onChange={e => setEdition(p => ({ ...p, type: e.target.value }))} style={st.input}>
+            <select className="df-champ" value={edition.type} onChange={e => setEdition(p => ({ ...p, type: e.target.value }))} style={st.input}>
               <option value="forfait">Forfait (prix total)</option>
               <option value="journee">À la journée (prix par jour)</option>
             </select>
@@ -155,16 +155,16 @@ function Offres({ st, colors, stage, offres, setOffres }) {
           {edition.type === 'forfait' && (
             <div>
               <label style={st.label}>Jours inclus</label>
-              <select value={edition.tousLesJours ? 'tous' : 'choix'} onChange={e => setEdition(p => ({ ...p, tousLesJours: e.target.value === 'tous' }))} style={st.input}>
+              <select className="df-champ" value={edition.tousLesJours ? 'tous' : 'choix'} onChange={e => setEdition(p => ({ ...p, tousLesJours: e.target.value === 'tous' }))} style={st.input}>
                 <option value="tous">Tout le stage ({nbJoursStage} j)</option>
                 <option value="choix">Nombre de jours au choix</option>
               </select>
             </div>
           )}
           {edition.type === 'forfait' && !edition.tousLesJours && (
-            <div><label style={st.label}>Nombre de jours</label><input type="number" min="1" max={nbJoursStage} value={edition.nb_jours} onChange={e => setEdition(p => ({ ...p, nb_jours: e.target.value }))} style={st.input} /></div>
+            <div><label style={st.label}>Nombre de jours</label><input className="df-champ" type="number" min="1" max={nbJoursStage} value={edition.nb_jours} onChange={e => setEdition(p => ({ ...p, nb_jours: e.target.value }))} style={st.input} /></div>
           )}
-          <div><label style={st.label}>{edition.type === 'journee' ? 'Prix par jour (€)' : 'Prix total (€)'}</label><input type="number" min="0" step="0.01" value={edition.prix} onChange={e => setEdition(p => ({ ...p, prix: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>{edition.type === 'journee' ? 'Prix par jour (€)' : 'Prix total (€)'}</label><input className="df-champ" type="number" min="0" step="0.01" value={edition.prix} onChange={e => setEdition(p => ({ ...p, prix: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={enregistrer} style={st.boutonPlein}>Enregistrer l'offre</button>
             <button onClick={() => { setEdition(null); setErreur('') }} style={st.boutonDiscret}>Annuler</button>
@@ -211,21 +211,21 @@ function Formules({ st, colors, stage, formules, setFormules }) {
     <Section st={st} colors={colors} titre="Formules repas" aide="Prix par jour, ajouté automatiquement pour chaque jour choisi. Sans formule, aucun choix de repas n'est demandé aux familles.">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {formules.map(f => (
-          <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '10px', padding: '10px 12px', opacity: f.actif ? 1 : 0.5, flexWrap: 'wrap' }}>
+          <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '6px', padding: '10px 12px', opacity: f.actif ? 1 : 0.5, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '160px' }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{f.nom}{!f.actif && <span style={{ fontWeight: 400, color: colors.text.faint }}> · désactivée</span>}</div>
+              <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{f.nom}{!f.actif && <span style={{ fontWeight: 400, color: colors.text.dim }}> · désactivée</span>}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim }}>{Number(f.prix_jour) > 0 ? `${euros(f.prix_jour)} par jour` : 'Sans supplément'}</div>
             </div>
             <button onClick={() => { setErreur(''); setEdition({ ...f, prix_jour: String(f.prix_jour) }) }} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
             <button onClick={() => basculerActif(f)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>{f.actif ? 'Désactiver' : 'Réactiver'}</button>
-            <button onClick={() => supprimer(f)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: '#f87171' }}>Supprimer</button>
+            <button onClick={() => supprimer(f)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: colors.accent.red }}>Supprimer</button>
           </div>
         ))}
       </div>
       {edition ? (
         <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', alignItems: 'end' }}>
-          <div><label style={st.label}>Nom</label><input value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Réfectoire" /></div>
-          <div><label style={st.label}>Prix par jour (€)</label><input type="number" min="0" step="0.01" value={edition.prix_jour} onChange={e => setEdition(p => ({ ...p, prix_jour: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Nom</label><input className="df-champ" value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Réfectoire" /></div>
+          <div><label style={st.label}>Prix par jour (€)</label><input className="df-champ" type="number" min="0" step="0.01" value={edition.prix_jour} onChange={e => setEdition(p => ({ ...p, prix_jour: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={enregistrer} style={st.boutonPlein}>Enregistrer la formule</button>
             <button onClick={() => { setEdition(null); setErreur('') }} style={st.boutonDiscret}>Annuler</button>
@@ -260,14 +260,14 @@ function Paiement({ st, colors, accent, stage, onMisAJour }) {
           const actif = modes.includes(id)
           return (
             <button key={id} type="button" onClick={() => setModes(prev => actif ? prev.filter(x => x !== id) : [...prev, id])} style={{
-              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              background: actif ? accent + '20' : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`, color: actif ? accent : colors.text.faint,
+              padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+              background: actif ? colors.background.raised : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`, color: actif ? colors.text.primary : colors.text.dim,
             }}>{label}</button>
           )
         })}
       </div>
       <label style={st.label}>Instructions pour les familles</label>
-      <textarea rows={4} value={instructions} onChange={e => setInstructions(e.target.value)} style={{ ...st.input, resize: 'vertical' }}
+      <textarea className="df-champ" rows={4} value={instructions} onChange={e => setInstructions(e.target.value)} style={{ ...st.input, resize: 'vertical' }}
         placeholder={'Virement : IBAN FR76 …, en indiquant la référence d\'inscription\nChèque à l\'ordre de : …\nEspèces : à l\'accueil le premier jour'} />
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
         <button onClick={enregistrer} style={st.bouton}>Enregistrer</button>

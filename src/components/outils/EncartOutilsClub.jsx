@@ -42,13 +42,13 @@ export default function EncartOutilsClub({ outils, userId, onVoirMesOutils }) {
   const paragraphe = { margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: colors.text.primary }
   const bouton = {
     marginTop: 12, background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`,
-    borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   }
 
   return (
     <div style={{
       background: colors.background.surface, border: `1px solid ${colors.accent.amber}`, borderRadius: 14,
-      padding: '14px 16px', marginBottom: 14, fontFamily: 'Inter, sans-serif',
+      padding: '14px 16px', marginBottom: 14, fontFamily: 'Barlow, sans-serif',
     }}>
       <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '1px' }}>
         Outils de ton club

@@ -27,7 +27,7 @@ function messageEmailExistant(navigate) {
     <>
       Un compte existe déjà avec cette adresse email.{' '}
       <button type="button" onClick={() => navigate('/login')}
-        style={{ background: 'transparent', border: 'none', color: colors.accent.green, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px', padding: 0 }}>
+        style={{ background: 'transparent', border: 'none', color: colors.accent.green, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', fontSize: '13px', padding: 0 }}>
         Connecte-toi
       </button>{' '}
       pour y accéder. Besoin d'un rôle supplémentaire (éducateur, parent...) ? Il doit être ajouté à ce compte via une invitation, pas en créant un nouveau compte.
@@ -253,7 +253,7 @@ export default function Register() {
           style={{
             background: colors.background.surface, border: '1px solid #1a1a1a',
             borderRadius: '14px', padding: '16px 18px',
-            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
             color: colors.text.primary, textAlign: 'left',
             display: 'flex', alignItems: 'center', gap: '14px',
             transition: 'border-color 0.15s, background 0.15s',
@@ -293,7 +293,7 @@ export default function Register() {
   // ── Étape 1 : choix du profil, en split-screen (fond uni, pas de photo) ──
   if (etape === 1) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' }}>
         <style>{SPLIT_MEDIA_QUERY}</style>
 
         {/* ── Colonne gauche — vitrine, cachée sur mobile. Photo + dégradé vert
@@ -344,7 +344,7 @@ export default function Register() {
             <p style={{ textAlign: 'center', fontSize: '13px', color: colors.text.disabled, marginTop: '20px' }}>
               {t('register_deja_compte', lang)}{' '}
               <button onClick={() => navigate('/login')}
-                style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                style={{ background: 'transparent', border: 'none', color: colors.accent.green, cursor: 'pointer', fontSize: '13px', fontFamily: 'Barlow, sans-serif', fontWeight: 600 }}>
                 {t('auth_se_connecter', lang)}
               </button>
             </p>
@@ -403,7 +403,7 @@ function GrilleFeatures({ features }) {
 
 function SplitRegisterLayout({ pitch, lang, onRetour, children }) {
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, fontFamily: 'Barlow, sans-serif' }}>
       <style>{SPLIT2_MEDIA_QUERY}</style>
       <div className="reg2-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100vh' }}>
 
@@ -446,7 +446,7 @@ function SplitRegisterLayout({ pitch, lang, onRetour, children }) {
           <div style={{ width: '100%', maxWidth: '420px', background: colors.background.surface, borderRadius: '16px', padding: '40px', boxSizing: 'border-box', margin: 'auto' }}>
             {onRetour && (
               <button type="button" onClick={onRetour}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', fontFamily: 'Inter, sans-serif', fontWeight: 600, padding: 0, marginBottom: '20px' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', fontSize: '12px', fontFamily: 'Barlow, sans-serif', fontWeight: 600, padding: 0, marginBottom: '20px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                 Retour
               </button>
@@ -467,7 +467,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
   const champStyle = {
     width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`,
     borderRadius: '10px', color: colors.text.primary, padding: '0 14px', height: '48px',
-    fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box',
+    fontSize: '14px', fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   }
   const labelStyle = { display: 'block', fontSize: '12px', color: colors.text.faint, marginBottom: '6px', fontWeight: 600 }
@@ -517,7 +517,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
           ].map(opt => (
             <button key={opt.key} type="button" onClick={() => setCycle(opt.key)}
               style={{
-                flex: 1, textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                flex: 1, textAlign: 'left', cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 background: cycle === opt.key ? colors.accent.green + alpha.subtle : colors.background.base,
                 border: `2px solid ${cycle === opt.key ? colors.accent.green : colors.border.faint}`,
                 borderRadius: '10px', padding: '12px 14px', position: 'relative',
@@ -571,7 +571,7 @@ function ProfilFormPanel({ profilChoisi, cycle, setCycle, prenom, setPrenom, nom
           width: '100%', height: '52px', background: colors.accent.green, color: colors.background.base,
           border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800,
           cursor: (loading || !rgpdAccepted) ? 'not-allowed' : 'pointer',
-          fontFamily: 'Inter, sans-serif', marginTop: '18px',
+          fontFamily: 'Barlow, sans-serif', marginTop: '18px',
           opacity: (loading || !rgpdAccepted) ? 0.5 : 1, transition: 'opacity 0.15s',
         }}>
         {loading
@@ -608,10 +608,10 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
   const [loading, setLoading] = useState(false)
   const [rgpdAccepted, setRgpdAccepted] = useState(false)
 
-  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Inter, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }
+  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '10px', color: colors.text.primary, padding: '12px 14px', fontSize: '14px', fontFamily: 'Barlow, sans-serif', outline: 'none', width: '100%', boxSizing: 'border-box' }
   const btnStyle = (desactive) => ({
     width: '100%', background: color, color: colors.black, border: 'none', borderRadius: '12px', padding: '14px',
-    fontSize: '15px', fontWeight: 800, cursor: desactive ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif',
+    fontSize: '15px', fontWeight: 800, cursor: desactive ? 'not-allowed' : 'pointer', fontFamily: 'Barlow, sans-serif',
     marginTop: '18px', opacity: desactive ? 0.6 : 1, transition: 'opacity 0.15s',
   })
 
@@ -759,7 +759,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
             {['mensuel', 'annuel'].map(c => (
               <button key={c} type="button" onClick={() => setCycle(c)}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${cycle === c ? color : '#2a2a2a'}`, background: cycle === c ? color + '15' : colors.background.surface, color: cycle === c ? color : colors.text.faint, fontWeight: cycle === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${cycle === c ? color : '#2a2a2a'}`, background: cycle === c ? color + '15' : colors.background.surface, color: cycle === c ? color : colors.text.faint, fontWeight: cycle === c ? 700 : 400, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', fontSize: '13px' }}>
                 {c === 'mensuel' ? 'Mensuel' : 'Annuel — 2 mois offerts'}
               </button>
             ))}
@@ -770,7 +770,7 @@ function ClubWizard({ color, navigate, palierInitial, cycleInitial, redirectApre
               if (!p) return null
               return (
                 <button key={key} type="button" onClick={() => setPalier(key)}
-                  style={{ textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: palier === key ? color + '15' : colors.background.surface, border: `2px solid ${palier === key ? color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px' }}>
+                  style={{ textAlign: 'left', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', background: palier === key ? color + '15' : colors.background.surface, border: `2px solid ${palier === key ? color : colors.border.faint}`, borderRadius: '10px', padding: '12px 14px' }}>
                   <p style={{ margin: 0, fontWeight: 800, fontSize: '13px', color: palier === key ? color : colors.text.primary }}>Jusqu'à {quota} équipes</p>
                   <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '15px', color: colors.text.primary }}>{cycle === 'annuel' ? p.annuelPrix : promoActive()
                     ? <>{prixPromo(prixDepuisTexte(p.mensuelPrix))}€ le 1er mois <span style={{ textDecoration: 'line-through', color: colors.text.faint, fontWeight: 400, fontSize: '12px', marginLeft: '6px' }}>{p.mensuelPrix.replace('/mois', '')}</span></>

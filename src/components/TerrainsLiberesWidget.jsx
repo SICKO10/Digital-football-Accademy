@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { ZONES, couleurZone } from '../lib/terrainZones'
 import { useColors } from '../lib/theme'
+import { MapPin } from 'lucide-react'
+import { styleCarteLiseree, styleTitreEcran, styleBoutonPrincipal, CLASSE_BOUTON } from '../lib/identite'
+import { EtiquetteStatut } from './identite'
+import { police } from '../tokens'
 
 // Date du jour au format local YYYY-MM-DD — jamais toISOString() (convertit en
 // UTC, ce qui décale la date d'un jour en France, cf. le même bug déjà corrigé
@@ -21,20 +25,15 @@ const dansSeptJoursStr = () => {
 
 const labelZone = (zone) => ZONES.find(z => z.val === zone)?.label
 
-// Badge de zone — mêmes couleurs (ZONE_COLORS_FIXES) que le planning terrain,
-// pour qu'un créneau libéré en zone 3 se reconnaisse d'un coup d'œil ici comme
-// là-bas. 'plein' n'a pas de couleur dédiée dans le planning, donc pas de badge ici.
-const BadgeZone = ({ zone, accentColor }) => {
+// Badge de zone : marqueur à la couleur de la zone (mêmes couleurs que le planning
+// terrain, pour qu'un créneau libéré en zone 3 se reconnaisse d'un coup d'œil ici
+// comme là-bas). 'plein' n'a pas de couleur dédiée dans le planning, donc pas de badge ici.
+const BadgeZone = ({ zone, couleurDefaut }) => {
   if (!zone || zone === 'plein') return null
-  const c = couleurZone(zone, accentColor)
-  return (
-    <span style={{ color: c, background: c + '18', border: `1px solid ${c}40`, borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-      {labelZone(zone)}
-    </span>
-  )
+  return <EtiquetteStatut couleur={couleurZone(zone, couleurDefaut)}>{labelZone(zone)}</EtiquetteStatut>
 }
 
-export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#4ade80', titre = 'Terrains disponibles cette semaine' }) {
+export default function TerrainsLiberesWidget({ clubId, userId, titre = 'Terrains disponibles cette semaine' }) {
   const colors = useColors()
   const [creneaux, setCreneaux] = useState([])
   const [recuperes, setRecuperes] = useState([])
@@ -100,28 +99,33 @@ export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#
 
   if (loading || (creneaux.length === 0 && recuperes.length === 0)) return null
 
+  const titreCarte = { ...styleTitreEcran(colors), fontSize: '20px', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }
+  const dateSt = { fontFamily: police.titre, fontWeight: 700, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.02em', color: colors.text.primary, marginRight: '8px' }
+  const ligne = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary, flexWrap: 'wrap' }
+  const detail = { color: colors.text.secondary, fontSize: '13px' }
+
   return (
-    <div style={{ background: accentColor + '10', border: `1px solid ${accentColor}40`, borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+    <div style={{ ...styleCarteLiseree(colors), marginBottom: '1.5rem' }}>
       {creneaux.length > 0 && (
         <>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>🏟️ {titre}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <p style={titreCarte}><MapPin size={18} strokeWidth={2} aria-hidden="true" focusable="false" style={{ flexShrink: 0 }} />{titre}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {creneaux.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', fontSize: '12px', flexWrap: 'wrap' }}>
+              <div key={c.id} style={ligne}>
                 <span>
-                  <span style={{ color: accentColor, fontWeight: 600, marginRight: '8px' }}>
+                  <span style={dateSt}>
                     {new Date(`${c.date_exception}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}
                   </span>
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
-                  {' '}<BadgeZone zone={c.creneau?.zone} accentColor={accentColor} />
+                  {' '}<BadgeZone zone={c.creneau?.zone} couleurDefaut={colors.text.dim} />
                   <br />
-                  <span style={{ color: colors.text.faint, fontSize: '11px' }}>libéré par {c.libere_par || '—'}</span>
+                  <span style={detail}>libéré par {c.libere_par || '—'}</span>
                 </span>
                 {userId && c.educateur_id === userId ? (
-                  <span style={{ color: colors.text.faint, fontSize: '11px', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Libéré par moi</span>
+                  <span style={{ ...detail, fontStyle: 'italic', whiteSpace: 'nowrap' }}>Libéré par moi</span>
                 ) : userId ? (
-                  <button onClick={() => prendreCreneau(c)} disabled={reclamingId === c.id}
-                    style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={() => prendreCreneau(c)} disabled={reclamingId === c.id} className={CLASSE_BOUTON}
+                    style={{ ...styleBoutonPrincipal(colors), minHeight: '36px', padding: '0 14px', fontSize: '13px', flexShrink: 0 }}>
                     {reclamingId === c.id ? '...' : 'Prendre ce créneau'}
                   </button>
                 ) : null}
@@ -132,18 +136,18 @@ export default function TerrainsLiberesWidget({ clubId, userId, accentColor = '#
       )}
 
       {recuperes.length > 0 && (
-        <div style={{ marginTop: creneaux.length > 0 ? '14px' : 0 }}>
-          <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 10px', color: accentColor }}>Créneaux récupérés</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ marginTop: creneaux.length > 0 ? '16px' : 0 }}>
+          <p style={titreCarte}>Créneaux récupérés</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {recuperes.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', fontSize: '12px', flexWrap: 'wrap' }}>
+              <div key={c.id} style={ligne}>
                 <span>
-                  <span style={{ color: accentColor, fontWeight: 600, marginRight: '8px' }}>
+                  <span style={dateSt}>
                     {new Date(`${c.date_exception}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}
                   </span>
                   · {c.creneau?.terrain?.nom || 'Terrain'} · {c.creneau?.heure_debut?.slice(0, 5)}–{c.creneau?.heure_fin?.slice(0, 5)}
                 </span>
-                <span style={{ color: colors.text.faint, fontSize: '11px', whiteSpace: 'nowrap' }}>récupéré par {c.equipe_remplacante || '—'}</span>
+                <span style={{ ...detail, whiteSpace: 'nowrap' }}>récupéré par {c.equipe_remplacante || '—'}</span>
               </div>
             ))}
           </div>

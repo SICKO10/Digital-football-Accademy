@@ -4,6 +4,7 @@ import EtapeEducateurs from './EtapeEducateurs'
 import EtapeJournal from './EtapeJournal'
 import { stylesMonClub, CSS_MON_CLUB } from './uiMonClub'
 import { etapesConfigurationVisibles } from '../../lib/menuClubGroupes'
+import { coqueVars } from '../../lib/menuLateral'
 
 const SOUS_PAGES = [
   { id: 'forfait', titre: 'Mon forfait' },
@@ -16,7 +17,7 @@ const SOUS_PAGES = [
 // etape / setEtape viennent du dashboard (retour de paiement, anciens liens).
 // L'écran Mon forfait (ancienne page Mes outils) est passé en `ecranForfait`.
 export default function Configuration({
-  etape, setEtape, droits, isMobile, outils, clubId, estCompteClub, educateurs, couleurPrincipale, ecranForfait, fourniture = null,
+  etape, setEtape, droits, outils, clubId, estCompteClub, educateurs, couleurPrincipale, ecranForfait, fourniture = null,
 }) {
   const colors = useColors()
   const s = stylesMonClub(colors)
@@ -29,20 +30,12 @@ export default function Configuration({
       <style>{CSS_MON_CLUB}</style>
 
       {visibles.length > 1 && (
-        <div role="tablist" aria-label="Pages de Configuration" style={{ display: 'flex', gap: 6, padding: 5, marginBottom: 26, borderRadius: 18, overflowX: 'auto', background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-          {visibles.map(e => {
-            const actif = e.id === courante.id
-            return (
-              <button key={e.id} role="tab" aria-selected={actif} onClick={() => setEtape(e.id)} className="mc-btn"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer', fontSize: 13, fontFamily: 'Inter, sans-serif',
-                  padding: isMobile ? '9px 14px' : '10px 18px', minHeight: 44, borderRadius: 14, fontWeight: 700, border: 'none',
-                  background: actif ? s.marque : 'transparent', color: actif ? s.surMarque : colors.text.secondary, transition: 'background .12s',
-                }}>
-                {e.titre}
-              </button>
-            )
-          })}
+        <div role="tablist" aria-label="Pages de Configuration" className="df-onglets" style={coqueVars(colors, colors.accent.green)}>
+          {visibles.map(e => (
+            <button key={e.id} role="tab" aria-selected={e.id === courante.id} className="df-onglet" onClick={() => setEtape(e.id)}>
+              {e.titre}
+            </button>
+          ))}
         </div>
       )}
 

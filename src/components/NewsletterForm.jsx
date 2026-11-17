@@ -42,7 +42,7 @@ export default function NewsletterForm({ source = 'home' }) {
             color: colors.text.primary,
             fontSize: '14px',
             outline: 'none',
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Barlow, sans-serif',
           }}
         />
         <button
@@ -58,7 +58,7 @@ export default function NewsletterForm({ source = 'home' }) {
             fontSize: '14px',
             cursor: status === 'loading' ? 'wait' : 'pointer',
             whiteSpace: 'nowrap',
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Barlow, sans-serif',
           }}
         >
           {status === 'loading' ? '...' : status === 'success' ? '✓ Inscrit !' : "S'inscrire"}

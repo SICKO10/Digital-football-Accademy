@@ -94,17 +94,17 @@ export function ModalNotation({ auteurId, cible, onClose, onDone }) {
           value={commentaire}
           onChange={e => setCommentaire(e.target.value)}
           placeholder="Commentaire optionnel..."
-          style={{ width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '13px', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', marginBottom: '1rem' }}
+          style={{ width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '13px', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box', marginBottom: '1rem' }}
         />
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={envoyer}
             disabled={!note || sending}
-            style={{ flex: 1, background: note ? '#4ade80' : '#1a1a1a', color: note ? '#000' : '#555', border: 'none', padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: note ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+            style={{ flex: 1, background: note ? '#4ade80' : '#1a1a1a', color: note ? '#000' : '#555', border: 'none', padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: note ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif' }}>
             {sending ? 'Envoi...' : dejaNote ? 'Mettre à jour' : 'Envoyer ma note'}
           </button>
-          <button onClick={onClose} style={{ background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <button onClick={onClose} style={{ background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Annuler
           </button>
         </div>

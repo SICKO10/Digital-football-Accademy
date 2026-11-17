@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
-import { alpha, radius } from '../../tokens'
+import { police, forme } from '../../tokens'
+import { styleCarte, styleChiffreHeros, couleurClub, CLASSE_BOUTON_SECONDAIRE } from '../../lib/identite'
+import { Etiquette, PastilleResultat } from '../identite'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../../lib/supabasePagination'
 import {
   saisonActuelle, saisonsAvecDonnees, aSaisonsPassees, bornesDatesSaison,
@@ -109,13 +111,20 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     return lignesJoueurs({ joueurs: effectif, matchs, entrainements: donnees.entrainements, dispos: donnees.dispos, notations })
   }, [donnees, effectif, filtreComp])
 
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.lg, padding: isMobile ? 14 : '16px 18px', minWidth: 0 }
-  const eyebrow = (texte) => (
-    <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{texte}</p>
-  )
+  const carte = { ...styleCarte(colors), padding: isMobile ? 14 : '16px 18px' }
+  const eyebrow = (texte) => <Etiquette as="p" style={{ marginBottom: '12px' }}>{texte}</Etiquette>
   const nonDispo = (texte = 'Non disponible pour cette saison.') => (
-    <p style={{ margin: 0, fontSize: 13, color: colors.text.faint }}>{texte}</p>
+    <p style={{ margin: 0, fontSize: 14, color: colors.text.secondary }}>{texte}</p>
   )
+  // Choix à bascule (critères, vues, compétitions) : plein à la couleur du club quand il est actif.
+  const choix = (actif) => ({
+    fontFamily: police.texte, fontWeight: actif ? 700 : 600, fontSize: '13px', lineHeight: 1.2, minHeight: '36px', padding: '0 14px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: forme.rayonCarte, cursor: 'pointer', boxSizing: 'border-box', whiteSpace: 'nowrap',
+    border: `1px solid ${actif ? colors.accent.brand : colors.border.strong}`,
+    background: actif ? colors.accent.brand : 'transparent',
+    color: actif ? colors.accent.onBrand : colors.text.primary,
+  })
+  const chiffreCond = (taille) => ({ fontFamily: police.titre, fontWeight: 700, fontSize: `${taille}px`, fontVariantNumeric: 'tabular-nums', color: colors.text.primary })
 
   const enCours = saison === saisonActuelle()
   const titreSaison = `Saison ${libelleSaison(saison)}${enCours ? ' (en cours)' : ''}`
@@ -124,7 +133,7 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
   if (erreur) {
     contenu = <div style={carte}>{nonDispo('Impossible de charger cette saison. Réessaie dans un instant.')}</div>
   } else if (!donnees) {
-    contenu = <p style={{ color: colors.text.faint, fontSize: 13 }}>Chargement…</p>
+    contenu = <p style={{ color: colors.text.secondary, fontSize: 14 }}>Chargement…</p>
   } else if (!donnees.matchs.length && !donnees.entrainements.length) {
     contenu = <div style={{ ...carte, textAlign: 'center', padding: 28 }}>{nonDispo('Aucun match ni séance enregistré cette saison-là.')}</div>
   } else if (vue === 'individuel' && !sansIndividuel) {
@@ -138,19 +147,14 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     const sante = resumeSante(donnees.blessures)
     const presMoy = presenceMoyenneEquipe(lignes)
     const critereIndispo = (critere === 'minutes' || critere === 'victoires') && !minutesSaisies(lignes)
-    const couleurRes = (m) => {
-      const res = resultatMatch(m)
-      return res === 'V' ? colors.accent.green : res === 'D' ? colors.accent.red : colors.accent.amber
-    }
-    const chip = (actif) => ({ padding: '6px 14px', borderRadius: 16, border: `1px solid ${actif ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: actif ? colors.accent.blue + alpha.subtle : 'transparent', color: actif ? colors.accent.blue : colors.text.faint, fontWeight: actif ? 700 : 500, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' })
     contenu = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 18 }}>
         <div style={carte}>
           {eyebrow('Effectif')}
-          <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}>
+          <p style={{ margin: 0, fontSize: 14, color: colors.text.secondary }}>
             {effectif.length} joueur{effectif.length > 1 ? 's' : ''} · {donnees.entrainements.length} séance{donnees.entrainements.length > 1 ? 's' : ''} · {matchsJoues.length} match{matchsJoues.length > 1 ? 's' : ''} joué{matchsJoues.length > 1 ? 's' : ''}
           </p>
-          {!enCours && <p style={{ margin: '6px 0 0', fontSize: 11, color: colors.text.faint }}>L'effectif affiché est l'effectif actuel, plus les joueurs qui ont des stats cette saison-là.</p>}
+          {!enCours && <p style={{ margin: '6px 0 0', fontSize: 12, color: colors.text.secondary }}>L'effectif affiché est l'effectif actuel, plus les joueurs qui ont des stats cette saison-là.</p>}
         </div>
 
         <div>
@@ -163,10 +167,11 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
             {eyebrow('Résultats')}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
               {matchsJoues.map(m => (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-                  <span style={{ width: 54, flexShrink: 0, color: colors.text.faint, fontSize: 12 }}>{dateFr(m.date)}</span>
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+                  <span style={{ width: 54, flexShrink: 0, color: colors.text.secondary, fontSize: 13 }}>{dateFr(m.date)}</span>
                   <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.domicile ? 'vs' : 'à'} {m.adversaire || 'Adversaire'}</span>
-                  <span style={{ fontWeight: 800, color: couleurRes(m), fontVariantNumeric: 'tabular-nums' }}>{scoreAffiche(m, ' - ')}</span>
+                  <span style={{ ...chiffreCond(18) }}>{scoreAffiche(m, ' - ')}</span>
+                  <PastilleResultat resultat={resultatMatch(m)} />
                 </div>
               ))}
             </div>
@@ -176,7 +181,7 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
         <div style={carte}>
           {eyebrow('Classements')}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-            {CRITERES_CLASSEMENT.map(c => <button key={c.key} onClick={() => setCritere(c.key)} style={chip(critere === c.key)}>{c.label}</button>)}
+            {CRITERES_CLASSEMENT.map(c => <button key={c.key} type="button" aria-pressed={critere === c.key} onClick={() => setCritere(c.key)} className={CLASSE_BOUTON_SECONDAIRE} style={choix(critere === c.key)}>{c.label}</button>)}
           </div>
           {critereIndispo ? nonDispo('Les minutes jouées n\'ont pas été saisies cette saison-là.')
             : rang.length === 0 ? nonDispo()
@@ -185,11 +190,11 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
                 {rang.map(({ ligne, valeur }, i) => (
                   <div key={ligne.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4, fontSize: 13 }}>
-                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: colors.text.faint, marginRight: 8 }}>{i + 1}</span>{ligne.prenom} {ligne.nom}</span>
-                      <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{Number.isInteger(valeur) ? valeur : valeur.toFixed(1)} <span style={{ fontWeight: 500, fontSize: 11, color: colors.text.faint }}>{triActif.unite}</span></span>
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ ...chiffreCond(14), color: colors.text.dim, marginRight: 8 }}>{i + 1}</span>{ligne.prenom} {ligne.nom}</span>
+                      <span style={{ ...chiffreCond(16) }}>{Number.isInteger(valeur) ? valeur : valeur.toFixed(1)} <span style={{ fontFamily: police.texte, fontWeight: 500, fontSize: 12, color: colors.text.secondary }}>{triActif.unite}</span></span>
                     </div>
-                    <div style={{ height: 5, background: colors.background.base, borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${(valeur / (critere === 'presence' ? 100 : critere === 'note' ? 10 : maxRang)) * 100}%`, background: colors.accent.blue, borderRadius: 3 }} />
+                    <div role="img" aria-label={`${ligne.prenom} ${ligne.nom} : ${Number.isInteger(valeur) ? valeur : valeur.toFixed(1)} ${triActif.unite}`} style={{ height: 6, background: colors.background.sunken, borderRadius: 1, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(valeur / (critere === 'presence' ? 100 : critere === 'note' ? 10 : maxRang)) * 100}%`, background: couleurClub(colors) }} />
                     </div>
                   </div>
                 ))}
@@ -202,8 +207,8 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
             {eyebrow('Présence entraînement')}
             {presMoy === null ? nonDispo() : (
               <>
-                <p style={{ margin: 0, fontSize: 28, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{presMoy}<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.faint, marginLeft: 3 }}>% en moyenne</span></p>
-                <p style={{ margin: '6px 0 0', fontSize: 12, color: colors.text.faint }}>{donnees.entrainements.length} séance{donnees.entrainements.length > 1 ? 's' : ''} sur la saison</p>
+                <p style={{ ...styleChiffreHeros(colors, 36), margin: 0 }}>{presMoy}<span style={{ fontFamily: police.texte, fontSize: 14, fontWeight: 600, color: colors.text.secondary, marginLeft: 3 }}>% en moyenne</span></p>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: colors.text.secondary }}>{donnees.entrainements.length} séance{donnees.entrainements.length > 1 ? 's' : ''} sur la saison</p>
               </>
             )}
           </div>
@@ -211,8 +216,8 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
             {eyebrow('Santé')}
             {sante.total === 0 ? nonDispo('Aucune blessure enregistrée cette saison-là.') : (
               <>
-                <p style={{ margin: 0, fontSize: 28, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{sante.total}<span style={{ fontSize: 13, fontWeight: 600, color: colors.text.faint, marginLeft: 3 }}>blessure{sante.total > 1 ? 's' : ''}</span></p>
-                <p style={{ margin: '6px 0 0', fontSize: 12, color: colors.text.faint }}>{sante.gueries} guérie{sante.gueries > 1 ? 's' : ''} · {sante.enCours} en cours · {sante.joueursTouches} joueur{sante.joueursTouches > 1 ? 's' : ''} touché{sante.joueursTouches > 1 ? 's' : ''}</p>
+                <p style={{ ...styleChiffreHeros(colors, 36), margin: 0 }}>{sante.total}<span style={{ fontFamily: police.texte, fontSize: 14, fontWeight: 600, color: colors.text.secondary, marginLeft: 3 }}>blessure{sante.total > 1 ? 's' : ''}</span></p>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: colors.text.secondary }}>{sante.gueries} guérie{sante.gueries > 1 ? 's' : ''} · {sante.enCours} en cours · {sante.joueursTouches} joueur{sante.joueursTouches > 1 ? 's' : ''} touché{sante.joueursTouches > 1 ? 's' : ''}</p>
               </>
             )}
           </div>
@@ -225,23 +230,23 @@ export default function HistoriqueCollectif({ educateurId, equipeId, joueurs = [
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <SelecteurSaison saisons={saisons} valeur={saison} onChange={setSaison} />
-        <span style={{ fontSize: 13, color: colors.text.faint }}>{titreSaison}</span>
+        <span style={{ fontSize: 14, color: colors.text.secondary }}>{titreSaison}</span>
       </div>
       {!sansIndividuel && <div style={{ display: 'flex', gap: 6 }}>
         {[['collectif', 'Collectif'], ['individuel', 'Individuel']].map(([cle, label]) => (
-          <button key={cle} onClick={() => setVue(cle)} style={{ padding: '6px 14px', borderRadius: 16, border: `1px solid ${vue === cle ? colors.accent.blue : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: vue === cle ? colors.accent.blue + alpha.subtle : 'transparent', color: vue === cle ? colors.accent.blue : colors.text.faint, fontWeight: vue === cle ? 700 : 500, fontFamily: 'Inter, sans-serif' }}>{label}</button>
+          <button key={cle} type="button" aria-pressed={vue === cle} onClick={() => setVue(cle)} className={CLASSE_BOUTON_SECONDAIRE} style={choix(vue === cle)}>{label}</button>
         ))}
       </div>}
       {donnees && (donnees.matchs.length > 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {FILTRES_COMPETITION.map(f => (
-            <button key={f.id} onClick={() => setFiltreComp(f.id)} style={{ padding: '6px 14px', borderRadius: 16, border: `1px solid ${filtreComp === f.id ? colors.accent.green : colors.border.default}`, cursor: 'pointer', fontSize: 12, background: filtreComp === f.id ? colors.accent.green + alpha.subtle : 'transparent', color: filtreComp === f.id ? colors.accent.green : colors.text.faint, fontWeight: filtreComp === f.id ? 700 : 500, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>{f.label}</button>
+            <button key={f.id} type="button" aria-pressed={filtreComp === f.id} onClick={() => setFiltreComp(f.id)} className={CLASSE_BOUTON_SECONDAIRE} style={choix(filtreComp === f.id)}>{f.label}</button>
           ))}
-          <span style={{ fontSize: 11, color: colors.text.faint }}>Classements et fiches joueurs</span>
+          <span style={{ fontSize: 12, color: colors.text.secondary }}>Classements et fiches joueurs</span>
         </div>
       )}
       {dates && !aSaisonsPassees(saisons) && (
-        <p style={{ margin: 0, fontSize: 12, color: colors.text.faint }}>{MESSAGE_AUCUNE_SAISON_ARCHIVEE}</p>
+        <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}>{MESSAGE_AUCUNE_SAISON_ARCHIVEE}</p>
       )}
       {contenu}
     </div>

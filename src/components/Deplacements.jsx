@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { repartirBus, effectifParDefautMatch } from '../lib/repartitionBus'
 import { estimerDeplacement, calculerTrajet, diagnostiquerEchecTrajet } from '../lib/mapbox'
-import { makeUseSt } from '../lib/theme'
+import { useSt } from '../lib/useStFinance'
+import { TriangleAlert } from 'lucide-react'
+import { useColors } from '../lib/theme'
+import { styleBoutonPrincipal, styleBoutonSecondaire, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE } from '../lib/identite'
+import { forme } from '../tokens'
+import { Message } from './categories/UiCategories'
 
 const IcoBus = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,21 +35,6 @@ const formVide = () => ({
   heure_coup_envoi: '', // transitoire, sert uniquement au calcul auto ci-dessous — jamais persisté
 })
 
-const stSombre = {
-  input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
-  label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
-  card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
-  bg: '#0a0a0a', bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
-  text: '#fff', textFaint: '#555', textDim: '#9ca3af', textGhost: '#444',
-}
-const stClaire = {
-  input: { width: '100%', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
-  label: { fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.25rem' },
-  bg: '#f8fafc', bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
-  text: '#0f172a', textFaint: '#64748b', textDim: '#334155', textGhost: '#94a3b8',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 const grouperParMois = (deplacements) => {
   const groupes = {}
@@ -78,8 +68,9 @@ const grouperParSemaine = (deplacements) => {
 // réservées au club — cf. readOnly. Par défaut lié à !readOnly pour ne rien
 // changer au comportement existant (DashboardClub) ; DashboardEducateur passe
 // readOnly + retourEditable explicitement pour dissocier les deux.
-export default function Deplacements({ clubId, equipeActiveId, equipeUnique = true, accentColor = '#4ade80', readOnly = false, retourEditable = !readOnly }) {
+export default function Deplacements({ clubId, equipeActiveId, equipeUnique = true, readOnly = false, retourEditable = !readOnly }) {
   const st = useSt()
+  const colors = useColors()
   const [deplacements, setDeplacements] = useState([])
   const [loading, setLoading] = useState(true)
   const [tableMissing, setTableMissing] = useState(false)
@@ -695,9 +686,9 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
     return (
       <div>
         <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '4px' }}>Déplacements</h1>
-        <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '12px 16px', marginTop: '1rem', color: '#f59e0b', fontSize: '13px' }}>
+        <Message ton="alerte" style={{ marginTop: '1rem' }}>
           La table <code>deplacements</code> n'existe pas encore en base — exécute la migration SQL pour activer cet outil.
-        </div>
+        </Message>
       </div>
     )
   }
@@ -712,7 +703,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         </div>
         {!readOnly && (
           <button onClick={() => { if (showForm) { setShowForm(false) } else { setForm(formVide()); setDeplacementEnEdition(null); setShowForm(true) } }}
-            style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
             {showForm ? 'Fermer' : '+ Nouveau déplacement'}
           </button>
         )}
@@ -729,7 +720,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
           </div>
           {!readOnly && !showAddVehicule && (
             <button onClick={() => setShowAddVehicule(true)}
-              style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, color: accentColor, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
               + Ajouter un véhicule
             </button>
           )}
@@ -739,12 +730,12 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
             {vehicules.map(v => {
               // Contrôle technique : rouge si échéance dans moins de 30 jours.
               const ctProche = v.prochain_ct && new Date(v.prochain_ct) < new Date(new Date().getTime() + 30 * 86400000)
-              const couleurCT = !v.prochain_ct ? st.textGhost : ctProche ? '#ef4444' : '#4ade80'
+              const couleurCT = !v.prochain_ct ? st.textGhost : ctProche ? colors.accent.red : colors.accent.success
               return (
                 <div key={v.id} onClick={() => setVehiculeDetail(v)}
                   title={v.prochain_ct ? `Prochain CT : ${new Date(v.prochain_ct).toLocaleDateString('fr-FR')}` : 'Contrôle technique non renseigné'}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', minWidth: 0 }}>
-                  <span style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: accentColor + '18', color: accentColor, flexShrink: 0 }}><IcoBus /></span>
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', background: st.bg, border: `1px solid ${st.border}`, borderRadius: '6px', padding: '10px 12px', cursor: 'pointer', minWidth: 0 }}>
+                  <span style={{ width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: st.bgRaised, color: colors.text.primary, flexShrink: 0 }}><IcoBus /></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: st.text, letterSpacing: '0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.plaque}</p>
                     <p style={{ margin: '1px 0 0', fontSize: '11px', color: st.textFaint, display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -765,10 +756,10 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
             <input style={{ ...st.input, maxWidth: '180px' }} placeholder="Plaque (ex: AB-123-CD)" value={newVehicule.plaque} onChange={e => setNewVehicule(v => ({ ...v, plaque: e.target.value }))} />
             <input style={{ ...st.input, maxWidth: '110px' }} type="number" min="1" placeholder="Capacité" value={newVehicule.capacite} onChange={e => setNewVehicule(v => ({ ...v, capacite: e.target.value }))} />
             <button onClick={ajouterVehicule} disabled={savingVehicule || !newVehicule.plaque.trim() || !newVehicule.capacite}
-              style={{ background: accentColor, color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
               {savingVehicule ? 'Ajout...' : 'Ajouter'}
             </button>
-            <button onClick={() => setShowAddVehicule(false)} style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={() => setShowAddVehicule(false)} style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: st.police.texte }}>
               Annuler
             </button>
           </div>
@@ -795,7 +786,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               </div>
             ))}
 
-            <div style={{ marginTop: '16px', background: st.bg, borderRadius: '10px', padding: '14px' }}>
+            <div style={{ marginTop: '16px', background: st.bg, borderRadius: '6px', padding: '14px' }}>
               <div style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px' }}>
                 Contrôle technique
               </div>
@@ -817,7 +808,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                   <input type="date" value={ctForm.prochain} onChange={e => setCtForm(p => ({ ...p, prochain: e.target.value }))} style={{ ...st.input, width: 'auto', padding: '4px 8px', fontSize: '12px' }} />
                 ) : (
                   <span style={{
-                    color: vehiculeDetail.prochain_ct && new Date(vehiculeDetail.prochain_ct) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? '#ef4444' : '#4ade80',
+                    color: vehiculeDetail.prochain_ct && new Date(vehiculeDetail.prochain_ct) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? colors.accent.red : colors.accent.success,
                     fontSize: '13px', fontWeight: 700,
                   }}>
                     {vehiculeDetail.prochain_ct ? new Date(vehiculeDetail.prochain_ct).toLocaleDateString('fr-FR') : '—'}
@@ -830,17 +821,17 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
                 {!editCT ? (
                   <button onClick={() => { setEditCT(true); setCtForm({ dernier: vehiculeDetail.dernier_ct || '', prochain: vehiculeDetail.prochain_ct || '' }) }}
-                    style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textDim, padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textDim, padding: '10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontFamily: st.police.texte }}>
                     Modifier les dates CT
                   </button>
                 ) : (
                   <>
                     <button onClick={() => setEditCT(false)} disabled={savingCT}
-                      style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textFaint, padding: '10px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ flex: 1, background: st.bgRaised, border: `1px solid ${st.border}`, color: st.textFaint, padding: '10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontFamily: st.police.texte }}>
                       Annuler
                     </button>
                     <button onClick={() => sauvegarderCT(vehiculeDetail.id)} disabled={savingCT}
-                      style={{ flex: 2, background: accentColor, border: 'none', color: '#000', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 2, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                       {savingCT ? 'Sauvegarde...' : 'Sauvegarder'}
                     </button>
                   </>
@@ -855,19 +846,19 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         {!readOnly && (
           <button onClick={recupererMatchsExterieur} disabled={recuperationMatchsEnCours || loading}
             title="Crée un déplacement pour chaque match Extérieur qui n'en a pas encore (ex: matchs ajoutés avant que la création automatique existe)"
-            style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: recuperationMatchsEnCours ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: recuperationMatchsEnCours ? 'wait' : 'pointer', fontFamily: st.police.texte }}>
             {recuperationMatchsEnCours ? 'Recherche...' : 'Récupérer les matchs Extérieur'}
           </button>
         )}
         {!readOnly && (
           <button onClick={repartirAutomatiquement} disabled={repartitionAutoEnCours || loading || vehicules.length === 0}
             title={vehicules.length === 0 ? 'Ajoute au moins un véhicule au parc' : 'Assigne un bus aux déplacements qui n\'en ont pas encore'}
-            style={{ background: accentColor, color: '#0a0a0a', border: 'none', borderRadius: '10px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: repartitionAutoEnCours || vehicules.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
+            className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), borderRadius: '6px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: repartitionAutoEnCours || vehicules.length === 0 ? 'not-allowed' : 'pointer', opacity: vehicules.length === 0 ? 0.5 : 1 }}>
             {repartitionAutoEnCours ? 'Répartition...' : 'Répartition automatique'}
           </button>
         )}
         <button onClick={exporterPlanningPDF} disabled={exportingPdf || loading || deplacements.length === 0}
-          style={{ background: 'transparent', border: `1px solid ${accentColor}40`, color: accentColor, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
+          className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: exportingPdf ? 'wait' : 'pointer', opacity: deplacements.length === 0 ? 0.5 : 1 }}>
           {exportingPdf ? 'Génération...' : 'Exporter planning annuel PDF'}
         </button>
       </div>
@@ -876,15 +867,15 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         const sansHeure = alertesLocation.filter(a => a.type === 'heure')
         const busInsuffisant = alertesLocation.filter(a => a.type === 'bus')
         const conflitsCreneau = alertesLocation.filter(a => a.type === 'conflit')
-        const bandeau = (liste, { bg, border, color, titre, boutonLabel = 'Compléter', boutonClick }) => liste.length > 0 && (
-          <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
-            <div style={{ fontWeight: 700, color, marginBottom: '8px', fontSize: '13px' }}>{titre(liste.length)}</div>
+        const bandeau = (liste, { color, titre, boutonLabel = 'Compléter', boutonClick }) => liste.length > 0 && (
+          <div style={{ background: st.bg, border: `1px solid ${st.border}`, boxShadow: `inset 3px 0 0 ${color}`, borderRadius: '6px', padding: '14px 16px 14px 19px', marginBottom: '16px' }}>
+            <div style={{ fontWeight: 700, color: st.text, marginBottom: '8px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}><TriangleAlert size={16} strokeWidth={2} aria-hidden="true" focusable="false" style={{ flexShrink: 0, color }} />{titre(liste.length)}</div>
             {liste.map((alerte, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px', color, marginTop: '4px' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '13px', color: st.textDim, marginTop: '4px' }}>
                 <span>• {alerte.msg}</span>
                 {!readOnly && (
-                  <button onClick={() => (boutonClick || (dep => ouvrirEditionDeplacement(dep, dep.nature === 'match' ? { focusHeureCoupEnvoi: true } : { focusHeureDepart: true })))(alerte.dep)}
-                    style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${border}`, color, padding: '2px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  <button type="button" onClick={() => (boutonClick || (dep => ouvrirEditionDeplacement(dep, dep.nature === 'match' ? { focusHeureCoupEnvoi: true } : { focusHeureDepart: true })))(alerte.dep)}
+                    style={{ flexShrink: 0, background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.text, padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: st.police.texte }}>
                     {boutonLabel}
                   </button>
                 )}
@@ -894,9 +885,9 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         )
         return (
           <>
-            {bandeau(sansHeure, { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.3)', color: '#fb923c', titre: n => `${n} déplacement${n > 1 ? 's' : ''} sans heure de départ — complète-${n > 1 ? 'les' : 'le'} pour permettre la répartition auto` })}
-            {bandeau(conflitsCreneau, { bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)', color: '#fbbf24', boutonLabel: 'Arbitrer', boutonClick: dep => ouvrirEditionDeplacement(dep), titre: n => `${n} conflit${n > 1 ? 's' : ''} de créneau — plusieurs trajets se disputent le même bus, à toi de choisir` })}
-            {bandeau(busInsuffisant, { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', color: '#ef4444', titre: n => `${n} déplacement${n > 1 ? 's' : ''} nécessite${n > 1 ? 'nt' : ''} un bus de location` })}
+            {bandeau(sansHeure, { color: colors.accent.orange, titre: n => `${n} déplacement${n > 1 ? 's' : ''} sans heure de départ — complète-${n > 1 ? 'les' : 'le'} pour permettre la répartition auto` })}
+            {bandeau(conflitsCreneau, { color: colors.accent.amber, boutonLabel: 'Arbitrer', boutonClick: dep => ouvrirEditionDeplacement(dep), titre: n => `${n} conflit${n > 1 ? 's' : ''} de créneau — plusieurs trajets se disputent le même bus, à toi de choisir` })}
+            {bandeau(busInsuffisant, { color: colors.accent.red, titre: n => `${n} déplacement${n > 1 ? 's' : ''} nécessite${n > 1 ? 'nt' : ''} un bus de location` })}
           </>
         )
       })()}
@@ -949,7 +940,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                 placeholder="Ex: Nice, Marseille, Lyon..." />
               {estimationEnCours && <p style={{ fontSize: '11px', color: st.textFaint, margin: '6px 0 0' }}>Estimation du trajet...</p>}
               {!estimationEnCours && form.distance_km != null && (
-                <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', fontSize: '12px', color: st.textDim }}>
+                <p style={{ marginTop: '8px', padding: '10px 14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '6px', fontSize: '12px', color: st.textDim }}>
                   <strong style={{ color: st.text }}>{form.distance_km} km</strong>
                   {form.duree_trajet_min != null && <> · {Math.floor(form.duree_trajet_min / 60)}h{String(form.duree_trajet_min % 60).padStart(2, '0')} de trajet (aller simple, depuis {clubVille})</>}
                 </p>
@@ -991,11 +982,11 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={sauvegarderDeplacement} disabled={saving || !form.date_depart || !form.lieu_destination.trim()}
-              style={{ background: accentColor, color: '#000', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.6 : 1 }}>
+              className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Enregistrement...' : deplacementEnEdition ? 'Enregistrer les modifications' : 'Créer le déplacement'}
             </button>
             <button onClick={() => { setShowForm(false); setForm(formVide()); setDeplacementEnEdition(null) }}
-              style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textFaint, padding: '10px 20px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textFaint, padding: '10px 20px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontFamily: st.police.texte }}>
               Annuler
             </button>
           </div>
@@ -1023,16 +1014,16 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
         const statutBus = (d) => {
           const cap = capaciteVehicule(d)
           if (!d.vehicule) return { texte: 'Aucun bus', couleur: st.textDim, alerte: true }
-          if (cap == null) return { texte: `${d.vehicule} · hors parc`, couleur: '#f59e0b', alerte: true }
-          if (d.nb_personnes != null && cap < d.nb_personnes) return { texte: `${d.nb_personnes}/${cap} places`, couleur: '#f59e0b', alerte: true }
-          return { texte: `${d.vehicule}${d.nb_personnes != null ? ` · ${d.nb_personnes}/${cap}` : ''}`, couleur: accentColor, alerte: false }
+          if (cap == null) return { texte: `${d.vehicule} · hors parc`, couleur: colors.accent.amber, alerte: true }
+          if (d.nb_personnes != null && cap < d.nb_personnes) return { texte: `${d.nb_personnes}/${cap} places`, couleur: colors.accent.amber, alerte: true }
+          return { texte: `${d.vehicule}${d.nb_personnes != null ? ` · ${d.nb_personnes}/${cap}` : ''}`, couleur: colors.accent.success, alerte: false }
         }
         const duree = (min) => `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`
         const paveDate = (iso, couleur, grand) => {
           const dt = new Date(iso + 'T12:00:00')
           return (
-            <div style={{ width: grand ? '62px' : '50px', textAlign: 'center', border: `1px solid ${st.border}`, borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-              <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: couleur ? '#000' : st.textFaint, background: couleur || st.bgRaised }}>{dt.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
+            <div style={{ width: grand ? '62px' : '50px', textAlign: 'center', border: `1px solid ${st.border}`, borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
+              <p style={{ margin: 0, padding: '2px 0', fontSize: '9px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: couleur ? texteSur(couleur) : st.textFaint, background: couleur || st.bgRaised }}>{dt.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</p>
               <p style={{ margin: 0, padding: '4px 0 0', fontSize: grand ? '24px' : '19px', fontWeight: 800, lineHeight: 1, color: st.text }}>{dt.getDate()}</p>
               <p style={{ margin: 0, padding: '1px 0 4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: st.textFaint }}>{dt.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</p>
             </div>
@@ -1083,22 +1074,22 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                 <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
                   {retourEditable && (
                     <button onClick={() => enregistrerRetour(d.id)} disabled={savingRetour[d.id]}
-                      style={{ background: retourComplet ? st.bgRaised : accentColor + '15', border: `1px solid ${retourComplet ? st.border : accentColor + '40'}`, color: retourComplet ? st.textFaint : accentColor, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), ...(retourComplet ? { color: colors.text.secondary } : {}), padding: '7px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                       {savingRetour[d.id] ? 'Enregistrement...' : retourComplet ? 'Retour enregistré — modifier' : 'Enregistrer le retour'}
                     </button>
                   )}
                   {!readOnly && (
                     <>
                       <button onClick={() => setAssignationBusOuverte(assignationBusOuverte === d.id ? null : d.id)}
-                        style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        style={{ background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, padding: '7px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: st.police.texte }}>
                         {assignationBusOuverte === d.id ? 'Fermer' : 'Assigner les bus'}
                       </button>
                       <button onClick={() => ouvrirEditionDeplacement(d)}
-                        style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '8px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${st.borderStrong}`, color: st.textDim, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: st.police.texte }}>
                         Modifier
                       </button>
                       <button onClick={() => supprimerDeplacement(d)}
-                        style={{ background: 'transparent', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                        className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), color: colors.accent.red, borderColor: colors.accent.red, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer' }}>
                         Supprimer
                       </button>
                     </>
@@ -1107,7 +1098,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               )}
 
               {assignationBusOuverte === d.id && (
-                <div style={{ marginTop: '12px', padding: '14px', background: st.bg, borderRadius: '10px', border: `1px solid ${st.bgRaised}` }}>
+                <div style={{ marginTop: '12px', padding: '14px', background: st.bg, borderRadius: '6px', border: `1px solid ${st.bgRaised}` }}>
                   {vehicules.length === 0 ? (
                     <p style={{ color: st.textGhost, fontSize: '12px', margin: 0 }}>Aucun véhicule dans le parc — ajoute-en ci-dessus.</p>
                   ) : (
@@ -1120,16 +1111,16 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                         )
                         return (
                           <label key={v.plaque} style={{
-                            display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px',
                             cursor: (dejaUtilise && !coche) || savingAssignation === d.id ? 'not-allowed' : 'pointer',
-                            background: coche ? accentColor + '15' : dejaUtilise ? '#6b728010' : st.bgRaised,
-                            border: coche ? `1px solid ${accentColor}50` : `1px solid ${st.border}`,
+                            background: coche ? colors.background.sunken : st.bgRaised,
+                            border: coche ? `1px solid ${colors.border.strong}` : `1px solid ${st.border}`,
                             opacity: dejaUtilise && !coche ? 0.4 : 1,
                           }}>
                             <input type="checkbox" checked={coche} disabled={(dejaUtilise && !coche) || savingAssignation === d.id}
                               onChange={() => toggleVehiculeDeplacement(d, v.plaque)}
-                              style={{ accentColor, width: '15px', height: '15px' }} />
-                            <span style={{ fontSize: '12px', color: coche ? accentColor : st.textDim, fontWeight: coche ? 600 : 400 }}>
+                              style={{ accentColor: colors.accent.brand, width: '18px', height: '18px' }} />
+                            <span style={{ fontSize: '12px', color: coche ? colors.text.primary : st.textDim, fontWeight: coche ? 600 : 400 }}>
                               {v.plaque} ({v.capacite} pl.)
                             </span>
                             {dejaUtilise && !coche && <span style={{ fontSize: '10px', color: st.textFaint, marginLeft: 'auto' }}>déjà assigné ce jour-là</span>}
@@ -1151,9 +1142,9 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
               const sb = statutBus(prochain)
               const ouvert = !!semaineOuverte[`prochain_${prochain.id}`]
               return (
-                <div style={{ ...st.card, padding: 0, overflow: 'hidden', borderLeft: `4px solid ${accentColor}` }}>
+                <div style={{ ...st.card, padding: 0, overflow: 'hidden', boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.brand}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 18px', flexWrap: 'wrap' }}>
-                    {paveDate(prochain.date_depart, accentColor, true)}
+                    {paveDate(prochain.date_depart, colors.accent.brand, true)}
                     <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: st.textDim }}>Prochain déplacement</p>
                       <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: 800, color: st.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prochain.lieu_destination}</p>
@@ -1165,9 +1156,9 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                       {meta(prochain) && <p style={{ margin: '6px 0 0', fontSize: '12px', color: st.textFaint }}>{meta(prochain)}</p>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '6px 10px', borderRadius: '8px', color: sb.couleur, background: sb.couleur + '15', border: `1px solid ${sb.couleur}40` }}><IcoBus />{sb.texte}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '6px 10px', borderRadius: '6px', color: sb.couleur, background: sb.couleur + '15', border: `1px solid ${sb.couleur}40` }}><IcoBus />{sb.texte}</span>
                       <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [`prochain_${prochain.id}`]: !ouvert }))} title="Détails"
-                        style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '8px', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, borderRadius: '6px', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                         <IcoChevron ouvert={ouvert} />
                       </button>
                     </div>
@@ -1193,8 +1184,8 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                       <span style={{ fontSize: '12px', color: st.textFaint }}>{deps.length} déplacement{deps.length > 1 ? 's' : ''}</span>
                     </div>
                     {aVerifier > 0
-                      ? etiquette(`${aVerifier} à vérifier`, '#f97316')
-                      : etiquette('Bus OK', accentColor)}
+                      ? etiquette(`${aVerifier} à vérifier`, colors.accent.orange)
+                      : etiquette('Bus OK', colors.accent.success)}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {deps.map(d => {
@@ -1202,9 +1193,9 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                       const sb = statutBus(d)
                       const passe = d.date_depart < aujourdHui
                       return (
-                        <div key={d.id} style={{ background: st.card.background, border: `1px solid ${sb.alerte && !passe ? '#f59e0b40' : st.bgRaised}`, borderRadius: '12px', overflow: 'hidden', opacity: passe ? 0.7 : 1 }}>
+                        <div key={d.id} style={{ background: st.card.background, border: `1px solid ${sb.alerte && !passe ? colors.accent.amber : st.bgRaised}`, borderRadius: '6px', overflow: 'hidden', opacity: passe ? 0.7 : 1 }}>
                           <button onClick={() => setSemaineOuverte(prev => ({ ...prev, [d.id]: !ouvert }))}
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', fontFamily: st.police.texte }}>
                             {paveDate(d.date_depart)}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -1215,7 +1206,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
                                 {[d.equipe, meta(d)].filter(Boolean).join(' · ') || '—'}
                               </p>
                             </div>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, padding: '4px 9px', borderRadius: '8px', color: sb.couleur, background: sb.couleur + '15', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoBus />{sb.texte}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, padding: '4px 9px', borderRadius: '6px', color: sb.couleur, background: sb.couleur + '15', flexShrink: 0, maxWidth: '45%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}><IcoBus />{sb.texte}</span>
                             <span style={{ color: st.textFaint, display: 'flex', flexShrink: 0 }}><IcoChevron ouvert={ouvert} /></span>
                           </button>
                           {ouvert && detailDeplacement(d)}
@@ -1229,7 +1220,7 @@ export default function Deplacements({ clubId, equipeActiveId, equipeUnique = tr
 
             {passes.length > 0 && (
               <button onClick={() => setAfficherPasses(v => !v)}
-                style={{ alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${st.border}`, color: st.textDim, padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: st.police.texte }}>
                 {afficherPasses ? 'Masquer les déplacements passés' : `Afficher les ${passes.length} déplacement${passes.length > 1 ? 's' : ''} passé${passes.length > 1 ? 's' : ''}`}
                 <IcoChevron ouvert={afficherPasses} />
               </button>

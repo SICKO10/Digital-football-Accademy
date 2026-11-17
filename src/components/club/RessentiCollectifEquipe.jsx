@@ -45,7 +45,7 @@ export default function RessentiCollectifEquipe({ categorieId }) {
   return (
     <div>
       <button onClick={basculer} style={{
-        padding: '9px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+        padding: '9px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
         background: ouvert ? colors.accent.blue + '1a' : 'transparent', border: `1px solid ${ouvert ? colors.accent.blue : colors.border.default}`, color: ouvert ? colors.accent.blue : colors.text.primary,
       }}>
         {ouvert ? 'Masquer le ressenti des séances' : 'Ressenti collectif des séances (charge et plaisir)'}

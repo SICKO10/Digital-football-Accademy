@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { CATEGORIES as CATEGORIES_STANDARD } from '../../lib/categories'
-import { PERMISSION_DEFAULTS } from '../../lib/permissionsClub'
+import { voitParDefaut, ecritParDefaut } from '../../lib/permissionsClub'
 import {
   ROLES_STAFF, PERMISSION_SECTIONS, ACCES_CATEGORIES_DEFAUT, ROLES_ACCES_COMPLET_DEFAUT, ROLES_HORS_ACCES_CATEGORIES,
 } from '../../lib/rolesClub'
 import Interrupteur from '../outils/Interrupteur'
 import { Icone, EnteteEtape, Encart } from './ui'
 import { ICONES, stylesMonClub, texteSur } from './uiMonClub'
+import { styleEtiquette, couleurCraie } from '../../lib/identite'
+import { police, forme } from '../../tokens'
 
 // ── Accès du bureau : ce que chaque rôle du staff peut voir et modifier ──
 // Grille : colonnes = PERMISSION_SECTIONS, lignes = ROLES_STAFF (hors président,
@@ -31,10 +33,9 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
       m[role.val] = {}
       for (const section of PERMISSION_SECTIONS) {
         const row = rolePermissions.find(p => p.role === role.val && p.section === section.id)
-        const parDefaut = (PERMISSION_DEFAULTS[section.id] || []).includes(role.val)
         m[role.val][section.id] = row
           ? { can_view: row.can_view, can_edit: row.can_edit }
-          : { can_view: parDefaut, can_edit: parDefaut }
+          : { can_view: voitParDefaut(section.id, role.val), can_edit: ecritParDefaut(section.id, role.val) }
       }
     }
     return m
@@ -89,15 +90,15 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
   const st = stylesMonClub(colors)
   // Case à cocher en pastille : pleine et cochée quand c'est accordé (pas seulement une couleur).
   const puce = (actif, couleur) => ({
-    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', minHeight: 32, borderRadius: 999, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
-    border: `1px solid ${actif ? couleur : colors.border.default}`, background: actif ? couleur : 'transparent', color: actif ? texteSur(couleur) : colors.text.faint,
+    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', minHeight: 32, borderRadius: forme.rayonPastille, cursor: 'pointer', fontFamily: police.texte, fontSize: 12, fontWeight: 600,
+    border: `1px solid ${actif ? couleur : colors.border.default}`, background: actif ? couleur : 'transparent', color: actif ? texteSur(couleur) : colors.text.secondary,
   })
   const contenu = (actif) => actif ? <Icone d={ICONES.check} size={13} trait={3} /> : null
-  const entete = { position: 'sticky', top: 0, zIndex: 2, background: colors.background.sunken, padding: '12px 10px', fontSize: 11, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800, whiteSpace: 'nowrap' }
+  const entete = { ...styleEtiquette(colors), position: 'sticky', top: 0, zIndex: 2, background: colors.background.sunken, padding: '12px 10px', fontSize: 11, whiteSpace: 'nowrap' }
   const nbCases = rolesConfigurables.reduce((n, r) => n + PERMISSION_SECTIONS.filter(sec => matrice[r.val][sec.id].can_view).length, 0)
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+    <div style={{ fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
       <EnteteEtape icone={ICONES.bureau} titre="Accès du bureau"
         texte="Le président voit et modifie tout, ce n'est pas réglable. Pour les autres rôles : «&nbsp;Voir&nbsp;» affiche l'onglet, «&nbsp;Modifier&nbsp;» autorise les ajouts et suppressions dans cet onglet." />
       <Encart>«&nbsp;Mon club&nbsp;» : le rôle coché voit l'étape Identité et la rubrique Configuration (Outils du club, Outils des éducateurs, Journal des changements). Cette étape-ci, Accès du bureau, reste réservée au président.</Encart>
@@ -105,9 +106,9 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
       <section style={{ ...st.carte, padding: isMobile ? 14 : 22, marginBottom: 20 }} aria-labelledby="mc-matrice">
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
           <h3 id="mc-matrice" style={st.titreCarte}>Ce que chaque rôle peut faire</h3>
-          <span style={{ fontSize: 12, color: colors.text.faint }}>{nbCases} accès « Voir » accordés</span>
+          <span style={{ fontSize: 12, color: colors.text.secondary }}>{nbCases} accès « Voir » accordés</span>
         </div>
-        <div style={{ overflow: 'auto', maxHeight: '64vh', border: `1px solid ${colors.border.subtle}`, borderRadius: 14 }}>
+        <div style={{ overflow: 'auto', maxHeight: '64vh', border: `1px solid ${colors.border.subtle}`, borderRadius: forme.rayonCarte }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
             <thead>
               <tr>
@@ -117,10 +118,10 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
             </thead>
             <tbody>
               {rolesConfigurables.map(role => (
-                <tr key={role.val} className="mc-ligne" style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
+                <tr key={role.val} className="mc-ligne" style={{ borderTop: `1px solid ${couleurCraie(colors)}` }}>
                   <td style={{ position: 'sticky', left: 0, zIndex: 1, background: colors.background.surface, padding: '10px 12px', whiteSpace: 'nowrap', boxShadow: `1px 0 0 ${colors.border.subtle}` }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 700 }}>
-                      <span aria-hidden="true" style={{ width: 30, height: 30, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, background: st.marque + '24', color: colors.text.primary }}>{role.label[0].toUpperCase()}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600 }}>
+                      <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: forme.rayonPastille, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontSize: 15, fontWeight: 700, background: colors.background.raised, color: colors.text.primary }}>{role.label[0].toUpperCase()}</span>
                       {role.label}
                     </span>
                   </td>
@@ -158,9 +159,9 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
           {rolesCategorisables.map(role => {
             const cfg = catAccess[role.val]
             return (
-              <div key={role.val} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '14px 16px' }}>
+              <div key={role.val} style={{ background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, borderRadius: forme.rayonCarte, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800 }}>{role.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{role.label}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, color: colors.text.secondary }}>
                     Accès complet (toutes catégories)
                     <Interrupteur actif={cfg.acces_complet} libelle={`${role.label} : accès complet à toutes les catégories`} onClick={() => toggleAccesComplet(role.val)} />
@@ -180,7 +181,7 @@ export default function EtapeAccesBureau({ rolePermissions, roleCategoriesAccess
         </div>
       </section>
 
-      <div style={{ position: 'sticky', bottom: 12, zIndex: 5, marginTop: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', borderRadius: 16, background: colors.background.surface, border: `1px solid ${modifie ? accent : colors.border.default}`, boxShadow: '0 8px 28px rgba(0,0,0,0.14)' }}>
+      <div style={{ position: 'sticky', bottom: 12, zIndex: 5, marginTop: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', borderRadius: forme.rayonCarte, background: colors.background.surface, border: `1px solid ${modifie ? accent : colors.border.strong}` }}>
         <button type="button" onClick={enregistrer} disabled={saving || !modifie} className="mc-btn" style={{ ...st.bouton(true, saving || !modifie), background: accent, color: texteSur(accent) }}>
           {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>

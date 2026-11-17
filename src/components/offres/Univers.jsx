@@ -5,7 +5,7 @@ import { PHOTOS, TRAITEMENT_PHOTO, POLICE_TITRE } from '../../lib/photosOffres'
 
 // Les trois univers de la page Offres (joueur, éducateur, club) : photos seulement en
 // fond des introductions, jamais derrière les cartes de tarifs.
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 const aller = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
 const CSS = `

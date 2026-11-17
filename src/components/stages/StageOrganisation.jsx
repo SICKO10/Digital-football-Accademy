@@ -44,7 +44,7 @@ export default function StageOrganisation({ st, colors, accent, stage }) {
     return () => { annule = true }
   }, [stage.id, stage.club_id])
 
-  if (chargement) return <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
+  if (chargement) return <p style={{ color: colors.text.dim, fontSize: '13px' }}>Chargement…</p>
   const commun = { st, colors, accent, stage, encadrants, setErreur }
 
   return (
@@ -65,7 +65,7 @@ function Bloc({ st, colors, titre, aide, droite, children }) {
         <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: colors.text.primary }}>{titre}</p>
         {droite}
       </div>
-      {aide && <p style={{ margin: '4px 0 12px', fontSize: '12px', color: colors.text.faint }}>{aide}</p>}
+      {aide && <p style={{ margin: '4px 0 12px', fontSize: '12px', color: colors.text.dim }}>{aide}</p>}
       {children}
     </div>
   )
@@ -100,21 +100,21 @@ function Encadrants({ st, colors, stage, encadrants, setEncadrants, setTaches, s
     <Bloc st={st} colors={colors} titre="Encadrants et responsabilités" aide="Toutes les personnes qui encadrent le stage, avec leur rôle (responsable de groupe, transport, infirmerie…).">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
         {encadrants.map(e => (
-          <div key={e.id} style={{ background: colors.background.raised, borderRadius: '10px', padding: '10px 12px' }}>
+          <div key={e.id} style={{ background: colors.background.raised, borderRadius: '6px', padding: '10px 12px' }}>
             <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary }}>{e.nom}</div>
             <div style={{ fontSize: '12px', color: colors.text.dim }}>{e.role || 'Rôle non précisé'}{e.telephone ? ` · ${e.telephone}` : ''}</div>
             <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
               <button onClick={() => setEdition({ ...e, role: e.role || '', telephone: e.telephone || '' })} style={petit(st)}>Modifier</button>
-              <button onClick={() => supprimer(e)} style={petit(st, { color: '#f87171' })}>Retirer</button>
+              <button onClick={() => supprimer(e)} style={petit(st, { color: colors.accent.red })}>Retirer</button>
             </div>
           </div>
         ))}
       </div>
       {edition ? (
         <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', alignItems: 'end' }}>
-          <div><label style={st.label}>Nom *</label><input value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} /></div>
-          <div><label style={st.label}>Responsabilité</label><input value={edition.role} onChange={e => setEdition(p => ({ ...p, role: e.target.value }))} style={st.input} placeholder="Responsable U8" /></div>
-          <div><label style={st.label}>Téléphone</label><input value={edition.telephone} onChange={e => setEdition(p => ({ ...p, telephone: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Nom *</label><input className="df-champ" value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Responsabilité</label><input className="df-champ" value={edition.role} onChange={e => setEdition(p => ({ ...p, role: e.target.value }))} style={st.input} placeholder="Responsable U8" /></div>
+          <div><label style={st.label}>Téléphone</label><input className="df-champ" value={edition.telephone} onChange={e => setEdition(p => ({ ...p, telephone: e.target.value }))} style={st.input} /></div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={enregistrer} style={st.boutonPlein}>Enregistrer</button>
             <button onClick={() => setEdition(null)} style={st.boutonDiscret}>Annuler</button>
@@ -155,37 +155,37 @@ function Materiel({ st, colors, accent, stage, encadrants, materiel, setMateriel
   }
 
   const obtenus = materiel.filter(m => m.statut === 'obtenu').length
-  const couleurStatut = { a_trouver: '#f87171', demande: '#facc15', obtenu: accent }
+  const couleurStatut = { a_trouver: colors.accent.red, demande: colors.accent.amber, obtenu: accent }
 
   return (
     <Bloc st={st} colors={colors} titre="Matériel nécessaire" aide="Clique sur le statut pour le faire avancer : à trouver, demandé, obtenu."
       droite={materiel.length > 0 && <span style={{ fontSize: '13px', color: colors.text.dim }}>{obtenus}/{materiel.length} obtenus</span>}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {materiel.map(m => (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '10px', padding: '9px 12px', flexWrap: 'wrap' }}>
-            <button onClick={() => changerStatut(m)} title="Changer le statut" style={{ minWidth: '86px', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: 'transparent', border: `1px solid ${couleurStatut[m.statut]}80`, color: couleurStatut[m.statut] }}>{STATUTS_MATERIEL[m.statut]}</button>
+          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '6px', padding: '9px 12px', flexWrap: 'wrap' }}>
+            <button onClick={() => changerStatut(m)} title="Changer le statut" style={{ minWidth: '86px', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, minHeight: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><span aria-hidden="true" style={{ width: '8px', height: '8px', background: couleurStatut[m.statut], borderRadius: '2px', flexShrink: 0 }} />{STATUTS_MATERIEL[m.statut]}</button>
             <div style={{ flex: 1, minWidth: '160px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{m.quantite} × {m.nom}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim }}>{[nomEncadrant(m.encadrant_id) && `Resp. ${nomEncadrant(m.encadrant_id)}`, m.source, m.notes].filter(Boolean).join(' · ') || 'Aucun détail'}</div>
             </div>
             <button onClick={() => setEdition({ ...m, encadrant_id: m.encadrant_id || '', source: m.source || '', notes: m.notes || '' })} style={petit(st)}>Modifier</button>
-            <button onClick={() => supprimer(m)} style={petit(st, { color: '#f87171' })}>Supprimer</button>
+            <button onClick={() => supprimer(m)} style={petit(st, { color: colors.accent.red })}>Supprimer</button>
           </div>
         ))}
       </div>
       {edition ? (
         <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', alignItems: 'end' }}>
-          <div><label style={st.label}>Matériel *</label><input value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Ballons taille 4" /></div>
-          <div><label style={st.label}>Quantité</label><input type="number" min="1" value={edition.quantite} onChange={e => setEdition(p => ({ ...p, quantite: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Matériel *</label><input className="df-champ" value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} placeholder="Ballons taille 4" /></div>
+          <div><label style={st.label}>Quantité</label><input className="df-champ" type="number" min="1" value={edition.quantite} onChange={e => setEdition(p => ({ ...p, quantite: e.target.value }))} style={st.input} /></div>
           <div>
             <label style={st.label}>Responsable</label>
-            <select value={edition.encadrant_id} onChange={e => setEdition(p => ({ ...p, encadrant_id: e.target.value }))} style={st.input}>
+            <select className="df-champ" value={edition.encadrant_id} onChange={e => setEdition(p => ({ ...p, encadrant_id: e.target.value }))} style={st.input}>
               <option value="">—</option>
               {encadrants.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}
             </select>
           </div>
-          <div><label style={st.label}>Où le trouver</label><input value={edition.source} onChange={e => setEdition(p => ({ ...p, source: e.target.value }))} style={st.input} placeholder="Local du club, prêt mairie…" /></div>
-          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Notes</label><input value={edition.notes} onChange={e => setEdition(p => ({ ...p, notes: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Où le trouver</label><input className="df-champ" value={edition.source} onChange={e => setEdition(p => ({ ...p, source: e.target.value }))} style={st.input} placeholder="Local du club, prêt mairie…" /></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Notes</label><input className="df-champ" value={edition.notes} onChange={e => setEdition(p => ({ ...p, notes: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px' }}>
             <button onClick={enregistrer} style={st.boutonPlein}>Enregistrer</button>
             <button onClick={() => setEdition(null)} style={st.boutonDiscret}>Annuler</button>
@@ -235,7 +235,7 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
   }
 
   const faites = taches.filter(t => t.statut === 'fait').length
-  const couleurStatut = { a_faire: colors.text.faint, en_cours: '#facc15', fait: accent }
+  const couleurStatut = { a_faire: colors.text.dim, en_cours: colors.accent.amber, fait: accent }
 
   return (
     <Bloc st={st} colors={colors} titre="Tâches" aide="Transport, surveillance, repas, logistique… Attribue chaque tâche à un encadrant ; clique sur le statut pour le faire avancer."
@@ -243,11 +243,11 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
       {!dupliSource && (
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
           {jours.length > 1 && <button onClick={() => { setMessageDupli(''); setDupliSource(taches.find(t => t.date)?.date || jours[0]) }} style={st.bouton}>Dupliquer une journée</button>}
-          <BoutonDoublons st={st} stage={stage} creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches} onMessage={setMessageDupli} />
-          <span style={{ fontSize: '12px', color: colors.text.faint }}>Recopie les tâches (et si besoin les créneaux du programme) d'un jour vers les autres.</span>
+          <BoutonDoublons st={st} colors={colors} stage={stage} creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches} onMessage={setMessageDupli} />
+          <span style={{ fontSize: '12px', color: colors.text.dim }}>Recopie les tâches (et si besoin les créneaux du programme) d'un jour vers les autres.</span>
         </div>
       )}
-      {messageDupli && <p style={{ margin: '0 0 10px', fontSize: '13px', color: messageDupli.startsWith('Suppression impossible') ? '#f87171' : '#4ade80' }}>{messageDupli}</p>}
+      {messageDupli && <p style={{ margin: '0 0 10px', fontSize: '13px', color: messageDupli.startsWith('Suppression impossible') ? colors.accent.red : colors.accent.success }}>{messageDupli}</p>}
       {dupliSource && (
         <DuplicationJournee st={st} colors={colors} stage={stage} jours={jours} sourceInitiale={dupliSource}
           creneaux={creneaux} taches={taches} setCreneaux={setCreneaux} setTaches={setTaches}
@@ -255,8 +255,8 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {taches.map(t => (
-          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '10px', padding: '9px 12px', flexWrap: 'wrap' }}>
-            <button onClick={() => changerStatut(t)} title="Changer le statut" style={{ minWidth: '74px', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', background: 'transparent', border: `1px solid ${couleurStatut[t.statut]}80`, color: couleurStatut[t.statut] }}>{STATUTS_TACHE[t.statut]}</button>
+          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: colors.background.raised, borderRadius: '6px', padding: '9px 12px', flexWrap: 'wrap' }}>
+            <button onClick={() => changerStatut(t)} title="Changer le statut" style={{ minWidth: '74px', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, minHeight: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><span aria-hidden="true" style={{ width: '8px', height: '8px', background: couleurStatut[t.statut], borderRadius: '2px', flexShrink: 0 }} />{STATUTS_TACHE[t.statut]}</button>
             <div style={{ flex: 1, minWidth: '180px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary, textDecoration: t.statut === 'fait' ? 'line-through' : 'none' }}>{t.tache}</div>
               <div style={{ fontSize: '12px', color: colors.text.dim, textTransform: 'none' }}>
@@ -264,48 +264,48 @@ function Taches({ st, colors, accent, stage, encadrants, taches, setTaches, cren
               </div>
             </div>
             <button onClick={() => setEdition({ ...t, date: t.date || '', heure_debut: heure(t.heure_debut), heure_fin: heure(t.heure_fin), encadrant_ids: t.encadrant_ids || [], tous_encadrants: !!t.tous_encadrants, notes: t.notes || '' })} style={petit(st)}>Modifier</button>
-            <button onClick={() => supprimer(t)} style={petit(st, { color: '#f87171' })}>Supprimer</button>
+            <button onClick={() => supprimer(t)} style={petit(st, { color: colors.accent.red })}>Supprimer</button>
           </div>
         ))}
       </div>
       {edition ? (
         <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', alignItems: 'end' }}>
-          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Tâche *</label><input value={edition.tache} onChange={e => setEdition(p => ({ ...p, tache: e.target.value }))} style={st.input} placeholder="Conduire le minibus vers Coubertin" /></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Tâche *</label><input className="df-champ" value={edition.tache} onChange={e => setEdition(p => ({ ...p, tache: e.target.value }))} style={st.input} placeholder="Conduire le minibus vers Coubertin" /></div>
           <div>
             <label style={st.label}>Catégorie</label>
-            <select value={edition.categorie} onChange={e => setEdition(p => ({ ...p, categorie: e.target.value }))} style={st.input}>
+            <select className="df-champ" value={edition.categorie} onChange={e => setEdition(p => ({ ...p, categorie: e.target.value }))} style={st.input}>
               {Object.entries(CATEGORIES_TACHE).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           </div>
           <div>
             <label style={st.label}>Jour</label>
-            <select value={edition.date} onChange={e => setEdition(p => ({ ...p, date: e.target.value }))} style={st.input}>
+            <select className="df-champ" value={edition.date} onChange={e => setEdition(p => ({ ...p, date: e.target.value }))} style={st.input}>
               <option value="">Tous les jours du stage</option>
               {jours.map(j => <option key={j} value={j}>{formatJourCourt(j)}</option>)}
             </select>
           </div>
-          <div><label style={st.label}>Début</label><input type="time" value={edition.heure_debut} onChange={e => setEdition(p => ({ ...p, heure_debut: e.target.value }))} style={st.input} /></div>
-          <div><label style={st.label}>Fin</label><input type="time" value={edition.heure_fin} onChange={e => setEdition(p => ({ ...p, heure_fin: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Début</label><input className="df-champ" type="time" value={edition.heure_debut} onChange={e => setEdition(p => ({ ...p, heure_debut: e.target.value }))} style={st.input} /></div>
+          <div><label style={st.label}>Fin</label><input className="df-champ" type="time" value={edition.heure_fin} onChange={e => setEdition(p => ({ ...p, heure_fin: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={st.label}>Encadrants</label>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <button type="button" onClick={() => setEdition(p => ({ ...p, tous_encadrants: !p.tous_encadrants }))} style={{
-                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                background: edition.tous_encadrants ? accent + '20' : 'transparent', border: `1px solid ${edition.tous_encadrants ? accent : colors.border.default}`, color: edition.tous_encadrants ? accent : colors.text.dim,
+                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+                background: edition.tous_encadrants ? colors.background.raised : 'transparent', border: `1px solid ${edition.tous_encadrants ? accent : colors.border.default}`, color: edition.tous_encadrants ? colors.text.primary : colors.text.dim,
               }}>Tous les encadrants</button>
               {!edition.tous_encadrants && encadrants.map(e => {
                 const actif = edition.encadrant_ids.includes(e.id)
                 return (
                   <button key={e.id} type="button" onClick={() => basculerEncadrant(e.id)} style={{
-                    padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    background: actif ? accent + '20' : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`, color: actif ? accent : colors.text.dim,
+                    padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+                    background: actif ? colors.background.raised : 'transparent', border: `1px solid ${actif ? accent : colors.border.default}`, color: actif ? colors.text.primary : colors.text.dim,
                   }}>{e.nom}</button>
                 )
               })}
             </div>
-            {encadrants.length === 0 && <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.faint }}>Ajoute d'abord des encadrants pour leur attribuer la tâche.</p>}
+            {encadrants.length === 0 && <p style={{ margin: '6px 0 0', fontSize: '12px', color: colors.text.dim }}>Ajoute d'abord des encadrants pour leur attribuer la tâche.</p>}
           </div>
-          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Notes</label><input value={edition.notes} onChange={e => setEdition(p => ({ ...p, notes: e.target.value }))} style={st.input} /></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Notes</label><input className="df-champ" value={edition.notes} onChange={e => setEdition(p => ({ ...p, notes: e.target.value }))} style={st.input} /></div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px' }}>
             <button onClick={enregistrer} style={st.boutonPlein}>Enregistrer</button>
             <button onClick={() => setEdition(null)} style={st.boutonDiscret}>Annuler</button>
@@ -335,8 +335,8 @@ function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, cren
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
         {encadrants.map(e => (
           <button key={e.id} onClick={() => setChoisi(e.id)} style={{
-            padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-            background: encadrant.id === e.id ? accent + '18' : 'transparent', border: `1px solid ${encadrant.id === e.id ? accent + '60' : colors.border.default}`, color: encadrant.id === e.id ? accent : colors.text.dim,
+            padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+            background: encadrant.id === e.id ? colors.background.raised : 'transparent', border: `1px solid ${encadrant.id === e.id ? accent : colors.border.default}`, color: encadrant.id === e.id ? colors.text.primary : colors.text.dim,
           }}>{e.nom}</button>
         ))}
       </div>
@@ -345,17 +345,17 @@ function PlanningEncadrant({ st, colors, accent, stage, encadrants, taches, cren
         <button onClick={() => exporter(encadrants)} style={st.boutonDiscret}>PDF de tous les encadrants</button>
       </div>
       <p style={{ margin: '0 0 10px', fontSize: '13px', color: colors.text.secondary }}><strong>{encadrant.nom}</strong>{encadrant.role ? ` · ${encadrant.role}` : ''}{encadrant.telephone ? ` · ${encadrant.telephone}` : ''}</p>
-      {elements.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Rien de prévu pour cet encadrant pour l'instant.</p> : (
+      {elements.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Rien de prévu pour cet encadrant pour l'instant.</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {Object.entries(parJour).map(([jour, liste]) => (
             <div key={jour}>
               <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '13px', color: colors.text.primary, textTransform: 'capitalize' }}>{jour === 'tout' ? 'Tout le stage' : formatDate(jour)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {liste.map(e => (
-                  <div key={e.cle} style={{ display: 'flex', gap: '12px', background: colors.background.raised, borderRadius: '10px', padding: '8px 12px', borderLeft: `4px solid ${e.type === 'Tâche' ? '#60a5fa' : accent}` }}>
+                  <div key={e.cle} style={{ display: 'flex', gap: '12px', background: colors.background.raised, borderRadius: '6px', padding: '8px 12px', borderLeft: `4px solid ${e.type === 'Tâche' ? colors.accent.info : accent}` }}>
                     <span style={{ fontSize: '12px', fontWeight: 700, color: colors.text.secondary, minWidth: '86px' }}>{e.debut ? `${heure(e.debut)}${e.fin ? ` – ${heure(e.fin)}` : ''}` : 'Sans horaire'}</span>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{e.titre} <span style={{ fontWeight: 400, fontSize: '11px', color: colors.text.faint }}>· {e.type}</span></div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{e.titre} <span style={{ fontWeight: 400, fontSize: '11px', color: colors.text.dim }}>· {e.type}</span></div>
                       {e.detail && <div style={{ fontSize: '12px', color: colors.text.dim }}>{e.detail}</div>}
                     </div>
                   </div>

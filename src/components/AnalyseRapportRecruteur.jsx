@@ -14,11 +14,11 @@ const playerInfoVide = () => ({
 })
 
 const st = {
-  input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif' },
+  input: { width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', padding: '10px 12px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Barlow, sans-serif' },
   label: { fontSize: '11px', color: '#555', marginBottom: '4px', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' },
   card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '1.25rem' },
-  btn: (color = '#f97316') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
-  btnSolid: (color = '#f97316', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  btn: (color = '#f97316') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }),
+  btnSolid: (color = '#f97316', textColor = '#000') => ({ background: color, color: textColor, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }),
 }
 
 const RECO_CONFIG = {
@@ -324,7 +324,7 @@ export default function AnalyseRapportRecruteur({ userId }) {
           <div style={{ display: 'flex', gap: '8px' }}>
             {[['complet', 'Match complet'], ['premiere', '1ère mi-temps'], ['deuxieme', '2ème mi-temps']].map(([val, label]) => (
               <button key={val} onClick={() => setPlayerInfo(p => ({ ...p, periodeMatch: val }))}
-                style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#f97316' : '#2a2a2a'}`, background: playerInfo.periodeMatch === val ? '#f9731615' : '#1a1a1a', color: playerInfo.periodeMatch === val ? '#f97316' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${playerInfo.periodeMatch === val ? '#f97316' : '#2a2a2a'}`, background: playerInfo.periodeMatch === val ? '#f9731615' : '#1a1a1a', color: playerInfo.periodeMatch === val ? '#f97316' : '#555', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 {label}
               </button>
             ))}

@@ -32,7 +32,7 @@ export default function DashboardDirigeant() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: colors.accent.green, fontFamily: 'Inter, sans-serif' }}>Chargement...</p>
+      <p style={{ color: colors.accent.green, fontFamily: 'Barlow, sans-serif' }}>Chargement...</p>
     </div>
   )
 

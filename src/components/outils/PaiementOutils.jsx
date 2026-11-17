@@ -61,7 +61,7 @@ export function PaiementOutils({ payables }) {
     return null
   }
 
-  const police = 'Inter, sans-serif'
+  const police = 'Barlow, sans-serif'
   return (
     <section aria-labelledby="titre-boutique" style={{ marginBottom: 32, fontFamily: police }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -204,7 +204,7 @@ export function RetourPaiement({ outils }) {
         ? ['Paiement validé. Activation de tes outils en cours...', colors.accent.info]
         : ['Ton paiement est validé, mais l\'activation prend plus de temps que prévu. Recharge la page dans quelques minutes.', colors.accent.amber]
   return (
-    <p role="status" style={{ margin: '0 0 16px', padding: '10px 14px', borderRadius: 10, border: `1px solid ${couleur}`, fontSize: 13, fontWeight: 600, color: couleur, fontFamily: 'Inter, sans-serif' }}>
+    <p role="status" style={{ margin: '0 0 16px', padding: '10px 14px', borderRadius: 10, border: `1px solid ${couleur}`, fontSize: 13, fontWeight: 600, color: couleur, fontFamily: 'Barlow, sans-serif' }}>
       {texte}
     </p>
   )

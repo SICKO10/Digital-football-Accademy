@@ -10,7 +10,7 @@ import { IconTool, IconBall, IconChart, IconBolt, IconCheck } from '../icones'
 // toujours sombre, comme le reste de Offres.
 // Photo de fond : public/offres/club.jpg (voir lib/photosOffres.js), même traitement que les deux autres univers.
 const PHOTO_CLUB = PHOTOS.club
-const police = 'Inter, sans-serif'
+const police = 'Barlow, sans-serif'
 
 const CSS = `
   .oc-photo { background-size: cover; background-position: center; }

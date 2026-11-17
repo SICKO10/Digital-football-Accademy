@@ -29,6 +29,29 @@ export const PERMISSION_DEFAULTS = {
   // (choix produit du 2026-10-24) — même liste reprise côté base dans
   // peut_gerer_stages() (supabase_stages_etape1.sql), à garder synchronisée.
   stages: ['president', 'directeur_sportif', 'secretaire'],
+  // Bibliothèque du club : l'écriture est réservée au président et au directeur
+  // sportif ; la lecture est plus large (voir LECTURE_PAR_DEFAUT). Même règle côté
+  // base dans a_permission_bibliotheque() (supabase_bibliotheque_club.sql).
+  bibliotheque: ['president', 'directeur_sportif'],
+}
+
+// Sections dont la lecture par défaut est plus large que l'écriture. 'tous' = tous
+// les rôles du staff. Les autres sections n'apparaissent pas ici : pour elles,
+// voir et écrire restent une seule et même liste (PERMISSION_DEFAULTS).
+export const LECTURE_PAR_DEFAUT = {
+  bibliotheque: 'tous',
+}
+
+// Le rôle voit-il la section tant que le président n'a rien réglé ?
+export function voitParDefaut(section, role) {
+  if (!role) return false
+  if (LECTURE_PAR_DEFAUT[section] === 'tous') return true
+  return (PERMISSION_DEFAULTS[section] || []).includes(role)
+}
+
+// Le rôle écrit-il dans la section tant que le président n'a rien réglé ?
+export function ecritParDefaut(section, role) {
+  return (PERMISSION_DEFAULTS[section] || []).includes(role)
 }
 
 // Même règle que canEditSection (DashboardClub.jsx) : le président a toujours

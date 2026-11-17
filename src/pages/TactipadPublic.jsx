@@ -40,7 +40,7 @@ export default function TactipadPublic() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontFamily: 'Barlow, sans-serif' }}>
         {t('jexp_chargement', lang)}
       </div>
     )
@@ -48,10 +48,10 @@ export default function TactipadPublic() {
 
   if (notFound) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', fontFamily: 'Barlow, sans-serif' }}>
         <p style={{ fontSize: '32px' }}>🎨</p>
         <p style={{ color: colors.text.dim }}>{t('tacpub_schema_introuvable', lang)}</p>
-        <button onClick={() => navigate('/')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+        <button onClick={() => navigate('/')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
           {t('invite_retour_accueil', lang)}
         </button>
       </div>
@@ -59,7 +59,7 @@ export default function TactipadPublic() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' }}>
       <p style={{ fontWeight: 800, fontSize: '18px', margin: '0 0 4px', textAlign: 'center' }}>{tactipad.nom || t('tacpub_schema_tactique', lang)}</p>
       <p style={{ color: colors.text.faint, fontSize: '12px', marginBottom: '20px' }}>{t('tacpub_partage_le', lang)} {new Date(tactipad.created_at).toLocaleDateString(localeOf(lang))}</p>
 
@@ -112,7 +112,7 @@ export default function TactipadPublic() {
         </Layer>
       </Stage>
 
-      <button onClick={() => navigate('/')} style={{ marginTop: '24px', background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+      <button onClick={() => navigate('/')} style={{ marginTop: '24px', background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
         {t('tacpub_voir_sur', lang)}
       </button>
     </div>

@@ -193,7 +193,7 @@ function RecetteCard({ recette, onAjouter }) {
               </div>
             )}
 
-            <button onClick={onAjouter} style={{ background: colors.accent.green + '1a', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={onAjouter} style={{ background: colors.accent.green + '1a', color: colors.accent.green, border: `1px solid ${colors.accent.green}`, borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               + Ajouter au journal du jour
             </button>
           </div>
@@ -420,11 +420,11 @@ export default function NutritionDashboard({ joueurId, educateurId, isMobile = f
 
   const s = {
     card: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '20px', marginBottom: '16px' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', fontFamily: 'Barlow, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '13px', fontFamily: 'Barlow, sans-serif' },
     label: { color: colors.text.faint, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'block', fontWeight: 700 },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' },
-    pillTab: (actif) => ({ background: actif ? colors.text.primary : colors.background.raised, color: actif ? colors.background.base : colors.text.faint, border: `1px solid ${actif ? colors.text.primary : colors.border.default}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }),
+    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' },
+    pillTab: (actif) => ({ background: actif ? colors.text.primary : colors.background.raised, color: actif ? colors.background.base : colors.text.faint, border: `1px solid ${actif ? colors.text.primary : colors.border.default}`, borderRadius: '20px', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Barlow, sans-serif', whiteSpace: 'nowrap' }),
   }
 
   const cadre = { padding: isMobile ? '16px' : '24px 40px', maxWidth: '980px', margin: '0 auto' }

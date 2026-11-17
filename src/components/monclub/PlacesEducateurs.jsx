@@ -3,6 +3,7 @@ import { useColors } from '../../lib/theme'
 import { supabase } from '../../supabase'
 import { appelerOutils } from '../../lib/outilsApi'
 import { stylesMonClub } from './uiMonClub'
+import { forme, police } from '../../tokens'
 
 // Qui a une place dans le forfait du club (nouveau modèle, forfait actif).
 // `educateurs` : [{ id, nom }]. `sansPlace` : ids sans place, lus dans la base
@@ -55,11 +56,11 @@ export default function PlacesEducateurs({ clubId, educateurs, sansPlace, places
   const retirer = (e) => changer(e, 'retire', null, `${e.nom} n'a plus de place. Il en est prévenu s'il recevait des outils de votre club.`)
   const automatique = (e) => changer(e, 'auto', null, `${e.nom} suit de nouveau l'ordre automatique (le plus ancien affilié passe en premier).`)
 
-  const lien = { background: 'none', border: 'none', padding: '6px 4px', minHeight: 44, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700, color: colors.text.secondary, textDecoration: 'underline' }
+  const lien = { background: 'none', border: 'none', padding: '6px 4px', minHeight: 44, cursor: 'pointer', fontFamily: police.texte, fontSize: 12, fontWeight: 600, color: colors.text.secondary, textDecoration: 'underline' }
 
   return (
-    <section aria-labelledby="titre-places" style={{ margin: '0 0 22px', padding: '16px 18px', borderRadius: 16, background: colors.background.surface, border: `1px solid ${colors.border.subtle}` }}>
-      <h3 id="titre-places" style={{ margin: 0, fontSize: 16, fontWeight: 800, color: colors.text.primary }}>Qui a une place ?</h3>
+    <section aria-labelledby="titre-places" style={{ ...st.carte, margin: '0 0 22px', padding: '16px 18px' }}>
+      <h3 id="titre-places" style={st.titreCarte}>Qui a une place ?</h3>
       <p style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>
         {avecPlace.length} / {places} places utilisées. Sans choix de votre part, les plus anciens affiliés passent en premier. Un éducateur sans place garde le socle gratuit et ses données.
       </p>
@@ -71,9 +72,9 @@ export default function PlacesEducateurs({ clubId, educateurs, sansPlace, places
           const etat = choix[e.id]
           const occupe = enCours === e.id
           return (
-            <li key={e.id} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '10px 12px', borderRadius: 12, background: colors.background.sunken }}>
-              <span style={{ flex: '1 1 160px', minWidth: 0, fontSize: 14, fontWeight: 700, color: colors.text.primary }}>{e.nom}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, color: colors.text.primary, background: (place ? st.marque : colors.accent.red) + '22', border: `1px solid ${(place ? st.marque : colors.accent.red)}55` }}>
+            <li key={e.id} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '10px 12px', borderRadius: forme.rayonCarte, background: colors.background.sunken }}>
+              <span style={{ flex: '1 1 160px', minWidth: 0, fontSize: 14, fontWeight: 600, color: colors.text.primary }}>{e.nom}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 8px', borderRadius: forme.rayonPastille, color: colors.text.primary, background: (place ? st.marque : colors.accent.red) + '22', border: `1px solid ${(place ? st.marque : colors.accent.red)}55` }}>
                 {place ? (etat === 'choisi' ? 'Place garantie' : 'A une place') : (etat === 'retire' ? 'Place retirée' : 'Sans place')}
               </span>
               {place
@@ -85,7 +86,7 @@ export default function PlacesEducateurs({ clubId, educateurs, sansPlace, places
         })}
       </ul>
       {echange && (
-        <div role="group" aria-label={`Qui libère sa place pour ${echange.nom} ?`} style={{ marginTop: 14, padding: '14px 16px', borderRadius: 12, background: colors.accent.amber + '22', border: `1px solid ${colors.accent.amber}66` }}>
+        <div role="group" aria-label={`Qui libère sa place pour ${echange.nom} ?`} style={{ marginTop: 14, padding: '14px 16px', borderRadius: forme.rayonCarte, background: colors.accent.amber + '22', border: `1px solid ${colors.accent.amber}66` }}>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: colors.text.primary }}>Toutes les places sont prises. Qui libère sa place pour {echange.nom} ?</p>
           <p style={{ margin: '4px 0 10px', fontSize: 13, color: colors.text.secondary }}>Celui que vous choisissez n'a plus de place et en est prévenu s'il recevait des outils de votre club.</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

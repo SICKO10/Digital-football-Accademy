@@ -171,7 +171,7 @@ export default function PublierSeanceJoueurs({ userId, entrainement, fiche, club
 
   const dateLabel = new Date(entrainement.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
   const titreSection = { margin: '18px 0 8px', fontSize: '11px', fontWeight: 700, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px' }
-  const puce = actif => ({ padding: '7px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + '1a' : 'transparent', color: actif ? colors.accent.green : colors.text.secondary })
+  const puce = actif => ({ padding: '7px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + '1a' : 'transparent', color: actif ? colors.accent.green : colors.text.secondary })
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
@@ -265,16 +265,16 @@ export default function PublierSeanceJoueurs({ userId, entrainement, fiche, club
         <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {publication && (
             <button type="button" onClick={retirer} disabled={enCours}
-              style={{ marginRight: 'auto', padding: '10px 14px', borderRadius: '10px', background: 'transparent', border: `1px solid ${colors.accent.red}55`, color: colors.accent.red, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ marginRight: 'auto', padding: '10px 14px', borderRadius: '10px', background: 'transparent', border: `1px solid ${colors.accent.red}55`, color: colors.accent.red, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               Retirer
             </button>
           )}
           <button type="button" onClick={onFermer}
-            style={{ padding: '10px 14px', borderRadius: '10px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ padding: '10px 14px', borderRadius: '10px', background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             Annuler
           </button>
           <button type="button" onClick={publier} disabled={!peutPublier}
-            style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: peutPublier ? colors.accent.green : colors.background.raised, color: peutPublier ? colors.black : colors.text.disabled, fontWeight: 800, fontSize: '13px', cursor: peutPublier ? 'pointer' : 'default', fontFamily: 'Inter, sans-serif' }}>
+            style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: peutPublier ? colors.accent.green : colors.background.raised, color: peutPublier ? colors.black : colors.text.disabled, fontWeight: 800, fontSize: '13px', cursor: peutPublier ? 'pointer' : 'default', fontFamily: 'Barlow, sans-serif' }}>
             {enCours ? '…' : publication ? 'Mettre à jour' : 'Publier'}
           </button>
         </div>

@@ -23,7 +23,7 @@ export default function EcussonClub({ nom, logo, taille = 44 }) {
   return (
     <svg width={taille} height={taille * 1.1} viewBox="0 0 40 44" style={{ flexShrink: 0 }} role="img" aria-label={nom || ''}>
       <path d="M20 2 L36 7 V20 C36 31 29 38.5 20 42 C11 38.5 4 31 4 20 V7 Z" fill={colors.background.raised} stroke={colors.border.strong} strokeWidth="1.5" />
-      <text x="20" y="25.5" textAnchor="middle" fontSize="12" fontWeight="800" fontFamily="Inter, sans-serif" fill={colors.text.secondary}>{initialesClub(nom)}</text>
+      <text x="20" y="25.5" textAnchor="middle" fontSize="12" fontWeight="800" fontFamily="Barlow, sans-serif" fill={colors.text.secondary}>{initialesClub(nom)}</text>
     </svg>
   )
 }

@@ -96,7 +96,7 @@ export default function InstallAppBanner() {
           position: 'fixed', left: '12px', right: '12px', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
           zIndex: 2000, background: colors.background.surface, border: `1px solid ${colors.border.default}`,
           borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', fontFamily: 'Inter, sans-serif',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', fontFamily: 'Barlow, sans-serif',
         }}
       >
         <span style={{ color: colors.accent.green, flexShrink: 0, display: 'flex' }}><IcoPhone /></span>
@@ -104,7 +104,7 @@ export default function InstallAppBanner() {
           Ajoute Digital Football à ton écran d'accueil pour ne rater aucune actu.
         </p>
         <button onClick={() => setTutoOuvert(true)}
-          style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>
+          style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'Barlow, sans-serif' }}>
           Comment faire ?
         </button>
         <button onClick={fermer} aria-label="Fermer"
@@ -117,7 +117,7 @@ export default function InstallAppBanner() {
         <div onClick={fermer}
           style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 2001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px', fontFamily: 'Barlow, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ color: colors.text.primary, margin: 0, fontSize: '16px' }}>
                 Ajouter à l'écran d'accueil
@@ -142,7 +142,7 @@ export default function InstallAppBanner() {
             </div>
 
             <button onClick={fermer}
-              style={{ marginTop: '24px', width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>
+              style={{ marginTop: '24px', width: '100%', background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '10px', padding: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: 700, fontFamily: 'Barlow, sans-serif' }}>
               Compris
             </button>
           </div>

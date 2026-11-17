@@ -72,7 +72,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
                       border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
                       background: actif ? colors.accent.green + alpha.soft : colors.background.raised,
                       color: actif ? colors.accent.green : colors.text.primary,
-                      fontSize: fontSize.xl, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                      fontSize: fontSize.xl, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
                     }}
                   >
                     {c.prenom} {c.nom}
@@ -98,7 +98,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
               style={{
                 width: '100%', boxSizing: 'border-box', minHeight: '140px', resize: 'vertical', outline: 'none',
                 background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: radius.xl,
-                color: colors.text.primary, padding: spacing.xl, fontSize: fontSize['3xl'], lineHeight: 1.5, fontFamily: 'Inter, sans-serif',
+                color: colors.text.primary, padding: spacing.xl, fontSize: fontSize['3xl'], lineHeight: 1.5, fontFamily: 'Barlow, sans-serif',
               }}
             />
             {erreur && (
@@ -111,7 +111,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
               style={{
                 marginTop: spacing.lg, width: '100%', minHeight: '48px', border: 'none', borderRadius: radius.xl,
                 background: colors.accent.green, color: colors.black, fontSize: fontSize.xl, fontWeight: 700,
-                fontFamily: 'Inter, sans-serif', cursor: inactif ? 'default' : 'pointer', opacity: inactif ? 0.4 : 1, transition: 'opacity 0.2s',
+                fontFamily: 'Barlow, sans-serif', cursor: inactif ? 'default' : 'pointer', opacity: inactif ? 0.4 : 1, transition: 'opacity 0.2s',
               }}
             >
               {envoiEnCours ? t('etat_envoi_cours', lang) : t('jcoach_envoyer', lang)}

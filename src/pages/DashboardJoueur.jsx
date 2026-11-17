@@ -87,8 +87,8 @@ import StatsEquipe from '../components/StatsEquipe'
 // colors/alpha sont des imports statiques, pas de state, donc pas besoin de
 // redéfinir st par composant.
 const st = {
-  btn: (color = colors.accent.green) => ({ background: color + alpha.subtle, border: `1px solid ${color}${alpha.medium}`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
-  btnSolid: (color = colors.accent.green) => ({ background: color, color: colors.accent.onBrand, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }),
+  btn: (color = colors.accent.green) => ({ background: color + alpha.subtle, border: `1px solid ${color}${alpha.medium}`, color, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }),
+  btnSolid: (color = colors.accent.green) => ({ background: color, color: colors.accent.onBrand, border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }),
 }
 
 // CATEGORIES + valeurs historiques encore utilisées par certains profils (U21, Veteran)
@@ -131,7 +131,7 @@ function UpgradeCard({ titre, texte, lang = 'fr', userId, email }) {
       <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>{titre}</h2>
       <p style={{ fontSize: '13px', color: colors.text.faint, maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>{texte}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
+        <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('aff_starter_prix', lang)}</button>
         <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, email), '_blank')} style={st.btnSolid()}>{t('aff_pro_prix', lang)}</button>
       </div>
     </div>
@@ -195,7 +195,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly 
           )}
         </div>
         <button onClick={() => setEditProfil(!editProfil)}
-          style={{ background: editProfil ? colors.accent.green + alpha.soft : colors.background.surface, border: `1px solid ${editProfil ? `${colors.accent.green}60` : colors.border.default}`, color: editProfil ? colors.accent.green : colors.text.faint, borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', flexShrink: 0 }}>
+          style={{ background: editProfil ? colors.accent.green + alpha.soft : colors.background.surface, border: `1px solid ${editProfil ? `${colors.accent.green}60` : colors.border.default}`, color: editProfil ? colors.accent.green : colors.text.faint, borderRadius: '10px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', flexShrink: 0 }}>
           {editProfil ? t('btn_annuler', lang) : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconPencil size={13} />{t('btn_modifier', lang)}</span>}
         </button>
       </div>
@@ -216,13 +216,13 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly 
                 <label style={{ fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</label>
                 <input type={type} value={profilForm[key]}
                   onChange={e => setProfilForm(prev => ({ ...prev, [key]: e.target.value }))}
-                  style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
               </div>
             ))}
             <div>
               <label style={{ fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '4px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{t('equipe_poste', lang)}</label>
               <select value={profilForm.poste} onChange={e => setProfilForm(prev => ({ ...prev, poste: e.target.value }))}
-                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif', outline: 'none' }}>
                 <option value="">{t('aff_selectionner', lang)}</option>
                 {postes.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
@@ -232,7 +232,7 @@ function ProfilAffilieOnglet({ profil, userId, setProfil, lang = 'fr', readOnly 
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[['droit', t('equipe_droit', lang)], ['gauche', t('equipe_gauche', lang)], ['les deux', t('equipe_les_deux', lang)]].map(([p, label]) => (
                   <button key={p} onClick={() => setProfilForm(prev => ({ ...prev, pied: p }))}
-                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? `${colors.accent.green}60` : colors.border.default}`, background: profilForm.pied === p ? colors.accent.green + alpha.subtle : colors.background.base, color: profilForm.pied === p ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize' }}>
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: `1px solid ${profilForm.pied === p ? `${colors.accent.green}60` : colors.border.default}`, background: profilForm.pied === p ? colors.accent.green + alpha.subtle : colors.background.base, color: profilForm.pied === p ? colors.accent.green : colors.text.faint, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', textTransform: 'capitalize' }}>
                     {label}
                   </button>
                 ))}
@@ -1884,7 +1884,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const inputStyle = {
     width: '100%', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px',
     padding: '11px 14px', color: colors.text.primary, fontSize: '14px', boxSizing: 'border-box',
-    fontFamily: 'Inter, sans-serif', outline: 'none',
+    fontFamily: 'Barlow, sans-serif', outline: 'none',
   }
   const labelStyle = {
     fontSize: '11px', color: colors.text.faint, display: 'block', marginBottom: '7px',
@@ -1902,7 +1902,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   // ── BANNI ──
   if (profil?.banni) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ maxWidth: '440px', width: '100%', background: colors.background.surface, border: '1px solid #ef444430', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <div style={{ color: colors.accent.red, display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
@@ -1991,7 +1991,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       cursor: 'pointer',
       fontSize: fontSize.xl,
       lineHeight: 1,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: 'Barlow, sans-serif',
     }
 
     const navMois = (libelle, reculer, avancer) => (
@@ -2073,7 +2073,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <button key={f.id} onClick={() => setFiltreCompCompetition(f.id)} style={{
                 padding: `${spacing.sm} ${spacing.xl}`, borderRadius: radius.pill,
                 fontSize: fontSize.md, fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'Barlow, sans-serif',
                 background: actif ? colors.accent.green : colors.background.raised,
                 color: actif ? colors.accent.onBrand : colors.text.faint,
                 border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
@@ -2208,8 +2208,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           <p style={{ margin: '0 0 20px', fontSize: '13px', color: colors.text.faint, lineHeight: 1.5 }}>{notifEquipementPret.contenu}</p>
         )}
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Fermer</button>
-          <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setOnglet('equipement') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Voir mon équipement</button>
+          <button onClick={() => marquerNotifLue(notifEquipementPret.id)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${colors.border.default}`, background: 'transparent', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Fermer</button>
+          <button onClick={() => { marquerNotifLue(notifEquipementPret.id); setOnglet('equipement') }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: colors.accent.green, color: colors.accent.onBrand, fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Voir mon équipement</button>
         </div>
       </div>
     </div>
@@ -2290,8 +2290,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     ]
 
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; } .af-nav-btn:hover { background: ${colors.background.sunken} !important; color: ${colors.text.secondary} !important; color: ${colors.text.secondary} !important; }`}</style>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: ${colors.border.default}; border-radius: 2px; } .af-nav-btn:hover { background: ${colors.background.sunken} !important; color: ${colors.text.secondary} !important; color: ${colors.text.secondary} !important; }`}</style>
 
         {popupEquipementPret}
 
@@ -2325,7 +2325,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </div>
                 )}
                 <button className="af-nav-btn" onClick={() => { if (item.id === 'jogabonito') navigate('/jogabonito'); else setOnglet(item.id); setSidebarOpen(false) }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? `${colors.accent.green}12` : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: onglet === item.id ? `${colors.accent.green}12` : 'transparent', color: onglet === item.id ? colors.accent.green : item.locked ? colors.border.strong : colors.text.faint, fontSize: '13px', fontWeight: onglet === item.id ? 700 : 400, textAlign: 'left', fontFamily: 'Barlow, sans-serif', transition: 'all 0.15s', position: 'relative' }}>
                   <span style={{ flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.badge > 0 && (
@@ -2342,13 +2342,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
           {(mesRoles?.club || mesRoles?.educateur || mesRoles?.parent) && (
             <div style={{ padding: '8px 10px 0' }}>
               {mesRoles.club && (
-                <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
+                <button onClick={() => navigate('/club')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.blue}`, borderRadius: '8px', color: colors.accent.blue, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}>Vue Club{mesRoles.clubNom ? ` — ${mesRoles.clubNom}` : ''}</button>
               )}
               {mesRoles.educateur && (
-                <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Éducateur</button>
+                <button onClick={() => navigate('/educateur')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.green}`, borderRadius: '8px', color: colors.accent.green, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}>Vue Éducateur</button>
               )}
               {mesRoles.parent && (
-                <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
+                <button onClick={() => navigate('/dashboard-parent')} style={{ width: '100%', marginBottom: '4px', padding: '8px 12px', background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '8px', color: colors.accent.amber, cursor: 'pointer', fontSize: '12px', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}>Vue Parent{mesRoles.parentJoueurNom ? ` — ${mesRoles.parentJoueurNom}` : ''}</button>
               )}
             </div>
           )}
@@ -2363,7 +2363,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             </div>
           </div>
           <div style={{ padding: '12px 10px 20px', borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <button onClick={handleLogout} style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
+            <button onClick={handleLogout} style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}>{t('btn_deconnexion', lang)}</button>
             <ThemeToggleButton />
           </div>
         </aside>
@@ -2560,7 +2560,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
                             <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainEnt.id, 'entrainement', opt.val)} disabled={savingDispo}
-                              style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : colors.border.default}`, color: widgetDispoEnt === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ background: widgetDispoEnt === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoEnt === opt.val ? opt.border : colors.border.default}`, color: widgetDispoEnt === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoEnt === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                               {opt.label}
                             </button>
                           ))}
@@ -2582,7 +2582,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {STATUT_OPTIONS.map(opt => (
                             <button key={opt.val} onClick={() => repondreDisponibilite(widgetProchainMatch.id, 'match', opt.val)} disabled={savingDispo}
-                              style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : colors.border.default}`, color: widgetDispoMatch === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ background: widgetDispoMatch === opt.val ? opt.bg : 'transparent', border: `1px solid ${widgetDispoMatch === opt.val ? opt.border : colors.border.default}`, color: widgetDispoMatch === opt.val ? opt.color : colors.text.faint, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: widgetDispoMatch === opt.val ? 700 : 400, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                               {opt.label}
                             </button>
                           ))}
@@ -2626,7 +2626,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
                 {[{ id: 'prep_physique', label: t('aff_prepa_physique_court', lang), icone: <IconDumbbell />, desc: t('aff_tes_seances_exercices', lang) }, { id: 'stats', label: t('aff_mes_stats', lang), icone: <IconChart />, desc: t('aff_presences_performance', lang) }].map(item => (
-                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.xl, padding: `${spacing['2xl']} ${spacing['2xl']}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                  <button key={item.id} onClick={() => setOnglet(item.id)} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.xl, padding: `${spacing['2xl']} ${spacing['2xl']}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
                     <div style={{ color: colors.accent.green, marginBottom: spacing.md }}>{item.icone}</div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{item.label}</p>
                     <p style={{ margin: '3px 0 0', fontSize: '11px', color: colors.text.faint }}>{item.desc}</p>
@@ -2660,7 +2660,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </div>
                   <button
                     onClick={() => setOnglet('annonces')}
-                    style={{ marginTop: spacing['2xl'], background: 'transparent', border: 'none', color: colors.accent.green, fontSize: fontSize.lg, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', padding: 0 }}
+                    style={{ marginTop: spacing['2xl'], background: 'transparent', border: 'none', color: colors.accent.green, fontSize: fontSize.lg, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', padding: 0 }}
                   >
                     {t('jd_voir_tout', lang)}
                   </button>
@@ -2827,7 +2827,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         )}
                         {s.evaluations?.length > 0 && (
                           <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: affiliation.equipe_joueur_id, educateurId: affiliation.educateur_id })}
-                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Barlow, sans-serif' }}>
                             Voir ma fiche
                           </button>
                         )}
@@ -2857,7 +2857,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                               ))}
                               {data.length > 3 && (
                                 <button onClick={() => setClassementOuvert({ title, data, color })}
-                                  style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                  style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'Barlow, sans-serif' }}>
                                   {t('jd_voir_tout', lang)}
                                 </button>
                               )}
@@ -2988,8 +2988,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                         <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
                                           strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
                                           style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
-                                        <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
-                                        <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                        <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Barlow, sans-serif">{pct}%</text>
+                                        <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Barlow, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
                                       </svg>
                                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                                         <span style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconStar size={12} />{s.points} pts</span>
@@ -3062,7 +3062,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                             {s.evaluations.length} évaluation{s.evaluations.length > 1 ? 's' : ''} disponible{s.evaluations.length > 1 ? 's' : ''}
                                           </p>
                                           <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id })}
-                                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                            style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Barlow, sans-serif' }}>
                                             Voir ma fiche
                                           </button>
                                         </div>
@@ -3130,7 +3130,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                           )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
                                           {data?.length > 5 && (
                                             <button onClick={() => setClassementOuvert({ title, data, color })}
-                                              style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                              style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Barlow, sans-serif' }}>
                                               {t('jd_voir_tout', lang)}
                                             </button>
                                           )}
@@ -3275,8 +3275,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       setSidebarOpen(false)
     }
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex' }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; } .fan-nav-btn:hover { background: ${colors.background.surface} !important; }`}</style>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap'); * { box-sizing: border-box; } .fan-nav-btn:hover { background: ${colors.background.surface} !important; }`}</style>
 
         {isMobile && sidebarOpen && (
           <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 190 }} />
@@ -3298,7 +3298,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
                   background: fanOnglet === item.id ? colors.accent.green + alpha.soft : 'transparent',
                   color: fanOnglet === item.id ? colors.accent.green : colors.text.dim,
-                  border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s',
+                  border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', transition: 'background 0.15s',
                 }}>
                 {item.label}
               </button>
@@ -3308,7 +3308,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             <p style={{ fontSize: '11px', color: colors.text.disabled, padding: '0 8px', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profil?.prenom}</p>
             <div style={{ display: 'flex', gap: '4px' }}>
               <button onClick={handleLogout}
-                style={{ flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+                style={{ flex: 1, minWidth: 0, padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Barlow, sans-serif' }}>
                 Déconnexion
               </button>
               <ThemeToggleButton />
@@ -3377,7 +3377,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.accent.green }}>{reel.profiles?.poste}{reel.profiles?.categorie ? ` · ${reel.profiles.categorie}` : ''}</p>
                         {reel.titre && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.disabled, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{reel.titre}</p>}
                       </div>
-                      <button onClick={() => navigate('/jogabonito')} style={{ background: `${colors.accent.green}10`, border: `1px solid ${colors.accent.green}30`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>Voir</button>
+                      <button onClick={() => navigate('/jogabonito')} style={{ background: `${colors.accent.green}10`, border: `1px solid ${colors.accent.green}30`, color: colors.accent.green, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'Barlow, sans-serif' }}>Voir</button>
                     </div>
                   ))}
                 </div>
@@ -3407,15 +3407,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   const affilieAccepte = mesAffiliations.some(a => a.statut === 'accepte')
   if (!profil?.abonnement_actif && !affilieAccepte) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap');`}</style>
         <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
           <p style={{ fontSize: '13px', color: colors.text.faint, marginBottom: '1.5rem' }}>Ton paiement n'a pas encore été confirmé.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
-            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.starter, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.text.primary, border: `1px solid ${colors.border.default}`, padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Activer — {t('aff_starter_prix', lang)}</button>
+            <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.pro, userId, profil?.email), '_blank')} style={{ background: colors.accent.green, color: colors.accent.onBrand, border: 'none', padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Activer — {t('aff_pro_prix', lang)}</button>
           </div>
           <span onClick={handleLogout} style={{ color: colors.text.disabled, fontSize: '12px', cursor: 'pointer' }}>Déconnexion</span>
         </div>
@@ -3490,9 +3490,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', overflowX: 'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -3881,7 +3881,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   if (aff) {
                     const pe = aff.profil_educateur
                     return (
-                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                      <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: `linear-gradient(135deg, ${colors.accent.green}${alpha.subtle} 0%, ${colors.background.surface} 100%)`, border: `1px solid ${colors.accent.green}${alpha.light}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.green + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.green, fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
                           {pe?.prenom?.[0]}{pe?.nom?.[0]}
                         </div>
@@ -3901,7 +3901,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     )
                   }
                   return (
-                    <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: `1px dashed ${colors.border.default}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => setOnglet('equipe')} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: `1px dashed ${colors.border.default}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', color: colors.text.faint, fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>
                       Rejoins ton équipe avec le code fourni par ton éducateur
                     </button>
                   )
@@ -3916,7 +3916,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   if (!aff) return null
                   return (
                     <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: aff.equipe_joueur_id, educateurId: aff.educateur_id })}
-                      style={{ width: '100%', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Inter, sans-serif', color: colors.text.primary }}>
+                      style={{ width: '100%', textAlign: 'left', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius['3xl'], padding: `${spacing['2xl']} ${spacing['3xl']}`, marginBottom: spacing['3xl'], cursor: 'pointer', display: 'flex', alignItems: 'center', gap: spacing.xl, fontFamily: 'Barlow, sans-serif', color: colors.text.primary }}>
                       <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: colors.accent.blue + alpha.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.accent.blue, flexShrink: 0 }}>
                         <IconClipboard />
                       </div>
@@ -3934,7 +3934,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.green + alpha.subtle}`, borderRadius: radius['3xl'], padding: spacing['3xl'], marginBottom: spacing.xl }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.green }}>{t('jd_messages_rec', lang)}</p>
-                      <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
+                      <button onClick={() => setOnglet('messages')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {conversations.slice(0, 2).map(conv => (
                       <div key={conv.otherId}
@@ -3957,7 +3957,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   <div style={{ background: colors.background.surface, border: `1px solid ${colors.accent.orange + alpha.subtle}`, borderRadius: radius['3xl'], padding: spacing['3xl'], marginBottom: spacing.xl }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', color: colors.accent.orange }}>{t('jd_reponses_coach', lang)}</p>
-                      <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
+                      <button onClick={() => setOnglet('coach')} style={{ background: 'transparent', border: 'none', color: colors.text.disabled, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('jd_voir_tout', lang)}</button>
                     </div>
                     {convCoach.slice(0, 1).map(conv => (
                       <div key={conv.otherId}
@@ -4001,7 +4001,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                     ) : (
                       <p style={{ fontSize: '12px', color: colors.text.disabled, margin: 0, alignSelf: 'center' }}>{t('jd_quota_epuise', lang)}</p>
                     )}
-                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green + alpha.medium}`, padding: `${spacing.base} ${spacing['4xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    <button onClick={() => window.open(stripeUrl(STRIPE_LINKS.analyse_unite, userId, profil?.email), '_blank')} style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green + alpha.medium}`, padding: `${spacing.base} ${spacing['4xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                       {t('aff_acheter_analyse_cta', lang)}
                     </button>
                   </div>
@@ -4021,8 +4021,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       <a href={profil.clip_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.sm, background: colors.accent.green, color: colors.accent.onBrand, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
                         {t('jvid_voir', lang)}
                       </a>
-                      <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={() => navigate('/upload-clip')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteVideo} disabled={deletingVideo} style={{ background: 'transparent', color: deletingVideo ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 600, cursor: deletingVideo ? 'wait' : 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                         {deletingVideo ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
@@ -4040,8 +4040,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       <a href={reelJogabonito.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.sm, background: colors.accent.orange, color: colors.text.primary, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontWeight: 700, fontSize: '13px', textDecoration: 'none' }}>
                         {t('jvid_voir', lang)}
                       </a>
-                      <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>{t('jvid_changer', lang)}</button>
-                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={() => navigate('/upload-reel')} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.faint}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>{t('jvid_changer', lang)}</button>
+                      <button onClick={handleDeleteReel} disabled={deletingReel} style={{ background: 'transparent', color: deletingReel ? colors.text.disabled : colors.accent.red, border: `1px solid ${colors.accent.red + alpha.soft}`, padding: `${spacing.base} ${spacing['3xl']}`, borderRadius: radius.lg, fontSize: '13px', fontWeight: 600, cursor: deletingReel ? 'wait' : 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                         {deletingReel ? t('jvid_suppression', lang) : t('btn_supprimer', lang)}
                       </button>
                     </div>
@@ -4070,7 +4070,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       <p style={{ fontSize: '12px', color: colors.text.disabled }}>
                         {t('jd_plan_actif', lang)} <span style={{ color: colors.accent.green, fontWeight: 700, textTransform: 'capitalize' }}>{profil?.plan}</span>
                       </p>
-                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: `1px solid ${colors.accent.red + alpha.soft}`, color: cancelling ? colors.text.disabled : colors.accent.red, padding: `${spacing.sm} ${spacing.xl}`, borderRadius: radius.base, fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                      <button onClick={handleCancelSubscription} disabled={cancelling} style={{ background: 'transparent', border: `1px solid ${colors.accent.red + alpha.soft}`, color: cancelling ? colors.text.disabled : colors.accent.red, padding: `${spacing.sm} ${spacing.xl}`, borderRadius: radius.base, fontSize: '12px', cursor: cancelling ? 'wait' : 'pointer', fontWeight: 600, fontFamily: 'Barlow, sans-serif' }}>
                         {cancelling ? t('jd_en_cours', lang) : t('jd_resilier', lang)}
                       </button>
                     </div>
@@ -4109,7 +4109,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               style={{ marginBottom: spacing['2xl'] }}
               droite={
                 <button onClick={() => setOnglet('mes_stats')} title="Tes stats sont calculées automatiquement depuis tes fiches match"
-                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '9px 16px', color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '9px 16px', color: colors.text.secondary, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                   Voir mes statistiques →
                 </button>
               } />
@@ -4120,7 +4120,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px' }}>
                 <Avatar person={profil} size={80} border={`2px solid ${colors.accent.green}50`} />
                 <div>
-                  <label style={{ display: 'inline-block', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? colors.text.disabled : colors.text.secondary, fontFamily: 'Inter, sans-serif' }}>
+                  <label style={{ display: 'inline-block', background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 20px', cursor: avatarUploading ? 'not-allowed' : 'pointer', fontSize: '13px', color: avatarUploading ? colors.text.disabled : colors.text.secondary, fontFamily: 'Barlow, sans-serif' }}>
                     {avatarUploading ? t('jp_upload_cours', lang) : t('jp_choisir_photo', lang)}
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} disabled={avatarUploading} />
                   </label>
@@ -4388,7 +4388,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                   </button>
                   {editingParcoursId && (
                     <button onClick={() => { setEditingParcoursId(null); setNouveauClub({ club: '', saison: '', categorie: '', poste: '', logo_url: '', niveau_championnat: '', matchs_joues: '', buts: '', passes_decisives: '', cleansheets: '' }) }}
-                      style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, padding: '10px 16px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                       {t('btn_annuler', lang)}
                     </button>
                   )}
@@ -4482,11 +4482,11 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                         {d.statut === 'en_attente' ? (
                           <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                             <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, true)}
-                              style={{ flex: 1, background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px', color: colors.accent.onBrand, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ flex: 1, background: colors.accent.green, border: 'none', borderRadius: '8px', padding: '8px', color: colors.accent.onBrand, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                               Accepter
                             </button>
                             <button disabled={repondantDemandeId === d.id} onClick={() => repondreDemandeBilanMedical(d.id, false)}
-                              style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                              style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '8px', color: colors.text.faint, fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                               Refuser
                             </button>
                           </div>
@@ -4527,9 +4527,9 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 {parentsInvites.length < 2 ? (
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                     <input type="email" placeholder="Email du parent" value={emailParentInput} onChange={e => setEmailParentInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && inviterParent()}
-                      style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                      style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif' }} />
                     <button onClick={inviterParent} disabled={invitantParent || !emailParentInput.trim()}
-                      style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: invitantParent ? 0.6 : 1 }}>
+                      style={{ background: colors.accent.green + alpha.subtle, border: `1px solid ${colors.accent.green}40`, color: colors.accent.green, padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: invitantParent ? 0.6 : 1 }}>
                       {invitantParent ? '...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconMail size={13} />Inviter</span>}
                     </button>
                   </div>
@@ -4660,7 +4660,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 ))}
               </div>
               <div style={{ padding: '14px 16px', borderTop: `1px solid ${colors.border.subtle}`, display: 'flex', gap: '10px' }}>
-                <input style={{ flex: 1, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
+                <input style={{ flex: 1, background: colors.background.surfaceAlt, border: `1px solid ${colors.border.faint}`, borderRadius: '10px', color: colors.text.primary, padding: '10px 14px', fontSize: '13px', outline: 'none', fontFamily: 'Barlow, sans-serif' }} placeholder={t('jm_repondre', lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && envoyerMessage()} />
                 <button onClick={envoyerMessage} style={st.btnSolid()}>{t('btn_envoyer', lang)}</button>
               </div>
             </>
@@ -4676,7 +4676,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             if (messageActif) {
               return (
                 <div style={{ padding: '12px', height: 'calc(100vh)', display: 'flex', flexDirection: 'column' }}>
-                  <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.accent.green, fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Inter, sans-serif' }}>
+                  <button onClick={() => setMessageActif(null)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: colors.accent.green, fontSize: '14px', fontWeight: 600, cursor: 'pointer', padding: '4px 8px 12px', fontFamily: 'Barlow, sans-serif' }}>
                     {t('jm_retour', lang)}
                   </button>
                   <div style={{ flex: 1, minHeight: 0, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -4836,7 +4836,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                 <button
                   onClick={soumettreDemandesCertification}
                   disabled={submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5}
-                  style={{ width: '100%', background: '#f0c030', color: '#1a0800', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Inter, sans-serif', opacity: (submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                  style={{ width: '100%', background: '#f0c030', color: '#1a0800', border: 'none', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', opacity: (submittingCertif || !nouvelleCertif.niveau || !nouvelleCertif.saison || certifDocs.length < 5) ? 0.4 : 1, transition: 'opacity 0.2s' }}>
                   {submittingCertif ? t('etat_envoi_cours', lang) : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconStar size={13} />{`Soumettre la demande (${certifDocs.length}/5 feuilles)`}</span>}
                 </button>
               </div>
@@ -4883,7 +4883,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
                 {ONGLETS_EXPLORER.map(o => (
                   <button key={o.id} onClick={() => setExplorerOnglet(o.id)}
-                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${explorerOnglet === o.id ? o.accent : colors.border.default}`, background: explorerOnglet === o.id ? o.accent + alpha.subtle : 'transparent', color: explorerOnglet === o.id ? o.accent : colors.text.faint, fontSize: '13px', fontWeight: explorerOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ padding: '8px 18px', borderRadius: '20px', border: `1px solid ${explorerOnglet === o.id ? o.accent : colors.border.default}`, background: explorerOnglet === o.id ? o.accent + alpha.subtle : 'transparent', color: explorerOnglet === o.id ? o.accent : colors.text.faint, fontSize: '13px', fontWeight: explorerOnglet === o.id ? 700 : 400, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {o.label} ({o.liste.length})
                   </button>
                 ))}
@@ -4893,10 +4893,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 <input value={explorerRecherche} onChange={e => setExplorerRecherche(e.target.value)}
                   placeholder={t('jexp_recherche_placeholder', lang)}
-                  style={{ flex: 1, minWidth: '200px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                  style={{ flex: 1, minWidth: '200px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Barlow, sans-serif' }} />
                 <input value={explorerRegion} onChange={e => setExplorerRegion(e.target.value)}
                   placeholder={t('jexp_toute_region', lang)}
-                  style={{ width: '180px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }} />
+                  style={{ width: '180px', background: colors.background.surface, color: colors.text.primary, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '9px 14px', fontSize: '13px', fontFamily: 'Barlow, sans-serif' }} />
               </div>
 
               {clubsLoading && <p style={{ color: colors.text.disabled, textAlign: 'center' }}>{t('jexp_chargement', lang)}</p>}
@@ -5090,8 +5090,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                       <circle cx="50" cy="50" r={r} fill="none" stroke={presColor} strokeWidth="9"
                                         strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ / 4} strokeLinecap="round"
                                         style={{ filter: `drop-shadow(0 0 8px ${presColor}50)` }} />
-                                      <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Inter, sans-serif">{pct}%</text>
-                                      <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Inter, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
+                                      <text x="50" y="46" textAnchor="middle" fill={presColor} fontSize="16" fontWeight="800" fontFamily="Barlow, sans-serif">{pct}%</text>
+                                      <text x="50" y="62" textAnchor="middle" fill={colors.text.disabled} fontSize="9" fontFamily="Barlow, sans-serif">{s.present}/{s.total} {t('stats_seances_plural', lang)}</text>
                                     </svg>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                                       <span style={{ background: colors.accent.amber + alpha.subtle, border: '1px solid #fbbf2430', color: colors.accent.amber, fontSize: '11px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconStar size={12} />{s.points} pts</span>
@@ -5164,7 +5164,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                           {s.evaluations.length} évaluation{s.evaluations.length > 1 ? 's' : ''} disponible{s.evaluations.length > 1 ? 's' : ''}
                                         </p>
                                         <button onClick={() => setEvalFicheOuverte({ equipeJoueurId: a.equipe_joueur_id, educateurId: a.educateur_id })}
-                                          style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>
+                                          style={{ background: colors.accent.blue, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Barlow, sans-serif' }}>
                                           Voir ma fiche
                                         </button>
                                       </div>
@@ -5232,7 +5232,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                                         )) : <p style={{ margin: 0, fontSize: '11px', color: colors.border.strong }}>—</p>}
                                         {data?.length > 5 && (
                                           <button onClick={() => setClassementOuvert({ title, data, color })}
-                                            style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Inter, sans-serif' }}>
+                                            style={{ background: 'none', border: 'none', color, fontSize: '10px', fontWeight: 700, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'Barlow, sans-serif' }}>
                                             {t('jd_voir_tout', lang)}
                                           </button>
                                         )}
@@ -5450,7 +5450,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <label style={{ fontSize: '12px', color: colors.text.faint, flexShrink: 0 }}>Saison évaluée :</label>
               <select value={noteSaison} onChange={e => setNoteSaison(e.target.value)}
-                style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '6px 10px', fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>
                 {['2024-2025','2023-2024','2022-2023'].map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -5484,7 +5484,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             <div style={{ marginBottom: '14px' }}>
               <textarea value={noteCommentaire} onChange={e => setNoteCommentaire(e.target.value)}
                 placeholder="Commentaire (optionnel)..."
-                style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box' }} />
             </div>
 
             {/* Visibilité */}

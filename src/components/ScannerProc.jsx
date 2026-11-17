@@ -2,6 +2,10 @@ import { useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { t } from '../lib/translations'
 import { useColors } from '../lib/theme'
+import { Camera, ClipboardList, ScanSearch, Sparkles, Save, Check, TriangleAlert, Palette, Flame, Goal, RefreshCw, Target } from 'lucide-react'
+import { styleCarte, styleCarteLiseree, styleEtiquette, styleChamp, styleBoutonPrincipal, styleBoutonSecondaire, styleTitreEcran, couleurCraie, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
+import { Icone } from './identite'
+import { police, forme } from '../tokens'
 import { PRINCIPES_OFFENSIFS, PRINCIPES_DEFENSIFS } from '../constants/principesJeu'
 import Tactipad from './Tactipad'
 import { remplacerSchemaParLien } from '../lib/schemaUpload'
@@ -20,10 +24,10 @@ const CATEGORIES_AGE = ['Pour tous', 'U6-U7', 'U8-U9', 'U10-U11', 'U12-U13', 'U1
 // création/édition de procédé) — repris ici à l'identique pour que le scan
 // ne force plus systématiquement "exercice".
 const TYPES_PROCEDE = [
-  { valeur: 'echauffement', cle: 'biblio_tab_echauffement', emoji: '🔥' },
-  { valeur: 'jeu', cle: 'biblio_tab_jeu', emoji: '⚽' },
-  { valeur: 'exercice', cle: 'biblio_tab_exercice', emoji: '🔄' },
-  { valeur: 'situation', cle: 'biblio_tab_situation', emoji: '🎯' },
+  { valeur: 'echauffement', cle: 'biblio_tab_echauffement', icone: Flame },
+  { valeur: 'jeu', cle: 'biblio_tab_jeu', icone: Goal },
+  { valeur: 'exercice', cle: 'biblio_tab_exercice', icone: RefreshCw },
+  { valeur: 'situation', cle: 'biblio_tab_situation', icone: Target },
 ]
 
 // Gemini répond en texte libre pour theme/categorie_age — on rattache au plus
@@ -124,7 +128,10 @@ const redimensionnerImage = (file, maxWidth = 1600) => new Promise((resolve, rej
   reader.readAsDataURL(file)
 })
 
-export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer }) {
+// Mode club (bibliothèque du club) : `onResultat` reçoit la fiche lue et prend la
+// suite (formulaire du club prérempli). Rien n'est alors écrit dans
+// bibliotheque_exercices et la case « partager avec la communauté » disparaît.
+export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer, onResultat, libelleValider }) {
   const colors = useColors()
   const [image, setImage] = useState(null)
   const [imageBase64, setImageBase64] = useState(null)
@@ -145,7 +152,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       setImage(preview)
       setImageBase64(base64)
     } catch {
-      setErreur(`❌ ${t('scanproc_image_illisible', lang)}`)
+      setErreur(t('scanproc_image_illisible', lang))
     }
   }
 
@@ -196,9 +203,9 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
       const sature = /\b429\b/.test(brut) || /quota/i.test(brut)
       const surcharge = /\b503\b/.test(brut) || /UNAVAILABLE/i.test(brut)
       setErreur(
-        sature ? `⏳ ${t('scanproc_erreur_saturation', lang)}`
-        : surcharge ? `⚠️ ${t('scanproc_erreur_surcharge', lang)}`
-        : `❌ ${t('scanproc_erreur_prefix', lang)}${brut}`
+        sature ? t('scanproc_erreur_saturation', lang)
+        : surcharge ? t('scanproc_erreur_surcharge', lang)
+        : `${t('scanproc_erreur_prefix', lang)}${brut}`
       )
     } finally {
       setScanning(false)
@@ -207,6 +214,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
 
   const sauvegarder = async () => {
     if (!resultat || !resultat.nom.trim()) return
+    if (onResultat) { onResultat(resultat); return }
     setSaving(true)
     const { error } = await supabase.from('bibliotheque_exercices').insert({
       type: resultat.type || 'exercice',
@@ -234,9 +242,11 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
     onImporte?.()
   }
 
-  const champLabel = { color: colors.text.faint, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }
-  const champInput = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }
-  const pastille = (actif) => ({ padding: '7px 14px', borderRadius: '20px', border: `1px solid ${actif ? colors.accent.green : colors.border.default}`, background: actif ? colors.accent.green + '20' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontSize: '13px', cursor: 'pointer', fontWeight: actif ? 700 : 400, fontFamily: 'Inter, sans-serif' })
+  const champLabel = { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' }
+  const champInput = styleChamp(colors)
+  // Choix à bascule (type, thème, catégorie d'âge) : plein à la couleur du club quand il est actif.
+  const pastille = (actif) => ({ ...(actif ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors)), minHeight: '36px', padding: '0 14px', fontSize: '13px' })
+  const classePastille = (actif) => (actif ? CLASSE_BOUTON : CLASSE_BOUTON_SECONDAIRE)
 
   const champsTexte = [
     { key: 'but', label: t('seance_but', lang) },
@@ -246,78 +256,82 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
     { key: 'criteres_realisation', label: t('seance_criteres_realisation', lang) },
   ]
 
+  const sauvegardeImpossible = saving || !resultat?.nom?.trim()
+  const texteSec = { fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary }
+
   return (
     <div style={{ padding: '4px', maxWidth: '560px', width: '100%' }}>
       <div style={{ marginBottom: '16px' }}>
-        <h2 style={{ color: colors.text.primary, margin: 0, fontSize: '18px', fontWeight: 800 }}>📸 {t('scanproc_titre', lang)}</h2>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>{t('scanproc_sous_titre', lang)}</p>
+        <h2 style={{ ...styleTitreEcran(colors), fontSize: '22px', display: 'flex', alignItems: 'center', gap: '10px' }}><Icone icone={Camera} taille={22} />{t('scanproc_titre', lang)}</h2>
+        <p style={{ ...texteSec, margin: '6px 0 0' }}>{t('scanproc_sous_titre', lang)}</p>
       </div>
 
-      <div onClick={() => inputRef.current.click()}
-        style={{ border: `2px dashed ${colors.border.default}`, borderRadius: '12px', padding: '26px', textAlign: 'center', cursor: 'pointer', marginBottom: '16px' }}>
+      <div onClick={() => inputRef.current.click()} role="button" tabIndex={0} className={CLASSE_CLIQUABLE}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current.click() } }}
+        style={{ border: `1px dashed ${colors.border.strong}`, borderRadius: forme.rayonCarte, padding: '26px', textAlign: 'center', cursor: 'pointer', marginBottom: '16px' }}>
         {image
-          ? <img src={image} alt="Fiche" style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '8px', objectFit: 'contain' }} />
+          ? <img src={image} alt="Fiche" style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: forme.rayonCarte, objectFit: 'contain' }} />
           : (
             <div>
-              <div style={{ fontSize: '32px', marginBottom: '8px' }}>📋</div>
-              <div style={{ color: colors.text.dim, fontSize: '14px', fontWeight: 600 }}>{t('scanproc_zone_texte', lang)}</div>
-              <div style={{ color: colors.text.disabled, fontSize: '12px', marginTop: '4px' }}>{t('scanproc_zone_sous_texte', lang)}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: colors.text.secondary }}><Icone icone={ClipboardList} taille={32} /></div>
+              <div style={{ ...texteSec, color: colors.text.primary, fontWeight: 600 }}>{t('scanproc_zone_texte', lang)}</div>
+              <div style={{ ...texteSec, fontSize: '13px', marginTop: '4px' }}>{t('scanproc_zone_sous_texte', lang)}</div>
             </div>
           )}
         <input ref={inputRef} type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} />
       </div>
 
       {image && !resultat && (
-        <button onClick={analyser} disabled={scanning}
-          style={{ width: '100%', background: scanning ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '14px', color: scanning ? colors.text.disabled : colors.black, fontWeight: 800, fontSize: '15px', cursor: scanning ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-          {scanning ? `🔍 ${t('scanproc_analyse_en_cours', lang)}` : `🤖 ${t('scanproc_analyser', lang)}`}
+        <button type="button" onClick={analyser} disabled={scanning} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), width: '100%', minHeight: '48px', fontSize: '15px' }}>
+          <Icone icone={scanning ? ScanSearch : Sparkles} /> {scanning ? t('scanproc_analyse_en_cours', lang) : t('scanproc_analyser', lang)}
         </button>
       )}
 
       {erreur && (
-        <div style={{ background: '#ef444415', border: '1px solid #ef4444', borderRadius: '10px', padding: '12px', marginTop: '12px', color: '#ef4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <span>{erreur}</span>
-          <button onClick={analyser} style={{ background: 'none', border: '1px solid #ef4444', borderRadius: '6px', padding: '4px 10px', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>{t('scanproc_reessayer', lang)}</button>
+        <div role="alert" style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.red}`, paddingLeft: '19px', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <Icone icone={TriangleAlert} style={{ color: colors.accent.red }} />
+          <span style={{ ...texteSec, color: colors.text.primary, flex: '1 1 200px' }}>{erreur}</span>
+          <button type="button" onClick={analyser} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', fontSize: '13px' }}>{t('scanproc_reessayer', lang)}</button>
         </div>
       )}
 
       {resultat && (
-        <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '20px', marginTop: '16px' }}>
-          <div style={{ color: colors.accent.green, fontWeight: 800, fontSize: '13px', marginBottom: '16px' }}>✅ {t('scanproc_detecte', lang)}</div>
+        <div style={{ ...styleCarte(colors), padding: '20px', marginTop: '16px' }}>
+          <div style={{ ...styleEtiquette(colors), display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><Icone icone={Check} style={{ color: colors.accent.success }} />{t('scanproc_detecte', lang)}</div>
 
-          <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-            <span style={{ color: colors.accent.blue, fontSize: '12px' }}>
+          <div style={{ ...styleCarte(colors), boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.info}`, padding: '10px 14px 10px 17px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ ...texteSec, color: colors.text.primary, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <Icone icone={Palette} />
               {resultat.schema_data
-                ? `🎨 Schéma tactique détecté (${resultat.schema_data.elements.length} élément${resultat.schema_data.elements.length > 1 ? 's' : ''})`
-                : '🎨 Aucun schéma détecté sur cette photo'}
+                ? `Schéma tactique détecté (${resultat.schema_data.elements.length} élément${resultat.schema_data.elements.length > 1 ? 's' : ''})`
+                : 'Aucun schéma détecté sur cette photo'}
             </span>
-            <button type="button" onClick={() => setShowTactipad(true)}
-              style={{ background: colors.accent.blue, color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
+            <button type="button" onClick={() => setShowTactipad(true)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', fontSize: '13px' }}>
               {resultat.schema_data ? 'Corriger le schéma' : 'Créer le schéma'}
             </button>
           </div>
 
           <div style={{ marginBottom: '14px' }}>
             <label style={champLabel}>{t('biblio_nom_procede', lang)} *</label>
-            <input value={resultat.nom} onChange={e => setResultat(r => ({ ...r, nom: e.target.value }))} style={champInput} />
+            <input value={resultat.nom} onChange={e => setResultat(r => ({ ...r, nom: e.target.value }))} className={CLASSE_CHAMP} style={champInput} />
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={champLabel}>{t('biblio_champ_type', lang)}</label>
+            <span style={champLabel}>{t('biblio_champ_type', lang)}</span>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {TYPES_PROCEDE.map(ty => (
-                <button key={ty.valeur} type="button" onClick={() => setResultat(r => ({ ...r, type: ty.valeur }))} style={pastille(resultat.type === ty.valeur)}>
-                  {ty.emoji} {t(ty.cle, lang)}
+                <button key={ty.valeur} type="button" aria-pressed={resultat.type === ty.valeur} onClick={() => setResultat(r => ({ ...r, type: ty.valeur }))} className={classePastille(resultat.type === ty.valeur)} style={pastille(resultat.type === ty.valeur)}>
+                  <Icone icone={ty.icone} taille={16} /> {t(ty.cle, lang)}
                 </button>
               ))}
             </div>
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={champLabel}>{t('biblio_champ_theme', lang)}</label>
+            <span style={champLabel}>{t('biblio_champ_theme', lang)}</span>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {THEMES.map(th => (
-                <button key={th.valeur} type="button" onClick={() => setResultat(r => ({ ...r, theme: th.valeur, principe: '' }))} style={pastille(resultat.theme === th.valeur)}>
+                <button key={th.valeur} type="button" aria-pressed={resultat.theme === th.valeur} onClick={() => setResultat(r => ({ ...r, theme: th.valeur, principe: '' }))} className={classePastille(resultat.theme === th.valeur)} style={pastille(resultat.theme === th.valeur)}>
                   {t(th.cle, lang)}
                 </button>
               ))}
@@ -327,7 +341,7 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
           {(resultat.theme === 'Offensif' || resultat.theme === 'Défensif') && (
             <div style={{ marginBottom: '14px' }}>
               <label style={champLabel}>{t('biblio_principe_label', lang)}</label>
-              <select value={resultat.principe} onChange={e => setResultat(r => ({ ...r, principe: e.target.value }))} style={champInput}>
+              <select value={resultat.principe} onChange={e => setResultat(r => ({ ...r, principe: e.target.value }))} className={CLASSE_CHAMP} style={champInput}>
                 <option value="">{t('biblio_choisir_principe', lang)}</option>
                 {(resultat.theme === 'Offensif' ? PRINCIPES_OFFENSIFS : PRINCIPES_DEFENSIFS).map(p => (
                   <option key={p.id} value={p.label}>{t(`principe_${p.id}`, lang)}</option>
@@ -337,10 +351,10 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
           )}
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={champLabel}>{t('biblio_categorie_age_label', lang)} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span></label>
+            <span style={champLabel}>{t('biblio_categorie_age_label', lang)} <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>({t('biblio_plusieurs_choix', lang)})</span></span>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {CATEGORIES_AGE.map(c => (
-                <button key={c} type="button" onClick={() => setResultat(r => ({ ...r, categorie_age: toggleDansListe(r.categorie_age, c) }))} style={pastille(resultat.categorie_age?.includes(c))}>
+                <button key={c} type="button" aria-pressed={!!resultat.categorie_age?.includes(c)} onClick={() => setResultat(r => ({ ...r, categorie_age: toggleDansListe(r.categorie_age, c) }))} className={classePastille(resultat.categorie_age?.includes(c))} style={pastille(resultat.categorie_age?.includes(c))}>
                   {c === 'Pour tous' ? t('biblio_age_pour_tous', lang) : c === 'Senior' ? t('biblio_age_senior', lang) : c}
                 </button>
               ))}
@@ -350,40 +364,39 @@ export default function ScannerProc({ userId, clubId, lang, onImporte, onFermer 
           <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
             <div style={{ flex: 1 }}>
               <label style={champLabel}>{t('seance_duree_min', lang)}</label>
-              <input type="number" value={resultat.duree} onChange={e => setResultat(r => ({ ...r, duree: e.target.value }))} style={champInput} />
+              <input type="number" value={resultat.duree} onChange={e => setResultat(r => ({ ...r, duree: e.target.value }))} className={CLASSE_CHAMP} style={champInput} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={champLabel}>{t('seance_nb_joueurs', lang)}</label>
-              <input value={resultat.nb_joueurs} onChange={e => setResultat(r => ({ ...r, nb_joueurs: e.target.value }))} style={champInput} />
+              <input value={resultat.nb_joueurs} onChange={e => setResultat(r => ({ ...r, nb_joueurs: e.target.value }))} className={CLASSE_CHAMP} style={champInput} />
             </div>
           </div>
 
           {champsTexte.map(({ key, label }) => (
             <div key={key} style={{ marginBottom: '14px' }}>
               <label style={champLabel}>{label}</label>
-              <textarea value={resultat[key]} onChange={e => setResultat(r => ({ ...r, [key]: e.target.value }))} rows={2} style={{ ...champInput, resize: 'vertical' }} />
+              <textarea value={resultat[key]} onChange={e => setResultat(r => ({ ...r, [key]: e.target.value }))} rows={2} className={CLASSE_CHAMP} style={{ ...champInput, resize: 'vertical' }} />
             </div>
           ))}
 
-          <div style={{ background: colors.accent.green + '15', border: `1px solid ${colors.accent.green}30`, borderRadius: '10px', padding: '12px 14px', marginBottom: '18px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          {!onResultat && <div style={{ ...styleCarteLiseree(colors), padding: '12px 14px 12px 17px', marginBottom: '18px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
             <input type="checkbox" id="scanproc-partage" checked={resultat.partage_platform}
               onChange={e => setResultat(r => ({ ...r, partage_platform: e.target.checked }))}
-              style={{ marginTop: '2px', accentColor: colors.accent.green, width: '15px', height: '15px', flexShrink: 0, cursor: 'pointer' }} />
+              style={{ marginTop: '2px', accentColor: colors.accent.brand, width: '18px', height: '18px', flexShrink: 0, cursor: 'pointer' }} />
             <label htmlFor="scanproc-partage" style={{ cursor: 'pointer' }}>
-              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 700 }}>{t('biblio_partage_communaute_titre', lang)}</div>
-              <div style={{ color: colors.text.faint, fontSize: '11px', marginTop: '2px', lineHeight: 1.4 }}>{t('biblio_partage_communaute_desc', lang)}</div>
+              <div style={{ ...texteSec, color: colors.text.primary, fontWeight: 600 }}>{t('biblio_partage_communaute_titre', lang)}</div>
+              <div style={{ ...texteSec, fontSize: '13px', marginTop: '2px', lineHeight: 1.4 }}>{t('biblio_partage_communaute_desc', lang)}</div>
             </label>
-          </div>
+          </div>}
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', borderTop: `1px solid ${couleurCraie(colors)}`, paddingTop: '16px' }}>
             {onFermer && (
-              <button onClick={onFermer} style={{ flex: 1, background: 'transparent', border: `1px solid ${colors.border.default}`, borderRadius: '10px', padding: '12px', color: colors.text.faint, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              <button type="button" onClick={onFermer} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: 1 }}>
                 {t('btn_annuler', lang)}
               </button>
             )}
-            <button onClick={sauvegarder} disabled={saving || !resultat.nom.trim()}
-              style={{ flex: 2, background: saving || !resultat.nom.trim() ? colors.background.raised : colors.accent.green, border: 'none', borderRadius: '10px', padding: '12px', color: saving || !resultat.nom.trim() ? colors.text.disabled : colors.black, fontWeight: 800, fontSize: '14px', cursor: saving || !resultat.nom.trim() ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              💾 {t('biblio_sauvegarder_bouton', lang)}
+            <button type="button" onClick={sauvegarder} disabled={sauvegardeImpossible} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 2 }}>
+              <Icone icone={Save} /> {libelleValider || t('biblio_sauvegarder_bouton', lang)}
             </button>
           </div>
         </div>

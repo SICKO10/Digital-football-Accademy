@@ -52,7 +52,7 @@ const DSM_STYLE = `
   .dsm-tabs { display: flex; flex-direction: column; gap: 8px; }
   .dsm-tab { display: flex; align-items: flex-start; gap: 14px; width: 100%; text-align: left; cursor: pointer;
     background: transparent; border: 1px solid ${colors.border.subtle}; border-left: 3px solid transparent; border-radius: 12px;
-    padding: 14px 16px; color: ${colors.text.secondary}; font-family: Inter, sans-serif;
+    padding: 14px 16px; color: ${colors.text.secondary}; font-family: Barlow, sans-serif;
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
   .dsm-tab[aria-selected="true"] { background: var(--dsm-soft); border-color: var(--dsm-line); border-left-color: var(--dsm); color: ${colors.text.primary}; }
   .dsm-tab:focus-visible, .dsm-ctrl:focus-visible, .dsm-dot:focus-visible, .dsm-track:focus-visible, .dsm-cta:focus-visible {
@@ -260,7 +260,7 @@ export default function DemoSemaineMatch({ lang }) {
 
       <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
         <button type="button" className="dsm-cta" onClick={() => navigate('/offres')}
-          style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}40`, padding: '13px 32px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s ease' }}>
+          style={{ background: 'transparent', color: colors.accent.green, border: `1px solid ${colors.accent.green}40`, padding: '13px 32px', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', transition: 'background 0.2s ease' }}>
           {t('action_cta', lang)}
         </button>
         <p style={{ fontSize: '12px', color: colors.text.faint, margin: '1rem 0 0' }}>{t('action_mention', lang)}</p>

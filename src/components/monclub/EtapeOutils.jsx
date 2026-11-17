@@ -6,6 +6,8 @@ import { OUTILS, THEMES_CLUB } from '../../lib/catalogueOutils'
 import { EnteteEtape, CarteReglage, Encart } from './ui'
 import { ICONES, stylesMonClub } from './uiMonClub'
 import Interrupteur from '../outils/Interrupteur'
+import { styleCarte, styleEtiquette, styleChiffreHeros, couleurCraie } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 import BandeauAnnuler from './BandeauAnnuler'
 
 const OUTILS_CLUB = OUTILS.filter(o => o.role === 'club')
@@ -77,13 +79,13 @@ export default function EtapeOutils({ outils, clubId, estCompteClub }) {
     : 'Tous vos outils sont affichés. Retirer un outil enlève seulement son entrée du menu du club : rien n\'est supprimé, et en le réaffichant vous retrouvez tout.'
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ fontFamily: 'Barlow, sans-serif' }}>
       <EnteteEtape icone={ICONES.outils} titre="Outils du club" texte={texte}>
         {pret && (
-          <div style={{ flex: '0 1 220px', minWidth: 170, padding: '12px 16px', borderRadius: 14, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {OUTILS_CLUB.length} affichés</p>
-            <div role="meter" aria-valuemin={0} aria-valuemax={OUTILS_CLUB.length} aria-valuenow={nbAffiches} aria-label="Outils affichés" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
-              <div style={{ width: `${(nbAffiches / OUTILS_CLUB.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
+          <div style={{ flex: '0 1 220px', minWidth: 170, ...styleCarte(colors), padding: '12px 16px' }}>
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ ...styleChiffreHeros(colors, 26), marginRight: 4 }}>{nbAffiches}</strong> sur {OUTILS_CLUB.length} affichés</p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={OUTILS_CLUB.length} aria-valuenow={nbAffiches} aria-label="Outils affichés" style={{ height: 6, borderRadius: forme.rayonPastille, marginTop: 8, background: colors.border.default, overflow: 'hidden' }}>
+              <div style={{ width: `${(nbAffiches / OUTILS_CLUB.length) * 100}%`, height: '100%', background: st.marque }} />
             </div>
           </div>
         )}
@@ -92,16 +94,16 @@ export default function EtapeOutils({ outils, clubId, estCompteClub }) {
         <Encart>Seul le compte du club active ou désactive les outils de son forfait. Vous voyez ici leur état.</Encart>
       )}
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
-      {!pret && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des outils...</p>}
+      {!pret && <p style={{ fontSize: 13, color: colors.text.secondary }}>Chargement des outils...</p>}
 
       {pret && parTheme.map(t => {
         const nb = t.outils.filter(allume).length
         return (
           <section key={t.id} aria-labelledby={`theme-${t.id}`} style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-              <h3 id={`theme-${t.id}`} style={{ margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }}>{t.titre}</h3>
-              <span style={{ flex: 1, height: 1, background: colors.border.subtle }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: colors.text.faint }}>{nb} sur {t.outils.length}</span>
+              <h3 id={`theme-${t.id}`} style={{ ...styleEtiquette(colors), margin: 0 }}>{t.titre}</h3>
+              <span aria-hidden="true" style={{ flex: 1, height: 1, background: couleurCraie(colors) }} />
+              <span style={{ ...styleEtiquette(colors), fontFamily: police.titre, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{nb} sur {t.outils.length}</span>
             </div>
             <div style={grille}>
               {t.outils.map(o => {

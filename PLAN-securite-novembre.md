@@ -193,7 +193,7 @@ Rappel : `/clear` et une session neuve par bloc.
   - 2026-11-16 · Opus 5.5 · Tests à l'écran faits par Kevin (« fait ») : connexion +staff, onglet Staff, changement de rôle par le compte club. Bloc clos, commit à faire avec l'accord de Kevin.
 
 ### Bloc 6 : fermeture de `convocation_joueurs`
-- Statut : à faire
+- Statut : en cours : appliqué en production le 2026-11-17, tests à l'écran à faire par Kevin
 - Objectif : lecture par l'éducateur de la convocation, le club, le joueur convoqué et ses parents ; écriture par l'éducateur de la convocation et le club.
 - Résultat testable : lecture `USING true` et écriture « tout éducateur » remplacées ; tests SQL ok ; convoquer, répondre et voir la convocation marchent.
 - Modèle : opus · Effort : high · Coût estimé : moyen
@@ -208,10 +208,15 @@ Rappel : `/clear` et une session neuve par bloc.
   - Liste de tests à l'écran.
 - Ce que je teste pour valider : avec `+educ`, créer une convocation pour `+joueur` ; avec `+joueur` puis `+parent`, la voir (et y répondre si l'écran le permet) ; avec le compte club, la voir.
 - Reste à finir :
+  - Tests à l'écran (liste du compte rendu), puis commit avec l'accord de Kevin.
+  - Hors bloc, à noter : l'éducateur auteur peut convoquer n'importe quel compte (renforts d'autres équipes : pas de contrôle « joueur de mon équipe » en base). Effet limité : le compte convoqué voit la convocation publiée. À examiner avec le chantier catégories.
+  - Pour le bloc 7 : même piège vérifié ici (règles d'autres tables au rôle public qui consultent la table) ; compter celles qui lisent `entrainements` avant d'écrire T907.
 - Journal :
+  - 2026-11-16 · Opus 5.5 · Lu en base : 4 règles exactes (`lecture convocation joueurs` USING true même sans compte, `gestion convocation joueurs` ALL pour toute fiche `profil_educateur`, `parent_lit_donnees_enfant` public, `categories_commun_lecture` authenticated), RLS active, 196 lignes, 13 convocations, 1 seul auteur, aucune ligne orpheline, `anon` et `authenticated` = arwdDxtm. Code : 3 usages seulement (lecture/suppression/ajout éducateur, lecture joueur ou parent), aucun serveur. **Piège confirmé** : 2 règles de `convocations` au rôle public (« Joueur voit sa convocation », « Parent voit convocation enfant ») lisent cette table ; le visiteur garde donc SELECT technique, sans règle qui lui ouvre une ligne. Écrits : `supabase_securite_novembre_convocations.sql` (retire les 2 règles ouvertes ; ajoute `cj_encadrant_lecture/ajout/suppression` sur `secu_peut_gerer_convocation` et `cj_joueur_lit_sa_ligne` ; `parent_lit_donnees_enfant` réservée à authenticated ; `categories_commun_lecture` inchangée ; aucune modification de ligne autorisée ; visiteur sans écriture ; authenticated sans TRUNCATE/REFERENCES/TRIGGER/MAINTAIN ; contrôle final avec essai réel pour chaque auteur, joueur convoqué et parent, compte sans lien, visiteur sur les deux tables), secours (fonction et 3 règles « auteur seulement », jamais public), tests : T905 ajusté, T906 avec MAINTAIN, ajout T320-T322 (joueur et parent voient toujours la convocation, visiteur sans erreur) et T910, `t.blocs_appliques = '2,3,5,6'`. Vérifié sur Postgres 17 local (règles des 2 tables identiques à la prod, données fictives) : 30 essais avant = écarts attendus ; après = 30/30 ok (dont l'auteur sans fiche qui enregistre enfin) ; 2e passage arrêté ; 12 garde-fous testés un par un, chacun arrête sans rien modifier (dont 2 contrôles finaux en échec) ; secours testé dans 5 cas. Mon premier contrôle final lisait `parents_acces` avec les droits du parent : corrigé (listes calculées avant de prendre l'identité). Aucune écriture en production, aucun commit.
+  - 2026-11-17 · Opus 5.5 · Sur demande de Kevin (« exécute les sql »), Claude a lancé la sauvegarde (`2026-11-17_0006`), puis appliqué `supabase_securite_novembre_convocations.sql` en production : « Bloc 6 appliqué ». Vérifié en lecture : 6 règles prévues toutes `authenticated`, RLS active, `anon=r`, `authenticated=arwd`, 196 lignes et 13 convocations inchangées. Tests SQL enveloppés dans `begin … rollback` : 201 cas, 0 échec, 177 ok (dont T301-T322, T905, T906, T910), 24 écarts restants (bloc 7). Aucune trace des tests (196 lignes, 13 convocations, 0 séance de test, 5 lignes de staff). Reste : tests à l'écran, puis commit avec l'accord de Kevin.
 
 ### Bloc 7 : fermeture de `entrainements` (script et tests SQL)
-- Statut : à faire
+- Statut : fait (appliqué en production le 2026-11-17, tests SQL 211/211 ok)
 - Objectif : chaque club, ses éducateurs, son staff autorisé, ses joueurs et leurs parents ne voient que les séances qui les concernent ; seuls l'éducateur auteur et le club modifient ou suppriment.
 - Résultat testable : règles ouvertes remplacées ; tests SQL ok pour les 9 acteurs, lecture et écriture.
 - Modèle : opus · Effort : high · Coût estimé : élevé
@@ -226,10 +231,16 @@ Rappel : `/clear` et une session neuve par bloc.
   - Préparer la liste de tests à l'écran du bloc 8 (une ligne par lecteur).
 - Ce que je teste pour valider : script sans « ARRÊT », tests SQL tous ok.
 - Reste à finir :
+  - Commit des 4 fichiers SQL et du plan avec l'accord de Kevin (rien n'est commité).
+  - Limite connue (vitesse) : la règle appelle une fonction par séance lue, environ 0,3 ms en prod. Les écrans filtrent avant la règle (vérifié : filtre de l'écran appliqué d'abord) et l'auteur passe par un raccourci sans fonction ; seule la règle `joueur_read_team_presences` (présences vues par le joueur) parcourt toutes les séances : environ 0,3 s de plus par lecture de présences pour un joueur ou parent aujourd'hui, proportionnel au nombre de séances. À observer au bloc 8 ; si c'est lent : bloc d'optimisation (listes d'éducateurs et d'équipes lisibles calculées une fois par requête), sans changer les droits.
+  - Limite connue (droits) : l'auteur peut rattacher sa propre séance à l'équipe d'un autre club (`club_categorie_id`), qui la voit alors. Aucune donnée d'autrui exposée ; à fermer avec le chantier catégories (contrôle « équipe de mon club »), comme la note du bloc 6.
+  - Hors chantier, à mettre dans le prochain brief : `entrainements_supprimes` lisible par tout compte connecté (journal des suppressions de tous les clubs : date, heure, éducateur, équipe) ; `presences_entrainement`, `entrainements_supprimes`, `seances_publiees` : le visiteur garde tous les droits techniques (les règles le bloquent, mais même logique de nettoyage que les 4 tables).
 - Journal :
+  - 2026-11-17 · Opus 5.5 · Lu en base : 4 règles « tout compte connecté » exactes, RLS active, 953 séances (93 sans équipe, 10 auteurs), `anon` et `authenticated` = arwdDxtm. **Piège compté** (pg_depend) : une seule règle d'une autre table lit `entrainements`, `presences_entrainement.joueur_read_team_presences`, réservée à authenticated ; aucune vue ; les 6 fonctions qui lisent la table sont SECURITY DEFINER. Donc, contrairement aux blocs 5 et 6, le visiteur perd aussi la lecture technique. Code : 13e lecteur trouvé, `categories/FicheJoueurCategorie.jsx:42` (fiche joueur par équipe, club et éducateur) ; club `PlanificationAnnuelle` en `peutGererSeances={false}`, conforme à « le club ne modifie pas ». Écrits : `supabase_securite_novembre_entrainements.sql` (11 garde-fous dont règles d'autres tables, vues et fonctions sans SECURITY DEFINER ; règles `ent_lecture` avec raccourci auteur, `ent_ajout`, `ent_modification` avant et après, `ent_suppression`, toutes authenticated ; visiteur sans aucun droit ; authenticated sans TRUNCATE/REFERENCES/TRIGGER/MAINTAIN ; contrôles finaux avec essai réel pour chaque auteur (lecture et modification), club et staff, joueur (et lecture des présences), parent, dirigeant, compte sans lien, visiteur refusé et visiteur qui lit toujours les présences), secours `..._SECOURS_NE_PAS_EXECUTER.sql` (règle auteur + lecture club, staff, dirigeant, joueur, parent ; jamais public), tests : `t.blocs_appliques = '2,3,5,6,7'`, T907 et T908 avec MAINTAIN, ajout T443-T452 (dirigeant en lecture ou sans droit, directeur sportif en lecture, éducateur d'équipe qui crée au nom d'un autre, joueur et parent qui écrivent, présences vues par le joueur). Vérifié sur Postgres 17 local (règles des blocs 2, 3, 5, 6 rejouées, identifiants seulement) : avant = 177 ok et 24 écarts, comme la prod ; après = 211/211 ok, aucune trace ; 2e passage arrêté ; 11 garde-fous testés un par un, chacun arrête sans rien modifier ; 6 contrôles finaux mis en échec volontairement, chacun annule tout ; secours testé dans 6 cas (bloqué en entier, sans confirmation, avant bloc 7, 2e passage ; appliqué : 211/211 toujours ok). Mesuré en prod en lecture seule : 0,3 s pour évaluer la règle sur les 953 séances ; en local, filtre de l'écran appliqué avant la règle (2 ms au lieu de 37 ms). Aucune écriture en production, aucun commit.
+  - 2026-11-17 · Sonnet 5.5 · Appliqué en production par Kevin (sauvegarde faite avant) : message « Bloc 7 appliqué », puis relu en lecture seule : 4 règles `ent_*` réservées à authenticated, `authenticated` = INSERT/SELECT/UPDATE/DELETE, plus aucun droit pour le visiteur. Premier passage des tests : 209 ok, 2 « ÉCHEC » (T451, T452) dus au test lui-même (la présence de test pointait un identifiant inventé, alors que `presences_entrainement.joueur_id` référence `equipe_joueurs`). Test corrigé (fiche `equipe_joueurs` réelle non rattachée à un compte affilié, annulée comme le reste). Deuxième passage : 211/211 ok, 0 écart, 0 échec.
 
 ### Bloc 8 : `entrainements`, tests à l'écran et corrections
-- Statut : à faire
+- Statut : fait (2026-11-17, Kevin a passé la liste à l'écran : « tout est ok »)
 - Objectif : vérifier les 12 écrans lecteurs avec les bons comptes et corriger ce qui casse.
 - Résultat testable : la liste du bloc 7 entièrement cochée ; corrections éventuelles en commits dédiés.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -243,11 +254,27 @@ Rappel : `/clear` et une session neuve par bloc.
   - Si la règle est en cause : arrêter, retour au protocole du bloc 7 (script présenté, sauvegarde).
   - Commit dédié par correction, déploiement test puis production avec le « ok ».
 - Ce que je teste pour valider : planning, planification annuelle et séances, sondage de la semaine, carte joueur, nutrition, clôtures de saison, historique collectif, parcours coach, dashboards éducateur, club et joueur : chaque séance du club test apparaît, aucune séance d'AS CANNES n'apparaît, créer, modifier et supprimer une séance de test marche.
+- Liste de tests à l'écran (préparée au bloc 7, une ligne par lecteur ; noter aussi toute lenteur nouvelle) :
+  1. `testfinal` · tableau éducateur, Séances : la liste de ses séances (avec présences) s'affiche ; créer une séance de test, la modifier (date, lieu), lier une fiche puis la délier, la supprimer.
+  2. `testfinal` · accueil, sondage de la semaine : clore puis rouvrir le sondage, changer l'heure de clôture.
+  3. `testfinal` · Projet sportif → Planification annuelle (U13 A) : accrocher une séance à une semaine, la décrocher. Note : seules ses propres séances sont proposées (avant, aussi celles des collègues de même catégorie).
+  4. `testfinal` · Mes saisons (parcours coach), historique collectif d'une équipe, clôtures de saison (prépa physique) : les séances sont comptées comme avant.
+  5. `testfinal` · fiche d'un joueur, saison par équipe : lignes Entraînements de ses équipes remplies (les équipes d'un collègue restent vides, comme les matchs).
+  6. Dirigeant `deabreu.amorim@` · tableau de `testfinal` : voit les séances, en crée une, la modifie, la supprime (droit « entraînements » en édition).
+  7. Club test `+club` · Planning : séances de ses équipes visibles ; accueil (compteurs), historique club, fiche joueur par équipe ; Planification des séances : créer une séance pour U13 A puis la supprimer.
+  8. Directeur sportif `7kevin.amorim10@` · mêmes écrans club : séances visibles ; créer et supprimer une séance planifiée (droit « Séances » en édition).
+  9. Joueur `kenza.harroudsilva@` · tableau joueur : séances à venir, calendrier, sondage de la semaine, nutrition, carte joueur (Mes stats) avec présences.
+  10. Parent `bykenza.contact@` · même tableau vu par le parent : mêmes séances que le joueur.
+  11. Contrôle négatif : aucun de ces comptes ne voit de séance d'AS CANNES (planning club, historique).
 - Reste à finir :
+  - Commit des fichiers SQL du bloc 7 (script, secours, tests) et du plan, avec l'accord de Kevin (sélectif : d'autres chantiers ont des fichiers modifiés).
+  - Optimisation de vitesse des présences côté joueur/parent : non nécessaire (aucune lenteur signalée à l'écran).
 - Journal :
+  - 2026-11-17 · Sonnet 5.5 · Prérequis vérifié en base avant de commencer (bloc 7 pas encore appliqué : arrêt, Kevin l'a appliqué puis tests SQL 211/211). Liste de 11 tests à l'écran passée par Kevin avec les comptes de test, résultat : tout ok, aucune lenteur ni écran cassé signalé. Aucune correction de code, aucune règle touchée, aucun déploiement. Contrôle visuel de Kevin sur la version de test Vercel (écran Configuration > Outils des éducateurs du club test affiché normalement).
+
 
 ### Bloc 9 : vérification finale et clôture
-- Statut : à faire
+- Statut : en cours (attente des tests SQL de Kevin)
 - Objectif : prouver que les 4 tables sont fermées et qu'aucune nouvelle ouverture n'existe, puis ranger.
 - Résultat testable : `supabase_controle_ouvertures.sql` ne liste plus aucune des 4 tables ; fichier de tests complet tout ok ; BRIEF passé à « terminé ».
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -262,7 +289,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Commit des fichiers SQL et documents de ce chantier uniquement, après accord.
 - Ce que je teste pour valider : je lis le compte rendu et les résultats du contrôle ; un tour rapide connecté avec le compte club test et `+joueur`.
 - Reste à finir :
+  - Kevin : relancer `supabase_securite_novembre_tests.sql` en entier et me coller le résultat (attendu : 211 ok, 0 échec) ; tour rapide connecté (club test et `+joueur`).
+  - Commit sélectif des SQL des blocs 6 et 7, du fichier de tests, du contrôle du 2026-11-17 et des documents, avec l'accord de Kevin (rien n'est commité).
+  - Hors chantier, à mettre dans un nouveau brief : 41 règles « tout le monde, même sans compte » (messagerie, `clubs`, budgets, `tournois_*`, notifications...), 5 règles « tout compte connecté » (`budget_modeles`, `demandes_club` x2, `profil_educateur`, `storage.objects`), 9 tables à RLS sans règle ; plus les notes des blocs 6 et 7 (`entrainements_supprimes`, rattachement d'équipe d'un autre club, droits techniques résiduels du visiteur sur `convocation_joueurs` et `staff_club`).
 - Journal :
+  - 2026-11-17 · Sonnet 5.5 · Contrôle des ouvertures relancé en lecture seule par Claude (`supabase db query --linked`), enregistré dans `controle-ouvertures-2026-11-17.csv` : 59 lignes contre 60 au départ. Les 4 tables n'apparaissent plus. Seule différence avec le 2026-11-14 : la règle `lecture convocation joueurs` (lisible sans compte) a disparu. Aucune nouvelle ouverture. `pg_policies` relu : les 4 tables n'ont plus que des règles réservées à `authenticated` (role_categories_access 3, staff_club 7, convocation_joueurs 6, entrainements 4). Droits techniques : `anon` garde SELECT sur `convocation_joueurs` et `staff_club` seulement (voulu, des règles d'autres tables les lisent ; les règles bloquent le visiteur). Tests SQL complets : en attente de Kevin.
 
 ## Inventaire
 (côté code rempli au bloc 0 le 2026-11-14 ; côté base à compléter au bloc 1 avec le diagnostic)
@@ -318,6 +349,7 @@ Rappel : `/clear` et une session neuve par bloc.
 | `DashboardJoueur.jsx:511, 554, 1113, 1245-1246` | lecture | `id, date, description, heure, lieu, sondage_clos, cloture_sondage_avant, created_at, updated_at` · `educateur_id` de l'affiliation | joueur, **parent** (même tableau) |
 | `SondageSemaine.jsx:149, 180`, `NutritionDashboard.jsx:257, 278` | lecture | dates, `sondage_*`, `fiche_id` · `educateur_id` | joueur, parent |
 | `CarteJoueur.jsx:64` | lecture | `id, date` · `educateur_id` + `club_categorie_id` | joueur (`MesStats` → `ProfilStatsJoueur`) |
+| `categories/FicheJoueurCategorie.jsx:42` (ajouté au bloc 7) | lecture | `id, date, club_categorie_id` · `club_categorie_id in (équipes de la catégorie)`, dates | club (`DashboardClub`) et éducateur (`DashboardEducateur`) : après fermeture, l'éducateur ne voit que ses équipes, comme pour les matchs |
 
 À trancher au bloc 1 : les lectures joueur filtrent seulement par `educateur_id` (un éducateur avec deux équipes : le joueur voit les séances des deux) ; certaines séances peuvent n'avoir aucune équipe (`club_categorie_id` vide, compté par le diagnostic). Un commentaire de `DashboardEducateur.jsx:5394` dit « le joueur ne lit pas entrainements », c'est faux aujourd'hui.
 

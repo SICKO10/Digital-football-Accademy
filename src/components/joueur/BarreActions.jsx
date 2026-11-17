@@ -57,7 +57,7 @@ export default function BarreActions({ actions, vignette, lienVideo, libelleVide
             flex: '1 1 0', minWidth: isMobile ? '0' : '150px', display: 'flex', alignItems: 'center', gap: spacing.lg,
             textAlign: 'left', cursor: 'pointer', padding: `${spacing.lg} ${spacing.xl}`, borderRadius: radius.xl,
             background: colors.background.surface, border: `1px solid ${colors.border.subtle}`,
-            color: colors.text.primary, fontFamily: 'Inter, sans-serif',
+            color: colors.text.primary, fontFamily: 'Barlow, sans-serif',
           }}
         >
           <span style={{ width: '36px', height: '36px', borderRadius: radius.lg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: a.couleur + alpha.subtle, color: a.couleur }}>

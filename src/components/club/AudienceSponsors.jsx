@@ -2,6 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import DossierSponsorPDF from './DossierSponsorPDF'
+import { styleCarte, styleChamp, styleTableau, styleEtiquette, styleBoutonPrincipal, CLASSE_BOUTON, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../../lib/identite'
+import { styleMontant } from '../../lib/identiteFinance'
+import { police, forme } from '../../tokens'
+import { TitreEcran, Etiquette } from '../identite'
+import { GroupeChoix } from './UiFinance'
 
 // Audience du club, présentée comme un argument pour les sponsors : connexions à la
 // plateforme, visites des pages publiques de tournois et de stages, clics sur les
@@ -11,10 +16,8 @@ import DossierSponsorPDF from './DossierSponsorPDF'
 // Les visites de la page publique du club viennent de club_vues_log (supabase_club_vues_page_publique.sql).
 
 const CSS = `
-  .au-chip:focus-visible, .au-tuile:focus-visible { outline: 2px solid var(--au-brand); outline-offset: 2px; }
   .au-tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-  .au-tuile { text-align: left; cursor: pointer; font-family: Inter, sans-serif; transition: border-color .12s, background .12s; }
-  .au-ligne { transition: background .12s; }
+  .au-tuile { text-align: left; cursor: pointer; font-family: Barlow, sans-serif; }
   .au-ligne:hover { background: var(--au-hover); }
 `
 
@@ -41,7 +44,6 @@ async function toutLire(construire) {
 export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
   const colors = useColors()
   const accent = couleurPrincipale || colors.accent.green
-  const surBrand = colors.accent.onBrand || '#000'
   const [donnees, setDonnees] = useState(null) // null = chargement
   const [periode, setPeriode] = useState('saison0')
   const [metrique, setMetrique] = useState('connexions')
@@ -126,7 +128,7 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
   }, [periode, maintenant, saisonCourante, saisonPrecedente])
   const parJour = periode === 'jours30'
 
-  if (donnees === null) return <p style={{ color: colors.text.faint, fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Chargement de l'audience…</p>
+  if (donnees === null) return <p style={{ color: colors.text.secondary, fontSize: 14, fontFamily: 'Barlow, sans-serif' }}>Chargement de l'audience…</p>
 
   const clicsTous = (donnees.clicsClub || []).concat(donnees.clicsT || [], donnees.clicsS || [])
   const sources = [
@@ -158,7 +160,8 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
     ...donnees.stages.map(s => ({ type: 'Stage', id: s.id, nom: s.nom, vues: dans((donnees.vuesS || []).filter(v => v.id === s.id), debut, fin).length, clics: dans((donnees.clicsS || []).filter(v => v.id === s.id), debut, fin).length })),
   ].filter(e => e.vues > 0 || e.clics > 0).sort((a, b) => b.vues - a.vues)
 
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 16, padding: 20, boxSizing: 'border-box' }
+  const carte = { ...styleCarte(colors), padding: 20 }
+  const tb = styleTableau(colors)
 
   // Graphique : barres fines, une seule échelle, tooltip au survol.
   const L = 640, H = 220, g = { gauche: 38, droite: 8, haut: 12, bas: 28 }
@@ -205,42 +208,28 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
   }
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', color: colors.text.primary, '--au-brand': accent, '--au-hover': colors.background.sunken }}>
+    <div style={{ fontFamily: 'Barlow, sans-serif', color: colors.text.primary, '--au-brand': accent, '--au-hover': colors.background.sunken }}>
       <style>{CSS}</style>
 
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Audience & valeur pour les sponsors</h2>
-        <p style={{ margin: '6px 0 0', fontSize: 14, color: colors.text.secondary, lineHeight: 1.5, maxWidth: 680 }}>
-          Ce que le club offre en visibilité : à chaque connexion et à chaque visite de page publique, les sponsors du club sont affichés. Ces chiffres sont réels et comptés automatiquement.
-        </p>
-      </div>
+      <TitreEcran as="h2" titre="Audience & valeur pour les sponsors"
+        sousTitre="Ce que le club offre en visibilité : à chaque connexion et à chaque visite de page publique, les sponsors du club sont affichés. Ces chiffres sont réels et comptés automatiquement." />
 
       <div style={{ ...carte, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, marginBottom: 16 }}>
         <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Dossier sponsor en PDF</div>
-          <p style={{ margin: '4px 0 10px', fontSize: 13, color: colors.text.secondary, lineHeight: 1.5 }}>Une page aux couleurs du club avec les chiffres de la période choisie, à joindre à vos propositions.</p>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: colors.text.faint, marginBottom: 4 }} htmlFor="au-contact">Contact affiché en bas de page (facultatif)</label>
-          <textarea id="au-contact" value={contact} onChange={e => setContact(e.target.value.slice(0, 160))} rows={2} placeholder={'Prénom Nom, fonction\nemail ou téléphone'}
-            style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', padding: '8px 10px', borderRadius: 10, border: `1px solid ${colors.border.subtle}`, background: colors.background.sunken, color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+          <div style={{ fontFamily: police.titre, fontSize: 20, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase' }}>Dossier sponsor en PDF</div>
+          <p style={{ margin: '4px 0 10px', fontSize: 14, color: colors.text.secondary, lineHeight: 1.5 }}>Une page aux couleurs du club avec les chiffres de la période choisie, à joindre à vos propositions.</p>
+          <label htmlFor="au-contact" style={{ ...styleEtiquette(colors), display: 'block', marginBottom: 6 }}>Contact affiché en bas de page (facultatif)</label>
+          <textarea id="au-contact" value={contact} onChange={e => setContact(e.target.value.slice(0, 160))} rows={2} placeholder={'Prénom Nom, fonction\nemail ou téléphone'} className={CLASSE_CHAMP}
+            style={{ ...styleChamp(colors), resize: 'vertical' }} />
         </div>
-        <button type="button" className="au-chip" onClick={exporterPDF} disabled={enCours || aucuneDonnee}
-          style={{ padding: '10px 20px', minHeight: 44, borderRadius: 999, border: 'none', background: accent, color: surBrand, fontSize: 14, fontWeight: 800, cursor: (enCours || aucuneDonnee) ? 'not-allowed' : 'pointer', opacity: aucuneDonnee ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
+        <button type="button" className={CLASSE_BOUTON} onClick={exporterPDF} disabled={enCours || aucuneDonnee}
+          style={{ ...styleBoutonPrincipal(colors), minHeight: 44, padding: '0 20px' }}>
           {enCours ? 'Création du PDF…' : 'Exporter le dossier sponsor'}
         </button>
-        {aucuneDonnee && <p style={{ flexBasis: '100%', margin: 0, fontSize: 12, color: colors.text.faint }}>Rien n'est encore enregistré sur cette période : choisis une autre période pour exporter.</p>}
+        {aucuneDonnee && <p style={{ flexBasis: '100%', margin: 0, fontSize: 13, color: colors.text.secondary }}>Rien n'est encore enregistré sur cette période : choisis une autre période pour exporter.</p>}
       </div>
 
-      <div role="tablist" aria-label="Période" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        {PERIODES.map(p => {
-          const actif = periode === p.id
-          return (
-            <button key={p.id} className="au-chip" role="tab" aria-selected={actif} onClick={() => setPeriode(p.id)}
-              style={{ padding: '8px 16px', minHeight: 40, borderRadius: 999, border: `1px solid ${actif ? accent : colors.border.subtle}`, background: actif ? accent : 'transparent', color: actif ? surBrand : colors.text.secondary, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              {p.label}
-            </button>
-          )
-        })}
-      </div>
+      <GroupeChoix libelle="Période" choix={PERIODES.map(p => ({ id: p.id, label: p.label }))} valeur={periode} onChoisir={setPeriode} style={{ marginBottom: 16 }} />
 
       <div className="au-tuiles" style={{ marginBottom: 16 }}>
         {sources.map(s => {
@@ -248,14 +237,15 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
           const actif = metrique === s.id
           const precedent = (periode === 'saison0' && s.lignes !== null) ? somme(dans(s.lignes, debutPrecedent, finPrecedent)) : null
           return (
-            <button key={s.id} type="button" className="au-tuile" aria-pressed={actif} onClick={() => setMetrique(s.id)}
-              style={{ ...carte, padding: 16, borderColor: actif ? s.couleur : colors.border.subtle, borderWidth: actif ? 2 : 1, borderStyle: 'solid', color: colors.text.primary }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: colors.text.secondary }}>
-                <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: s.couleur }} />{s.titre}
+            <button key={s.id} type="button" className={`au-tuile ${CLASSE_CLIQUABLE}`} aria-pressed={actif} onClick={() => setMetrique(s.id)}
+              style={{ ...carte, padding: actif ? '16px 16px 16px 19px' : 16, borderColor: actif ? colors.border.strong : undefined, boxShadow: actif ? `inset ${forme.lisere} 0 0 ${s.couleur}` : 'none', color: colors.text.primary }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 1, background: s.couleur, flexShrink: 0 }} />
+                <Etiquette>{s.titre}</Etiquette>
               </span>
-              <span style={{ display: 'block', margin: '8px 0 2px', fontSize: 32, fontWeight: 800, lineHeight: 1 }}>{total === null ? 'Non activé' : nombre(total)}</span>
-              <span style={{ display: 'block', fontSize: 12, color: colors.text.faint }}>{s.sous}</span>
-              {precedent !== null && <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: colors.text.faint }}>Saison précédente : {nombre(precedent)}</span>}
+              <span style={{ ...styleMontant(colors, total === null ? 22 : 40), display: 'block', margin: '10px 0 4px', textTransform: total === null ? 'uppercase' : 'none' }}>{total === null ? 'Non activé' : nombre(total)}</span>
+              <span style={{ display: 'block', fontSize: 13, color: colors.text.secondary }}>{s.sous}</span>
+              {precedent !== null && <span style={{ display: 'block', marginTop: 6, fontSize: 13, color: colors.text.secondary }}>Saison précédente : {nombre(precedent)}</span>}
             </button>
           )
         })}
@@ -263,22 +253,22 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
 
       <div style={{ ...carte, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{choisie.titre} {parJour ? 'par jour' : 'par mois'}</h3>
+          <h3 style={{ margin: 0, fontFamily: police.titre, fontSize: 20, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{choisie.titre} {parJour ? 'par jour' : 'par mois'}</h3>
           {choisie.id === 'connexions' && (connexionsParRole.club || connexionsParRole.educateur || connexionsParRole.joueur) ? (
-            <span style={{ fontSize: 12, color: colors.text.faint }}>
+            <span style={{ fontSize: 13, color: colors.text.secondary }}>
               Éducateurs {nombre(connexionsParRole.educateur || 0)} · Joueurs {nombre(connexionsParRole.joueur || 0)} · Club {nombre(connexionsParRole.club || 0)}
             </span>
           ) : null}
         </div>
         {choisie.lignes === null ? (
-          <p style={{ margin: 0, fontSize: 13, color: colors.text.faint }}>Cette mesure n'est pas encore activée sur la base du club.</p>
+          <p style={{ margin: 0, fontSize: 14, color: colors.text.secondary }}>Cette mesure n'est pas encore activée sur la base du club.</p>
         ) : (
           <div style={{ position: 'relative' }} onMouseLeave={() => setSurvol(null)}>
             <svg viewBox={`0 0 ${L} ${H}`} width="100%" role="img" aria-label={`${choisie.titre} ${parJour ? 'par jour' : 'par mois'}`} style={{ display: 'block', overflow: 'visible' }}>
               {graduations.map(v => (
                 <g key={v}>
                   <line x1={g.gauche} x2={L - g.droite} y1={yDe(v)} y2={yDe(v)} stroke={colors.border.subtle} strokeWidth="1" />
-                  <text x={g.gauche - 8} y={yDe(v) + 4} textAnchor="end" fontSize="11" fill={colors.text.faint}>{nombre(v)}</text>
+                  <text x={g.gauche - 8} y={yDe(v) + 4} textAnchor="end" fontSize="11" fill={colors.text.secondary}>{nombre(v)}</text>
                 </g>
               ))}
               {barres.map((b, i) => {
@@ -289,8 +279,8 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
                 return (
                   <g key={b.cle}>
                     {survol === i && <rect x={g.gauche + largeurCase * i} y={g.haut} width={largeurCase} height={H - g.haut - g.bas} fill={colors.background.sunken} opacity="0.7" />}
-                    {h > 0 && <path d={`M${x},${yDe(0)} V${yDe(0) - h + 4} Q${x},${yDe(0) - h} ${x + 4},${yDe(0) - h} H${x + largeurBarre - 4} Q${x + largeurBarre},${yDe(0) - h} ${x + largeurBarre},${yDe(0) - h + 4} V${yDe(0)} Z`} fill={choisie.couleur} />}
-                    {afficherLabel && <text x={x + largeurBarre / 2} y={H - 8} textAnchor="middle" fontSize="11" fill={colors.text.faint}>{b.label}</text>}
+                    {h > 0 && <rect x={x} y={yDe(0) - h} width={largeurBarre} height={h} rx="1" fill={choisie.couleur} />}
+                    {afficherLabel && <text x={x + largeurBarre / 2} y={H - 8} textAnchor="middle" fontSize="11" fill={colors.text.secondary}>{b.label}</text>}
                     <rect x={g.gauche + largeurCase * i} y={g.haut} width={largeurCase} height={H - g.haut - g.bas} fill="transparent"
                       onMouseEnter={() => setSurvol(i)} onTouchStart={() => setSurvol(i)} />
                   </g>
@@ -298,9 +288,9 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
               })}
             </svg>
             {survol !== null && (
-              <div role="status" style={{ position: 'absolute', top: 0, left: `${Math.min(80, Math.max(0, ((g.gauche + largeurCase * (survol + 0.5)) / L) * 100))}%`, transform: 'translateX(-50%)', pointerEvents: 'none', background: colors.background.raised || colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 10, padding: '6px 10px', fontSize: 12, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }}>
-                <span style={{ display: 'block', color: colors.text.faint }}>{barres[survol].detail}</span>
-                <span style={{ fontWeight: 800 }}>{nombre(valeursBarres[survol])}</span> <span style={{ color: colors.text.secondary }}>{choisie.titre.toLowerCase()}</span>
+              <div role="status" style={{ position: 'absolute', top: 0, left: `${Math.min(80, Math.max(0, ((g.gauche + largeurCase * (survol + 0.5)) / L) * 100))}%`, transform: 'translateX(-50%)', pointerEvents: 'none', background: colors.background.raised || colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 6, padding: '6px 10px', fontSize: 13, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' }}>
+                <span style={{ display: 'block', color: colors.text.secondary }}>{barres[survol].detail}</span>
+                <span style={styleMontant(colors, 17)}>{nombre(valeursBarres[survol])}</span> <span style={{ color: colors.text.secondary }}>{choisie.titre.toLowerCase()}</span>
               </div>
             )}
           </div>
@@ -308,26 +298,26 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
       </div>
 
       <div style={{ ...carte, marginBottom: 16 }}>
-        <h3 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>Par tournoi et par stage</h3>
-        <p style={{ margin: '0 0 12px', fontSize: 13, color: colors.text.faint }}>Visites de la page publique et clics sur les sponsors, sur la période choisie.</p>
+        <h3 style={{ margin: '0 0 4px', fontFamily: police.titre, fontSize: 20, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase' }}>Par tournoi et par stage</h3>
+        <p style={{ margin: '0 0 12px', fontSize: 14, color: colors.text.secondary }}>Visites de la page publique et clics sur les sponsors, sur la période choisie.</p>
         {evenements.length === 0 ? (
-          <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}>Aucune visite enregistrée sur cette période.</p>
+          <p style={{ margin: 0, fontSize: 14, color: colors.text.secondary }}>Aucune visite enregistrée sur cette période.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <table style={tb.tableau}>
               <thead>
                 <tr>{['Événement', 'Visites', 'Clics sponsors'].map((h, i) => (
-                  <th key={h} style={{ textAlign: i === 0 ? 'left' : 'right', padding: '8px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>{h}</th>
+                  <th key={h} scope="col" style={i === 0 ? tb.entete : tb.enteteChiffre}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {evenements.map(e => (
                   <tr key={`${e.type}-${e.id}`} className="au-ligne">
-                    <td style={{ padding: '10px', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: colors.text.faint, marginRight: 8, textTransform: 'uppercase' }}>{e.type}</span>{e.nom}
+                    <td style={tb.cellule}>
+                      <Etiquette style={{ marginRight: 8 }}>{e.type}</Etiquette>{e.nom}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, borderBottom: `1px solid ${colors.border.subtle}` }}>{nombre(e.vues)}</td>
-                    <td style={{ padding: '10px', textAlign: 'right', borderBottom: `1px solid ${colors.border.subtle}` }}>{nombre(e.clics)}</td>
+                    <td style={{ ...tb.celluleChiffre, fontWeight: 700 }}>{nombre(e.vues)}</td>
+                    <td style={tb.celluleChiffre}>{nombre(e.clics)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -336,7 +326,7 @@ export default function AudienceSponsors({ clubId, couleurPrincipale, club }) {
         )}
       </div>
 
-      <div style={{ ...carte, padding: 16, fontSize: 13, color: colors.text.secondary, lineHeight: 1.6 }}>
+      <div style={{ ...carte, padding: 16, fontSize: 14, color: colors.text.secondary, lineHeight: 1.6 }}>
         <strong style={{ color: colors.text.primary }}>Comment lire ces chiffres.</strong> Une connexion est une ouverture de la plateforme par un éducateur, un joueur ou le club, pas une personne différente. Une visite est une ouverture de la page publique du club, d'un tournoi ou d'un stage (une seule par session de navigation). Les chiffres commencent le jour où chaque mesure a été activée.
         {aucuneDonnee && <> Rien n'est encore enregistré sur cette période.</>}
       </div>

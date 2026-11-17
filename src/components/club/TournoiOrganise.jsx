@@ -6,6 +6,10 @@ import { saisonActuelle } from '../../lib/saison'
 import PaveDateTournoi from './PaveDateTournoi'
 import { PastilleTerrain, LegendeTerrains } from './PastilleTerrain'
 import TournoiSponsors from './TournoiSponsors'
+import { Icone } from '../identite'
+import { Trophy, RefreshCw, Zap } from 'lucide-react'
+import { styleCarte, styleChamp, styleEtiquette, styleBoutonPrincipal, styleBoutonSecondaire, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { police } from '../../tokens'
 
 const IcoArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 const IcoTrophy = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>
@@ -16,7 +20,16 @@ const IcoRefresh = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="n
 const IcoShuffle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
 const IcoLink = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
 
-const STATUT_COULEUR = { preparation: '#f59e0b', en_cours: '#4ade80', termine: '#888' }
+// Couleur de repère du statut (liseré, marqueur carré) : jamais utilisée en texte.
+const couleurStatutTournoi = (colors, statut) => ({ preparation: colors.accent.amber, en_cours: colors.accent.success, termine: colors.text.dim }[statut] || colors.text.dim)
+// Statut écrit en texte plein, précédé d'un petit carré de couleur.
+const EtiquetteStatut = ({ colors, couleur, libelle }) => (
+  <span style={{ ...styleEtiquette(colors), display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+    <span aria-hidden="true" style={{ width: '8px', height: '8px', background: couleur, borderRadius: '2px', flexShrink: 0 }} />{libelle}
+  </span>
+)
+// Carton jaune ou rouge dessiné (à la place des emojis).
+const Carton = ({ couleur }) => <span aria-hidden="true" style={{ display: 'inline-block', width: '9px', height: '13px', borderRadius: '2px', background: couleur, flexShrink: 0 }} />
 const STATUT_LABEL = { preparation: 'Préparation', en_cours: 'En cours', termine: 'Terminé' }
 const LETTRES_POULE = ['A', 'B', 'C', 'D', 'E', 'F']
 
@@ -408,7 +421,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     }
     setOnglet('planning')
     if (nonPlanifies.length > 0) {
-      alert(`⚠️ ${nonPlanifies.length} match${nonPlanifies.length > 1 ? 's' : ''} n'ont pas pu être placés avant ${tournoi.heure_fin}. Augmente le nombre de terrains ou avance l'heure de début.`)
+      alert(`${nonPlanifies.length} match${nonPlanifies.length > 1 ? 's' : ''} n'ont pas pu être placés avant ${tournoi.heure_fin}. Augmente le nombre de terrains ou avance l'heure de début.`)
     }
   }
 
@@ -485,7 +498,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const enEdition = mt.statut !== 'termine' || edit !== undefined
     const carton = (equipe, champ, valeur) => (
       <input type="number" min="0" title={`Cartons ${champ === 'j' ? 'jaunes' : 'rouges'} — ${equipe === 'a' ? ea?.nom : eb?.nom}`}
-        style={{ ...st.input, width: '30px', padding: '3px', textAlign: 'center', fontSize: '11px' }}
+        className={CLASSE_CHAMP} style={{ ...st.input, width: '30px', padding: '3px', textAlign: 'center', fontSize: '11px' }}
         value={valeur}
         onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), [`c${champ}${equipe}`]: e.target.value } }))} />
     )
@@ -496,24 +509,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
         {!enEdition ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
-            {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b, cja: mt.cartons_jaunes_a || 0, cjb: mt.cartons_jaunes_b || 0, cra: mt.cartons_rouges_a || 0, crb: mt.cartons_rouges_b || 0 } }))} style={st.iconBtn(colors.text.faint)}><IcoEdit /></button>}
+            <span style={{ fontWeight: 700, color: colors.text.primary, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
+            {!readOnly && <button onClick={() => setScoreEdit(p => ({ ...p, [mt.id]: { a: mt.score_a, b: mt.score_b, cja: mt.cartons_jaunes_a || 0, cjb: mt.cartons_jaunes_b || 0, cra: mt.cartons_rouges_a || 0, crb: mt.cartons_rouges_b || 0 } }))} title="Modifier le score" aria-label="Modifier le score" style={st.iconBtn(colors.text.dim)}><IcoEdit /></button>}
           </div>
         ) : readOnly ? (
-          <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
+          <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '4px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>
         ) : (() => {
           const aVide = edit?.a === undefined || edit?.a === ''
           const bVide = edit?.b === undefined || edit?.b === ''
           const pret = !aVide && !bVide
           return (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${aVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.a ?? ''}
+              <input type="number" min="0" className={CLASSE_CHAMP} style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${aVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.a ?? ''}
                 onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), a: e.target.value } }))} />
               <span style={{ color: colors.text.disabled }}>-</span>
-              <input type="number" min="0" style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${bVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.b ?? ''}
+              <input type="number" min="0" className={CLASSE_CHAMP} style={{ ...st.input, width: '50px', padding: '6px', textAlign: 'center', border: `1px solid ${bVide ? colors.accent.amber + '80' : colors.border.strong}` }} placeholder="?" value={edit?.b ?? ''}
                 onChange={e => setScoreEdit(p => ({ ...p, [mt.id]: { ...(p[mt.id] || {}), b: e.target.value } }))} />
-              <button onClick={() => saisirScore(mt.id)} disabled={!pret} title={pret ? 'Valider le score' : 'Saisis les deux scores (même 0) pour valider'}
-                style={{ ...st.iconBtn(colors.accent.green), opacity: pret ? 1 : 0.35, cursor: pret ? 'pointer' : 'not-allowed' }}>
+              <button onClick={() => saisirScore(mt.id)} disabled={!pret} title={pret ? 'Valider le score' : 'Saisis les deux scores (même 0) pour valider'} aria-label="Valider le score"
+                style={{ ...st.iconBtn(colors.accent.success), opacity: pret ? 1 : 0.35, cursor: pret ? 'pointer' : 'not-allowed' }}>
                 <IcoCheck />
               </button>
             </div>
@@ -522,13 +535,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
       </div>
       {enEdition && !readOnly && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '8px', fontSize: '11px', color: colors.text.faint }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '8px', fontSize: '11px', color: colors.text.dim }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            🟨 {carton('a', 'j', edit?.cja ?? (mt.cartons_jaunes_a || 0))} 🟥 {carton('a', 'r', edit?.cra ?? (mt.cartons_rouges_a || 0))}
+            <Carton couleur={colors.accent.amber} /> {carton('a', 'j', edit?.cja ?? (mt.cartons_jaunes_a || 0))} <Carton couleur={colors.accent.red} /> {carton('a', 'r', edit?.cra ?? (mt.cartons_rouges_a || 0))}
           </span>
           <span style={{ color: colors.text.disabled }}>cartons</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            🟨 {carton('b', 'j', edit?.cjb ?? (mt.cartons_jaunes_b || 0))} 🟥 {carton('b', 'r', edit?.crb ?? (mt.cartons_rouges_b || 0))}
+            <Carton couleur={colors.accent.amber} /> {carton('b', 'j', edit?.cjb ?? (mt.cartons_jaunes_b || 0))} <Carton couleur={colors.accent.red} /> {carton('b', 'r', edit?.crb ?? (mt.cartons_rouges_b || 0))}
           </span>
         </div>
       )}
@@ -538,12 +551,12 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         return (
           <div style={{ marginTop: '6px' }}>
             <div onClick={() => setMatchExpande(matchExpande === mt.id ? null : mt.id)}
-              style={{ cursor: 'pointer', color: colors.text.faint, fontSize: '12px', padding: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              style={{ cursor: 'pointer', color: colors.text.dim, fontSize: '12px', padding: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>{buteursMatch.length} buteur{buteursMatch.length !== 1 ? 's' : ''}</span>
               <span>{matchExpande === mt.id ? '▴' : '▾'}</span>
             </div>
             {matchExpande === mt.id && (
-              <div style={{ background: colors.background.raised, borderRadius: '8px', padding: '12px', marginTop: '4px' }}>
+              <div style={{ background: colors.background.raised, borderRadius: '6px', padding: '12px', marginTop: '4px' }}>
                 {buteursMatch.map(b => {
                   const eq = getEquipe(b.equipe_id)
                   return (
@@ -552,24 +565,24 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                       <span style={{ color: colors.text.primary, fontWeight: 600 }}>{b.prenom_joueur} {b.nom_joueur}</span>
                       {b.nb_buts > 1 && <span style={{ color: colors.accent.amber, fontSize: '12px', fontWeight: 700 }}>×{b.nb_buts}</span>}
                       <span style={{ color: colors.text.disabled, fontSize: '12px' }}>{eq?.nom}</span>
-                      {!readOnly && <button onClick={() => supprimerButeur(b.id)} style={{ ...st.iconBtn(colors.accent.red), width: '20px', height: '20px', marginLeft: 'auto' }}><IcoX /></button>}
+                      {!readOnly && <button onClick={() => supprimerButeur(b.id)} title="Retirer ce buteur" aria-label="Retirer ce buteur" style={{ ...st.iconBtn(colors.accent.red), width: '20px', height: '20px', marginLeft: 'auto' }}><IcoX /></button>}
                     </div>
                   )
                 })}
                 {!readOnly && (
                   <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
-                    <input style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Prénom"
+                    <input className={CLASSE_CHAMP} style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Prénom"
                       value={f.prenom || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, prenom: e.target.value } }))} />
-                    <input style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Nom *"
+                    <input className={CLASSE_CHAMP} style={{ ...st.input, flex: 1, minWidth: '80px', padding: '6px 8px', fontSize: '12px' }} placeholder="Nom *"
                       value={f.nom || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, nom: e.target.value } }))} />
-                    <input type="number" min="1" style={{ ...st.input, width: '54px', padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} placeholder="#"
+                    <input type="number" min="1" className={CLASSE_CHAMP} style={{ ...st.input, width: '54px', padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} placeholder="#"
                       value={f.numero || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, numero: e.target.value } }))} />
-                    <select style={{ ...st.input, flex: 1, minWidth: '100px', padding: '6px 8px', fontSize: '12px' }}
+                    <select className={CLASSE_CHAMP} style={{ ...st.input, flex: 1, minWidth: '100px', padding: '6px 8px', fontSize: '12px' }}
                       value={f.equipe_id || ''} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, equipe_id: e.target.value } }))}>
                       <option value="">Équipe</option>
                       {[mt.equipe_a_id, mt.equipe_b_id].map(eid => { const eq = getEquipe(eid); return eq ? <option key={eid} value={eid}>{eq.nom}</option> : null })}
                     </select>
-                    <select style={{ ...st.input, width: '68px', padding: '6px 8px', fontSize: '12px' }}
+                    <select className={CLASSE_CHAMP} style={{ ...st.input, width: '68px', padding: '6px 8px', fontSize: '12px' }}
                       value={f.nb_buts || 1} onChange={e => setButeurForm(p => ({ ...p, [mt.id]: { ...f, nb_buts: e.target.value } }))}>
                       {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} but{n > 1 ? 's' : ''}</option>)}
                     </select>
@@ -794,66 +807,67 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     setTimeout(() => setLienInscriptionCopie(false), 2000)
   }
 
+  // Mise en forme : kit d'identité (bloc 10), aucun changement de comportement.
   const st = {
-    card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', color: colors.text.primary, padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box' },
-    label: { fontSize: '11px', color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', fontWeight: 700 },
-    btnSolid: { background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' },
-    btnSecondary: { background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.secondary, borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-    btnGhost: { background: 'none', border: 'none', color: colors.accent.green, fontWeight: 700, cursor: 'pointer', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' },
-    iconBtn: (couleur) => ({ background: couleur + '15', border: `1px solid ${couleur}40`, color: couleur, borderRadius: '6px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }),
+    card: { ...styleCarte(colors), padding: '18px' },
+    input: styleChamp(colors),
+    label: { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' },
+    btnSolid: styleBoutonPrincipal(colors),
+    btnSecondary: styleBoutonSecondaire(colors),
+    btnGhost: { ...styleBoutonSecondaire(colors), border: '1px solid transparent', padding: '0 8px', gap: '6px', minHeight: '36px' },
+    iconBtn: (couleur) => ({ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: couleur, borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }),
   }
 
   if (vue === 'liste') return (
     <div style={{ maxWidth: 1000 }}>
       {!readOnly && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button onClick={ouvrirCreation} style={st.btnSolid}>+ Créer un tournoi</button>
+          <button onClick={ouvrirCreation} className={CLASSE_BOUTON} style={st.btnSolid}>+ Créer un tournoi</button>
         </div>
       )}
 
       {tournois.length === 0 ? (
         <div style={{ ...st.card, textAlign: 'center', padding: '60px 24px' }}>
-          <div style={{ color: colors.accent.green, marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><IcoTrophy /></div>
+          <div style={{ color: colors.text.primary, marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><IcoTrophy /></div>
           <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Aucun tournoi organisé</div>
-          <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '18px' }}>Créez un tournoi pour générer automatiquement le planning sans conflits.</div>
-          {!readOnly && <button onClick={ouvrirCreation} style={st.btnSolid}>+ Créer mon premier tournoi</button>}
+          <div style={{ color: colors.text.dim, fontSize: '13px', marginBottom: '18px' }}>Créez un tournoi pour générer automatiquement le planning sans conflits.</div>
+          {!readOnly && <button onClick={ouvrirCreation} className={CLASSE_BOUTON} style={st.btnSolid}>+ Créer mon premier tournoi</button>}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {tournois.map(t => {
-            const couleur = STATUT_COULEUR[t.statut] || colors.text.faint
+            const couleur = couleurStatutTournoi(colors, t.statut)
             return (
               <Fragment key={t.id}>
               <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
                 <PaveDateTournoi iso={t.date} colors={colors} couleur={t.statut === 'termine' ? null : couleur} />
                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => chargerDetail(t)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                    <span style={{ background: couleur + '1a', color: couleur, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{STATUT_LABEL[t.statut]}</span>
-                    {t.categorie_age && <span style={{ background: colors.background.raised, color: colors.text.secondary, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>{t.categorie_age}</span>}
+                    <EtiquetteStatut colors={colors} couleur={couleur} libelle={STATUT_LABEL[t.statut]} />
+                    {t.categorie_age && <span style={{ ...styleEtiquette(colors), fontSize: '11px' }}>{t.categorie_age}</span>}
                   </div>
                   <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
-                  {t.lieu && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.lieu}</div>}
+                  {t.lieu && <div style={{ color: colors.text.dim, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.lieu}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                   <button onClick={() => chargerDetail(t)} style={st.btnSecondary}>Gérer</button>
                   {!readOnly && <button onClick={() => setDuplication(d => d?.source.id === t.id ? null : { source: t, nom: `${t.nom} (copie)`, date: '', erreur: '', enCours: false })} style={st.btnSecondary}>Dupliquer</button>}
-                  {!readOnly && <button onClick={() => supprimerTournoi(t.id)} title="Supprimer" style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
+                  {!readOnly && <button onClick={() => supprimerTournoi(t.id)} title="Supprimer ce tournoi" aria-label="Supprimer ce tournoi" style={st.iconBtn(colors.accent.red)}><IcoX /></button>}
                 </div>
               </div>
               {duplication?.source.id === t.id && (
                 <div style={{ ...st.card, marginTop: '-4px', display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', padding: '12px 16px' }}>
                   <div style={{ flex: '1 1 200px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginBottom: '4px' }}>Nom du nouveau tournoi</label>
-                    <input value={duplication.nom} onChange={e => setDuplication(d => ({ ...d, nom: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.dim, marginBottom: '4px' }}>Nom du nouveau tournoi</label>
+                    <input value={duplication.nom} onChange={e => setDuplication(d => ({ ...d, nom: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
                   </div>
                   <div style={{ flex: '0 1 170px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.faint, marginBottom: '4px' }}>Date</label>
-                    <input type="date" value={duplication.date} onChange={e => setDuplication(d => ({ ...d, date: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: colors.text.dim, marginBottom: '4px' }}>Date</label>
+                    <input type="date" value={duplication.date} onChange={e => setDuplication(d => ({ ...d, date: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: '6px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px' }} />
                   </div>
-                  <button onClick={dupliquerTournoi} disabled={duplication.enCours} style={{ ...st.btnSecondary, opacity: duplication.enCours ? 0.6 : 1 }}>{duplication.enCours ? 'Duplication…' : 'Créer la copie'}</button>
+                  <button onClick={dupliquerTournoi} disabled={duplication.enCours} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...st.btnSecondary, opacity: duplication.enCours ? 0.6 : 1 }}>{duplication.enCours ? 'Duplication…' : 'Créer la copie'}</button>
                   <button onClick={() => setDuplication(null)} style={st.btnSecondary}>Annuler</button>
-                  <p style={{ flexBasis: '100%', margin: 0, fontSize: '12px', color: duplication.erreur ? colors.accent.red : colors.text.faint }}>{duplication.erreur || 'Les réglages sont recopiés (format, terrains, horaires, règlement, tarifs). Les équipes, matchs et résultats ne le sont pas.'}</p>
+                  <p style={{ flexBasis: '100%', margin: 0, fontSize: '12px', color: duplication.erreur ? colors.accent.red : colors.text.dim }}>{duplication.erreur || 'Les réglages sont recopiés (format, terrains, horaires, règlement, tarifs). Les équipes, matchs et résultats ne le sont pas.'}</p>
                 </div>
               )}
               </Fragment>
@@ -885,14 +899,14 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const ratioTemps = tempsDispo > 0 ? Math.min(1, tempsNecessaire / tempsDispo) : 1
     // Champs de hauteur uniforme (les <select> natifs étaient plus bas que
     // les <input> sous Safari) et un peu plus aérés que le style par défaut.
-    const inp = { ...st.input, height: '42px', borderRadius: '10px', fontSize: '14px', padding: '0 12px' }
+    const inp = { ...st.input, height: '42px', borderRadius: '6px', fontSize: '14px', padding: '0 12px' }
     const section = (numero, titre, sousTitre, contenu) => (
       <div style={{ ...st.card, padding: '20px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <span style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.green + '1a', color: colors.accent.green, fontSize: '13px', fontWeight: 800 }}>{numero}</span>
+          <span style={{ width: '28px', height: '28px', borderRadius: '6px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.accent.brand, color: colors.accent.onBrand, fontFamily: police.titre, fontSize: '16px', fontWeight: 700 }}>{numero}</span>
           <div style={{ minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>{titre}</p>
-            {sousTitre && <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.faint, lineHeight: 1.5 }}>{sousTitre}</p>}
+            <p style={{ margin: 0, fontFamily: police.titre, fontSize: '18px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', color: colors.text.primary }}>{titre}</p>
+            {sousTitre && <p style={{ margin: '3px 0 0', fontSize: '12px', color: colors.text.dim, lineHeight: 1.5 }}>{sousTitre}</p>}
           </div>
         </div>
         <div style={{ display: 'grid', gap: '14px', marginTop: '16px' }}>{contenu}</div>
@@ -902,7 +916,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       <div style={{ minWidth: 0 }}>
         <label style={st.label}>{label}</label>
         {el}
-        {aide && <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.faint }}>{aide}</p>}
+        {aide && <p style={{ margin: '6px 0 0', fontSize: '11px', color: colors.text.dim }}>{aide}</p>}
       </div>
     )
     // Compteur − valeur + (appelé comme fonction : aucun état propre, pas de
@@ -915,7 +929,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         </button>
       )
       return (
-        <div style={{ display: 'flex', alignItems: 'center', height: '42px', border: `1px solid ${colors.border.strong}`, borderRadius: '10px', background: colors.background.raised, boxSizing: 'border-box', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: '42px', border: `1px solid ${colors.border.strong}`, borderRadius: '6px', background: colors.background.raised, boxSizing: 'border-box', overflow: 'hidden' }}>
           {bouton('−', valeur > min, valeur - 1)}
           <span style={{ flex: 1, textAlign: 'center', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>{valeur}</span>
           {bouton('+', valeur < max, valeur + 1)}
@@ -923,12 +937,12 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
       )
     }
     const segments = (options, valeur, onChange) => (
-      <div style={{ display: 'flex', gap: '4px', padding: '4px', height: '42px', boxSizing: 'border-box', borderRadius: '10px', background: colors.background.raised, border: `1px solid ${colors.border.strong}` }}>
+      <div style={{ display: 'flex', gap: '4px', padding: '4px', height: '42px', boxSizing: 'border-box', borderRadius: '6px', background: colors.background.raised, border: `1px solid ${colors.border.strong}` }}>
         {options.map(o => {
           const actif = o.valeur === valeur
           return (
             <button key={o.valeur} type="button" onClick={() => onChange(o.valeur)}
-              style={{ flex: 1, border: 'none', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, background: actif ? colors.accent.green : 'transparent', color: actif ? colors.black : colors.text.secondary }}>
+              style={{ flex: 1, border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, background: actif ? colors.accent.brand : 'transparent', color: actif ? colors.accent.onBrand : colors.text.secondary }}>
               {o.libelle}
             </button>
           )
@@ -938,12 +952,12 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     const avecUnite = (el, unite) => (
       <div style={{ position: 'relative' }}>
         {el}
-        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.faint, pointerEvents: 'none' }}>{unite}</span>
+        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: colors.text.dim, pointerEvents: 'none' }}>{unite}</span>
       </div>
     )
     const ligneResume = (label, valeur, couleur) => (
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '8px 0', borderBottom: `1px solid ${colors.border.faint}` }}>
-        <span style={{ color: colors.text.faint, fontSize: '12px' }}>{label}</span>
+        <span style={{ color: colors.text.dim, fontSize: '12px' }}>{label}</span>
         <span style={{ color: couleur || colors.text.primary, fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>{valeur}</span>
       </div>
     )
@@ -951,8 +965,8 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
     return (
     <div style={{ maxWidth: 1080 }}>
       <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Retour</button>
-      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontWeight: 800, fontSize: '22px' }}>Créer un tournoi</h2>
-      <p style={{ color: colors.text.faint, fontSize: '13px', margin: '0 0 20px' }}>Renseigne l'essentiel : le planning des matchs sera généré automatiquement une fois les équipes ajoutées.</p>
+      <h2 style={{ color: colors.text.primary, margin: '14px 0 4px', fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: '28px', lineHeight: 1.05 }}>Créer un tournoi</h2>
+      <p style={{ color: colors.text.dim, fontSize: '13px', margin: '0 0 20px' }}>Renseigne l'essentiel : le planning des matchs sera généré automatiquement une fois les équipes ajoutées.</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px', alignItems: 'start' }}>
       <div style={{ display: 'grid', gap: '16px', gridColumn: 'span 2', minWidth: 0 }}>
         {section(1, 'Le tournoi', null, <>
@@ -971,7 +985,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             {champ('Terrains', compteur(nbTerrains, 1, 12, v => setForm(f => ({ ...f, nb_terrains: v }))))}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '11px', color: colors.text.faint, marginRight: '4px' }}>Couleur de chaque terrain dans le planning :</span>
+            <span style={{ fontSize: '11px', color: colors.text.dim, marginRight: '4px' }}>Couleur de chaque terrain dans le planning :</span>
             {Array.from({ length: nbTerrains }, (_, i) => <PastilleTerrain key={i} numero={i + 1} taille="petite" />)}
           </div>
         </>)}
@@ -985,14 +999,14 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           </div>
 
           {/* Pause déjeuner facultative (durée 0 = pas de pause) */}
-          <div style={{ borderRadius: '12px', border: `1px solid ${pauseActive ? colors.accent.green + '55' : colors.border.default}`, background: pauseActive ? colors.accent.green + '0d' : 'transparent', padding: '14px 16px' }}>
+          <div style={{ borderRadius: '6px', border: `1px solid ${pauseActive ? colors.accent.green + '55' : colors.border.default}`, background: pauseActive ? colors.accent.green + '0d' : 'transparent', padding: '14px 16px' }}>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
               <input type="checkbox" checked={pauseActive}
                 onChange={e => setForm(f => ({ ...f, pause_midi_duree: e.target.checked ? DUREE_PAUSE_MIDI_DEFAUT : 0 }))}
                 style={{ width: '18px', height: '18px', marginTop: '1px', accentColor: colors.accent.green, cursor: 'pointer', flexShrink: 0 }} />
               <span>
                 <span style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: colors.text.primary }}>Prévoir une pause déjeuner</span>
-                <span style={{ display: 'block', fontSize: '12px', color: colors.text.faint, marginTop: '2px' }}>
+                <span style={{ display: 'block', fontSize: '12px', color: colors.text.dim, marginTop: '2px' }}>
                   {pauseActive ? 'Aucun match ne sera programmé pendant cette pause, sur tous les terrains.' : 'Pas de pause : les matchs s\'enchaînent sur toute la journée.'}
                 </span>
               </span>
@@ -1014,37 +1028,37 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             {champ('Équipes payantes', <input type="number" min="0" value={form.nb_equipes_payantes} onChange={e => setForm(f => ({ ...f, nb_equipes_payantes: parseInt(e.target.value) || 0 }))} style={inp} />)}
             {champ("Coût d'organisation", avecUnite(<input type="number" min="0" step="0.01" placeholder="0.00" value={form.cout_organisation} onChange={e => setForm(f => ({ ...f, cout_organisation: e.target.value }))} style={{ ...inp, paddingRight: '32px' }} />, '€'))}
           </div>
-          <p style={{ margin: 0, fontSize: '11px', color: colors.text.faint }}>L'équipe hôte (ton club) ne paie pas d'inscription. Coût : terrain, arbitrage, récompenses…</p>
+          <p style={{ margin: 0, fontSize: '11px', color: colors.text.dim }}>L'équipe hôte (ton club) ne paie pas d'inscription. Coût : terrain, arbitrage, récompenses…</p>
         </>)}
       </div>
 
       {/* Résumé en direct */}
       <div style={{ ...st.card, padding: '20px 22px', position: 'sticky', top: '16px', borderTop: `3px solid ${colors.accent.green}` }}>
-        <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint }}>Résumé</p>
+        <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.dim }}>Résumé</p>
         <p style={{ margin: '0 0 14px', fontSize: '17px', fontWeight: 800, color: colors.text.primary, overflowWrap: 'anywhere' }}>{form.nom.trim() || 'Nouveau tournoi'}</p>
         {ligneResume('Poules', `${nbPoules} poule${nbPoules > 1 ? 's' : ''} (${taillesPoules.join(' / ')} équipes)`)}
         {ligneResume('Matchs de poule', nbMatchsPoules)}
         {ligneResume('Terrains', nbTerrains)}
         {ligneResume('Pause déjeuner', pauseActive ? `${form.pause_midi_debut || '12:00'} · ${libelleDuree(Number(form.pause_midi_duree))}` : 'Aucune')}
         {ligneResume('Temps nécessaire', fmtDuree(tempsNecessaire))}
-        {ligneResume('Temps disponible', fmtDuree(tempsDispo), tientDansJournee ? colors.accent.green : colors.accent.red)}
+        {ligneResume('Temps disponible', fmtDuree(tempsDispo), tientDansJournee ? colors.accent.success : colors.accent.red)}
         <div style={{ marginTop: '12px', height: '6px', borderRadius: '6px', background: colors.background.raised, overflow: 'hidden' }} title="Temps nécessaire / temps disponible">
           <div style={{ width: `${Math.round(ratioTemps * 100)}%`, height: '100%', borderRadius: '6px', background: tientDansJournee ? colors.accent.green : colors.accent.amber, transition: 'width 0.2s' }} />
         </div>
-        <div style={{ margin: '12px 0', padding: '10px 12px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, background: (tientDansJournee ? colors.accent.green : colors.accent.amber) + '14', color: tientDansJournee ? colors.accent.green : colors.accent.amber }}>
+        <div style={{ margin: '12px 0', padding: '10px 12px', borderRadius: '6px', fontSize: '12px', lineHeight: 1.5, background: colors.background.sunken, boxShadow: `inset 3px 0 0 ${tientDansJournee ? colors.accent.success : colors.accent.amber}`, paddingLeft: '15px', color: colors.text.primary }}>
           {tientDansJournee
             ? 'Les poules tiennent dans la journée, il reste du temps pour les phases finales.'
             : 'Les poules dépassent la journée : ajoute un terrain, raccourcis les matchs ou élargis les horaires.'}
         </div>
         {(recette > 0 || cout > 0) && <>
-          {recette > 0 && ligneResume('Recette prévue', `${recette.toFixed(2)} €`, colors.accent.green)}
+          {recette > 0 && ligneResume('Recette prévue', `${recette.toFixed(2)} €`)}
           {cout > 0 && ligneResume("Coût d'organisation", `−${cout.toFixed(2)} €`, colors.accent.red)}
-          {recette > 0 && cout > 0 && ligneResume('Solde prévu', `${recette - cout >= 0 ? '+' : ''}${(recette - cout).toFixed(2)} €`, recette - cout >= 0 ? colors.accent.green : colors.accent.red)}
+          {recette > 0 && cout > 0 && ligneResume('Solde prévu', `${recette - cout >= 0 ? '+' : ''}${(recette - cout).toFixed(2)} €`, recette - cout >= 0 ? colors.accent.success : colors.accent.red)}
         </>}
-        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} style={{ ...st.btnSolid, width: '100%', marginTop: '14px', opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px', cursor: (!form.nom.trim() || loading) ? 'not-allowed' : 'pointer' }}>
+        <button onClick={creerTournoi} disabled={!form.nom.trim() || loading} className={CLASSE_BOUTON} style={{ ...st.btnSolid, width: '100%', marginTop: '14px', opacity: (!form.nom.trim() || loading) ? 0.4 : 1, padding: '13px', fontSize: '14px', cursor: (!form.nom.trim() || loading) ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Création…' : 'Créer le tournoi'}
         </button>
-        {!form.nom.trim() && <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.faint, textAlign: 'center' }}>Le nom du tournoi est obligatoire.</p>}
+        {!form.nom.trim() && <p style={{ margin: '8px 0 0', fontSize: '11px', color: colors.text.dim, textAlign: 'center' }}>Le nom du tournoi est obligatoire.</p>}
       </div>
       </div>
     </div>
@@ -1068,7 +1082,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button onClick={() => setVue('liste')} style={st.btnGhost}><IcoArrowLeft /> Tous les tournois</button>
           <button onClick={() => setTourEtape(0)} title="Revoir le tutoriel"
-            style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: 'none', color: colors.text.faint, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+            style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${colors.border.default}`, background: 'none', color: colors.text.dim, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
             ?
           </button>
         </div>
@@ -1083,29 +1097,29 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               : nbJoues < matchs.length
                 ? { texte: `${nbJoues}/${matchs.length} matchs joués : saisis les scores au fil de la journée.`, action: 'resultats', bouton: 'Saisir les scores' }
                 : { texte: 'Tous les matchs sont joués : consulte le classement et le palmarès.', action: 'classement', bouton: 'Voir le classement' }
-          const couleurStatut = STATUT_COULEUR[tournoi.statut] || colors.text.faint
+          const couleurStatut = couleurStatutTournoi(colors, tournoi.statut)
           const progression = matchs.length ? Math.round(nbJoues / matchs.length * 100) : 0
           return (
             <div style={{ ...st.card, margin: '14px 0 16px', padding: '18px 20px', borderLeft: `4px solid ${couleurStatut}` }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <PaveDateTournoi iso={tournoi.date} colors={colors} couleur={tournoi.statut === 'termine' ? null : couleurStatut} />
                 <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                  <span style={{ background: couleurStatut + '1a', color: couleurStatut, borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{STATUT_LABEL[tournoi.statut]}</span>
-                  <h2 style={{ color: colors.text.primary, margin: '6px 0 4px', fontSize: '20px', fontWeight: 800 }}>{tournoi.nom}</h2>
-                  <div style={{ color: colors.text.faint, fontSize: '13px' }}>
+                  <EtiquetteStatut colors={colors} couleur={couleurStatut} libelle={STATUT_LABEL[tournoi.statut]} />
+                  <h2 style={{ color: colors.text.primary, margin: '6px 0 4px', fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: '26px', lineHeight: 1.05 }}>{tournoi.nom}</h2>
+                  <div style={{ color: colors.text.dim, fontSize: '13px' }}>
                     {[tournoi.categorie_age, tournoi.lieu, `${equipes.length} équipe${equipes.length > 1 ? 's' : ''}`, `${tournoi.nb_terrains} terrain${tournoi.nb_terrains > 1 ? 's' : ''}`, `matchs de ${tournoi.duree_match} min`].filter(Boolean).join(' · ')}
                   </div>
                 </div>
                 {matchs.length > 0 && (
                   <div style={{ minWidth: '140px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: colors.text.faint, marginBottom: '5px' }}><span>Avancement</span><strong style={{ color: colors.text.primary }}>{nbJoues}/{matchs.length}</strong></div>
-                    <div style={{ height: '6px', borderRadius: '3px', background: colors.background.raised, overflow: 'hidden' }}><div style={{ width: `${progression}%`, height: '100%', background: colors.accent.green }} /></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: colors.text.dim, marginBottom: '5px' }}><span>Avancement</span><strong style={{ color: colors.text.primary }}>{nbJoues}/{matchs.length}</strong></div>
+                    <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progression} aria-label="Avancement du tournoi" style={{ height: '6px', borderRadius: '2px', background: colors.background.raised, overflow: 'hidden' }}><div style={{ width: `${progression}%`, height: '100%', background: colors.accent.brand }} /></div>
                   </div>
                 )}
               </div>
               {!readOnly && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '14px', padding: '10px 12px', borderRadius: '10px', background: colors.accent.green + '10', border: `1px solid ${colors.accent.green}30` }}>
-                  <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.accent.green }}>Étape suivante</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '14px', padding: '10px 12px', borderRadius: '6px', background: colors.background.sunken, boxShadow: `inset 3px 0 0 ${colors.accent.brand}`, paddingLeft: '15px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase', color: colors.text.primary }}>Étape suivante</span>
                   <span style={{ flex: 1, minWidth: '180px', fontSize: '13px', color: colors.text.primary }}>{etape.texte}</span>
                   <button onClick={() => { setOnglet(etape.action); if (etape.bouton === 'Générer le planning') genererPlanningAuto() }} style={{ ...st.btnSolid, padding: '7px 14px', fontSize: '12px' }}>{etape.bouton}</button>
                 </div>
@@ -1122,22 +1136,25 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             ].filter(Boolean).map(l => (
               <div key={l.titre} style={{ ...st.card, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{l.titre} <span style={{ fontWeight: 500, color: colors.text.faint, fontSize: '12px' }}>· {l.desc}</span></p>
-                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.accent.green, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.url.replace(/^https?:\/\//, '')}</p>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>{l.titre} <span style={{ fontWeight: 500, color: colors.text.dim, fontSize: '12px' }}>· {l.desc}</span></p>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: colors.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.url.replace(/^https?:\/\//, '')}</p>
                 </div>
-                <button onClick={l.copier} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', fontSize: '12px', flexShrink: 0, color: l.copie ? colors.accent.green : colors.text.secondary }}><IcoLink /> {l.copie ? 'Copié' : 'Copier'}</button>
+                <button onClick={l.copier} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...st.btnSecondary, display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', fontSize: '12px', flexShrink: 0, color: l.copie ? colors.accent.success : colors.text.secondary }}><IcoLink /> {l.copie ? 'Copié' : 'Copier'}</button>
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '2px', padding: '3px', marginBottom: '18px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}`, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {onglets.map(o => (
-            <button key={o.key} ref={el => (tourRefs.current[o.key] = el)} onClick={() => setOnglet(o.key)}
-              style={{ flexShrink: 0, padding: '7px 14px', borderRadius: '8px', border: 'none', background: onglet === o.key ? colors.background.raised : 'transparent', color: onglet === o.key ? colors.text.primary : colors.text.faint, fontWeight: onglet === o.key ? 700 : 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap' }}>
-              {o.label}
-            </button>
-          ))}
+        <div role="group" aria-label="Sections du tournoi" style={{ display: 'flex', gap: '6px', marginBottom: '18px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+          {onglets.map(o => {
+            const actif = onglet === o.key
+            return (
+              <button key={o.key} ref={el => (tourRefs.current[o.key] = el)} type="button" aria-pressed={actif} onClick={() => setOnglet(o.key)} className={CLASSE_BOUTON}
+                style={{ ...(actif ? styleBoutonPrincipal(colors) : styleBoutonSecondaire(colors)), flexShrink: 0, minHeight: '36px', padding: '0 14px', fontSize: '13px' }}>
+                {o.label}
+              </button>
+            )
+          })}
         </div>
 
         {onglet === 'equipes' && (
@@ -1151,20 +1168,20 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 <div style={{ ...st.card, marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {Number(tournoi.prix_inscription_equipe) > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Recette réelle actuelle ({equipesPayantes} équipe{equipesPayantes > 1 ? 's' : ''} payante{equipesPayantes > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
-                      <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: '15px' }}>{recetteReelle.toFixed(2)}€</span>
+                      <span style={{ color: colors.text.dim, fontSize: '12px' }}>Recette réelle actuelle ({equipesPayantes} équipe{equipesPayantes > 1 ? 's' : ''} payante{equipesPayantes > 1 ? 's' : ''} × {tournoi.prix_inscription_equipe}€)</span>
+                      <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px' }}>{recetteReelle.toFixed(2)}€</span>
                     </div>
                   )}
                   {cout > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ color: colors.text.faint, fontSize: '12px' }}>Coût d'organisation</span>
+                      <span style={{ color: colors.text.dim, fontSize: '12px' }}>Coût d'organisation</span>
                       <span style={{ color: colors.accent.red, fontWeight: 700, fontSize: '15px' }}>-{cout.toFixed(2)}€</span>
                     </div>
                   )}
                   {cout > 0 && Number(tournoi.prix_inscription_equipe) > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderTop: `1px solid ${colors.border.faint}`, paddingTop: '6px' }}>
                       <span style={{ color: colors.text.secondary, fontSize: '12px', fontWeight: 700 }}>Solde net (réel)</span>
-                      <span style={{ color: solde >= 0 ? colors.accent.green : colors.accent.red, fontWeight: 800, fontSize: '15px' }}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)}€</span>
+                      <span style={{ color: solde >= 0 ? colors.accent.success : colors.accent.red, fontWeight: 800, fontSize: '15px' }}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)}€</span>
                     </div>
                   )}
                 </div>
@@ -1174,17 +1191,17 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               <div style={{ ...st.card, marginBottom: '16px', padding: '14px 16px' }}>
                 <div style={{ color: colors.text.secondary, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '12px' }}>Ajouter une équipe</div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <input style={{ ...st.input, flex: 2, minWidth: '140px' }} placeholder="Nom de l'équipe *" value={nouvelleEquipe.nom}
+                  <input className={CLASSE_CHAMP} style={{ ...st.input, flex: 2, minWidth: '140px' }} placeholder="Nom de l'équipe *" value={nouvelleEquipe.nom}
                     onChange={e => setNouvelleEquipe(p => ({ ...p, nom: e.target.value }))} onKeyDown={e => e.key === 'Enter' && ajouterEquipe()} />
-                  <input style={{ ...st.input, flex: 2, minWidth: '140px' }} placeholder="Club (optionnel)" value={nouvelleEquipe.club}
+                  <input className={CLASSE_CHAMP} style={{ ...st.input, flex: 2, minWidth: '140px' }} placeholder="Club (optionnel)" value={nouvelleEquipe.club}
                     onChange={e => setNouvelleEquipe(p => ({ ...p, club: e.target.value }))} />
-                  <select style={{ ...st.input, flex: 1, minWidth: '90px' }} value={nouvelleEquipe.poule}
+                  <select className={CLASSE_CHAMP} style={{ ...st.input, flex: 1, minWidth: '90px' }} value={nouvelleEquipe.poule}
                     onChange={e => setNouvelleEquipe(p => ({ ...p, poule: e.target.value }))}>
                     {LETTRES_POULE.map(p => <option key={p} value={p}>Poule {p}</option>)}
                   </select>
-                  <button onClick={ajouterEquipe} disabled={!nouvelleEquipe.nom.trim()} style={{ ...st.btnSolid, opacity: !nouvelleEquipe.nom.trim() ? 0.4 : 1 }}>+ Ajouter</button>
+                  <button onClick={ajouterEquipe} disabled={!nouvelleEquipe.nom.trim()} className={CLASSE_BOUTON} style={{ ...st.btnSolid, opacity: !nouvelleEquipe.nom.trim() ? 0.4 : 1 }}>+ Ajouter</button>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', color: colors.text.faint, fontSize: '12px', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', color: colors.text.dim, fontSize: '12px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={nouvelleEquipe.est_hote} onChange={e => setNouvelleEquipe(p => ({ ...p, est_hote: e.target.checked }))} />
                   Équipe hôte (le club organisateur — ne paie pas d'inscription)
                 </label>
@@ -1192,7 +1209,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             )}
 
             {poules.length === 0 ? (
-              <div style={{ ...st.card, color: colors.text.faint, textAlign: 'center', padding: '30px', fontSize: '13px' }}>Aucune équipe pour l'instant — ajoute-les ci-dessus ou partage le lien d'inscription.</div>
+              <div style={{ ...st.card, color: colors.text.dim, textAlign: 'center', padding: '30px', fontSize: '13px' }}>Aucune équipe pour l'instant — ajoute-les ci-dessus ou partage le lien d'inscription.</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '12px', marginBottom: '14px' }}>
                 {poules.map(poule => {
@@ -1201,17 +1218,17 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     <div key={poule} style={{ ...st.card, padding: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: colors.text.primary }}>Poule {poule}</span>
-                        <span style={{ fontSize: '11px', color: colors.text.faint }}>{eqs.length} équipe{eqs.length > 1 ? 's' : ''}</span>
+                        <span style={{ fontSize: '11px', color: colors.text.dim }}>{eqs.length} équipe{eqs.length > 1 ? 's' : ''}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {eqs.map(eq => (
-                          <div key={eq.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', background: colors.background.base, border: `1px solid ${colors.border.faint}` }}>
+                          <div key={eq.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '6px', background: colors.background.base, border: `1px solid ${colors.border.faint}` }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ margin: 0, color: colors.text.primary, fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.nom}</p>
-                              {eq.club && <p style={{ margin: '1px 0 0', color: colors.text.faint, fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.club}</p>}
+                              {eq.club && <p style={{ margin: '1px 0 0', color: colors.text.dim, fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.club}</p>}
                             </div>
                             {eq.est_hote && <span style={{ background: colors.accent.blue + '1a', color: colors.accent.blue, borderRadius: '6px', padding: '2px 7px', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>Hôte</span>}
-                            {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} title="Retirer" style={{ background: 'none', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '2px', display: 'flex', flexShrink: 0 }}><IcoX /></button>}
+                            {!readOnly && <button onClick={() => supprimerEquipe(eq.id)} title="Retirer" style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', padding: '2px', display: 'flex', flexShrink: 0 }}><IcoX /></button>}
                           </div>
                         ))}
                       </div>
@@ -1223,10 +1240,10 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
 
             {!readOnly && equipes.length >= 2 && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
-                <button onClick={genererPlanningAuto} style={st.btnSolid}>
+                <button onClick={genererPlanningAuto} className={CLASSE_BOUTON} style={st.btnSolid}>
                   Générer le planning · {equipes.length} équipes · {tournoi.nb_terrains} terrain{tournoi.nb_terrains > 1 ? 's' : ''}
                 </button>
-                <button onClick={tirageAuSort} style={{ ...st.btnGhost, background: colors.background.raised, border: `1px solid ${colors.border.strong}`, padding: '10px 16px', borderRadius: '10px' }}>
+                <button onClick={tirageAuSort} style={{ ...st.btnGhost, background: colors.background.raised, border: `1px solid ${colors.border.strong}`, padding: '10px 16px', borderRadius: '6px' }}>
                   <IcoShuffle /> Tirage au sort des poules
                 </button>
               </div>
@@ -1238,7 +1255,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
           <div>
             {matchs.length === 0 ? (
               <div style={{ ...st.card, textAlign: 'center', padding: '40px' }}>
-                <p style={{ color: colors.text.faint }}>Ajoutez des équipes puis générez le planning.</p>
+                <p style={{ color: colors.text.dim }}>Ajoutez des équipes puis générez le planning.</p>
                 <button onClick={() => setOnglet('equipes')} style={st.btnSolid}>← Gérer les équipes</button>
               </div>
             ) : (() => {
@@ -1249,27 +1266,27 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 <LegendeTerrains numeros={numerosTerrains} colors={colors} />
                 {Object.entries(parHeure).sort(([a], [b]) => a.localeCompare(b)).map(([heure, mts]) => (
                 <div key={heure} style={{ marginBottom: '16px' }}>
-                  <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}>{heure?.slice(0, 5)}</div>
+                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}>{heure?.slice(0, 5)}</div>
                   {mts.sort((a, b) => a.terrain - b.terrain).map(mt => {
                     const ea = getEquipe(mt.equipe_a_id), eb = getEquipe(mt.equipe_b_id)
                     return (
                       <div key={mt.id} style={{ ...st.card, marginBottom: '8px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', borderLeft: `4px solid ${couleurTerrain(mt.terrain)}` }}>
                         <PastilleTerrain numero={mt.terrain} />
                         {mt.phase === 'poule' ? (
-                          <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '56px', textAlign: 'center' }}>Poule {mt.poule}</span>
+                          <span style={{ background: colors.accent.blue + '20', color: colors.accent.blue, borderRadius: '4px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, minWidth: '56px', textAlign: 'center' }}>Poule {mt.poule}</span>
                         ) : (
-                          <span style={{ background: colors.accent.purple + '20', color: colors.accent.purple, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textAlign: 'center' }}>{PHASE_LABEL[mt.phase] || mt.phase}</span>
+                          <span style={{ background: colors.accent.purple + '20', color: colors.accent.purple, borderRadius: '4px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textAlign: 'center' }}>{PHASE_LABEL[mt.phase] || mt.phase}</span>
                         )}
                         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, textAlign: 'right', fontSize: '13px' }}>{ea?.nom || '?'}</span>
                         <span style={{ color: colors.text.disabled, fontWeight: 700, padding: '0 10px' }}>vs</span>
                         <span style={{ color: colors.text.primary, fontWeight: 600, flex: 1, fontSize: '13px' }}>{eb?.nom || '?'}</span>
                         {mt.statut === 'termine'
-                          ? <span style={{ fontWeight: 700, color: colors.accent.green, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
-                          : <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>}
+                          ? <span style={{ fontWeight: 700, color: colors.text.primary, minWidth: '50px', textAlign: 'center' }}>{mt.score_a} - {mt.score_b}</span>
+                          : <span style={{ background: colors.accent.amber + '20', color: colors.accent.amber, borderRadius: '4px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>À jouer</span>}
                         {!readOnly && (
                           <div style={{ display: 'flex', gap: '4px' }}>
-                            <button onClick={() => ajusterHoraire(mt.id, -5)} style={{ ...st.iconBtn(colors.text.faint), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler -5 min">-5</button>
-                            <button onClick={() => ajusterHoraire(mt.id, 5)} style={{ ...st.iconBtn(colors.text.faint), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler +5 min">+5</button>
+                            <button onClick={() => ajusterHoraire(mt.id, -5)} style={{ ...st.iconBtn(colors.text.dim), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler -5 min">-5</button>
+                            <button onClick={() => ajusterHoraire(mt.id, 5)} style={{ ...st.iconBtn(colors.text.dim), width: 'auto', padding: '0 6px', fontSize: '11px', fontWeight: 700 }} title="Décaler +5 min">+5</button>
                           </div>
                         )}
                       </div>
@@ -1288,17 +1305,17 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         {onglet === 'resultats' && (
           <div>
             {matchs.length === 0 ? (
-              <div style={{ ...st.card, textAlign: 'center', padding: '40px' }}><p style={{ color: colors.text.faint }}>Générez d'abord le planning.</p></div>
+              <div style={{ ...st.card, textAlign: 'center', padding: '40px' }}><p style={{ color: colors.text.dim }}>Générez d'abord le planning.</p></div>
             ) : (
               <>
                 {!readOnly && (
-                  <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', color: colors.accent.blue, fontSize: '12px', lineHeight: 1.5 }}>
+                  <div style={{ background: colors.accent.blue + '15', border: `1px solid ${colors.accent.blue}30`, borderRadius: '6px', padding: '12px 14px', marginBottom: '16px', color: colors.accent.blue, fontSize: '12px', lineHeight: 1.5 }}>
                     Pour valider un score : clique sur les deux champs (marqués « ? » tant qu'ils sont vides) et saisis un chiffre dans chacun — y compris 0 pour un 0-0. La coche verte ne s'active qu'une fois les deux scores renseignés.
                   </div>
                 )}
                 {poules.map(poule => (
                   <div key={poule} style={{ ...st.card, marginBottom: '12px' }}>
-                    <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
+                    <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
                     {matchs.filter(mt => mt.poule === poule).map(ligneMatch)}
                   </div>
                 ))}
@@ -1307,13 +1324,13 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                   <div style={{ ...st.card, marginBottom: '16px', borderColor: colors.accent.green + '44' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
-                        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>🏆 Phase finale</div>
-                        <div style={{ color: colors.text.faint, fontSize: '12px' }}>
+                        <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Icone icone={Trophy} />Phase finale</span></div>
+                        <div style={{ color: colors.text.dim, fontSize: '12px' }}>
                           {matchsPoule.filter(m => m.statut === 'termine').length} / {matchsPoule.length} matchs de poule terminés
                         </div>
                       </div>
-                      <button onClick={genererPhaseFinale} style={st.btnSolid}>
-                        {matchsElim.length > 0 ? '🔄 Regénérer' : '⚡ Générer'}
+                      <button onClick={genererPhaseFinale} className={CLASSE_BOUTON} style={st.btnSolid}>
+                        {matchsElim.length > 0 ? <><Icone icone={RefreshCw} />Regénérer</> : <><Icone icone={Zap} />Générer</>}
                       </button>
                     </div>
                   </div>
@@ -1336,7 +1353,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     if (actuelleTerminee && suivanteAGenerer) {
                       return (
                         <button onClick={() => genererTourSuivant(actuelle, suivante)} style={{ ...st.btnSolid, marginTop: '4px' }}>
-                          {suivante === 'finale' ? '🏆 Générer la finale' : `⚡ Générer les ${PHASE_LABEL[suivante].toLowerCase()}`}
+                          {suivante === 'finale' ? <><Icone icone={Trophy} />Générer la finale</> : <><Icone icone={Zap} />{`Générer les ${PHASE_LABEL[suivante].toLowerCase()}`}</>}
                         </button>
                       )
                     }
@@ -1356,27 +1373,27 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               const classement = calculerClassement(equipes, matchs, poule)
               return (
                 <div key={poule} style={{ ...st.card, marginBottom: '12px', overflowX: 'auto' }}>
-                  <div style={{ color: colors.accent.green, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
+                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Poule {poule}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
                     <thead>
                       <tr>{['#', 'Équipe', 'J', 'V', 'N', 'D', 'BP', 'BC', 'Diff', 'Fair-play', 'Pts'].map(h => (
-                        <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.dim, fontSize: '11px', fontWeight: 700 }}>{h}</th>
                       ))}</tr>
                     </thead>
                     <tbody>
                       {classement.map((s, i) => (
                         <tr key={s.equipe.id} style={{ background: i === 0 ? colors.accent.green + '11' : 'transparent' }}>
-                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 700, color: i === 0 ? colors.accent.green : i === 1 ? colors.accent.amber : colors.text.disabled }}>{i + 1}</td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontFamily: police.titre, fontSize: '16px', fontWeight: 700, color: i < 2 ? colors.text.primary : colors.text.dim }}>{i + 1}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.primary, fontWeight: 600 }}>{s.equipe.nom}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.j}</td>
-                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.accent.green }}>{s.v}</td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.primary }}>{s.v}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.n}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.accent.red }}>{s.d}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.bp}</td>
                           <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary }}>{s.bc}</td>
-                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: s.diff >= 0 ? colors.accent.green : colors.accent.red }}>{s.diff > 0 ? '+' : ''}{s.diff}</td>
-                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.faint, fontSize: '12px' }}>🟨{s.cj} 🟥{s.cr}</td>
-                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.accent.green, fontSize: '14px' }}>{s.pts}</td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: s.diff >= 0 ? colors.accent.success : colors.accent.red }}>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.dim, fontSize: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Carton couleur={colors.accent.amber} />{s.cj}</span> <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Carton couleur={colors.accent.red} />{s.cr}</span></td>
+                          <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.text.primary, fontSize: '14px' }}>{s.pts}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1403,20 +1420,20 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '420px' }}>
                   <thead>
                     <tr>{['#', 'Joueur', 'Équipe', 'Buts'].map(h => (
-                      <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.dim, fontSize: '11px', fontWeight: 700 }}>{h}</th>
                     ))}</tr>
                   </thead>
                   <tbody>
                     {classementButeurs.map((j, i) => (
                       <tr key={`${j.nom}_${j.equipe}_${i}`} style={{ background: i === 0 ? colors.accent.green + '11' : 'transparent' }}>
-                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 700, color: i === 0 ? colors.accent.green : i === 1 ? colors.accent.amber : colors.text.disabled }}>{i + 1}</td>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontFamily: police.titre, fontSize: '16px', fontWeight: 700, color: i < 2 ? colors.text.primary : colors.text.dim }}>{i + 1}</td>
                         <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}` }}>
                           <div style={{ color: colors.text.primary, fontWeight: 700 }}>{j.prenom} {j.nom}</div>
                           {j.numero != null && <div style={{ color: colors.text.disabled, fontSize: '11px' }}>#{j.numero}</div>}
                         </td>
                         <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.secondary, fontSize: '13px' }}>{j.equipe}</td>
-                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.accent.green, fontSize: '16px' }}>
-                          {j.total} <span style={{ fontSize: '12px', fontWeight: 400, color: colors.text.faint }}>but{j.total > 1 ? 's' : ''}</span>
+                        <td style={{ padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 800, color: colors.text.primary, fontSize: '16px' }}>
+                          {j.total} <span style={{ fontSize: '12px', fontWeight: 400, color: colors.text.dim }}>but{j.total > 1 ? 's' : ''}</span>
                         </td>
                       </tr>
                     ))}
@@ -1437,23 +1454,23 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
         {onglet === 'reglages' && !readOnly && (
           <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={st.card}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, color: colors.text.primary }}>Format du tournoi</h3>
+              <h3 style={{ margin: '0 0 16px', fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: '18px', color: colors.text.primary }}>Format du tournoi</h3>
               {[
-                { value: 'poules', label: '🏅 Championnat / Poules uniquement', desc: 'Classement final par points, pas de phase éliminatoire' },
-                { value: 'poules_elimination', label: '⚡ Poules + Élimination directe', desc: "Les meilleurs de chaque poule s'affrontent en demi-finales et finale" },
-                { value: 'poules_minichampionnat', label: '🔄 Poules + Mini-championnat', desc: 'Les qualifiés forment une nouvelle poule finale' },
-                { value: 'elimination', label: '🎯 Élimination directe uniquement', desc: 'Tableau à partir des équipes engagées, pas de poules' },
+                { value: 'poules', label: 'Championnat / Poules uniquement', desc: 'Classement final par points, pas de phase éliminatoire' },
+                { value: 'poules_elimination', label: 'Poules + Élimination directe', desc: "Les meilleurs de chaque poule s'affrontent en demi-finales et finale" },
+                { value: 'poules_minichampionnat', label: 'Poules + Mini-championnat', desc: 'Les qualifiés forment une nouvelle poule finale' },
+                { value: 'elimination', label: 'Élimination directe uniquement', desc: 'Tableau à partir des équipes engagées, pas de poules' },
               ].map(f => (
                 <div key={f.value}
                   onClick={async () => {
                     const { data } = await supabase.from('tournois_organises').update({ format: f.value }).eq('id', tournoi.id).select().single()
                     if (data) setTournoi(data)
                   }}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', marginBottom: '8px', borderRadius: '10px', cursor: 'pointer', border: `2px solid ${tournoi.format === f.value ? colors.accent.green : colors.border.strong}`, background: tournoi.format === f.value ? colors.accent.green + '11' : colors.background.raised }}>
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', marginBottom: '8px', borderRadius: '6px', cursor: 'pointer', border: `2px solid ${tournoi.format === f.value ? colors.accent.green : colors.border.strong}`, background: tournoi.format === f.value ? colors.accent.green + '11' : colors.background.raised }}>
                   <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${tournoi.format === f.value ? colors.accent.green : colors.border.strong}`, background: tournoi.format === f.value ? colors.accent.green : 'transparent', flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px', color: colors.text.primary }}>{f.label}</div>
-                    <div style={{ color: colors.text.faint, fontSize: '12px' }}>{f.desc}</div>
+                    <div style={{ color: colors.text.dim, fontSize: '12px' }}>{f.desc}</div>
                   </div>
                 </div>
               ))}
@@ -1464,7 +1481,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               const rangSuivant = parPoule + 1
               return (
               <div style={st.card}>
-                <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, color: colors.text.primary }}>Qualification pour la phase finale</h3>
+                <h3 style={{ margin: '0 0 16px', fontFamily: police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.01em', fontSize: '18px', color: colors.text.primary }}>Qualification pour la phase finale</h3>
                 <div style={{ marginBottom: '16px' }}>
                   <label style={st.label}>Qualifiés automatiques par poule</label>
                   <select value={parPoule} onChange={e => setReglagesForm(f => ({ ...f, qualifies_par_poule: parseInt(e.target.value) }))} style={st.input}>
@@ -1483,7 +1500,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                   const ok = [2, 4, 8, 16].includes(q)
                   const tours = { 2: 'Finale', 4: 'Demi-finales, finale', 8: 'Quarts, demi-finales, finale', 16: 'Huitièmes, quarts, demi-finales, finale' }
                   return (
-                    <div style={{ marginTop: '10px', fontSize: '12px', color: ok ? colors.accent.green : colors.accent.amber, fontWeight: 600 }}>
+                    <div style={{ marginTop: '10px', fontSize: '12px', color: ok ? colors.accent.success : colors.accent.amber, fontWeight: 600 }}>
                       {ok
                         ? `${q} qualifiés — ${tours[q]}`
                         : `${q} qualifiés — ajuste le nombre de qualifiés par poule ou de meilleurs ${rangSuivant}e pour tomber sur 2, 4, 8 ou 16 qualifiés`}
@@ -1532,7 +1549,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                     onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: e.target.checked ? DUREE_PAUSE_MIDI_DEFAUT : 0 }))}
                     style={{ width: '18px', height: '18px', accentColor: colors.accent.green, cursor: 'pointer' }} />
                   <span style={{ fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Pause déjeuner</span>
-                  <span style={{ fontSize: '12px', color: colors.text.faint }}>{Number(reglagesForm.pause_midi_duree) > 0 ? '' : '— aucune, les matchs s\'enchaînent'}</span>
+                  <span style={{ fontSize: '12px', color: colors.text.dim }}>{Number(reglagesForm.pause_midi_duree) > 0 ? '' : '— aucune, les matchs s\'enchaînent'}</span>
                 </label>
               </div>
             </div>
@@ -1568,7 +1585,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               </div>
             </div>
             {Number(reglagesForm.prix_inscription_equipe) > 0 && (
-              <div style={{ color: colors.accent.green, fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>
+              <div style={{ color: colors.text.primary, fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>
                 Recette prévisionnelle : {(Number(reglagesForm.prix_inscription_equipe) * (reglagesForm.nb_equipes_payantes || 0)).toFixed(2)}€
                 <span style={{ color: colors.text.disabled, fontWeight: 400 }}> (l'équipe hôte ne paie pas)</span>
               </div>
@@ -1577,7 +1594,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               <label style={st.label}>Coût d'organisation (€)</label>
               <input type="number" min="0" step="0.01" placeholder="0.00" value={reglagesForm.cout_organisation} onChange={e => setReglagesForm(f => ({ ...f, cout_organisation: e.target.value }))} style={st.input} />
             </div>
-            <button onClick={sauvegarderReglages} disabled={reglagesSaving} style={{ ...st.btnSolid, opacity: reglagesSaving ? 0.6 : 1, marginTop: '16px' }}>
+            <button onClick={sauvegarderReglages} disabled={reglagesSaving} className={CLASSE_BOUTON} style={{ ...st.btnSolid, opacity: reglagesSaving ? 0.6 : 1, marginTop: '16px' }}>
               {reglagesSaving ? 'Enregistrement…' : 'Enregistrer — puis régénère le planning pour appliquer'}
             </button>
           </div>
@@ -1601,36 +1618,36 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               <div onClick={fermerTour} style={{ position: 'fixed', inset: 0, zIndex: 4000 }} />
               <div style={{
                 position: 'fixed', top: box.top, left: box.left, width: box.width, height: box.height,
-                borderRadius: '10px', border: `2px solid ${colors.accent.green}`, pointerEvents: 'none',
+                borderRadius: '6px', border: `2px solid ${colors.accent.green}`, pointerEvents: 'none',
                 boxShadow: `0 0 0 9999px rgba(0,0,0,0.65), 0 0 18px ${colors.accent.green}a0`,
                 zIndex: 4001, transition: 'top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease',
               }} />
               <div onClick={e => e.stopPropagation()} style={{
                 position: 'fixed', top: ttTop, left: ttLeft, width: TOOLTIP_W, zIndex: 4002,
                 background: colors.background.surface, border: `1px solid ${colors.border.default}`,
-                borderRadius: '12px', padding: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+                borderRadius: '6px', padding: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
               }}>
-                <div style={{ fontSize: '11px', color: colors.accent.green, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div style={{ fontSize: '11px', color: colors.text.primary, fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Étape {tourEtape + 1} / {TOUR_STEPS.length}
                 </div>
                 <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: '15px', marginBottom: '6px' }}>{step.titre}</div>
                 <p style={{ color: colors.text.secondary, fontSize: '13px', lineHeight: 1.5, margin: '0 0 14px' }}>{step.texte}</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button onClick={fermerTour} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                  <button onClick={fermerTour} style={{ background: 'none', border: 'none', color: colors.text.dim, fontSize: '12px', cursor: 'pointer', padding: 0 }}>
                     Passer
                   </button>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {tourEtape > 0 && (
-                      <button onClick={() => setTourEtape(tourEtape - 1)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                      <button onClick={() => setTourEtape(tourEtape - 1)} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '6px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
                         Précédent
                       </button>
                     )}
                     {tourEtape < TOUR_STEPS.length - 1 ? (
-                      <button onClick={() => setTourEtape(tourEtape + 1)} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      <button onClick={() => setTourEtape(tourEtape + 1)} style={{ background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
                         Suivant
                       </button>
                     ) : (
-                      <button onClick={fermerTour} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      <button onClick={fermerTour} style={{ background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '6px', padding: '7px 14px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
                         Terminer
                       </button>
                     )}
@@ -1670,14 +1687,14 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
     }
   }
 
-  const couleurStatut = { en_attente: colors.accent.amber, validee: colors.accent.green, refusee: colors.accent.red }
+  const couleurStatut = { en_attente: colors.accent.amber, validee: colors.accent.success, refusee: colors.accent.red }
   const labelStatut = { en_attente: 'En attente', validee: 'Validée', refusee: 'Refusée' }
 
   if (inscriptions.length === 0) {
     return (
-      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', textAlign: 'center', padding: '40px' }}>
+      <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '6px', textAlign: 'center', padding: '40px' }}>
         <p style={{ color: colors.text.disabled, margin: 0 }}>Aucune inscription reçue pour l'instant.</p>
-        <p style={{ color: colors.text.faint, fontSize: '13px', margin: '6px 0 0' }}>Partage le lien d'inscription aux équipes depuis le haut de cette page.</p>
+        <p style={{ color: colors.text.dim, fontSize: '13px', margin: '6px 0 0' }}>Partage le lien d'inscription aux équipes depuis le haut de cette page.</p>
       </div>
     )
   }
@@ -1685,29 +1702,29 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {inscriptions.map(ins => (
-        <div key={ins.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px' }}>
+        <div key={ins.id} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '6px', padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '16px' }}>{ins.nom_club}{ins.categorie ? ` · ${ins.categorie}` : ''}</div>
-              <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>
+              <div style={{ color: colors.text.dim, fontSize: '13px', marginTop: '4px' }}>
                 {ins.nom_referent} · {ins.email_referent}{ins.telephone_referent ? ` · ${ins.telephone_referent}` : ''}
               </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.tournois_inscriptions_joueurs?.length || 0} joueur{(ins.tournois_inscriptions_joueurs?.length || 0) > 1 ? 's' : ''}</span>
-                <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.mode_paiement}</span>
-                {prix > 0 && <span style={{ color: colors.text.faint, fontSize: '12px' }}>{ins.montant_paye}/{prix}€</span>}
-                <span style={{ background: couleurStatut[ins.statut] + '22', color: couleurStatut[ins.statut], border: `1px solid ${couleurStatut[ins.statut]}44`, borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>{labelStatut[ins.statut]}</span>
+                <span style={{ color: colors.text.dim, fontSize: '12px' }}>{ins.tournois_inscriptions_joueurs?.length || 0} joueur{(ins.tournois_inscriptions_joueurs?.length || 0) > 1 ? 's' : ''}</span>
+                <span style={{ color: colors.text.dim, fontSize: '12px' }}>{ins.mode_paiement}</span>
+                {prix > 0 && <span style={{ color: colors.text.dim, fontSize: '12px' }}>{ins.montant_paye}/{prix}€</span>}
+                <EtiquetteStatut colors={colors} couleur={couleurStatut[ins.statut]} libelle={labelStatut[ins.statut]} />
               </div>
-              {ins.message && <div style={{ color: colors.text.faint, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>« {ins.message} »</div>}
+              {ins.message && <div style={{ color: colors.text.dim, fontSize: '12px', marginTop: '8px', fontStyle: 'italic' }}>« {ins.message} »</div>}
             </div>
             <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
               {!readOnly && ins.statut !== 'validee' && (
-                <button onClick={() => changerStatut(ins.id, 'validee')} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Valider</button>
+                <button onClick={() => changerStatut(ins.id, 'validee')} style={{ background: colors.accent.brand, color: colors.accent.onBrand, border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Valider</button>
               )}
               {!readOnly && ins.statut !== 'refusee' && (
-                <button onClick={() => changerStatut(ins.id, 'refusee')} style={{ background: colors.accent.red + '15', color: colors.accent.red, border: `1px solid ${colors.accent.red}40`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Refuser</button>
+                <button onClick={() => changerStatut(ins.id, 'refusee')} style={{ background: colors.accent.red + '15', color: colors.accent.red, border: `1px solid ${colors.accent.red}40`, borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Refuser</button>
               )}
-              <button onClick={() => setDetailOuvert(detailOuvert === ins.id ? null : ins.id)} style={{ background: 'none', border: 'none', color: colors.accent.green, fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '4px 0' }}>
+              <button onClick={() => setDetailOuvert(detailOuvert === ins.id ? null : ins.id)} style={{ background: 'none', border: 'none', color: colors.text.primary, fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '4px 0' }}>
                 {detailOuvert === ins.id ? 'Masquer' : 'Joueurs'}
               </button>
             </div>
@@ -1721,7 +1738,7 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '400px' }}>
                   <thead>
                     <tr>{['#', 'Prénom', 'Nom', 'Maillot', 'Email'].map(h => (
-                      <th key={h} style={{ background: colors.background.raised, padding: '6px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ background: colors.background.raised, padding: '6px 10px', textAlign: 'left', color: colors.text.dim, fontSize: '11px', fontWeight: 700 }}>{h}</th>
                     ))}</tr>
                   </thead>
                   <tbody>
@@ -1730,8 +1747,8 @@ function GestionInscriptions({ prix, inscriptions, onChange, readOnly }) {
                         <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.disabled }}>{i + 1}</td>
                         <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}` }}>{j.prenom}</td>
                         <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontWeight: 600 }}>{j.nom}</td>
-                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.accent.green }}>{j.numero_maillot ? `#${j.numero_maillot}` : '—'}</td>
-                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.faint, fontSize: '12px' }}>{j.email || '—'}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.primary }}>{j.numero_maillot ? `#${j.numero_maillot}` : '—'}</td>
+                        <td style={{ padding: '6px 10px', borderBottom: `1px solid ${colors.border.faint}`, color: colors.text.dim, fontSize: '12px' }}>{j.email || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1766,16 +1783,16 @@ function PalmaresVotes({ tournoiId, equipes }) {
 
   return (
     <div>
-      <div style={{ color: colors.text.faint, fontSize: '13px', marginBottom: '20px' }}>
+      <div style={{ color: colors.text.dim, fontSize: '13px', marginBottom: '20px' }}>
         {votes.length} équipe{votes.length > 1 ? 's ont' : ' a'} voté
       </div>
       {distinctions.map(d => (
-        <div key={d.key} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '20px 24px', marginBottom: '14px' }}>
-          <div style={{ color: colors.text.faint, fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d.label}</div>
+        <div key={d.key} style={{ background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '6px', padding: '20px 24px', marginBottom: '14px' }}>
+          <div style={{ color: colors.text.dim, fontSize: '11px', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{d.label}</div>
           {d.valeur ? (
             <>
               <div style={{ fontWeight: 800, fontSize: '18px', color: colors.text.primary }}>{d.valeur}</div>
-              {d.detail && <div style={{ color: colors.text.faint, fontSize: '13px', marginTop: '4px' }}>{d.detail}</div>}
+              {d.detail && <div style={{ color: colors.text.dim, fontSize: '13px', marginTop: '4px' }}>{d.detail}</div>}
             </>
           ) : (
             <div style={{ color: colors.text.disabled, fontSize: '14px' }}>Aucun vote pour l'instant</div>

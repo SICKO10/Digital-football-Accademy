@@ -42,19 +42,19 @@ export default function NutritionAccueil({
   const bouton = {
     background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg,
     padding: `${spacing.lg} ${spacing['3xl']}`, minHeight: '44px', fontWeight: 700, fontSize: fontSize.xl,
-    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   }
   const boutonDiscret = {
     background: 'transparent', color: colors.text.secondary, border: `1px solid ${colors.border.default}`,
     borderRadius: radius.lg, padding: `${spacing.lg} ${spacing['3xl']}`, minHeight: '44px', fontWeight: 600,
-    fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   }
   const puce = (actif) => ({
     background: actif ? colors.text.primary : 'transparent',
     color: actif ? colors.background.base : colors.text.faint,
     border: `1px solid ${actif ? colors.text.primary : colors.border.default}`,
     borderRadius: radius.pill, padding: `${spacing.md} ${spacing.xl}`, minHeight: '36px',
-    fontSize: fontSize.md, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+    fontSize: fontSize.md, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', whiteSpace: 'nowrap',
   })
 
   return (

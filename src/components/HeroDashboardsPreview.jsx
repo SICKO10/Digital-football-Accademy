@@ -155,7 +155,7 @@ function NavTabs({ profilActif, setProfilActif, lang }) {
               border: `1px solid ${estActif ? p.color : colors.border.default}`,
               color: estActif ? p.color : colors.text.faint,
               borderRadius: '20px', padding: '8px 20px', fontSize: '13px', fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'color 0.2s, border-color 0.2s, background 0.2s',
+              cursor: 'pointer', fontFamily: 'Barlow, sans-serif', transition: 'color 0.2s, border-color 0.2s, background 0.2s',
               letterSpacing: '0.04em',
             }}>
             {t(p.navKey, lang)}

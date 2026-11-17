@@ -126,15 +126,15 @@ export default function TournoiPublic() {
   const onglets = matchsElim.length > 0 ? [...ONGLETS_BASE, { key: 'finale', label: 'Phase finale' }] : ONGLETS_BASE
 
   const st = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' },
     header: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.subtle}`, padding: '20px 24px' },
     body: { padding: '24px 16px', maxWidth: '900px', margin: '0 auto' },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '18px', marginBottom: '12px' },
     tab: (actif) => ({ padding: '8px 18px', borderRadius: '20px', border: actif ? `2px solid ${colors.accent.green}` : `1px solid ${colors.border.default}`, background: actif ? colors.accent.green + '15' : 'transparent', color: actif ? colors.accent.green : colors.text.faint, fontWeight: actif ? 700 : 400, fontSize: '13px', cursor: 'pointer' }),
     th: { background: colors.background.raised, padding: '8px 10px', textAlign: 'left', color: colors.text.faint, fontSize: '11px', fontWeight: 700 },
     td: { padding: '8px 10px', borderBottom: `1px solid ${colors.border.faint}`, fontSize: '13px' },
-    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Inter, sans-serif' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Barlow, sans-serif' },
     option: (sel) => ({ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '10px', cursor: 'pointer', border: `2px solid ${sel ? colors.accent.green : colors.border.faint}`, background: sel ? colors.accent.green + '11' : colors.background.raised, marginBottom: '8px' }),
     radio: (sel) => ({ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${sel ? colors.accent.green : colors.border.strong}`, background: sel ? colors.accent.green : 'transparent', flexShrink: 0 }),
   }
@@ -150,7 +150,7 @@ export default function TournoiPublic() {
     <div style={{ ...st.page, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
       <BoutonRetourApp />
       <p style={{ color: colors.text.faint }}>Tournoi introuvable — vérifie le code.</p>
-      <button onClick={() => navigate('/')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Retour à l'accueil</button>
+      <button onClick={() => navigate('/')} style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>Retour à l'accueil</button>
     </div>
   )
 
@@ -340,7 +340,7 @@ export default function TournoiPublic() {
                       Les résultats restent secrets jusqu'à ce que l'organisateur les dévoile.
                     </p>
                     <button onClick={reveler} disabled={chargementVotes}
-                      style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
+                      style={{ background: colors.accent.green, color: colors.black, border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 700, cursor: chargementVotes ? 'default' : 'pointer', fontFamily: 'Barlow, sans-serif', opacity: chargementVotes ? 0.6 : 1 }}>
                       {chargementVotes ? 'Chargement…' : 'Dévoiler les résultats'}
                     </button>
                   </>

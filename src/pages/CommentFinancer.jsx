@@ -140,7 +140,7 @@ export default function CommentFinancer() {
   const parLicencieMois = (palier.an / total / 12).toFixed(2)
 
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff', fontFamily: 'Barlow, sans-serif', overflowX: 'hidden' }}>
       <style>{CSS}</style>
 
       {/* NAV */}

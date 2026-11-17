@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { X } from 'lucide-react'
+import { styleCarte, styleEtiquette, styleChamp, styleBoutonPrincipal, styleBoutonSecondaire, styleTitreEcran, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
+import { Icone } from './identite'
+import { police } from '../tokens'
 import CompositionTerrain, { ModalSelectionJoueur, FORMATIONS } from './CompositionTerrain'
 import { sansPositions } from '../lib/compositionPositions'
 
@@ -171,10 +175,13 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
   }
 
   const st = {
-    label: { fontSize: '11px', color: colors.text.faint, marginBottom: '6px', display: 'block', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
-    input: { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', color: colors.text.primary, padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' },
-    section: { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px', padding: '18px', marginBottom: '16px' },
+    label: { ...styleEtiquette(colors), display: 'block', marginBottom: '6px' },
+    input: { ...styleChamp(colors), minHeight: '38px', padding: '7px 10px' },
+    section: { ...styleCarte(colors), padding: '18px', marginBottom: '16px' },
+    titre: { ...styleTitreEcran(colors), fontSize: '20px', margin: '0 0 12px' },
   }
+  const croix = { background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', padding: '8px', minWidth: '40px', minHeight: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }
+  const ajout = { ...styleBoutonSecondaire(colors), borderStyle: 'dashed', width: '100%', minHeight: '36px', fontSize: '13px' }
 
   const ajouterLigne = (setter) => setter(prev => [...prev, {}])
   const retirerLigne = (setter, i) => setter(prev => prev.filter((_, idx) => idx !== i))
@@ -182,34 +189,34 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: colors.background.base, border: `1px solid ${colors.border.subtle}`, borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div role="dialog" aria-modal="true" aria-label="Rapport de match" style={{ ...styleCarte(colors), background: colors.background.base, border: `1px solid ${colors.border.default}`, padding: '1.5rem', width: '100%', maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '17px' }}>Rapport de match</p>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.text.faint }}>
+            <p style={{ ...styleTitreEcran(colors), fontSize: '24px' }}>Rapport de match</p>
+            <p style={{ margin: '6px 0 0', fontFamily: police.texte, fontSize: '14px', color: colors.text.secondary }}>
               {clubNom || 'Nous'} {match.score_nous} - {match.score_eux} {match.adversaire} · {new Date(match.date).toLocaleDateString('fr-FR')}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Fermer" className={CLASSE_CLIQUABLE} style={{ ...croix, color: colors.text.secondary }}><Icone icone={X} taille={20} /></button>
         </div>
 
         {loading ? (
-          <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement...</p>
+          <p style={{ color: colors.text.secondary, fontFamily: police.texte, fontSize: '14px' }}>Chargement...</p>
         ) : (
           <>
             {/* Score mi-temps — n'existe nulle part ailleurs (matchs_equipe n'a que le score final) */}
             <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Score mi-temps</p>
+              <p style={st.titre}>Score mi-temps</p>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', maxWidth: '200px' }}>
-                <input placeholder="Nous" value={scoreMiTemps.nous} onChange={e => setScoreMiTemps(s => ({ ...s, nous: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
-                <span style={{ color: colors.text.faint }}>-</span>
-                <input placeholder="Eux" value={scoreMiTemps.eux} onChange={e => setScoreMiTemps(s => ({ ...s, eux: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
+                <input className={CLASSE_CHAMP} placeholder="Nous" value={scoreMiTemps.nous} onChange={e => setScoreMiTemps(s => ({ ...s, nous: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
+                <span style={{ color: colors.text.secondary }}>-</span>
+                <input className={CLASSE_CHAMP} placeholder="Eux" value={scoreMiTemps.eux} onChange={e => setScoreMiTemps(s => ({ ...s, eux: e.target.value }))} style={{ ...st.input, textAlign: 'center' }} />
               </div>
             </div>
 
             {/* Composition de départ — terrain visuel, placée à la main */}
             <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Composition de départ</p>
+              <p style={st.titre}>Composition de départ</p>
               <CompositionTerrain
                 formation={formation}
                 titulaires={titulaires}
@@ -240,107 +247,107 @@ export default function RapportMatch({ match, joueurs, userId, equipeActiveId, c
 
             {/* Buts marqués */}
             <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Buts marqués</p>
+              <p style={st.titre}>Buts marqués</p>
               {butsMarques.map((b, i) => (
                 <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input placeholder="N°" value={b.numero || ''} onChange={e => majLigne(setButsMarques, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
-                  <input placeholder="Min" value={b.minute || ''} onChange={e => majLigne(setButsMarques, i, 'minute', e.target.value)} style={{ ...st.input, width: '56px' }} />
-                  <input placeholder="Description" value={b.description || ''} onChange={e => majLigne(setButsMarques, i, 'description', e.target.value)} style={{ ...st.input, flex: 1 }} />
-                  <button onClick={() => retirerLigne(setButsMarques, i)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                  <input className={CLASSE_CHAMP} placeholder="N°" value={b.numero || ''} onChange={e => majLigne(setButsMarques, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
+                  <input className={CLASSE_CHAMP} placeholder="Min" value={b.minute || ''} onChange={e => majLigne(setButsMarques, i, 'minute', e.target.value)} style={{ ...st.input, width: '56px' }} />
+                  <input className={CLASSE_CHAMP} placeholder="Description" value={b.description || ''} onChange={e => majLigne(setButsMarques, i, 'description', e.target.value)} style={{ ...st.input, flex: 1 }} />
+                  <button type="button" onClick={() => retirerLigne(setButsMarques, i)} aria-label="Retirer cette ligne" className={CLASSE_CLIQUABLE} style={croix}><Icone icone={X} taille={16} /></button>
                 </div>
               ))}
-              <button onClick={() => ajouterLigne(setButsMarques)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px', width: '100%', cursor: 'pointer', fontSize: '12px' }}>+ Ajouter un but</button>
+              <button type="button" onClick={() => ajouterLigne(setButsMarques)} className={CLASSE_BOUTON_SECONDAIRE} style={ajout}>+ Ajouter un but</button>
             </div>
 
             {/* Buts encaissés */}
             <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Buts encaissés</p>
+              <p style={st.titre}>Buts encaissés</p>
               {butsEncaisses.map((b, i) => (
                 <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input placeholder="Min" value={b.minute || ''} onChange={e => majLigne(setButsEncaisses, i, 'minute', e.target.value)} style={{ ...st.input, width: '56px' }} />
-                  <input placeholder="Description" value={b.description || ''} onChange={e => majLigne(setButsEncaisses, i, 'description', e.target.value)} style={{ ...st.input, flex: 1 }} />
-                  <button onClick={() => retirerLigne(setButsEncaisses, i)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                  <input className={CLASSE_CHAMP} placeholder="Min" value={b.minute || ''} onChange={e => majLigne(setButsEncaisses, i, 'minute', e.target.value)} style={{ ...st.input, width: '56px' }} />
+                  <input className={CLASSE_CHAMP} placeholder="Description" value={b.description || ''} onChange={e => majLigne(setButsEncaisses, i, 'description', e.target.value)} style={{ ...st.input, flex: 1 }} />
+                  <button type="button" onClick={() => retirerLigne(setButsEncaisses, i)} aria-label="Retirer cette ligne" className={CLASSE_CLIQUABLE} style={croix}><Icone icone={X} taille={16} /></button>
                 </div>
               ))}
-              <button onClick={() => ajouterLigne(setButsEncaisses)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px', width: '100%', cursor: 'pointer', fontSize: '12px' }}>+ Ajouter un but</button>
+              <button type="button" onClick={() => ajouterLigne(setButsEncaisses)} className={CLASSE_BOUTON_SECONDAIRE} style={ajout}>+ Ajouter un but</button>
             </div>
 
             {/* Cartons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Cartons jaunes</p>
+                <p style={st.titre}>Cartons jaunes</p>
                 {cartonsJaunes.map((c, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input placeholder="N°" value={c.numero || ''} onChange={e => majLigne(setCartonsJaunes, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
-                    <input placeholder="Min" value={c.minute || ''} onChange={e => majLigne(setCartonsJaunes, i, 'minute', e.target.value)} style={{ ...st.input, flex: 1 }} />
-                    <button onClick={() => retirerLigne(setCartonsJaunes, i)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                    <input className={CLASSE_CHAMP} placeholder="N°" value={c.numero || ''} onChange={e => majLigne(setCartonsJaunes, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
+                    <input className={CLASSE_CHAMP} placeholder="Min" value={c.minute || ''} onChange={e => majLigne(setCartonsJaunes, i, 'minute', e.target.value)} style={{ ...st.input, flex: 1 }} />
+                    <button type="button" onClick={() => retirerLigne(setCartonsJaunes, i)} aria-label="Retirer cette ligne" className={CLASSE_CLIQUABLE} style={croix}><Icone icone={X} taille={16} /></button>
                   </div>
                 ))}
-                <button onClick={() => ajouterLigne(setCartonsJaunes)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px', width: '100%', cursor: 'pointer', fontSize: '12px' }}>+ Ajouter</button>
+                <button type="button" onClick={() => ajouterLigne(setCartonsJaunes)} className={CLASSE_BOUTON_SECONDAIRE} style={ajout}>+ Ajouter</button>
               </div>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Cartons rouges</p>
+                <p style={st.titre}>Cartons rouges</p>
                 {cartonsRouges.map((c, i) => (
                   <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input placeholder="N°" value={c.numero || ''} onChange={e => majLigne(setCartonsRouges, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
-                    <input placeholder="Min" value={c.minute || ''} onChange={e => majLigne(setCartonsRouges, i, 'minute', e.target.value)} style={{ ...st.input, flex: 1 }} />
-                    <button onClick={() => retirerLigne(setCartonsRouges, i)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                    <input className={CLASSE_CHAMP} placeholder="N°" value={c.numero || ''} onChange={e => majLigne(setCartonsRouges, i, 'numero', e.target.value)} style={{ ...st.input, width: '56px' }} />
+                    <input className={CLASSE_CHAMP} placeholder="Min" value={c.minute || ''} onChange={e => majLigne(setCartonsRouges, i, 'minute', e.target.value)} style={{ ...st.input, flex: 1 }} />
+                    <button type="button" onClick={() => retirerLigne(setCartonsRouges, i)} aria-label="Retirer cette ligne" className={CLASSE_CLIQUABLE} style={croix}><Icone icone={X} taille={16} /></button>
                   </div>
                 ))}
-                <button onClick={() => ajouterLigne(setCartonsRouges)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px', width: '100%', cursor: 'pointer', fontSize: '12px' }}>+ Ajouter</button>
+                <button type="button" onClick={() => ajouterLigne(setCartonsRouges)} className={CLASSE_BOUTON_SECONDAIRE} style={ajout}>+ Ajouter</button>
               </div>
             </div>
 
             {/* Remplacements */}
             <div style={st.section}>
-              <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Remplacements</p>
+              <p style={st.titre}>Remplacements</p>
               {remplacements.map((r, i) => (
                 <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input placeholder="N° sortant" value={r.sortant || ''} onChange={e => majLigne(setRemplacements, i, 'sortant', e.target.value)} style={{ ...st.input, width: '90px' }} />
-                  <span style={{ color: colors.text.faint, fontSize: '12px' }}>→</span>
-                  <input placeholder="N° entrant" value={r.entrant || ''} onChange={e => majLigne(setRemplacements, i, 'entrant', e.target.value)} style={{ ...st.input, width: '90px' }} />
-                  <input placeholder="Minute" value={r.minute || ''} onChange={e => majLigne(setRemplacements, i, 'minute', e.target.value)} style={{ ...st.input, width: '80px' }} />
-                  <button onClick={() => retirerLigne(setRemplacements, i)} style={{ background: 'none', border: 'none', color: colors.accent.red, cursor: 'pointer', fontSize: '16px' }}>✕</button>
+                  <input className={CLASSE_CHAMP} placeholder="N° sortant" value={r.sortant || ''} onChange={e => majLigne(setRemplacements, i, 'sortant', e.target.value)} style={{ ...st.input, width: '90px' }} />
+                  <span style={{ color: colors.text.secondary, fontSize: '12px' }}>→</span>
+                  <input className={CLASSE_CHAMP} placeholder="N° entrant" value={r.entrant || ''} onChange={e => majLigne(setRemplacements, i, 'entrant', e.target.value)} style={{ ...st.input, width: '90px' }} />
+                  <input className={CLASSE_CHAMP} placeholder="Minute" value={r.minute || ''} onChange={e => majLigne(setRemplacements, i, 'minute', e.target.value)} style={{ ...st.input, width: '80px' }} />
+                  <button type="button" onClick={() => retirerLigne(setRemplacements, i)} aria-label="Retirer cette ligne" className={CLASSE_CLIQUABLE} style={croix}><Icone icone={X} taille={16} /></button>
                 </div>
               ))}
-              <button onClick={() => ajouterLigne(setRemplacements)} style={{ background: 'none', border: `1px dashed ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px', width: '100%', cursor: 'pointer', fontSize: '12px' }}>+ Ajouter un remplacement</button>
+              <button type="button" onClick={() => ajouterLigne(setRemplacements)} className={CLASSE_BOUTON_SECONDAIRE} style={ajout}>+ Ajouter un remplacement</button>
             </div>
 
             {/* Analyse offensive / défensive */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Sur le plan offensif</p>
+                <p style={st.titre}>Sur le plan offensif</p>
                 <label style={st.label}>Points positifs</label>
-                <textarea rows={3} value={analyse.offensif_positif} onChange={e => setAnalyse(a => ({ ...a, offensif_positif: e.target.value }))} style={{ ...st.input, resize: 'vertical', marginBottom: '10px' }} />
+                <textarea className={CLASSE_CHAMP} rows={3} value={analyse.offensif_positif} onChange={e => setAnalyse(a => ({ ...a, offensif_positif: e.target.value }))} style={{ ...st.input, resize: 'vertical', marginBottom: '10px' }} />
                 <label style={st.label}>Problèmes rencontrés</label>
-                <textarea rows={3} value={analyse.offensif_probleme} onChange={e => setAnalyse(a => ({ ...a, offensif_probleme: e.target.value }))} style={{ ...st.input, resize: 'vertical' }} />
+                <textarea className={CLASSE_CHAMP} rows={3} value={analyse.offensif_probleme} onChange={e => setAnalyse(a => ({ ...a, offensif_probleme: e.target.value }))} style={{ ...st.input, resize: 'vertical' }} />
               </div>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Sur le plan défensif</p>
+                <p style={st.titre}>Sur le plan défensif</p>
                 <label style={st.label}>Points positifs</label>
-                <textarea rows={3} value={analyse.defensif_positif} onChange={e => setAnalyse(a => ({ ...a, defensif_positif: e.target.value }))} style={{ ...st.input, resize: 'vertical', marginBottom: '10px' }} />
+                <textarea className={CLASSE_CHAMP} rows={3} value={analyse.defensif_positif} onChange={e => setAnalyse(a => ({ ...a, defensif_positif: e.target.value }))} style={{ ...st.input, resize: 'vertical', marginBottom: '10px' }} />
                 <label style={st.label}>Problèmes rencontrés</label>
-                <textarea rows={3} value={analyse.defensif_probleme} onChange={e => setAnalyse(a => ({ ...a, defensif_probleme: e.target.value }))} style={{ ...st.input, resize: 'vertical' }} />
+                <textarea className={CLASSE_CHAMP} rows={3} value={analyse.defensif_probleme} onChange={e => setAnalyse(a => ({ ...a, defensif_probleme: e.target.value }))} style={{ ...st.input, resize: 'vertical' }} />
               </div>
             </div>
 
             {/* Causerie avant-match */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Plan de causerie et idées forces</p>
-                <textarea rows={4} value={causerie} onChange={e => setCauserie(e.target.value)} placeholder="Système, consignes, points clés évoqués avant le match..." style={{ ...st.input, resize: 'vertical' }} />
+                <p style={st.titre}>Plan de causerie et idées forces</p>
+                <textarea className={CLASSE_CHAMP} rows={4} value={causerie} onChange={e => setCauserie(e.target.value)} placeholder="Système, consignes, points clés évoqués avant le match..." style={{ ...st.input, resize: 'vertical' }} />
               </div>
               <div style={st.section}>
-                <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 12px' }}>Supports et méthodes</p>
-                <textarea rows={4} value={causerieSupports} onChange={e => setCauserieSupports(e.target.value)} placeholder="Paper board, vidéo, plots..." style={{ ...st.input, resize: 'vertical' }} />
+                <p style={st.titre}>Supports et méthodes</p>
+                <textarea className={CLASSE_CHAMP} rows={4} value={causerieSupports} onChange={e => setCauserieSupports(e.target.value)} placeholder="Paper board, vidéo, plots..." style={{ ...st.input, resize: 'vertical' }} />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={sauvegarder} disabled={saving} style={{ flex: 1, background: colors.accent.green, color: colors.black, border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              <button type="button" onClick={sauvegarder} disabled={saving} className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 1 }}>
                 {saving ? 'Enregistrement...' : rapportId ? 'Mettre à jour le rapport' : 'Enregistrer le rapport'}
               </button>
-              <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, padding: '12px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+              <button type="button" onClick={onClose} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                 Annuler
               </button>
             </div>

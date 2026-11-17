@@ -81,12 +81,12 @@ export default function TournoiVote() {
   }
 
   const st = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' },
     header: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.subtle}`, padding: '24px', textAlign: 'center' },
     body: { maxWidth: '600px', margin: '0 auto', padding: '32px 24px' },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '24px', marginBottom: '20px' },
-    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Inter, sans-serif' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '14px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Barlow, sans-serif' },
     option: (sel) => ({ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '10px', cursor: 'pointer', border: `2px solid ${sel ? colors.accent.green : colors.border.faint}`, background: sel ? colors.accent.green + '11' : colors.background.raised, marginBottom: '8px' }),
     radio: (sel) => ({ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${sel ? colors.accent.green : colors.border.strong}`, background: sel ? colors.accent.green : 'transparent', flexShrink: 0 }),
   }

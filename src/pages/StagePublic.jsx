@@ -12,7 +12,7 @@ import { formatDate, formatJourCourt, heure, euros, detailOffre } from '../lib/s
 // onglets fixes, programme jour par jour, galerie plein écran.
 
 const CSS = `
-  .sp { --accent: #4ade80; background: #070707; min-height: 100vh; color: #f4f4f5; font-family: Inter, system-ui, sans-serif; }
+  .sp { --accent: #4ade80; background: #070707; min-height: 100vh; color: #f4f4f5; font-family: Barlow, system-ui, sans-serif; }
   .sp a { color: inherit; }
   .sp-hero { position: relative; min-height: 440px; display: flex; align-items: flex-end; background-size: cover; background-position: center 30%; }
   .sp-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,7,7,.25) 0%, rgba(7,7,7,.55) 45%, #070707 100%); }

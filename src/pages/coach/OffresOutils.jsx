@@ -54,7 +54,7 @@ export default function OffresOutils() {
   )
 
   const etiquette = { margin: '0 0 6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.textMuted }
-  const champ = { background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', padding: '10px 12px', color: c.text, fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }
+  const champ = { background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', padding: '10px 12px', color: c.text, fontSize: '13px', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
   const bouton = (plein) => ({
     background: plein ? c.accent : 'transparent', color: plein ? '#fff' : c.text, border: plein ? 'none' : `1px solid ${c.border}`,
     borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '13px', cursor: envoi ? 'default' : 'pointer', opacity: envoi ? 0.6 : 1,

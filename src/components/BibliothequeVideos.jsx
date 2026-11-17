@@ -253,7 +253,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
   }, []) : null
   const videosSansTheme = type === 'df' ? videosFiltrees.filter(v => !themeSeanceInfo(v.theme_seance)) : null
 
-  const inputStyle = { background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif' }
+  const inputStyle = { background: colors.background.sunken, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif' }
 
   const renderCard = (video) => (
     <div key={video.id} onClick={() => setVideoActive(video)}
@@ -324,7 +324,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               if (next) { setVideoEnEdition(null); setForm(FORM_VIDE); setFormPhase('offensif') }
               return next
             })}
-            style={{ background: accentColor, color: colors.black || '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            style={{ background: accentColor, color: colors.black || '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
             + Ajouter une vidéo
           </button>
         )}
@@ -333,7 +333,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
       {showForm && peutAjouter && (
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.default}`, borderRadius: '14px', padding: '22px', marginBottom: '24px' }}>
           <p style={{ color: colors.text.primary, margin: '0 0 18px', fontSize: '14px', fontWeight: 700 }}>{videoEnEdition ? 'Modifier la vidéo' : 'Nouvelle vidéo'}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px', marginBottom: '12px' }}>
             <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
               placeholder="Titre de la vidéo" style={inputStyle} />
             <input value={form.youtube_url} onChange={e => setForm(f => ({ ...f, youtube_url: e.target.value }))}
@@ -349,7 +349,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {Object.entries(THEMES_SEANCE).map(([phase, groupe]) => (
                     <button key={phase} onClick={() => { setFormPhase(phase); setForm(f => ({ ...f, theme_seance: '' })) }}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                         background: formPhase === phase ? groupe.color + '22' : 'transparent',
                         borderColor: formPhase === phase ? groupe.color : colors.border.strong,
                         color: formPhase === phase ? groupe.color : colors.text.faint }}>
@@ -363,7 +363,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {THEMES_SEANCE[formPhase].themes.map(th => (
                     <button key={th.value} onClick={() => setForm(f => ({ ...f, theme_seance: th.value }))}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                         background: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color + '22' : 'transparent',
                         borderColor: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.border.strong,
                         color: form.theme_seance === th.value ? THEMES_SEANCE[formPhase].color : colors.text.faint }}>
@@ -377,7 +377,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {TYPES_SEANCE.map(ts => (
                     <button key={ts.val} onClick={() => setForm(f => ({ ...f, type_seance: ts.val }))}
-                      style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                      style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                         background: form.type_seance === ts.val ? colors.accent.blue + '22' : 'transparent',
                         borderColor: form.type_seance === ts.val ? colors.accent.blue : colors.border.strong,
                         color: form.type_seance === ts.val ? colors.accent.blue : colors.text.faint }}>
@@ -393,7 +393,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {TYPES_PROCEDE.map(tp => (
                 <button key={tp.val} onClick={() => setForm(f => ({ ...f, type_procede: f.type_procede === tp.val ? '' : tp.val }))}
-                  style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                     background: form.type_procede === tp.val ? accentColor + '22' : 'transparent',
                     borderColor: form.type_procede === tp.val ? accentColor : colors.border.strong,
                     color: form.type_procede === tp.val ? accentColor : colors.text.faint }}>
@@ -420,9 +420,9 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             )}
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button onClick={() => { setShowForm(false); setVideoEnEdition(null); setForm(FORM_VIDE) }} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
+            <button onClick={() => { setShowForm(false); setVideoEnEdition(null); setForm(FORM_VIDE) }} style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'Barlow, sans-serif' }}>Annuler</button>
             <button onClick={enregistrerVideo} disabled={!form.titre || !form.youtube_url || saving}
-              style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: (!form.titre || !form.youtube_url || saving) ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>
+              style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: (!form.titre || !form.youtube_url || saving) ? 0.5 : 1, fontFamily: 'Barlow, sans-serif' }}>
               {saving ? (videoEnEdition ? 'Enregistrement...' : 'Ajout...') : (videoEnEdition ? 'Enregistrer' : 'Ajouter')}
             </button>
           </div>
@@ -435,7 +435,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             {[{ id: 'tous', nom: 'Toutes', n: videos.length }, { id: 'sans', nom: 'Sans dossier', n: videos.filter(v => !favoris[v.id]).length },
               ...dossiers.map(d => ({ id: d.id, nom: d.nom, n: videos.filter(v => favoris[v.id] === d.id).length }))].map(d => (
               <button key={d.id} onClick={() => { setDossierActif(d.id); setSaisieDossier(null) }}
-                style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                   background: dossierActif === d.id ? accentColor + '22' : 'transparent',
                   borderColor: dossierActif === d.id ? accentColor : colors.border.strong,
                   color: dossierActif === d.id ? accentColor : colors.text.faint }}>
@@ -443,18 +443,18 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               </button>
             ))}
             <button onClick={() => setSaisieDossier({ id: null, nom: '' })}
-              style={{ padding: '7px 13px', borderRadius: '8px', border: `1px dashed ${colors.border.strong}`, background: 'transparent', color: colors.text.faint, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              style={{ padding: '7px 13px', borderRadius: '8px', border: `1px dashed ${colors.border.strong}`, background: 'transparent', color: colors.text.faint, fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
               + Nouveau dossier
             </button>
           </div>
           {dossiers.some(d => d.id === dossierActif) && !saisieDossier && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button onClick={() => setSaisieDossier({ id: dossierActif, nom: dossiers.find(d => d.id === dossierActif)?.nom || '' })}
-                style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'transparent', border: `1px solid ${colors.border.strong}`, color: colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 Renommer le dossier
               </button>
               <button onClick={() => supprimerDossier(dossierActif)}
-                style={{ background: suppressionArmee === 'dossier:' + dossierActif ? '#ef444420' : 'transparent', border: `1px solid ${suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.border.strong}`, color: suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: suppressionArmee === 'dossier:' + dossierActif ? '#ef444420' : 'transparent', border: `1px solid ${suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.border.strong}`, color: suppressionArmee === 'dossier:' + dossierActif ? '#ef4444' : colors.text.faint, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 {suppressionArmee === 'dossier:' + dossierActif ? 'Confirmer ? Les vidéos restent en favoris' : 'Supprimer le dossier'}
               </button>
             </div>
@@ -464,11 +464,11 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               <input autoFocus value={saisieDossier.nom} onChange={ev => setSaisieDossier(sd => ({ ...sd, nom: ev.target.value }))}
                 placeholder="Nom du dossier" maxLength={60} style={{ ...inputStyle, width: '220px' }} />
               <button type="submit" disabled={!saisieDossier.nom.trim()}
-                style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: saisieDossier.nom.trim() ? 1 : 0.5, fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: accentColor, color: '#000', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: saisieDossier.nom.trim() ? 1 : 0.5, fontFamily: 'Barlow, sans-serif' }}>
                 {saisieDossier.id ? 'Renommer' : 'Créer'}
               </button>
               <button type="button" onClick={() => setSaisieDossier(null)}
-                style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                style={{ background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '8px 14px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                 Annuler
               </button>
             </form>
@@ -483,7 +483,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
           {CATEGORIES.map(cat => (
             <button key={cat.val} onClick={() => setFiltreCategorie(cat.val)}
               style={{
-                padding: '6px 12px', borderRadius: '20px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                padding: '6px 12px', borderRadius: '20px', border: '1px solid', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 background: filtreCategorie === cat.val ? accentColor + '22' : 'transparent',
                 borderColor: filtreCategorie === cat.val ? accentColor : colors.border.strong,
                 color: filtreCategorie === cat.val ? accentColor : colors.text.faint,
@@ -497,7 +497,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             <div style={{ display: 'flex', gap: '6px' }}>
               {[{ val: 'tous', label: 'Toutes phases' }, { val: 'offensif', label: THEMES_SEANCE.offensif.label }, { val: 'defensif', label: THEMES_SEANCE.defensif.label }].map(p => (
                 <button key={p.val} onClick={() => { setFiltrePhase(p.val); setFiltreTheme('tous') }}
-                  style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                     background: filtrePhase === p.val ? accentColor + '22' : 'transparent',
                     borderColor: filtrePhase === p.val ? accentColor : colors.border.strong,
                     color: filtrePhase === p.val ? accentColor : colors.text.faint }}>
@@ -514,7 +514,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
             <div style={{ display: 'flex', gap: '6px' }}>
               {[{ val: 'tous', label: 'Tous' }, ...TYPES_SEANCE.filter(t => t.val !== 'les_deux')].map(t => (
                 <button key={t.val} onClick={() => setFiltreTypeSeance(t.val)}
-                  style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                     background: filtreTypeSeance === t.val ? colors.accent.blue + '22' : 'transparent',
                     borderColor: filtreTypeSeance === t.val ? colors.accent.blue : colors.border.strong,
                     color: filtreTypeSeance === t.val ? colors.accent.blue : colors.text.faint }}>
@@ -527,7 +527,7 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
         <div style={{ display: 'flex', gap: '6px' }}>
           {[{ val: 'tous', label: 'Tous' }, ...TYPES_PROCEDE].map(tp => (
             <button key={tp.val} onClick={() => setFiltreTypeProcede(tp.val)}
-              style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 background: filtreTypeProcede === tp.val ? accentColor + '22' : 'transparent',
                 borderColor: filtreTypeProcede === tp.val ? accentColor : colors.border.strong,
                 color: filtreTypeProcede === tp.val ? accentColor : colors.text.faint }}>
@@ -594,18 +594,18 @@ export default function BibliothequeVideos({ type, clubId = null, proprietaireId
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                 {favorisId && videoActive.type === 'df' && (
                   <button onClick={() => basculerFavori(videoActive)}
-                    style={{ background: '#fbbf2420', border: '1px solid #fbbf2450', color: '#fbbf24', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                    style={{ background: '#fbbf2420', border: '1px solid #fbbf2450', color: '#fbbf24', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                     {videoActive.id in favoris ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                   </button>
                 )}
                 {peutAjouter && videoActive.type !== 'df' && (
                   <>
                     <button onClick={() => ouvrirEditionVideo(videoActive)}
-                      style={{ background: accentColor + '20', border: `1px solid ${accentColor}40`, color: accentColor, borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: accentColor + '20', border: `1px solid ${accentColor}40`, color: accentColor, borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                       Modifier
                     </button>
                     <button onClick={() => supprimerVideo(videoActive.id)}
-                      style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                      style={{ background: '#ef444420', border: '1px solid #ef444440', color: '#ef4444', borderRadius: '8px', padding: '0 14px', height: '36px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                       {suppressionArmee === 'video:' + videoActive.id ? 'Confirmer ?' : 'Supprimer'}
                     </button>
                   </>

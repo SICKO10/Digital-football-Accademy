@@ -85,19 +85,19 @@ export default function StageActualites({ st, colors, accent, stage }) {
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
           {Object.entries(TYPES).map(([id, t]) => (
             <button key={id} onClick={() => { setType(id); setErreur('') }} style={{
-              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              background: type === id ? accent + '18' : 'transparent', border: `1px solid ${type === id ? accent + '60' : colors.border.default}`, color: type === id ? accent : colors.text.dim,
+              padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+              background: type === id ? colors.background.raised : 'transparent', border: `1px solid ${type === id ? accent : colors.border.default}`, color: type === id ? colors.text.primary : colors.text.dim,
             }}>{t.label}</button>
           ))}
         </div>
-        <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.faint }}>{TYPES[type].aide}</p>
+        <p style={{ margin: '0 0 12px', fontSize: '12px', color: colors.text.dim }}>{TYPES[type].aide}</p>
         <div style={{ display: 'grid', gap: '10px' }}>
-          <div><label style={st.label}>{type === 'objet_perdu' ? 'Objet' : type === 'photo' ? 'Légende (facultatif)' : 'Titre'}</label><input value={titre} onChange={e => setTitre(e.target.value)} style={st.input} maxLength={120} /></div>
-          {type !== 'photo' && <div><label style={st.label}>{type === 'objet_perdu' ? 'Où et quand (facultatif)' : 'Message'}</label><textarea rows={type === 'actualite' ? 4 : 2} value={contenu} onChange={e => setContenu(e.target.value)} style={{ ...st.input, resize: 'vertical' }} maxLength={2000} /></div>}
+          <div><label style={st.label}>{type === 'objet_perdu' ? 'Objet' : type === 'photo' ? 'Légende (facultatif)' : 'Titre'}</label><input className="df-champ" value={titre} onChange={e => setTitre(e.target.value)} style={st.input} maxLength={120} /></div>
+          {type !== 'photo' && <div><label style={st.label}>{type === 'objet_perdu' ? 'Où et quand (facultatif)' : 'Message'}</label><textarea className="df-champ" rows={type === 'actualite' ? 4 : 2} value={contenu} onChange={e => setContenu(e.target.value)} style={{ ...st.input, resize: 'vertical' }} maxLength={2000} /></div>}
           <div>
             <label style={st.label}>{type === 'photo' ? 'Photos' : 'Photo (facultatif)'}</label>
-            <input key={cleSelecteur} type="file" accept="image/*" multiple onChange={e => setFichiers(Array.from(e.target.files || []))} style={{ fontSize: '13px', color: colors.text.dim }} />
-            {fichiers.length > 1 && <span style={{ fontSize: '12px', color: colors.text.faint, marginLeft: '8px' }}>{fichiers.length} photos</span>}
+            <input className="df-champ" key={cleSelecteur} type="file" accept="image/*" multiple onChange={e => setFichiers(Array.from(e.target.files || []))} style={{ fontSize: '13px', color: colors.text.dim }} />
+            {fichiers.length > 1 && <span style={{ fontSize: '12px', color: colors.text.dim, marginLeft: '8px' }}>{fichiers.length} photos</span>}
           </div>
         </div>
         {erreur && <p style={st.erreur}>{erreur}</p>}
@@ -108,20 +108,20 @@ export default function StageActualites({ st, colors, accent, stage }) {
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
           {[['tous', 'Tout'], ['actualite', 'Actualités'], ['photo', 'Photos'], ['objets', 'Objets oubliés']].map(([id, label]) => (
             <button key={id} onClick={() => setFiltre(id)} style={{
-              padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              background: filtre === id ? accent + '18' : 'transparent', border: `1px solid ${filtre === id ? accent + '60' : colors.border.default}`, color: filtre === id ? accent : colors.text.dim,
+              padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
+              background: filtre === id ? colors.background.raised : 'transparent', border: `1px solid ${filtre === id ? accent : colors.border.default}`, color: filtre === id ? colors.text.primary : colors.text.dim,
             }}>{label}</button>
           ))}
         </div>
-        {chargement ? <p style={{ color: colors.text.faint, fontSize: '13px' }}>Chargement…</p>
-          : visibles.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: colors.text.faint }}>Rien de publié pour l'instant.</p>
+        {chargement ? <p style={{ color: colors.text.dim, fontSize: '13px' }}>Chargement…</p>
+          : visibles.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: colors.text.dim }}>Rien de publié pour l'instant.</p>
           : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
               {visibles.map(p => (
-                <div key={p.id} style={{ background: colors.background.raised, borderRadius: '12px', overflow: 'hidden', opacity: p.visible ? 1 : 0.5, display: 'flex', flexDirection: 'column' }}>
+                <div key={p.id} style={{ background: colors.background.raised, borderRadius: '6px', overflow: 'hidden', opacity: p.visible ? 1 : 0.5, display: 'flex', flexDirection: 'column' }}>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: '100%', height: '150px', objectFit: 'cover' }} loading="lazy" />}
                   <div style={{ padding: '10px 12px', flex: 1 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: p.type === 'objet_perdu' ? '#facc15' : colors.text.faint }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: p.type === 'objet_perdu' ? colors.accent.amber : colors.text.dim }}>
                       {LIBELLES[p.type]}{!p.visible && ' · masquée'} · {dateHeure(p.created_at)}
                     </div>
                     {p.titre && <div style={{ fontWeight: 700, fontSize: '13px', color: colors.text.primary, marginTop: '4px' }}>{p.titre}</div>}
@@ -130,7 +130,7 @@ export default function StageActualites({ st, colors, accent, stage }) {
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '0 12px 12px' }}>
                     {p.type === 'objet_perdu' && <button onClick={() => modifier(p, { type: 'objet_retrouve' })} style={{ ...st.bouton, padding: '4px 10px', fontSize: '12px' }}>Récupéré</button>}
                     <button onClick={() => modifier(p, { visible: !p.visible })} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px' }}>{p.visible ? 'Masquer' : 'Afficher'}</button>
-                    <button onClick={() => supprimer(p)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: '#f87171' }}>Supprimer</button>
+                    <button onClick={() => supprimer(p)} style={{ ...st.boutonDiscret, padding: '4px 10px', fontSize: '12px', color: colors.accent.red }}>Supprimer</button>
                   </div>
                 </div>
               ))}

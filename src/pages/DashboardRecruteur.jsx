@@ -79,7 +79,7 @@ function RadarChart({ j, size = 180 }) {
       {stats.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={colors.border.default} strokeWidth="1" />; })}
       <polygon points={stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return `${p.x},${p.y}`; }).join(" ")} fill="#f9731625" stroke={colors.accent.orange} strokeWidth="1.5" />
       {stats.map((s, i) => { const p = pt(i, Math.max(s.value, 0.05)); return <circle key={i} cx={p.x} cy={p.y} r="3" fill={colors.accent.orange} />; })}
-      {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill={colors.text.dim} fontSize="9" fontFamily="Inter,sans-serif">{s.label}</text>; })}
+      {stats.map((s, i) => { const lp = pt(i, 1.28); return <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle" fill={colors.text.dim} fontSize="9" fontFamily="Barlow,sans-serif">{s.label}</text>; })}
     </svg>
   );
 }
@@ -486,7 +486,7 @@ export default function DashboardRecruteur() {
   const isCloudinary = (url) => url && url.includes("cloudinary.com");
 
   const st = {
-    page: { background: colors.background.base, minHeight: "100vh", color: colors.text.primary, fontFamily: "Inter, sans-serif" },
+    page: { background: colors.background.base, minHeight: "100vh", color: colors.text.primary, fontFamily: "Barlow, sans-serif" },
     navbar: { background: colors.background.surface, borderBottom: "1px solid #222", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" },
     logo: { color: colors.accent.orange, fontWeight: 700, fontSize: "1.2rem", letterSpacing: "1px" },
     logoutBtn: { background: "transparent", border: "1px solid #333", color: colors.text.secondary, padding: "6px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" },
@@ -561,7 +561,7 @@ export default function DashboardRecruteur() {
   // suffisait de se connecter, ou de faire "retour" depuis Stripe).
   if (!recruteur?.abonnement_actif) {
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ maxWidth: '400px', width: '100%', background: colors.background.surface, border: '1px solid #1a1a1a', borderRadius: '20px', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>Digital<span style={{ color: colors.accent.green }}>Football</span></div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>Abonnement non actif</h1>
@@ -1506,12 +1506,12 @@ export default function DashboardRecruteur() {
 
               <div>
                 <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Présentation</label>
-                <textarea value={profilEdit.description} onChange={e => setProfilEdit(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Qui êtes-vous ? Depuis combien de temps dans le recrutement..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
+                <textarea value={profilEdit.description} onChange={e => setProfilEdit(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Qui êtes-vous ? Depuis combien de temps dans le recrutement..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Barlow, sans-serif", lineHeight: 1.6 }} />
               </div>
 
               <div>
                 <label style={{ fontSize: "11px", color: colors.text.faint, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "6px" }}>Ce que je recherche</label>
-                <textarea value={profilEdit.recherche_profil} onChange={e => setProfilEdit(p => ({ ...p, recherche_profil: e.target.value }))} rows={3} placeholder="Ex : Milieu U20 évoluant en Régional 1, capable de jouer en profondeur..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }} />
+                <textarea value={profilEdit.recherche_profil} onChange={e => setProfilEdit(p => ({ ...p, recherche_profil: e.target.value }))} rows={3} placeholder="Ex : Milieu U20 évoluant en Régional 1, capable de jouer en profondeur..." style={{ ...st.searchInput, resize: "vertical", fontFamily: "Barlow, sans-serif", lineHeight: 1.6 }} />
               </div>
 
               <button onClick={handleSaveProfil} disabled={savingProfil}

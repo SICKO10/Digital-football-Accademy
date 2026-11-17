@@ -10,6 +10,8 @@ import Interrupteur from '../outils/Interrupteur'
 import BandeauAnnuler from './BandeauAnnuler'
 import ApercuMenuEducateur from './ApercuMenuEducateur'
 import PlacesEducateurs from './PlacesEducateurs'
+import { styleCarte, styleChiffreHeros, couleurCraie } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 
 const AUCUN = []
 
@@ -265,16 +267,16 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
   ]
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ fontFamily: 'Barlow, sans-serif' }}>
       <EnteteEtape icone={ICONES.educateurs} titre="Dashboard de mes éducateurs"
         texte={offre
           ? 'Choisissez les outils que votre club fournit à vos éducateurs : ils les utilisent sans rien payer, dans la limite des places de votre forfait. Si vous cessez de fournir un outil, vos éducateurs sont prévenus et gardent leurs données. Un outil qu\'un éducateur paie lui-même reste toujours affiché pour lui.'
           : 'Choisissez les entrées du menu que vos éducateurs voient. Retirer un outil enlève seulement son entrée du menu : rien n\'est supprimé, et en le réaffichant l\'éducateur retrouve tout. Un outil qu\'un éducateur paie lui-même reste toujours affiché pour lui.'}>
         {pret && (
-          <div style={{ flex: '0 1 220px', minWidth: 170, padding: '12px 16px', borderRadius: 14, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
-            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ fontSize: 20, color: colors.text.primary }}>{nbAffiches}</strong> sur {outilsListe.length} {offre && !individualise ? 'fournis' : 'affichés'}</p>
-            <div role="meter" aria-valuemin={0} aria-valuemax={outilsListe.length} aria-valuenow={nbAffiches} aria-label="Entrées affichées dans le menu" style={{ height: 8, borderRadius: 999, marginTop: 8, background: st.marque + '26', overflow: 'hidden' }}>
-              <div style={{ width: `${(nbAffiches / outilsListe.length) * 100}%`, height: '100%', borderRadius: 999, background: st.marque, transition: 'width .25s' }} />
+          <div style={{ flex: '0 1 220px', minWidth: 170, ...styleCarte(colors), padding: '12px 16px' }}>
+            <p style={{ margin: 0, fontSize: 13, color: colors.text.secondary }}><strong style={{ ...styleChiffreHeros(colors, 26), marginRight: 4 }}>{nbAffiches}</strong> sur {outilsListe.length} {offre && !individualise ? 'fournis' : 'affichés'}</p>
+            <div role="meter" aria-valuemin={0} aria-valuemax={outilsListe.length} aria-valuenow={nbAffiches} aria-label="Entrées affichées dans le menu" style={{ height: 6, borderRadius: forme.rayonPastille, marginTop: 8, background: colors.border.default, overflow: 'hidden' }}>
+              <div style={{ width: `${(nbAffiches / outilsListe.length) * 100}%`, height: '100%', background: st.marque }} />
             </div>
             {offre && fourniture.forfaitActif && (
               <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.text.secondary }}><strong style={{ color: sansPlace.length ? colors.accent.red : colors.text.primary }}>{Math.min(liste.length, places)} / {places}</strong> places</p>
@@ -283,17 +285,17 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
         )}
       </EnteteEtape>
       {erreur && <p role="alert" style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: colors.accent.red }}>{erreur}</p>}
-      {!pret && !erreur && <p style={{ fontSize: 13, color: colors.text.faint }}>Chargement des réglages...</p>}
+      {!pret && !erreur && <p style={{ fontSize: 13, color: colors.text.secondary }}>Chargement des réglages...</p>}
 
       {pret && (
         <>
           {offre && !fourniture.forfaitActif && (
-            <p role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: colors.accent.amber + '22', color: colors.text.primary }}>
+            <p role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: forme.rayonCarte, fontSize: 13, fontWeight: 600, background: colors.accent.amber + '22', color: colors.text.primary }}>
               Prenez un forfait pour fournir des outils à vos éducateurs.
             </p>
           )}
           {offre && sansPlace.length > 0 && (
-            <div role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: 12, fontSize: 13, lineHeight: 1.5, background: colors.accent.amber + '22', color: colors.text.primary }}>
+            <div role="status" style={{ margin: '0 0 16px', padding: '12px 16px', borderRadius: forme.rayonCarte, fontSize: 13, lineHeight: 1.5, background: colors.accent.amber + '22', color: colors.text.primary }}>
               <strong>Sans place : socle seulement.</strong> Votre forfait permet {places} éducateur{places > 1 ? 's' : ''} : {nomSansPlace.join(', ')} {sansPlace.length > 1 ? 'n\'ont' : 'n\'a'} que le socle gratuit. Passez au forfait supérieur pour leur fournir aussi les outils. Aucune affiliation n'est supprimée.
             </div>
           )}
@@ -305,16 +307,16 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
               const actif = (m.id === 'individualise') === individualise
               return (
                 <button key={m.id} type="button" role="radio" aria-checked={actif} disabled={!!enCours} onClick={() => changerMode(m.id)} className="mc-btn mc-carte"
-                  style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', padding: '16px 18px', borderRadius: 16, cursor: enCours ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif',
-                    background: actif ? st.marque + '16' : colors.background.surface, border: `2px solid ${actif ? st.marque : colors.border.default}`, color: colors.text.primary }}>
-                  <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: actif ? st.marque : colors.background.sunken, color: actif ? st.surMarque : colors.text.faint }}>
+                  style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', padding: '16px 18px 16px 21px', borderRadius: forme.rayonCarte, cursor: enCours ? 'default' : 'pointer', fontFamily: police.texte,
+                    background: colors.background.surface, border: `1px solid ${actif ? st.marque : colors.border.strong}`, boxShadow: actif ? `inset ${forme.lisere} 0 0 ${st.marque}` : 'none', color: colors.text.primary }}>
+                  <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: forme.rayonCarte, flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: actif ? st.marque : colors.background.sunken, color: actif ? st.surMarque : colors.text.secondary }}>
                     <Icone d={m.icone} size={20} />
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 15, fontWeight: 800 }}>{m.titre}</span>
-                    <span style={{ display: 'block', marginTop: 2, fontSize: 12, lineHeight: 1.45, color: colors.text.faint }}>{m.texte}</span>
+                    <span style={{ display: 'block', fontFamily: police.titre, fontSize: 18, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{m.titre}</span>
+                    <span style={{ display: 'block', marginTop: 2, fontSize: 12, lineHeight: 1.45, color: colors.text.secondary }}>{m.texte}</span>
                   </span>
-                  {actif && <span aria-hidden="true" style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: st.marque, color: st.surMarque }}><Icone d={ICONES.check} size={13} trait={3} /></span>}
+                  {actif && <span aria-hidden="true" style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: forme.rayonPastille, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: st.marque, color: st.surMarque }}><Icone d={ICONES.check} size={13} trait={3} /></span>}
                 </button>
               )
             })}
@@ -326,30 +328,30 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
           </div>
           {apercu && <ApercuMenuEducateur mode={mode} lignes={lignes} educateurs={liste} couleur={couleurPrincipale} fournis={fournis} sansPlace={sansPlace} fournisIndividuels={fournisIndiv} onFermer={() => setApercu(false)} />}
           {nbMisDeCote > 0 && (
-            <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.faint }}>
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: colors.text.secondary }}>
               {nbMisDeCote} éducateur{nbMisDeCote > 1 ? 's ont' : ' a'} un réglage individuel gardé de côté : il revient si vous repassez en « Individualisé ».
             </p>
           )}
 
           {individualise && (
             liste.length === 0
-              ? <p style={{ margin: '12px 0', fontSize: 13, color: colors.text.faint }}>Aucun éducateur affilié pour l'instant. Leur menu suivra le réglage commun dès leur arrivée.</p>
+              ? <p style={{ margin: '12px 0', fontSize: 13, color: colors.text.secondary }}>Aucun éducateur affilié pour l'instant. Leur menu suivra le réglage commun dès leur arrivée.</p>
               : (
                 <div role="tablist" aria-label="Éducateurs" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 12px', margin: '0 0 12px' }}>
                   {liste.map(e => {
                     const actif = cible?.id === e.id
                     return (
                       <button key={e.id} type="button" role="tab" aria-selected={actif} onClick={() => setChoisi(e.id)} className="mc-btn" style={{ ...st.pastille(actif), paddingLeft: 8 }}>
-                        <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.sunken, color: actif ? st.surMarque : colors.text.secondary }}>{initiales(e.nom)}</span>
+                        <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: forme.rayonPastille, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontSize: 13, fontWeight: 700, background: actif ? 'rgba(0,0,0,0.16)' : colors.background.sunken, color: actif ? st.surMarque : colors.text.secondary }}>{initiales(e.nom)}</span>
                         {e.nom}
-                        {sansPlace.includes(e.id) && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.red + '22', color: actif ? st.surMarque : colors.text.primary }}>Sans place</span>}
+                        {sansPlace.includes(e.id) && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: forme.rayonPastille, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.red + '22', color: actif ? st.surMarque : colors.text.primary }}>Sans place</span>}
                         {(fournisIndiv[e.id] || []).length > 0 && (
-                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : st.marque + '22', color: actif ? st.surMarque : colors.text.primary }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: forme.rayonPastille, background: actif ? 'rgba(0,0,0,0.16)' : st.marque + '22', color: actif ? st.surMarque : colors.text.primary }}>
                             {fournisIndiv[e.id].length} fourni{fournisIndiv[e.id].length > 1 ? 's' : ''} à lui seul
                           </span>
                         )}
                         {ajustes(e.id) && (
-                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.amber + '2a', color: actif ? st.surMarque : colors.text.primary }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: forme.rayonPastille, background: actif ? 'rgba(0,0,0,0.16)' : colors.accent.amber + '2a', color: actif ? st.surMarque : colors.text.primary }}>
                             Ajusté
                           </span>
                         )}
@@ -362,7 +364,7 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
 
           {(!individualise || cible) && (
             <div>
-              {cible && <h3 style={{ margin: '4px 0 14px', fontSize: 16, fontWeight: 800, color: colors.text.primary }}>Menu de {cible.nom}</h3>}
+              {cible && <h3 style={{ ...st.titreCarte, margin: '4px 0 14px' }}>Menu de {cible.nom}</h3>}
               <div style={grille}>
                 {outilsFiche.map(o => {
                   if (offre && !individualise) {
@@ -398,8 +400,8 @@ export default function EtapeEducateurs({ clubId, educateurs, couleurPrincipale,
                         ? { texte: 'Retiré du menu', couleur: colors.accent.amber }
                         : ajuste ? { texte: 'Ajusté pour cet éducateur', couleur: st.marque } : null}
                       extra={parUn && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: `1px solid ${colors.border.subtle}` }}>
-                          <span style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 700, color: colors.text.secondary }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: `1px solid ${couleurCraie(colors)}` }}>
+                          <span style={{ fontSize: 12, lineHeight: 1.4, fontWeight: 600, color: colors.text.secondary }}>
                             {pourTous ? 'Fourni à tous vos éducateurs'
                               : fourniAUn(o) ? `Fourni à ${cible.nom}`
                                 : !fourniture.forfaitActif ? 'Forfait requis pour fournir cet outil'

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { makeUseSt } from '../../lib/theme'
+import { useSt } from '../../lib/useStFinance'
+import { Icone } from '../identite'
+import { TriangleAlert } from 'lucide-react'
 
 // Clics sur le bandeau sponsor (bannière + bouton "Découvrir", cf.
 // SponsorsBar.jsx / supabase_sponsors_clics.sql). Même approche que le
@@ -9,21 +11,6 @@ import { makeUseSt } from '../../lib/theme'
 // côté client (pas de RPC de comptage), graphique en barres CSS fait
 // main — pas de librairie de charts dans le projet.
 
-const stSombre = {
-  card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
-  tab: (active, color = '#4ade80') => ({ padding: '8px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? color : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '12px' }),
-  th: { textAlign: 'left', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#666', borderBottom: '1px solid #222' },
-  td: { padding: '10px 10px', fontSize: '13px', color: '#fff', borderBottom: '1px solid #1a1a1a' },
-  textFaint: '#666', textDim: '#ccc',
-}
-const stClaire = {
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
-  tab: (active, color = '#4ade80') => ({ padding: '8px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #cbd5e1', background: active ? color : 'transparent', color: active ? '#000' : '#334155', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '12px' }),
-  th: { textAlign: 'left', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748b', borderBottom: '1px solid #e2e8f0' },
-  td: { padding: '10px 10px', fontSize: '13px', color: '#0f172a', borderBottom: '1px solid #f1f5f9' },
-  textFaint: '#64748b', textDim: '#334155',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 const PERIODES = [
   { val: 'jour', label: '24 dernières heures' },
@@ -108,7 +95,7 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
   if (clics === 'table_manquante') {
     return (
       <div style={{ ...st.card, borderColor: '#f59e0b40' }}>
-        <p style={{ margin: 0, color: '#f59e0b', fontSize: 13, fontWeight: 700 }}>⚠️ Suivi des clics pas encore activé</p>
+        <p style={{ margin: 0, color: st.text, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ display: 'inline-flex', color: '#f59e0b' }}><Icone icone={TriangleAlert} taille={16} /></span> Suivi des clics pas encore activé</p>
         <p style={{ margin: '6px 0 0', color: st.textFaint, fontSize: 12 }}>Migration supabase_sponsors_clics.sql à exécuter.</p>
       </div>
     )
@@ -198,7 +185,7 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {audience === 'fonction_manquante' && (
         <div style={{ ...st.card, borderColor: '#f59e0b40' }}>
-          <p style={{ margin: 0, color: '#f59e0b', fontSize: 13, fontWeight: 700 }}>⚠️ Impressions/CTR pas encore disponibles</p>
+          <p style={{ margin: 0, color: st.text, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ display: 'inline-flex', color: '#f59e0b' }}><Icone icone={TriangleAlert} taille={16} /></span> Impressions/CTR pas encore disponibles</p>
           <p style={{ margin: '6px 0 0', color: st.textFaint, fontSize: 12 }}>Migration supabase_stats_sponsors_phase1.sql à exécuter — les clics restent affichés ci-dessous.</p>
         </div>
       )}
@@ -211,7 +198,7 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
           { label: '12 derniers mois', clics: totalAnnee, imp: impressionsAnnee },
         ].map(c => (
           <div key={c.label} style={{ ...st.card, borderTop: `3px solid ${accentColor}` }}>
-            <p style={{ margin: 0, fontSize: 26, fontWeight: 900, color: accentColor, fontFamily: 'monospace' }}>{c.clics}</p>
+            <p style={{ margin: 0, fontSize: 32, fontWeight: 700, color: st.text, fontFamily: st.police.titre, fontVariantNumeric: 'tabular-nums' }}>{c.clics}</p>
             <p style={{ margin: '4px 0 0', fontSize: 11, color: st.textFaint, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Clics · {c.label}</p>
             {audienceOk && (
               <p style={{ margin: '10px 0 0', fontSize: 11, color: st.textDim }}>

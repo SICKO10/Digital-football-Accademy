@@ -136,7 +136,7 @@ export default function Communication({ adminId }) {
 
           <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
             placeholder="Titre de la communication"
-            style={{ width: '100%', background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', padding: '10px 12px', color: c.text, fontSize: '13px', marginBottom: '12px', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: c.surface2, border: `1px solid ${c.border}`, borderRadius: '8px', padding: '10px 12px', color: c.text, fontSize: '13px', marginBottom: '12px', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
 
           <textarea value={form.contenu} onChange={e => setForm(f => ({ ...f, contenu: e.target.value }))}
             placeholder="Contenu du message..." rows={5}

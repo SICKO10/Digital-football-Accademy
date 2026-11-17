@@ -143,14 +143,14 @@ function RevueExtraction({ extrait, showPlanFields, pole, onValider, onAnnuler }
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <input type="date" value={planFields.date_debut} onChange={e => setPlanFields(f => ({ ...f, date_debut: e.target.value }))}
-              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif' }} />
+              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif' }} />
             <input type="date" value={planFields.date_fin} onChange={e => setPlanFields(f => ({ ...f, date_fin: e.target.value }))}
-              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif' }} />
+              style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif' }} />
           </div>
           <input value={planFields.projet_jeu} onChange={e => setPlanFields(f => ({ ...f, projet_jeu: e.target.value }))} placeholder="Projet de jeu"
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', marginBottom: 10, fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', marginBottom: 10, fontFamily: 'Barlow, sans-serif' }} />
           <input value={planFields.valeurs} onChange={e => setPlanFields(f => ({ ...f, valeurs: e.target.value }))} placeholder="Valeurs (séparées par virgule)"
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
         </div>
       )}
 
@@ -160,17 +160,17 @@ function RevueExtraction({ extrait, showPlanFields, pole, onValider, onAnnuler }
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <input type="checkbox" checked={p._inclure} onChange={e => majPhase(i, '_inclure', e.target.checked)} />
               <input value={p.nom} onChange={e => majPhase(i, 'nom', e.target.value)} placeholder="Nom de la phase"
-                style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif' }} />
+                style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif' }} />
               <input type="date" value={p.date_debut} onChange={e => majPhase(i, 'date_debut', e.target.value)}
-                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Inter, sans-serif' }} />
+                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Barlow, sans-serif' }} />
               <input type="date" value={p.date_fin} onChange={e => majPhase(i, 'date_fin', e.target.value)}
-                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Inter, sans-serif' }} />
+                style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Barlow, sans-serif' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <textarea value={p.theme_offensif} onChange={e => majPhase(i, 'theme_offensif', e.target.value)} placeholder="Thème offensif" rows={2}
-                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
               <textarea value={p.theme_defensif} onChange={e => majPhase(i, 'theme_defensif', e.target.value)} placeholder="Thème défensif" rows={2}
-                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+                style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
             </div>
           </div>
         ))}
@@ -185,9 +185,9 @@ function RevueExtraction({ extrait, showPlanFields, pole, onValider, onAnnuler }
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.background.surface, borderRadius: 8, padding: 8 }}>
                 <input type="checkbox" checked={c._inclure} onChange={e => majCompetition(i, '_inclure', e.target.checked)} />
                 <input value={c.nom} onChange={e => majCompetition(i, 'nom', e.target.value)}
-                  style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif' }} />
+                  style={{ flex: 1, background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif' }} />
                 <input type="date" value={c.date} onChange={e => majCompetition(i, 'date', e.target.value)}
-                  style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Inter, sans-serif' }} />
+                  style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: 6, color: colors.text.primary, fontSize: 11, fontFamily: 'Barlow, sans-serif' }} />
               </div>
             ))}
           </div>
@@ -281,29 +281,29 @@ function SetupPlan({ categorie, clubId, pole, onCreer }) {
           <div>
             <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Date de début</div>
             <input type="date" value={form.date_debut} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
           <div>
             <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Date de fin</div>
             <input type="date" value={form.date_fin} onChange={e => setForm(f => ({ ...f, date_fin: e.target.value }))}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
         </div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Séances par semaine</div>
           <input type="number" min={1} value={form.nb_seances_semaine} onChange={e => setForm(f => ({ ...f, nb_seances_semaine: e.target.value }))}
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
         </div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Projet de jeu (optionnel)</div>
           <input value={form.projet_jeu} onChange={e => setForm(f => ({ ...f, projet_jeu: e.target.value }))}
             placeholder="Ex: Être une équipe progressive, solidaire, performante"
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
         </div>
         <div style={{ marginBottom: 20 }}>
           <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Valeurs du club (séparées par virgule)</div>
           <input value={form.valeurs} onChange={e => setForm(f => ({ ...f, valeurs: e.target.value }))}
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '9px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
         </div>
 
         <button onClick={creer} disabled={saving || !form.date_debut || !form.date_fin}
@@ -324,7 +324,7 @@ function SelecteurMethodo({ camp, sel, setSel, couleur, label }) {
   const colors = useColors()
   const phases = camp === 'offensif' ? getPhasesOffensives() : getPhasesDefensives()
   const pill = (actif) => ({
-    padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+    padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
     background: actif ? couleur + '22' : 'transparent', borderColor: actif ? couleur : colors.border.default, color: actif ? couleur : colors.text.faint,
   })
 
@@ -450,17 +450,17 @@ function ModalPhase({ phase, planId, pole, onSave, onClose, onDelete }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
             placeholder="Nom de la phase (ex: S'organiser)"
-            style={{ gridColumn: '1/-1', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+            style={{ gridColumn: '1/-1', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif' }} />
           <input type="date" value={form.date_debut} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))}
-            style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+            style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif' }} />
           <input type="date" value={form.date_fin} onChange={e => setForm(f => ({ ...f, date_fin: e.target.value }))}
-            style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Inter, sans-serif' }} />
+            style={{ background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 10, color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif' }} />
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
           {Object.entries(TYPE_PHASE).map(([val, cfg]) => (
             <button key={val} onClick={() => setForm(f => ({ ...f, type: val }))}
-              style={{ flex: '1 1 100px', padding: 7, borderRadius: 8, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              style={{ flex: '1 1 100px', padding: 7, borderRadius: 8, border: '1px solid', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 background: form.type === val ? cfg.couleur + '22' : 'transparent', borderColor: form.type === val ? cfg.couleur : colors.border.default,
                 color: form.type === val ? cfg.couleur : colors.text.faint }}>
               {cfg.label}
@@ -477,12 +477,12 @@ function ModalPhase({ phase, planId, pole, onSave, onClose, onDelete }) {
           <div>
             <div style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Objectifs prioritaires (1 par ligne)</div>
             <textarea value={form.objectifs_prioritaires} onChange={e => setForm(f => ({ ...f, objectifs_prioritaires: e.target.value }))}
-              rows={4} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              rows={4} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
           <div>
             <div style={{ color: '#a78bfa', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>Critères de réussite (1 par ligne)</div>
             <textarea value={form.criteres_reussite} onChange={e => setForm(f => ({ ...f, criteres_reussite: e.target.value }))}
-              rows={4} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              rows={4} style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: 8, color: colors.text.primary, fontSize: 11, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
         </div>
 
@@ -531,11 +531,11 @@ function ModalSemaine({ semaine, planId, phases, pole, onSave, onClose, onDelete
     <div style={{ marginBottom: 10 }}>
       <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{label}</div>
       <input value={form[key]} placeholder={placeholder} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+        style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
     </div>
   )
 
-  const selectStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }
+  const selectStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' }
 
   // Thème (select groupé par phase de jeu) + principe (options des seules
   // phases où ce thème existe, cf. getPrincipes qui renvoie [] sinon).
@@ -569,24 +569,24 @@ function ModalSemaine({ semaine, planId, phases, pole, onSave, onClose, onDelete
           <div>
             <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Numéro</div>
             <input type="number" value={form.numero_semaine} onChange={e => setForm(f => ({ ...f, numero_semaine: e.target.value }))}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
           <div>
             <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Date</div>
             <input type="date" value={form.date_debut || ''} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
           <div>
             <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Mois</div>
             <input value={form.mois} onChange={e => setForm(f => ({ ...f, mois: e.target.value }))}
-              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }} />
+              style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }} />
           </div>
         </div>
 
         <div style={{ marginBottom: 10 }}>
           <div style={{ color: colors.text.faint, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>Phase</div>
           <select value={form.phase_id} onChange={e => setForm(f => ({ ...f, phase_id: e.target.value }))}
-            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
+            style={{ width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 8, padding: '8px 10px', color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif' }}>
             <option value="">— Aucune —</option>
             {phases.map(ph => <option key={ph.id} value={ph.id}>{ph.nom}</option>)}
           </select>
@@ -1031,7 +1031,7 @@ export default function PlanificationAnnuelle({ categorie, clubId, pole, readOnl
           <div style={{ display: 'flex', background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 8, padding: 3, gap: 3 }}>
             {[['phases', 'Phases'], ['semaines', 'Semaines']].map(([val, label]) => (
               <button key={val} onClick={() => setVue(val)}
-                style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Inter, sans-serif',
+                style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
                   background: vue === val ? pole.couleur : 'transparent', color: vue === val ? '#0a0a0a' : colors.text.faint }}>
                 {label}
               </button>

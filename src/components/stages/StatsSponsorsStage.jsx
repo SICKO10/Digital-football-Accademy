@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
+import { police } from '../../tokens'
 
 // Même esprit que StatsSponsors.jsx (dashboard club) mais scopé à un seul
 // stage : vues de stage_vues_log (impressions — exposées à chaque chargement
@@ -54,7 +55,7 @@ const semainesEntre = (depuisSemainesAgo) => {
   return semaines
 }
 
-export default function StatsSponsorsStage({ stage, sponsors, colors, accentColor = '#4ade80' }) {
+export default function StatsSponsorsStage({ stage, sponsors, colors, accentColor = colors.accent.brand }) {
   const [clics, setClics] = useState(null)
   const [vues, setVues] = useState(null)
   const [periodeGraph, setPeriodeGraph] = useState('mois')
@@ -70,12 +71,12 @@ export default function StatsSponsorsStage({ stage, sponsors, colors, accentColo
       .then(({ data, error }) => { setVues(error?.code === '42P01' ? 'table_manquante' : (data || [])) })
   }, [stage?.id])
 
-  if (clics === null || vues === null) return <p style={{ color: colors.text.faint, fontSize: 13 }}>Chargement des statistiques…</p>
+  if (clics === null || vues === null) return <p style={{ color: colors.text.dim, fontSize: 13 }}>Chargement des statistiques…</p>
   if (clics === 'table_manquante' || vues === 'table_manquante') {
     return (
-      <div style={{ background: colors.background.raised, border: `1px solid #f59e0b40`, borderRadius: '10px', padding: '14px' }}>
-        <p style={{ margin: 0, color: '#f59e0b', fontSize: 13, fontWeight: 700 }}>⚠️ Suivi des vues/clics pas encore activé</p>
-        <p style={{ margin: '6px 0 0', color: colors.text.faint, fontSize: 12 }}>Migration supabase_stats_sponsors_phase1.sql à exécuter.</p>
+      <div style={{ background: colors.background.raised, border: `1px solid ${colors.accent.amber}`, borderRadius: '6px', padding: '14px' }}>
+        <p style={{ margin: 0, color: colors.text.primary, fontSize: 13, fontWeight: 700 }}>Suivi des vues/clics pas encore activé</p>
+        <p style={{ margin: '6px 0 0', color: colors.text.dim, fontSize: 12 }}>Migration supabase_stats_sponsors_phase1.sql à exécuter.</p>
       </div>
     )
   }
@@ -164,15 +165,15 @@ export default function StatsSponsorsStage({ stage, sponsors, colors, accentColo
           { label: '30 derniers jours', clics: totalMois, imp: vuesMois },
           { label: '12 derniers mois', clics: totalAnnee, imp: vuesAnnee },
         ].map(c => (
-          <div key={c.label} style={{ background: colors.background.raised, borderTop: `3px solid ${accentColor}`, borderRadius: '10px', padding: '12px 14px' }}>
-            <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: accentColor, fontFamily: 'monospace' }}>{c.clics}</p>
-            <p style={{ margin: '4px 0 0', fontSize: 10, color: colors.text.faint, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Clics · {c.label}</p>
+          <div key={c.label} style={{ background: colors.background.raised, borderTop: `3px solid ${accentColor}`, borderRadius: '6px', padding: '12px 14px' }}>
+            <p style={{ margin: 0, fontSize: 28, fontWeight: 700, lineHeight: 1, color: colors.text.primary, fontFamily: police.titre, fontVariantNumeric: 'tabular-nums' }}>{c.clics}</p>
+            <p style={{ margin: '4px 0 0', fontSize: 10, color: colors.text.dim, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Clics · {c.label}</p>
             <p style={{ margin: '8px 0 0', fontSize: 11, color: colors.text.dim }}>{c.imp} vue{c.imp === 1 ? '' : 's'} · CTR <strong>{ctr(c.clics, c.imp)}</strong></p>
           </div>
         ))}
       </div>
 
-      <div style={{ background: colors.background.raised, borderRadius: '10px', padding: '12px 14px' }}>
+      <div style={{ background: colors.background.raised, borderRadius: '6px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 12, color: colors.text.dim }}>Évolution des clics</p>
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -185,16 +186,16 @@ export default function StatsSponsorsStage({ stage, sponsors, colors, accentColo
           </div>
         </div>
         {totalAnnee === 0 ? (
-          <p style={{ color: colors.text.faint, fontSize: 12, textAlign: 'center', padding: '14px 0' }}>Aucun clic enregistré pour l'instant.</p>
+          <p style={{ color: colors.text.dim, fontSize: 12, textAlign: 'center', padding: '14px 0' }}>Aucun clic enregistré pour l'instant.</p>
         ) : (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '90px', overflowX: 'auto' }}>
             {serie.map(d => {
               const max = Math.max(1, ...serie.map(x => x.count))
               return (
                 <div key={d.key} style={{ flex: 1, minWidth: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-                  <span style={{ fontSize: 8, color: colors.text.faint, marginBottom: 2, fontFamily: 'monospace' }}>{d.count || ''}</span>
+                  <span style={{ fontSize: 8, color: colors.text.dim, marginBottom: 2, fontVariantNumeric: 'tabular-nums' }}>{d.count || ''}</span>
                   <div style={{ width: '70%', minWidth: '6px', height: `${Math.max((d.count / max) * 78, d.count > 0 ? 4 : 0)}%`, background: accentColor, borderRadius: '2px 2px 0 0' }} />
-                  <span style={{ fontSize: 8, color: colors.text.faint, marginTop: 3, whiteSpace: 'nowrap' }}>{d.label}</span>
+                  <span style={{ fontSize: 8, color: colors.text.dim, marginTop: 3, whiteSpace: 'nowrap' }}>{d.label}</span>
                 </div>
               )
             })}
@@ -207,19 +208,19 @@ export default function StatsSponsorsStage({ stage, sponsors, colors, accentColo
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>Sponsor</th>
-                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>Semaine</th>
-                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>Mois</th>
-                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.faint, borderBottom: `1px solid ${colors.border.subtle}` }}>Année</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.dim, borderBottom: `1px solid ${colors.border.subtle}` }}>Sponsor</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.dim, borderBottom: `1px solid ${colors.border.subtle}` }}>Semaine</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.dim, borderBottom: `1px solid ${colors.border.subtle}` }}>Mois</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: 10, textTransform: 'uppercase', color: colors.text.dim, borderBottom: `1px solid ${colors.border.subtle}` }}>Année</th>
               </tr>
             </thead>
             <tbody>
               {lignes.map(l => (
                 <tr key={l.id}>
                   <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, borderBottom: `1px solid ${colors.border.subtle}` }}>{l.nom}</td>
-                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontFamily: 'monospace', borderBottom: `1px solid ${colors.border.subtle}` }}>{l.semaine}</td>
-                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontFamily: 'monospace', borderBottom: `1px solid ${colors.border.subtle}` }}>{l.mois}</td>
-                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, borderBottom: `1px solid ${colors.border.subtle}` }}>{l.annee}</td>
+                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${colors.border.subtle}` }}>{l.semaine}</td>
+                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${colors.border.subtle}` }}>{l.mois}</td>
+                  <td style={{ padding: '8px 8px', fontSize: 12, color: colors.text.primary, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, borderBottom: `1px solid ${colors.border.subtle}` }}>{l.annee}</td>
                 </tr>
               ))}
             </tbody>

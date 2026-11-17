@@ -4,6 +4,7 @@ import { useColors } from '../../lib/theme'
 import ApercuCouleurClub from '../ApercuCouleurClub'
 import { Icone, EnteteEtape } from './ui'
 import { ICONES, stylesMonClub, texteSur } from './uiMonClub'
+import { forme, police } from '../../tokens'
 
 // ── Personnalisation visuelle du club (couleurs, photo de fond, logo hero, slogan) ──
 // Edite une copie locale des couleurs/slogan (themeEdit), appliquée immédiatement
@@ -31,18 +32,18 @@ function ChoixCouleur({ titre, aide, champ, defaut, presets, club, themeEdit, se
     if (/^#[0-9a-f]{6}$/i.test(t)) setThemeEdit(p => ({ ...p, [champ]: t.toLowerCase() }))
   }
   return (
-    <div style={{ padding: 18, borderRadius: 16, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
+    <div style={{ padding: 18, borderRadius: forme.rayonCarte, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}` }}>
       <p style={s.etiquette}>{titre}</p>
       <p style={{ ...s.sousTitre, margin: '4px 0 14px' }}>{aide}</p>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
-        <span style={{ position: 'relative', width: 56, height: 56, borderRadius: 16, flexShrink: 0, background: valeur, boxShadow: `inset 0 0 0 1px rgba(0,0,0,0.15), 0 4px 14px ${valeur}55` }}>
+        <span style={{ position: 'relative', width: 56, height: 56, borderRadius: forme.rayonCarte, flexShrink: 0, background: valeur, boxShadow: `inset 0 0 0 1px rgba(0,0,0,0.25)` }}>
           <input type="color" value={valeur} aria-label={`${titre} : choisir une couleur libre`} onChange={e => choisir(e.target.value)} className="mc-in"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }} />
         </span>
         <div>
           <input type="text" value={texte} maxLength={7} spellCheck={false} aria-label={`${titre} : code hexadécimal`} onChange={e => saisir(e.target.value.trim())} onBlur={() => setSaisie(null)} className="mc-in"
-            style={{ ...s.champ, width: 118, fontFamily: 'monospace', fontWeight: 700 }} />
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: colors.text.faint }}>Cliquez le carré : toutes les couleurs sont possibles.</p>
+            style={{ ...s.champ, width: 130, fontFamily: 'monospace', fontWeight: 700 }} />
+          <p style={{ margin: '6px 0 0', fontSize: 11, color: colors.text.secondary }}>Cliquez le carré : toutes les couleurs sont possibles.</p>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -50,7 +51,7 @@ function ChoixCouleur({ titre, aide, champ, defaut, presets, club, themeEdit, se
           const actif = valeur.toLowerCase() === c.toLowerCase()
           return (
             <button key={c} type="button" onClick={() => choisir(c)} title={c} aria-label={`Couleur ${c}`} aria-pressed={actif} className="mc-btn"
-              style={{ width: 30, height: 30, borderRadius: 999, background: c, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: texteSur(c),
+              style={{ width: 30, height: 30, borderRadius: forme.rayonPastille, background: c, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: texteSur(c),
                 border: 'none', boxShadow: actif ? `0 0 0 2px ${colors.background.sunken}, 0 0 0 4px ${colors.text.primary}` : `inset 0 0 0 1px rgba(0,0,0,0.18)` }}>
               {actif && <Icone d={ICONES.check} size={14} trait={3} />}
             </button>
@@ -75,12 +76,12 @@ function TuileImage({ titre, aide, url, champ, carre, themeUploading, uploaderIm
       <p style={s.etiquette}>{titre}</p>
       <p style={{ ...s.sousTitre, margin: '4px 0 12px' }}>{aide}</p>
       <div style={{
-        width: carre ? 132 : '100%', maxWidth: carre ? 132 : 380, aspectRatio: carre ? '1 / 1' : '16 / 7', borderRadius: carre ? 20 : 16, overflow: 'hidden', marginBottom: 12,
+        width: carre ? 132 : '100%', maxWidth: carre ? 132 : 380, aspectRatio: carre ? '1 / 1' : '16 / 7', borderRadius: forme.rayonCarte, overflow: 'hidden', marginBottom: 12,
         display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.background.sunken, border: url ? `1px solid ${colors.border.subtle}` : `2px dashed ${colors.border.strong}`,
       }}>
         {url
           ? <img src={url} alt={titre} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          : <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: colors.text.faint, fontSize: 12 }}><Icone d={ICONES.image} size={26} />Aucune image</span>}
+          : <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: colors.text.secondary, fontSize: 12 }}><Icone d={ICONES.image} size={26} />Aucune image</span>}
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <label className="mc-btn" style={{ ...s.bouton(false, !!themeUploading), cursor: themeUploading ? 'default' : 'pointer' }}>
@@ -108,7 +109,7 @@ export default function EtapeIdentite({ club, themeEdit, setThemeEdit, sauvegard
   const commun = { club, themeEdit, setThemeEdit, sauvegarderTheme, savingTheme }
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ fontFamily: police.texte }}>
       <EnteteEtape icone={ICONES.identite} titre="Identité du club"
         texte="Couleurs, photos et slogan : ce que voient vos joueurs et vos éducateurs. Chaque réglage s'applique tout de suite." />
 
@@ -142,8 +143,8 @@ export default function EtapeIdentite({ club, themeEdit, setThemeEdit, sauvegard
           <p style={{ ...s.sousTitre, margin: '4px 0 14px' }}>Une phrase courte, affichée sur l'accueil de vos joueurs et de vos éducateurs.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <input type="text" placeholder="Ex : Ensemble, on va plus loin" value={themeEdit.slogan} aria-label="Slogan du club" className="mc-in"
-              onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))} style={{ ...s.champ, flex: 1, minWidth: 220, padding: '12px 14px', fontSize: 15 }} />
-            <button type="button" className="mc-btn" disabled={savingTheme} style={{ ...s.bouton(true, savingTheme), padding: '10px 24px', cursor: savingTheme ? 'wait' : 'pointer' }}
+              onChange={e => setThemeEdit(p => ({ ...p, slogan: e.target.value }))} style={{ ...s.champ, flex: 1, minWidth: 220 }} />
+            <button type="button" className="mc-btn" disabled={savingTheme} style={{ ...s.bouton(true, savingTheme), padding: '0 24px', cursor: savingTheme ? 'wait' : 'pointer' }}
               onClick={async () => {
                 setMessageSlogan('')
                 const ok = await sauvegarderTheme({ slogan: themeEdit.slogan.trim() || null })
@@ -152,7 +153,7 @@ export default function EtapeIdentite({ club, themeEdit, setThemeEdit, sauvegard
               {savingTheme ? 'Enregistrement...' : 'Sauvegarder'}
             </button>
           </div>
-          {messageSlogan && <p role="status" style={{ margin: '10px 0 0', fontSize: 13, fontWeight: 600, color: colors.accent.success }}>{messageSlogan}</p>}
+          {messageSlogan && <p role="status" style={{ margin: '10px 0 0', fontSize: 13, fontWeight: 600, color: colors.text.primary }}>{messageSlogan}</p>}
         </section>
       </div>
     </div>

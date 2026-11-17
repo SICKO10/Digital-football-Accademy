@@ -26,7 +26,7 @@ export default function FilterBar({ toggles = [], search, onSearchChange, search
             border: `1px solid ${t.active ? c.accent : c.border}`,
             background: t.active ? rgba(c.accent, 0.12) : c.surface,
             color: t.active ? c.accent : c.textMuted,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Barlow, sans-serif',
             transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
           }}>
           {t.label}
@@ -39,7 +39,7 @@ export default function FilterBar({ toggles = [], search, onSearchChange, search
           placeholder={searchPlaceholder}
           style={{
             marginLeft: 'auto', flex: '0 1 200px', minWidth: '160px', background: c.surface2, border: `1px solid ${c.border}`,
-            color: c.text, borderRadius: '7px', padding: '6px 12px', fontSize: '13px', outline: 'none', fontFamily: 'Inter, sans-serif',
+            color: c.text, borderRadius: '7px', padding: '6px 12px', fontSize: '13px', outline: 'none', fontFamily: 'Barlow, sans-serif',
             transition: 'border-color 0.15s ease',
           }}
         />

@@ -52,12 +52,12 @@ export default function DerniereCauserieWidget({ userId, prochainMatch, onOuvrir
 
   return (
     <button onClick={onOuvrir}
-      style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Inter, sans-serif' }}
+      style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: colors.text.primary, fontFamily: 'Barlow, sans-serif' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = accentColor}
       onMouseLeave={e => e.currentTarget.style.borderColor = colors.border.subtle}>
       <div style={{ fontSize: '10px', color: colors.text.dim, marginBottom: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>PROCHAINE CAUSERIE</div>
       <div style={{ fontSize: '13px', color: colors.text.primary, fontWeight: 700, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-        🎙️ vs {prochainMatch.adversaire || 'adversaire'}
+        Contre {prochainMatch.adversaire || 'adversaire'}
       </div>
       {causerie ? (
         causerie.objectifs ? (

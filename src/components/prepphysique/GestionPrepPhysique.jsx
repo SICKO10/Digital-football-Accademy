@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase'
 import { t } from '../../lib/translations'
-import { makeUseSt } from '../../lib/theme'
+import { useStPalette as useSt } from '../../lib/useStFinance'
+import { TitreEcran, Etiquette, Icone } from '../identite'
+import { CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+
+import { Star, Check, X, ArrowLeft, Lock } from 'lucide-react'
 
 const TYPES_SEANCE = [
   { value: 'course', label: 'Footing / Course' },
@@ -13,18 +17,6 @@ const TYPES_SEANCE = [
 ]
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-
-const stSombre = {
-  bg: '#0a0a0a', card: '#111', card2: '#1a1a1a', border: '#222',
-  green: '#4ade80', text: '#fff', muted: '#888',
-  red: '#ef4444', yellow: '#eab308',
-}
-const stClaire = {
-  bg: '#f8fafc', card: '#ffffff', card2: '#f1f5f9', border: '#cbd5e1',
-  green: '#4ade80', text: '#0f172a', muted: '#64748b',
-  red: '#ef4444', yellow: '#eab308',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 const getSaison = () => {
   const now = new Date()
@@ -55,41 +47,41 @@ function ModalCreerProgramme({ onClose, onSave, educateurId, equipeActiveId }) {
     if (!error) onSave(data)
   }
 
-  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
+  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '90vw' }}>
-        <h3 style={{ color: st.text, marginBottom: 24 }}>Créer un programme</h3>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 32, width: 480, maxWidth: '90vw' }}>
+        <h3 style={{ color: st.text, marginBottom: 24, fontFamily: st.police.titre, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Créer un programme</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Titre *</label>
-            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex: Pré-reprise U18 R2 2026-2027" style={inp} />
+            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex: Pré-reprise U18 R2 2026-2027" className={CLASSE_CHAMP} style={inp} />
           </div>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Description</label>
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Instructions générales..." style={{ ...inp, resize: 'vertical' }} />
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Instructions générales..." className={CLASSE_CHAMP} style={{ ...inp, resize: 'vertical' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date début *</label>
-              <input type="date" value={form.date_debut} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))} style={inp} />
+              <input type="date" value={form.date_debut} onChange={e => setForm(f => ({ ...f, date_debut: e.target.value }))} className={CLASSE_CHAMP} style={inp} />
             </div>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date fin *</label>
-              <input type="date" value={form.date_fin} onChange={e => setForm(f => ({ ...f, date_fin: e.target.value }))} style={inp} />
+              <input type="date" value={form.date_fin} onChange={e => setForm(f => ({ ...f, date_fin: e.target.value }))} className={CLASSE_CHAMP} style={inp} />
             </div>
           </div>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Nombre de semaines</label>
-            <select value={form.nb_semaines} onChange={e => setForm(f => ({ ...f, nb_semaines: parseInt(e.target.value) }))} style={inp}>
+            <select value={form.nb_semaines} onChange={e => setForm(f => ({ ...f, nb_semaines: parseInt(e.target.value) }))} className={CLASSE_CHAMP} style={inp}>
               {[1, 2, 3, 4, 6, 8].map(n => <option key={n} value={n}>{n} semaine{n > 1 ? 's' : ''}</option>)}
             </select>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Créer'}</button>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.brand, border: '1px solid transparent', borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Créer'}</button>
         </div>
       </div>
     </div>
@@ -103,8 +95,9 @@ function EtoilesNote({ valeur, onChange, label, st }) {
       <div style={{ display: 'flex', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
           <button key={n} type="button" onClick={() => onChange(n)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, padding: 0, color: n <= valeur ? '#eab308' : st.border, lineHeight: 1 }}>
-            ★
+            aria-label={`${n} sur 5`} aria-pressed={n <= valeur}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', width: 44, height: 44, padding: 0, color: n <= valeur ? st.text : st.border, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Star size={24} strokeWidth={2} fill={n <= valeur ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
         ))}
       </div>
@@ -134,29 +127,29 @@ function ModalClotureProgramme({ programme, onClose, onSave }) {
     if (!error) onSave(data)
   }
 
-  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
+  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ color: st.text, marginBottom: 4 }}>Clôturer le programme</h3>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 32, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ color: st.text, marginBottom: 4, fontFamily: st.police.titre, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Clôturer le programme</h3>
         <p style={{ color: st.muted, fontSize: 13, marginBottom: 24 }}>{programme.titre}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Ressenti général</label>
-            <textarea value={form.ressenti_general} onChange={e => setForm(f => ({ ...f, ressenti_general: e.target.value }))} rows={4} placeholder="Bilan de la préparation : ce qui a fonctionné, ce qui a manqué..." style={{ ...inp, resize: 'vertical' }} />
+            <textarea value={form.ressenti_general} onChange={e => setForm(f => ({ ...f, ressenti_general: e.target.value }))} rows={4} placeholder="Bilan de la préparation : ce qui a fonctionné, ce qui a manqué..." className={CLASSE_CHAMP} style={{ ...inp, resize: 'vertical' }} />
           </div>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Nombre de joueurs blessés sur la période</label>
-            <input type="number" min="0" value={form.nb_blesses} onChange={e => setForm(f => ({ ...f, nb_blesses: parseInt(e.target.value) || 0 }))} style={{ ...inp, width: 100 }} />
+            <input type="number" min="0" value={form.nb_blesses} onChange={e => setForm(f => ({ ...f, nb_blesses: parseInt(e.target.value) || 0 }))} className={CLASSE_CHAMP} style={{ ...inp, width: 100 }} />
           </div>
           <EtoilesNote label="Capacité à tenir un match de 90 min" valeur={form.note_capacite_match} onChange={n => setForm(f => ({ ...f, note_capacite_match: n }))} st={st} />
           <EtoilesNote label="Repères tactiques" valeur={form.note_reperes_tactiques} onChange={n => setForm(f => ({ ...f, note_reperes_tactiques: n }))} st={st} />
           <EtoilesNote label="Qualité technique" valeur={form.note_qualite_technique} onChange={n => setForm(f => ({ ...f, note_qualite_technique: n }))} st={st} />
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={handleCloturer} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Clôturer'}</button>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handleCloturer} disabled={loading} style={{ padding: '10px 20px', background: st.brand, border: '1px solid transparent', borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Clôturer'}</button>
         </div>
       </div>
     </div>
@@ -179,41 +172,41 @@ function ModalSeance({ seance, programmeId, semaine, jour, onClose, onSave }) {
     if (!error) onSave()
   }
 
-  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
+  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ color: st.text, marginBottom: 24 }}>{seance ? 'Modifier' : `Séance S${semaine} J${jour}`}</h3>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 32, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ color: st.text, marginBottom: 24, fontFamily: st.police.titre, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{seance ? 'Modifier' : `Séance S${semaine} J${jour}`}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Type</label>
-            <select value={form.type_seance} onChange={e => setForm(f => ({ ...f, type_seance: e.target.value }))} style={inp}>
+            <select value={form.type_seance} onChange={e => setForm(f => ({ ...f, type_seance: e.target.value }))} className={CLASSE_CHAMP} style={inp}>
               {TYPES_SEANCE.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Titre *</label>
-            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex: Footing 35 min + gainage" style={inp} />
+            <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} placeholder="Ex: Footing 35 min + gainage" className={CLASSE_CHAMP} style={inp} />
           </div>
           <div>
             <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Consignes</label>
-            <textarea value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ ...inp, resize: 'vertical' }} />
+            <textarea value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} className={CLASSE_CHAMP} style={{ ...inp, resize: 'vertical' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Durée cible (min)</label>
-              <input type="number" value={form.duree_cible || ''} onChange={e => setForm(f => ({ ...f, duree_cible: e.target.value }))} placeholder="35" style={inp} />
+              <input type="number" value={form.duree_cible || ''} onChange={e => setForm(f => ({ ...f, duree_cible: e.target.value }))} placeholder="35" className={CLASSE_CHAMP} style={inp} />
             </div>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Distance cible (km)</label>
-              <input type="number" step="0.1" value={form.distance_cible || ''} onChange={e => setForm(f => ({ ...f, distance_cible: e.target.value }))} placeholder="5.0" style={inp} />
+              <input type="number" step="0.1" value={form.distance_cible || ''} onChange={e => setForm(f => ({ ...f, distance_cible: e.target.value }))} placeholder="5.0" className={CLASSE_CHAMP} style={inp} />
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Enregistrer'}</button>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.brand, border: '1px solid transparent', borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer' }}>{loading ? '...' : 'Enregistrer'}</button>
         </div>
       </div>
     </div>
@@ -224,26 +217,26 @@ function ModalSoumission({ soumission, joueurNom, onClose }) {
   const st = useSt()
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 520, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ color: st.text, marginBottom: 4 }}>Soumission de {joueurNom}</h3>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 32, width: 520, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ color: st.text, marginBottom: 4, fontFamily: st.police.titre, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Soumission de {joueurNom}</h3>
         <p style={{ color: st.muted, fontSize: 13, marginBottom: 24 }}>Soumis le {new Date(soumission.created_at).toLocaleDateString('fr-FR')}</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          {soumission.duree_reelle && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>DURÉE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.duree_reelle} min</div></div>}
-          {soumission.distance_reelle && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>DISTANCE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.distance_reelle} km</div></div>}
-          {soumission.allure && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>ALLURE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.allure} /km</div></div>}
-          {soumission.calories && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>CALORIES</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.calories} kcal</div></div>}
-          {soumission.fc_moyenne && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>FC MOYENNE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.fc_moyenne} bpm</div></div>}
-          {soumission.rpe && <div style={{ background: st.card2, borderRadius: 8, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>RPE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.rpe}/10</div></div>}
+          {soumission.duree_reelle && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>DURÉE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.duree_reelle} min</div></div>}
+          {soumission.distance_reelle && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>DISTANCE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.distance_reelle} km</div></div>}
+          {soumission.allure && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>ALLURE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.allure} /km</div></div>}
+          {soumission.calories && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>CALORIES</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.calories} kcal</div></div>}
+          {soumission.fc_moyenne && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>FC MOYENNE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.fc_moyenne} bpm</div></div>}
+          {soumission.rpe && <div style={{ background: st.card2, borderRadius: 6, padding: 12 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>RPE</div><div style={{ color: st.text, fontWeight: 700 }}>{soumission.rpe}/10</div></div>}
         </div>
-        {soumission.notes && <div style={{ background: st.card2, borderRadius: 8, padding: 12, marginBottom: 16 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>NOTES</div><div style={{ color: st.text, fontSize: 14 }}>{soumission.notes}</div></div>}
+        {soumission.notes && <div style={{ background: st.card2, borderRadius: 6, padding: 12, marginBottom: 16 }}><div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>NOTES</div><div style={{ color: st.text, fontSize: 14 }}>{soumission.notes}</div></div>}
         {soumission.proof_url && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ color: st.muted, fontSize: 12, marginBottom: 8 }}>CAPTURE D'ÉCRAN</div>
-            <img src={soumission.proof_url} alt="Preuve" style={{ width: '100%', borderRadius: 8, border: `1px solid ${st.border}` }} />
+            <img src={soumission.proof_url} alt="Preuve" style={{ width: '100%', borderRadius: 6, border: `1px solid ${st.border}` }} />
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Fermer</button>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>Fermer</button>
         </div>
       </div>
     </div>
@@ -255,19 +248,19 @@ function NavBarVues({ vue, programmeTitre, onBack, onSuivi, onStats, onClassemen
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <button onClick={onBack} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer', fontSize: 13 }}>← Programme</button>
+        <button onClick={onBack} className={CLASSE_BOUTON_SECONDAIRE} style={{ background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 6, minHeight: 44, padding: '0 16px', color: st.text, cursor: 'pointer', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icone icone={ArrowLeft} />Programme</button>
         <span style={{ flex: 1, minWidth: 0, color: st.muted, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{programmeTitre}</span>
       </div>
-      <div style={{ display: 'flex', gap: 6, background: st.card2, borderRadius: 10, padding: 4 }}>
+      <div role="group" aria-label="Vue du programme" style={{ display: 'flex', gap: 6, background: st.card2, borderRadius: 6, padding: 4 }}>
         {[
           { key: 'suivi', label: 'Suivi', fn: onSuivi },
           { key: 'stats', label: 'Stats', fn: onStats },
           { key: 'classement', label: 'Classement', fn: onClassement },
         ].map(tab => (
-          <button key={tab.key} onClick={tab.fn}
-            style={{ flex: 1, padding: '9px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
-              background: vue === tab.key ? st.green : 'transparent',
-              color: vue === tab.key ? '#000' : st.muted, transition: 'all 0.15s' }}>
+          <button key={tab.key} onClick={tab.fn} aria-pressed={vue === tab.key}
+            style={{ flex: 1, minHeight: 44, borderRadius: 4, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
+              background: vue === tab.key ? st.brand : 'transparent',
+              color: vue === tab.key ? st.surBrand : st.text, transition: 'all 0.15s' }}>
             {tab.label}
           </button>
         ))}
@@ -575,8 +568,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>{t('btn_chargement', lang)}</div>
 
   if (error === 'tables_missing') return (
-    <div style={{ background: '#1a1a00', border: '1px solid #444', borderRadius: 12, padding: 24, margin: 16 }}>
-      <div style={{ color: st.yellow, fontWeight: 700, marginBottom: 8 }}>{t('phys_migration_requise', lang)}</div>
+    <div style={{ background: st.card, border: `1px solid ${st.border}`, boxShadow: `inset 3px 0 0 ${st.yellow}`, borderRadius: 6, padding: 20, margin: 16 }}>
+      <div style={{ color: st.text, fontWeight: 700, marginBottom: 8 }}>{t('phys_migration_requise', lang)}</div>
       <div style={{ color: st.muted, fontSize: 14 }}>{t('phys_lance_migration', lang)}</div>
     </div>
   )
@@ -584,31 +577,27 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   // VUE PROGRAMMES
   if (vue === 'programmes') return (
     <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ color: st.text, margin: 0 }}>{t('phys_titre', lang)}</h2>
-          <p style={{ color: st.muted, fontSize: 14, margin: '4px 0 0' }}>{t('phys_programmes_joueurs', lang)}</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Tests physiques</button>
+      <TitreEcran titre={t('phys_titre', lang)} sousTitre={t('phys_programmes_joueurs', lang)} actions={(
+        <>
+          <button onClick={ouvrirTests} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Tests physiques</button>
           {!readOnly && (
             <>
               <label style={{
-                padding: '10px 20px', background: st.card2, border: `1px solid ${st.green}`,
-                borderRadius: 10, color: st.green, fontWeight: 700, fontSize: 13,
+                minHeight: 44, padding: '0 20px', background: 'transparent', border: `1px solid ${st.border}`,
+                borderRadius: 6, color: st.text, fontWeight: 700, fontSize: 13,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 {t('phys_scanner_programme', lang)}
                 <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
                   onChange={handleScanProgramme} disabled={scanLoading} />
               </label>
-              <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>+ {t('phys_nouveau_programme', lang)}</button>
+              <button onClick={() => setShowCreerProgramme(true)} style={{ padding: '10px 20px', background: st.brand, border: '1px solid transparent', borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer' }}>+ {t('phys_nouveau_programme', lang)}</button>
             </>
           )}
-        </div>
-      </div>
+        </>
+      )} />
       {readOnly && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#60a5fa15', border: '1px solid #60a5fa30', color: '#60a5fa', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, marginBottom: 16 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: st.card2, border: `1px solid ${st.border}`, boxShadow: `inset 3px 0 0 ${st.blue}`, color: st.text, fontSize: 13, fontWeight: 600, padding: '4px 12px', borderRadius: 4, marginBottom: 16 }}>
           {t('equipe_mode_lecture', lang)}
         </div>
       )}
@@ -618,7 +607,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           { id: 'archivees', label: `Archivées (${programmes.filter(p => p.statut !== 'actif').length})` },
         ].map(o => (
           <button key={o.id} onClick={() => setFiltreProgrammes(o.id)}
-            style={{ padding: '7px 16px', borderRadius: 20, border: `1px solid ${filtreProgrammes === o.id ? st.green : st.border}`, background: filtreProgrammes === o.id ? st.green + '22' : 'transparent', color: filtreProgrammes === o.id ? st.green : st.muted, fontSize: 13, fontWeight: filtreProgrammes === o.id ? 700 : 400, cursor: 'pointer' }}>
+            aria-pressed={filtreProgrammes === o.id}
+            style={{ minHeight: 44, padding: '0 16px', borderRadius: 6, border: `1px solid ${filtreProgrammes === o.id ? st.brand : st.border}`, background: filtreProgrammes === o.id ? st.brand : 'transparent', color: filtreProgrammes === o.id ? st.surBrand : st.text, fontSize: 14, fontWeight: filtreProgrammes === o.id ? 700 : 500, cursor: 'pointer' }}>
             {o.label}
           </button>
         ))}
@@ -633,8 +623,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {programmesFiltres.map(p => (
-            <div key={p.id} onClick={() => ouvrirProgramme(p)} style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, cursor: 'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = st.green}
+            <div key={p.id} onClick={() => ouvrirProgramme(p)} style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 20, cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = st.brand}
               onMouseLeave={e => e.currentTarget.style.borderColor = st.border}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -643,12 +633,13 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                   <div style={{ color: st.muted, fontSize: 12 }}>{new Date(p.date_debut).toLocaleDateString('fr-FR')} → {new Date(p.date_fin).toLocaleDateString('fr-FR')} · {p.nb_semaines} semaine{p.nb_semaines > 1 ? 's' : ''}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  <span style={{ background: p.statut === 'actif' ? '#14532d' : st.card2, color: p.statut === 'actif' ? st.green : st.muted, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                    {p.statut === 'actif' ? `● ${t('phys_actif', lang)}` : t('phys_termine', lang)}
+                  <span style={{ background: st.card2, border: `1px solid ${st.border}`, color: st.text, padding: '4px 10px', borderRadius: 4, fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 1, background: p.statut === 'actif' ? st.green : st.border }} />
+                    {p.statut === 'actif' ? t('phys_actif', lang) : t('phys_termine', lang)}
                   </span>
                   {!readOnly && (
                     <button onClick={e => { e.stopPropagation(); supprimerProgramme(p.id) }}
-                      style={{ padding: '6px 12px', background: '#2a0a0a', border: '1px solid #5a1a1a', borderRadius: 6, color: st.red, cursor: 'pointer', fontSize: 12 }}>
+                      className={CLASSE_BOUTON_SECONDAIRE} style={{ minHeight: 44, padding: '0 14px', background: 'transparent', border: `1px solid ${st.red}`, borderRadius: 6, color: st.text, cursor: 'pointer', fontSize: 14 }}>
                       Supprimer
                     </button>
                   )}
@@ -670,10 +661,10 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
           <div style={{
-            background: st.card, borderRadius: 16, padding: 32,
+            background: st.card, borderRadius: 6, padding: 32,
             width: 600, maxWidth: '95vw', maxHeight: '80vh', overflowY: 'auto', border: `1px solid ${st.border}`,
           }}>
-            <h2 style={{ color: st.green, marginBottom: 8 }}>
+            <h2 style={{ color: st.text, marginBottom: 8, fontFamily: st.police.titre, fontWeight: 700, fontSize: 24, textTransform: 'uppercase' }}>
               Programme détecté : {scanResultat.titre}
             </h2>
             <p style={{ color: st.muted, marginBottom: 24 }}>
@@ -682,14 +673,14 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
 
             {scanResultat.semaines.map(sem => (
               <div key={sem.numero} style={{ marginBottom: 20 }}>
-                <div style={{ color: st.green, fontWeight: 700, marginBottom: 10 }}>
-                  SEMAINE {sem.numero}
-                </div>
+                <Etiquette as="div" style={{ marginBottom: 10 }}>
+                  Semaine {sem.numero}
+                </Etiquette>
                 {sem.jours.map(j => (
                   <div key={j.jour} style={{
                     display: 'flex', gap: 12, padding: '8px 12px',
                     background: j.repos ? st.bg : st.card2,
-                    borderRadius: 8, marginBottom: 4,
+                    borderRadius: 6, marginBottom: 4,
                   }}>
                     <span style={{ color: st.muted, width: 80, textTransform: 'capitalize' }}>
                       {j.jour}
@@ -706,8 +697,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
               <button
                 onClick={confirmerScanProgramme}
                 style={{
-                  flex: 1, padding: 14, background: st.green, border: 'none',
-                  borderRadius: 10, color: '#000', fontWeight: 800, cursor: 'pointer',
+                  flex: 1, padding: 14, background: st.brand, border: '1px solid transparent',
+                  borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer',
                 }}>
                 Confirmer et remplir la grille
               </button>
@@ -715,7 +706,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                 onClick={() => setScanResultat(null)}
                 style={{
                   padding: '14px 24px', background: st.card2, border: `1px solid ${st.border}`,
-                  borderRadius: 10, color: st.text, cursor: 'pointer',
+                  borderRadius: 6, color: st.text, cursor: 'pointer',
                 }}>
                 Annuler
               </button>
@@ -729,7 +720,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999,
         }}>
-          <div style={{ color: st.green, fontSize: 18, fontWeight: 700 }}>
+          <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }} role="status">
             Analyse du programme en cours...
           </div>
         </div>
@@ -740,19 +731,18 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
   // VUE TESTS PHYSIQUES — autonome, pas liée à un programme
   if (vue === 'tests') return (
     <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h2 style={{ color: st.text, margin: 0 }}>Tests physiques</h2>
-        <button onClick={() => setVue('programmes')} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer', fontSize: 13 }}>← Retour</button>
-      </div>
+      <TitreEcran titre="Tests physiques" actions={(
+        <button onClick={() => setVue('programmes')} className={CLASSE_BOUTON_SECONDAIRE} style={{ minHeight: 44, padding: '0 16px', background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icone icone={ArrowLeft} />Retour</button>
+      )} />
 
       {!readOnly && (
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 20, marginBottom: 24 }}>
           <h3 style={{ color: st.text, margin: '0 0 16px', fontSize: 15 }}>Nouveau test</h3>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Joueur</label>
               <select value={testForm.joueur_id} onChange={e => setTestForm(f => ({ ...f, joueur_id: e.target.value }))}
-                style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }}>
+                className={CLASSE_CHAMP} style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }}>
                 <option value="">— Choisir —</option>
                 {joueurs.map(j => <option key={j.id} value={j.id}>{j.prenom} {j.nom}</option>)}
               </select>
@@ -760,7 +750,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Date du test</label>
               <input type="date" value={testForm.date_test} onChange={e => setTestForm(f => ({ ...f, date_test: e.target.value }))}
-                style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
+                className={CLASSE_CHAMP} style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }} />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
@@ -771,9 +761,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                   <label style={{ color: st.muted, fontSize: 11, display: 'block', marginBottom: 6 }}>{o.label} ({o.unit})</label>
                   <input type="number" step="0.01" value={testForm[cle]} onChange={e => setTestForm(f => ({ ...f, [cle]: e.target.value }))}
                     placeholder={`Objectif : ${o.gt ? '≥' : '≤'} ${o.placeholder}`}
-                    style={{ width: '100%', background: st.card2, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }} />
+                    className={CLASSE_CHAMP} style={{ width: '100%', background: st.card2, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 16, boxSizing: 'border-box' }} />
                   {atteint != null && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: atteint ? st.green : st.red }}>{atteint ? 'Objectif atteint' : 'Objectif non atteint'}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: st.text}}>{atteint ? 'Objectif atteint' : 'Objectif non atteint'}</span>
                   )}
                 </div>
               )
@@ -781,9 +771,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
           </div>
           <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Notes / ressenti</label>
           <textarea value={testForm.notes} onChange={e => setTestForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-            style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', marginBottom: 16 }} />
+            className={CLASSE_CHAMP} style={{ width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, padding: '10px 14px', color: st.text, fontSize: 14, resize: 'vertical', boxSizing: 'border-box', marginBottom: 16 }} />
           <button onClick={enregistrerTest} disabled={savingTest || !testForm.joueur_id || !testForm.date_test}
-            style={{ padding: '10px 24px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer', opacity: (savingTest || !testForm.joueur_id || !testForm.date_test) ? 0.5 : 1 }}>
+            style={{ padding: '10px 24px', background: st.brand, border: '1px solid transparent', borderRadius: 6, color: st.surBrand, fontWeight: 700, cursor: 'pointer', opacity: (savingTest || !testForm.joueur_id || !testForm.date_test) ? 0.5 : 1 }}>
             {savingTest ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
@@ -791,7 +781,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
 
       <h3 style={{ color: st.text, margin: '0 0 12px', fontSize: 15 }}>Historique de l'équipe</h3>
       {tests.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 30, color: st.muted, background: st.card, border: `1px solid ${st.border}`, borderRadius: 12 }}>Aucun test enregistré pour le moment.</div>
+        <div style={{ textAlign: 'center', padding: 30, color: st.muted, background: st.card, border: `1px solid ${st.border}`, borderRadius: 6 }}>Aucun test enregistré pour le moment.</div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -814,8 +804,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                     return (
                       <td key={cle} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
                         {valeur != null ? (
-                          <span style={{ color: atteint ? st.green : st.red, fontWeight: 600 }}>
-                            {atteint ? '✓' : '✗'} {valeur}{objectifsTests[cle].unit}
+                          <span style={{ color: st.text, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, fontVariantNumeric: 'tabular-nums', boxShadow: `inset 0 -2px 0 ${atteint ? st.green : st.red}` }}>
+                            <Icone icone={atteint ? Check : X} taille={14} libelle={atteint ? 'Objectif atteint' : 'Objectif non atteint'} /> {valeur}{objectifsTests[cle].unit}
                           </span>
                         ) : <span style={{ color: st.muted }}>—</span>}
                       </td>
@@ -829,7 +819,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
 
                       </button>
                       <button onClick={() => supprimerTest(test)}
-                        style={{ background: 'transparent', border: '1px solid #ef444430', color: st.red, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: `1px solid ${st.red}`, color: st.text, borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
 
                       </button>
                     </td>
@@ -844,7 +834,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
       {testEnEdition && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={() => setTestEnEdition(null)}>
-          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 16, padding: 24, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
+          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 24, width: 480, maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
             onClick={e => e.stopPropagation()}>
             <p style={{ fontWeight: 700, fontSize: 15, margin: 0, color: st.text }}>
               Modifier le test — {testEnEdition.joueur ? `${testEnEdition.joueur.prenom} ${testEnEdition.joueur.nom}` : ''}
@@ -857,7 +847,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                 <div key={cle}>
                   <label style={{ fontSize: 12, color: st.muted, display: 'block', marginBottom: 6 }}>{o.label} ({o.unit.trim()})</label>
                   <input type="number" step="0.01" value={formEditTest[cle]} onChange={e => setFormEditTest(p => ({ ...p, [cle]: e.target.value }))}
-                    style={{ width: '100%', background: st.bg, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 8, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                    className={CLASSE_CHAMP} style={{ width: '100%', background: st.bg, border: `1px solid ${atteint === true ? st.green : atteint === false ? st.red : st.border}`, borderRadius: 6, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               )
             })}
@@ -865,16 +855,16 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             <div>
               <label style={{ fontSize: 12, color: st.muted, display: 'block', marginBottom: 6 }}>Notes</label>
               <textarea value={formEditTest.notes} onChange={e => setFormEditTest(p => ({ ...p, notes: e.target.value }))}
-                style={{ width: '100%', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', minHeight: 60, resize: 'vertical', boxSizing: 'border-box' }} />
+                style={{ width: '100%', background: st.bg, border: `1px solid ${st.border}`, borderRadius: 6, padding: '8px 12px', color: st.text, fontSize: 13, outline: 'none', minHeight: 60, resize: 'vertical', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
               <button onClick={() => setTestEnEdition(null)}
-                style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.muted, borderRadius: 8, padding: '9px 18px', fontSize: 13, cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: `1px solid ${st.border}`, color: st.muted, borderRadius: 6, padding: '9px 18px', fontSize: 13, cursor: 'pointer' }}>
                 Annuler
               </button>
               <button onClick={sauvegarderTestEdit} disabled={savingEditTest}
-                style={{ background: st.green, color: '#000', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingEditTest ? 0.6 : 1 }}>
+                style={{ background: st.brand, color: st.surBrand, border: '1px solid transparent', borderRadius: 6, minHeight: 44, padding: '0 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingEditTest ? 0.6 : 1 }}>
                 Sauvegarder
               </button>
             </div>
@@ -890,19 +880,19 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
     return (
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setVue('programmes')} style={{ background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '8px 16px', color: st.text, cursor: 'pointer' }}>← {t('phys_retour', lang)}</button>
-          <h2 style={{ color: st.text, margin: 0, fontSize: isMobile ? 16 : 18, flex: isMobile ? 'none' : 1 }}>{selectedProgramme.titre}</h2>
+          <button onClick={() => setVue('programmes')} className={CLASSE_BOUTON_SECONDAIRE} style={{ background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 6, minHeight: 44, padding: '0 16px', color: st.text, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icone icone={ArrowLeft} />{t('phys_retour', lang)}</button>
+          <h2 style={{ color: st.text, margin: 0, fontFamily: st.police.titre, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontSize: isMobile ? 22 : 28, flex: isMobile ? 'none' : 1 }}>{selectedProgramme.titre}</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_suivi', lang)}</button>
-            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('nav_stats', lang)}</button>
-            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>{t('phys_classement', lang)}</button>
+            <button onClick={ouvrirSuivi} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>{t('phys_suivi', lang)}</button>
+            <button onClick={ouvrirStats} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>{t('nav_stats', lang)}</button>
+            <button onClick={ouvrirClassement} style={{ padding: '8px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 6, color: st.text, cursor: 'pointer' }}>{t('phys_classement', lang)}</button>
             {!readOnly && selectedProgramme.statut === 'actif' && (
-              <button onClick={() => setShowClotureProgramme(true)} style={{ padding: '8px 16px', background: '#eab30822', border: '1px solid #eab308', borderRadius: 8, color: '#eab308', fontWeight: 700, cursor: 'pointer' }}>Clôturer</button>
+              <button onClick={() => setShowClotureProgramme(true)} className={CLASSE_BOUTON_SECONDAIRE} style={{ minHeight: 44, padding: '0 16px', background: 'transparent', border: `1px solid ${st.yellow}`, borderRadius: 6, color: st.text, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icone icone={Lock} />Clôturer</button>
             )}
           </div>
         </div>
         {selectedProgramme.statut !== 'actif' && (
-          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, padding: 20, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <p style={{ color: st.text, fontWeight: 700, margin: 0 }}>Bilan de clôture</p>
               {selectedProgramme.cloture_le && <span style={{ color: st.muted, fontSize: 12 }}>{new Date(selectedProgramme.cloture_le).toLocaleDateString('fr-FR')}</span>}
@@ -919,7 +909,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
               ].map(([label, note]) => (
                 <div key={label}>
                   <div style={{ color: st.muted, fontSize: 11, marginBottom: 4 }}>{label}</div>
-                  <div style={{ color: '#eab308', fontSize: 14 }}>{note ? '★'.repeat(note) + '☆'.repeat(5 - note) : '—'}</div>
+                  <div style={{ color: st.text, fontFamily: st.police.titre, fontWeight: 600, fontSize: 18 }}>{note ? `${note} / 5` : '—'}</div>
                 </div>
               ))}
             </div>
@@ -930,7 +920,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
         )}
         {Array.from({ length: nbSemaines }, (_, i) => i + 1).map(sem => (
           <div key={sem} style={{ marginBottom: 24 }}>
-            <h3 style={{ color: st.green, marginBottom: 12, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em' }}>SEMAINE {sem}</h3>
+            <Etiquette as="h3" style={{ marginBottom: 12 }}>Semaine {sem}</Etiquette>
             <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(110px, 1fr))', gap: 8, minWidth: isMobile ? 770 : 'auto' }}>
                 {JOURS.map((jourLabel, ji) => {
@@ -941,9 +931,9 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                     <div key={jour}>
                       <div style={{ color: st.muted, fontSize: isMobile ? 11 : 13, textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>{jourLabel}</div>
                       <div onClick={() => !readOnly && setModalSeance({ semaine: sem, jour, seance })}
-                        style={{ background: seance ? (isRepos ? st.card2 : '#0a1a0a') : st.card, border: `1px solid ${seance ? (isRepos ? st.border : st.green) : st.border}`, borderRadius: 8, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
+                        style={{ background: seance ? st.card2 : st.card, border: `1px solid ${seance ? (isRepos ? st.border : st.green) : st.border}`, borderRadius: 6, padding: 10, minHeight: 80, cursor: readOnly ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.5 : 1 }}
                         onMouseEnter={e => { if (!readOnly) e.currentTarget.style.borderColor = st.green }}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? '#333' : st.green) : st.border}>
+                        onMouseLeave={e => e.currentTarget.style.borderColor = seance ? (isRepos ? st.border : st.green) : st.border}>
                         {seance ? (
                           <>
                             <div style={{ color: st.text, fontSize: 10, textAlign: 'center', lineHeight: 1.3 }}>{seance.titre}</div>
@@ -1007,8 +997,8 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                           {fait ? (
                             <button onClick={() => setModalSoumission({ soumission: sub, joueurNom: `${j.prenom} ${j.nom}` })}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, margin: '0 auto' }}>
-                              <span style={{ color: st.green, fontSize: 16 }}>✓</span>
-                              {sub?.proof_url && <span style={{ color: st.green, fontSize: 10 }}>●</span>}
+                              <span style={{ color: st.text, display: 'inline-flex' }}><Icone icone={Check} libelle="Séance faite" /></span>
+                              {sub?.proof_url && <span aria-label="Preuve jointe" role="img" style={{ width: 6, height: 6, borderRadius: 1, background: st.green }} />}
                             </button>
                           ) : <span style={{ color: st.border, fontSize: 16 }}>—</span>}
                         </td>
@@ -1040,7 +1030,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             const allureMoy = distTotal > 0 ? (dureeTotal / distTotal).toFixed(1) : '—'
             const ouvert = joueurOuvert === j.id
             return (
-              <div key={j.id} style={{ background: st.card2, borderRadius: 10, marginBottom: 8, overflow: 'hidden' }}>
+              <div key={j.id} style={{ background: st.card2, borderRadius: 6, marginBottom: 8, overflow: 'hidden' }}>
                 <button onClick={() => setJoueurOuvert(ouvert ? null : j.id)}
                   style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: 16, background: 'none', border: 'none', cursor: 'pointer', flexWrap: 'wrap' }}>
                   <span style={{ color: st.text, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1067,7 +1057,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
                             <span style={{ color: st.muted }}>{s.duree_reelle ? `${s.duree_reelle} min` : '—'}</span>
                             <a href={s.proof_url || '#'} target={s.proof_url ? '_blank' : '_self'} rel="noreferrer"
                               onClick={!s.proof_url ? e => e.preventDefault() : undefined}
-                              style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : st.border}`, borderRadius: 6, color: s.proof_url ? st.green : st.muted, fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
+                              style={{ padding: '3px 10px', background: st.bg, border: `1px solid ${s.proof_url ? st.green : st.border}`, borderRadius: 6, color: st.text, fontSize: 12, textDecoration: 'none', cursor: s.proof_url ? 'pointer' : 'default' }}>
                               {s.proof_url ? 'Voir' : 'Aucun'}
                             </a>
                           </div>
@@ -1090,7 +1080,7 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
     return (
       <div style={{ padding: 16 }}>
         <NavBarVues vue={vue} programmeTitre={selectedProgramme?.titre} onBack={() => setVue('detail')} onSuivi={ouvrirSuivi} onStats={ouvrirStats} onClassement={ouvrirClassement} />
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, overflow: 'hidden', overflowX: 'auto' }}>
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 6, overflow: 'hidden', overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', background: st.card2, color: st.muted, fontSize: 11, fontWeight: 700, gap: 8 }}>
             <div>#</div><div>JOUEUR</div><div style={{ textAlign: 'center' }}>POINTS</div><div style={{ textAlign: 'center' }}>RÉGULARITÉ</div>
             <div style={{ textAlign: 'center' }}>BONUS</div>
@@ -1098,15 +1088,15 @@ export default function GestionPrepPhysique({ educateurId, clubId, equipeActiveI
             <div style={{ textAlign: 'center' }}>30m</div><div style={{ textAlign: 'center' }}>30-15</div>
           </div>
           {classement.map((j, idx) => (
-            <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? '#0a1a0a' : 'transparent' }}>
-              <div style={{ color: idx === 0 ? st.green : st.muted, fontWeight: 700 }}>{idx + 1}</div>
+            <div key={j.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px 90px 65px 65px 65px 65px 70px', padding: '12px 16px', borderTop: `1px solid ${st.border}`, gap: 8, alignItems: 'center', background: idx === 0 ? st.card2 : 'transparent' }}>
+              <div style={{ color: st.text, fontFamily: st.police.titre, fontWeight: 700, fontSize: 18 }}>{idx + 1}</div>
               <div style={{ color: st.text, fontWeight: idx < 3 ? 700 : 400 }}>{j.full_name || `${j.prenom || ''} ${j.nom || ''}`}</div>
-              <div style={{ textAlign: 'center', color: st.green, fontWeight: 800 }}>{j.points} pts</div>
+              <div style={{ textAlign: 'center', color: st.text, fontFamily: st.police.titre, fontWeight: 700, fontSize: 18 }}>{j.points} pts</div>
               <div style={{ textAlign: 'center' }}>
-                <span style={{ color: j.taux >= 80 ? st.green : j.taux >= 50 ? st.yellow : st.red, fontWeight: 700 }}>{j.taux}%</span>
+                <span style={{ color: st.text, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}><span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 1, background: j.taux >= 80 ? st.green : j.taux >= 50 ? st.yellow : st.red }} />{j.taux}%</span>
                 <div style={{ color: st.muted, fontSize: 10 }}>{j.validees}/{j.total}</div>
               </div>
-              <div style={{ textAlign: 'center', color: j.nbBonus > 0 ? st.yellow : st.border }}>{j.nbBonus > 0 ? `x${j.nbBonus}` : '—'}</div>
+              <div style={{ textAlign: 'center', color: st.text}}>{j.nbBonus > 0 ? `x${j.nbBonus}` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.cmj ? st.text : st.border }}>{j.cmj ? `${j.cmj}cm` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s10 ? st.text : st.border }}>{j.s10 ? `${j.s10}s` : '—'}</div>
               <div style={{ textAlign: 'center', color: j.s30 ? st.text : st.border }}>{j.s30 ? `${j.s30}s` : '—'}</div>

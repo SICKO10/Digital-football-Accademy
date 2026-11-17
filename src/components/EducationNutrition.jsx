@@ -127,7 +127,7 @@ export default function EducationNutrition({ sousSection, setSousSection, profil
               background: sousSection === s.id ? colors.accent.green : colors.background.raised,
               color: sousSection === s.id ? colors.black : colors.text.dim,
               border: `1px solid ${sousSection === s.id ? colors.accent.green : colors.border.default}`,
-              borderRadius: '20px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Inter, sans-serif',
+              borderRadius: '20px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, fontFamily: 'Barlow, sans-serif',
             }}>
             {s.label}
           </button>

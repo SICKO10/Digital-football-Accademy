@@ -43,7 +43,7 @@ export const SIDEBAR = {
 
 export const FONTS = {
   display: "'Rajdhani', sans-serif",
-  body: "'Inter', system-ui, sans-serif",
+  body: "'Barlow', system-ui, sans-serif",
   mono: "'JetBrains Mono', monospace",
 }
 

@@ -54,8 +54,8 @@ export default function DuplicationJournee({ st, colors, stage, jours, sourceIni
   }
 
   const pastille = (actif) => ({
-    padding: '6px 11px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', textTransform: 'capitalize',
-    background: actif ? '#60a5fa22' : 'transparent', border: `1px solid ${actif ? '#60a5fa' : colors.border.default}`, color: actif ? '#60a5fa' : colors.text.dim,
+    padding: '6px 11px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: 'Barlow, sans-serif', textTransform: 'capitalize',
+    background: actif ? colors.background.raised : 'transparent', border: `1px solid ${actif ? colors.accent.info : colors.border.default}`, color: actif ? colors.accent.info : colors.text.dim,
   })
   const coche = (j) => setD(x => ({ ...x, cibles: x.cibles.includes(j) ? x.cibles.filter(y => y !== j) : [...x.cibles, j] }))
   const nbSource = (d.creneaux ? creneaux.filter(c => c.date === d.source).length : 0) + (d.taches ? taches.filter(t => t.date === d.source).length : 0)
@@ -65,10 +65,10 @@ export default function DuplicationJournee({ st, colors, stage, jours, sourceIni
       <p style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: colors.text.primary }}>Dupliquer une journée</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
         <span style={{ fontSize: '13px', color: colors.text.dim }}>Journée à copier :</span>
-        <select value={d.source} onChange={e => setD(x => ({ ...x, source: e.target.value, cibles: x.cibles.filter(c => c !== e.target.value) }))} style={{ ...st.input, width: 'auto', textTransform: 'capitalize' }}>
+        <select className="df-champ" value={d.source} onChange={e => setD(x => ({ ...x, source: e.target.value, cibles: x.cibles.filter(c => c !== e.target.value) }))} style={{ ...st.input, width: 'auto', textTransform: 'capitalize' }}>
           {jours.map(j => <option key={j} value={j}>{formatDate(j, { weekday: 'long', day: 'numeric', month: 'long' })}</option>)}
         </select>
-        <span style={{ fontSize: '12px', color: colors.text.faint }}>{nbSource} élément(s) à copier</span>
+        <span style={{ fontSize: '12px', color: colors.text.dim }}>{nbSource} élément(s) à copier</span>
       </div>
       <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: colors.text.primary }}>Vers les jours :</p>
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -76,9 +76,9 @@ export default function DuplicationJournee({ st, colors, stage, jours, sourceIni
         {autres.map(j => <button key={j} type="button" onClick={() => coche(j)} style={pastille(d.cibles.includes(j))}>{formatDate(j, { weekday: 'short', day: 'numeric', month: 'short' })}</button>)}
       </div>
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '12px', fontSize: '13px', color: colors.text.dim }}>
-        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={d.creneaux} onChange={e => setD(x => ({ ...x, creneaux: e.target.checked }))} /> Créneaux du programme</label>
-        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={d.taches} onChange={e => setD(x => ({ ...x, taches: e.target.checked }))} /> Tâches</label>
-        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={d.remplacer} onChange={e => setD(x => ({ ...x, remplacer: e.target.checked }))} /> Remplacer le contenu existant de ces jours</label>
+        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input className="df-champ" type="checkbox" checked={d.creneaux} onChange={e => setD(x => ({ ...x, creneaux: e.target.checked }))} /> Créneaux du programme</label>
+        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input className="df-champ" type="checkbox" checked={d.taches} onChange={e => setD(x => ({ ...x, taches: e.target.checked }))} /> Tâches</label>
+        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer' }}><input className="df-champ" type="checkbox" checked={d.remplacer} onChange={e => setD(x => ({ ...x, remplacer: e.target.checked }))} /> Remplacer le contenu existant de ces jours</label>
       </div>
       {d.erreur && <p style={st.erreur}>{d.erreur}</p>}
       <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -114,7 +114,7 @@ const doublonsStage = (creneaux, taches) => ({
   taches: enTrop(taches, t => [t.date || 'tous', t.heure_debut, t.heure_fin, norm(t.tache), t.categorie].join('|'), t => RANG_STATUT[t.statut] || 0),
 })
 
-export function BoutonDoublons({ st, stage, creneaux, taches, setCreneaux, setTaches, onMessage }) {
+export function BoutonDoublons({ st, colors, stage, creneaux, taches, setCreneaux, setTaches, onMessage }) {
   const [enCours, setEnCours] = useState(false)
   const { creneaux: idsC, taches: idsT } = doublonsStage(creneaux, taches)
   const total = idsC.length + idsT.length
@@ -137,7 +137,7 @@ export function BoutonDoublons({ st, stage, creneaux, taches, setCreneaux, setTa
   }
 
   return (
-    <button onClick={supprimer} disabled={enCours} style={{ ...st.bouton, color: '#f87171', borderColor: '#f8717166', opacity: enCours ? 0.6 : 1 }}>
+    <button onClick={supprimer} disabled={enCours} style={{ ...st.bouton, color: colors.accent.red, borderColor: colors.accent.red + '66', opacity: enCours ? 0.6 : 1 }}>
       {enCours ? 'Suppression…' : `Supprimer les doublons (${total})`}
     </button>
   )

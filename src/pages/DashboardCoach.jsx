@@ -476,7 +476,7 @@ function DashboardCoachInner() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: c.bg, color: c.text, fontFamily: fonts.body, fontSize: 14 }}>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
 
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)}

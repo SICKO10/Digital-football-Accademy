@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { alpha } from '../../tokens'
-
-const IcoPersonne = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-const IcoPoubelle = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+import { police } from '../../tokens'
+import { styleCarte, styleChamp, styleBoutonPrincipal, styleBoutonSecondaire, couleurCraie, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
+import { TitreEcran, Etiquette, CarteChiffre, Icone, EtiquetteStatut } from '../identite'
+import { Plus, Trash2, User } from 'lucide-react'
 
 const STATUTS = [
   { val: 'a_faire', label: 'À faire', color: 'orange' },
@@ -20,9 +20,8 @@ const emptyTache = { titre: '', emoji: '✅', responsable_id: '', responsable_no
 // scopées par club_id (cf. supabase_taches_responsabilites_club.sql). Les
 // responsables sont choisis parmi educateursAffilies (déjà chargé par
 // DashboardClub, mêmes données que club_educateurs — pas de requête propre ici).
-export default function TachesClub({ clubId, educateursAffilies, couleurPrincipale, readOnly }) {
+export default function TachesClub({ clubId, educateursAffilies, readOnly }) {
   const colors = useColors()
-  const accent = couleurPrincipale || colors.accent.green
   const [onglet, setOnglet] = useState('responsabilites')
   const [responsabilites, setResponsabilites] = useState([])
   const [taches, setTaches] = useState([])
@@ -114,49 +113,49 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
     setTaches(prev => prev.filter(t => t.id !== id))
   }
 
-  const statutInfo = (val) => STATUTS.find(s => s.val === val) || STATUTS[0]
 
   const ouvrirAjout = () => {
     if (onglet === 'responsabilites') setAjoutResp(true)
     else setAjoutTache(true)
   }
 
-  // V2 : en-tête + onglets compacts, chiffres clés sans emoji, liste pleine
-  // largeur (tâches en retard signalées), aide réduite à une ligne. Les
-  // colonnes emoji restent enregistrées en base mais ne sont plus affichées.
+  // Mise en forme : kit d'identité (bloc 11), aucun changement de comportement.
+  // Les colonnes emoji restent enregistrées en base mais ne sont pas affichées.
   const items = onglet === 'responsabilites' ? responsabilites : taches
   const enCours = taches.filter(t => t.statut === 'en_cours').length
   const terminees = taches.filter(t => t.statut === 'terminee').length
   const aujourdHui = new Date().toISOString().slice(0, 10)
   const enRetard = taches.filter(t => t.echeance && t.echeance < aujourdHui && t.statut !== 'terminee').length
-  const champ = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 12px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', minWidth: 0 }
-  const eyebrow = { margin: 0, fontSize: '11px', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.secondary }
-  const carte = { background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: '14px' }
+  const craie = `1px solid ${couleurCraie(colors)}`
+  const champ = { ...styleChamp(colors), minWidth: 0 }
+  const carte = styleCarte(colors)
+  const btnMini = { minHeight: '36px', padding: '0 14px', fontSize: '13px', borderRadius: '6px' }
+
+  // Couleur de repère du statut (liseré) : jamais en texte, le libellé porte le sens.
+  const couleurStatut = (val) => ({ a_faire: colors.accent.amber, en_cours: colors.accent.info, terminee: colors.accent.success }[val] || colors.text.dim)
 
   const STATS = [
-    { label: 'Responsabilités', value: responsabilites.length, color: colors.accent.blue, detail: `${responsabilites.filter(r => r.responsable_nom).length} attribuée${responsabilites.filter(r => r.responsable_nom).length > 1 ? 's' : ''}` },
-    { label: 'Tâches', value: taches.length, color: colors.text.primary, detail: `${taches.length - terminees} ouverte${taches.length - terminees > 1 ? 's' : ''}` },
-    { label: 'En cours', value: enCours, color: colors.accent.blue, detail: enRetard ? `${enRetard} en retard` : 'aucune en retard', alerte: enRetard > 0 },
-    { label: 'Terminées', value: terminees, color: colors.accent.success, detail: taches.length ? `${Math.round(terminees / taches.length * 100)}% des tâches` : '—' },
+    { label: 'Responsabilités', value: responsabilites.length, detail: `${responsabilites.filter(r => r.responsable_nom).length} attribuée${responsabilites.filter(r => r.responsable_nom).length > 1 ? 's' : ''}` },
+    { label: 'Tâches', value: taches.length, detail: `${taches.length - terminees} ouverte${taches.length - terminees > 1 ? 's' : ''}` },
+    { label: 'En cours', value: enCours, detail: enRetard ? `${enRetard} en retard` : 'aucune en retard', alerte: enRetard > 0 },
+    { label: 'Terminées', value: terminees, detail: taches.length ? `${Math.round(terminees / taches.length * 100)}\u00A0% des tâches` : '—' },
   ]
 
   const choixResponsable = (modeManuel, setModeManuel, form, setForm) => (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-      <div style={{ display: 'inline-flex', padding: '3px', borderRadius: '9px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+      <div role="group" aria-label="Type de responsable" style={{ display: 'inline-flex', gap: '6px' }}>
         {[{ val: false, label: 'Membre du club' }, { val: true, label: 'Autre personne' }].map(m => (
-          <button key={String(m.val)} type="button" onClick={() => setModeManuel(m.val)}
-            style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', fontSize: '12px', fontWeight: modeManuel === m.val ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              background: modeManuel === m.val ? colors.background.raised : 'transparent',
-              color: modeManuel === m.val ? colors.text.primary : colors.text.faint }}>
+          <button key={String(m.val)} type="button" aria-pressed={modeManuel === m.val} onClick={() => setModeManuel(m.val)} className={CLASSE_BOUTON_SECONDAIRE}
+            style={modeManuel === m.val ? { ...styleBoutonPrincipal(colors), ...btnMini } : { ...styleBoutonSecondaire(colors), ...btnMini }}>
             {m.label}
           </button>
         ))}
       </div>
       {modeManuel ? (
-        <input value={form.responsable_nom_libre} onChange={e => setForm(f => ({ ...f, responsable_nom_libre: e.target.value }))}
-          placeholder="Nom et prénom (hors plateforme)" style={{ ...champ, flex: '1 1 200px' }} />
+        <input className={CLASSE_CHAMP} aria-label="Nom du responsable" value={form.responsable_nom_libre} onChange={e => setForm(f => ({ ...f, responsable_nom_libre: e.target.value }))}
+          placeholder="Nom et prénom (hors plateforme)" style={{ ...champ, flex: '1 1 200px', width: 'auto' }} />
       ) : (
-        <select value={form.responsable_id} onChange={e => setForm(f => ({ ...f, responsable_id: e.target.value }))} style={{ ...champ, flex: '1 1 200px' }}>
+        <select className={CLASSE_CHAMP} aria-label="Responsable" value={form.responsable_id} onChange={e => setForm(f => ({ ...f, responsable_id: e.target.value }))} style={{ ...champ, flex: '1 1 200px', width: 'auto' }}>
           <option value="">Responsable (optionnel)</option>
           {educateursAcceptes.map(e => <option key={e.educateur_id} value={e.educateur_id}>{e.educateur?.prenom} {e.educateur?.nom}</option>)}
         </select>
@@ -165,58 +164,56 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
   )
   const boutonsForm = (annuler, valider, invalide) => (
     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-      <button onClick={annuler} style={{ background: 'transparent', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: '8px', padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Annuler</button>
-      <button onClick={valider} disabled={invalide} style={{ background: accent, color: colors.background.base, border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: invalide ? 0.5 : 1, fontFamily: 'Inter, sans-serif' }}>Ajouter</button>
+      <button type="button" onClick={annuler} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Annuler</button>
+      <button type="button" onClick={valider} disabled={invalide} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>Ajouter</button>
     </div>
   )
+  const boutonSupprimer = (libelle, action) => (
+    <button type="button" onClick={action} className={CLASSE_BOUTON_SECONDAIRE}
+      style={{ ...styleBoutonSecondaire(colors), minHeight: '36px', minWidth: '36px', padding: 0, border: '1px solid transparent', color: colors.text.dim, flexShrink: 0 }}>
+      <Icone icone={Trash2} seule libelle={libelle} />
+    </button>
+  )
+  const personne = (nom) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Icone icone={User} taille={14} />{nom}</span>
+  )
+  const formulaire = { padding: '16px 18px', borderBottom: craie, display: 'flex', flexDirection: 'column', gap: '10px', background: colors.background.raised }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: colors.text.primary }}>Tâches & Responsabilités</h1>
-          <p style={{ color: colors.text.faint, fontSize: '13px', margin: '4px 0 0' }}>Qui fait quoi dans le club : les responsabilités permanentes et les tâches à échéance.</p>
-        </div>
-        {!readOnly && (
-          <button onClick={ouvrirAjout} style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: accent, color: colors.background.base, fontWeight: 700, fontSize: '13px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-            + {onglet === 'responsabilites' ? 'Nouvelle responsabilité' : 'Nouvelle tâche'}
+      <TitreEcran titre="Tâches & Responsabilités" sousTitre="Qui fait quoi dans le club : les responsabilités permanentes et les tâches à échéance." style={{ marginBottom: 0 }}
+        actions={!readOnly && (
+          <button type="button" onClick={ouvrirAjout} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>
+            <Icone icone={Plus} />{onglet === 'responsabilites' ? 'Nouvelle responsabilité' : 'Nouvelle tâche'}
           </button>
-        )}
-      </div>
+        )} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
-        {STATS.map(x => (
-          <div key={x.label} style={{ ...carte, padding: '16px 18px' }}>
-            <p style={{ margin: 0, color: colors.text.faint, fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{x.label}</p>
-            <p style={{ margin: '8px 0 4px', fontSize: '28px', fontWeight: 800, lineHeight: 1, color: x.color, fontVariantNumeric: 'tabular-nums' }}>{x.value}</p>
-            <p style={{ margin: 0, fontSize: '12px', color: x.alerte ? colors.accent.red : colors.text.faint }}>{x.detail}</p>
-          </div>
-        ))}
+        {STATS.map(x => <CarteChiffre key={x.label} etiquette={x.label} valeur={x.value} detail={x.detail} alerte={x.alerte} taille={32} />)}
       </div>
 
-      <div style={{ display: 'inline-flex', alignSelf: 'flex-start', padding: '3px', borderRadius: '10px', background: colors.background.base, border: `1px solid ${colors.border.subtle}` }}>
+      <div role="group" aria-label="Type de liste" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         {[{ val: 'responsabilites', label: 'Responsabilités récurrentes', n: responsabilites.length }, { val: 'taches', label: 'Tâches ponctuelles', n: taches.length }].map(o => (
-          <button key={o.val} onClick={() => setOnglet(o.val)}
-            style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: onglet === o.val ? 700 : 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-              background: onglet === o.val ? colors.background.raised : 'transparent',
-              color: onglet === o.val ? colors.text.primary : colors.text.faint }}>
-            {o.label} <span style={{ color: colors.text.faint, fontWeight: 600 }}>{o.n}</span>
+          <button key={o.val} type="button" aria-pressed={onglet === o.val} onClick={() => setOnglet(o.val)} className={CLASSE_BOUTON_SECONDAIRE}
+            style={onglet === o.val ? { ...styleBoutonPrincipal(colors), ...btnMini } : { ...styleBoutonSecondaire(colors), ...btnMini }}>
+            {o.label}
+            <span style={{ fontFamily: police.titre, fontWeight: 700, fontSize: '15px', fontVariantNumeric: 'tabular-nums' }}>{o.n}</span>
           </button>
         ))}
       </div>
-      <p style={{ margin: '-8px 0 0', fontSize: '12px', color: colors.text.faint }}>
+      <p style={{ margin: '-8px 0 0', fontFamily: police.texte, fontSize: '13px', color: colors.text.dim }}>
         {onglet === 'responsabilites'
-          ? 'Missions permanentes (licences, communication, matériel…) — à attribuer dès le début de saison pour éviter les oublis.'
+          ? 'Missions permanentes (licences, communication, matériel…) : à attribuer dès le début de saison pour éviter les oublis.'
           : 'Actions à date butoir (préparer un tournoi, envoyer un document…), avec un responsable et un statut.'}
       </p>
 
-      <div style={{ ...carte, overflow: 'hidden' }}>
+      <div style={{ ...carte, padding: 0, overflow: 'hidden' }}>
         {(ajoutResp && onglet === 'responsabilites') && (
-          <div style={{ padding: '16px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '10px', background: accent + '08' }}>
-            <p style={eyebrow}>Nouvelle responsabilité</p>
+          <div style={formulaire}>
+            <Etiquette as="p">Nouvelle responsabilité</Etiquette>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-              <input value={formResp.domaine} onChange={e => setFormResp(f => ({ ...f, domaine: e.target.value }))} placeholder="Domaine (ex : Communication, Terrains…)" style={champ} />
-              <input value={formResp.tache} onChange={e => setFormResp(f => ({ ...f, tache: e.target.value }))} placeholder="Responsabilité (ex : Gérer les réservations)" style={champ} />
+              <input className={CLASSE_CHAMP} aria-label="Domaine" value={formResp.domaine} onChange={e => setFormResp(f => ({ ...f, domaine: e.target.value }))} placeholder="Domaine (ex : Communication, Terrains…)" style={champ} />
+              <input className={CLASSE_CHAMP} aria-label="Responsabilité" value={formResp.tache} onChange={e => setFormResp(f => ({ ...f, tache: e.target.value }))} placeholder="Responsabilité (ex : Gérer les réservations)" style={champ} />
             </div>
             {choixResponsable(respModeManuel, setRespModeManuel, formResp, setFormResp)}
             {boutonsForm(() => { setAjoutResp(false); setFormResp(emptyResponsabilite); setRespModeManuel(false) }, ajouterResponsabilite, !formResp.tache.trim())}
@@ -224,11 +221,11 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
         )}
 
         {(ajoutTache && onglet === 'taches') && (
-          <div style={{ padding: '16px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', flexDirection: 'column', gap: '10px', background: accent + '08' }}>
-            <p style={eyebrow}>Nouvelle tâche</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 160px', gap: '10px' }}>
-              <input value={formTache.titre} onChange={e => setFormTache(f => ({ ...f, titre: e.target.value }))} placeholder="Titre de la tâche" style={champ} />
-              <input type="date" value={formTache.echeance} onChange={e => setFormTache(f => ({ ...f, echeance: e.target.value }))} title="Échéance" style={champ} />
+          <div style={formulaire}>
+            <Etiquette as="p">Nouvelle tâche</Etiquette>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 170px', gap: '10px' }}>
+              <input className={CLASSE_CHAMP} aria-label="Titre de la tâche" value={formTache.titre} onChange={e => setFormTache(f => ({ ...f, titre: e.target.value }))} placeholder="Titre de la tâche" style={champ} />
+              <input className={CLASSE_CHAMP} type="date" value={formTache.echeance} onChange={e => setFormTache(f => ({ ...f, echeance: e.target.value }))} aria-label="Échéance" title="Échéance" style={champ} />
             </div>
             {choixResponsable(tacheModeManuel, setTacheModeManuel, formTache, setFormTache)}
             {boutonsForm(() => { setAjoutTache(false); setFormTache(emptyTache); setTacheModeManuel(false) }, ajouterTache, !formTache.titre.trim())}
@@ -236,56 +233,52 @@ export default function TachesClub({ clubId, educateursAffilies, couleurPrincipa
         )}
 
         {loading ? (
-          <p style={{ color: colors.text.faint, fontSize: '13px', padding: '20px' }}>Chargement...</p>
+          <p style={{ color: colors.text.dim, fontSize: '14px', padding: '20px', margin: 0 }}>Chargement...</p>
         ) : items.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <p style={{ color: colors.text.secondary, fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>
+            <p style={{ fontFamily: police.texte, color: colors.text.primary, fontWeight: 600, fontSize: '16px', margin: '0 0 4px' }}>
               Aucune {onglet === 'responsabilites' ? 'responsabilité' : 'tâche'} pour l'instant
             </p>
-            <p style={{ color: colors.text.faint, fontSize: '12px', margin: '0 0 16px' }}>
+            <p style={{ fontFamily: police.texte, color: colors.text.dim, fontSize: '14px', margin: '0 0 16px' }}>
               {onglet === 'responsabilites' ? 'Attribue les missions permanentes du club à tes membres.' : 'Ajoute une tâche avec un responsable et une échéance.'}
             </p>
             {!readOnly && !(ajoutResp || ajoutTache) && (
-              <button onClick={ouvrirAjout} style={{ padding: '8px 16px', borderRadius: '10px', border: `1px solid ${accent}50`, background: accent + '14', color: accent, fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                + Ajouter
+              <button type="button" onClick={ouvrirAjout} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
+                <Icone icone={Plus} />Ajouter
               </button>
             )}
           </div>
         ) : onglet === 'responsabilites' ? (
           responsabilites.map(r => (
-            <div key={r.id} style={{ padding: '12px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {r.domaine && <p style={{ margin: 0, color: accent, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{r.domaine}</p>}
-                <p style={{ margin: '2px 0 0', color: colors.text.primary, fontWeight: 600, fontSize: '14px' }}>{r.tache}</p>
+            <div key={r.id} style={{ padding: '12px 18px', borderBottom: craie, display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                {r.domaine && <Etiquette as="p" style={{ fontSize: '11px' }}>{r.domaine}</Etiquette>}
+                <p style={{ margin: '2px 0 0', fontFamily: police.texte, color: colors.text.primary, fontWeight: 600, fontSize: '16px' }}>{r.tache}</p>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '8px', flexShrink: 0, color: r.responsable_nom ? colors.text.secondary : colors.accent.amber, background: r.responsable_nom ? colors.background.raised : colors.accent.amber + '14' }}>
-                <IcoPersonne /> {r.responsable_nom || 'Non attribuée'}
-              </span>
-              {!readOnly && (
-                <button onClick={() => supprimerResponsabilite(r.id)} title="Supprimer" style={{ background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '4px', display: 'flex', flexShrink: 0 }}><IcoPoubelle /></button>
-              )}
+              <EtiquetteStatut couleur={r.responsable_nom ? colors.text.dim : colors.accent.amber} style={{ textTransform: 'none', letterSpacing: 0, fontSize: '13px', fontWeight: 600 }}>
+                {personne(r.responsable_nom || 'Non attribuée')}
+              </EtiquetteStatut>
+              {!readOnly && boutonSupprimer(`Supprimer la responsabilité « ${r.tache} »`, () => supprimerResponsabilite(r.id))}
             </div>
           ))
         ) : (
           taches.map(t => {
-            const si = statutInfo(t.statut)
             const retard = t.echeance && t.echeance < aujourdHui && t.statut !== 'terminee'
             return (
-              <div key={t.id} style={{ padding: '12px 18px', borderBottom: `1px solid ${colors.border.subtle}`, display: 'flex', alignItems: 'center', gap: '14px', borderLeft: `3px solid ${colors.accent[si.color]}`, opacity: t.statut === 'terminee' ? 0.65 : 1 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, color: colors.text.primary, fontWeight: 600, fontSize: '14px', textDecoration: t.statut === 'terminee' ? 'line-through' : 'none' }}>{t.titre}</p>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '3px', fontSize: '12px', color: colors.text.faint }}>
-                    {t.responsable_nom && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IcoPersonne /> {t.responsable_nom}</span>}
-                    {t.echeance && <span style={{ color: retard ? colors.accent.red : colors.text.faint, fontWeight: retard ? 700 : 400 }}>{retard ? 'En retard · ' : 'Échéance '}{new Date(t.echeance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+              <div key={t.id} style={{ padding: '12px 18px 12px 21px', borderBottom: craie, display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', boxShadow: `inset 3px 0 0 ${couleurStatut(t.statut)}`, opacity: t.statut === 'terminee' ? 0.7 : 1 }}>
+                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <p style={{ margin: 0, fontFamily: police.texte, color: colors.text.primary, fontWeight: 600, fontSize: '16px', textDecoration: t.statut === 'terminee' ? 'line-through' : 'none' }}>{t.titre}</p>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px', fontFamily: police.texte, fontSize: '13px', color: colors.text.dim }}>
+                    {t.responsable_nom && personne(t.responsable_nom)}
+                    {t.echeance && <span>Échéance {new Date(t.echeance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                    {retard && <EtiquetteStatut couleur={colors.accent.red}>En retard</EtiquetteStatut>}
                   </div>
                 </div>
-                <select value={t.statut} disabled={readOnly} onChange={e => changerStatut(t.id, e.target.value)}
-                  style={{ background: colors.accent[si.color] + alpha.subtle, color: colors.accent[si.color], border: `1px solid ${colors.accent[si.color]}60`, borderRadius: '8px', padding: '6px 10px', fontSize: '12px', fontWeight: 700, cursor: readOnly ? 'default' : 'pointer', flexShrink: 0 }}>
+                <select className={CLASSE_CHAMP} aria-label={`Statut de la tâche « ${t.titre} »`} value={t.statut} disabled={readOnly} onChange={e => changerStatut(t.id, e.target.value)}
+                  style={{ ...champ, width: 'auto', minHeight: '36px', padding: '0 10px', fontSize: '14px', fontWeight: 600, flexShrink: 0, cursor: readOnly ? 'default' : 'pointer' }}>
                   {STATUTS.map(x => <option key={x.val} value={x.val}>{x.label}</option>)}
                 </select>
-                {!readOnly && (
-                  <button onClick={() => supprimerTache(t.id)} title="Supprimer" style={{ background: 'transparent', border: 'none', color: colors.text.faint, cursor: 'pointer', padding: '4px', display: 'flex', flexShrink: 0 }}><IcoPoubelle /></button>
-                )}
+                {!readOnly && boutonSupprimer(`Supprimer la tâche « ${t.titre} »`, () => supprimerTache(t.id))}
               </div>
             )
           })

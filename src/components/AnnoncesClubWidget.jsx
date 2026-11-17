@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
+import { styleCarteLiseree, styleTitreEcran, styleChiffreHeros, CLASSE_CLIQUABLE } from '../lib/identite'
+import { EtiquetteStatut } from './identite'
+import { police } from '../tokens'
 
 // Aperçu des dernières actualités du club sur l'Accueil éducateur — remplace
 // le lien de nav dédié "Actualités du club" (retiré, la nav étant déjà
 // dense) : la page complète (activeSection === 'annonces', inchangée) reste
 // accessible via "Voir tout".
-export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentColor = '#60a5fa' }) {
+export default function AnnoncesClubWidget({ clubId, userId, onVoirTout }) {
   const colors = useColors()
   const [annonces, setAnnonces] = useState([])
   const [luesIds, setLuesIds] = useState(new Set())
@@ -35,28 +38,27 @@ export default function AnnoncesClubWidget({ clubId, userId, onVoirTout, accentC
   // au lieu de rester affiché indéfiniment en grisé.
   if (nbNonLues === 0) return null
 
+  const lien = { background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: police.texte }
   return (
-    <div style={{ background: accentColor + '10', border: `1px solid ${accentColor}40`, borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+    <div style={{ ...styleCarteLiseree(colors), marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <p style={{ fontWeight: 700, fontSize: '13px', margin: 0, color: accentColor }}>Actualités du club</p>
-        {nbNonLues > 0 && (
-          <span style={{ background: accentColor, color: '#000', borderRadius: '10px', minWidth: '18px', height: '18px', padding: '0 5px', fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{nbNonLues}</span>
-        )}
+        <p style={{ ...styleTitreEcran(colors), fontSize: '20px' }}>Actualités du club</p>
+        {nbNonLues > 0 && <EtiquetteStatut couleur={colors.accent.brand}>{nbNonLues} nouvelle{nbNonLues > 1 ? 's' : ''}</EtiquetteStatut>}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
         {annonces.map(a => (
-          <button key={a.id} onClick={onVoirTout} style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ fontSize: '12px', color: luesIds.has(a.id) ? colors.text.faint : colors.text.primary, fontWeight: luesIds.has(a.id) ? 400 : 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <button key={a.id} type="button" onClick={onVoirTout} className={CLASSE_CLIQUABLE} style={{ ...lien, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', minHeight: '32px' }}>
+            <span style={{ fontSize: '14px', color: luesIds.has(a.id) ? colors.text.secondary : colors.text.primary, fontWeight: luesIds.has(a.id) ? 400 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {a.titre}
             </span>
-            <span style={{ color: colors.text.faint, fontSize: '11px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ ...styleChiffreHeros(colors, 14), fontFamily: police.texte, fontWeight: 500, color: colors.text.secondary, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
             </span>
           </button>
         ))}
       </div>
-      <button onClick={onVoirTout} style={{ background: 'none', border: 'none', color: accentColor, fontSize: '11px', fontWeight: 700, cursor: 'pointer', padding: 0, fontFamily: 'Inter, sans-serif' }}>
-        Voir tout →
+      <button type="button" onClick={onVoirTout} className={CLASSE_CLIQUABLE} style={{ ...lien, color: colors.text.primary, fontSize: '13px', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+        Voir tout
       </button>
     </div>
   )

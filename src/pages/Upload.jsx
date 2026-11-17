@@ -263,7 +263,7 @@ export default function Upload() {
   }
 
   const s = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' },
     nav: { background: colors.background.surface, borderBottom: '1px solid #222', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' },
     logo: { color: colors.accent.green, fontWeight: 700, fontSize: '1.2rem', cursor: 'pointer' },
     container: { maxWidth: '700px', margin: '0 auto', padding: '3rem 2rem' },

@@ -9,11 +9,8 @@ import { planRetablir, planRetablirServeur, estPlace, estFourniture } from '../.
 // jamais aux pages ni aux données : seulement à ce qui s'affiche dans les menus.
 
 // Outils éducateur qui ont une entrée de menu à régler (Stats collectives n'en
-// a pas : ce sont des parties de pages). Analyse vidéo n'est qu'un onglet de
-// « Rapports & Évaluations » : l'afficher ou le masquer ne change rien à l'écran,
-// on ne le propose donc pas dans Mon club.
-const NON_REGLABLES = ['evaluations_video']
-export const OUTILS_EDUCATEUR = OUTILS.filter(o => o.role === 'educateur' && o.menus.length > 0 && !NON_REGLABLES.includes(o.id))
+// a pas : ce sont des parties de pages).
+export const OUTILS_EDUCATEUR = OUTILS.filter(o => o.role === 'educateur' && o.menus.length > 0)
 
 // Écrit le choix d'affichage du menu du club (cible « club ») pour un club de
 // l'ancien modèle : une ligne seulement quand l'outil est masqué, aucune quand

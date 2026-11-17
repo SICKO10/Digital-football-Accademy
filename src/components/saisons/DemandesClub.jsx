@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { alpha } from '../../tokens'
+import { police, forme } from '../../tokens'
+import { Etiquette } from '../identite'
+import { Message } from '../categories/UiCategories'
+import { styleCarte, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleEtiquette, couleurCraie, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP } from '../../lib/identite'
 import { labelCategorie } from '../../lib/categories'
 import { libelleSaison } from '../../lib/saison'
 import {
@@ -94,98 +97,98 @@ export default function DemandesClub({ clubId, userId, staff, libelleRole, onCha
 
   if (erreurChargement) {
     return (
-      <div style={carte(colors)}>
-        <p style={{ margin: 0, fontSize: 13, color: colors.accent.red }}>Impossible de lire les demandes des éducateurs pour le moment.</p>
-        <button onClick={charger} style={{ ...bouton(colors, false), marginTop: 10 }}>Réessayer</button>
+      <div style={{ ...styleCarte(colors), display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
+        <Message ton="erreur" style={{ width: '100%', boxSizing: 'border-box' }}>Impossible de lire les demandes des éducateurs pour le moment.</Message>
+        <button onClick={charger} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Réessayer</button>
       </div>
     )
   }
   if (!demandes || demandes.length === 0) return null
 
+  const craie = `1px solid ${couleurCraie(colors)}`
+  const boutonRefus = { ...styleBoutonSecondaire(colors), borderColor: colors.accent.red }
+  const note = { margin: 0, fontFamily: police.texte, fontSize: 13, lineHeight: 1.45, color: colors.text.secondary }
+
   return (
-    <div style={{ ...carte(colors), borderLeft: `4px solid ${colors.accent.blue}` }}>
-      <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.accent.blue }}>
-        Demandes des éducateurs à traiter · {demandes.length}
-      </p>
-      <p style={{ margin: '0 0 12px', fontSize: 12, color: colors.text.faint }}>
+    <div style={{ ...styleCarte(colors), padding: '16px 18px 16px 21px', boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.info}` }}>
+      <Etiquette as="p" style={{ marginBottom: 4 }}>Demandes des éducateurs à traiter · {demandes.length}</Etiquette>
+      <p style={{ ...note, fontSize: 13, margin: '0 0 12px' }}>
         Rien n'est accordé au coach tant que le club n'a pas répondu.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {demandes.map(d => {
+      <div>
+        {demandes.map((d, i) => {
           const categorie = categoriePourDroit(d)
           const action = actionsDemandeClub({ demande: d, peutValider: droits[categorie ?? ''] === true, userId })
           const nom = [d.educateur?.prenom, d.educateur?.nom].filter(Boolean).join(' ') || 'Éducateur'
           const occupe = enCours === d.id
           return (
-            <div key={d.id} style={{ background: colors.background.base, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div key={d.id} style={{ padding: '12px 0', borderTop: i === 0 ? craie : 'none', borderBottom: craie, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <Photo personne={d.educateur} colors={colors} />
                 <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: colors.text.primary }}>{nom}</div>
-                  <div style={{ fontSize: 12, color: colors.text.secondary }}>{libelleDemandeClub(d, labelCategorie)}</div>
-                  <div style={{ fontSize: 11, color: colors.text.faint }}>Saison {libelleSaison(d.saison)}</div>
+                  <div style={{ fontFamily: police.texte, fontSize: 14, fontWeight: 700, color: colors.text.primary }}>{nom}</div>
+                  <div style={{ fontFamily: police.texte, fontSize: 13, color: colors.text.secondary }}>{libelleDemandeClub(d, labelCategorie)}</div>
+                  <div style={{ fontFamily: police.texte, fontSize: 12, color: colors.text.secondary }}>Saison {libelleSaison(d.saison)}</div>
                 </div>
 
                 {(action === 'valider' || action === 'confirmer_depart') && refusDe !== d.id && departDe !== d.id && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {action === 'valider' && (
                       <>
-                        <button onClick={() => traiter(d, 'validee')} disabled={occupe} style={bouton(colors, true)}>{occupe ? '...' : 'Valider'}</button>
-                        <button onClick={() => { setRefusDe(d.id); setMotif('') }} disabled={occupe} style={{ ...bouton(colors, false), color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>Refuser</button>
+                        <button onClick={() => traiter(d, 'validee')} disabled={occupe} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{occupe ? '...' : 'Valider'}</button>
+                        <button onClick={() => { setRefusDe(d.id); setMotif('') }} disabled={occupe} className={CLASSE_BOUTON_SECONDAIRE} style={boutonRefus}>Refuser</button>
                       </>
                     )}
                     {action === 'confirmer_depart' && (
-                      <button onClick={() => setDepartDe(d.id)} disabled={occupe} style={bouton(colors, true)}>Confirmer le départ</button>
+                      <button onClick={() => setDepartDe(d.id)} disabled={occupe} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>Confirmer le départ</button>
                     )}
                   </div>
                 )}
               </div>
 
               {action === 'refuse' && (
-                <p style={{ margin: 0, fontSize: 12, color: colors.accent.amber }}>
-                  À valider par {libelleValideurs({ staff, categorie, libelleRole })}.
-                </p>
+                <Message ton="alerte">À valider par {libelleValideurs({ staff, categorie, libelleRole })}.</Message>
               )}
               {action === 'propre' && (
-                <p style={{ margin: 0, fontSize: 12, color: colors.accent.amber }}>
-                  C'est ta propre demande : quelqu'un d'autre au club doit la traiter.
-                </p>
+                <Message ton="alerte">C'est ta propre demande : quelqu'un d'autre au club doit la traiter.</Message>
               )}
 
               {departDe === d.id && (
                 <div>
-                  <p style={{ margin: '0 0 8px', fontSize: 12, color: colors.text.secondary }}>
+                  <p style={{ ...note, margin: '0 0 8px' }}>
                     Ce coach sera retiré du club et ses équipes seront libérées, comme avec le bouton Retirer. Ses séances et ses matchs déjà enregistrés ne sont pas supprimés.
                   </p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setDepartDe(null)} disabled={occupe} style={bouton(colors, false)}>Retour</button>
-                    <button onClick={() => traiter(d, 'validee')} disabled={occupe} style={bouton(colors, true)}>{occupe ? '...' : 'Oui, confirmer le départ'}</button>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button onClick={() => setDepartDe(null)} disabled={occupe} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Retour</button>
+                    <button onClick={() => traiter(d, 'validee')} disabled={occupe} className={CLASSE_BOUTON} style={styleBoutonPrincipal(colors)}>{occupe ? '...' : 'Oui, confirmer le départ'}</button>
                   </div>
                 </div>
               )}
 
               {refusDe === d.id && (
                 <div>
-                  <label style={{ fontSize: 11, color: colors.text.faint, display: 'block', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <label htmlFor={`motif-${d.id}`} style={{ ...styleEtiquette(colors), display: 'block', marginBottom: 6 }}>
                     Motif (facultatif, le coach le verra)
                   </label>
                   <input
+                    id={`motif-${d.id}`}
                     value={motif}
                     onChange={e => setMotif(e.target.value)}
                     maxLength={200}
                     placeholder="Ex. cette équipe est déjà confiée à un autre éducateur"
-                    style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.default}`, borderRadius: 8, color: colors.text.primary, padding: '9px 12px', fontSize: 13, boxSizing: 'border-box', outline: 'none', fontFamily: 'Inter, sans-serif', marginBottom: 8 }}
+                    className={CLASSE_CHAMP}
+                    style={{ ...styleChamp(colors), marginBottom: 8 }}
                   />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setRefusDe(null)} disabled={occupe} style={bouton(colors, false)}>Retour</button>
-                    <button onClick={() => traiter(d, 'refusee')} disabled={occupe} style={{ ...bouton(colors, false), color: colors.accent.red, borderColor: colors.accent.red + alpha.medium }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button onClick={() => setRefusDe(null)} disabled={occupe} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>Retour</button>
+                    <button onClick={() => traiter(d, 'refusee')} disabled={occupe} className={CLASSE_BOUTON_SECONDAIRE} style={boutonRefus}>
                       {occupe ? '...' : 'Confirmer le refus'}
                     </button>
                   </div>
                 </div>
               )}
 
-              {message[d.id] && <p style={{ margin: 0, fontSize: 12, color: colors.accent.red }}>{message[d.id]}</p>}
+              {message[d.id] && <Message ton="erreur">{message[d.id]}</Message>}
             </div>
           )
         })}
@@ -196,13 +199,8 @@ export default function DemandesClub({ clubId, userId, staff, libelleRole, onCha
 
 function Photo({ personne, colors }) {
   const initiales = `${personne?.prenom?.[0] || ''}${personne?.nom?.[0] || ''}`.toUpperCase() || '?'
-  const style = { width: 34, height: 34, borderRadius: '50%', flexShrink: 0 }
+  const style = { width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }
   return personne?.avatar_url
     ? <img src={personne.avatar_url} alt="" style={{ ...style, objectFit: 'cover' }} />
-    : <span style={{ ...style, background: colors.background.raised, color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{initiales}</span>
+    : <span aria-hidden="true" style={{ ...style, background: colors.background.sunken, border: `1px solid ${couleurCraie(colors)}`, color: colors.text.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: police.titre, fontSize: 15, fontWeight: 700, boxSizing: 'border-box' }}>{initiales}</span>
 }
-
-const carte = (colors) => ({ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 14, padding: '16px 18px' })
-const bouton = (colors, plein) => plein
-  ? { background: colors.accent.blue, color: colors.black, border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }
-  : { background: 'transparent', color: colors.text.secondary, border: `1px solid ${colors.border.default}`, padding: '9px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }

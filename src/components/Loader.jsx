@@ -104,7 +104,7 @@ function Loader() {
       <div style={{ textAlign: 'center' }}>
         <p style={{
           color: couleur,
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'Barlow, sans-serif',
           fontSize: '11px',
           fontWeight: 800,
           letterSpacing: '5px',

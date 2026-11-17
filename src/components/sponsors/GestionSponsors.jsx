@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../supabase'
-import { makeUseSt } from '../../lib/theme'
+import { useSt } from '../../lib/useStFinance'
+import { useColors } from '../../lib/theme'
+import { GroupeChoix, Barre } from '../club/UiFinance'
+import { Etiquette, Jauge } from '../identite'
+import { styleMontant, carteStatut } from '../../lib/identiteFinance'
+import { styleCarte, styleChiffreHeros, styleBoutonSecondaire, CLASSE_BOUTON_SECONDAIRE } from '../../lib/identite'
+import { forme } from '../../tokens'
+import { Message } from '../categories/UiCategories'
+import { Icone } from '../identite'
+import { Link2, Camera, Ruler, FileText, CircleCheck, TriangleAlert } from 'lucide-react'
 import { useWindowWidth } from '../../hooks/useWindowWidth'
 import CatalogueOffres from './CatalogueOffres'
 import ValorisationClub from './ValorisationClub'
@@ -59,39 +68,12 @@ const STATUTS_PROSPECT = [
   { val: 'perdu', label: 'Perdu', couleur: '#ef4444' },
 ]
 const TYPES_ECHANGE = [
-  { val: 'note', label: '📝 Note' },
-  { val: 'appel', label: '📞 Appel' },
-  { val: 'email', label: '✉️ Email' },
-  { val: 'rdv', label: '🤝 RDV' },
+  { val: 'note', label: 'Note' },
+  { val: 'appel', label: 'Appel' },
+  { val: 'email', label: 'Email' },
+  { val: 'rdv', label: 'RDV' },
 ]
 
-const stSombre = {
-  card: { background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem' },
-  tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  tab: (active, color = '#4ade80') => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #333', background: active ? color : 'transparent', color: active ? '#000' : '#aaa', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  btnSecondary: { background: 'transparent', border: '1px solid #333', color: '#aaa', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-  btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }),
-  input: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
-  label: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  modalBg: '#0a0a0a', modalBorder: '#1a1a1a',
-  bgRaised: '#1a1a1a', border: '#2a2a2a', borderStrong: '#333',
-  text: '#fff', textDim: '#ccc', textFaint: '#666', textGhost: '#444',
-}
-const stClaire = {
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem' },
-  tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  tab: (active, color = '#4ade80') => ({ padding: '9px 16px', borderRadius: '8px', border: active ? 'none' : '1px solid #cbd5e1', background: active ? color : 'transparent', color: active ? '#000' : '#334155', fontWeight: active ? 700 : 400, cursor: 'pointer', fontSize: '13px' }),
-  btnSolid: (color = '#4ade80') => ({ background: color, color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }),
-  btnSecondary: { background: 'transparent', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px' },
-  btn: (color = '#4ade80') => ({ background: color + '15', border: `1px solid ${color}40`, color, padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }),
-  input: { background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', padding: '9px 12px', fontSize: '13px', boxSizing: 'border-box', width: '100%' },
-  label: { fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' },
-  modalBg: '#ffffff', modalBorder: '#e2e8f0',
-  bgRaised: '#f1f5f9', border: '#cbd5e1', borderStrong: '#94a3b8',
-  text: '#0f172a', textDim: '#334155', textFaint: '#64748b', textGhost: '#94a3b8',
-}
-const useSt = makeUseSt(stSombre, stClaire)
 
 // ── Calculs (fonctions pures, hors composant) ────────────────────────────────
 const getMontantRecu = (sponsor) => {
@@ -135,8 +117,10 @@ const getAlerts = (sponsors) => {
 
 // ── Petits composants de présentation ────────────────────────────────────────
 function StatutBadge({ statut }) {
+  const st = useSt()
   return (
-    <span style={{ background: statut.color + '20', border: `1px solid ${statut.color}50`, color: statut.color, fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: st.bgRaised, border: `1px solid ${st.border}`, color: st.text, fontSize: '12px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+      <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: statut.color, flexShrink: 0 }} />
       {statut.label}
     </span>
   )
@@ -159,7 +143,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{sponsor.entreprise}</p>
             {niveau && (
-              <span style={{ background: niveau.couleur + '20', border: `1px solid ${niveau.couleur}50`, color: niveau.couleur, fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: '20px' }}>{niveau.nom}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: st.bgRaised, border: `1px solid ${st.border}`, color: st.text, fontSize: '12px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px' }}><span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '1px', background: niveau.couleur, flexShrink: 0 }} />{niveau.nom}</span>
             )}
             <StatutBadge statut={statut} />
             {sponsor.role && (
@@ -176,7 +160,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
         </div>
         {!readOnly && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => onCopierLien(sponsor)} style={st.btn('#a78bfa')}>🔗 Lien partenaire</button>
+            <button onClick={() => onCopierLien(sponsor)} style={st.btn()}><Icone icone={Link2} taille={14} /> Lien partenaire</button>
             <button onClick={() => onAjouterPaiement(sponsor)} style={st.btn('#60a5fa')}>+ Paiement</button>
             <button onClick={() => onEdit(sponsor)} style={st.btnSecondary}>Modifier</button>
             <button onClick={() => onDelete(sponsor)} style={st.btn('#ef4444')}>Supprimer</button>
@@ -184,7 +168,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
         )}
       </div>
       {sponsor.demande_renouvellement && (
-        <div style={{ background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: '8px', padding: '8px 12px', marginBottom: '10px', color: '#f59e0b', fontSize: '12px', fontWeight: 700 }}>
+        <div style={{ background: st.bgRaised, boxShadow: 'inset 3px 0 0 #f59e0b', borderRadius: '6px', padding: '8px 12px 8px 15px', marginBottom: '10px', color: st.text, fontSize: '13px', fontWeight: 700 }}>
           ↻ Le partenaire a demandé un renouvellement
         </div>
       )}
@@ -196,7 +180,7 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
         </div>
         <div>
           <p style={st.label}>Reçu</p>
-          <p style={{ margin: 0, fontWeight: 700, color: '#22c55e' }}>{recu.toLocaleString('fr-FR')} €</p>
+          <p style={{ margin: 0, fontFamily: st.police.titre, fontWeight: 700, fontSize: '20px', color: st.text, fontVariantNumeric: 'tabular-nums' }}>{recu.toLocaleString('fr-FR')} €</p>
         </div>
         <div>
           <p style={st.label}>Reste</p>
@@ -234,10 +218,10 @@ function SponsorCard({ sponsor, onEdit, onDelete, onAjouterPaiement, onToggleSta
                       style={{ ...st.input, width: '130px', padding: '4px 8px', fontSize: '11px' }} />
                   )}
                   {item.preuve_url ? (
-                    <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#60a5fa' }}>📷 Voir la preuve</a>
+                    <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: st.text, display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'underline' }}><Icone icone={Camera} taille={14} /> Voir la preuve</a>
                   ) : !readOnly && (
                     <label style={{ fontSize: '11px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
-                      📷 Ajouter une preuve
+                      <Icone icone={Camera} taille={14} /> Ajouter une preuve
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onUploadPreuve(sponsor, item, e.target.files[0])} />
                     </label>
                   )}
@@ -312,10 +296,10 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{sponsor ? 'Modifier le sponsor' : 'Nouveau sponsor'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -410,7 +394,7 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
                       </label>
                     </div>
                     <p style={{ margin: '6px 0 0', fontSize: '11px', color: st.textFaint }}>
-                      📐 Format recommandé : 1200 × 80 px — JPEG ou WebP, fond transparent possible. Ratio paysage obligatoire (min. 8:1). Taille max conseillée : 200 Ko.
+                      <Icone icone={Ruler} taille={14} style={{ display: 'inline-block', verticalAlign: 'text-bottom', marginRight: '4px' }} />Format recommandé : 1200 × 80 px — JPEG ou WebP, fond transparent possible. Ratio paysage obligatoire (min. 8:1). Taille max conseillée : 200 Ko.
                     </p>
                   </div>
                 </>
@@ -426,9 +410,9 @@ function ModalSponsor({ sponsor, niveaux, onClose, onSave, onAjouterDocument, on
               <label style={st.label}>Documents (contrat, facture...) — visibles par le partenaire</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
                 {(sponsor.documents || []).map((d, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: st.bgRaised, borderRadius: '8px', padding: '6px 10px' }}>
-                    <a href={d.url} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: '12px', textDecoration: 'none' }}>📄 {d.label}</a>
-                    <button onClick={() => onSupprimerDocument(sponsor, i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>×</button>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: st.bgRaised, borderRadius: '6px', padding: '6px 10px' }}>
+                    <a href={d.url} target="_blank" rel="noreferrer" style={{ color: st.text, fontSize: '13px', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icone icone={FileText} taille={14} /> {d.label}</a>
+                    <button onClick={() => onSupprimerDocument(sponsor, i)} style={{ background: 'none', border: 'none', color: st.text, textDecoration: 'underline', cursor: 'pointer', fontSize: '16px' }}>×</button>
                   </div>
                 ))}
               </div>
@@ -462,10 +446,10 @@ function ModalPaiement({ sponsor, onClose, onSave, saving }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '400px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>Ajouter un paiement — {sponsor.entreprise}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -520,10 +504,10 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '440px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{niveau ? 'Modifier le niveau' : 'Nouveau niveau'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -547,9 +531,9 @@ function ModalNiveau({ niveau, suggestionsContreparties = [], onClose, onSave, s
             <label style={st.label}>Contreparties</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
               {contreparties.map((c, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: st.bgRaised, borderRadius: '8px', padding: '6px 10px' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: st.bgRaised, borderRadius: '6px', padding: '6px 10px' }}>
                   <span style={{ flex: 1, fontSize: '13px', color: st.textDim }}>{c}</span>
-                  <button onClick={() => supprimerContrepartie(i)} style={{ background: 'none', border: 'none', color: st.textDim, cursor: 'pointer' }}>✕</button>
+                  <button onClick={() => supprimerContrepartie(i)} aria-label="Supprimer cette contrepartie" style={{ background: 'none', border: 'none', color: st.textDim, cursor: 'pointer' }}>✕</button>
                 </div>
               ))}
             </div>
@@ -633,10 +617,10 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '640px', padding: '24px', margin: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>{readOnly ? 'Prospect (consultation)' : prospect ? 'Modifier le prospect' : 'Nouveau prospect'}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         <fieldset disabled={readOnly} style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}>
@@ -695,7 +679,7 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
             <label style={st.label}>Statut</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {STATUTS_PROSPECT.map(s => (
-                <button key={s.val} onClick={() => champ('statut', s.val)} style={{ padding: '6px 12px', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', background: form.statut === s.val ? s.couleur : st.bgRaised, color: form.statut === s.val ? '#000' : st.textFaint }}>
+                <button key={s.val} onClick={() => champ('statut', s.val)} style={{ padding: '6px 12px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', background: form.statut === s.val ? s.couleur : st.bgRaised, color: form.statut === s.val ? '#000' : st.textFaint }}>
                   {s.label}
                 </button>
               ))}
@@ -765,7 +749,7 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
                   {(echanges || []).length === 0 ? (
                     <p style={{ color: st.textGhost, fontSize: '12px', fontStyle: 'italic', margin: 0 }}>Aucun échange enregistré.</p>
                   ) : echanges.map(e => (
-                    <div key={e.id} style={{ background: st.bgRaised, borderRadius: '8px', padding: '8px 10px' }}>
+                    <div key={e.id} style={{ background: st.bgRaised, borderRadius: '6px', padding: '8px 10px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: st.textFaint, marginBottom: '2px' }}>
                         <span>{TYPES_ECHANGE.find(t => t.val === e.type)?.label || e.type}</span>
                         <span>{new Date(e.created_at).toLocaleDateString('fr-FR')}</span>
@@ -793,18 +777,18 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
 
         {prospect && (
           <button onClick={() => onGenererDossier(prospect)} style={{ ...st.btnSecondary, marginTop: '16px', width: '100%' }}>
-            📄 Générer un dossier commercial personnalisé
+            <Icone icone={FileText} /> Générer un dossier commercial personnalisé
           </button>
         )}
 
         {!readOnly && prospect && form.statut === 'gagne' && !prospect.sponsor_id && (
-          <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '10px', padding: '12px 14px', marginTop: '16px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '13px', color: accentColor, fontWeight: 700 }}>🎉 Prospect gagné !</p>
+          <div style={{ background: accentColor + '15', border: `1px solid ${accentColor}40`, borderRadius: '6px', padding: '12px 14px', marginTop: '16px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', color: st.text, fontWeight: 700 }}>Prospect gagné !</p>
             <button onClick={() => onConvertir(prospect)} style={st.btnSolid(accentColor)}>Créer la fiche sponsor signé</button>
           </div>
         )}
         {prospect?.sponsor_id && (
-          <p style={{ color: '#22c55e', fontSize: '12px', fontWeight: 700, marginTop: '16px' }}>✅ Converti en sponsor signé</p>
+          <p style={{ color: st.text, fontSize: '13px', fontWeight: 700, marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ display: 'inline-flex', color: '#22c55e' }}><Icone icone={CircleCheck} taille={16} /></span> Converti en sponsor signé</p>
         )}
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -813,7 +797,7 @@ function ModalProspect({ prospect, echanges, onClose, onSave, onDelete, onAjoute
               {saving ? 'Enregistrement...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
             </button>
           )}
-          {!readOnly && prospect && <button onClick={() => onDelete(prospect.id)} style={{ ...st.btnSecondary, color: '#ef4444' }}>Supprimer</button>}
+          {!readOnly && prospect && <button onClick={() => onDelete(prospect.id)} style={{ ...st.btnSecondary, borderColor: '#ef4444' }}>Supprimer</button>}
           <button onClick={onClose} style={readOnly ? { ...st.btnSecondary, flex: 1 } : st.btnSecondary}>{readOnly ? 'Fermer' : 'Annuler'}</button>
         </div>
       </div>
@@ -871,6 +855,7 @@ async function chargerDroitsProspects(clubId, userId) {
 
 export default function GestionSponsors({ clubId, saison, readOnly = false, accentColor = '#4ade80' }) {
   const st = useSt()
+  const colors = useColors()
   const isMobile = useWindowWidth() < 768
   const [vue, setVue] = useState('dashboard')
   const [saisonActive, setSaisonActive] = useState(saison)
@@ -1399,9 +1384,9 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
   if (tableMissing) {
     return (
-      <div style={{ background: '#f59e0b10', border: '1px solid #f59e0b40', borderRadius: '10px', padding: '16px 20px', color: '#f59e0b', fontSize: '13px' }}>
+      <Message ton="alerte">
         Les tables <code>sponsors</code> et <code>niveaux_partenariat</code> n'existent pas encore en base — exécute la migration SQL dans Supabase avant d'utiliser cette rubrique.
-      </div>
+      </Message>
     )
   }
 
@@ -1434,8 +1419,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1.25rem' }}>
-        <div style={st.tabs}>
-          {[
+        <GroupeChoix libelle="Rubriques sponsors" valeur={vue} onChoisir={setVue}
+          choix={[
             { id: 'dashboard', label: 'Tableau de bord' },
             { id: 'prospects', label: `Prospects${prospects.length ? ` (${prospects.length})` : ''}` },
             { id: 'sponsors', label: 'Sponsors' },
@@ -1444,10 +1429,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
             { id: 'offres', label: 'Offres' },
             { id: 'valorisation', label: 'Valorisation' },
             { id: 'stats', label: 'Statistiques' },
-          ].map(t => (
-            <button key={t.id} style={st.tab(vue === t.id, accentColor)} onClick={() => setVue(t.id)}>{t.label}</button>
-          ))}
-        </div>
+          ]} />
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {vue === 'prospects' ? (
             !prospectsLectureSeule && <button onClick={() => setModalProspect('new')} style={st.btnSolid(accentColor)}>+ Nouveau prospect</button>
@@ -1467,73 +1449,67 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       {vue === 'dashboard' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
-            <div style={st.card}>
-              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Sponsors actifs</p>
-              <p style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: accentColor }}>{sponsors.length}</p>
+            <div style={{ ...styleCarte(colors), padding: '16px 16px 16px 19px', boxShadow: `inset ${forme.lisere} 0 0 ${colors.accent.brand}` }}>
+              <Etiquette as="p">Sponsors actifs</Etiquette>
+              <p style={{ ...styleChiffreHeros(colors, 36), margin: '10px 0 0' }}>{sponsors.length}</p>
             </div>
-            <div style={st.card}>
-              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Budget total</p>
-              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: st.text }}>{budgetTotal.toLocaleString('fr-FR')} €</p>
+            <div style={{ ...styleCarte(colors), padding: '16px' }}>
+              <Etiquette as="p">Budget total</Etiquette>
+              <p style={{ ...styleChiffreHeros(colors, 36), margin: '10px 0 0' }}>{budgetTotal.toLocaleString('fr-FR')}<span style={{ fontSize: '0.55em', fontWeight: 600 }}>{'\u00A0'}€</span></p>
             </div>
-            <div style={{ ...st.card, border: '1px solid #22c55e40' }}>
-              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Encaissé</p>
-              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#22c55e' }}>{encaisse.toLocaleString('fr-FR')} €</p>
-              <div style={{ marginTop: '10px', background: st.bgRaised, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, encaisse / budgetTotal * 100) : 0}%`, background: '#22c55e', borderRadius: '999px' }} />
-              </div>
+            <div style={carteStatut(colors, colors.accent.success)}>
+              <Etiquette as="p">Encaissé</Etiquette>
+              <p style={{ ...styleChiffreHeros(colors, 36), margin: '10px 0 10px' }}>{encaisse.toLocaleString('fr-FR')}<span style={{ fontSize: '0.55em', fontWeight: 600 }}>{'\u00A0'}€</span></p>
+              <Barre part={budgetTotal > 0 ? encaisse / budgetTotal * 100 : 0} couleur={colors.accent.success} />
             </div>
-            <div style={{ ...st.card, border: '1px solid #f59e0b40' }}>
-              <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: st.textFaint, textTransform: 'uppercase' }}>Restant à recevoir</p>
-              <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#f59e0b' }}>{restant.toLocaleString('fr-FR')} €</p>
-              <div style={{ marginTop: '10px', background: st.bgRaised, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, restant / budgetTotal * 100) : 0}%`, background: '#f59e0b', borderRadius: '999px' }} />
-              </div>
+            <div style={carteStatut(colors, colors.accent.amber)}>
+              <Etiquette as="p">Restant à recevoir</Etiquette>
+              <p style={{ ...styleChiffreHeros(colors, 36), margin: '10px 0 10px' }}>{restant.toLocaleString('fr-FR')}<span style={{ fontSize: '0.55em', fontWeight: 600 }}>{'\u00A0'}€</span></p>
+              <Barre part={budgetTotal > 0 ? restant / budgetTotal * 100 : 0} couleur={colors.accent.amber} />
             </div>
           </div>
 
           {alerts.length > 0 && (
-            <div style={{ background: '#ef444410', border: '1px solid #ef444440', borderRadius: '12px', padding: '16px', marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '13px', color: '#ef4444' }}>Alertes</p>
+            <Message ton="alerte" style={{ marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 700 }}>Alertes</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {alerts.map((a, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: '13px', color: st.textDim }}>
+                  <p key={i} style={{ margin: 0, fontSize: '14px', color: st.textDim }}>
                     {a.type === 'expiration' && `Contrat ${a.sponsor.entreprise} expire dans moins de 30 jours`}
                     {a.type === 'retard' && `Paiement en retard — ${a.sponsor.entreprise}`}
-                    {a.type === 'anniversaire' && `🎂 Anniversaire du partenariat avec ${a.sponsor.entreprise} cette semaine`}
+                    {a.type === 'anniversaire' && `Anniversaire du partenariat avec ${a.sponsor.entreprise} cette semaine`}
                     {a.type === 'contrepartie_retard' && `${a.nb} contrepartie${a.nb > 1 ? 's' : ''} en retard — ${a.sponsor.entreprise}`}
                     {a.type === 'demande_renouvellement' && `↻ ${a.sponsor.entreprise} a demandé un renouvellement`}
                   </p>
                 ))}
               </div>
-            </div>
+            </Message>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '20px', alignItems: 'start' }}>
 
-            {/* Colonne gauche — niveaux + derniers sponsors */}
+            {/* Colonne gauche : niveaux + derniers sponsors */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               {niveaux.length > 0 && (
                 <div style={st.card}>
-                  <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 14px' }}>Répartition par niveau</p>
+                  <Etiquette as="p" style={{ marginBottom: '14px' }}>Répartition par niveau</Etiquette>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {niveaux.map(n => {
                       const sponsorsNiveau = sponsors.filter(s => s.niveau_id === n.id)
                       const montant = sponsorsNiveau.reduce((s, sp) => s + (Number(sp.montant_contrat) || 0), 0)
                       const encaisseNiveau = sponsorsNiveau.reduce((s, sp) => s + getMontantRecu(sp), 0)
                       return (
-                        <div key={n.id} style={{ padding: '14px 16px', borderRadius: '12px', background: st.bgRaised, borderLeft: `3px solid ${n.couleur}` }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <span style={{ color: n.couleur, fontWeight: 800, fontSize: '13px' }}>{n.nom}</span>
-                            <span style={{ color: st.text, fontWeight: 700 }}>{montant.toLocaleString('fr-FR')} €</span>
+                        <div key={n.id} style={{ padding: '12px 16px 12px 19px', borderRadius: '6px', background: st.bgRaised, boxShadow: `inset ${forme.lisere} 0 0 ${n.couleur}` }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ color: st.text, fontWeight: 700, fontSize: '15px' }}>{n.nom}</span>
+                            <span style={styleMontant(colors, 20)}>{montant.toLocaleString('fr-FR')} €</span>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <span style={{ color: st.textFaint, fontSize: '12px' }}>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''}</span>
-                            <span style={{ color: '#22c55e', fontSize: '12px' }}>{encaisseNiveau.toLocaleString('fr-FR')} € encaissé</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: st.textDim }}>
+                            <span>{sponsorsNiveau.length} sponsor{sponsorsNiveau.length > 1 ? 's' : ''}</span>
+                            <span>{encaisseNiveau.toLocaleString('fr-FR')} € encaissé</span>
                           </div>
-                          <div style={{ background: st.border, borderRadius: '999px', height: '4px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: montant > 0 ? `${Math.min(100, encaisseNiveau / montant * 100)}%` : '0%', background: n.couleur, borderRadius: '999px' }} />
-                          </div>
+                          <Barre part={montant > 0 ? encaisseNiveau / montant * 100 : 0} couleur={n.couleur} />
                         </div>
                       )
                     })}
@@ -1543,20 +1519,20 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
               <div style={st.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>Derniers sponsors</p>
-                  <button onClick={() => setVue('sponsors')} style={{ color: accentColor, background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>Voir tous →</button>
+                  <Etiquette as="p">Derniers sponsors</Etiquette>
+                  <button type="button" onClick={() => setVue('sponsors')} style={{ color: st.text, background: 'none', border: 'none', fontSize: '13px', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '3px' }}>Voir tous</button>
                 </div>
                 {sponsors.length === 0 ? (
-                  <p style={{ color: st.textGhost, fontSize: '13px', margin: 0 }}>Aucun sponsor pour l'instant.</p>
+                  <p style={{ color: st.textDim, fontSize: '14px', margin: 0 }}>Aucun sponsor pour l'instant.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {[...sponsors].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map(s => (
-                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', background: st.bgRaised }}>
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '6px', background: st.bgRaised }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{s.entreprise}</p>
-                          {s.niveaux_partenariat?.nom && <p style={{ margin: '2px 0 0', fontSize: '11px', color: st.textFaint }}>{s.niveaux_partenariat.nom}</p>}
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '15px' }}>{s.entreprise}</p>
+                          {s.niveaux_partenariat?.nom && <p style={{ margin: '2px 0 0', fontSize: '13px', color: st.textDim }}>{s.niveaux_partenariat.nom}</p>}
                         </div>
-                        <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>{getMontantRecu(s).toLocaleString('fr-FR')} €</span>
+                        <span style={{ ...styleMontant(colors, 18), flexShrink: 0 }}>{getMontantRecu(s).toLocaleString('fr-FR')} €</span>
                         <StatutBadge statut={getStatutPaiement(s)} />
                       </div>
                     ))}
@@ -1565,23 +1541,22 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
               </div>
             </div>
 
-            {/* Colonne droite — objectif + actions rapides */}
+            {/* Colonne droite : objectif + actions rapides */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
               <div style={st.card}>
-                <p style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 14px' }}>Objectif saison</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: st.textDim, fontSize: '13px' }}>{encaisse.toLocaleString('fr-FR')} € / {budgetTotal.toLocaleString('fr-FR')} €</span>
-                  <span style={{ color: '#22c55e', fontWeight: 700 }}>{budgetTotal > 0 ? Math.round(encaisse / budgetTotal * 100) : 0}%</span>
+                <Etiquette as="p" style={{ marginBottom: '14px' }}>Objectif saison</Etiquette>
+                <Jauge hauteur={10} pourcentages legende={false}
+                  segments={[{ libelle: 'Encaissé', valeur: Math.min(encaisse, budgetTotal), couleur: colors.accent.success }, { libelle: 'Restant', valeur: Math.max(0, budgetTotal - encaisse), couleur: colors.border.default }]} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '10px' }}>
+                  <span style={{ color: st.textDim, fontSize: '14px' }}>{encaisse.toLocaleString('fr-FR')} € / {budgetTotal.toLocaleString('fr-FR')} €</span>
+                  <span style={styleMontant(colors, 20)}>{budgetTotal > 0 ? Math.round(encaisse / budgetTotal * 100) : 0} %</span>
                 </div>
-                <div style={{ background: st.bgRaised, borderRadius: '999px', height: '10px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${budgetTotal > 0 ? Math.min(100, encaisse / budgetTotal * 100) : 0}%`, background: 'linear-gradient(90deg, #22c55e, #38bdf8)', borderRadius: '999px', transition: 'width 0.8s ease' }} />
-                </div>
-                <p style={{ color: st.textFaint, fontSize: '12px', marginTop: '10px', marginBottom: 0 }}>{restant.toLocaleString('fr-FR')} € restant à encaisser</p>
+                <p style={{ color: st.textDim, fontSize: '13px', marginTop: '10px', marginBottom: 0 }}>{restant.toLocaleString('fr-FR')} € restant à encaisser</p>
               </div>
 
               <div style={st.card}>
-                <p style={{ color: st.textFaint, fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 14px' }}>Actions rapides</p>
+                <Etiquette as="p" style={{ marginBottom: '14px' }}>Actions rapides</Etiquette>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {[
                     !readOnly && { label: 'Ajouter un sponsor', action: () => setModalSponsor('new') },
@@ -1589,10 +1564,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                     { label: 'Relancer les sponsors', action: relancerSponsors },
                     { label: 'Exporter le rapport', action: exporterRapport },
                   ].filter(Boolean).map(a => (
-                    <button key={a.label} onClick={a.action}
-                      style={{ padding: '10px 14px', borderRadius: '10px', border: `1px solid ${st.border}`, background: 'transparent', color: st.textDim, fontSize: '13px', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = st.bgRaised; e.currentTarget.style.color = st.text }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = st.textDim }}>
+                    <button key={a.label} type="button" onClick={a.action} className={CLASSE_BOUTON_SECONDAIRE}
+                      style={{ ...styleBoutonSecondaire(colors), justifyContent: 'flex-start', width: '100%' }}>
                       {a.label}
                     </button>
                   ))}
@@ -1606,7 +1579,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
       {vue === 'prospects' && (
         <div>
           {droitsProspects.etat === 'erreur' && (
-            <div style={{ ...st.card, marginBottom: '12px', padding: '10px 14px', fontSize: '13px', color: '#f59e0b' }}>
+            <div style={{ ...st.card, marginBottom: '12px', padding: '10px 14px', fontSize: '14px', color: st.text, boxShadow: 'inset 3px 0 0 #f59e0b' }}>
               Impossible de vérifier tes droits sur les prospects : consultation seule pour le moment.
             </div>
           )}
@@ -1628,7 +1601,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                 return (
                   <div key={statutInfo.val} style={{ flex: '0 0 260px', width: '260px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', marginBottom: '8px' }}>
-                      <span style={{ color: statutInfo.couleur, fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{statutInfo.label}</span>
+                      <span style={{ color: st.text, fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', boxShadow: `inset 0 -2px 0 ${statutInfo.couleur}`, paddingBottom: '2px' }}>{statutInfo.label}</span>
                       <span style={{ color: st.textFaint, fontSize: '11px' }}>{prospectsColonne.length}</span>
                     </div>
                     {totalColonne > 0 && (
@@ -1641,7 +1614,7 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                           <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '13px' }}>{p.nom_entreprise}</p>
                           {p.secteur && <p style={{ margin: '0 0 6px', color: st.textFaint, fontSize: '11px' }}>{p.secteur}</p>}
                           {p.montant_potentiel != null && (
-                            <p style={{ margin: '0 0 4px', color: accentColor, fontSize: '13px', fontWeight: 700 }}>{Number(p.montant_potentiel).toLocaleString('fr-FR')} €</p>
+                            <p style={{ margin: '0 0 4px', color: st.text, fontSize: '14px', fontWeight: 700 }}>{Number(p.montant_potentiel).toLocaleString('fr-FR')} €</p>
                           )}
                           <p style={{ margin: 0, color: st.textFaint, fontSize: '11px' }}>{p.probabilite}% de probabilité</p>
                           {p.prochaine_action && (
@@ -1740,16 +1713,16 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           <button onClick={() => !readOnly && toggleStatutContrepartie(sponsor, item)} disabled={readOnly}
-                            style={{ background: item.statut === 'fait' ? '#22c55e20' : enRetard ? '#ef444420' : st.bgRaised, border: 'none', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: item.statut === 'fait' ? '#22c55e' : enRetard ? '#ef4444' : st.textFaint, cursor: readOnly ? 'default' : 'pointer' }}>
+                            style={{ background: item.statut === 'fait' ? '#22c55e20' : enRetard ? '#ef444420' : st.bgRaised, border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: item.statut === 'fait' ? '#22c55e' : enRetard ? '#ef4444' : st.textFaint, cursor: readOnly ? 'default' : 'pointer' }}>
                             {item.statut === 'fait' ? 'Fait' : enRetard ? 'En retard' : 'À faire'}
                           </button>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           {item.preuve_url ? (
-                            <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#60a5fa' }}>📷 Preuve</a>
+                            <a href={item.preuve_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: st.text, display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'underline' }}><Icone icone={Camera} taille={14} /> Preuve</a>
                           ) : !readOnly && (
                             <label style={{ fontSize: '12px', color: st.textFaint, cursor: 'pointer', textDecoration: 'underline' }}>
-                              📷 Ajouter
+                              <Icone icone={Camera} taille={14} /> Ajouter
                               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && uploaderPreuveContrepartie(sponsor, item, e.target.files[0])} />
                             </label>
                           )}
@@ -1850,10 +1823,10 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
 
       {modalDossier && (
         <div onClick={() => setModalDossier(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '16px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: st.modalBg, border: `1px solid ${st.modalBorder}`, borderRadius: '6px', width: '100%', maxWidth: '520px', padding: '24px', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px' }}>📄 Dossier commercial — {modalDossier.nom_entreprise}</p>
-              <button onClick={() => setModalDossier(null)} style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icone icone={FileText} /> Dossier commercial — {modalDossier.nom_entreprise}</p>
+              <button onClick={() => setModalDossier(null)} aria-label="Fermer" style={{ background: 'none', border: 'none', color: st.textFaint, fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1882,8 +1855,8 @@ export default function GestionSponsors({ clubId, saison, readOnly = false, acce
               </div>
 
               {!valorisationDossier && (
-                <p style={{ color: '#f59e0b', fontSize: '12px', margin: 0 }}>
-                  ⚠️ Aucune donnée de valorisation renseignée — complète l'onglet "Valorisation" pour un dossier plus convaincant.
+                <p style={{ color: st.text, fontSize: '13px', margin: 0 }}>
+                  <Icone icone={TriangleAlert} taille={14} style={{ display: 'inline-block', verticalAlign: 'text-bottom', marginRight: '6px' }} />Aucune donnée de valorisation renseignée — complète l'onglet "Valorisation" pour un dossier plus convaincant.
                 </p>
               )}
             </div>

@@ -92,7 +92,7 @@ Instructions:
   // ── AnalyseVideo.jsx (dashboard éducateur) ──
   analyse_video: {
     profil: 'educateur',
-    outil: 'evaluations_video',
+    outil: 'suivi_joueurs',
     valider: (e) => ({
       joueur: joueurObserve(e.joueur, 'nomClub'),
       transcription: texte(e.transcription, { max: MAX_TRANSCRIPTION, requis: true, nom: 'transcription' }),

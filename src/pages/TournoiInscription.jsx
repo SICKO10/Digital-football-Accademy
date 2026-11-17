@@ -94,14 +94,14 @@ export default function TournoiInscription() {
   }
 
   const st = {
-    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif' },
+    page: { minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif' },
     header: { background: colors.background.surface, borderBottom: `1px solid ${colors.border.subtle}`, padding: '24px', textAlign: 'center' },
     body: { maxWidth: '700px', margin: '0 auto', padding: '32px 24px' },
     card: { background: colors.background.surface, border: `1px solid ${colors.border.faint}`, borderRadius: '12px', padding: '24px', marginBottom: '20px' },
-    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' },
+    input: { background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '14px', width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' },
     label: { color: colors.text.faint, fontSize: '12px', marginBottom: '6px', display: 'block' },
-    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '12px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Inter, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', fontFamily: 'Inter, sans-serif' },
+    btn: { background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '12px 28px', cursor: 'pointer', fontWeight: 700, fontSize: '15px', width: '100%', fontFamily: 'Barlow, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: '14px', fontFamily: 'Barlow, sans-serif' },
     btnRed: { background: colors.accent.red + '22', color: colors.accent.red, border: `1px solid ${colors.accent.red}33`, borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '12px' },
     grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' },
   }

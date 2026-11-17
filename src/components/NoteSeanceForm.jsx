@@ -36,7 +36,7 @@ function RpePicker({ value, onChange, colors }) {
           const actif = value === n
           return (
             <button key={n} type="button" onClick={() => onChange(n)} aria-label={`RPE ${n}`} aria-pressed={actif}
-              style={{ minWidth: 0, height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 800, fontFamily: 'Inter, sans-serif', fontVariantNumeric: 'tabular-nums',
+              style={{ minWidth: 0, height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 800, fontFamily: 'Barlow, sans-serif', fontVariantNumeric: 'tabular-nums',
                 border: `1px solid ${actif ? c : c + '55'}`, background: actif ? c : c + '14', color: actif ? colors.black : c }}>
               {n}
             </button>
@@ -101,14 +101,14 @@ export default function NoteSeanceForm({ demande, joueurId, onSubmit }) {
           onChange={e => { setMots(e.target.value); setErreur('') }}
           placeholder="ex : pressing, transition, appel de balle"
           maxLength={60}
-          style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+          style={{ width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: '8px', padding: '10px 14px', color: colors.text.primary, fontSize: '13px', fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }}
         />
       </div>
 
       {erreur && <div style={{ color: colors.accent.red, fontSize: '12px', marginBottom: '10px' }}>{erreur}</div>}
 
       <button onClick={soumettre} disabled={envoi}
-        style={{ width: '100%', background: pret ? colors.accent.green : colors.background.raised, border: 'none', color: pret ? colors.black : colors.text.disabled, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: pret ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif' }}>
+        style={{ width: '100%', background: pret ? colors.accent.green : colors.background.raised, border: 'none', color: pret ? colors.black : colors.text.disabled, padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: pret ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif' }}>
         {envoi ? 'Envoi…' : 'Envoyer ma note'}
       </button>
     </div>

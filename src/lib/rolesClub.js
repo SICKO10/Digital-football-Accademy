@@ -65,4 +65,5 @@ export const PERMISSION_SECTIONS = [
   { id: 'newsletter', label: 'Newsletter' },
   { id: 'taches', label: 'Tâches & Responsabilités' },
   { id: 'projet_club_cff4', label: 'Projet Club — CFF4' },
+  { id: 'bibliotheque', label: 'Bibliothèque' },
 ]

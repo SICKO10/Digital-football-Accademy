@@ -1,4 +1,6 @@
 import { useColors } from '../../lib/theme'
+import { styleCarte } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 
 // Carte d'un outil sur la page « Mes outils ». Avec `onSelection`, toute la
 // carte devient une case à cocher (boutique de l'éducateur). `badge` :
@@ -9,19 +11,19 @@ export default function CarteOutil({ nom, promesse, badge, pied, action, childre
   const selectionnable = !!onSelection
   const style = {
     display: 'flex', flexDirection: 'column', gap: 10, width: '100%', textAlign: 'left', boxSizing: 'border-box',
-    padding: coche ? '15px 15px' : '16px 16px', minHeight: 150, borderRadius: 14, fontFamily: 'Inter, sans-serif',
+    ...styleCarte(colors), padding: '16px 16px 16px 19px', minHeight: 150, fontFamily: police.texte,
     background: coche ? colors.accent.brand + '14' : colors.background.surface,
-    border: coche ? `2px solid ${colors.accent.brand}` : `1px solid ${colors.border.default}`,
+    border: `1px solid ${coche ? colors.accent.brand : colors.border.strong}`, boxShadow: coche ? `inset ${forme.lisere} 0 0 ${colors.accent.brand}` : 'none',
     color: colors.text.primary, cursor: selectionnable && !desactive ? 'pointer' : 'default',
     opacity: desactive && !coche ? 0.55 : 1, transition: 'border-color .15s, background .15s',
   }
   const contenu = (
     <>
       <span style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.3 }}>{nom}</span>
+        <span style={{ fontFamily: police.titre, fontSize: 18, fontWeight: 700, lineHeight: 1.2, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{nom}</span>
         {selectionnable && (
           <span aria-hidden="true" style={{
-            flexShrink: 0, width: 22, height: 22, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, width: 22, height: 22, borderRadius: forme.rayonPastille, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             background: coche ? colors.accent.brand : 'transparent', border: coche ? 'none' : `1.5px solid ${colors.border.strong}`,
           }}>
             {coche && (
@@ -34,12 +36,12 @@ export default function CarteOutil({ nom, promesse, badge, pied, action, childre
         {action}
       </span>
       {badge && (
-        <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: badge.couleur, background: badge.couleur + '1f', borderRadius: 999, padding: '3px 10px' }}>
+        <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', color: colors.text.primary, background: badge.couleur + '1f', border: `1px solid ${badge.couleur}66`, borderRadius: forme.rayonPastille, padding: '3px 8px' }}>
           {badge.texte}
         </span>
       )}
       <span style={{ flex: 1, fontSize: 13, lineHeight: 1.5, color: colors.text.secondary }}>{promesse}</span>
-      {pied && <span style={{ fontSize: 13, fontWeight: 700, color: colors.text.secondary }}>{pied}</span>}
+      {pied && <span style={{ fontSize: 13, fontWeight: 600, color: colors.text.secondary }}>{pied}</span>}
       {children}
     </>
   )

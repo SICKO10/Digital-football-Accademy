@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { OUTILS } from '../../lib/catalogueOutils'
 import { MODELES, planModele, planVide } from '../../lib/modelesDepart'
+import { styleEtiquette } from '../../lib/identite'
+import { forme, police } from '../../tokens'
 import { ecrireLigne, ecrireMode, lireReglages, modeDepuis, prevenirEducateurs, DELAI_PREVENIR, OUTILS_EDUCATEUR } from './ecritures'
 import BandeauAnnuler from './BandeauAnnuler'
 import ApercuMenuEducateur from './ApercuMenuEducateur'
@@ -128,10 +130,10 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
   // Une liste d'outils sous forme de pastilles, avec son titre.
   const Groupe = ({ titre, ids, nom, couleur }) => (
     <div style={{ margin: '0 0 14px' }}>
-      <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, letterSpacing: '0.4px', textTransform: 'uppercase', color: colors.text.faint }}>{titre}</p>
+      <p style={{ ...styleEtiquette(colors), margin: '0 0 6px' }}>{titre}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {ids.map(id => (
-          <span key={id} style={{ fontSize: 12, fontWeight: 700, padding: '4px 11px', borderRadius: 999, color: colors.text.primary, background: couleur + '24', border: `1px solid ${couleur}66` }}>{nom(id)}</span>
+          <span key={id} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: forme.rayonPastille, color: colors.text.primary, background: couleur + '24', border: `1px solid ${couleur}66` }}>{nom(id)}</span>
         ))}
       </div>
     </div>
@@ -141,13 +143,13 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
     const { modele, plan, mode } = ouvert
     const nbRetires = plan.club.retires.length + plan.educateurs.retires.length
     return (
-      <div style={{ margin: '16px 0 0', padding: 22, borderRadius: 18, border: `2px solid ${st.marque}`, background: colors.background.surface, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 17, fontWeight: 800, color: colors.text.primary }}>Modèle « {modele.nom} »</h3>
+      <div style={{ margin: '16px 0 0', ...st.carte, padding: '22px 22px 22px 25px', borderColor: st.marque, boxShadow: `inset ${forme.lisere} 0 0 ${st.marque}` }}>
+        <h3 style={{ ...st.titreCarte, margin: '0 0 12px' }}>Modèle « {modele.nom} »</h3>
         {planVide(plan) ? (
           <p style={ligne}>Rien à changer : vos outils et le menu de vos éducateurs sont déjà réglés ainsi.</p>
         ) : (
           <>
-            <p style={{ ...ligne, fontWeight: 800, fontSize: 14, color: colors.text.primary, marginBottom: 14 }}>
+            <p style={{ ...ligne, fontWeight: 700, fontSize: 14, color: colors.text.primary, marginBottom: 14 }}>
               {nbRetires > 0 ? `${nbRetires} outil${nbRetires > 1 ? 's' : ''} retiré${nbRetires > 1 ? 's' : ''} au total.` : 'Aucun outil retiré.'}
             </p>
             {plan.club.retires.length > 0 && <Groupe titre={`${nouveauModele ? 'Désactivés' : 'Retirés'} du menu du club`} ids={plan.club.retires} nom={nomClub} couleur={colors.accent.amber} />}
@@ -160,7 +162,7 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
             {mode === 'individualise' && (
               <p style={ligne}>Le menu des éducateurs repasse en « Le même pour tous ». Vos réglages individuels sont gardés de côté.</p>
             )}
-            <p style={{ ...ligne, color: colors.text.faint }}>Rien n'est supprimé et aucun outil payant n'est acheté ni activé. Un outil qu'un éducateur paie lui-même reste affiché pour lui. Vos éducateurs sont prévenus dans leur cloche.</p>
+            <p style={{ ...ligne, color: colors.text.secondary }}>Rien n'est supprimé et aucun outil payant n'est acheté ni activé. Un outil qu'un éducateur paie lui-même reste affiché pour lui. Vos éducateurs sont prévenus dans leur cloche.</p>
           </>
         )}
         <ApercuMenuEducateur mode="commun" lignes={ouvert.apres} educateurs={[]} couleur={couleur} />
@@ -173,12 +175,12 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
   })()
 
   return (
-    <section aria-labelledby="modeles-depart" style={{ margin: '0 0 36px', padding: 22, borderRadius: 20, background: colors.background.sunken, border: `1px solid ${colors.border.subtle}`, fontFamily: 'Inter, sans-serif' }}>
+    <section aria-labelledby="modeles-depart" style={{ ...st.carte, margin: '0 0 36px', padding: 22, background: colors.background.sunken, fontFamily: police.texte }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <span aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: st.marque + '24', color: st.marque }}><Icone d={ICONES.eclair} size={18} /></span>
-        <h3 id="modeles-depart" style={{ margin: 0, fontSize: 17, fontWeight: 800, color: colors.text.primary }}>Modèles de départ</h3>
+        <span aria-hidden="true" style={{ display: 'inline-flex', color: colors.text.primary }}><Icone d={ICONES.eclair} size={20} /></span>
+        <h3 id="modeles-depart" style={st.titreCarte}>Modèles de départ</h3>
       </div>
-      <p style={{ margin: '0 0 16px', maxWidth: 640, fontSize: 13, lineHeight: 1.55, color: colors.text.faint }}>
+      <p style={{ margin: '0 0 16px', maxWidth: 640, fontSize: 13, lineHeight: 1.55, color: colors.text.secondary }}>
         Un clic pour pré-régler vos outils et le menu de vos éducateurs, puis vous ajustez. Vous voyez ce qui change avant de valider.
       </p>
       <div role="group" aria-label="Modèles de départ" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
@@ -186,9 +188,9 @@ export default function ModelesDepart({ clubId, educateurs, nouveauModele, clubA
           const actif = ouvert?.modele.id === m.id
           return (
             <button key={m.id} type="button" disabled={occupe} aria-expanded={actif} onClick={() => choisir(m)} className="mc-btn mc-carte"
-              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: occupe ? 'default' : 'pointer', fontFamily: 'Inter, sans-serif', border: `2px solid ${actif ? st.marque : colors.border.default}`, background: actif ? st.marque + '16' : colors.background.surface, color: colors.text.primary }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{m.nom}</span>
-              <span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: 1.45, color: colors.text.faint }}>{m.pour}</span>
+              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', padding: '14px 16px 14px 19px', borderRadius: forme.rayonCarte, cursor: occupe ? 'default' : 'pointer', fontFamily: police.texte, border: `1px solid ${actif ? st.marque : colors.border.strong}`, boxShadow: actif ? `inset ${forme.lisere} 0 0 ${st.marque}` : 'none', background: colors.background.surface, color: colors.text.primary }}>
+              <span style={{ display: 'block', fontFamily: police.titre, fontSize: 17, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{m.nom}</span>
+              <span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: 1.45, color: colors.text.secondary }}>{m.pour}</span>
             </button>
           )
         })}

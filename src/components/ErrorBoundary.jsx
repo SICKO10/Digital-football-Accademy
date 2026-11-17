@@ -71,7 +71,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.error) return this.props.children
     if (this.state.autoReload) return null
     return (
-      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Inter, sans-serif', padding: '24px', boxSizing: 'border-box' }}>
+      <div style={{ minHeight: '100vh', background: colors.background.base, color: colors.text.primary, fontFamily: 'Barlow, sans-serif', padding: '24px', boxSizing: 'border-box' }}>
         <p style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px' }}>⚠️ Une erreur a bloqué l'affichage</p>
         <p style={{ fontSize: '13px', color: colors.text.dim, margin: '0 0 16px' }}>Copie le texte ci-dessous pour le signaler.</p>
         <button onClick={rechargerVersionFraiche} style={{ background: colors.accent.green, color: colors.black, border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', marginBottom: '20px' }}>
