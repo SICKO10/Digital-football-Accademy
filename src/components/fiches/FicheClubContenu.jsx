@@ -198,10 +198,17 @@ export default function FicheClubContenu({ fiche, logo, couleur, joueursParPoste
   const hex = lireHex(couleur) ? couleur : ROUGE_MODELE
   const style = { '--fc': hex, '--fc-on': texteSurCouleur(hex) }
   const logoAffiche = logo || LOGO_DEFAUT
+  // Verso imprimé seulement si un procédé 4 à 6 (ou un temps du verso) est rempli.
+  // Fiche entièrement vide (fiche vierge à remplir au stylo) : recto et verso gardés.
+  const rempli = (p) => !!(p && (p.schema_png || String(p.consignes || '').trim() || String(p.variables || '').trim()))
+  const procedes = fiche.procedes || []
+  const versoRempli = procedes.slice(3, 6).some(rempli) || !!String(fiche.tps_effectif_verso || '').trim() || !!String(fiche.tps_total_verso || '').trim()
+  const rectoRempli = procedes.slice(0, 3).some(rempli) || !!String(fiche.tps_effectif_recto || '').trim() || !!String(fiche.tps_total_recto || '').trim()
+  const afficherVerso = versoRempli || !rectoRempli
   return (
     <div className="fc-doc" style={style}>
       <Face numeros={[1, 2, 3]} face={0} fiche={fiche} logo={logoAffiche} joueursParPoste={joueursParPoste} nonRenseignes={nonRenseignes} />
-      <Face numeros={[4, 5, 6]} face={1} fiche={fiche} logo={logoAffiche} joueursParPoste={joueursParPoste} nonRenseignes={nonRenseignes} />
+      {afficherVerso && <Face numeros={[4, 5, 6]} face={1} fiche={fiche} logo={logoAffiche} joueursParPoste={joueursParPoste} nonRenseignes={nonRenseignes} />}
     </div>
   )
 }

@@ -291,7 +291,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
 
 
 ### Bloc 11 : vérification finale, mise en ligne
-- Statut : en cours
+- Statut : fait (en production le 2026-11-17, parcours validé par Kevin sur la version de test)
 - Objectif : tout vérifier en conditions réelles et publier.
 - Résultat testable : parcours complet validé sur la version de test Vercel, puis en production après mon « ok ».
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -311,6 +311,7 @@ Attention commits : le chantier « dashboard joueur v3 » a des fichiers non com
   - Version de test Vercel : la commande `vercel` n'est pas installée ; le dossier contient aussi le travail non commité du dashboard joueur v3 (il partirait dans le test). Décision attendue de Kevin.
   - Pousser les 3 commits locaux (blocs 9 et 10) seulement après ton « ok » pour la mise en ligne.
 - Journal : 2026-11-17, modèle réel Sonnet 5.5 (conforme). `vite build` OK. Blocs 7 à 8 déjà poussés, blocs 9 et 10 commités en local (3 commits, non poussés). `backups/` du chantier rangés dans `backups/fiche-seance/` (les sauvegardes du dashboard joueur v3 laissées en place). BRIEF mis à jour. Rien déployé, rien poussé.
+- Journal (suite) : 2026-11-17 à 18, bug « equipeActive avant initialisation » (introduit au bloc 6, en production) corrigé et publié en urgence (9cc97a5). Blocs 9, 10 et 12 publiés après test Vercel validé par Kevin. Variante demandée : verso imprimé seulement si un procédé 4 à 6 est rempli (FicheClubContenu.jsx), fiche entièrement vide = recto et verso gardés. Variante commitée, non poussée.
 
 ### Bloc 12 (optionnel) : [IDÉE] fiche vierge du jour en un clic
 - Statut : fait (code et build OK, test écran par Kevin)
