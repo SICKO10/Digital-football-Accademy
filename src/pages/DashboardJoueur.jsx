@@ -51,7 +51,6 @@ import { choisirEquipePrincipale } from '../lib/statsFusion'
 import { getPosteFamille } from '../lib/postes'
 import { statutPresenceEffectif } from '../lib/presence'
 import { fetchToutesLignes, fetchToutesLignesIn } from '../lib/supabasePagination'
-import PlanningSemaineWidget from '../components/PlanningSemaineWidget'
 import OnboardingGuide from '../components/OnboardingGuide'
 import CompositionTerrain from '../components/CompositionTerrain'
 import FloatingHelper from '../components/FloatingHelper'
@@ -2567,13 +2566,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               {/* Ma saison — la progression racontée, à la place des chiffres secs. */}
               <JaugeSaison presence={tauxPresenceAccueil} notes={mesNotes} isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }} />
 
-              {edu && (
-                <Carte isMobile={isMobile} style={{ marginBottom: spacing['2xl'] }}>
-                  <TitreSection couleur={colors.accent.green}>{t('planning_semaine_titre', lang)}</TitreSection>
-                  <PlanningSemaineWidget entrainements={planningEntrainements} matchs={planningMatchs} rdvsMedicaux={rdvsMedicaux} onClickRdv={() => setOnglet('sante')} />
-                </Carte>
-              )}
-
               {(() => {
                 const STATUT_OPTIONS = [
                   { val: 'present',  label: t('ent_present', lang),  color: colors.accent.green, bg: colors.accent.green + alpha.subtle, border: colors.accent.green + alpha.medium },
@@ -2625,6 +2617,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                           ))}
                         </div>
                         {widgetDispoMatch && <p style={{ fontSize: '11px', color: colors.text.disabled, marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}><Check size={12} />{t('aff_reponse_envoyee', lang)}</p>}
+                      </div>
+                    )}
+
+                    {/* Planning de la semaine avec le sondage de présence, juste sous le prochain match */}
+                    {mesAffiliations.some(af => af.statut === 'accepte') && (
+                      <div style={{ marginBottom: spacing['2xl'] }}>
+                        <SondageSemaine mode="joueur" userId={userId} affiliations={mesAffiliations.filter(af => af.statut === 'accepte')} accentColor={colors.accent.green} />
                       </div>
                     )}
 
@@ -2722,6 +2721,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
               clubId={clubIdInventaire}
               categorie={profil?.categorie}
+              joueurId={userId}
+              posteProfil={profil?.poste || ''}
               isMobile={isMobile}
               lang={lang}
               onNaviguer={setOnglet}
@@ -3633,8 +3634,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
 
         <nav style={{ flex: 1, padding: '8px 10px 12px', display: 'flex', flexDirection: 'column' }}>
           <style>{menuLateralCss}</style>
-          {/* Sur téléphone la navigation est dans la barre basse : le tiroir ne garde que le compte. */}
-          {!isMobile && groupesMenu.map(g => (
+          {groupesMenu.map(g => (
             <button key={g.id} className="df-nav-btn" id={g.domId}
               data-actif={groupeActif?.id === g.id}
               onClick={() => changerOnglet(g.onglets[0])}>
@@ -3643,7 +3643,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               {g.badge > 0 && <span className="df-nav-badge">{g.badge}</span>}
             </button>
           ))}
-          {!isMobile && !readOnly && (
+          {!readOnly && (
             <button className="df-menu-action" id="saisir-match-section" onClick={ouvrirSaisieMatch}>
               <Plus size={18} strokeWidth={2} />
               <span>{t('jnav_saisir_match', lang)}</span>
@@ -3858,6 +3858,13 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
                       style={marge}
                     />
                   )}
+                  {/* PLANNING DE LA SEMAINE avec le sondage de présence, juste sous le prochain match
+                      (une seule section : mêmes événements, boutons de présence en plus). */}
+                  {(() => {
+                    const accepteesAff = mesAffiliations.filter(af => af.statut === 'accepte')
+                    if (accepteesAff.length === 0) return null
+                    return <div style={marge}><SondageSemaine mode="joueur" userId={userId} affiliations={accepteesAff} accentColor={colors.accent.green} /></div>
+                  })()}
                   <ALaUne
                     choix={aLaUneSansMatch}
                     isMobile={isMobile}
@@ -3920,14 +3927,6 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
               </div>
             )}
 
-            {/* PLANNING DE LA SEMAINE — fusionné avec le sondage de présence (une seule
-                section : mêmes événements, boutons de présence en plus) au lieu de deux
-                blocs redondants côte à côte (si affilié à un éducateur) */}
-            {(() => {
-              const accepteesAff = mesAffiliations.filter(af => af.statut === 'accepte')
-              if (accepteesAff.length === 0) return null
-              return <SondageSemaine mode="joueur" userId={userId} affiliations={accepteesAff} accentColor={colors.accent.green} />
-            })()}
             {/* Catégorie en effectif commun : réponse à la date, séances de toutes les équipes. Rien en mode par équipe. */}
             <SondageCategorie userId={userId} readOnly={readOnly} isMobile={isMobile} lang={lang} />
             {mesNotes.length > 0 && (
@@ -5069,6 +5068,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
             educateurIds={[...new Set(mesAffiliations.filter(a => a.statut === 'accepte').map(a => a.educateur_id))]}
             clubId={clubIdInventaire}
             categorie={profil?.categorie}
+            joueurId={userId}
+            posteProfil={profil?.poste || ''}
             isMobile={isMobile}
             lang={lang}
             onNaviguer={setOnglet}

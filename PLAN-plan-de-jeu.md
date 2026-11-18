@@ -106,7 +106,7 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
 - Journal : 2026-11-18, Opus 5.5. Relevé prod : règles identiques au bloc 0 ; droit d'éditer = `club_educateurs.peut_editer_projet_sportif`, sinon `profiles.educateurs_editent_projet_sportif` du club (même calcul que l'écran). Décisions : (1) le droit d'éditer est maintenant aussi contrôlé par la base pour les écritures de l'éducateur (avant, seulement à l'écran) ; (2) l'éducateur lit tout le plan du club, ajouts des autres équipes compris ; (3) une ligne d'équipe n'est visible par le joueur que s'il est aussi affilié au club ET dans `equipe_joueurs` de cette équipe (45 joueurs sur 173 y sont reliés à un compte) ; (4) suppression d'une équipe = ses ajouts supprimés (jamais remontés au niveau club) ; (5) garde-fou : équipe du même club, zone reliée du même club et du même niveau ; (6) `lignes` non vide de valeur, `{}` par défaut. `verrou_outils` intact. Testé sur une copie locale Postgres 17 (mêmes règles que la prod) : 18/18 vérifications OK, 18 essais d'écriture conformes, lectures par rôle conformes (club, 2 éducateurs, 2 joueurs, parent, inconnu), cascades OK, 2e exécution arrêtée sans rien changer, annulation bloquée par garde-fou puis, garde-fou retiré, retour exact aux 9 règles d'origine. Exécuté en prod par Kevin : 18/18 OK. Contrôle Claude par SELECT en prod : un éducateur réel ayant le droit peut écrire pour sa propre équipe (vrai), pas pour le plan du club ni pour l'équipe d'un autre coach (faux) ; 1 principe et 0 zone comme avant, aucune ligne modifiée.
 
 ### Bloc 3 : lien principe ↔ zone avec pastilles numérotées [IDÉE]
-- Statut : à faire
+- Statut : fait (en attente du test à l'écran par Kevin)
 - Objectif : rattacher un principe à une zone ; pastille numérotée sur la zone ; toucher l'un met l'autre en évidence.
 - Résultat testable : dans le Plan de jeu club, un principe rattaché montre son numéro sur la zone, et le clic sur l'un surligne l'autre.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -120,11 +120,11 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Mise en évidence croisée au toucher, accessible au clavier et sur téléphone.
   - Composant d'affichage en lecture seule séparé, réutilisable pour le joueur (bloc 6) et la fiche A4 (bloc 7).
 - Ce que je teste pour valider : relier 2 principes à 2 zones, recharger, toucher chaque pastille et chaque principe.
-- Reste à finir :
-- Journal :
+- Reste à finir : test à l'écran par Kevin avec le club test (ordinateur et téléphone). `PlanPhaseLecture.jsx` n'est branché nulle part pour l'instant : il sert au bloc 6 (joueur) et au bloc 7 (fiche A4). Les ajouts d'équipe (`club_categorie_id`) ne sont pas encore pris en compte à l'écran : bloc 5. Sur téléphone, la galerie d'images supplémentaires s'affiche entre le terrain et les principes (héritage du bloc 1) : à réordonner si Kevin le souhaite. 6 tests de `npm test` échouent (paliers éducateur, outils offerts, offre tous les outils) : fichiers non touchés par ce bloc, à regarder à part.
+- Journal : 2026-11-18, Sonnet 5.5. Nouveaux fichiers : `src/lib/planDeJeu.js` (numéros, sélection croisée, 6 tests OK dans `tests/planDeJeu.test.js`), `src/components/PastillePlan.jsx` (pastille ronde numérotée, couleur de la zone), `src/components/PlanPhaseLecture.jsx` (affichage lecture seule d'une phase, sans requête, réutilisable). `PastilleTerrain.jsx` écarté : c'est la pastille « T1 » des terrains de tournoi, pas adaptée. `TerrainZonesSvg.jsx` : prop `numeros` (pastilles dans le coin de la zone, 4 max puis « +n »), zones utilisables au clavier (Tab, Entrée, Espace). `PlanDeJeu.jsx` charge maintenant principes et zones une seule fois et les partage aux deux sections (prop `lien`) ; sans `lien`, les sections fonctionnent comme avant. Dans la fiche d'un principe : liste « Zone » (Aucune ou une zone de la phase) à l'ajout et sur chaque ligne ; en lecture seule : « Zone : nom ». Supprimer une zone détache ses principes (la base le fait déjà) et la liste se met à jour. Les erreurs d'enregistrement s'affichent au lieu d'être avalées. Page CPA : pas de choix de zone (les CPA sont des schémas, pas des zones). Vérifié : `npm run build` OK ; banc d'essai local dans un vrai navigateur (Chrome sans interface, base simulée en mémoire, rien en prod, banc supprimé ensuite) : 26 contrôles OK en édition, lecture seule et composant de lecture, dont relier, ajouter avec et sans zone, supprimer une zone, toucher principe, zone sur le terrain et zone dans la liste, changement de phase, clavier ; captures ordinateur et largeur 390 px relues. Aucun changement de base.
 
 ### Bloc 4 : « Mon poste dans ce plan », côté club [IDÉE]
-- Statut : à faire
+- Statut : fait (en attente du test à l'écran par Kevin)
 - Objectif : le club marque un principe pour une ou plusieurs lignes (gardien, défense, milieu, attaque).
 - Résultat testable : dans la liste des principes, des étiquettes de ligne s'affichent et s'enregistrent.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -137,11 +137,12 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Étiquettes discrètes dans la liste.
   - Créer la fonction de correspondance poste → ligne (`src/constants/`) à partir du relevé du bloc 0, prête pour le bloc 6.
 - Ce que je teste pour valider : marquer un principe « défense », un autre « milieu, attaque », recharger.
-- Reste à finir :
-- Journal :
+- Reste à finir : test à l'écran par Kevin (club test). Non vérifié dans un navigateur : seulement build et tests unitaires. La fonction `posteVersLignes` n'est branchée nulle part avant le bloc 6 ; elle lit un texte libre, le bloc 6 devra lui donner `equipe_joueurs.poste` en priorité puis `profiles.poste`. Les principes de la page CPA (coups de pied arrêtés) ont aussi le choix des lignes.
+- Journal : 2026-11-18, Sonnet 5.5. Nouveau `src/constants/lignesJeu.js` : 4 lignes, `posteVersLignes` (sans accents ni casse, « Piston » = défense + milieu, « Milieu défensif » = milieu seul, vide ou « COACH » = aucune ligne), `principeConcerne` (liste vide = tout le monde). `SectionPrincipes` (ProjetSportif.jsx) : boutons « Pour qui » (Gardien, Défense, Milieu, Attaque, rien = Tout le monde) à l'ajout et sur chaque principe en édition, enregistrés dans `principes_jeu.lignes` ; étiquettes discrètes après le texte, aussi en lecture seule. Envoi de `lignes` seulement dans le Plan de jeu. 2 tests ajoutés (8/8 OK), `npm run build` OK. Aucun changement de base.
+
 
 ### Bloc 5 : ajouts de l'éducateur au niveau équipe
-- Statut : à faire
+- Statut : fait (en attente du test à l'écran par Kevin)
 - Objectif : l'éducateur autorisé ajoute ses propres principes et zones pour son équipe, sans pouvoir toucher le plan du club.
 - Résultat testable : connecté en éducateur test, je vois le plan du club verrouillé et je peux ajouter une consigne et une zone pour mon équipe.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -155,11 +156,12 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Éducateur sans droit : tout en lecture, comme aujourd'hui ; aucun verrou ajouté pour les non affiliés.
   - Côté club : les ajouts des éducateurs visibles en lecture, avec le nom de l'équipe.
 - Ce que je teste pour valider : en éducateur, ajouter une consigne ; vérifier que modifier un principe du club n'est plus proposé ; en club, voir la consigne de l'éducateur.
-- Reste à finir :
-- Journal :
+- Reste à finir : test à l'écran par Kevin avec un vrai éducateur test (il manque encore l'éducateur +edu@ rattaché au club test avec une équipe et le droit d'éditer). Les zones des CPA, fonds, galerie, photos et schémas CPA restent au niveau club : l'éducateur les voit en lecture seule (pas d'ajout d'équipe sur ces éléments). Le texte « Consigne de ton coach » est réservé à la vue joueur (bloc 6) ; côté éducateur l'étiquette est « Ajout de mon équipe ». Les droits d'éditer la Planification annuelle et les Règles du jeu ne changent pas. 6 tests de `npm test` échouent toujours (paliers éducateur, outils offerts) : fichiers non touchés.
+- Journal : 2026-11-18, Sonnet 5.5. `PlanDeJeu.jsx` : nouvelles props `equipes` (ses équipes de ce pôle, l'équipe active en premier) et `peutAjouter`. Vue éducateur : plan du club toujours en lecture seule, ajouts de l'équipe choisie seulement (les ajouts des autres équipes sont masqués), choix de l'équipe si deux, texte d'explication, étiquette « Ajout de mon équipe ». Vue club : ajouts des équipes affichés en lecture seule avec « Équipe U13 », sans bouton Suppr. ni Modifier ; noms lus dans `club_categories`. `ProjetSportif.jsx` : chaque ajout envoie `club_categorie_id` ; un principe d'équipe ne se relie qu'à une zone de la même équipe (règle de la base) ; lecture des zones CPA limitée au niveau club. `ProjetSportifEducateur.jsx` et `DashboardEducateur.jsx` : passent les équipes et le droit d'éditer (aucun verrou pour les non affiliés, qui n'ont pas d'accès à cet écran). Vérifié : `npm run build` OK ; banc d'essai local dans Chrome sans interface avec base simulée en mémoire (rien en prod, banc supprimé) : vue club, vue éducateur avec droit (ajout d'une zone et d'un principe envoyés avec l'équipe, plan du club sans bouton de modification, autre équipe masquée) et vue éducateur sans droit (aucun bouton d'ajout) conformes. Aucun changement de base.
+  2026-11-18, Sonnet 5.5 (relance de `/bloc 5`) : le travail était déjà fait, seul le statut n'avait pas été mis à jour. Revérifié : code présent (`PlanDeJeu.jsx`, `ProjetSportif.jsx`, `ProjetSportifEducateur.jsx`), `npm run build` OK, `node --test tests/planDeJeu.test.js` 8/8. Rien d'autre modifié.
 
 ### Bloc 6 : vue joueur dans Préparation tactique
-- Statut : à faire
+- Statut : fait (en attente du test à l'écran par Kevin)
 - Objectif : chaque onglet phase montre au joueur le terrain et les principes de son pôle, triés selon sa ligne, avec les consignes de son coach.
 - Résultat testable : connecté en joueur test, chaque phase affiche terrain, pastilles et principes, les siens en premier.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -173,11 +175,11 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Consignes de l'équipe signalées « Consigne de ton coach ».
   - Lisible sur téléphone : terrain en haut, principes dessous ; état vide clair si le club n'a rien écrit.
 - Ce que je teste pour valider : sur téléphone, en joueur test, parcourir 3 phases et la page CPA ; changer son poste et voir l'ordre changer.
-- Reste à finir :
-- Journal :
+- Reste à finir : test à l'écran par Kevin avec un joueur test affilié (il manque encore le joueur +joueur@ avec un poste ; aucun accès connecté pour Claude). Le poste lu vient d'abord de `equipe_joueurs.poste` (ligne du joueur chez l'éducateur affilié), puis de `profiles.poste`. Si le texte du poste n'est reconnu par aucune ligne (ex. « Joueur »), le plan s'affiche dans l'ordre normal, sans titres de groupe. Les galeries d'images supplémentaires restent sous le plan (inchangées). Les anciennes pages de zones du joueur (légende `PanneauZones`) ne servent plus que pour les CPA offensifs et défensifs. Le vrai parcours parent (lecture du plan de son enfant) n'est pas testé à l'écran. 6 tests de `npm test` échouent toujours (paliers éducateur, outils offerts) : fichiers non touchés.
+- Journal : 2026-11-18, Sonnet 5.5. `PreparationTactiqueJoueur.jsx` lit maintenant `principes_jeu` (club + équipe, filtré par la base), `principes_photos` et le poste d'équipe du joueur (`equipe_joueurs`, lisible par le joueur grâce à la règle `joueur_read_team_effectif`). Chaque phase utilise `PlanPhaseLecture` : terrain avec pastilles, principes rangés sous « Ton poste : Défense », « Pour toute l'équipe », « Pour les autres postes » (sans poste reconnu : ordre normal, aucun titre). La numérotation reste celle de la phase, donc les pastilles du terrain sont identiques à celles du club. Étiquette « Consigne de ton coach » sur les ajouts d'équipe, « Pour : Défense, Milieu » sur les principes ciblés. Légende « Les zones du terrain » avec l'explication de chaque zone (pour ne rien perdre de l'ancien écran). Page CPA : principes des coups de pied arrêtés en premier (liste seule), puis schémas et zones CPA comme avant. État vide si ni zone ni principe. `PlanPhaseLecture.jsx` : nouvelles props `groupes`/`groupeDe`, `sansTerrain`, `legendeZones`. `DashboardJoueur.jsx` : transmet `joueurId` et `posteProfil` aux deux appels. Vérifié : `npm run build` OK ; `npm test` 529 réussis, 6 échecs existants hors périmètre ; banc d'essai local dans Chrome sans interface avec base simulée (rien en prod, banc mis à la corbeille) : défenseur central (ordre 2, 5 puis 1, 4 puis 3), milieu offensif (5 puis 1, 4 puis 2, 3), sans poste (ordre normal, aucun titre), toucher un principe allume sa zone, page CPA, phase vide ; captures ordinateur et mobile relues (le mobile est rendu à ~500 px par Chrome sans interface, donc contrôle à refaire sur un vrai téléphone). Aucun changement de base.
 
 ### Bloc 7 : fiche A4 imprimable par phase [IDÉE]
-- Statut : à faire
+- Statut : fait (en attente du test à l'écran par Kevin)
 - Objectif : imprimer une phase : terrain, zones numérotées, principes, logo et couleurs du club.
 - Résultat testable : bouton « Imprimer cette phase » chez le club, l'éducateur et le joueur, aperçu A4 propre sur une page.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -190,11 +192,11 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Contenu : en-tête club (logo, couleurs), nom de la phase, terrain avec pastilles, principes numérotés, consignes du coach si présentes.
   - Bouton présent pour les trois profils ; le joueur imprime sa version (avec ses consignes d'équipe).
 - Ce que je teste pour valider : aperçu avant impression depuis chaque profil, une phase avec 5 principes tient sur une page.
-- Reste à finir :
-- Journal :
+- Reste à finir : test à l'écran par Kevin (vraie impression ou « Enregistrer en PDF » depuis club, éducateur et joueur). Le bouton n'existe pas sur la page des coups de pied arrêtés (schémas, pas de phase). Le joueur imprime les principes dans l'ordre de la phase (mêmes numéros que le terrain), avec « Ton poste » et « Consigne du coach » en étiquettes, pas regroupés. Logo et couleurs lus dans le profil du club ; si un éducateur ou un joueur n'a pas le droit de le lire, la fiche sort avec les couleurs par défaut et sans logo (à vérifier au test). Phase avec beaucoup de principes (plus de 10 environ) : passe sur une 2e page, sans coupure au milieu d'un principe.
+- Journal : 2026-11-18, Sonnet 5.5. Nouveau `src/components/FichePlanPhase.jsx` (bouton « Imprimer cette phase » + fiche montée dans le body le temps de l'impression, nettoyée après). Au clic seulement : lecture du logo, des couleurs, du fond de terrain et de l'illustration. Papier blanc, couleurs fixes (pas de thème sombre). Branché dans `PlanDeJeu.jsx` (club et éducateur, avec ce que chacun voit : l'éducateur imprime plan du club + ajouts de son équipe) et dans `PreparationTactiqueJoueur.jsx` (joueur, avec ses consignes d'équipe). Styles `@media print` et page A4 portrait nommée dans `index.css`, sans toucher aux autres fiches. Vérifié : `npm run build` OK ; fiche rendue en PDF par Chrome sans interface avec 5 principes, 2 zones : 1 seule page A4, relue en capture (en-tête club, terrain, pastilles, principes numérotés, étiquettes). Pas encore testé en connecté. Aucun changement de base.
 
 ### Bloc 8 : tutoriels, FAQ, permissions, historique des saisons
-- Statut : à faire
+- Statut : fait (en attente du contrôle à l'écran par Kevin)
 - Objectif : mettre tous les textes et lecteurs annexes au niveau du nouvel onglet.
 - Résultat testable : plus aucune mention des anciens onglets « Principes » et « Zones » dans l'interface.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible
@@ -208,11 +210,11 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - `HistoriqueClub.jsx` : vérifier l'affichage avec les nouvelles colonnes, corriger si besoin.
   - Textes sans tiret long ni moyen, sans formules creuses.
 - Ce que je teste pour valider : ouvrir le tutoriel, la FAQ et l'écran des permissions côté club.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle à l'écran par Kevin (tutoriel « Plan de jeu » dans l'onglet du pôle, FAQ « Comment mettre en place le projet sportif », carte « Droits des éducateurs », bulle du guide Cedinho). Les anciennes clés de tutoriel `projet_sportif_principes` et `_zones` n'existent plus (plus aucune référence dans le code). `OffreClub.jsx` garde « principes de jeu du club » (texte commercial, toujours vrai). Le tutoriel côté éducateur n'a pas été touché (hors périmètre du plan).
+- Journal : 2026-11-18, Sonnet 5.5. `TutorielsClub.jsx` : un seul tutoriel `projet_sportif_plan_de_jeu` (5 étapes : intérêt, phase + terrain + principes, lien zone avec numéros, lignes de jeu, ce que font les éducateurs + impression) à la place de Principes et Zones ; carte d'introduction du Projet Sportif et étape « Droits des éducateurs » mises à jour. `ProjetSportif.jsx` : l'onglet Plan de jeu ouvre maintenant son propre tutoriel (retrait du provisoire). `DashboardClub.jsx` : FAQ, bulle Cedinho et libellé de permission (« Consignes de leur équipe dans le plan de jeu, règles. Le plan du club reste protégé »). `HistoriqueClub.jsx` : lu, il ne touche ni `principes_jeu` ni `terrain_zones` donc aucun bug avec les nouvelles colonnes ; seul le texte d'information a été corrigé. Pas de tiret long ni moyen dans les nouveaux textes. Vérifié : `npm run build` OK, `tests/planDeJeu.test.js` OK. Aucun changement de base.
 
 ### Bloc 9 : vérification de bout en bout et contrôle des accès
-- Statut : à faire
+- Statut : fait (parcours à l'écran à refaire par Kevin)
 - Objectif : prouver les parcours des trois profils et l'étanchéité entre équipes.
 - Résultat testable : compte rendu avec, pour chaque profil, ce qui a été vu, et le résultat des requêtes de contrôle.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -226,11 +228,11 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Contrôle en prod (SELECT) : un joueur d'une autre équipe ne reçoit pas les consignes du coach ; un éducateur ne peut pas modifier une ligne du club.
   - Corriger les écarts trouvés (petites corrections seulement, sinon noter dans « Reste à finir »).
 - Ce que je teste pour valider : je refais moi-même le parcours joueur sur mon téléphone.
-- Reste à finir :
-- Journal :
+- Reste à finir : parcours à l'écran par Kevin, sur téléphone : club (Plan de jeu, lien zone, lignes, impression), éducateur (plan du club verrouillé, ajout de consigne), joueur (phases, « Ton poste », « Consigne de ton coach », CPA, impression). Il manque toujours l'éducateur +edu@ et le joueur +joueur@ de test ; sans eux, la prod contient 1 principe et 0 zone, donc aucune ligne d'équipe à comparer en vrai. Pas d'accès connecté pour Claude. Les 6 échecs de `npm test` (paliers éducateur, outils offerts) existaient avant ce chantier : à regarder à part. Parent : règle de lecture lue dans la base (même schéma que le joueur), parcours non testé.
+- Journal : 2026-11-18, Sonnet 5.5. `npm run build` OK ; `npm test` 529 réussis, 6 échecs hors périmètre ; plus aucune référence aux anciens onglets Principes et Zones dans `src`. Contrôles en prod par SELECT, transactions en lecture seule annulées, aucune écriture : (1) un vrai joueur affilié voit son équipe (vrai) mais pas une autre équipe du même club (faux) via `pdj_joueur_dans_equipe` ; il voit bien le principe du club ; (2) un vrai éducateur peut écrire pour sa propre équipe (vrai), pas pour le plan du club (faux), pas pour l'équipe d'un autre coach (faux, 2 équipes testées) ; (3) règles joueur et parent relues dans `pg_policies` : lecture limitée au niveau club + leur équipe, règle `verrou_outils` toujours en place. Limite : le test d'étanchéité porte sur les fonctions de règle, pas sur des lignes réelles d'équipe (il n'y en a pas encore en prod). Aucune correction de code nécessaire. Aucun changement de base.
 
 ### Bloc 10 : nettoyage, version de test et clôture
-- Statut : à faire
+- Statut : fait (version de test en ligne, commit et production en attente de ton ok)
 - Objectif : retirer l'ancien code devenu inutile, ranger, mettre en ligne une version de test, commit et push après validation.
 - Résultat testable : adresse de test Vercel où tout fonctionne ; plan mis à jour.
 - Modèle : haiku · Effort : low · Coût estimé : faible
@@ -244,5 +246,6 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
   - Mettre à jour ce plan et la mémoire du projet.
   - Après mon ok : commit en français et push sur `main` ; production seulement sur mon ok explicite.
 - Ce que je teste pour valider : l'adresse de test, parcours club et joueur.
-- Reste à finir :
-- Journal :
+- Reste à finir : commit et push sur `main` après ton ok ; production seulement sur ton ok explicite ; parcours à l'écran sur téléphone par toi (tests connectés impossibles pour Claude) ; éducateur et joueur de test toujours à créer ; `npm run lint` remonte des erreurs de style "setState dans un effet" déjà présentes dans ProjetSportif.jsx (lignes 97, 352, 468, 515, 1019), à traiter à part.
+- Journal : 2026-11-18, Haiku 5.5 (modèle prévu : haiku, conforme). Sauvegarde `backups/plan-de-jeu-bloc10-20261118/ProjetSportif.jsx`. Constat : les anciens onglets Principes et Zones étaient déjà retirés de `ONGLETS` ; toutes les constantes et props restantes sont utilisées, aucun import mort, `SectionRegles` importé par ProjetSportifEducateur, `SectionPrincipes` et `SectionZones` par PlanDeJeu. Aucune suppression de code nécessaire. `npm run build` OK. Vercel CLI absente : lancée via npx (v66.2.0), connectée en sicko10, projet lié existant. `vercel deploy --dry` OK (Vite, .env et PLAN*.md exclus). Preview créée : https://digital-football-accademy-h6q7cwa48-digital-football-s-projects.vercel.app (statut Ready, page d'accueil servie). Protection Vercel active sur la preview, non modifiée. Parcours connecté non testé par Claude (pas d'accès au compte).
+

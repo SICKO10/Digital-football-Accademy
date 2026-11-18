@@ -12214,6 +12214,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         {activeSection === 'projet_sportif' && (
           <Suspense fallback={<SectionLoader />}>
           <ProjetSportifEducateur categorie={equipeActive?.nom} clubId={clubAffiliation?.club_id}
+            mesEquipes={mesEquipes} equipeActiveId={equipeActive?.id || null}
             readOnlyProjet={!(clubAffiliation?.peut_editer_projet_sportif ?? clubAffiliation?.club?.educateurs_editent_projet_sportif ?? false)}
             readOnlyPlanification={!(clubAffiliation?.peut_editer_planification ?? clubAffiliation?.club?.educateurs_editent_planification ?? false)} />
           </Suspense>

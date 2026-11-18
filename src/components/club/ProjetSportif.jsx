@@ -5,9 +5,13 @@ import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { POLES, polesMasculins, polesFeminins } from '../../constants/poles'
 import { PHASES_JEU, RUBRIQUE_CPA } from '../../constants/phasesJeu'
+import { LIGNES } from '../../constants/lignesJeu'
 import { saisonActuelle } from '../../lib/saison'
 import PlanificationAnnuelle from './PlanificationAnnuelle'
+import PlanDeJeu from './PlanDeJeu'
 import TerrainZonesSvg from '../TerrainZonesSvg'
+import PastillePlan from '../PastillePlan'
+import { principesDeLaPhase, numerosParZone, selectionDerivee } from '../../lib/planDeJeu'
 import DemiTerrainSchema from '../DemiTerrainSchema'
 import { X } from 'lucide-react'
 import { Icone } from '../identite'
@@ -16,8 +20,7 @@ import { police } from '../../tokens'
 
 const ONGLETS = [
   { key: 'categories', label: 'Catégories & Stats' },
-  { key: 'principes', label: 'Principes de jeu' },
-  { key: 'zones', label: 'Zones de terrain' },
+  { key: 'plan_de_jeu', label: 'Plan de jeu' },
   { key: 'planification', label: 'Planification annuelle' },
   { key: 'regles', label: 'Règles du jeu' },
 ]
@@ -68,19 +71,30 @@ const PHASES_AVEC_PHOTO = PHASES_JEU
   .filter(p => p.cle.startsWith('construction_') || p.cle.startsWith('defense_'))
   .map(p => p.cle)
 
-export function SectionPrincipes({ pole, clubId, readOnly }) {
+// phaseUnique : l'onglet « Plan de jeu » n'affiche qu'une phase à la fois (celle
+// de son sélecteur) ; sans cette prop, toutes les phases sont listées.
+// lien : fourni par l'onglet « Plan de jeu » — principes et zones chargés une
+// seule fois par PlanDeJeu.jsx, partagés avec SectionZones : { principes, zones,
+// rechargerPrincipes, selection, onSelect }. Il active le choix d'une zone pour
+// chaque principe et la mise en évidence croisée avec le terrain.
+export function SectionPrincipes({ pole, clubId, readOnly, phaseUnique = null, lien = null }) {
   const colors = useColors()
-  const [principes, setPrincipes] = useState([])
+  const [principesInternes, setPrincipesInternes] = useState([])
+  const principes = lien ? lien.principes : principesInternes
   const [ajoutPhase, setAjoutPhase] = useState(null)
   const [texte, setTexte] = useState('')
+  const [zoneChoisie, setZoneChoisie] = useState('')
+  const [lignesChoisies, setLignesChoisies] = useState([])
+  const [erreur, setErreur] = useState('')
   const [photos, setPhotos] = useState({})
   const [photoUploading, setPhotoUploading] = useState(null)
 
   const charger = async () => {
+    if (lien) { await lien.rechargerPrincipes(); return }
     const { data } = await supabase.from('principes_jeu').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
-    setPrincipes(data || [])
+    setPrincipesInternes(data || [])
   }
-  useEffect(() => { charger() }, [pole.key, clubId])
+  useEffect(() => { if (!lien) charger() }, [pole.key, clubId])
 
   useEffect(() => {
     if (!clubId) return
@@ -94,17 +108,86 @@ export function SectionPrincipes({ pole, clubId, readOnly }) {
 
   const ajouter = async () => {
     if (!texte.trim()) return
+    setErreur('')
     const ordre = principes.filter(p => p.phase === ajoutPhase).length
-    await supabase.from('principes_jeu').insert({ club_id: clubId, pole_key: pole.key, phase: ajoutPhase, principe: texte.trim(), ordre })
+    const { error } = await supabase.from('principes_jeu').insert({
+      club_id: clubId, pole_key: pole.key, phase: ajoutPhase, principe: texte.trim(), ordre,
+      ...(zoneChoisie ? { zone_id: zoneChoisie } : {}),
+      ...(lien ? { lignes: lignesChoisies } : {}),
+      ...(equipeId ? { club_categorie_id: equipeId } : {}),
+    })
+    if (error) { setErreur("Ajout refusé : " + error.message); return }
     setTexte('')
+    setZoneChoisie('')
+    setLignesChoisies([])
     setAjoutPhase(null)
     charger()
   }
 
   const supprimer = async (id) => {
-    await supabase.from('principes_jeu').delete().eq('id', id)
-    setPrincipes(prev => prev.filter(p => p.id !== id))
+    setErreur('')
+    const { error } = await supabase.from('principes_jeu').delete().eq('id', id)
+    if (error) { setErreur("Suppression refusée : " + error.message); return }
+    charger()
   }
+
+  const changerZone = async (id, zoneId) => {
+    setErreur('')
+    const { error } = await supabase.from('principes_jeu').update({ zone_id: zoneId || null }).eq('id', id)
+    if (error) setErreur("Changement de zone refusé : " + error.message)
+    charger()
+  }
+
+  const changerLignes = async (id, lignes) => {
+    setErreur('')
+    const { error } = await supabase.from('principes_jeu').update({ lignes }).eq('id', id)
+    if (error) setErreur("Changement de lignes refusé : " + error.message)
+    charger()
+  }
+
+  // Deux niveaux (voir PlanDeJeu.jsx) : une ligne se modifie si elle est du niveau
+  // que l'écran peut éditer (plan du club, ou ajouts de l'équipe choisie).
+  const niveau = lien?.niveau || null
+  const equipeId = niveau?.equipe ? niveau.equipeId : null
+  const peutAjouterIci = niveau ? niveau.peutAjouter : !readOnly
+  const modifiable = (l) => niveau
+    ? (niveau.equipe ? (niveau.peutAjouter && !!l.club_categorie_id && l.club_categorie_id === equipeId) : (!readOnly && !l.club_categorie_id))
+    : !readOnly
+  const etiquetteEquipe = (l) => {
+    if (!niveau || !l.club_categorie_id) return null
+    const nom = niveau.nomsEquipes?.[l.club_categorie_id]
+    return niveau.equipe ? 'Ajout de mon équipe' : (nom ? `Équipe ${nom}` : 'Ajout d\'une équipe')
+  }
+
+  const basculer = (liste, cle) => liste.includes(cle) ? liste.filter(x => x !== cle) : [...liste, cle]
+
+  // Cases des lignes (rien coché = tout le monde)
+  const choixLignes = (valeur, onChange, nom) => (
+    <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+      <legend style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{nom}</legend>
+      <span style={{ color: colors.text.dim, fontSize: 11, marginRight: 2 }}>Pour qui</span>
+      {LIGNES.map(l => {
+        const on = valeur.includes(l.cle)
+        return (
+          <button key={l.cle} type="button" aria-pressed={on} onClick={() => onChange(basculer(valeur, l.cle))}
+            style={{ background: on ? pole.couleur : 'transparent', color: on ? texteSur(pole.couleur) : colors.text.secondary, border: `1px solid ${on ? pole.couleur : colors.border.default}`, borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
+            {l.label}
+          </button>
+        )
+      })}
+      {valeur.length === 0 && <span style={{ color: colors.text.dim, fontSize: 11, fontStyle: 'italic' }}>Tout le monde</span>}
+    </fieldset>
+  )
+
+  const etiquettesLignes = (lignes) => (lignes && lignes.length > 0) && (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 4, marginLeft: 6 }}>
+      {lignes.map(c => (
+        <span key={c} style={{ border: `1px solid ${colors.border.default}`, color: colors.text.dim, borderRadius: 999, padding: '0 7px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+          {LIGNES.find(l => l.cle === c)?.label || c}
+        </span>
+      ))}
+    </span>
+  )
 
   const uploaderPhoto = async (phase, e) => {
     const file = e.target.files[0]
@@ -135,69 +218,120 @@ export function SectionPrincipes({ pole, clubId, readOnly }) {
     setPhotos(prev => { const n = { ...prev }; delete n[phase]; return n })
   }
 
+  const blocPhoto = (phaseVal) => PHASES_AVEC_PHOTO.includes(phaseVal) && (
+    <div style={{ marginBottom: 14 }}>
+      {photos[phaseVal] ? (
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img src={photos[phaseVal]} alt="" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 6, display: 'block' }} />
+          {!readOnly && (
+            <button onClick={() => retirerPhoto(phaseVal)} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              Retirer
+            </button>
+          )}
+        </div>
+      ) : !readOnly && (
+        <label style={{ display: 'inline-block', background: pole.couleur + '15', color: colors.text.primary, border: `1px dashed ${pole.couleur}55`, borderRadius: 6, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: photoUploading === phaseVal ? 'default' : 'pointer', opacity: photoUploading === phaseVal ? 0.6 : 1 }}>
+          {photoUploading === phaseVal ? 'Envoi...' : '+ Ajouter une photo'}
+          <input type="file" accept="image/*" onChange={e => uploaderPhoto(phaseVal, e)} disabled={photoUploading === phaseVal} style={{ display: 'none' }} />
+        </label>
+      )}
+    </div>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {PHASES.map(phase => {
-        const principesPhase = principes.filter(p => p.phase === phase.val)
+      {PHASES.filter(ph => !phaseUnique || ph.val === phaseUnique).map(phase => {
+        const principesPhase = principesDeLaPhase(principes, phase.val)
+        const zonesPhase = (lien?.zones || []).filter(z => z.phase === phase.val)
+        // un principe d'équipe ne se relie qu'à une zone de la même équipe, un principe du club à une zone du club
+        const zonesDuNiveau = (niveauId) => zonesPhase.filter(z => (z.club_categorie_id || null) === (niveauId || null))
+        const { principesActifs } = selectionDerivee(lien?.selection, principesPhase)
+        const selectZoneStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '6px 8px', color: colors.text.primary, fontSize: 12, fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' }
         return (
           <div key={phase.val} style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 6, padding: 18 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ color: colors.text.primary, margin: 0, fontFamily: police.titre, fontSize: 17, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{phase.label}</h3>
-              {!readOnly && ajoutPhase !== phase.val && (
+              <h3 style={{ color: colors.text.primary, margin: 0, fontFamily: police.titre, fontSize: 17, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{phaseUnique ? 'Principes de jeu' : phase.label}</h3>
+              {peutAjouterIci && ajoutPhase !== phase.val && (
                 <button onClick={() => setAjoutPhase(phase.val)} style={{ background: pole.couleur + '22', color: colors.text.primary, border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}>
                   + Ajouter
                 </button>
               )}
             </div>
 
-            {PHASES_AVEC_PHOTO.includes(phase.val) && (
-              <div style={{ marginBottom: 14 }}>
-                {photos[phase.val] ? (
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img src={photos[phase.val]} alt="" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 6, display: 'block' }} />
-                    {!readOnly && (
-                      <button onClick={() => retirerPhoto(phase.val)} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                        Retirer
-                      </button>
+            {!phaseUnique && blocPhoto(phase.val)}
+
+            {erreur && <p role="alert" style={{ color: colors.accent.red, fontSize: 12, margin: '0 0 10px' }}>{erreur}</p>}
+
+            {principesPhase.map((p, i) => {
+              const zone = zonesPhase.find(z => z.id === p.zone_id) || null
+              const actif = principesActifs.has(p.id)
+              const editable = modifiable(p)
+              const tag = etiquetteEquipe(p)
+              const zonesChoix = zonesDuNiveau(p.club_categorie_id)
+              return (
+                <div key={p.id} style={{ padding: '8px 6px', borderBottom: `1px solid ${colors.border.subtle}`, borderRadius: 4, background: actif ? pole.couleur + '18' : 'transparent' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button type="button" onClick={() => lien?.onSelect('principe', p.id)} disabled={!lien} aria-pressed={lien ? actif : undefined}
+                      aria-label={`Principe ${i + 1}${zone ? `, zone ${zone.label}` : ''} : ${p.principe}`}
+                      style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: lien ? 'pointer' : 'default', font: 'inherit' }}>
+                      <PastillePlan numero={i + 1} couleur={zone?.couleur || null} actif={actif} />
+                      <span style={{ flex: 1, color: colors.text.secondary, fontSize: 13 }}>{p.principe}{lien && etiquettesLignes(p.lignes)}{tag && <span style={{ marginLeft: 6, background: pole.couleur + '22', color: colors.text.primary, borderRadius: 999, padding: '0 8px', fontSize: 10, fontWeight: 700 }}>{tag}</span>}</span>
+                    </button>
+                    {editable && (
+                      <button onClick={() => supprimer(p.id)} style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif' }}>Suppr.</button>
                     )}
                   </div>
-                ) : !readOnly && (
-                  <label style={{ display: 'inline-block', background: pole.couleur + '15', color: colors.text.primary, border: `1px dashed ${pole.couleur}55`, borderRadius: 6, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: photoUploading === phase.val ? 'default' : 'pointer', opacity: photoUploading === phase.val ? 0.6 : 1 }}>
-                    {photoUploading === phase.val ? 'Envoi...' : '+ Ajouter une photo'}
-                    <input type="file" accept="image/*" onChange={e => uploaderPhoto(phase.val, e)} disabled={photoUploading === phase.val} style={{ display: 'none' }} />
-                  </label>
-                )}
-              </div>
-            )}
-
-            {principesPhase.map((p, i) => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${colors.border.subtle}` }}>
-                <span style={{ color: colors.text.primary, fontWeight: 800, fontSize: 12, minWidth: 18 }}>{i + 1}</span>
-                <span style={{ flex: 1, color: colors.text.secondary, fontSize: 13 }}>{p.principe}</span>
-                {!readOnly && (
-                  <button onClick={() => supprimer(p.id)} style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif' }}>Suppr.</button>
-                )}
-              </div>
-            ))}
+                  {lien && editable && zonesChoix.length > 0 && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingLeft: 34, color: colors.text.dim, fontSize: 11 }}>
+                      <span style={{ flexShrink: 0 }}>Zone</span>
+                      <select value={zone ? zone.id : ''} onChange={e => changerZone(p.id, e.target.value)} aria-label={`Zone du principe ${i + 1}`} style={selectZoneStyle}>
+                        <option value="">Aucune</option>
+                        {zonesChoix.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+                      </select>
+                    </label>
+                  )}
+                  {lien && editable && (
+                    <div style={{ marginTop: 6, paddingLeft: 34 }}>{choixLignes(p.lignes || [], l => changerLignes(p.id, l), `Lignes concernées par le principe ${i + 1}`)}</div>
+                  )}
+                  {lien && !editable && zone && (
+                    <div style={{ marginTop: 4, paddingLeft: 34, color: colors.text.dim, fontSize: 11 }}>Zone : {zone.label}</div>
+                  )}
+                </div>
+              )
+            })}
 
             {principesPhase.length === 0 && ajoutPhase !== phase.val && (
               <p style={{ color: colors.text.dim, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun principe défini</p>
             )}
 
             {ajoutPhase === phase.val && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                <input
-                  autoFocus
-                  value={texte}
-                  onChange={e => setTexte(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && ajouter()}
-                  placeholder="Ex: Sortie de balle courte depuis le gardien"
-                  style={{ flex: 1, background: colors.background.base, border: `1px solid ${pole.couleur}44`, borderRadius: 6, padding: '8px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none' }}
-                />
-                <button onClick={ajouter} style={{ background: pole.couleur, color: texteSur(pole.couleur), border: 'none', borderRadius: 6, padding: '8px 14px', fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>OK</button>
-                <button onClick={() => { setAjoutPhase(null); setTexte('') }} style={{ background: colors.background.raised, color: colors.text.dim, border: 'none', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}>Annuler</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    autoFocus
+                    value={texte}
+                    onChange={e => setTexte(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && ajouter()}
+                    placeholder="Ex: Sortie de balle courte depuis le gardien"
+                    style={{ flex: 1, minWidth: 0, background: colors.background.base, border: `1px solid ${pole.couleur}44`, borderRadius: 6, padding: '8px 12px', color: colors.text.primary, fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none' }}
+                  />
+                  <button onClick={ajouter} style={{ background: pole.couleur, color: texteSur(pole.couleur), border: 'none', borderRadius: 6, padding: '8px 14px', fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>OK</button>
+                  <button onClick={() => { setAjoutPhase(null); setTexte(''); setZoneChoisie(''); setLignesChoisies([]) }} style={{ background: colors.background.raised, color: colors.text.dim, border: 'none', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}>Annuler</button>
+                </div>
+                {lien && choixLignes(lignesChoisies, setLignesChoisies, 'Lignes concernées par le nouveau principe')}
+                {lien && zonesDuNiveau(equipeId).length > 0 && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: colors.text.dim, fontSize: 11 }}>
+                    <span style={{ flexShrink: 0 }}>Zone du terrain (facultatif)</span>
+                    <select value={zoneChoisie} onChange={e => setZoneChoisie(e.target.value)} style={selectZoneStyle}>
+                      <option value="">Aucune</option>
+                      {zonesDuNiveau(equipeId).map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+                    </select>
+                  </label>
+                )}
               </div>
             )}
+
+            {phaseUnique && <div style={{ marginTop: 14 }}>{blocPhoto(phase.val)}</div>}
           </div>
         )
       })}
@@ -309,10 +443,17 @@ export function SectionRegles({ pole, clubId, readOnly }) {
   )
 }
 
-export function SectionZones({ pole, clubId, readOnly }) {
+// phaseFixe : l'onglet « Plan de jeu » pilote la phase depuis son propre
+// sélecteur (le sélecteur interne et l'introduction disparaissent). compact :
+// terrain au-dessus de la liste des zones (colonne étroite à côté des principes).
+// titre : intitulé affiché au-dessus (page CPA : offensifs puis défensifs).
+// lien : voir SectionPrincipes (zones et principes partagés avec le plan de jeu).
+export function SectionZones({ pole, clubId, readOnly, phaseFixe = null, compact = false, titre = null, lien = null }) {
   const colors = useColors()
-  const [zones, setZones] = useState([])
-  const [phaseActive, setPhaseActive] = useState(PHASES_ZONES[0].val)
+  const [zonesInternes, setZonesInternes] = useState([])
+  const zones = lien ? lien.zones : zonesInternes
+  const [phaseChoisie, setPhaseActive] = useState(PHASES_ZONES[0].val)
+  const phaseActive = phaseFixe || phaseChoisie
   const [editId, setEditId] = useState(null)
   const [edit, setEdit] = useState(ZONE_VIDE)
   const [saving, setSaving] = useState(false)
@@ -320,10 +461,11 @@ export function SectionZones({ pole, clubId, readOnly }) {
   const [fondUploading, setFondUploading] = useState(false)
 
   const charger = async () => {
-    const { data } = await supabase.from('terrain_zones').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
-    setZones(data || [])
+    if (lien) { await lien.rechargerZones(); return }
+    const { data } = await supabase.from('terrain_zones').select('*').eq('club_id', clubId).eq('pole_key', pole.key).is('club_categorie_id', null).order('ordre')
+    setZonesInternes(data || [])
   }
-  useEffect(() => { charger() }, [pole.key, clubId])
+  useEffect(() => { if (!lien) charger() }, [pole.key, clubId])
 
   // Fond du terrain (image uploadée par le club) : un réglage par pôle ET
   // par phase (organisation offensive/défensive/transition/CPA), même
@@ -509,6 +651,17 @@ export function SectionZones({ pole, clubId, readOnly }) {
   ])).sort((a, b) => (Number(a) || 0) - (Number(b) || 0) || String(a).localeCompare(String(b))) : []
 
   const zonesPhase = zones.filter(z => z.phase === phaseActive)
+  // Deux niveaux (voir PlanDeJeu.jsx) : plan du club ou ajouts de l'équipe choisie
+  const niveau = lien?.niveau || null
+  const equipeId = niveau?.equipe ? niveau.equipeId : null
+  const peutAjouterIci = niveau ? niveau.peutAjouter : !readOnly
+  const modifiable = (z) => niveau
+    ? (niveau.equipe ? (niveau.peutAjouter && !!z.club_categorie_id && z.club_categorie_id === equipeId) : (!readOnly && !z.club_categorie_id))
+    : !readOnly
+  // Pastilles numérotées : numéros des principes de la phase rattachés à chaque zone.
+  const principesPhase = lien ? principesDeLaPhase(lien.principes, phaseActive) : []
+  const numeros = lien ? numerosParZone(principesPhase, zonesPhase) : null
+  const { zoneActiveId } = selectionDerivee(lien?.selection, principesPhase)
 
   const ouvrirNouvelle = () => { setEditId('nouvelle'); setEdit({ ...ZONE_VIDE, label: '' }) }
   const ouvrirEdition = (z) => { setEditId(z.id); setEdit({ x: z.x, y: z.y, largeur: z.largeur, hauteur: z.hauteur, label: z.label, description: z.description || '', couleur: z.couleur || '#4ade80' }) }
@@ -522,7 +675,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
       label: edit.label.trim(), description: edit.description.trim() || null, couleur: edit.couleur,
     }
     if (editId === 'nouvelle') {
-      await supabase.from('terrain_zones').insert({ ...champs, club_id: clubId, pole_key: pole.key, phase: phaseActive, ordre: zonesPhase.length })
+      await supabase.from('terrain_zones').insert({ ...champs, club_id: clubId, pole_key: pole.key, phase: phaseActive, ordre: zonesPhase.length, ...(equipeId ? { club_categorie_id: equipeId } : {}) })
     } else {
       await supabase.from('terrain_zones').update(champs).eq('id', editId)
     }
@@ -535,7 +688,10 @@ export function SectionZones({ pole, clubId, readOnly }) {
     if (!confirm('Supprimer cette zone ?')) return
     await supabase.from('terrain_zones').delete().eq('id', id)
     if (editId === id) annuler()
+    if (lien?.selection?.type === 'zone' && lien.selection.id === id) lien.onSelect('zone', id)
     charger()
+    // la base vide le lien des principes rattachés à cette zone : on relit la liste
+    lien?.rechargerPrincipes()
   }
 
   const champStyle = { width: '100%', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: 6, padding: '8px 10px', color: colors.text.primary, fontSize: 13, boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
@@ -543,11 +699,16 @@ export function SectionZones({ pole, clubId, readOnly }) {
 
   return (
     <div>
-      <p style={{ color: colors.text.dim, fontSize: 13, margin: '0 0 16px' }}>
-        Dessine tes propres zones de terrain (position, taille, couleur, libellé) pour chaque phase de jeu — affichées telles quelles dans le dashboard de tes joueurs.
-      </p>
+      {titre && (
+        <h3 style={{ color: colors.text.primary, margin: '0 0 12px', fontFamily: police.titre, fontSize: 17, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{titre}</h3>
+      )}
+      {!phaseFixe && (
+        <p style={{ color: colors.text.dim, fontSize: 13, margin: '0 0 16px' }}>
+          Dessine tes propres zones de terrain (position, taille, couleur, libellé) pour chaque phase de jeu — affichées telles quelles dans le dashboard de tes joueurs.
+        </p>
+      )}
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+      {!phaseFixe && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
         {PHASES_ZONES.map(ph => (
           <button key={ph.val} onClick={() => { setPhaseActive(ph.val); annuler() }}
             style={{
@@ -559,12 +720,12 @@ export function SectionZones({ pole, clubId, readOnly }) {
             {ph.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {!estPhaseCpa && (
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'auto 1fr', gap: 20, alignItems: 'start' }}>
         <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 6, padding: 16 }}>
-          <TerrainZonesSvg fondUrl={fondUrl} zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
+          <TerrainZonesSvg fondUrl={fondUrl} numeros={numeros} zoneActiveId={zoneActiveId} onZoneClick={lien ? (id => { if (id !== 'nouvelle') lien.onSelect('zone', id) }) : undefined} zones={editId ? zonesPhase.map(z => (z.id === editId ? { ...z, ...edit } : z)).concat(editId === 'nouvelle' ? [{ id: 'nouvelle', ...edit }] : []) : zonesPhase} />
           {!readOnly && (
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <label style={{ flex: 1, textAlign: 'center', background: pole.couleur + '22', color: colors.text.primary, borderRadius: 6, padding: '8px 10px', fontSize: 11, fontWeight: 700, cursor: fondUploading ? 'default' : 'pointer', opacity: fondUploading ? 0.6 : 1 }}>
@@ -579,7 +740,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
             </div>
           )}
           {!readOnly && (
-            <p style={{ color: colors.text.dim, fontSize: 10, margin: '8px 0 0', fontStyle: 'italic' }}>Propre à ce pôle et cette phase — change d'onglet ci-dessus pour en définir une différente.</p>
+            <p style={{ color: colors.text.dim, fontSize: 10, margin: '8px 0 0', fontStyle: 'italic' }}>Propre à ce pôle et cette phase — change de phase ci-dessus pour en définir une différente.</p>
           )}
         </div>
 
@@ -588,15 +749,27 @@ export function SectionZones({ pole, clubId, readOnly }) {
             <p style={{ color: colors.text.dim, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucune zone définie pour cette phase.</p>
           )}
 
-          {zonesPhase.map(z => (
-            editId === z.id ? null : (
-              <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 6, padding: '10px 14px' }}>
-                <div style={{ width: 14, height: 14, borderRadius: 3, background: z.couleur || '#4ade80', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{z.label}</div>
-                  {z.description && <div style={{ color: colors.text.dim, fontSize: 11, marginTop: 2 }}>{z.description}</div>}
-                </div>
-                {!readOnly && (
+          {zonesPhase.map(z => {
+            if (editId === z.id) return null
+            const actif = zoneActiveId === z.id
+            const lies = (numeros && numeros[z.id]) || []
+            const couleurZone = z.couleur || '#4ade80'
+            return (
+              <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: actif ? couleurZone + '22' : colors.background.surface, border: `1px solid ${actif ? couleurZone : colors.border.subtle}`, borderRadius: 6, padding: '10px 14px' }}>
+                <button type="button" onClick={() => lien?.onSelect('zone', z.id)} disabled={!lien} aria-pressed={lien ? actif : undefined}
+                  style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: lien ? 'pointer' : 'default', font: 'inherit' }}>
+                  <div style={{ width: 14, height: 14, borderRadius: 3, background: couleurZone, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: 13 }}>{z.label}{niveau && z.club_categorie_id && <span style={{ marginLeft: 6, background: pole.couleur + '22', borderRadius: 999, padding: '0 8px', fontSize: 10, fontWeight: 700 }}>{niveau.equipe ? 'Ajout de mon équipe' : (niveau.nomsEquipes?.[z.club_categorie_id] ? `Équipe ${niveau.nomsEquipes[z.club_categorie_id]}` : 'Ajout d\'une équipe')}</span>}</div>
+                    {z.description && <div style={{ color: colors.text.dim, fontSize: 11, marginTop: 2 }}>{z.description}</div>}
+                  </div>
+                  {lies.length > 0 && (
+                    <span style={{ display: 'flex', gap: 4, flexShrink: 0 }} title={`Principe${lies.length > 1 ? 's' : ''} ${lies.join(', ')}`}>
+                      {lies.map(n => <PastillePlan key={n} numero={n} couleur={couleurZone} actif={actif} taille={20} />)}
+                    </span>
+                  )}
+                </button>
+                {modifiable(z) && (
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button onClick={() => ouvrirEdition(z)} style={{ background: 'none', border: 'none', color: colors.text.primary, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif' }}>Modifier</button>
                     <button onClick={() => supprimer(z.id)} style={{ background: 'none', border: 'none', color: colors.text.dim, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif' }}>Suppr.</button>
@@ -604,7 +777,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
                 )}
               </div>
             )
-          ))}
+          })}
 
           {editId && (
             <div style={{ background: colors.background.sunken, border: `1px solid ${pole.couleur}44`, borderRadius: 6, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -647,7 +820,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
             </div>
           )}
 
-          {!readOnly && !editId && (
+          {peutAjouterIci && !editId && (
             <button onClick={ouvrirNouvelle} style={{ background: pole.couleur + '15', color: colors.text.primary, border: `1px solid ${pole.couleur}40`, borderRadius: 6, padding: '10px', fontWeight: 700, cursor: 'pointer', fontSize: 12, marginTop: zonesPhase.length > 0 ? 4 : 0 }}>
               + Ajouter une zone
             </button>
@@ -685,7 +858,7 @@ export function SectionZones({ pole, clubId, readOnly }) {
           {!cpaSchemaActif ? (
             <p style={{ color: colors.text.dim, fontSize: 12, fontStyle: 'italic', margin: 0 }}>Aucun schéma pour cette phase.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 620px) 1fr', gap: 20, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20, alignItems: 'start' }}>
               <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: 6, padding: 16 }}>
                 {!readOnly && (
                   <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -897,8 +1070,7 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
           </div>
         )
       )}
-      {onglet === 'principes' && <SectionPrincipes pole={pole} clubId={clubId} readOnly={readOnly} />}
-      {onglet === 'zones' && <SectionZones pole={pole} clubId={clubId} readOnly={readOnly} />}
+      {onglet === 'plan_de_jeu' && <PlanDeJeu pole={pole} clubId={clubId} readOnly={readOnly} />}
       {onglet === 'planification' && (
         equipesDuPole.length === 0 ? (
           <PlaceholderAVenir couleur={pole.couleur} texte="Aucune équipe créée dans ce pôle pour l'instant. Ajoute une catégorie depuis Sportif → Catégories." />

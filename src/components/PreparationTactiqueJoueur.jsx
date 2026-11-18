@@ -14,6 +14,9 @@ import TactipadViewer from './TactipadViewer'
 import SchemaPleinEcran from './SchemaPleinEcran'
 import TerrainZonesSvg from './TerrainZonesSvg'
 import DemiTerrainSchema from './DemiTerrainSchema'
+import PlanPhaseLecture from './PlanPhaseLecture'
+import BoutonImprimerPlan from './FichePlanPhase'
+import { LIGNES, libelleLigne, posteVersLignes, principeConcerne } from '../constants/lignesJeu'
 
 // Un terrain + sa légende, pour une phase donnée — brique de base réutilisée
 // pour les 8 phases de jeu et les 2 rubriques CPA. La légende est
@@ -174,7 +177,13 @@ const ONGLETS = [
 // joueur (educateurIds). Partage interne distinct du lien public
 // (tactipads.partage/partage_slug) : cf. supabase_tactipads_visible_joueurs.sql
 // pour la policy RLS qui vérifie l'affiliation acceptée côté base.
-export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, categorie, isMobile = false, lang = 'fr', onNaviguer }) {
+//
+// Plan de jeu (blocs 3 à 6 du plan) : chaque phase affiche le terrain avec ses
+// pastilles numérotées et les principes du pôle (principes_jeu, la base ne
+// renvoie que le plan du club + celui de l'équipe du joueur). Les principes de
+// la ligne du joueur passent en premier : sa ligne vient de son poste dans
+// l'équipe (equipe_joueurs.poste), à défaut de son poste de profil.
+export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, categorie, joueurId = null, posteProfil = '', isMobile = false, lang = 'fr', onNaviguer }) {
   const colors = useColors()
   const locale = localeOf(lang)
   const pole = categorie ? getPoleDeCategorie(categorie) : null
@@ -184,6 +193,9 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const [fondUrls, setFondUrls] = useState({})
   const [cpaSchemas, setCpaSchemas] = useState([])
   const [galerieImages, setGalerieImages] = useState([])
+  const [principes, setPrincipes] = useState([])
+  const [photosPhase, setPhotosPhase] = useState({})
+  const [posteEquipe, setPosteEquipe] = useState('')
   const [schemas, setSchemas] = useState([])
   const [loadingSchemas, setLoadingSchemas] = useState(true)
   const [schemaActif, setSchemaActif] = useState(null)
@@ -241,6 +253,34 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
       .then(({ data }) => setGalerieImages(data || []))
   }, [clubId, pole?.key])
 
+  useEffect(() => {
+    if (!clubId || !pole) { setPrincipes([]); setPhotosPhase({}); return }
+    supabase.from('principes_jeu').select('*').eq('club_id', clubId).eq('pole_key', pole.key).order('ordre')
+      .then(({ data }) => setPrincipes(data || []))
+    supabase.from('principes_photos').select('phase, image_url').eq('club_id', clubId).eq('pole_key', pole.key)
+      .then(({ data }) => {
+        const map = {}
+        data?.forEach(f => { map[f.phase] = f.image_url })
+        setPhotosPhase(map)
+      })
+  }, [clubId, pole?.key])
+
+  // Poste du joueur dans son équipe (texte libre saisi par l'éducateur).
+  useEffect(() => {
+    if (!joueurId) { setPosteEquipe(''); return }
+    supabase.from('equipe_joueurs').select('poste, educateur_id').eq('joueur_id', joueurId)
+      .then(({ data }) => {
+        const lignes = (data || []).filter(r => r.poste && (!idsKey || idsKey.split(',').includes(r.educateur_id)))
+        setPosteEquipe(lignes[0]?.poste || '')
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joueurId, idsKey])
+
+  // Ligne(s) du joueur : poste d'équipe d'abord, poste de profil sinon.
+  const lignesEquipe = posteVersLignes(posteEquipe)
+  const lignesJoueur = lignesEquipe.length ? lignesEquipe : posteVersLignes(posteProfil)
+  const posteAffiche = (lignesEquipe.length ? posteEquipe : posteProfil) || ''
+
   const cadre = { padding: isMobile ? spacing['2xl'] : `${spacing['4xl']} 40px`, maxWidth: '1100px', margin: '0 auto' }
 
   if (schemaActif) {
@@ -282,6 +322,46 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   const zonesPhase = (phase) => zones.filter(z => z.phase === phase)
   const panneau = (phase) => <PanneauZones zones={zonesPhase(phase)} colors={colors} fondUrl={fondUrls[phase]} isMobile={isMobile} />
   const galerie = (phase) => <GalerieImages images={galerieImages.filter(g => g.phase === phase)} colors={colors} />
+
+  // Principes d'une phase pour le joueur : « Ton poste » d'abord, puis le reste.
+  // Sans ligne connue pour le joueur, ordre normal et aucun titre de groupe.
+  const GROUPES_AVEC_LIGNE = [
+    { cle: 'poste', titre: lignesJoueur.length ? `Ton poste : ${lignesJoueur.map(libelleLigne).join(' et ')}` : 'Ton poste' },
+    { cle: 'equipe', titre: "Pour toute l'équipe" },
+    { cle: 'autres', titre: 'Pour les autres postes' },
+  ]
+  const groupeDe = (p) => (p.lignes || []).length === 0 ? 'equipe' : (principeConcerne(p, lignesJoueur) ? 'poste' : 'autres')
+  const ligneSup = (p) => {
+    const lignesP = (p.lignes || []).filter(l => LIGNES.some(x => x.cle === l))
+    const coach = !!p.club_categorie_id
+    if (!coach && lignesP.length === 0) return null
+    return (
+      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+        {coach && <span style={{ background: colors.accent.green + '22', color: colors.text.primary, border: `1px solid ${colors.accent.green}`, borderRadius: forme.rayonPastille, padding: '1px 8px', fontSize: fontSize.sm, fontWeight: 700 }}>Consigne de ton coach</span>}
+        {lignesP.length > 0 && <span style={{ color: colors.text.faint, fontSize: fontSize.sm }}>Pour : {lignesP.map(libelleLigne).join(', ')}</span>}
+      </span>
+    )
+  }
+  const planPhase = (phase, options = {}) => {
+    const dePhase = principes.filter(p => p.phase === phase)
+    const zonesP = zonesPhase(phase)
+    if (dePhase.length === 0 && zonesP.length === 0 && !options.sansTerrain) {
+      return (
+        <EmptyState
+          icon={<Route />}
+          title="Rien n'est encore écrit pour cette phase"
+          subtitle="Ton club n'a pas encore rempli cette page. Dès que ton club ou ton éducateur l'aura fait, le terrain et les principes apparaîtront ici."
+        />
+      )
+    }
+    return (
+      <PlanPhaseLecture key={phase} phase={phase} zones={zones} principes={principes}
+        fondUrl={fondUrls[phase]} photoUrl={photosPhase[phase] || null} couleur={colors.accent.green}
+        groupes={lignesJoueur.length ? GROUPES_AVEC_LIGNE : null} groupeDe={groupeDe} ligneSup={ligneSup}
+        sansTerrain={!!options.sansTerrain} legendeZones
+        libelleVide="Aucun principe n'est encore écrit pour cette phase." />
+    )
+  }
   const sousPhase = (titre, phase, avecCpa) => (
     <div>
       <TitreSection>{titre}</TitreSection>
@@ -325,13 +405,32 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
       {phasesPretes && PHASE_PAR_CLE[onglet] && (
         <div>
           <TitreSection>{PHASE_PAR_CLE[onglet].long}</TitreSection>
-          {panneau(onglet)}
+          {posteAffiche && lignesJoueur.length > 0 && (
+            <p style={{ margin: `0 0 ${spacing.lg}`, color: colors.text.faint, fontSize: fontSize.base }}>
+              Ton poste : <strong style={{ color: colors.text.secondary }}>{posteAffiche}</strong>. Les principes qui te concernent sont en premier.
+            </p>
+          )}
+          {(zonesPhase(onglet).length > 0 || principes.some(p => p.phase === onglet)) && (
+            <div style={{ marginBottom: spacing.lg }}>
+              <BoutonImprimerPlan clubId={clubId} poleKey={pole.key} phase={onglet} phaseLabel={PHASE_PAR_CLE[onglet].long}
+                soustitre={posteAffiche ? `Poste : ${posteAffiche}` : ''}
+                zones={zones} principes={principes} pourMoi={lignesJoueur.length ? (p => (p.lignes || []).length > 0 && principeConcerne(p, lignesJoueur)) : null}
+                couleur={colors.accent.green} />
+            </div>
+          )}
+          {planPhase(onglet)}
           {galerie(onglet)}
         </div>
       )}
 
       {phasesPretes && onglet === 'cpa' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['5xl'] }}>
+          {principes.some(p => p.phase === 'coups_pied_arretes') && (
+            <div>
+              <TitreSection>Principes sur coups de pied arrêtés</TitreSection>
+              {planPhase('coups_pied_arretes', { sansTerrain: true })}
+            </div>
+          )}
           {sousPhase('CPA offensifs', 'cpa_offensif', true)}
           {sousPhase('CPA défensifs', 'cpa_defensif', true)}
         </div>

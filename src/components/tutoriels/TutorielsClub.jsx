@@ -390,7 +390,7 @@ const TUTORIELS = {
         titre: 'Pourquoi c’est important',
         texte: 'Un club où chaque éducateur joue à sa façon perd ses joueurs en route. Le projet sportif écrit une ligne commune : mêmes principes de jeu, mêmes règles et même progression, de catégorie en catégorie.',
         astuce: 'Un projet clair aide aussi à recruter : un éducateur qui arrive sait où il met les pieds.',
-        visuel: <Cartes items={[{ titre: 'Principes', texte: 'Comment on joue', couleur: c.accent.green, icone: '⚽' }, { titre: 'Zones', texte: 'Où on joue', couleur: c.accent.blue, icone: '▦' }, { titre: 'Saison', texte: 'Quand on progresse', couleur: c.accent.amber, icone: '↗' }]} />,
+        visuel: <Cartes items={[{ titre: 'Plan de jeu', texte: 'Comment et où on joue', couleur: c.accent.green, icone: '⚽' }, { titre: 'Saison', texte: 'Quand on progresse', couleur: c.accent.amber, icone: '↗' }]} />,
       },
       {
         titre: 'Choisis un pôle',
@@ -399,7 +399,7 @@ const TUTORIELS = {
       },
       {
         titre: 'Droits des éducateurs',
-        texte: 'Plus bas sur la page, choisis si tes éducateurs peuvent éditer le Projet Sportif et la Planification annuelle. Par défaut, ils consultent sans modifier.',
+        texte: 'Plus bas sur la page, choisis si tes éducateurs peuvent éditer le Projet Sportif et la Planification annuelle. Par défaut, ils consultent sans modifier. Avec le droit, un éducateur ajoute les consignes de son équipe, le plan du club reste protégé.',
         astuce: 'Un réglage individuel reste possible depuis Éducateurs (menu d’actions).',
         visuel: <Boutons items={['Éditer le Projet Sportif', 'Éditer la Planification annuelle']} actifs={['Éditer le Projet Sportif']} />,
       },
@@ -423,42 +423,43 @@ const TUTORIELS = {
     ],
   }),
 
-  projet_sportif_principes: (c) => ({
-    titre: 'Projet Sportif : Principes de jeu',
+  projet_sportif_plan_de_jeu: (c) => ({
+    titre: 'Projet Sportif : Plan de jeu',
     etapes: [
       {
         titre: 'Pourquoi c’est important',
-        texte: 'Ce sont les règles du jeu de ton club : ce que tout joueur doit savoir faire à chaque phase, quelle que soit son équipe. Tes éducateurs s’en servent pour préparer leurs séances.',
-        visuel: <Onglets items={['Construction basse', 'Construction médiane', 'Construction haute', 'Défense en bloc haut', 'Coups de pied arrêtés']} actif="Construction basse" couleur={c.accent.green} />,
+        texte: 'Le plan de jeu réunit au même endroit ce que ton club veut voir sur le terrain : le dessin des zones et les principes qui vont avec. Tes éducateurs préparent leurs séances dessus, tes joueurs le retrouvent dans leur Préparation tactique.',
+        visuel: <Cartes items={[{ titre: 'Terrain', texte: 'Où on joue', couleur: c.accent.blue, icone: '▦' }, { titre: 'Principes', texte: 'Comment on joue', couleur: c.accent.green, icone: '⚽' }]} />,
       },
       {
-        titre: 'Écris tes principes',
-        texte: 'Pour chaque phase, ajoute tes principes un par un avec « + principe ». Une idée courte et claire vaut mieux qu’un long paragraphe.',
-        points: [
-          'Ajoute des images (schémas, captures) pour illustrer la phase.',
-          'Reste concret : « le gardien relance au pied court » se retient mieux que « construire proprement ».',
-        ],
-        visuel: <Pile><Formulaire colonnes={1} champs={[['Principe', 'Jouer court depuis le gardien']]} bouton="+ principe" /></Pile>,
-      },
-    ],
-  }),
-
-  projet_sportif_zones: (c) => ({
-    titre: 'Projet Sportif : Zones de terrain',
-    etapes: [
-      {
-        titre: 'Pourquoi c’est important',
-        texte: 'Un dessin sur le terrain se comprend plus vite qu’un texte. Les zones montrent à tes joueurs où se placer et où presser, phase par phase.',
-        visuel: <Cartes items={[{ titre: 'Zones', texte: 'Où on joue', couleur: c.accent.green, icone: '▦' }, { titre: 'Coups de pied arrêtés', texte: 'Schémas offensifs et défensifs', couleur: c.accent.blue, icone: '⚑' }]} />,
-      },
-      {
-        titre: 'Dessine tes zones',
-        texte: 'Choisis l’une des 8 phases de jeu, puis trace les zones clés sur le terrain. Tu peux aussi charger un fond de terrain et une galerie d’images.',
+        titre: 'Choisis une phase, dessine et écris',
+        texte: 'Choisis l’une des phases de jeu. Le terrain est à gauche et les principes à droite. Trace les zones clés sur le terrain, puis ajoute tes principes un par un avec « + principe ». Une idée courte et claire vaut mieux qu’un long paragraphe.',
         points: [
           'Les coups de pied arrêtés ont leurs propres schémas, offensifs et défensifs.',
-          'Enregistre : les zones apparaissent ensuite dans la préparation de tes équipes.',
+          'Tu peux charger un fond de terrain et des images pour illustrer la phase.',
         ],
-        visuel: <Onglets items={['Construction basse', 'Construction médiane', 'Construction haute']} actif="Construction basse" />,
+        visuel: <Onglets items={['Construction basse', 'Construction médiane', 'Construction haute', 'Défense en bloc haut']} actif="Construction basse" couleur={c.accent.green} />,
+      },
+      {
+        titre: 'Relie un principe à une zone',
+        texte: 'Un principe peut pointer vers une zone. Chaque principe porte un numéro, et le même numéro apparaît sur sa zone dans le terrain. Touche un principe pour allumer sa zone, touche une zone pour allumer ses principes.',
+        astuce: 'Un principe sans zone reste valable : le lien sert quand une consigne se joue à un endroit précis.',
+        visuel: <Pile><Formulaire colonnes={1} champs={[['Principe', 'Jouer court depuis le gardien'], ['Zone liée', '1 · Entrée du milieu']]} bouton="+ principe" /></Pile>,
+      },
+      {
+        titre: 'Les lignes de jeu',
+        texte: 'Tu peux indiquer pour quelle ligne est écrit un principe : gardien, défense, milieu ou attaque. Chaque joueur voit d’abord les principes de son poste, puis ceux de toute l’équipe, puis les autres.',
+        astuce: 'Sans ligne précisée, le principe vaut pour toute l’équipe.',
+        visuel: <Etapes items={[{ texte: 'Gardien', couleur: c.accent.amber }, { texte: 'Défense', couleur: c.accent.blue }, { texte: 'Milieu', couleur: c.accent.green }, { texte: 'Attaque', couleur: c.accent.red }]} />,
+      },
+      {
+        titre: 'Ce que font les éducateurs',
+        texte: 'Ton plan reste protégé : un éducateur ne peut pas le modifier. Il y ajoute les consignes de sa propre équipe, que seuls ses joueurs voient, sous l’étiquette « Consigne de ton coach ». Tu peux aussi imprimer une phase en fiche A4 avec le bouton « Imprimer cette phase ».',
+        points: [
+          'Pour qu’un éducateur puisse ajouter ses consignes, active « Éditer le Projet Sportif » plus bas sur la page.',
+          'Tes joueurs et leurs parents lisent le plan, sans pouvoir le changer.',
+        ],
+        visuel: <Boutons items={['Imprimer cette phase']} actifs={['Imprimer cette phase']} />,
       },
     ],
   }),

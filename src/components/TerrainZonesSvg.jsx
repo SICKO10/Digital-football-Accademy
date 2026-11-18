@@ -10,9 +10,18 @@
 // Zones dessinées par-dessus à partir de x/y/largeur/hauteur en % (0-100 sur
 // chaque axe indépendamment, même convention que les schémas scannés/
 // Tactipad ailleurs dans l'app).
+import { texteSur } from '../lib/identite'
+
 const W = 260, H = 360
 
-export default function TerrainZonesSvg({ zones, fondUrl, zoneActiveId, onZoneClick }) {
+// numeros (facultatif) : { [zoneId]: [1, 3] } — numéros des principes rattachés
+// à chaque zone, dessinés en pastilles dans le coin de la zone (cf.
+// src/lib/planDeJeu.js). Quand onZoneClick est fourni, chaque zone est aussi
+// utilisable au clavier (Entrée ou Espace).
+const R_PASTILLE = 9
+const MAX_PASTILLES = 4
+
+export default function TerrainZonesSvg({ zones, fondUrl, zoneActiveId, onZoneClick, numeros = null }) {
   const cx = W / 2, cy = H / 2
   const boxW = W * 0.6, boxH = H * 0.16
   const sixW = W * 0.3, sixH = H * 0.06
@@ -71,12 +80,38 @@ export default function TerrainZonesSvg({ zones, fondUrl, zoneActiveId, onZoneCl
         const w = (Number(z.largeur) || 0) / 100 * W, h = (Number(z.hauteur) || 0) / 100 * H
         const active = zoneActiveId != null && z.id === zoneActiveId
         const inactif = zoneActiveId != null && !active
+        const couleur = z.couleur || '#4ade80'
+        const lies = (numeros && numeros[z.id]) || []
+        const pastilles = lies.length > MAX_PASTILLES
+          ? [...lies.slice(0, MAX_PASTILLES - 1).map(String), `+${lies.length - MAX_PASTILLES + 1}`]
+          : lies.map(String)
+        const interactif = !!onZoneClick
+        const descriptionLiee = lies.length ? ` (principe${lies.length > 1 ? 's' : ''} ${lies.join(', ')})` : ''
         return (
-          <g key={z.id} onClick={() => onZoneClick?.(z.id)} style={{ cursor: onZoneClick ? 'pointer' : 'default' }}>
+          <g key={z.id}
+            onClick={() => onZoneClick?.(z.id)}
+            onKeyDown={interactif ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onZoneClick(z.id) } }) : undefined}
+            role={interactif ? 'button' : undefined}
+            tabIndex={interactif ? 0 : undefined}
+            aria-pressed={interactif ? active : undefined}
+            aria-label={interactif ? `Zone ${z.label || ''}${descriptionLiee}` : undefined}
+            style={{ cursor: interactif ? 'pointer' : 'default' }}>
             <rect x={x} y={y} width={w} height={h}
-              fill={(z.couleur || '#4ade80') + (inactif ? '55' : 'cc')}
+              fill={couleur + (inactif ? '55' : 'cc')}
               stroke={active ? '#fff' : 'rgba(0,0,0,0.3)'} strokeWidth={active ? 2 : 1} />
             {z.label && <text x={x + w / 2} y={y + h / 2} fill="white" fontSize={Math.min(11, h * 0.35)} fontWeight="800" textAnchor="middle" dominantBaseline="middle" opacity={inactif ? 0.6 : 1}>{z.label.toUpperCase()}</text>}
+            {pastilles.map((txt, i) => {
+              const px = Math.min(W - R_PASTILLE - 1, Math.max(R_PASTILLE + 1, x + R_PASTILLE + 3 + i * (2 * R_PASTILLE + 3)))
+              const py = Math.min(H - R_PASTILLE - 1, Math.max(R_PASTILLE + 1, y + R_PASTILLE + 3))
+              const numActif = active && !txt.startsWith('+')
+              return (
+                <g key={txt + i} opacity={inactif ? 0.65 : 1} pointerEvents="none">
+                  <circle cx={px} cy={py} r={R_PASTILLE} fill={couleur} stroke={numActif ? '#fff' : 'rgba(255,255,255,0.9)'} strokeWidth={numActif ? 2.5 : 1.5} />
+                  <circle cx={px} cy={py} r={R_PASTILLE + 1.5} fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
+                  <text x={px} y={py} fill={texteSur(couleur)} fontSize={txt.length > 1 ? 8.5 : 11} fontWeight="800" textAnchor="middle" dominantBaseline="central">{txt}</text>
+                </g>
+              )
+            })}
           </g>
         )
       })}

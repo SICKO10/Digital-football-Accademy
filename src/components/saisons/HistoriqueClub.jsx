@@ -221,8 +221,8 @@ function VueEducateurs({ categories }) {
 
 // ── Vue projet sportif ──────────────────────────────────────
 // Planification annuelle (par pôle), règles du jeu (par pôle) et plan annuel par
-// catégorie ont une colonne saison : on les compare. Les principes de jeu n'en ont
-// pas : leur historique démarrera à partir d'une première sauvegarde.
+// catégorie ont une colonne saison : on les compare. Le plan de jeu (principes et
+// zones, dont les ajouts d'équipe) n'en a pas : il n'est pas comparé ici.
 const libelleType = { preparation: 'Préparation', competition: 'Compétition', treve: 'Trêve', reprise: 'Reprise' }
 
 function VueProjet({ clubId }) {
@@ -322,7 +322,7 @@ function VueProjet({ clubId }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>{choix(b, setB, 'Seconde saison')}{colonne(b)}</div>
       </div>
       <p style={{ margin: 0, fontSize: 11, color: colors.text.faint }}>
-        Les principes de jeu et les zones de terrain ne sont pas rattachés à une saison : leur historique commencera à partir de leur prochaine sauvegarde.
+        Le plan de jeu (zones et principes) n'est pas rattaché à une saison : il n'apparaît pas dans cette comparaison.
       </p>
     </div>
   )

@@ -312,3 +312,37 @@ input[type="date"] {
   .fc-page { zoom: 0.71; break-after: page; break-inside: avoid; }
   .fc-page:last-child { break-after: auto; }
 }
+
+/* ── Fiche A4 « Plan de jeu » d'une phase (FichePlanPhase.jsx) ──────────────
+   Montée dans <body> (#plan-print) seulement pendant l'impression ; papier
+   blanc, couleurs fixes. Une phase tient sur une page A4 portrait. */
+#plan-print { display: none; }
+@page plan-a4 { size: A4 portrait; margin: 10mm; }
+@media print {
+  body > *:not(#plan-print) { display: none !important; }
+  body > #plan-print { display: block !important; page: plan-a4; background: #fff; color: #16161A; font-family: 'Barlow', sans-serif; }
+  #plan-print, #plan-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .plan-a4 { width: 100%; }
+  .plan-a4-entete { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 6px; }
+  .plan-a4-logo { width: 56px; height: 56px; object-fit: contain; border-radius: 6px; background: #fff; padding: 3px; }
+  .plan-a4-kicker { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+  .plan-a4-titre { font-size: 26px; font-weight: 800; text-transform: uppercase; line-height: 1.1; margin-top: 2px; }
+  .plan-a4-sous { font-size: 12px; opacity: 0.85; margin-top: 3px; }
+  .plan-a4-corps { display: flex; gap: 22px; align-items: flex-start; margin-top: 18px; }
+  .plan-a4-terrain { width: 300px; flex-shrink: 0; break-inside: avoid; }
+  .plan-a4-terrain svg { max-width: 300px !important; width: 300px !important; }
+  .plan-a4-zones { list-style: none; margin: 10px 0 0; padding: 0; font-size: 11px; line-height: 1.35; }
+  .plan-a4-zones li { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 4px; }
+  .plan-a4-zones li span { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; margin-top: 3px; }
+  .plan-a4-principes { flex: 1; min-width: 0; }
+  .plan-a4-principes ol { list-style: none; margin: 0; padding: 0; }
+  .plan-a4-principes li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #ddd; break-inside: avoid; }
+  .plan-a4-num { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+  .plan-a4-texte { display: block; font-size: 14px; line-height: 1.4; }
+  .plan-a4-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10.5px; color: #555; margin-top: 3px; }
+  .plan-a4-meta:empty { display: none; }
+  .plan-a4-coach { font-weight: 800; color: #16161A; }
+  .plan-a4-vide { font-size: 13px; font-style: italic; color: #666; margin: 0; }
+  .plan-a4-photo { max-width: 100%; max-height: 200px; border-radius: 6px; margin-top: 14px; }
+  .plan-a4-pied { margin-top: 18px; font-size: 9px; color: #888; text-align: right; }
+}

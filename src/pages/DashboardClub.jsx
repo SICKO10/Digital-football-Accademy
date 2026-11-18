@@ -84,7 +84,7 @@ const CLUB_FAQ = [
   { q: "Comment ajouter une catégorie (équipe) ?", a: "Dans Sportif → Catégories → \"+ Ajouter\". Choisis la tranche d'âge, l'équipe (A, B...) et affecte un éducateur." },
   { q: "Comment affilier un éducateur à mon club ?", a: "Dans Sportif → Éducateurs, recherche-le par nom ou envoie une invitation par email. Il doit accepter pour rejoindre officiellement le club." },
   { q: "Comment gérer le planning des terrains ?", a: "Dans Sportif → Organisation → Planning des terrains, importe ton fichier Excel/CSV ou saisis les créneaux manuellement pour chaque catégorie." },
-  { q: "Comment mettre en place le projet sportif du club ?", a: "Dans Sportif → Projet Sportif, choisis le pôle (la tranche d'âge) puis avance onglet par onglet : Principes de jeu (tes principes écrits pour chaque phase : organisation offensive et défensive, transitions, coups de pied arrêtés), Zones de terrain (dessine les zones et explique-les), Planification annuelle, puis Règles du jeu. Tes joueurs retrouvent ensuite ce projet dans leur Préparation tactique. Dans Sportif → Éducateurs, tu choisis aussi si chaque éducateur peut le modifier ou seulement le lire." },
+  { q: "Comment mettre en place le projet sportif du club ?", a: "Dans Sportif → Projet Sportif, choisis le pôle (la tranche d'âge) puis avance onglet par onglet : Plan de jeu (pour chaque phase, tu dessines les zones sur le terrain et tu écris tes principes, reliés par des numéros), Planification annuelle, puis Règles du jeu. Tes joueurs retrouvent ensuite ce projet dans leur Préparation tactique. Dans Sportif → Éducateurs, tu choisis aussi si chaque éducateur peut ajouter les consignes de son équipe : ton plan de jeu reste protégé, seul son ajout est visible par ses joueurs." },
   { q: "Pourquoi bien régler l'Accès du bureau ?", a: "Dans Administratif → Mon club → Staff, tu invites les membres du club par email et tu leur donnes un rôle (directeur sportif, secrétaire, trésorier...). Dans l'étape Accès du bureau, tu choisis, rubrique par rubrique, ce qu'ils peuvent voir ou modifier. C'est ce qui protège les données sensibles du club : le budget, les sponsors ou les déplacements ne sont pas faits pour tout le monde. Sans réglage de ta part, seul le président a accès aux rubriques récentes (Événements, Organigramme, Inventaire, Newsletter...). Donne à chacun uniquement ce dont il a besoin." },
 ];
 
@@ -3432,7 +3432,7 @@ export default function DashboardClub() {
     { rubrique: 'categories', title: "Catégories & Équipes", message: "Crée tes catégories et tes équipes (U11 A, U13 B…) et désigne l'éducateur responsable de chacune." },
     { rubrique: 'classements', title: "Stats équipe", message: "Juste sous les catégories : choisis une équipe pour voir son bilan, ses derniers résultats, le classement officiel et le classement des joueurs (buteurs, passeurs, présence)." },
     { rubrique: 'planning', title: "Planning", message: "Vue générale de toutes les équipes : matchs, entraînements, événements et projets sur un calendrier jour, semaine, mois ou année." },
-    { rubrique: 'projet_sportif', title: "Projet Sportif", message: "Définis les principes de jeu du club par phase, et choisis si tes éducateurs peuvent les modifier." },
+    { rubrique: 'projet_sportif', title: "Projet Sportif", message: "Définis le plan de jeu du club par phase (zones et principes), et choisis si tes éducateurs peuvent y ajouter les consignes de leur équipe." },
     { rubrique: 'recrutement', title: "Recrutement", message: "Repère des joueurs disponibles pour renforcer tes équipes, par poste, région, niveau et statistiques." },
     { rubrique: 'educateurs', title: "Éducateurs", message: "Invite tes éducateurs par email ou partage-leur le code club : ils rejoignent le club depuis leur dashboard." },
     { rubrique: 'organisation', title: "Organisation", message: "Quatre sous-onglets pour la logistique : Déplacements (trajets et mini-bus), Planifier séance (à la place d'un éducateur), Planning des terrains et Inventaire (équipement du club)." },
@@ -4303,7 +4303,7 @@ export default function DashboardClub() {
                 <p style={{ margin: '4px 0 12px', fontSize: '13px', color: colors.text.secondary, lineHeight: 1.45 }}>Par défaut, les éducateurs affiliés consultent sans modifier. Un réglage individuel reste possible depuis Éducateurs (menu ···).</p>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                   {[
-                    { champ: 'educateurs_editent_projet_sportif', label: 'Éditer le Projet Sportif', desc: 'Principes de jeu, zones de terrain, règles' },
+                    { champ: 'educateurs_editent_projet_sportif', label: 'Éditer le Projet Sportif', desc: 'Consignes de leur équipe dans le plan de jeu, règles. Le plan du club reste protégé' },
                     { champ: 'educateurs_editent_planification', label: 'Éditer la Planification annuelle', desc: 'Périodes et objectifs de la saison' },
                   ].map(({ champ, label, desc }) => {
                     const actif = !!club?.[champ]
