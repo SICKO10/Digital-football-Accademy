@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha, fontSize, radius, spacing } from '../tokens'
+import { alpha, fontSize, forme, police, radius, spacing } from '../tokens'
 import { getPoleDeCategorie } from '../constants/poles'
 import { PHASES_JEU, PHASE_PAR_CLE } from '../constants/phasesJeu'
 import { localeOf } from '../lib/translations'
-import { IconTactic } from './icones'
+import { Play, Route } from 'lucide-react'
 import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
 import EnTetePage from './joueur/EnTetePage'
@@ -25,13 +25,13 @@ function PanneauZones({ zones, colors, fondUrl, isMobile }) {
   const [zoneActiveId, setZoneActiveId] = useState(null)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr', gap: spacing['3xl'], alignItems: 'start' }}>
-      <Carte isMobile style={{ display: 'flex', justifyContent: 'center' }}>
+      <Carte isMobile identite style={{ display: 'flex', justifyContent: 'center' }}>
         <TerrainZonesSvg zones={zones} fondUrl={fondUrl} zoneActiveId={zoneActiveId} onZoneClick={id => setZoneActiveId(prev => prev === id ? null : id)} />
       </Carte>
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, minWidth: 0 }}>
         {zones.length === 0 ? (
           <EmptyState
-            icon={<IconTactic />}
+            icon={<Route />}
             title="Rien n'est encore dessiné pour cette phase"
             subtitle="Ton club n'a pas encore personnalisé cette page. Dès que ton club ou ton éducateur l'aura fait, les zones apparaîtront ici avec leur explication."
           />
@@ -39,10 +39,10 @@ function PanneauZones({ zones, colors, fondUrl, isMobile }) {
           const couleur = z.couleur || colors.accent.green
           const active = zoneActiveId === z.id
           return (
-            <Carte key={z.id} isMobile onClick={() => setZoneActiveId(prev => prev === z.id ? null : z.id)}
+            <Carte key={z.id} isMobile identite onClick={() => setZoneActiveId(prev => prev === z.id ? null : z.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: spacing.base, padding: `${spacing.base} ${spacing.xl}`,
-                borderLeft: `3px solid ${active ? couleur : 'transparent'}`,
+                borderLeft: `${forme.lisere} solid ${active ? couleur : 'transparent'}`,
                 background: active ? couleur + alpha.subtle : colors.background.surface,
               }}>
               <div style={{ width: '14px', height: '14px', borderRadius: radius.sm, background: couleur, flexShrink: 0 }} />
@@ -67,7 +67,7 @@ function GalerieCpa({ schemas, colors }) {
       {schemas.map(s => {
         const numeros = Object.keys(s.legende || {}).sort((a, b) => (Number(a) || 0) - (Number(b) || 0))
         return (
-          <Carte key={s.id} isMobile style={{ padding: spacing.base, borderRadius: radius.xl }}>
+          <Carte key={s.id} isMobile identite style={{ padding: spacing.base }}>
             <DemiTerrainSchema elements={s.elements || []} />
             <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.base, fontWeight: 700, color: colors.text.primary, textAlign: 'center' }}>{s.nom}</p>
             {numeros.length > 0 && (
@@ -94,7 +94,7 @@ function GalerieImages({ images, colors }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: spacing.lg, marginTop: spacing.lg }}>
       {images.map(g => (
-        <img key={g.id} src={g.image_url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: radius.lg, border: `1px solid ${colors.border.subtle}`, display: 'block' }} />
+        <img key={g.id} src={g.image_url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: forme.rayonPastille, border: `1px solid ${colors.border.subtle}`, display: 'block' }} />
       ))}
     </div>
   )
@@ -122,11 +122,9 @@ function CarteSchema({ schema, colors, locale, onOuvrir }) {
   return (
     <div onClick={onOuvrir} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}
       style={{
-        cursor: 'pointer', borderRadius: radius.xl, overflow: 'hidden', background: colors.background.surface,
+        cursor: 'pointer', borderRadius: forme.rayonCarte, overflow: 'hidden', background: colors.background.surface,
         border: `1px solid ${survol ? couleur : colors.border.subtle}`,
-        transform: survol ? 'translateY(-4px)' : 'none',
-        boxShadow: survol ? `0 14px 32px ${couleur}33` : 'none',
-        transition: 'transform .2s ease, box-shadow .2s ease, border-color .2s ease',
+        transition: 'border-color .2s ease',
       }}>
       <div ref={refMedia} style={{ position: 'relative', width: '100%', aspectRatio: '16 / 10', overflow: 'hidden', background: '#0B3D1E' }}>
         {largeur > 0 && (
@@ -137,21 +135,19 @@ function CarteSchema({ schema, colors, locale, onOuvrir }) {
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.6) 100%)', pointerEvents: 'none' }} />
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <span style={{
-            width: '58px', height: '58px', borderRadius: '50%', background: couleur, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 6px 22px rgba(0,0,0,0.45), 0 0 0 ${survol ? '10px' : '6px'} rgba(255,255,255,0.18)`,
-            transform: survol ? 'scale(1.1)' : 'scale(1)', transition: 'transform .2s ease, box-shadow .2s ease',
+            width: '52px', height: '52px', borderRadius: forme.rayonCarte, background: couleur, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.black} style={{ marginLeft: '3px' }}><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z" /></svg>
+            <Play size={22} fill={colors.black} color={colors.black} style={{ marginLeft: '2px' }} />
           </span>
         </div>
         {etapes > 1 && (
-          <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.62)', color: '#fff', fontSize: fontSize.base, fontWeight: 700, padding: '4px 9px', borderRadius: '999px', letterSpacing: '0.4px' }}>
+          <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.62)', color: '#fff', fontSize: fontSize.base, fontWeight: 700, padding: '4px 9px', borderRadius: forme.rayonPastille, letterSpacing: '0.4px' }}>
             Animé · {etapes} étapes
           </span>
         )}
       </div>
       <div style={{ padding: `${spacing.lg} ${spacing.xl} ${spacing.xl}` }}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: fontSize['4xl'], lineHeight: 1.25, color: colors.text.primary }}>{schema.nom || 'Sans titre'}</p>
+        <p style={{ margin: 0, fontFamily: police.titre, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: fontSize['4xl'], lineHeight: 1.25, color: colors.text.primary }}>{schema.nom || 'Sans titre'}</p>
         <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.base, color: colors.text.faint }}>
           Mis à jour le {new Date(schema.updated_at || schema.created_at).toLocaleDateString(locale)}
         </p>
@@ -259,11 +255,11 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
           style={{ background: 'none', border: 'none', color: colors.accent.blue, cursor: 'pointer', fontSize: fontSize.lg, fontWeight: 700, marginBottom: spacing['2xl'], padding: 0, fontFamily: 'inherit' }}>
           ← Retour aux schémas
         </button>
-        <Carte isMobile={isMobile}>
-          <h2 style={{ color: colors.text.primary, margin: `0 0 ${spacing['2xl']}`, fontSize: fontSize['4xl'] }}>{schemaActif.nom || 'Sans titre'}</h2>
+        <Carte isMobile={isMobile} identite>
+          <h2 style={{ color: colors.text.primary, margin: `0 0 ${spacing['2xl']}`, fontFamily: police.titre, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: fontSize['4xl'] }}>{schemaActif.nom || 'Sans titre'}</h2>
           {isMobile && (
             <button onClick={() => setPleinEcran('lecture')}
-              style={{ width: '100%', marginBottom: spacing['2xl'], background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '12px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', marginBottom: spacing['2xl'], background: colors.accent.green, color: colors.black, border: 'none', borderRadius: forme.rayonPastille, padding: '12px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
               Plein écran
             </button>
           )}
@@ -277,7 +273,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   }
 
   const tabStyle = (actif) => ({
-    padding: `${spacing.base} ${spacing['2xl']}`, borderRadius: radius.lg, border: 'none',
+    padding: `${spacing.base} ${spacing['2xl']}`, borderRadius: forme.rayonPastille, border: 'none',
     background: actif ? colors.background.raised : 'transparent',
     color: actif ? colors.text.primary : colors.text.faint,
     fontWeight: actif ? 700 : 400, fontSize: fontSize.lg, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit',
@@ -300,14 +296,14 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
   // (le pôle se déduit d'elle, sans pôle aucune zone ne peut être lue).
   const blocPhasesVide = !clubId ? (
     <EmptyState
-      icon={<IconTactic />}
+      icon={<Route />}
       title="Le projet de jeu arrive avec ton club"
       subtitle="Une fois dans une équipe, tu retrouves ici les zones du terrain, les phases de jeu, les transitions et les coups de pied arrêtés de ton club."
       cta={onNaviguer ? { label: 'Rejoindre mon équipe', onClick: () => onNaviguer('equipe') } : undefined}
     />
   ) : !pole ? (
     <EmptyState
-      icon={<IconTactic />}
+      icon={<Route />}
       title="Ta catégorie n'est pas renseignée"
       subtitle="Le projet de jeu dépend de ta catégorie (U13, U16, Seniors...). Indique-la dans ton profil pour voir celui qui te concerne."
       cta={onNaviguer ? { label: 'Compléter mon profil', onClick: () => onNaviguer('profil') } : undefined}
@@ -320,7 +316,7 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
       <EnTetePage isMobile={isMobile} kicker="Ton espace tactique" titre="Préparation tactique" accentMot="tactique"
         sousTitre="Le projet de jeu de ton club, phase par phase, et les schémas que ton éducateur partage avec toi. Arrive au match en sachant exactement quoi faire." />
 
-      <div style={{ display: 'flex', gap: spacing.xs, background: colors.background.sunken, borderRadius: radius.xl, padding: spacing.xs, width: 'fit-content', maxWidth: '100%', overflowX: 'auto', border: `1px solid ${colors.border.subtle}` }}>
+      <div style={{ display: 'flex', gap: spacing.xs, background: colors.background.sunken, borderRadius: forme.rayonCarte, padding: spacing.xs, width: 'fit-content', maxWidth: '100%', overflowX: 'auto', border: `1px solid ${colors.border.subtle}` }}>
         {ONGLETS.map(o => <button key={o.key} style={tabStyle(onglet === o.key)} onClick={() => setOnglet(o.key)}>{o.label}</button>)}
       </div>
 
@@ -346,14 +342,14 @@ export default function PreparationTactiqueJoueur({ educateurIds = [], clubId, c
           schemas.length === 0 ? (
             educateurIds.length === 0 ? (
               <EmptyState
-                icon={<IconTactic />}
+                icon={<Route />}
                 title="Les schémas de ton éducateur arrivent avec ton équipe"
                 subtitle="Quand tu fais partie d'une équipe, les schémas tactiques que ton éducateur choisit de partager apparaissent ici."
                 cta={onNaviguer ? { label: 'Rejoindre mon équipe', onClick: () => onNaviguer('equipe') } : undefined}
               />
             ) : (
               <EmptyState
-                icon={<IconTactic />}
+                icon={<Route />}
                 title="Aucun schéma partagé pour l'instant"
                 subtitle="Ton éducateur n'a pas encore partagé de schéma tactique. Dès qu'il le fera depuis Tactipad, tu le retrouveras ici, prêt à être consulté avant le match."
               />

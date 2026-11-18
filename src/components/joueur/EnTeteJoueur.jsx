@@ -4,7 +4,7 @@ import { numeroDePoste } from '../../lib/ecranJoueur'
 import { t } from '../../lib/translations'
 import Avatar from '../Avatar'
 import Carte from './Carte'
-import { IconCard } from '../icones'
+import { CreditCard } from 'lucide-react'
 
 // En-tête de l'accueil joueur : la carte de joueur. Un seul squelette pour les
 // deux profils, seul le contenu change (cf. BRIEF-joueur-v2.md, emplacement 1) :
@@ -107,7 +107,7 @@ export default function EnTeteJoueur({ profil, clubAffilieInfo, isPro, nbDemande
             )}
             {profil?.numero_licence && (
               <span style={pastille(colors.accent.blue, { display: 'inline-flex', alignItems: 'center', gap: spacing.md })}>
-                <IconCard /> {t('jd_licencie', lang)}
+                <CreditCard /> {t('jd_licencie', lang)}
               </span>
             )}
           </div>

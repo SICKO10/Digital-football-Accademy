@@ -2,15 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { makeUseSt } from '../../lib/theme'
 import {
-  IconRun, IconDumbbell, IconBolt, IconRefresh, IconStretch, IconClose,
-  IconTarget, IconCheck, IconClock, IconPencil, IconCamera, IconStar,
-  IconSearch, IconTrophy, IconMessage, IconAlert,
-} from '../icones'
+  Footprints, Dumbbell, Zap, RefreshCw, PersonStanding, X, Target, Check, Clock, Pencil, Camera,
+  Star, Search, Trophy, MessageSquare, TriangleAlert, ChevronDown, ChevronRight,
+} from 'lucide-react'
+import { forme, police } from '../../tokens'
 
 const TYPES_SEANCE = [
-  { value: 'course', Icone: IconRun }, { value: 'renforcement', Icone: IconDumbbell },
-  { value: 'fractionne', Icone: IconBolt }, { value: 'circuit', Icone: IconRefresh },
-  { value: 'gainage', Icone: IconStretch }, { value: 'repos', Icone: IconClose },
+  { value: 'course', Icone: Footprints }, { value: 'renforcement', Icone: Dumbbell },
+  { value: 'fractionne', Icone: Zap }, { value: 'circuit', Icone: RefreshCw },
+  { value: 'gainage', Icone: PersonStanding }, { value: 'repos', Icone: X },
 ]
 
 const stSombre = {
@@ -133,30 +133,30 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
   }
 
   const typeInfo = TYPES_SEANCE.find(t => t.value === seance.type_seance)
-  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
+  const inp = { width: '100%', background: st.card2, border: `1px solid ${st.border}`, borderRadius: forme.rayonPastille, padding: '10px 14px', color: st.text, fontSize: 14, boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 32, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: forme.rayonCarte, padding: 32, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 28, marginBottom: 6 }}>{typeInfo?.icon}</div>
           <h3 style={{ color: st.text, margin: '0 0 4px' }}>{seance.titre}</h3>
           {seance.description && <p style={{ color: st.muted, fontSize: 13, margin: 0 }}>{seance.description}</p>}
           <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-            {seance.duree_cible && <span style={{ color: st.green, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconTarget size={13} />{seance.duree_cible} min</span>}
-            {seance.distance_cible && <span style={{ color: st.green, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconTarget size={13} />{seance.distance_cible} km</span>}
+            {seance.duree_cible && <span style={{ color: st.green, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Target size={13} />{seance.duree_cible} min</span>}
+            {seance.distance_cible && <span style={{ color: st.green, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Target size={13} />{seance.distance_cible} km</span>}
           </div>
         </div>
         {soumissionExistante && (
-          <div style={{ background: soumissionExistante.statut === 'valide' ? '#14532d' : soumissionExistante.statut === 'refuse' ? '#450a0a' : '#1a1a00', border: `1px solid ${soumissionExistante.statut === 'valide' ? st.green : soumissionExistante.statut === 'refuse' ? st.red : st.yellow}`, borderRadius: 8, padding: 12, marginBottom: 20, fontSize: 13, color: soumissionExistante.statut === 'valide' ? st.green : soumissionExistante.statut === 'refuse' ? st.red : st.yellow }}>
-            {soumissionExistante.statut === 'valide' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconCheck size={13} />Validé par le coach</span> : soumissionExistante.statut === 'refuse' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClose size={13} />Refusé — tu peux renvoyer</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconClock size={13} />En attente de validation</span>}
+          <div style={{ background: (soumissionExistante.statut === 'valide' ? st.green : soumissionExistante.statut === 'refuse' ? st.red : st.yellow) + '15', border: `1px solid ${soumissionExistante.statut === 'valide' ? st.green : soumissionExistante.statut === 'refuse' ? st.red : st.yellow}`, borderRadius: forme.rayonPastille, padding: 12, marginBottom: 20, fontSize: 13, color: soumissionExistante.statut === 'valide' ? st.green : soumissionExistante.statut === 'refuse' ? st.red : st.yellow }}>
+            {soumissionExistante.statut === 'valide' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Check size={13} />Validé par le coach</span> : soumissionExistante.statut === 'refuse' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><X size={13} />Refusé — tu peux renvoyer</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Clock size={13} />En attente de validation</span>}
           </div>
         )}
         {estCourse && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20, background: st.card2, borderRadius: 8, padding: 4 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, background: st.card2, borderRadius: forme.rayonPastille, padding: 4 }}>
             {['manuel', 'upload'].map(m => (
-              <button key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mode === m ? st.green : 'transparent', color: mode === m ? '#000' : st.muted }}>
-                {m === 'manuel' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPencil size={13} />Saisie manuelle</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconCamera size={13} />Screenshot</span>}
+              <button key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: '8px', borderRadius: forme.rayonPastille, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mode === m ? st.green : 'transparent', color: mode === m ? '#000' : st.muted }}>
+                {m === 'manuel' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Pencil size={13} />Saisie manuelle</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Camera size={13} />Screenshot</span>}
               </button>
             ))}
           </div>
@@ -169,11 +169,11 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <label style={{ display: 'flex', gap: 12, alignItems: 'center', color: st.text, cursor: 'pointer' }}>
               <input type="checkbox" checked={form.objectifs_atteints} onChange={e => setForm(f => ({ ...f, objectifs_atteints: e.target.checked }))} />
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCheck size={14} />J'ai atteint les objectifs de la séance</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Check size={14} />J'ai atteint les objectifs de la séance</span>
             </label>
             <label style={{ display: 'flex', gap: 12, alignItems: 'center', color: st.green, cursor: 'pointer' }}>
               <input type="checkbox" checked={form.bonus} onChange={e => setForm(f => ({ ...f, bonus: e.target.checked }))} />
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconStar size={14} />BONUS — J'ai fait plus que demandé</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Star size={14} />BONUS — J'ai fait plus que demandé</span>
             </label>
             <div>
               <label style={{ color: st.muted, fontSize: 12, display: 'block', marginBottom: 6 }}>Notes</label>
@@ -183,8 +183,8 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
         ) : mode === 'manuel' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {scanNotice && (
-              <div style={{ background: '#0a1a0a', border: `1px solid ${st.green}40`, borderRadius: 8, padding: 10, color: st.green, fontSize: 12 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconCheck size={13} />Champs pré-remplis depuis le screenshot — vérifie avant de valider.</span>
+              <div style={{ background: st.green + '15', border: `1px solid ${st.green}40`, borderRadius: forme.rayonPastille, padding: 10, color: st.green, fontSize: 12 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Check size={13} />Champs pré-remplis depuis le screenshot — vérifie avant de valider.</span>
               </div>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -224,12 +224,12 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
           </div>
         ) : (
           <div>
-            <div onClick={() => !scanning && fileRef.current?.click()} style={{ border: `2px dashed ${preview ? st.green : st.border}`, borderRadius: 12, padding: 32, textAlign: 'center', cursor: scanning ? 'default' : 'pointer', background: st.card2 }}>
+            <div onClick={() => !scanning && fileRef.current?.click()} style={{ border: `2px dashed ${preview ? st.green : st.border}`, borderRadius: forme.rayonCarte, padding: 32, textAlign: 'center', cursor: scanning ? 'default' : 'pointer', background: st.card2 }}>
               {scanning ? (
-                <div style={{ color: st.green, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><IconSearch size={14} />Analyse du screenshot en cours...</div>
-              ) : preview ? <img src={preview} alt="Preview" style={{ maxWidth: '100%', borderRadius: 8 }} /> : (
+                <div style={{ color: st.green, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><Search size={14} />Analyse du screenshot en cours...</div>
+              ) : preview ? <img src={preview} alt="Preview" style={{ maxWidth: '100%', borderRadius: forme.rayonPastille }} /> : (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: st.muted }}><IconCamera size={36} /></div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: st.muted }}><Camera size={36} /></div>
                   <div style={{ color: st.text, fontWeight: 600, marginBottom: 4 }}>Ajouter un screenshot</div>
                   <div style={{ color: st.muted, fontSize: 13 }}>Nike Run, Strava, Adidas Running, Decathlon Coach...</div>
                   <div style={{ color: st.green, fontSize: 12, marginTop: 8 }}>L'IA remplit distance / durée / allure / FC pour toi</div>
@@ -237,12 +237,12 @@ function ModalSoumettre({ seance, joueurId, soumissionExistante, onClose, onSave
               )}
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} disabled={scanning} />
-            {preview && !scanning && <button onClick={() => { setFile(null); setPreview(null); setScanNotice(false) }} style={{ width: '100%', marginTop: 8, background: 'transparent', border: `1px solid ${st.border}`, borderRadius: 8, color: st.muted, padding: '6px', cursor: 'pointer', fontSize: 12 }}>Changer l'image</button>}
+            {preview && !scanning && <button onClick={() => { setFile(null); setPreview(null); setScanNotice(false) }} style={{ width: '100%', marginTop: 8, background: 'transparent', border: `1px solid ${st.border}`, borderRadius: forme.rayonPastille, color: st.muted, padding: '6px', cursor: 'pointer', fontSize: 12 }}>Changer l'image</button>}
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 8, color: st.text, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: 8, color: '#000', fontWeight: 700, cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ padding: '10px 20px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: forme.rayonPastille, color: st.text, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: st.green, border: 'none', borderRadius: forme.rayonPastille, color: '#000', fontWeight: 700, cursor: 'pointer' }}>
             {loading ? '...' : soumissionExistante ? 'Renvoyer' : 'Soumettre'}
           </button>
         </div>
@@ -265,8 +265,8 @@ const METRIQUES_TESTS = [
 function CarteTest({ test, precedent }) {
   const st = useSt()
   return (
-    <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, padding: 20, marginBottom: 12 }}>
-      <h3 style={{ color: st.text, margin: '0 0 16px', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}><IconTrophy size={16} />Tests du {new Date(test.date_test).toLocaleDateString('fr-FR')}</h3>
+    <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: forme.rayonCarte, padding: 20, marginBottom: 12 }}>
+      <h3 style={{ color: st.text, margin: '0 0 16px', fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={16} />Tests du {new Date(test.date_test).toLocaleDateString('fr-FR')}</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
         {METRIQUES_TESTS.map(m => {
           const value = test[m.key]
@@ -274,12 +274,12 @@ function CarteTest({ test, precedent }) {
           const prevValue = precedent?.[m.key]
           const delta = value != null && prevValue != null ? Math.round((value - prevValue) * 100) / 100 : null
           return (
-            <div key={m.key} style={{ background: st.card2, borderRadius: 8, padding: 12 }}>
+            <div key={m.key} style={{ background: st.card2, borderRadius: forme.rayonPastille, padding: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <span style={{ color: st.muted, fontSize: 11 }}>{m.label}</span>
-                {atteint != null && <span style={{ display: 'inline-flex', color: atteint ? st.green : st.red }}>{atteint ? <IconCheck size={13} /> : <IconClose size={13} />}</span>}
+                {atteint != null && <span style={{ display: 'inline-flex', color: atteint ? st.green : st.red }}>{atteint ? <Check size={13} /> : <X size={13} />}</span>}
               </div>
-              <div style={{ color: st.text, fontWeight: 700, fontSize: 20 }}>{value != null ? `${value}${m.unit}` : '—'}</div>
+              <div style={{ color: st.text, fontFamily: police.titre, fontWeight: 700, fontSize: 24 }}>{value != null ? `${value}${m.unit}` : '—'}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
                 <span style={{ color: st.muted, fontSize: 10 }}>Objectif : {m.gt ? '≥' : '≤'} {m.cible}{m.unit}</span>
                 {delta != null && delta !== 0 && (
@@ -292,7 +292,7 @@ function CarteTest({ test, precedent }) {
           )
         })}
       </div>
-      {test.notes && <p style={{ color: st.muted, fontSize: 12, fontStyle: 'italic', margin: '12px 0 0', display: 'flex', alignItems: 'flex-start', gap: 6 }}><IconMessage size={13} />{test.notes}</p>}
+      {test.notes && <p style={{ color: st.muted, fontSize: 12, fontStyle: 'italic', margin: '12px 0 0', display: 'flex', alignItems: 'flex-start', gap: 6 }}><MessageSquare size={13} />{test.notes}</p>}
     </div>
   )
 }
@@ -346,19 +346,19 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
   if (loading) return <div style={{ color: st.muted, textAlign: 'center', padding: 40 }}>Chargement...</div>
 
   if (error === 'tables_missing') return (
-    <div style={{ background: '#1a1a00', border: '1px solid #444', borderRadius: 12, padding: 24 }}>
-      <div style={{ color: st.yellow, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><IconAlert size={15} />Fonctionnalité en cours d'activation</div>
+    <div style={{ background: st.yellow + '15', border: `1px solid ${st.yellow}40`, borderRadius: forme.rayonCarte, padding: 24 }}>
+      <div style={{ color: st.yellow, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><TriangleAlert size={15} />Fonctionnalité en cours d'activation</div>
     </div>
   )
 
   const sectionTests = (
     <div style={{ marginTop: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ color: st.text, margin: 0, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}><IconTrophy size={16} />Tests physiques</h3>
+        <h3 style={{ color: st.text, margin: 0, fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={16} />Tests physiques</h3>
         <span style={{ color: st.muted, fontSize: 11, fontStyle: 'italic' }}>Résultats saisis par ton éducateur</span>
       </div>
       {tests.length === 0 ? (
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 14, padding: '40px 24px', textAlign: 'center' }}>
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: forme.rayonCarte, padding: '40px 24px', textAlign: 'center' }}>
           <p style={{ color: st.muted, fontWeight: 600, fontSize: 14, margin: '0 0 4px' }}>Aucun test enregistré</p>
           <p style={{ color: st.border, fontSize: 12, margin: 0 }}>Ton éducateur saisira tes résultats ici</p>
         </div>
@@ -371,7 +371,7 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
   if (!programme) return (
     <div style={{ padding: 16 }}>
       <div style={{ textAlign: 'center', padding: '40px 20px', color: st.muted }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: st.muted }}><IconDumbbell size={44} /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: st.muted }}><Dumbbell size={44} /></div>
         <div style={{ color: st.text, marginBottom: 8 }}>Aucun programme actif</div>
         <div style={{ fontSize: 14 }}>Ton éducateur n'a pas encore créé de programme.</div>
       </div>
@@ -390,29 +390,29 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
   return (
     <div style={{ padding: 16 }}>
       {/* Header — plan actif */}
-      <div style={{ background: st.card, border: `1px solid ${st.green}25`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+      <div style={{ background: st.card, border: `1px solid ${st.border}`, borderLeft: `${forme.lisere} solid ${st.green}`, borderRadius: forme.rayonCarte, padding: 24, marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <p style={{ color: st.green, fontSize: 11, fontWeight: 700, letterSpacing: '2px', margin: '0 0 6px' }}>PLAN ACTIF</p>
-            <h2 style={{ color: st.text, fontWeight: 800, fontSize: 18, margin: '0 0 4px', lineHeight: 1.3 }}>{programme.titre}</h2>
+            <p style={{ color: st.green, fontFamily: police.titre, fontSize: 12, fontWeight: 700, letterSpacing: '2px', margin: '0 0 6px' }}>PLAN ACTIF</p>
+            <h2 style={{ color: st.text, fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 800, fontSize: 22, margin: '0 0 4px', lineHeight: 1.3 }}>{programme.titre}</h2>
             <p style={{ color: st.muted, fontSize: 13, margin: 0 }}>
               {new Date(programme.date_debut).toLocaleDateString('fr-FR')} → {new Date(programme.date_fin).toLocaleDateString('fr-FR')}
             </p>
             {programme.description && <p style={{ color: st.muted, fontSize: 13, margin: '8px 0 0' }}>{programme.description}</p>}
           </div>
           <div style={{ textAlign: 'center', flexShrink: 0 }}>
-            <div style={{ fontSize: 32, fontWeight: 900, color: st.green, lineHeight: 1 }}>{progression}%</div>
+            <div style={{ fontFamily: police.titre, fontSize: 40, fontWeight: 800, color: st.green, lineHeight: 1 }}>{progression}%</div>
             <div style={{ fontSize: 11, color: st.muted, marginTop: 2 }}>complété</div>
           </div>
         </div>
 
-        <div style={{ background: st.bg, borderRadius: 999, height: 8, marginBottom: 12, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${progression}%`, background: `linear-gradient(90deg, ${st.green}, #22d3ee)`, borderRadius: 999, transition: 'width 0.8s ease' }} />
+        <div style={{ background: st.bg, borderRadius: forme.rayonCarte, height: 8, marginBottom: 12, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${progression}%`, background: st.green, borderRadius: forme.rayonCarte, transition: 'width 0.8s ease' }} />
         </div>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ padding: '5px 12px', borderRadius: 8, background: st.green + '20', color: st.green, fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><IconCheck size={13} />{nbValides} validées</span>
-          <span style={{ padding: '5px 12px', borderRadius: 8, background: st.muted + '20', color: st.muted, fontSize: 13, fontWeight: 600 }}>{nbTotal - nbValides} à faire</span>
+          <span style={{ padding: '5px 12px', borderRadius: forme.rayonPastille, background: st.green + '20', color: st.green, fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={13} />{nbValides} validées</span>
+          <span style={{ padding: '5px 12px', borderRadius: forme.rayonPastille, background: st.muted + '20', color: st.muted, fontSize: 13, fontWeight: 600 }}>{nbTotal - nbValides} à faire</span>
         </div>
       </div>
 
@@ -420,7 +420,7 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
       {Array.from({ length: programme.nb_semaines || 2 }, (_, i) => i + 1).map(sem => (
         <div key={sem} style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <span style={{ color: st.green, fontWeight: 800, fontSize: 13, letterSpacing: '1px' }}>SEMAINE {sem}</span>
+            <span style={{ color: st.green, fontFamily: police.titre, fontWeight: 800, fontSize: 15, letterSpacing: '1px' }}>SEMAINE {sem}</span>
             <div style={{ flex: 1, height: 1, background: st.border }} />
           </div>
           <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
@@ -438,17 +438,17 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
                 let Icone = null, couleurTexte = st.muted
 
                 if (seance && !isRepos) {
-                  if (soumission?.statut === 'valide') { cellStyle = { background: st.green + '10', border: `1px solid ${st.green}30` }; Icone = IconCheck; couleurTexte = st.green }
-                  else if (soumission?.statut === 'soumis') { cellStyle = { background: st.yellow + '10', border: `1px solid ${st.yellow}30` }; Icone = IconClock; couleurTexte = st.yellow }
-                  else if (soumission?.statut === 'refuse') { cellStyle = { background: st.red + '10', border: `1px solid ${st.red}30` }; Icone = IconRefresh; couleurTexte = st.red }
-                  else { cellStyle = { background: st.card2, border: `1px dashed ${st.border}` }; Icone = typeInfo?.Icone || IconDumbbell; couleurTexte = st.muted }
+                  if (soumission?.statut === 'valide') { cellStyle = { background: st.green + '10', border: `1px solid ${st.green}30` }; Icone = Check; couleurTexte = st.green }
+                  else if (soumission?.statut === 'soumis') { cellStyle = { background: st.yellow + '10', border: `1px solid ${st.yellow}30` }; Icone = Clock; couleurTexte = st.yellow }
+                  else if (soumission?.statut === 'refuse') { cellStyle = { background: st.red + '10', border: `1px solid ${st.red}30` }; Icone = RefreshCw; couleurTexte = st.red }
+                  else { cellStyle = { background: st.card2, border: `1px dashed ${st.border}` }; Icone = typeInfo?.Icone || Dumbbell; couleurTexte = st.muted }
                 }
 
                 return (
                   <div key={jour}>
                     <div style={{ color: st.muted, fontSize: 10, textAlign: 'center', marginBottom: 3, fontWeight: 600 }}>{'LMMJVSD'[jour - 1]}</div>
                     <div onClick={() => seance && !isRepos && setModalSeance({ seance, soumission })}
-                      style={{ ...cellStyle, borderRadius: 12, padding: '10px 6px', minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.4 : 1 }}>
+                      style={{ ...cellStyle, borderRadius: forme.rayonCarte, padding: '10px 6px', minHeight: 72, cursor: seance && !isRepos ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: isRepos ? 0.4 : 1 }}>
                       {seance ? (
                         <>
                           <span style={{ display: 'flex', color: couleurTexte }}>{Icone && <Icone size={18} />}</span>
@@ -466,10 +466,10 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
 
       {/* Mes séances soumises (récap) */}
       {mesSoumissions.length > 0 && (
-        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: 12, marginBottom: 20, overflow: 'hidden' }}>
+        <div style={{ background: st.card, border: `1px solid ${st.border}`, borderRadius: forme.rayonCarte, marginBottom: 20, overflow: 'hidden' }}>
           <button onClick={() => setAccordeonOuvert(o => !o)}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: st.text, fontWeight: 700, fontSize: 14 }}>
-            <span>{accordeonOuvert ? '▼' : '▶'}</span> Mes séances soumises ({mesSoumissions.length})
+            {accordeonOuvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />} Mes séances soumises ({mesSoumissions.length})
           </button>
           {accordeonOuvert && (
             <div style={{ padding: '0 20px 16px' }}>
@@ -477,9 +477,9 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
                 const typeInfo = TYPES_SEANCE.find(t => t.value === s.seance.type_seance)
                 const estCourseS = ['course', 'fractionne'].includes(s.seance.type_seance)
                 return (
-                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: 12, marginBottom: 8 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: st.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                      {(() => { const I = typeInfo?.Icone || IconDumbbell; return <I size={14} /> })()}
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: st.card2, border: `1px solid ${st.border}`, borderRadius: forme.rayonCarte, marginBottom: 8 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: forme.rayonCarte, background: st.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                      {(() => { const I = typeInfo?.Icone || Dumbbell; return <I size={14} /> })()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ color: st.text, fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.seance.titre}</div>
@@ -492,11 +492,11 @@ export default function PrepPhysiqueJoueur({ joueurId, isMobile = false }) {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                      {s.objectifs_atteints && <span style={{ padding: '3px 8px', borderRadius: 6, background: st.green + '15', color: st.green, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconCheck size={11} />Objectifs</span>}
-                      {s.bonus && <span style={{ padding: '3px 8px', borderRadius: 6, background: st.yellow + '15', color: st.yellow, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconStar size={11} />Bonus</span>}
+                      {s.objectifs_atteints && <span style={{ padding: '3px 8px', borderRadius: forme.rayonPastille, background: st.green + '15', color: st.green, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={11} />Objectifs</span>}
+                      {s.bonus && <span style={{ padding: '3px 8px', borderRadius: forme.rayonPastille, background: st.yellow + '15', color: st.yellow, fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Star size={11} />Bonus</span>}
                       {s.proof_url && (
                         <a href={s.proof_url} target="_blank" rel="noreferrer"
-                          style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${st.border}`, background: 'transparent', color: st.muted, fontSize: 11, textDecoration: 'none' }}>
+                          style={{ padding: '4px 10px', borderRadius: forme.rayonPastille, border: `1px solid ${st.border}`, background: 'transparent', color: st.muted, fontSize: 11, textDecoration: 'none' }}>
                           Voir →
                         </a>
                       )}

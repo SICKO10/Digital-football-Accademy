@@ -1,5 +1,5 @@
 import { useColors, useTheme } from '../../lib/theme'
-import { alpha, radius, spacing } from '../../tokens'
+import { alpha, forme, radius, spacing } from '../../tokens'
 
 // Carte standard de l'espace joueur — mêmes fond, bordure, rayon et padding
 // dans les deux variantes (fan affilié et joueur Pro), cf. BRIEF.md : ce qui
@@ -18,11 +18,15 @@ import { alpha, radius, spacing } from '../../tokens'
 // (SanteJoueur, EquipementJoueur, NutritionIntro) et sera retiré quand ils auront
 // migré. Ne pas l'utiliser dans du nouveau code.
 //
+// `identite` : passe de la carte « Maison de club » (rayon 6 px, grille du chantier
+// PLAN-dashboard-joueur-v3.md). Sans lui, le rayon historique de 16 px est gardé pour
+// les rubriques pas encore passées ; le défaut basculera au bloc 11.
+//
 // `isMobile` est passé en prop (et non lu via useIsMobileOrTablet ici) pour la
 // même raison que PrepPhysiqueJoueur : le dashboard l'a déjà, et ce hook pose
 // deux écouteurs de redimensionnement par instance — une dizaine de cartes par
 // écran en poserait une vingtaine pour rien.
-export default function Carte({ niveau = 'standard', accent, isMobile = false, onClick, style, children, ...rest }) {
+export default function Carte({ niveau = 'standard', accent, identite = false, isMobile = false, onClick, style, children, ...rest }) {
   const colors = useColors()
   const { theme } = useTheme()
   const vert = colors.accent.green
@@ -48,7 +52,7 @@ export default function Carte({ niveau = 'standard', accent, isMobile = false, o
       style={{
         background: niveau === 'relief' && theme !== 'claire' ? `radial-gradient(circle at 15% 0%, ${vert}10, transparent 60%), ${fond}` : fond,
         border: `1px solid ${bordure}`,
-        borderRadius: radius['3xl'],
+        borderRadius: identite ? forme.rayonCarte : radius['3xl'],
         padding: isMobile ? spacing['2xl'] : spacing['3xl'],
         boxShadow: ombre,
         cursor: onClick ? 'pointer' : undefined,

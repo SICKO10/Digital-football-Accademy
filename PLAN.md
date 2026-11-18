@@ -1,5 +1,6 @@
 # PLAN : finition de l'espace joueur (starter et Pro)
 Date : 2026-10-29 · Chantier précédent archivé dans `PLAN-archive-refonte-accueil-joueur.md`
+> Note 2026-11-17 : les validations visuelles en attente de ce plan sont remplacées par le contrôle final de `PLAN-dashboard-joueur-v3.md` (bloc 11).
 
 Objectif : reprendre une à une les pages internes de l'espace joueur, qui font aujourd'hui brouillon ou enfantin, et les amener au niveau de l'accueil refait le 2026-10-29.
 Périmètre : les écrans que voient les comptes `joueur_starter` et `joueur_pro`. Aucune modification de base de données, de paiement ou d'email.

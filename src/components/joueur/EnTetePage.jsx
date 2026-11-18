@@ -1,5 +1,5 @@
 import { useColors } from '../../lib/theme'
-import { radius, spacing, fontSize } from '../../tokens'
+import { forme, spacing, fontSize } from '../../tokens'
 
 // Grand bandeau de titre des rubriques de l'espace joueur : une petite ligne
 // d'accroche, un titre en majuscules (police sportive condensée) dont le dernier
@@ -12,19 +12,19 @@ export default function EnTetePage({ kicker, titre, accentMot, sousTitre, isMobi
 
   return (
     <div style={{
-      position: 'relative', overflow: 'hidden', borderRadius: radius.xl, padding: isMobile ? '28px 20px' : '40px 36px',
-      background: `radial-gradient(120% 140% at 0% 0%, ${couleur}2E 0%, transparent 60%), ${colors.background.surface}`,
-      border: `1px solid ${colors.border.subtle}`, ...style,
+      position: 'relative', overflow: 'hidden', borderRadius: forme.rayonCarte, padding: isMobile ? '24px 18px' : '36px 32px',
+      background: colors.background.surface,
+      border: `1px solid ${colors.border.subtle}`, borderLeft: `${forme.lisere} solid ${couleur}`, ...style,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing['2xl'], flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           {kicker && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <span style={{ width: '36px', height: '4px', borderRadius: '2px', background: couleur }} />
+              <span style={{ width: '36px', height: '4px', borderRadius: forme.rayonPastille, background: couleur }} />
               <span style={{ fontSize: fontSize.lg, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: couleur }}>{kicker}</span>
             </div>
           )}
-          <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Barlow', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '52px' : '88px', color: colors.text.primary, overflowWrap: 'anywhere' }}>
+          <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Barlow', sans-serif", fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, fontSize: isMobile ? '48px' : '72px', color: colors.text.primary, overflowWrap: 'anywhere' }}>
             {parties[0]}{parties[1] && <span style={{ color: couleur }}>{parties[1]}</span>}
           </h1>
           {sousTitre && (

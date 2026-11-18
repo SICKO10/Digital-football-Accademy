@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useColors } from '../../lib/theme'
 import { localeOf, t } from '../../lib/translations'
 import { extractYoutubeId, youtubeThumbnail } from '../../lib/youtube'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, police, spacing } from '../../tokens'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 import ApercuPro from './ApercuPro'
-import { IconVideo, IconDocument } from '../icones'
+import { FileText, Video } from 'lucide-react'
 
 // Image d'aperçu d'une demande d'analyse. Les vidéos envoyées depuis le site
 // sont hébergées sur Cloudinary : la même adresse en .jpg donne une image tirée
@@ -29,14 +29,14 @@ function Vignette({ url, isMobile }) {
   return (
     <div
       style={{
-        flexShrink: 0, width: isMobile ? '104px' : '160px', aspectRatio: '16 / 9', borderRadius: radius.xl, overflow: 'hidden',
+        flexShrink: 0, width: isMobile ? '104px' : '160px', aspectRatio: '16 / 9', borderRadius: forme.rayonPastille, overflow: 'hidden',
         background: colors.background.raised, border: `1px solid ${colors.border.subtle}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.text.faint,
       }}
     >
       {src
         ? <img src={src} alt="" loading="lazy" onError={() => setCasse(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        : <IconVideo size={28} />}
+        : <Video size={28} />}
     </div>
   )
 }
@@ -55,7 +55,7 @@ export default function AnalysesJoueur({ sansEntete = false,
   const entete = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing['2xl'], flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0 }}>
-        {!sansEntete && <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('ja_titre', lang)}</h1>}
+        {!sansEntete && <h1 style={{ margin: 0, fontFamily: police.titre, textTransform: 'uppercase', fontSize: fontSize['8xl'], fontWeight: 800, letterSpacing: '1px', color: colors.text.primary }}>{t('ja_titre', lang)}</h1>}
         <p style={{ margin: sansEntete ? 0 : `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
           {peutDemander
             ? `Il te reste ${analysesRestantes} ${analysesRestantes > 1 ? 'analyses' : 'analyse'} vidéo à utiliser.`
@@ -66,7 +66,7 @@ export default function AnalysesJoueur({ sansEntete = false,
         <button
           onClick={onNouvelleAnalyse}
           style={{
-            minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: radius.xl, border: 'none',
+            minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: forme.rayonPastille, border: 'none',
             background: colors.accent.green, color: colors.black, fontSize: fontSize.xl, fontWeight: 700,
             fontFamily: 'Barlow, sans-serif', cursor: 'pointer', width: isMobile ? '100%' : 'auto',
           }}
@@ -85,9 +85,9 @@ export default function AnalysesJoueur({ sansEntete = false,
       <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
         {entete}
         {isPro ? (
-          <Carte isMobile={isMobile}>
+          <Carte identite isMobile={isMobile}>
             <TitreSection>Comment ça marche</TitreSection>
-            <p style={{ margin: 0, fontSize: fontSize['3xl'], fontWeight: 700, color: colors.text.primary }}>{t('ja_aucune', lang)}</p>
+            <p style={{ margin: 0, fontFamily: police.titre, fontSize: fontSize['6xl'], fontWeight: 700, color: colors.text.primary }}>{t('ja_aucune', lang)}</p>
             <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.6 }}>
               {peutDemander
                 ? 'Envoie une vidéo de ton match. Notre coach analyseur te répond avec la vidéo commentée et un rapport détaillé.'
@@ -115,19 +115,19 @@ export default function AnalysesJoueur({ sansEntete = false,
           const recue = demande.statut === 'analyse'
           const teinte = recue ? colors.accent.green : colors.accent.amber
           return (
-            <Carte key={demande.id} isMobile={isMobile} style={{ padding: isMobile ? spacing.xl : spacing['2xl'] }}>
+            <Carte key={demande.id} identite isMobile={isMobile} style={{ padding: isMobile ? spacing.xl : spacing['2xl'], borderLeft: `${forme.lisere} solid ${teinte}` }}>
               <div style={{ display: 'flex', gap: spacing['2xl'], alignItems: 'flex-start' }}>
                 <Vignette url={demande.video_url} isMobile={isMobile} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span
                     style={{
                       display: 'inline-block', background: teinte + alpha.subtle, color: teinte,
-                      fontSize: fontSize.base, fontWeight: 700, padding: `${spacing.xs} ${spacing.lg}`, borderRadius: '999px',
+                      fontSize: fontSize.base, fontWeight: 700, padding: `${spacing.xs} ${spacing.lg}`, borderRadius: forme.rayonPastille,
                     }}
                   >
                     {recue ? t('ja_recue', lang) : t('etat_en_attente', lang)}
                   </span>
-                  <p style={{ margin: `${spacing.md} 0 0`, fontSize: fontSize['2xl'], fontWeight: 700, color: colors.text.primary, letterSpacing: '-0.2px', overflowWrap: 'anywhere' }}>
+                  <p style={{ margin: `${spacing.md} 0 0`, fontFamily: police.titre, fontSize: fontSize['6xl'], fontWeight: 700, color: colors.text.primary, letterSpacing: '0.3px', overflowWrap: 'anywhere' }}>
                     {demande.titre}
                   </p>
                   <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.md, color: colors.text.faint }}>
@@ -145,11 +145,11 @@ export default function AnalysesJoueur({ sansEntete = false,
                           href={demande.loom_url} target="_blank" rel="noreferrer"
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: spacing.md, minHeight: '40px', padding: `0 ${spacing['2xl']}`,
-                            borderRadius: radius.xl, background: colors.accent.green, color: colors.black,
+                            borderRadius: forme.rayonPastille, background: colors.accent.green, color: colors.black,
                             fontSize: fontSize.lg, fontWeight: 700, textDecoration: 'none',
                           }}
                         >
-                          <IconVideo size={16} />{t('ja_voir', lang)}
+                          <Video size={16} />{t('ja_voir', lang)}
                         </a>
                       )}
                       {demande.rapport_pdf_url && (
@@ -157,12 +157,12 @@ export default function AnalysesJoueur({ sansEntete = false,
                           href={demande.rapport_pdf_url} target="_blank" rel="noopener noreferrer"
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: spacing.md, minHeight: '40px', padding: `0 ${spacing['2xl']}`,
-                            borderRadius: radius.xl, background: 'transparent', color: colors.accent.green,
+                            borderRadius: forme.rayonPastille, background: 'transparent', color: colors.accent.green,
                             border: `1px solid ${colors.accent.green + alpha.light}`,
                             fontSize: fontSize.lg, fontWeight: 700, textDecoration: 'none',
                           }}
                         >
-                          <IconDocument size={16} />{t('ja_telecharger_rapport', lang)}
+                          <FileText size={16} />{t('ja_telecharger_rapport', lang)}
                         </a>
                       )}
                     </div>

@@ -139,7 +139,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Validation : « ok » de Kevin le 2026-11-17, puis commit et push des blocs 0 à 4 (fichiers du chantier uniquement, `npm run build` OK).
 
 ### Bloc 5 : icônes lucide-react sur tout le dashboard joueur
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : remplacer tous les composants `Icon*` maison du dashboard joueur et de `src/components/joueur/` par leurs équivalents lucide-react, selon la table du bloc 0.
 - Résultat testable : plus aucun `Icon*` maison utilisé côté joueur ; build OK ; icônes de même épaisseur partout.
 - Modèle : haiku · Effort : low · Coût estimé : faible
@@ -156,7 +156,7 @@ Rappel : `/clear` et une session neuve par bloc.
 - Journal :
 
 ### Bloc 6 : passe identité, Mon équipe
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : appliquer la grille de la passe identité à Équipe, Actualités du club, Compétition.
 - Résultat testable : les 3 sous-onglets ont la même allure que l'accueil validé ; classement de compétition façon classement FFF (rang, points, pastilles de forme).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -169,11 +169,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Classement : colonnes condensées, ligne du club du joueur surlignée au liseré d'écusson.
   - États vides : une phrase + une action.
 - Ce que je teste pour valider : les 3 sous-onglets sur téléphone, badge non lus des actualités.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) pas de vrai classement de ligue en base (le classement officiel reste le lien externe) : la ligne « Bilan de la saison » en tient lieu, points 3/1/0 calculés sur les matchs joués ; si Kevin veut un vrai classement FFF, il faut une source de données (saisie éducateur ou import), à décider. (2) `Carte` a un nouveau réglage `identite` (coins 6 px), non activé par défaut pour ne pas changer l'accueil validé : bascule du défaut au bloc 11. (3) `EnTetePage` est passé en coins 6 px, fond uni et liseré (touche aussi Entraînement, Nutrition, Tactique, Équipement, Mes stats). (4) Dans la branche abandonnée estAffilie, 6 titres de section ont été remplacés par erreur par `TitreSection` (code mort, sans effet).
+- Journal : 2026-11-17, Sonnet 5.5. Sauvegarde backups/DashboardJoueur.bloc6-*.jsx. Équipe : en-tête EnTetePage avec saison, titres de section en TitreSection, coins 6 px / 4 px, couleurs en dur remplacées par la palette, dégradés et lueur retirés. Actualités : cartes à coins 6 px, liseré vert sur les non lues, titres en Barlow Condensed, pastille Nouveau en 4 px. Compétition : bilan en ligne de classement (Pts J G N P BP BC Diff + forme sur 5 matchs en pastilles V/N/D), liserés, filtres et boutons en 4 px, états vides avec phrase d'aide. Incident corrigé : un remplacement automatique avait cassé une chaîne de caractères (ligne du badge amber), repéré et réparé. `npm run build` OK. Aucun test à l'écran (pas de navigateur).
 
 ### Bloc 7 : passe identité, Progresser (1/2)
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : grille de la passe identité sur Entraînement, Préparation tactique, Préparation physique.
 - Résultat testable : 3 sous-onglets harmonisés, aucune fonction changée.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -186,11 +186,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Uniformiser les en-têtes de rubrique (`EnTetePage`) et les cartes de séance.
   - États vides.
 - Ce que je teste pour valider : ouvrir une séance, un exercice tactique, un programme physique.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle visuel par Kevin (téléphone puis ordinateur) : ouvrir une séance publiée, un schéma partagé, un programme physique et une soumission de séance ; pas de commit tant que le « ok » n'est pas donné. (1) PrepPhysiqueJoueur garde sa petite palette locale (`stSombre` / `stClaire`, thème clair et sombre) : elle n'est pas branchée sur la palette du club, à décider au bloc 11. (2) L'état vide « Aucun programme actif » n'a pas d'action (l'éducateur crée le programme, rien à faire côté joueur). (3) Les vignettes de schéma gardent un fond vert terrain en dur (`#0B3D1E`), c'est la couleur du terrain.
+- Journal : 2026-11-17, Sonnet 5.5, aucun écart. Sauvegarde backups/DashboardJoueur.bloc7-*.jsx (les 3 composants sont dans git). Entraînement (`SeanceDuJourJoueur`) : carte en coins 6 px, titres en Barlow Condensed, icône lucide. Tactique (`PreparationTactiqueJoueur`) : cartes en coins 6 px (réglage `identite`), onglets et boutons en 4 px, liseré de 3 px sur la zone choisie, vignettes de schéma sans lueur ni lévitation au survol, bouton lecture carré avec icône lucide, titres en Barlow Condensed. Préparation physique (`PrepPhysiqueJoueur`) : 16 icônes maison remplacées par lucide, tous les coins passés à 6 px / 4 px, jauge de progression en vert uni (dégradé retiré), fonds d'alerte en dur remplacés par la palette, chevrons lucide à la place des flèches texte, chiffres et titres en Barlow Condensed, liseré vert sur la carte du plan actif. Aucune requête, table, paiement ni email touché. `npm run build` OK. Aucun navigateur ici : pas de contrôle visuel.
 
 ### Bloc 8 : passe identité, Progresser (2/2)
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : grille de la passe identité sur Nutrition (cadenas et aperçu non Pro inclus) et Analyses / Coach analyseur.
 - Résultat testable : rubriques harmonisées ; joueur non Pro voit un aperçu propre avec une action claire vers l'offre (lien Stripe existant, inchangé).
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -203,11 +203,12 @@ Rappel : `/clear` et une session neuve par bloc.
   - Ne pas toucher aux liens Stripe (rappel : `STRIPE_LINKS.starter` = mensuel, `.pro` = annuel).
   - États vides.
 - Ce que je teste pour valider : Nutrition en Pro et non Pro, envoi d'une demande d'analyse, Coach analyseur.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle visuel par Kevin (Nutrition Pro et non Pro, Analyses avec et sans demande, Coach analyseur). (1) Les autres écrans de `NutritionDashboard` (Journal, Poids, Profil, Plan) gardent leurs styles en dur : hors périmètre de ce bloc, à décider au bloc 11. (2) L'état vide « Aucun coach » n'a pas d'action (rien à faire côté joueur). (3) `TuileChiffre` garde 12 px par défaut, forcé à 6 px seulement dans Nutrition ; bascule du défaut au bloc 11.
+- Journal : 2026-11-17, Sonnet 5.5, aucun écart. Sauvegardes backups/*.bloc8-*.jsx. ApercuPro, NutritionIntro, NutritionAccueil, AnalysesJoueur, CoachAnalyseurJoueur : cartes en `identite` (coins 6 px) avec liseré vert (liseré de statut vert/ambre sur les demandes d'analyse), anciennes lueurs `accent` retirées, boutons et champs en 4 px, titres et grands chiffres en Barlow Condensed (prix, kcal, titres de page), bulles de message en 6 px, vignettes en 4 px, onglets Analyses / Coach du dashboard en 6 px / 4 px. Liens Stripe, formules et textes non touchés. `npm run build` OK. Aucun navigateur ici : pas de contrôle visuel.
+
 
 ### Bloc 9 : passe identité, Moi (avec la fiche façon feuille de match)
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : grille de la passe identité sur Profil, Mes statistiques, Certification, Équipement. [IDÉE] Mes statistiques prend la forme d'une feuille de match : numéro, poste, stats de saison en tableau d'affichage condensé, série V/N/D en pastilles.
 - Résultat testable : rubriques harmonisées ; la fiche se lit en un coup d'œil sur téléphone.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -220,11 +221,13 @@ Rappel : `/clear` et une session neuve par bloc.
   - Grille sur Profil, Certification, Équipement (`EquipementJoueur`).
   - États vides.
 - Ce que je teste pour valider : ma fiche avec et sans matchs saisis, modification du profil, page certification.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle visuel par Kevin (téléphone puis ordinateur) : Mes statistiques avec et sans matchs saisis, Profil (modifier puis enregistrer), Certification, Équipement. Pas de commit tant que le « ok » n'est pas donné. (1) La feuille de match n'affiche pas de numéro de maillot : aucune donnée de numéro n'existe en base, rien n'a été inventé ; à décider si Kevin veut ajouter ce champ. (2) La série V/N/D est celle de l'équipe (résultats de la compétition), car les matchs du joueur n'ont pas de score en base. (3) Dans Profil, les pastilles de style de jeu et de points forts gardent leurs coins ronds (20 px) et le bleu « #60a5fa » en dur : choix de sélection, à reprendre au bloc 11 si on veut tout en 4 px. (4) Radar de Mes stats : inchangé.
+- Journal : 2026-11-17, Sonnet 5.5, aucun écart. Sauvegardes backups/ProfilStatsJoueur.bloc9-*.jsx et backups/DashboardJoueur.bloc9-*.jsx. Mes statistiques (`ProfilStatsJoueur`) : nouvelle « Feuille de match » à côté de la carte joueur : poste et saison en en-tête, tableau d'affichage de cases condensées (matchs, minutes, buts, passes, note, présence, points, rang d'équipe), série V/N/D de l'équipe en pastilles ; cartes en coins 6 px avec liseré ; récompenses en pastilles 4 px. `MesStats` : icônes maison remplacées par lucide, champs et boutons en 4 px, cartes `identite`. `DashboardJoueur` : l'onglet Mes stats charge maintenant les résultats de la compétition (lecture seule, déjà utilisée ailleurs) pour la série. Profil : cartes `identite`, coins 4 px, 2 icônes en svg brut remplacées par lucide. Certification : jaune en dur remplacé par la palette, cartes en 6 px avec liseré, icône d'envoi en lucide. Équipement : cartes `identite`, coins 4 px, liseré ambre à la place de la lueur. Aucune requête d'écriture, table, paiement ni email touché. `npm run build` OK. Aucun navigateur ici : pas de contrôle visuel.
+
+
 
 ### Bloc 10 : passe identité, rubriques hors menu
-- Statut : à faire
+- Statut : fait côté code (contrôle visuel de Kevin en attente)
 - Objectif : grille de la passe identité sur les rubriques joignables par liens internes : Santé (`sante`), Recruteurs (`messages`), Clubs (`clubs`) et écrans restants repérés au bloc 0 dans la branche `navItems` / `isPro`.
 - Résultat testable : plus aucun écran joueur au style divergent.
 - Modèle : sonnet · Effort : medium · Coût estimé : moyen
@@ -237,11 +240,11 @@ Rappel : `/clear` et une session neuve par bloc.
   - Vérifier que leurs liens d'accès (depuis l'accueil, le profil, le guide) fonctionnent toujours.
   - États vides.
 - Ce que je teste pour valider : ouvrir Santé, Recruteurs, Clubs depuis leurs liens.
-- Reste à finir :
-- Journal :
+- Reste à finir : contrôle visuel par Kevin : ouvrir Santé (depuis les alertes de l'accueil), Recruteurs (depuis la carte messages de l'accueil), Clubs (Explorer). Pas de commit tant que le « ok » n'est pas donné. (1) Dans Santé, le détail des blessures (visites, rééducation) garde ses réglages internes, seuls coins et cartes ont changé. (2) Les avatars restent ronds (ce sont des photos). (3) Le bloc 11 doit aussi décider du défaut `identite` de `Carte` et des textes en dur restants.
+- Journal : 2026-11-17, Sonnet 5.5, aucun écart. Sauvegarde backups/dashboard-joueur-v3-bloc10-20261117-1807 (DashboardJoueur.jsx, SanteJoueur.jsx). Santé : titre en Barlow Condensed, cartes `identite` (coins 6 px), liseré de couleur de statut sur « Ton état actuel » à la place de la lueur, pastilles, boutons et jauges en 4 px. Recruteurs (messages) : cartes en 6 px, champs en 4 px, titre en Barlow Condensed, état vide avec action « Compléter mon profil » (mobile et ordinateur). Clubs (Explorer) : titre en Barlow Condensed, onglets et champs en 4 px, cartes en 6 px. Écran Coach déjà fait au bloc 8. Liens d'accès vérifiés (alertes vers Santé, accueil vers Messages, Explorer). Aucune requête, table, paiement ni email touché. `npm run build` OK. Aucun navigateur ici : pas de contrôle visuel.
 
 ### Bloc 11 : vérification finale et nettoyage
-- Statut : à faire
+- Statut : fait côté code, version de test en ligne le 2026-11-18 (contrôle de Kevin en attente)
 - Objectif : retirer le code mort laissé par le chantier, relire les liens internes, version de test finale, commit.
 - Résultat testable : build OK, aucune fonction ni composant joueur inutilisé, version de test Vercel validée par Kevin.
 - Modèle : sonnet · Effort : medium · Coût estimé : faible à moyen
@@ -256,8 +259,8 @@ Rappel : `/clear` et une session neuve par bloc.
   - Marquer dans `PLAN.md` et `PLAN-joueur-v2.md` que leurs validations visuelles sont remplacées par ce chantier.
   - Après « ok » : commit et push ; mise en production seulement sur ton ok explicite.
 - Ce que je teste pour valider : tour complet de l'app joueur avec les deux comptes.
-- Reste à finir :
-- Journal :
+- Reste à finir : (1) Version de test Vercel non lancée : à faire sur ton « ok » (le déploiement est une action vers l'extérieur), puis contrôle par toi sur téléphone et ordinateur avec les deux comptes. (2) Commit et push non faits : attendent ton « ok » après le contrôle. Les modifications des blocs 5 à 10 sont toujours non commitées. (3) `IconBall` reste en maison (lucide n'a pas de ballon), utilisé par d'autres pages. (4) Décisions repoussées, aucune urgence : défaut `identite` de `Carte`, défaut 6 px de `TuileChiffre`, palette locale de PrepPhysiqueJoueur, écrans Journal / Poids / Profil / Plan de Nutrition, pastilles de Profil en 20 px. Les laisser tels quels ne change rien à l'accueil validé. (5) Pas de numéro de maillot en base (bloc 9) : décision à prendre si tu veux ce champ. (6) Pas de vrai classement de ligue en base (bloc 6).
+- Journal : 2026-11-17, Sonnet 5.5. Sauvegarde backups/dashboard-joueur-v3-bloc11-*. Recherche de code mort par lint sur tous les fichiers joueur touchés : 3 imports inutiles retirés (`BadgeCheck` et `TuileChiffre` dans DashboardJoueur, `radius` dans SeanceDuJourJoueur) et la règle CSS `dj-bottom-nav-btn` (aucun élément ne l'utilisait). `TuileChiffre` gardé (utilisé par Nutrition, Santé, JaugeSaison, Historique). Liens internes rejoués : ids d'onglet envoyés (accueil, annonces, coach, entrainement, equipe, equipement, mes_stats, messages, profil, sante, analyses) tous gérés ; Santé, Messages, Clubs, Coach restent atteignables. Notes ajoutées dans PLAN.md et PLAN-joueur-v2.md. `npm run build` OK. Aucun navigateur ici : pas de contrôle visuel.
 
 ## Inventaire
 (rempli au bloc 0, 2026-11-17, lignes de `src/pages/DashboardJoueur.jsx` approximatives)

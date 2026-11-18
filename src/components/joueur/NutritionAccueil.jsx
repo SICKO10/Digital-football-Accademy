@@ -1,5 +1,5 @@
 import { useColors } from '../../lib/theme'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, police, spacing } from '../../tokens'
 import { CONSEILS_POSTE, CONSEILS_OBJECTIF, precautionAge } from '../../lib/nutritionConseils'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
@@ -40,36 +40,36 @@ export default function NutritionAccueil({
   }[typeJourneeAuto]
 
   const bouton = {
-    background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg,
+    background: colors.accent.green, color: colors.black, border: 'none', borderRadius: forme.rayonPastille,
     padding: `${spacing.lg} ${spacing['3xl']}`, minHeight: '44px', fontWeight: 700, fontSize: fontSize.xl,
     cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   }
   const boutonDiscret = {
     background: 'transparent', color: colors.text.secondary, border: `1px solid ${colors.border.default}`,
-    borderRadius: radius.lg, padding: `${spacing.lg} ${spacing['3xl']}`, minHeight: '44px', fontWeight: 600,
+    borderRadius: forme.rayonPastille, padding: `${spacing.lg} ${spacing['3xl']}`, minHeight: '44px', fontWeight: 600,
     fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   }
   const puce = (actif) => ({
     background: actif ? colors.text.primary : 'transparent',
     color: actif ? colors.background.base : colors.text.faint,
     border: `1px solid ${actif ? colors.text.primary : colors.border.default}`,
-    borderRadius: radius.pill, padding: `${spacing.md} ${spacing.xl}`, minHeight: '36px',
+    borderRadius: forme.rayonPastille, padding: `${spacing.md} ${spacing.xl}`, minHeight: '36px',
     fontSize: fontSize.md, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', whiteSpace: 'nowrap',
   })
 
   return (
     <div>
-      <Carte accent={colors.accent.green} isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
+      <Carte identite isMobile={isMobile} style={{ marginBottom: spacing['4xl'], borderLeft: `${forme.lisere} solid ${colors.accent.green}` }}>
         <TitreSection couleur={colors.accent.green}>Aujourd'hui · {conseil.titre}</TitreSection>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: isMobile ? '40px' : '48px', fontWeight: 800, lineHeight: 1, letterSpacing: '-1px', color: colors.text.primary }}>{consommees}</span>
-          <span style={{ fontSize: fontSize['4xl'], fontWeight: 600, color: colors.text.faint }}>/ {tdee} kcal</span>
+          <span style={{ fontFamily: police.titre, fontSize: isMobile ? '48px' : '56px', fontWeight: 800, lineHeight: 1, letterSpacing: '0.5px', color: colors.text.primary }}>{consommees}</span>
+          <span style={{ fontFamily: police.titre, fontSize: fontSize['6xl'], fontWeight: 600, color: colors.text.faint }}>/ {tdee} kcal</span>
         </div>
 
         <div role="progressbar" aria-valuemin={0} aria-valuemax={tdee} aria-valuenow={consommees} aria-label="Calories notées aujourd'hui"
-          style={{ background: colors.background.raised, borderRadius: radius.pill, height: spacing.md, margin: `${spacing['2xl']} 0 ${spacing.lg}`, overflow: 'hidden' }}>
-          <div style={{ background: couleurBarre, width: `${part * 100}%`, height: '100%', borderRadius: radius.pill }} />
+          style={{ background: colors.background.raised, borderRadius: forme.rayonPastille, height: spacing.md, margin: `${spacing['2xl']} 0 ${spacing.lg}`, overflow: 'hidden' }}>
+          <div style={{ background: couleurBarre, width: `${part * 100}%`, height: '100%', borderRadius: forme.rayonPastille }} />
         </div>
 
         <p style={{ margin: 0, fontSize: fontSize.xl, color: colors.text.secondary }}>
@@ -104,17 +104,17 @@ export default function NutritionAccueil({
       </Carte>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: isMobile ? spacing.md : spacing.lg, marginBottom: spacing['4xl'] }}>
-        <TuileChiffre isMobile={isMobile} couleur={colors.accent.amber} valeur={`${macros.glucides_g} g`} libelle={`Glucides · ${macros.glucides_pct} %`} />
-        <TuileChiffre isMobile={isMobile} couleur={colors.accent.blue} valeur={`${macros.proteines_g} g`} libelle={`Protéines · ${macros.proteines_pct} %`} />
-        <TuileChiffre isMobile={isMobile} couleur={colors.accent.orange} valeur={`${macros.lipides_g} g`} libelle={`Lipides · ${macros.lipides_pct} %`} />
+        <TuileChiffre style={{ borderRadius: forme.rayonCarte }} isMobile={isMobile} couleur={colors.accent.amber} valeur={`${macros.glucides_g} g`} libelle={`Glucides · ${macros.glucides_pct} %`} />
+        <TuileChiffre style={{ borderRadius: forme.rayonCarte }} isMobile={isMobile} couleur={colors.accent.blue} valeur={`${macros.proteines_g} g`} libelle={`Protéines · ${macros.proteines_pct} %`} />
+        <TuileChiffre style={{ borderRadius: forme.rayonCarte }} isMobile={isMobile} couleur={colors.accent.orange} valeur={`${macros.lipides_g} g`} libelle={`Lipides · ${macros.lipides_pct} %`} />
       </div>
 
-      <Carte isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
+      <Carte identite isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
         <TitreSection couleur={conseil.couleur}>{conseil.titre}</TitreSection>
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
           {conseil.conseils.map((c, i) => (
             <li key={i} style={{ display: 'flex', gap: spacing.lg, fontSize: fontSize.lg, lineHeight: 1.5, color: colors.text.secondary }}>
-              <span aria-hidden="true" style={{ flexShrink: 0, width: spacing.md, height: spacing.md, borderRadius: radius.circle, background: conseil.couleur, marginTop: '6px' }} />
+              <span aria-hidden="true" style={{ flexShrink: 0, width: spacing.md, height: spacing.md, borderRadius: forme.rayonPastille, background: conseil.couleur, marginTop: '6px' }} />
               <span>{c}</span>
             </li>
           ))}
@@ -122,7 +122,7 @@ export default function NutritionAccueil({
       </Carte>
 
       {(conseilPoste || conseilObjectif) && (
-        <Carte isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
+        <Carte identite isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
           <TitreSection>Pour ton profil</TitreSection>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? spacing['3xl'] : spacing['5xl'] }}>
             {[
@@ -131,12 +131,12 @@ export default function NutritionAccueil({
             ].filter(b => b.bloc).map(({ cle, surTitre, bloc, couleur }) => (
               <div key={cle} style={{ minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: fontSize.md, fontWeight: 700, color: couleur }}>{surTitre}</p>
-                <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize['3xl'], fontWeight: 800, color: colors.text.primary }}>{bloc.titre}</p>
+                <p style={{ margin: `${spacing.xs} 0 0`, fontFamily: police.titre, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: fontSize['6xl'], fontWeight: 800, color: colors.text.primary }}>{bloc.titre}</p>
                 <p style={{ margin: `${spacing.md} 0 ${spacing.lg}`, fontSize: fontSize.lg, lineHeight: 1.5, color: colors.text.faint }}>{bloc.resume}</p>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: spacing.md }}>
                   {bloc.conseils.map((c, i) => (
                     <li key={i} style={{ display: 'flex', gap: spacing.lg, fontSize: fontSize.lg, lineHeight: 1.5, color: colors.text.secondary }}>
-                      <span aria-hidden="true" style={{ flexShrink: 0, width: spacing.md, height: spacing.md, borderRadius: radius.circle, background: couleur, marginTop: '6px' }} />
+                      <span aria-hidden="true" style={{ flexShrink: 0, width: spacing.md, height: spacing.md, borderRadius: forme.rayonPastille, background: couleur, marginTop: '6px' }} />
                       <span>{c}</span>
                     </li>
                   ))}
@@ -145,14 +145,14 @@ export default function NutritionAccueil({
             ))}
           </div>
           {precaution && (
-            <p style={{ margin: `${spacing.lg} 0 0`, padding: `${spacing.lg} ${spacing.xl}`, borderRadius: radius.lg, background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber + alpha.light}`, fontSize: fontSize.lg, lineHeight: 1.5, color: colors.text.secondary }}>
+            <p style={{ margin: `${spacing.lg} 0 0`, padding: `${spacing.lg} ${spacing.xl}`, borderRadius: forme.rayonPastille, background: colors.accent.amber + alpha.subtle, border: `1px solid ${colors.accent.amber + alpha.light}`, fontSize: fontSize.lg, lineHeight: 1.5, color: colors.text.secondary }}>
               {precaution}
             </p>
           )}
         </Carte>
       )}
 
-      <Carte isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
+      <Carte identite isMobile={isMobile} style={{ marginBottom: spacing['4xl'] }}>
         <TitreSection>{semaineEstExemple ? 'Semaine type' : 'Cette semaine'}</TitreSection>
         {semaineEstExemple && (
           <p style={{ margin: `0 0 ${spacing.lg}`, fontSize: fontSize.md, color: colors.text.faint }}>
@@ -168,7 +168,7 @@ export default function NutritionAccueil({
         ))}
       </Carte>
 
-      <Carte isMobile={isMobile}>
+      <Carte identite isMobile={isMobile}>
         <TitreSection>Comment c'est calculé</TitreSection>
         <p style={{ margin: 0, fontSize: fontSize.lg, lineHeight: 1.6, color: colors.text.secondary }}>
           Ton plan part de ton poids, de ta taille, de ton âge, de ton nombre d'entraînements par semaine, de ton poste et de ton objectif. C'est une estimation de départ, pas un avis médical : écoute aussi ton énergie et ta récupération.

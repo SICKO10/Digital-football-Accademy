@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { fontSize, radius, spacing } from '../tokens'
+import { fontSize, forme, police, spacing } from '../tokens'
 import { localeOf } from '../lib/translations'
 import { dateParisAujourdhui, heureParis } from '../lib/seancePubliee'
-import { IconTactic } from './icones'
+import { Route } from 'lucide-react'
 import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
 import EmptyState from './EmptyState'
@@ -47,7 +47,7 @@ function Procede({ p, colors, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl, paddingTop: spacing.xl, borderTop: `1px solid ${colors.border.subtle}` }}>
       <div>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: fontSize['2xl'], color: colors.text.primary }}>
+        <p style={{ margin: 0, fontFamily: police.titre, fontWeight: 800, letterSpacing: '0.5px', fontSize: fontSize['2xl'], color: colors.text.primary }}>
           {p.numero ? `${p.numero}. ` : ''}{p.titre || 'Exercice'}
         </p>
         {infos && <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.base, color: colors.text.faint }}>{infos}</p>}
@@ -64,13 +64,13 @@ function Procede({ p, colors, isMobile }) {
             <TactipadViewer schema={p.schema_data} width={largeur} onLire={isMobile ? () => setPleinEcran('lecture') : null} />
           </div>
           <button onClick={() => setPleinEcran(true)}
-            style={{ marginTop: spacing.lg, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: radius.lg, padding: '10px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ marginTop: spacing.lg, background: colors.accent.green, color: colors.black, border: 'none', borderRadius: forme.rayonPastille, padding: '10px 16px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
             Voir en plein écran
           </button>
           {pleinEcran && <SchemaPleinEcran schema={p.schema_data} nom={p.titre} colors={colors} onFermer={() => setPleinEcran(false)} lectureAuto={pleinEcran === 'lecture'} />}
         </div>
       ) : p.schema_png ? (
-        <img src={p.schema_png} alt={`Schéma : ${p.titre || 'exercice'}`} style={{ width: '100%', maxWidth: '640px', borderRadius: radius.base }} />
+        <img src={p.schema_png} alt={`Schéma : ${p.titre || 'exercice'}`} style={{ width: '100%', maxWidth: '640px', borderRadius: forme.rayonPastille }} />
       ) : null}
     </div>
   )
@@ -102,7 +102,7 @@ export default function SeanceDuJourJoueur({ isMobile = false, lang = 'fr' }) {
   if (visibles.length === 0) {
     return (
       <EmptyState
-        icon={<IconTactic />}
+        icon={<Route />}
         title="Pas de séance publiée pour toi"
         subtitle="Quand ton éducateur publie la séance de ton prochain entraînement, tu la retrouves ici : consignes, critères et schémas animés. Elle disparaît à 22h le jour de l'entraînement."
       />
@@ -112,9 +112,9 @@ export default function SeanceDuJourJoueur({ isMobile = false, lang = 'fr' }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
       {visibles.map(s => (
-        <Carte key={s.id} isMobile={isMobile} style={{ borderRadius: radius.xl }}>
+        <Carte key={s.id} isMobile={isMobile} identite>
           <TitreSection couleur={colors.accent.green}>Séance · {libelleJour(s.date_seance, locale)}</TitreSection>
-          <h2 style={{ margin: 0, fontSize: fontSize['4xl'], color: colors.text.primary }}>{s.theme || "Séance d'entraînement"}</h2>
+          <h2 style={{ margin: 0, fontFamily: police.titre, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: fontSize['4xl'], color: colors.text.primary }}>{s.theme || "Séance d'entraînement"}</h2>
           <p style={{ margin: `${spacing.sm} 0 ${spacing.xl}`, fontSize: fontSize.base, color: colors.text.faint }}>
             {[s.heure && s.heure.slice(0, 5).replace(':', 'h'), s.lieu].filter(Boolean).join(' · ')}
           </p>

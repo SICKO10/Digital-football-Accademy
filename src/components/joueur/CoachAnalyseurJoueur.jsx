@@ -1,10 +1,10 @@
 import { useColors } from '../../lib/theme'
 import { localeOf, t } from '../../lib/translations'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, police, spacing } from '../../tokens'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 import EmptyState from '../EmptyState'
-import { IconMic, IconCheckCircle } from '../icones'
+import { CircleCheck, Mic } from 'lucide-react'
 
 // Page "Coach analyseur" : le joueur écrit au coach qui analyse ses vidéos.
 // L'état (messages, brouillon, envoi) reste dans DashboardJoueur ; ce
@@ -29,7 +29,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
 
   const bulle = (mine) => ({
     maxWidth: isMobile ? '88%' : '70%', padding: `${spacing.base} ${spacing.xl}`,
-    borderRadius: mine ? `${radius['3xl']} ${radius['3xl']} ${radius.sm} ${radius['3xl']}` : `${radius['3xl']} ${radius['3xl']} ${radius['3xl']} ${radius.sm}`,
+    borderRadius: forme.rayonCarte,
     background: mine ? colors.accent.green : colors.background.raised,
     color: mine ? colors.black : colors.text.primary,
     fontSize: fontSize.xl, alignSelf: mine ? 'flex-end' : 'flex-start', marginBottom: spacing.md, lineHeight: 1.5,
@@ -37,7 +37,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
 
   const entete = (
     <div>
-      {!sansEntete && <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>{t('jnav_coach', lang)}</h1>}
+      {!sansEntete && <h1 style={{ margin: 0, fontFamily: police.titre, textTransform: 'uppercase', fontSize: fontSize['8xl'], fontWeight: 800, letterSpacing: '1px', color: colors.text.primary }}>{t('jnav_coach', lang)}</h1>}
       <p style={{ margin: sansEntete ? 0 : `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.secondary, lineHeight: 1.5 }}>
         Une question sur une analyse, ton rapport ou ta vidéo ? Écris à ton coach analyseur, il te répond ici.
       </p>
@@ -48,7 +48,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
     return (
       <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
         {entete}
-        <EmptyState dashed icon={<IconMic size={40} />} title={t('jcoach_aucun', lang)} />
+        <EmptyState dashed icon={<Mic size={40} />} title={t('jcoach_aucun', lang)} />
       </div>
     )
   }
@@ -57,7 +57,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
     <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
       {entete}
 
-      <Carte isMobile={isMobile}>
+      <Carte identite isMobile={isMobile} style={{ borderLeft: `${forme.lisere} solid ${colors.accent.green}` }}>
         {coaches.length > 1 && (
           <div style={{ marginBottom: spacing['2xl'] }}>
             <TitreSection>{t('jcoach_coach', lang)}</TitreSection>
@@ -68,7 +68,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
                   <button
                     key={c.id} onClick={() => onChoisirCoach(c)}
                     style={{
-                      minHeight: '44px', padding: `0 ${spacing['2xl']}`, borderRadius: radius.xl, cursor: 'pointer',
+                      minHeight: '44px', padding: `0 ${spacing['2xl']}`, borderRadius: forme.rayonPastille, cursor: 'pointer',
                       border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
                       background: actif ? colors.accent.green + alpha.soft : colors.background.raised,
                       color: actif ? colors.accent.green : colors.text.primary,
@@ -87,7 +87,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
 
         {envoye ? (
           <div style={{ textAlign: 'center', padding: `${spacing['5xl']} 0`, color: colors.accent.green }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.md }}><IconCheckCircle size={28} /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spacing.md }}><CircleCheck size={28} /></div>
             <p style={{ margin: 0, fontWeight: 700, fontSize: fontSize.xl }}>{t('jcoach_msg_envoye', lang)}</p>
           </div>
         ) : (
@@ -97,7 +97,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
               placeholder={`Bonjour ${prenom || ''}, j'aurais une question sur...`}
               style={{
                 width: '100%', boxSizing: 'border-box', minHeight: '140px', resize: 'vertical', outline: 'none',
-                background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: radius.xl,
+                background: colors.background.surfaceAlt, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonPastille,
                 color: colors.text.primary, padding: spacing.xl, fontSize: fontSize['3xl'], lineHeight: 1.5, fontFamily: 'Barlow, sans-serif',
               }}
             />
@@ -109,7 +109,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
             <button
               onClick={onEnvoyer} disabled={inactif}
               style={{
-                marginTop: spacing.lg, width: '100%', minHeight: '48px', border: 'none', borderRadius: radius.xl,
+                marginTop: spacing.lg, width: '100%', minHeight: '48px', border: 'none', borderRadius: forme.rayonPastille,
                 background: colors.accent.green, color: colors.black, fontSize: fontSize.xl, fontWeight: 700,
                 fontFamily: 'Barlow, sans-serif', cursor: inactif ? 'default' : 'pointer', opacity: inactif ? 0.4 : 1, transition: 'opacity 0.2s',
               }}
@@ -121,7 +121,7 @@ export default function CoachAnalyseurJoueur({ sansEntete = false,
       </Carte>
 
       {echanges.length > 0 && (
-        <Carte isMobile={isMobile}>
+        <Carte identite isMobile={isMobile}>
           <TitreSection>{t('jcoach_historique', lang)}</TitreSection>
           <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '380px', overflowY: 'auto' }}>
             {echanges.map((m, i) => {

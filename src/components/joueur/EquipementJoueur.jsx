@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useColors } from '../../lib/theme'
 import EnTetePage from './EnTetePage'
 import { localeOf } from '../../lib/translations'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, spacing } from '../../tokens'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 import EmptyState from '../EmptyState'
-import { IconShirt, IconCheck } from '../icones'
+import { Check, Shirt } from 'lucide-react'
 
 // Au-delà de ce nombre de tailles possibles (pointures, par exemple), des
 // boutons côte à côte prendraient tout l'écran : on bascule sur une liste.
@@ -49,7 +49,7 @@ export default function EquipementJoueur({
   ].filter(Boolean).join(' · ').replace(' · puis', ' puis')
 
   const bouton = (actif) => ({
-    minHeight: '44px', minWidth: '44px', padding: `0 ${spacing['2xl']}`, borderRadius: radius.xl,
+    minHeight: '44px', minWidth: '44px', padding: `0 ${spacing['2xl']}`, borderRadius: forme.rayonPastille,
     border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
     background: actif ? colors.accent.green + alpha.soft : colors.background.raised,
     color: actif ? colors.accent.green : colors.text.primary,
@@ -63,13 +63,13 @@ export default function EquipementJoueur({
         sousTitre="Indique tes tailles ici : ton club les reçoit et prépare ton pack de début de saison. Plus tôt elles sont renseignées, plus vite tu reçois ton équipement." />
 
       {equipementPret && (
-        <Carte isMobile={isMobile} accent={colors.accent.amber}>
+        <Carte identite isMobile={isMobile} style={{ borderLeft: `${forme.lisere} solid ${colors.accent.amber}` }}>
           <TitreSection couleur={colors.accent.amber}>Ton équipement est prêt</TitreSection>
           <p style={{ margin: `0 0 ${spacing.lg}`, fontSize: fontSize.xl, color: colors.text.primary, lineHeight: 1.5 }}>{horaires}</p>
           {!readOnly && (
             <button
               onClick={onRecupere}
-              style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: radius.base, minHeight: '44px', padding: `0 ${spacing['3xl']}`, fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}
+              style={{ background: colors.accent.amber, color: colors.black, border: 'none', borderRadius: forme.rayonPastille, minHeight: '44px', padding: `0 ${spacing['3xl']}`, fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif' }}
             >
               J'ai récupéré mon équipement
             </button>
@@ -78,8 +78,8 @@ export default function EquipementJoueur({
       )}
 
       {equipementCommande?.statut === 'recupere' && dateRemise && (
-        <Carte isMobile={isMobile} style={{ display: 'flex', alignItems: 'center', gap: spacing.lg }}>
-          <span style={{ color: colors.accent.green, display: 'flex' }}><IconCheck /></span>
+        <Carte identite isMobile={isMobile} style={{ display: 'flex', alignItems: 'center', gap: spacing.lg }}>
+          <span style={{ color: colors.accent.green, display: 'flex' }}><Check /></span>
           <p style={{ margin: 0, fontSize: fontSize.xl, fontWeight: 700, color: colors.text.primary }}>
             Équipement remis le {dateRemise.toLocaleDateString(locale)} à {dateRemise.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
           </p>
@@ -88,7 +88,7 @@ export default function EquipementJoueur({
 
       {!packAttribue ? (
         <EmptyState
-          icon={<IconShirt />}
+          icon={<Shirt />}
           title={aUnClub ? "Ton club n'a pas encore choisi ton pack" : 'Ton équipement arrive avec ton club'}
           subtitle={aUnClub
             ? "Dès que ton club t'attribue un pack, les articles à renseigner apparaissent ici, avec une taille à choisir pour chacun. Tu seras prévenu."
@@ -97,8 +97,8 @@ export default function EquipementJoueur({
         />
       ) : (
         <>
-          <Carte isMobile={isMobile} style={{ display: 'flex', alignItems: 'center', gap: spacing['2xl'], flexWrap: 'wrap' }}>
-            <span style={{ color: colors.accent.green, display: 'flex', flexShrink: 0 }}><IconShirt /></span>
+          <Carte identite isMobile={isMobile} style={{ display: 'flex', alignItems: 'center', gap: spacing['2xl'], flexWrap: 'wrap' }}>
+            <span style={{ color: colors.accent.green, display: 'flex', flexShrink: 0 }}><Shirt /></span>
             <div style={{ flex: '1 1 180px', minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: fontSize['3xl'], fontWeight: 800, color: colors.text.primary }}>{packAttribue.nom}</p>
               <p style={{ margin: `${spacing.xs} 0 0`, fontSize: fontSize.md, color: colors.text.faint }}>
@@ -117,7 +117,7 @@ export default function EquipementJoueur({
             )}
           </Carte>
 
-          <Carte isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
+          <Carte identite isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
             <TitreSection style={{ margin: 0 }}>Mes tailles</TitreSection>
             {champsEquipement.length === 0 && (
               <p style={{ margin: 0, fontSize: fontSize.lg, color: colors.text.faint }}>Ton pack ne contient pas encore d'article.</p>
@@ -131,7 +131,7 @@ export default function EquipementJoueur({
                     <p style={{ margin: 0, fontSize: fontSize.xl, fontWeight: 700, color: colors.text.primary }}>{c.nom}</p>
                     {statut === 'ok' && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs, fontSize: fontSize.md, fontWeight: 600, color: colors.accent.green }}>
-                        <IconCheck size={14} /> Enregistré
+                        <Check size={14} /> Enregistré
                       </span>
                     )}
                     {statut === 'erreur' && (

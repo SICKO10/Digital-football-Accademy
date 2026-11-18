@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha, fontSize, radius, spacing } from '../tokens'
+import { Target, Handshake, Footprints, ChartColumn, Check } from 'lucide-react'
+import { alpha, fontSize, forme, spacing } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
 import { calculerMoyennes } from '../lib/statsRecrutement'
 import { fusionnerMatchs } from '../lib/statsFusion'
-import { IconChart, IconTarget, IconPass, IconRun, IconCheck } from '../components/icones'
 import Carte from '../components/joueur/Carte'
 import TitreSection from '../components/joueur/TitreSection'
 import EnTetePage from '../components/joueur/EnTetePage'
@@ -121,7 +121,7 @@ function Groupe({ titre, aide, children }) {
   )
 }
 
-export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, onOuvrirFiche, logoClub, profilJoueur, readOnly = false, vueInitiale = 'profil' }) {
+export default function MesStats({ userId, joueurPoste, isMobile = false, statsEquipe = null, serieEquipe = [], onOuvrirFiche, logoClub, profilJoueur, readOnly = false, vueInitiale = 'profil' }) {
   const colors = useColors()
   const [vue, setVue] = useState(vueInitiale) // profil | saisir | historique
   const [matchs, setMatchs] = useState([])
@@ -167,18 +167,18 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
   const tousMatchs = fusionnerMatchs(matchs, statsEquipe?.matchsOfficiels)
   const moy = calculerMoyennes(tousMatchs)
   const formulaireValide = !!form.adversaire.trim() && !!form.date
-  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: radius.lg, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
+  const inputStyle = { background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonPastille, padding: `0 ${spacing.lg}`, minHeight: '44px', color: colors.text.primary, fontSize: fontSize['3xl'], width: '100%', boxSizing: 'border-box', fontFamily: 'Barlow, sans-serif' }
   const labelStyle = { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: spacing.xs }
   const grille = (colonnes) => ({ display: 'grid', gridTemplateColumns: `repeat(${colonnes}, minmax(0, 1fr))`, gap: spacing.lg })
   const pastille = (actif) => ({
-    minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: radius.pill,
+    minHeight: '44px', padding: `0 ${spacing['3xl']}`, borderRadius: forme.rayonPastille,
     border: `1px solid ${actif ? colors.accent.green : colors.border.default}`,
     background: actif ? colors.accent.green + alpha.subtle : 'transparent',
     color: actif ? colors.accent.green : colors.text.faint,
     fontWeight: actif ? 700 : 500, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
   })
   const boutonPrincipal = (actif) => ({
-    minHeight: '48px', padding: `0 ${spacing['4xl']}`, border: 'none', borderRadius: radius.xl,
+    minHeight: '48px', padding: `0 ${spacing['4xl']}`, border: 'none', borderRadius: forme.rayonPastille,
     background: actif ? colors.accent.green : colors.background.raised,
     color: actif ? colors.black : colors.text.disabled,
     fontWeight: 800, fontSize: fontSize['2xl'], cursor: actif ? 'pointer' : 'not-allowed', fontFamily: 'Barlow, sans-serif',
@@ -217,24 +217,24 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
       </div>
 
       {vue === 'profil' && enregistre && (
-        <Carte isMobile={isMobile} accent={colors.accent.green} style={{ display: 'flex', alignItems: 'center', gap: spacing.lg, color: colors.accent.green, fontWeight: 700, fontSize: fontSize.xl }}>
-          <IconCheck size={18} /> Match enregistré, ton profil est à jour.
+        <Carte identite isMobile={isMobile} style={{ borderLeft: `${forme.lisere} solid ${colors.accent.green}`, display: 'flex', alignItems: 'center', gap: spacing.lg, color: colors.accent.green, fontWeight: 700, fontSize: fontSize.xl }}>
+          <Check size={18} /> Match enregistré, ton profil est à jour.
         </Carte>
       )}
 
       {vue === 'profil' && (
         <>
-          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} onOuvrirFiche={onOuvrirFiche} logoClub={logoClub} profilJoueur={profilJoueur} isMobile={isMobile} />
+          <ProfilStatsJoueur userId={userId} joueurPoste={joueurPoste} matchs={tousMatchs} statsEquipe={statsEquipe} onOuvrirFiche={onOuvrirFiche} logoClub={logoClub} profilJoueur={profilJoueur} serieEquipe={serieEquipe} isMobile={isMobile} />
           {matchs.length === 0 && readOnly ? (
-            <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px', color: colors.text.faint }}>Aucun match enregistré pour le moment.</Carte>
+            <Carte identite isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px', color: colors.text.faint }}>Aucun match enregistré pour le moment.</Carte>
           ) : matchs.length === 0 ? (
-            <Carte isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
+            <Carte identite isMobile={isMobile} style={{ textAlign: 'center', padding: isMobile ? spacing['4xl'] : '40px 24px' }}>
               <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize['4xl'], marginBottom: spacing.md }}>Complète ton profil avec tes propres matchs</div>
               <div style={{ color: colors.text.faint, fontSize: fontSize.xl, marginBottom: spacing['3xl'] }}>Saisis tes stats après chaque match pour obtenir ton radar de joueur.</div>
               <button onClick={() => changerVue('saisir')} style={boutonPrincipal(true)}>Saisir un match</button>
             </Carte>
           ) : (
-      <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['5xl'], alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+      <Carte identite isMobile={isMobile} style={{ display: 'flex', gap: spacing['5xl'], alignItems: 'center', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
         <RadarChart data={radarConfig.data} labels={radarConfig.labels} color={colors.accent.green} gridColor={colors.border.subtle} textColor={colors.text.faint} />
         <div style={{ flex: 1, minWidth: '220px' }}>
           <TitreSection couleur={colors.accent.green} style={{ marginBottom: spacing['2xl'] }}>Saison en cours · {moy.nb_matchs} matchs</TitreSection>
@@ -251,7 +251,7 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
       )}
 
       {vue === 'saisir' && (
-        <Carte isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing['4xl'] }}>
+        <Carte identite isMobile={isMobile} style={{ display: 'flex', flexDirection: 'column', gap: spacing['4xl'] }}>
           <Groupe titre="Le match" aide="Ces deux champs sont obligatoires : la date et l'adversaire.">
             <div style={grille(isMobile ? 1 : 2)}>
               <div>
@@ -325,10 +325,10 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
       {vue === 'historique' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
           {tousMatchs.length === 0 && (
-            <Carte isMobile={isMobile} style={{ textAlign: 'center', color: colors.text.faint, fontSize: fontSize.xl }}>Aucun match enregistré pour le moment.</Carte>
+            <Carte identite isMobile={isMobile} style={{ textAlign: 'center', color: colors.text.faint, fontSize: fontSize.xl }}>Aucun match enregistré pour le moment.</Carte>
           )}
           {tousMatchs.map(m => (
-            <Carte key={m.id} isMobile={isMobile} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
+            <Carte identite key={m.id} isMobile={isMobile} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
               <div>
                 <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl, marginBottom: '3px' }}>
                   vs {m.adversaire}
@@ -339,11 +339,11 @@ export default function MesStats({ userId, joueurPoste, isMobile = false, statsE
                 </div>
               </div>
               <div style={{ display: 'flex', gap: spacing.lg, fontSize: fontSize.lg, flexWrap: 'wrap' }}>
-                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconTarget size={13} />{m.buts}</span>}
-                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconPass size={13} />{m.passes_decisives}</span>}
-                {m.km_parcourus && <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconRun size={13} />{m.km_parcourus} km</span>}
+                {m.buts > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><Target size={13} />{m.buts}</span>}
+                {m.passes_decisives > 0 && <span style={{ color: colors.accent.green, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><Handshake size={13} />{m.passes_decisives}</span>}
+                {m.km_parcourus && <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><Footprints size={13} />{m.km_parcourus} km</span>}
                 {m.passes_tentees && m.passes_reussies && (
-                  <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><IconChart size={13} />{Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
+                  <span style={{ color: colors.text.secondary, display: 'inline-flex', alignItems: 'center', gap: spacing.sm }}><ChartColumn size={13} />{Math.round(m.passes_reussies / m.passes_tentees * 100)}%</span>
                 )}
               </div>
             </Carte>

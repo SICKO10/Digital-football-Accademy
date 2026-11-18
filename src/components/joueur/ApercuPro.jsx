@@ -1,5 +1,5 @@
 import { useColors } from '../../lib/theme'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, police, spacing } from '../../tokens'
 import Carte from './Carte'
 import TitreSection from './TitreSection'
 
@@ -14,10 +14,10 @@ import TitreSection from './TitreSection'
 export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, points = [], formules = [], libelleBouton, onCliquer, isMobile = false, style }) {
   const colors = useColors()
   return (
-    <Carte isMobile={isMobile} style={style}>
+    <Carte identite isMobile={isMobile} style={{ borderLeft: `${forme.lisere} solid ${colors.accent.green}`, ...style }}>
       <TitreSection couleur={colors.accent.green}>{surTitre}</TitreSection>
 
-      <p style={{ margin: 0, fontSize: isMobile ? fontSize['3xl'] : fontSize['4xl'], fontWeight: 800, letterSpacing: '-0.3px', color: colors.text.primary }}>
+      <p style={{ margin: 0, fontFamily: police.titre, textTransform: 'uppercase', fontSize: isMobile ? fontSize['6xl'] : fontSize['8xl'], fontWeight: 800, letterSpacing: '0.5px', lineHeight: 1.05, color: colors.text.primary }}>
         {titre}
       </p>
 
@@ -33,7 +33,7 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
             <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: spacing.lg, fontSize: fontSize.lg, color: colors.text.secondary }}>
               <span
                 style={{
-                  flexShrink: 0, marginTop: '5px', width: '6px', height: '6px', borderRadius: '999px',
+                  flexShrink: 0, marginTop: '5px', width: '6px', height: '6px', borderRadius: forme.rayonPastille,
                   background: colors.accent.green,
                 }}
               />
@@ -54,12 +54,12 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
               style={{
                 border: `1px solid ${f.misEnAvant ? colors.accent.green + alpha.light : colors.border.subtle}`,
                 background: f.misEnAvant ? colors.accent.green + alpha.faint : colors.background.raised,
-                borderRadius: radius.xl,
+                borderRadius: forme.rayonCarte,
                 padding: spacing['2xl'],
               }}
             >
               <div style={{ display: 'flex', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: f.misEnAvant ? colors.accent.green : colors.text.primary }}>
+                <span style={{ fontFamily: police.titre, fontSize: fontSize['8xl'], fontWeight: 800, letterSpacing: '0.5px', color: f.misEnAvant ? colors.accent.green : colors.text.primary }}>
                   {f.prix}
                 </span>
                 {f.mention && (
@@ -76,7 +76,7 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
                   background: f.misEnAvant ? colors.accent.green : 'transparent',
                   color: f.misEnAvant ? colors.black : colors.accent.green,
                   border: f.misEnAvant ? 'none' : `1px solid ${colors.accent.green + alpha.light}`,
-                  padding: `${spacing.lg} ${spacing['2xl']}`, borderRadius: radius.xl,
+                  minHeight: '44px', padding: `${spacing.lg} ${spacing['2xl']}`, borderRadius: forme.rayonPastille,
                   fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
                 }}
               >
@@ -93,7 +93,7 @@ export default function ApercuPro({ surTitre = 'Offre Pro', titre, accroche, poi
           style={{
             marginTop: spacing['3xl'], width: isMobile ? '100%' : 'auto',
             background: colors.accent.green, color: colors.black, border: 'none',
-            padding: `${spacing.lg} ${spacing['4xl']}`, borderRadius: radius.xl,
+            minHeight: '44px', padding: `${spacing.lg} ${spacing['4xl']}`, borderRadius: forme.rayonPastille,
             fontSize: fontSize.xl, fontWeight: 700, cursor: 'pointer', fontFamily: 'Barlow, sans-serif',
           }}
         >

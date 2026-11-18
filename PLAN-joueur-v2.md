@@ -1,5 +1,6 @@
 # PLAN : esthétique du dashboard joueur, deuxième passe
 Date : 2026-11-07 · Brief : BRIEF-joueur-v2.md · Exécution : `/bloc N PLAN-joueur-v2.md`
+> Note 2026-11-17 : les validations visuelles en attente de ce plan sont remplacées par le contrôle final de `PLAN-dashboard-joueur-v3.md` (bloc 11).
 
 Objectif : faire passer l'écran d'accueil joueur (branche `onglet === 'dashboard'`,
 les deux profils) de « propre » à « désirable », par une couche visuelle seule :

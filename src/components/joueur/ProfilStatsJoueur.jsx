@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
-import { fontSize, radius, spacing } from '../../tokens'
+import { fontSize, forme, spacing } from '../../tokens'
 import { saisonActuelle, bornesSaison } from '../../lib/saison'
 import { getPosteFamille } from '../../lib/postes'
 import CarteJoueur from '../CarteJoueur'
@@ -21,27 +21,26 @@ const moisLong = (mois) => {
   return new Date(parseInt(a), parseInt(m) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
 
-function Tuile({ valeur, libelle, detail, couleur, rang, colors }) {
+// Une case du tableau d'affichage : grand chiffre condensé, légende en majuscules,
+// rang dans l'équipe en petit. Le détail passe en infobulle pour garder la case compacte.
+function Case({ valeur, libelle, detail, couleur, rang, colors }) {
   return (
-    <div style={{ background: colors.background.surface, border: `1px solid ${colors.border.subtle}`, borderRadius: radius.xl, padding: `${spacing.xl} ${spacing.xl}`, minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: POLICE_CHIFFRES, fontWeight: 800, fontSize: '44px', lineHeight: 1, color: couleur || colors.text.primary }}>{valeur}</span>
-        {rang && rang.total > 0 && (
-          <span title="Ton rang dans l'équipe" style={{ fontSize: fontSize.md, fontWeight: 700, color: rang.rank === 1 ? colors.accent.amber : colors.text.faint, background: colors.background.sunken, borderRadius: radius.pill, padding: '2px 8px' }}>
-            #{rang.rank}/{rang.total}
-          </span>
-        )}
-      </div>
-      <div style={{ marginTop: spacing.md, fontSize: fontSize.base, fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', color: colors.text.faint }}>{libelle}</div>
-      {detail && <div style={{ marginTop: spacing.xs, fontSize: fontSize.md, color: colors.text.faint }}>{detail}</div>}
+    <div title={detail || undefined} style={{ background: colors.background.raised, borderRadius: forme.rayonPastille, padding: `${spacing.lg} ${spacing.base}`, textAlign: 'center', minWidth: 0 }}>
+      <div className="dj-chiffre" style={{ fontSize: '34px', lineHeight: 1, color: couleur || colors.text.primary }}>{valeur}</div>
+      <div style={{ marginTop: spacing.md, fontFamily: POLICE_CHIFFRES, fontSize: fontSize.base, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: colors.text.faint }}>{libelle}</div>
+      {rang && rang.total > 0 && (
+        <div title="Ton rang dans l'équipe" style={{ marginTop: spacing.sm, fontSize: fontSize.md, fontWeight: 700, color: rang.rank === 1 ? colors.accent.amber : colors.text.faint }}>
+          #{rang.rank}/{rang.total}
+        </div>
+      )}
     </div>
   )
 }
 
 function Pastille({ texte, couleur, colors }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.md, padding: '7px 14px', borderRadius: radius.pill, background: couleur + '22', border: `1px solid ${couleur}55`, color: colors.text.primary, fontSize: fontSize.lg, fontWeight: 700 }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: couleur }} />{texte}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.md, padding: '7px 14px', borderRadius: forme.rayonPastille, background: couleur + '22', border: `1px solid ${couleur}55`, color: colors.text.primary, fontSize: fontSize.lg, fontWeight: 700 }}>
+      <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 1, background: couleur }} />{texte}
     </span>
   )
 }
@@ -52,8 +51,9 @@ function Pastille({ texte, couleur, colors }) {
 //
 // `matchs` : liste déjà fusionnée (lib/statsFusion) des matchs saisis par
 // l'éducateur et de ceux saisis par le joueur ; `statsEquipe` : présence, points
-// séance, notes et élus du mois (calculés par DashboardJoueur).
-export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile, onOuvrirFiche, logoClub, profilJoueur }) {
+// séance, notes et élus du mois (calculés par DashboardJoueur) ; `serieEquipe` :
+// les derniers résultats de l'équipe (V, N ou D, du plus ancien au plus récent).
+export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], statsEquipe, isMobile, onOuvrirFiche, logoClub, profilJoueur, serieEquipe = [] }) {
   const colors = useColors()
   const saison = saisonActuelle()
   const [badges, setBadges] = useState([])
@@ -83,7 +83,6 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
   const points = statsEquipe ? (annee?.mesPoints ?? 0) : null
 
   const tuiles = [
-    { valeur: joueurPoste || '—', libelle: 'Poste', petit: true },
     { valeur: nbMatchs, libelle: 'Matchs joués', rang: statsEquipe?.rankMatchs, detail: nbMatchs ? `${parEducateur} saisi${parEducateur > 1 ? 's' : ''} par ton éducateur, ${nbMatchs - parEducateur} par toi` : null },
     { valeur: minutes, libelle: 'Minutes jouées', detail: nbMatchs ? `${Math.round(minutes / nbMatchs)} min par match` : null },
     { valeur: buts, libelle: 'Buts', couleur: colors.accent.green, rang: statsEquipe?.rankButs },
@@ -108,20 +107,43 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
           <CarteJoueur userId={userId} saison={saison} logoClub={logoClub} profilJoueur={profilJoueur} largeur={isMobile ? 260 : 290}
             stats={{ buts, passesD: passes, cleanSheets, matchs: nbMatchs, minutes, noteMoyenne, presencePct: presence ?? undefined }} />
         </div>
-        <div style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: spacing.xl }}>
-          {tuiles.map(t => (
-            <Tuile key={t.libelle} colors={colors} libelle={t.libelle} detail={t.detail} couleur={t.couleur} rang={t.rang}
-              valeur={t.petit ? <span style={{ fontSize: '28px', lineHeight: 1.15, display: 'block', paddingTop: '8px' }}>{t.valeur}</span> : t.valeur} />
-          ))}
-        </div>
+
+        {/* Feuille de match : poste, saison, tableau d'affichage et série de l'équipe */}
+        <Carte identite isMobile={isMobile} style={{ flex: 1, minWidth: isMobile ? '100%' : '320px', borderLeft: `${forme.lisere} solid ${colors.accent.green}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: spacing.lg, flexWrap: 'wrap', marginBottom: spacing.xl }}>
+            <TitreSection style={{ margin: 0 }}>Feuille de match</TitreSection>
+            <span className="dj-chiffre" style={{ fontSize: fontSize['3xl'], color: colors.text.secondary, letterSpacing: '0.04em' }}>
+              {joueurPoste ? joueurPoste.toUpperCase() : 'POSTE À CHOISIR'} · {saison.replace('-', ' / ')}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: spacing.md }}>
+            {tuiles.map(t => (
+              <Case key={t.libelle} colors={colors} libelle={t.libelle} detail={t.detail} couleur={t.couleur} rang={t.rang} valeur={t.valeur} />
+            ))}
+          </div>
+          {nbMatchs > 0 && (
+            <p style={{ margin: `${spacing.xl} 0 0`, color: colors.text.faint, fontSize: fontSize.md, lineHeight: 1.5 }}>
+              {nbMatchs} match{nbMatchs > 1 ? 's' : ''} cette saison : {parEducateur} saisi{parEducateur > 1 ? 's' : ''} par ton éducateur, {nbMatchs - parEducateur} par toi.
+            </p>
+          )}
+          {serieEquipe.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap', marginTop: spacing.xl }}>
+              <span className="dj-eyebrow" style={{ color: colors.text.faint, marginRight: spacing.sm }}>Série de l'équipe</span>
+              {serieEquipe.map((res, k) => (
+                <span key={k} className="dj-chiffre" title={res === 'V' ? 'Victoire' : res === 'N' ? 'Nul' : 'Défaite'}
+                  style={{ width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: forme.rayonPastille, background: res === 'V' ? colors.accent.green : res === 'N' ? colors.accent.amber : colors.accent.red, color: colors.accent.onBrand, fontSize: fontSize.xl }}>{res}</span>
+              ))}
+            </div>
+          )}
+        </Carte>
       </div>
 
-      <Carte isMobile={isMobile}>
-        <TitreSection couleur={colors.accent.amber}>Mes récompenses</TitreSection>
+      <Carte identite isMobile={isMobile}>
+        <TitreSection>Mes récompenses</TitreSection>
 
         {aucuneRecompense ? (
           <p style={{ margin: 0, color: colors.text.faint, fontSize: fontSize.xl, lineHeight: 1.5 }}>
-            Pas encore de récompense cette saison. Les titres de ton équipe (tournois, championnat, coupe), les distinctions individuelles et les titres de joueur du mois apparaissent ici dès qu'ils sont obtenus.
+            Pas encore de récompense cette saison. Les titres de ton équipe (tournois, championnat, coupe), les distinctions individuelles et les titres de joueur du mois apparaissent ici dès qu'ils sont obtenus. Continue les séances et les matchs : chaque présence compte.
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['3xl'] }}>
@@ -162,8 +184,8 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
       </Carte>
 
       {(statsEquipe?.presenceMensuelle?.length > 0 || suiviMois.length > 0) && (
-        <Carte isMobile={isMobile}>
-          <TitreSection couleur={colors.accent.amber}>Séances, mois par mois</TitreSection>
+        <Carte identite isMobile={isMobile}>
+          <TitreSection>Séances, mois par mois</TitreSection>
           <p style={{ margin: `0 0 ${spacing.xl}`, color: colors.text.faint, fontSize: fontSize.lg, lineHeight: 1.5 }}>
             Ta présence et tes points séance. Le joueur qui cumule le plus de points séance est élu joueur du mois, une fois le mois terminé. À la fin de la saison, le premier du classement général des points séance est élu joueur de l'année.
             {annee && annee.mesPoints > 0 && <strong style={{ color: colors.accent.amber }}> Classement général provisoire : {annee.rang}{annee.rang === 1 ? 'er' : 'e'} sur {annee.nbJoueurs}.</strong>}
@@ -185,8 +207,8 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
                       {elu && elu.max > 0 && <span style={{ color: colors.text.faint }}> · meilleur total {elu.max}</span>}
                     </span>
                   </div>
-                  <div style={{ height: '8px', borderRadius: radius.pill, background: colors.background.sunken, overflow: 'hidden' }}>
-                    <div style={{ width: `${m.taux}%`, height: '100%', borderRadius: radius.pill, background: couleurTaux }} />
+                  <div style={{ height: '8px', borderRadius: forme.rayonPastille, background: colors.background.sunken, overflow: 'hidden' }}>
+                    <div style={{ width: `${m.taux}%`, height: '100%', borderRadius: forme.rayonPastille, background: couleurTaux }} />
                   </div>
                 </div>
               )
@@ -196,15 +218,15 @@ export default function ProfilStatsJoueur({ userId, joueurPoste, matchs = [], st
       )}
 
       {statsEquipe && (
-        <Carte isMobile={isMobile}>
-          <TitreSection couleur={colors.accent.amber}>Avis de ton éducateur</TitreSection>
+        <Carte identite isMobile={isMobile}>
+          <TitreSection>Avis de ton éducateur</TitreSection>
           {statsEquipe.evaluations?.length > 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing['2xl'], flexWrap: 'wrap' }}>
               <span style={{ color: colors.text.secondary, fontSize: fontSize.xl }}>
                 {statsEquipe.evaluations.length} évaluation{statsEquipe.evaluations.length > 1 ? 's' : ''} disponible{statsEquipe.evaluations.length > 1 ? 's' : ''}
               </span>
               {onOuvrirFiche && (
-                <button onClick={onOuvrirFiche} style={{ background: colors.accent.green, color: colors.accent.onBrand || colors.black, border: 'none', borderRadius: radius.lg, padding: '9px 18px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={onOuvrirFiche} style={{ background: colors.accent.green, color: colors.accent.onBrand || colors.black, border: 'none', borderRadius: forme.rayonPastille, padding: '9px 18px', fontWeight: 700, fontSize: fontSize.lg, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Voir ma fiche
                 </button>
               )}

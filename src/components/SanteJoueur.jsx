@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
-import { alpha, fontSize, radius, spacing } from '../tokens'
+import { alpha, fontSize, forme, police, radius, spacing } from '../tokens'
 import { saisonActuelle } from '../lib/saison'
 import { localeOf } from '../lib/translations'
-import { IconPaperclip, IconHealth } from './icones'
+import { HeartPulse, Paperclip } from 'lucide-react'
 import Carte from './joueur/Carte'
 import TitreSection from './joueur/TitreSection'
 import TuileChiffre from './joueur/TuileChiffre'
@@ -221,12 +221,12 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
   }
 
   const s = {
-    pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: radius.pill, padding: `3px ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700, whiteSpace: 'nowrap' }),
-    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: radius.base, padding: `${spacing.base} ${spacing['3xl']}`, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
-    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: radius.base, padding: `${spacing.md} ${spacing['2xl']}`, fontWeight: 600, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
+    pill: (color) => ({ background: color + alpha.soft, color, border: `1px solid ${color}${alpha.medium}`, borderRadius: forme.rayonPastille, padding: `3px ${spacing.lg}`, fontSize: fontSize.base, fontWeight: 700, whiteSpace: 'nowrap' }),
+    btn: { background: colors.accent.orange, color: colors.black, border: 'none', borderRadius: forme.rayonPastille, padding: `${spacing.base} ${spacing['3xl']}`, fontWeight: 700, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
+    btnGhost: { background: 'transparent', color: colors.text.faint, border: `1px solid ${colors.border.default}`, borderRadius: forme.rayonPastille, padding: `${spacing.md} ${spacing['2xl']}`, fontWeight: 600, cursor: 'pointer', fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif' },
     label: { color: colors.text.faint, fontSize: fontSize.base, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.xs, display: 'block', fontWeight: 700 },
-    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' },
-    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: radius.base, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
+    input: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: forme.rayonPastille, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', boxSizing: 'border-box' },
+    textarea: { width: '100%', background: colors.background.raised, border: `1px solid ${colors.border.strong}`, borderRadius: forme.rayonPastille, padding: `${spacing.base} ${spacing.lg}`, color: colors.text.primary, fontSize: fontSize.lg, fontFamily: 'Barlow, sans-serif', minHeight: '70px', resize: 'vertical', boxSizing: 'border-box' },
     sousTitre: { color: colors.text.faint, fontSize: fontSize.base, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.base },
     lienDiscret: { background: 'transparent', border: 'none', fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', padding: 0 },
   }
@@ -243,7 +243,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
     <div style={{ ...cadre, display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing['2xl'], flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0, flex: '1 1 260px' }}>
-          <h1 style={{ margin: 0, fontSize: fontSize['6xl'], fontWeight: 800, letterSpacing: '-0.5px', color: colors.text.primary }}>Santé</h1>
+          <h1 style={{ margin: 0, fontFamily: police.titre, fontSize: isMobile ? '40px' : '56px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 0.95, color: colors.text.primary }}>Santé</h1>
           <p style={{ margin: `${spacing.sm} 0 0`, fontSize: fontSize.lg, color: colors.text.faint, lineHeight: 1.5 }}>
             Déclare une gêne ou une blessure : ton éducateur la voit tout de suite et suit ton retour avec toi.
           </p>
@@ -252,9 +252,9 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
       </div>
 
       {enCours.length > 0 && (
-        <Carte isMobile={isMobile} accent={STATUT_META[enCours[0].statut]?.color}>
+        <Carte identite isMobile={isMobile} style={{ borderLeft: `${forme.lisere} solid ${STATUT_META[enCours[0].statut]?.color || colors.accent.orange}` }}>
           <TitreSection couleur={STATUT_META[enCours[0].statut]?.color}>Ton état actuel</TitreSection>
-          <div style={{ color: colors.text.primary, fontWeight: 800, fontSize: fontSize['3xl'], marginBottom: spacing.xs }}>
+          <div style={{ color: colors.text.primary, fontFamily: police.titre, fontWeight: 800, fontSize: fontSize['5xl'], textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: spacing.xs }}>
             Tu es actuellement {STATUT_META[enCours[0].statut]?.label?.toLowerCase()}
           </div>
           <div style={{ color: colors.text.faint, fontSize: fontSize.lg }}>
@@ -273,7 +273,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
       )}
 
       {blessures.length > 0 && (
-        <Carte isMobile={isMobile} style={{ display: 'flex', gap: spacing['3xl'], alignItems: 'center', flexWrap: 'wrap' }}>
+        <Carte identite isMobile={isMobile} style={{ display: 'flex', gap: spacing['3xl'], alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ width: '110px', flexShrink: 0 }}>
             <CorpsHumain blessures={blessures} onZoneClick={(zoneId) => {
               const b = enCours.find(bl => bl.zone_corps === zoneId)
@@ -290,7 +290,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
       )}
 
       {showFormBlessure && (
-        <Carte isMobile={isMobile}>
+        <Carte identite isMobile={isMobile}>
           <TitreSection couleur={colors.accent.orange}>Déclarer une blessure</TitreSection>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '110px 1fr', gap: spacing['2xl'] }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing.sm }}>
@@ -340,7 +340,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
 
       {blessures.length === 0 && !showFormBlessure && (
         <EmptyState
-          icon={<IconHealth />}
+          icon={<HeartPulse />}
           title={estAffilie ? 'Aucune blessure déclarée' : 'Ton suivi santé se débloque avec ton équipe'}
           subtitle={estAffilie
             ? "Une gêne au genou, une douleur après un match : dis-le ici. Ton éducateur est prévenu, fixe la date de reprise et peut te proposer un programme de rééducation. Tes rendez-vous médicaux se retrouvent aussi ici."
@@ -358,7 +358,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
         const etapes = etapesParBlessure[b.id] || []
         const progression = etapes.length > 0 ? Math.round((etapes.filter(e => e.statut === 'validee').length / etapes.length) * 100) : 0
         return (
-          <Carte key={b.id} isMobile={isMobile}>
+          <Carte identite key={b.id} isMobile={isMobile}>
             <div onClick={() => ouvrirBlessure(b)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.base }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.xl }}>{b.type_blessure}{b.zone_corps && ` — ${b.zone_corps}`}</div>
@@ -400,7 +400,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                 {suivis.filter(sv => sv.statut === 'prevu').length > 0 && (
                   <div style={{ marginBottom: spacing.lg, display: 'flex', flexDirection: 'column', gap: spacing.md }}>
                     {suivis.filter(sv => sv.statut === 'prevu').map(sv => (
-                      <Carte key={sv.id} isMobile style={{ background: colors.background.raised, borderRadius: radius.xl }}>
+                      <Carte identite key={sv.id} isMobile style={{ background: colors.background.raised, borderRadius: forme.rayonPastille }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
                           <div>
                             <span style={{ color: colors.text.primary, fontWeight: 700, fontSize: fontSize.lg }}>
@@ -432,7 +432,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                 )}
 
                 {formRdvOuvert === b.id ? (
-                  <Carte isMobile style={{ border: `1px solid ${colors.border.default}`, marginBottom: spacing.lg }}>
+                  <Carte identite isMobile style={{ borderRadius: forme.rayonPastille, border: `1px solid ${colors.border.default}`, marginBottom: spacing.lg }}>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: spacing.base, marginBottom: spacing.base }}>
                       <div>
                         <label style={s.label}>Date</label>
@@ -454,7 +454,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                   </Carte>
                 ) : (
                   <button onClick={() => { setFormRdvOuvert(b.id); setFormRdv(RDV_VIDE) }}
-                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: radius.base, padding: `${spacing.md} ${spacing.xl}`, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginBottom: spacing.lg }}>
+                    style={{ background: 'transparent', border: `1px dashed ${colors.border.default}`, color: colors.text.faint, borderRadius: forme.rayonPastille, padding: `${spacing.md} ${spacing.xl}`, fontSize: fontSize.md, cursor: 'pointer', fontFamily: 'Barlow, sans-serif', marginBottom: spacing.lg }}>
                     + Programmer un rendez-vous
                   </button>
                 )}
@@ -473,7 +473,7 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                       </div>
                       {sv.document_path && (
                         <button onClick={() => ouvrirDocument(sv.document_path)} style={{ ...s.lienDiscret, color: colors.accent.blue }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><IconPaperclip size={12} />{sv.document_nom || 'Document'}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Paperclip size={12} />{sv.document_nom || 'Document'}</span>
                         </button>
                       )}
                     </div>
@@ -488,8 +488,8 @@ export default function SanteJoueur({ userId, estAffilie = true, isMobile = fals
                       <span style={{ color: colors.text.secondary, fontSize: fontSize.md }}>Progression</span>
                       <span style={{ color: colors.accent.green, fontWeight: 700, fontSize: fontSize.md }}>{progression}%</span>
                     </div>
-                    <div style={{ background: colors.background.raised, borderRadius: radius.md, height: '6px', marginBottom: spacing.xl }}>
-                      <div style={{ background: colors.accent.green, width: `${progression}%`, height: '6px', borderRadius: radius.md }} />
+                    <div style={{ background: colors.background.raised, borderRadius: forme.rayonPastille, height: '6px', marginBottom: spacing.xl }}>
+                      <div style={{ background: colors.accent.green, width: `${progression}%`, height: '6px', borderRadius: forme.rayonPastille }} />
                     </div>
                     {etapes.map((etape, idx) => {
                       const stMeta = STATUT_ETAPE_META[etape.statut] || STATUT_ETAPE_META.a_faire

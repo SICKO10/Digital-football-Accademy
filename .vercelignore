@@ -8,3 +8,4 @@ PLAN*.md
 BRIEF*.md
 supabase_*.sql
 *.csv
+backups

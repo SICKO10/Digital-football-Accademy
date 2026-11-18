@@ -1,10 +1,10 @@
 import { useColors } from '../../lib/theme'
 import EnTetePage from './EnTetePage'
 import { localeOf } from '../../lib/translations'
-import { alpha, fontSize, radius, spacing } from '../../tokens'
+import { alpha, fontSize, forme, police, spacing } from '../../tokens'
 import Carte from './Carte'
 import EmptyState from '../EmptyState'
-import { IconMessage } from '../icones'
+import { MessageSquare } from 'lucide-react'
 
 // Page "Actualités du club" du joueur : les annonces publiées par son club,
 // les plus récentes d'abord. Utilisée par la branche navItems du dashboard.
@@ -30,7 +30,7 @@ export default function ActualitesJoueur({ annonces, luesIds, aUnClub, isMobile,
 
       {annonces.length === 0 ? (
         <EmptyState
-          icon={<IconMessage />}
+          icon={<MessageSquare />}
           title={aUnClub ? "Ton club n'a rien publié pour le moment" : 'Les actualités arrivent avec ton club'}
           subtitle={aUnClub
             ? "Dès que ton club publie une annonce (horaires, événements, informations utiles), tu la retrouves ici."
@@ -45,17 +45,18 @@ export default function ActualitesJoueur({ annonces, luesIds, aUnClub, isMobile,
             return (
               <Carte
                 key={a.id}
+                identite
                 isMobile={isMobile}
                 onClick={lue ? undefined : () => onLue(a.id)}
                 role={lue ? undefined : 'button'}
                 tabIndex={lue ? undefined : 0}
                 onKeyDown={lue ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLue(a.id) } }}
-                style={{ opacity: lue ? 0.85 : 1 }}
+                style={{ opacity: lue ? 0.85 : 1, borderLeft: `${forme.lisere} solid ${lue ? colors.border.subtle : colors.accent.green}` }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.lg }}>
-                  <h2 style={{ margin: 0, fontSize: fontSize['3xl'], fontWeight: 700, color: colors.text.primary, minWidth: 0, overflowWrap: 'anywhere' }}>{a.titre}</h2>
+                  <h2 style={{ margin: 0, fontFamily: police.titre, fontSize: fontSize['6xl'], fontWeight: 700, letterSpacing: '0.01em', color: colors.text.primary, minWidth: 0, overflowWrap: 'anywhere' }}>{a.titre}</h2>
                   {!lue && (
-                    <span style={{ flexShrink: 0, background: colors.accent.green + alpha.soft, color: colors.accent.green, borderRadius: radius.pill, padding: `${spacing.xs} ${spacing.base}`, fontSize: fontSize.base, fontWeight: 700 }}>
+                    <span style={{ flexShrink: 0, background: colors.accent.green + alpha.soft, color: colors.accent.green, borderRadius: forme.rayonPastille, padding: `${spacing.xs} ${spacing.base}`, fontSize: fontSize.base, fontWeight: 700 }}>
                       Nouveau
                     </span>
                   )}
