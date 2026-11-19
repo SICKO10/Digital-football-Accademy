@@ -5,3 +5,8 @@
 -- Colonne vide = pas clôturée. Ajout seul, aucune donnée modifiée.
 alter table public.demandes add column if not exists cloture_manuelle_le timestamptz;
 alter table public.seances_uploadees add column if not exists cloture_manuelle_le timestamptz;
+
+-- La table demandes n'autorise la modification que de colonnes précises
+-- (droits par colonne) : on ajoute la nouvelle. Seuls les admins coach peuvent
+-- modifier une demande (règle admin_coach_gere_demandes), rien ne s'ouvre aux joueurs.
+grant update (cloture_manuelle_le) on public.demandes to authenticated;
