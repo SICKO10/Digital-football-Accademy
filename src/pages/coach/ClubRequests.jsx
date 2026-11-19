@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../supabase'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import Tabs from '../../components/coachAdmin/Tabs'
 import { STRIPE_LINKS_CLUB } from '../../lib/stripeLinks'
 import { IcoMail, IcoCopy, IcoLink, IcoCard, IcoHome, IcoCheck } from './NavIcons'
 
@@ -154,24 +155,37 @@ L'équipe Digital Football`
 
 export default function ClubRequests({ demandesClub, traitantDemande, marquerDemandeTraitee, setDemandesClub }) {
   const { c, rgba } = useCoachTheme()
+  const [vue, setVue] = useState('a_traiter')
+  const nbATraiter = demandesClub.filter(d => d.statut === 'nouveau').length
+  const nbHistorique = demandesClub.length - nbATraiter
+  const liste = demandesClub.filter(d => (vue === 'a_traiter') === (d.statut === 'nouveau'))
+  const rouvrir = async (id) => {
+    const { error } = await supabase.from('demandes_club').update({ statut: 'nouveau' }).eq('id', id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    setDemandesClub(prev => prev.map(d => d.id === id ? { ...d, statut: 'nouveau' } : d))
+  }
   return (
     <>
+      <Tabs active={vue} onChange={setVue} tabs={[
+        { id: 'a_traiter', label: `À traiter (${nbATraiter})` },
+        { id: 'historique', label: `Historique (${nbHistorique})` },
+      ]} />
       <p style={{ color: c.textMuted, fontSize: '13px', marginBottom: '1.25rem', lineHeight: 1.6 }}>
         Demandes envoyées depuis la page /offres — le choix du palier et le paiement sont
         désormais en libre-service (tableau de paliers), ce formulaire ne sert plus qu'aux
         questions et à la planification du rendez-vous de démarrage (disponibilités dans le
-        message). Recontacte sous 24-48h, puis marque comme traité.
+        message). Recontacte sous 24-48h, puis marque comme traité : la demande part dans l'historique.
       </p>
-      {demandesClub.length === 0 ? (
+      {liste.length === 0 ? (
         <Card>
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: c.textMuted }}><IcoHome size={40} /></div>
-            <p style={{ color: c.textMuted }}>Aucune demande pour le moment</p>
+            <p style={{ color: c.textMuted }}>{vue === 'a_traiter' ? 'Aucune demande à traiter' : 'Aucune demande dans l\'historique'}</p>
           </div>
         </Card>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '14px' }}>
-          {demandesClub.map(d => {
+          {liste.map(d => {
             const initiales = `${(d.prenom || '?')[0]}${(d.nom || '?')[0]}`
             const boxes = infoBoxes(d)
             return (
@@ -241,7 +255,10 @@ export default function ClubRequests({ demandesClub, traitantDemande, marquerDem
                       {traitantDemande === d.id ? 'Mise à jour...' : 'Marquer comme traité'}
                     </button>
                   ) : (
-                    <span style={{ fontSize: '11px', color: c.success, fontWeight: 600 }}>Traité</span>
+                    <button onClick={() => rouvrir(d.id)}
+                      style={{ alignSelf: 'flex-start', background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '5px 12px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>
+                      Remettre à traiter
+                    </button>
                   )}
                   {d.type === 'abonnement' && d.nb_licencies && d.statut !== 'traite' && (
                     <EmailBlockClub demande={d} onLienEnvoye={() => setDemandesClub(prev => prev.map(x => x.id === d.id ? { ...x, lien_paiement_envoye: true, lien_paiement_envoye_le: new Date().toISOString() } : x))} />

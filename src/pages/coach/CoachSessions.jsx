@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import Tabs from '../../components/coachAdmin/Tabs'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { IcoBook, IcoCheck, IcoLock, IcoUser, IcoPlay } from './NavIcons'
 
-export default function CoachSessions({ seancesTransferees, coachId, prendreEnCharge, setSeanceEvalModal }) {
+export default function CoachSessions({ seancesTransferees, coachId, prendreEnCharge, setSeanceEvalModal, cloturerManuellement }) {
   const { c, rgba } = useCoachTheme()
-  const [filtreStatut, setFiltreStatut] = useState('attente') // attente | completees | toutes
+  const [filtreStatut, setFiltreStatut] = useState('attente') // attente | completees
   const [recherche, setRecherche] = useState('')
+
+  const aTraiter = s => s.statut === 'transfere_coach' && !s.cloture_manuelle_le
 
   const seancesFiltrees = useMemo(() => {
     const q = recherche.trim().toLowerCase()
     return seancesTransferees.filter(s => {
-      if (filtreStatut === 'attente' && s.statut !== 'transfere_coach') return false
-      if (filtreStatut === 'completees' && s.statut !== 'analyse') return false
+      if ((filtreStatut === 'attente') !== aTraiter(s)) return false
       if (q) {
         const nom = `${s.educateur?.prenom || ''} ${s.educateur?.nom || ''}`.toLowerCase()
         if (!nom.includes(q)) return false
@@ -22,14 +24,15 @@ export default function CoachSessions({ seancesTransferees, coachId, prendreEnCh
     })
   }, [seancesTransferees, filtreStatut, recherche])
 
+  const nbAttente = seancesTransferees.filter(aTraiter).length
+
   return (
     <>
+      <Tabs active={filtreStatut} onChange={setFiltreStatut} tabs={[
+        { id: 'attente', label: `À traiter (${nbAttente})` },
+        { id: 'completees', label: `Historique (${seancesTransferees.length - nbAttente})` },
+      ]} />
       <FilterBar
-        toggles={[
-          { key: 'attente', label: 'En attente', active: filtreStatut === 'attente', onClick: () => setFiltreStatut('attente') },
-          { key: 'completees', label: 'Complétées', active: filtreStatut === 'completees', onClick: () => setFiltreStatut('completees') },
-          { key: 'toutes', label: 'Toutes', active: filtreStatut === 'toutes', onClick: () => setFiltreStatut('toutes') },
-        ]}
         search={recherche}
         onSearchChange={setRecherche}
         searchPlaceholder="Rechercher un éducateur..."
@@ -72,8 +75,17 @@ export default function CoachSessions({ seancesTransferees, coachId, prendreEnCh
                     <button onClick={() => prendreEnCharge('seances_uploadees', s.id, false)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}><IcoUser size={13} /> Je m'en occupe</button>
                   )}
                   <a href={s.video_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: rgba(c.accent, 0.12), border: `1px solid ${rgba(c.accent, 0.4)}`, color: c.accent, padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}><IcoPlay size={13} /> Voir</a>
-                  {s.statut === 'transfere_coach' && (
-                    <button onClick={() => setSeanceEvalModal(s)} style={{ background: c.accent, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Analyser</button>
+                  {aTraiter(s) && (
+                    <>
+                      <button onClick={() => setSeanceEvalModal(s)} style={{ background: c.accent, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>Analyser</button>
+                      <button onClick={() => cloturerManuellement('seances_uploadees', s.id, true)} title="Classer dans l'historique sans envoyer d'analyse (impayé, doublon...)" style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '8px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>Marquer comme fait sans envoyer</button>
+                    </>
+                  )}
+                  {s.statut === 'transfere_coach' && s.cloture_manuelle_le && (
+                    <>
+                      <span style={{ background: rgba(c.textMuted, 0.15), color: c.textMuted, fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>Clôturée sans envoi</span>
+                      <button onClick={() => cloturerManuellement('seances_uploadees', s.id, false)} style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '5px 12px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>Remettre à traiter</button>
+                    </>
                   )}
                   {eval_ && (
                     <span style={{ background: rgba(c.success, 0.12), color: c.success, fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px' }}>{Math.round(eval_.note_totale)}/100</span>

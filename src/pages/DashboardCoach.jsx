@@ -145,16 +145,27 @@ function DashboardCoachInner() {
     // Optimistic : la demande sort de la liste tout de suite, sans attendre
     // la réponse Supabase ni un rechargement complet.
     const avant = demandesClub.find(d => d.id === id)
-    setDemandesClub(prev => prev.filter(d => d.id !== id))
+    setDemandesClub(prev => prev.map(d => d.id === id ? { ...d, statut: 'traite' } : d))
     setTraitantDemande(id)
     const { error } = await supabase.from('demandes_club').update({ statut: 'traite' }).eq('id', id)
     setTraitantDemande(null)
     if (error) {
       alert('Erreur : ' + error.message)
-      if (avant) setDemandesClub(prev => [avant, ...prev])
+      if (avant) setDemandesClub(prev => prev.map(d => d.id === id ? avant : d))
     } else {
-      pushToast('Demande marquée comme traitée')
+      pushToast('Demande classée dans l\'historique')
     }
+  }
+
+  // Classe une demande ou une séance dans l'historique sans envoyer d'analyse
+  // (impayé, doublon...). Le statut ne change pas : rien ne bouge côté joueur/club.
+  const cloturerManuellement = async (table, id, clore) => {
+    const valeur = clore ? new Date().toISOString() : null
+    const { error } = await supabase.from(table).update({ cloture_manuelle_le: valeur }).eq('id', id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    const maj = liste => liste.map(x => x.id === id ? { ...x, cloture_manuelle_le: valeur } : x)
+    if (table === 'demandes') setDemandes(maj); else setSeancesTransferees(maj)
+    pushToast(clore ? "Classé dans l'historique" : 'Remis à traiter')
   }
 
   const prendreEnCharge = async (table, id, dejaPris) => {
@@ -386,8 +397,8 @@ function DashboardCoachInner() {
   }, [activeSection])
 
   const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
-  const enAttente = demandes.filter(d => d.statut === 'en_attente')
-  const seancesEnAttente = seancesTransferees.filter(s => s.statut === 'transfere_coach')
+  const enAttente = demandes.filter(d => d.statut === 'en_attente' && !d.cloture_manuelle_le)
+  const seancesEnAttente = seancesTransferees.filter(s => s.statut === 'transfere_coach' && !s.cloture_manuelle_le)
 
   if (loading && certifLoading) return (
     <div style={{ minHeight: '100vh', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -589,6 +600,7 @@ function DashboardCoachInner() {
               envoyerAnalyse={envoyerAnalyse}
               prendreEnCharge={prendreEnCharge}
               setNotationCible={setNotationCible}
+              cloturerManuellement={cloturerManuellement}
             />
           )}
 
@@ -614,6 +626,7 @@ function DashboardCoachInner() {
               coachId={coachId}
               prendreEnCharge={prendreEnCharge}
               setSeanceEvalModal={setSeanceEvalModal}
+              cloturerManuellement={cloturerManuellement}
             />
           )}
 

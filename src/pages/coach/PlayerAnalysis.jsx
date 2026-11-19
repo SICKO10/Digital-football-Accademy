@@ -1,23 +1,24 @@
 import { useMemo, useState } from 'react'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import Tabs from '../../components/coachAdmin/Tabs'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel, getVideoUrl, isVeo, isYoutube, parseDescription } from './helpers'
-import { IcoPlay, IcoClock, IcoLock, IcoUser, IcoAlert, IcoFile, IcoCheck } from './NavIcons'
+import { IcoPlay, IcoLock, IcoUser, IcoAlert, IcoFile, IcoCheck } from './NavIcons'
 
-export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrls, rapportPdfFiles, setRapportPdfFiles, sending, envoyerAnalyse, prendreEnCharge, setNotationCible }) {
+export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrls, rapportPdfFiles, setRapportPdfFiles, sending, envoyerAnalyse, prendreEnCharge, setNotationCible, cloturerManuellement }) {
   const { c, rgba } = useCoachTheme()
-  const [filtreStatut, setFiltreStatut] = useState('toutes') // attente | completees | toutes
+  const [filtreStatut, setFiltreStatut] = useState('attente') // attente | completees
   const [recherche, setRecherche] = useState('')
 
-  const enAttente = demandes.filter(d => d.statut === 'en_attente')
+  const aTraiter = d => d.statut === 'en_attente' && !d.cloture_manuelle_le
+  const enAttente = demandes.filter(aTraiter)
 
   const demandesFiltrees = useMemo(() => {
     const q = recherche.trim().toLowerCase()
     return demandes
       .filter(d => {
-        if (filtreStatut === 'attente' && d.statut !== 'en_attente') return false
-        if (filtreStatut === 'completees' && d.statut !== 'analyse') return false
+        if ((filtreStatut === 'attente') !== aTraiter(d)) return false
         if (q) {
           const nom = `${d.profiles?.prenom || ''} ${d.profiles?.nom || ''}`.toLowerCase()
           if (!nom.includes(q)) return false
@@ -25,8 +26,8 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
         return true
       })
       .sort((a, b) => {
-        if (a.statut === 'en_attente' && b.statut !== 'en_attente') return -1
-        if (a.statut !== 'en_attente' && b.statut === 'en_attente') return 1
+        if (aTraiter(a) && !aTraiter(b)) return -1
+        if (!aTraiter(a) && aTraiter(b)) return 1
         return new Date(b.created_at) - new Date(a.created_at)
       })
   }, [demandes, filtreStatut, recherche])
@@ -44,25 +45,15 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
 
   return (
     <>
+      <Tabs active={filtreStatut} onChange={setFiltreStatut} tabs={[
+        { id: 'attente', label: `À traiter (${enAttente.length})` },
+        { id: 'completees', label: `Historique (${demandes.length - enAttente.length})` },
+      ]} />
       <FilterBar
-        toggles={[
-          { key: 'attente', label: 'En attente', active: filtreStatut === 'attente', onClick: () => setFiltreStatut('attente') },
-          { key: 'completees', label: 'Complétées', active: filtreStatut === 'completees', onClick: () => setFiltreStatut('completees') },
-          { key: 'toutes', label: 'Toutes', active: filtreStatut === 'toutes', onClick: () => setFiltreStatut('toutes') },
-        ]}
         search={recherche}
         onSearchChange={setRecherche}
         searchPlaceholder="Rechercher un joueur..."
       />
-
-      {enAttente.length > 0 && (
-        <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ display: 'flex', color: c.warn }}><IcoClock size={18} /></span>
-          <p style={{ margin: 0, fontSize: '14px', color: c.warn, fontWeight: 600 }}>
-            {enAttente.length} demande{enAttente.length > 1 ? 's' : ''} en attente d'analyse
-          </p>
-        </div>
-      )}
 
       {demandesFiltrees.length === 0 && (
         <Card><p style={{ color: c.textMuted, textAlign: 'center', margin: 0, padding: '1rem 0' }}>Aucune demande ne correspond à ces filtres</p></Card>
@@ -85,7 +76,7 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: c.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profil?.prenom} {profil?.nom}</p>
                 </div>
                 <span style={{ background: rgba(getStatutColor(c, demande.statut), 0.15), color: getStatutColor(c, demande.statut), fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  {getStatutLabel(demande.statut)}
+                  {demande.cloture_manuelle_le ? 'Clôturée sans envoi' : getStatutLabel(demande.statut)}
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 1rem', textTransform: 'capitalize' }}>
@@ -149,7 +140,13 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
               )}
 
               <div style={{ marginTop: 'auto' }}>
-                {demande.statut === 'en_attente' && (
+                {demande.statut === 'en_attente' && demande.cloture_manuelle_le && (
+                  <button onClick={() => cloturerManuellement('demandes', demande.id, false)}
+                    style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '5px 12px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer' }}>
+                    Remettre à traiter
+                  </button>
+                )}
+                {demande.statut === 'en_attente' && !demande.cloture_manuelle_le && (
                   <div style={{ background: c.surface2, borderRadius: '10px', padding: '1rem' }}>
                     <p style={{ fontSize: '12px', color: c.textMuted, margin: '0 0 10px' }}>
                       Le joueur recevra une notification automatique dans son dashboard dès l'envoi
@@ -178,6 +175,13 @@ export default function PlayerAnalysis({ demandes, coachId, loomUrls, setLoomUrl
                       {rapportPdfFiles[demande.id] && (
                         <p style={{ margin: '4px 0 0', fontSize: '11px', color: c.success }}>{rapportPdfFiles[demande.id].name}</p>
                       )}
+                    </div>
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: `1px solid ${c.border}` }}>
+                      <button onClick={() => cloturerManuellement('demandes', demande.id, true)}
+                        style={{ background: 'transparent', border: `1px solid ${c.border}`, color: c.textMuted, padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                        Marquer comme fait sans envoyer
+                      </button>
+                      <p style={{ margin: '6px 0 0', fontSize: '11px', color: c.textMuted }}>Pour un impayé ou un doublon : la demande part dans l'historique, le joueur ne reçoit rien.</p>
                     </div>
                   </div>
                 )}

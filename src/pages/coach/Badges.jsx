@@ -1,21 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useCoachTheme } from './useCoachTheme'
 import Card from '../../components/coachAdmin/Card'
+import Tabs from '../../components/coachAdmin/Tabs'
 import FilterBar from '../../components/coachAdmin/FilterBar'
 import { getStatutColor, getStatutLabel } from './helpers'
 import { IcoShield, IcoAlert, IcoFile, IcoImage, IcoMessage, IcoCheck, IcoX } from './NavIcons'
 
 export default function Badges({ certifs, certifLoading, commentaires, setCommentaires, validating, validerCertification, rejeterCertification }) {
   const { c, rgba } = useCoachTheme()
-  const [filtreStatut, setFiltreStatut] = useState('toutes') // attente | traitees | toutes
+  const [filtreStatut, setFiltreStatut] = useState('attente') // attente | traitees
   const [recherche, setRecherche] = useState('')
   const certifsEnAttente = certifs.filter(cf => cf.statut === 'en_attente')
 
   const certifsFiltres = useMemo(() => {
     const q = recherche.trim().toLowerCase()
     return certifs.filter(cf => {
-      if (filtreStatut === 'attente' && cf.statut !== 'en_attente') return false
-      if (filtreStatut === 'traitees' && cf.statut === 'en_attente') return false
+      if ((filtreStatut === 'attente') !== (cf.statut === 'en_attente')) return false
       if (q) {
         const nom = `${cf.profiles?.prenom || ''} ${cf.profiles?.nom || ''}`.toLowerCase()
         if (!nom.includes(q)) return false
@@ -39,25 +39,15 @@ export default function Badges({ certifs, certifLoading, commentaires, setCommen
 
   return (
     <>
+      <Tabs active={filtreStatut} onChange={setFiltreStatut} tabs={[
+        { id: 'attente', label: `À traiter (${certifsEnAttente.length})` },
+        { id: 'traitees', label: `Historique (${certifs.length - certifsEnAttente.length})` },
+      ]} />
       <FilterBar
-        toggles={[
-          { key: 'attente', label: 'En attente', active: filtreStatut === 'attente', onClick: () => setFiltreStatut('attente') },
-          { key: 'traitees', label: 'Traitées', active: filtreStatut === 'traitees', onClick: () => setFiltreStatut('traitees') },
-          { key: 'toutes', label: 'Toutes', active: filtreStatut === 'toutes', onClick: () => setFiltreStatut('toutes') },
-        ]}
         search={recherche}
         onSearchChange={setRecherche}
         searchPlaceholder="Rechercher un éducateur..."
       />
-
-      {certifsEnAttente.length > 0 && (
-        <div style={{ background: rgba(c.warn, 0.08), border: `1px solid ${rgba(c.warn, 0.3)}`, borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ display: 'flex', color: c.warn }}><IcoShield size={18} /></span>
-          <p style={{ margin: 0, fontSize: '14px', color: c.warn, fontWeight: 600 }}>
-            {certifsEnAttente.length} certification{certifsEnAttente.length > 1 ? 's' : ''} en attente de validation
-          </p>
-        </div>
-      )}
 
       {certifsFiltres.length === 0 && (
         <Card><p style={{ color: c.textMuted, textAlign: 'center', margin: 0, padding: '1rem 0' }}>Aucune certification ne correspond à ces filtres</p></Card>
