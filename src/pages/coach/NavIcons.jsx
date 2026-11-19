@@ -88,3 +88,6 @@ export const IcoMegaphone = ({ size = 15 }) => (
 export const IcoLibrary = ({ size = 15 }) => (
   <svg {...base(size)}><line x1="4" y1="21" x2="4" y2="3" /><line x1="9" y1="21" x2="9" y2="7" /><line x1="14" y1="21" x2="14" y2="4" /><line x1="19" y1="21" x2="19" y2="10" /></svg>
 )
+export const IcoTarget = ({ size = 15 }) => (
+  <svg {...base(size)}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
+)

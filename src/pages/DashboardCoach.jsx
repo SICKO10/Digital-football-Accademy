@@ -10,7 +10,7 @@ import { COACH_ADMIN_EMAILS } from '../lib/coachAdmin'
 import { CoachThemeProvider } from './coach/ThemeContext'
 import { useCoachTheme } from './coach/useCoachTheme'
 import { SIDEBAR } from './coach/theme'
-import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone, IcoLibrary, IcoEye } from './coach/NavIcons'
+import { IcoGrid, IcoUsers, IcoCard, IcoDollar, IcoShare, IcoPlay, IcoShield, IcoBook, IcoHome, IcoMessage, IcoLink, IcoBriefcase, IcoMic, IcoMail, IcoMegaphone, IcoLibrary, IcoEye, IcoTarget } from './coach/NavIcons'
 import ToastStack from '../components/coachAdmin/Toast'
 import Overview from './coach/Overview'
 import Users from './coach/Users'
@@ -28,6 +28,7 @@ import OffresOutils from './coach/OffresOutils'
 import ClubsAgents from './coach/ClubsAgents'
 import Communication from './coach/Communication'
 import Bibliotheque from './coach/Bibliotheque'
+import CRM from './coach/CRM'
 
 function DashboardCoachInner() {
   const navigate = useNavigate()
@@ -416,6 +417,7 @@ function DashboardCoachInner() {
     { id: 'seances_club', label: 'Analyse Séance', Icon: IcoBook, badge: seancesEnAttente.length },
     { id: 'certifications', label: 'Badge Certifié', Icon: IcoShield, badge: certifsEnAttente.length },
     ...(isAdminClubs ? [{ id: 'demandes_club', label: 'Demande Club', Icon: IcoHome, badge: demandesClub.filter(d => d.statut === 'nouveau').length }] : []),
+    ...(isAdminClubs ? [{ id: 'crm', label: 'CRM', Icon: IcoTarget, badge: 0 }] : []),
   ]
   const NAV_CONTENU = [
     ...(isAdminClubs ? [{ id: 'bibliotheque', label: 'Bibliothèque', Icon: IcoLibrary, badge: 0 }] : []),
@@ -630,6 +632,8 @@ function DashboardCoachInner() {
           {activeSection === 'clubs_admin' && isAdminClubs && <StripeLinks />}
 
           {activeSection === 'offres_outils' && isAdminClubs && <OffresOutils />}
+
+          {activeSection === 'crm' && isAdminClubs && <CRM auteur={(coachEmail || '').split('@')[0]} />}
 
           {activeSection === 'demandes_club' && isAdminClubs && (
             <ClubRequests
