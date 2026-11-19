@@ -66,7 +66,7 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
 - Journal : 2026-11-18, Sonnet 5.5. Sauvegarde faite, SELECT en lecture seule seulement. Écart trouvé : règle restrictive verrou_outils sur principes_jeu.
 
 ### Bloc 1 : onglet unique « Plan de jeu » côté club (sans changement de base)
-- Statut : à faire
+- Statut : fait (vérifié dans le code le 2026-11-19 et testé à l'écran par Kevin)
 - Objectif : remplacer les onglets Principes et Zones par un seul onglet, avec sélecteur de phase (8 phases + CPA), terrain à gauche, principes à droite, empilés sur téléphone.
 - Résultat testable : dans le dashboard club, Projet sportif, un onglet « Plan de jeu » où l'on édite zones et principes d'une phase sur la même page.
 - Modèle : sonnet · Effort : high · Coût estimé : moyen
@@ -249,3 +249,4 @@ Rappel : `/clear` et une session neuve par bloc. Si la barre « 5h » dépasse 6
 - Reste à finir : commit et push sur `main` après ton ok ; production seulement sur ton ok explicite ; parcours à l'écran sur téléphone par toi (tests connectés impossibles pour Claude) ; éducateur et joueur de test toujours à créer ; `npm run lint` remonte des erreurs de style "setState dans un effet" déjà présentes dans ProjetSportif.jsx (lignes 97, 352, 468, 515, 1019), à traiter à part.
 - Journal : 2026-11-18, Haiku 5.5 (modèle prévu : haiku, conforme). Sauvegarde `backups/plan-de-jeu-bloc10-20261118/ProjetSportif.jsx`. Constat : les anciens onglets Principes et Zones étaient déjà retirés de `ONGLETS` ; toutes les constantes et props restantes sont utilisées, aucun import mort, `SectionRegles` importé par ProjetSportifEducateur, `SectionPrincipes` et `SectionZones` par PlanDeJeu. Aucune suppression de code nécessaire. `npm run build` OK. Vercel CLI absente : lancée via npx (v66.2.0), connectée en sicko10, projet lié existant. `vercel deploy --dry` OK (Vite, .env et PLAN*.md exclus). Preview créée : https://digital-football-accademy-h6q7cwa48-digital-football-s-projects.vercel.app (statut Ready, page d'accueil servie). Protection Vercel active sur la preview, non modifiée. Parcours connecté non testé par Claude (pas d'accès au compte).
 - Mise en production (2026-11-19, Haiku 5.5) : déploiement de production créé sans bascule (`digital-football-accademy-nr6chztpc`), testé (statut Ready, page d'accueil 200), puis promu sur le domaine principal après ton ok. Tests à l'écran sur téléphone et autres tests validés par Kevin.
+- Vérification bloc 1 (2026-11-19, Haiku 5.5) : code relu (PlanDeJeu branché dans ProjetSportif.jsx et ProjetSportifEducateur.jsx, sélecteur 8 phases + CPA, grille qui passe en colonne sur téléphone, CPA avec principes puis schémas). Test à l'écran validé par Kevin.
