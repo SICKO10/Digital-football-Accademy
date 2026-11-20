@@ -300,7 +300,9 @@ input[type="date"] {
 .fc-terrain { width: 100%; height: 100%; display: block; }
 .fc-numero { position: absolute; top: 14px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: var(--fc); color: var(--fc-on); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 .fc-carre-blanc { flex: 1; min-height: 0; border: 2px solid #333; background: #fff; padding: 6px 8px; overflow: hidden; font-size: 15px; line-height: 1.2; }
-.fc-schema { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; border: 1px solid #555; box-sizing: border-box; }
+.fc-schema-cadre { position: absolute; inset: 0; background: #fff; border: 1px solid #555; box-sizing: border-box; overflow: hidden; }
+.fc-schema { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.fc-schema-pivote { inset: auto; top: 50%; left: 50%; width: 147.06%; height: 68%; transform: translate(-50%, -50%) rotate(90deg); }
 .fc-entete-procede { display: flex; flex-direction: column; margin-bottom: 4px; font-weight: 700; }
 .fc-rubrique { margin-bottom: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .fc-rubrique b { display: block; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; color: #444; }

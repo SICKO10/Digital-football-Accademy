@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { PHASES_JEU } from '../../constants/phasesJeu'
 import { lireHex, contraste } from '../../lib/paletteClub'
 
@@ -64,6 +64,23 @@ function TerrainVierge() {
         {surface(false)}
       </g>
     </svg>
+  )
+}
+
+// Schéma du dashboard (horizontal) intégré dans le cadre vertical de la fiche : si l'image
+// est plus large que haute, on la pivote d'un quart de tour pour qu'elle remplisse le cadre.
+// Le schéma d'origine n'est pas modifié, seule l'affichage dans la fiche change.
+function SchemaVertical({ src, alt }) {
+  const [paysage, setPaysage] = useState(false)
+  return (
+    <div className="fc-schema-cadre">
+      <img
+        className={paysage ? 'fc-schema fc-schema-pivote' : 'fc-schema'}
+        src={src}
+        alt={alt}
+        onLoad={e => setPaysage(e.currentTarget.naturalWidth > e.currentTarget.naturalHeight * 1.05)}
+      />
+    </div>
   )
 }
 
@@ -178,7 +195,7 @@ function Face({ numeros, face, fiche, logo, joueursParPoste, nonRenseignes }) {
             return (
             <div className="fc-procede" key={n}>
               <div className="fc-terrain-cadre">
-                {p.schema_png ? <img className="fc-schema" src={p.schema_png} alt={`Schéma du procédé ${n}`} /> : <TerrainVierge />}
+                {p.schema_png ? <SchemaVertical src={p.schema_png} alt={`Schéma du procédé ${n}`} /> : <TerrainVierge />}
                 <span className="fc-numero">{n}</span>
               </div>
               <TexteAjuste className="fc-carre-blanc" signature={`${p.consignes}|${p.variables}`}>
