@@ -74,25 +74,25 @@ export default function FicheEvaluationNouvelle({ equipeJoueurId, joueurNom, pos
   const creation = useRef(null)
 
   const charger = useCallback(async () => {
-    const { data: ev, error } = await supabase.from('evaluations').select('*')
+    // Évaluations et leurs résultats en une seule requête
+    const { data: ev, error } = await supabase.from('evaluations').select('*, evaluation_resultats(*)')
       .eq('equipe_joueur_id', equipeJoueurId).eq('nature', 'evaluation').order('created_at', { ascending: true })
     if (error) { setErreur('Impossible de charger les évaluations.'); setEvals([]); return }
-    const liste = ev || []
-    const ids = liste.map(e => e.id)
     const res = {}
     const auto = {}
-    if (ids.length) {
-      const { data: rs } = await supabase.from('evaluation_resultats').select('*').in('evaluation_id', ids)
+    const liste = (ev || []).map(({ evaluation_resultats: rs, ...e }) => {
       ;(rs || []).forEach(r => { ((r.source === 'joueur' ? auto : res)[r.evaluation_id] ||= {})[r.critere_id] = r })
-    }
+      return e
+    })
+    setResultats(res)
+    setAutoRes(auto)
+    setEvals(liste)
+    // Critères des anciennes versions : chargés après l'affichage, ils ne bloquent pas l'écran
     const versionsAutres = [...new Set(liste.map(e => e.version_id).filter(v => v !== version.id))]
     if (versionsAutres.length) {
       const { data: cs } = await supabase.from('criteres_evaluation').select('*').in('version_id', versionsAutres)
       setCriteresAnciens(cs || [])
     } else setCriteresAnciens([])
-    setResultats(res)
-    setAutoRes(auto)
-    setEvals(liste)
   }, [equipeJoueurId, version.id])
   useEffect(() => { charger() }, [charger])
 

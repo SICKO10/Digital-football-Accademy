@@ -27,17 +27,19 @@ export default function FicheEvaluationRouteur({ equipeJoueurId, educateurId, jo
       try {
         const { data: cle } = await supabase.rpc('secu_categorie_effectif', { p_equipe_joueur_id: equipeJoueurId })
         if (!cle) { if (!annule) setChoix({ ancienne: true }); return }
-        const { data: modeles } = await supabase.from('modeles_evaluation').select('*').eq('categorie_cle', cle).eq('archive', false)
+        // Modèles et réglages demandés ensemble (la base ne renvoie que ce que ce compte a le droit de lire)
+        const [{ data: modeles }, { data: toutesLignes }] = await Promise.all([
+          supabase.from('modeles_evaluation').select('*, modeles_evaluation_versions(*, criteres_evaluation(*))').eq('categorie_cle', cle).eq('archive', false),
+          supabase.from('parametres_evaluation').select('*'),
+        ])
         const liste = (modeles || []).slice().sort((a, b) => (b.educateur_id === educateurId) - (a.educateur_id === educateurId))
-        for (const modele of liste) {
-          const { data: versions } = await supabase.from('modeles_evaluation_versions').select('*')
-            .eq('modele_id', modele.id).not('publiee_le', 'is', null).order('numero', { ascending: false }).limit(1)
-          const version = versions?.[0]
-          if (!version) continue
-          const { data: criteres } = await supabase.from('criteres_evaluation').select('*').eq('version_id', version.id).order('ordre', { ascending: true })
-          if (!criteres?.length) continue
+        for (const { modeles_evaluation_versions: vs, ...modele } of liste) {
+          const publiees = (vs || []).filter(v => v.publiee_le).sort((a, b) => b.numero - a.numero)
+          const { criteres_evaluation: cr, ...version } = publiees[0] || {}
+          if (!publiees[0] || !cr?.length) continue
+          const criteres = cr.slice().sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))
           const proprios = [modele.club_id, modele.educateur_id, educateurId].filter(Boolean)
-          const { data: lignes } = await supabase.from('parametres_evaluation').select('*').in('proprietaire_id', proprios)
+          const lignes = (toutesLignes || []).filter(l => proprios.includes(l.proprietaire_id))
           const params = (lignes || []).find(l => l.proprietaire_id === modele.club_id)
             || (lignes || []).find(l => l.proprietaire_id === educateurId) || null
           if (!annule) setChoix({ modele, version, criteres, params, categorieCle: cle })
@@ -53,7 +55,11 @@ export default function FicheEvaluationRouteur({ equipeJoueurId, educateurId, jo
   }, [equipeJoueurId, educateurId])
 
   const [forceAncienne, setForceAncienne] = useState(false)
-  if (!choix) return null
+  if (!choix) return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }} role="status">
+      <p style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>Chargement de la fiche…</p>
+    </div>
+  )
   if (choix.ancienne || forceAncienne) {
     return <FicheEvaluationJoueur equipeJoueurId={equipeJoueurId} educateurId={educateurId} joueurNom={joueurNom} role={role} readOnly={readOnly} onClose={onClose} />
   }
