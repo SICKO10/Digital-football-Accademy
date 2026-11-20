@@ -33,6 +33,13 @@ export const PERMISSION_DEFAULTS = {
   // sportif ; la lecture est plus large (voir LECTURE_PAR_DEFAUT). Même règle côté
   // base dans a_permission_bibliotheque() (supabase_bibliotheque_club.sql).
   bibliotheque: ['president', 'directeur_sportif'],
+  // Fiches d'évaluation (supabase_fiches_evaluation_bloc1/2.sql, fonctions
+  // a_permission_modeles_evaluation et a_permission_evaluations) : à garder
+  // synchronisé avec elles. Modèles : écriture directeur sportif ; évaluations :
+  // personne n'écrit par défaut ; tests : le préparateur physique écrit.
+  evaluations_modeles: ['president', 'directeur_sportif'],
+  evaluations: [],
+  evaluations_tests: ['preparateur_physique'],
 }
 
 // Sections dont la lecture par défaut est plus large que l'écriture. 'tous' = tous
@@ -40,12 +47,17 @@ export const PERMISSION_DEFAULTS = {
 // voir et écrire restent une seule et même liste (PERMISSION_DEFAULTS).
 export const LECTURE_PAR_DEFAUT = {
   bibliotheque: 'tous',
+  evaluations_modeles: ['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation', 'entraineur', 'educateur', 'preparateur_physique'],
+  evaluations: ['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation'],
+  evaluations_tests: ['directeur_sportif', 'responsable_formation', 'responsable_ecole_foot', 'responsable_preformation', 'preparateur_physique'],
 }
 
 // Le rôle voit-il la section tant que le président n'a rien réglé ?
 export function voitParDefaut(section, role) {
   if (!role) return false
-  if (LECTURE_PAR_DEFAUT[section] === 'tous') return true
+  const lecture = LECTURE_PAR_DEFAUT[section]
+  if (lecture === 'tous') return true
+  if (Array.isArray(lecture) && lecture.includes(role)) return true
   return (PERMISSION_DEFAULTS[section] || []).includes(role)
 }
 

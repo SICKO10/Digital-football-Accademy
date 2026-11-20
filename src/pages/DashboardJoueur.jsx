@@ -44,7 +44,7 @@ import SponsorsBar from '../components/SponsorsBar'
 import NoteSeanceForm from '../components/NoteSeanceForm'
 import { useLang } from '../hooks/useLang'
 import { t, localeOf } from '../lib/translations'
-import FicheEvaluationJoueur from '../components/FicheEvaluationJoueur'
+import MesEvaluationsJoueur from '../components/MesEvaluationsJoueur'
 import { STRIPE_LINKS, stripeUrl } from '../lib/stripeLinks'
 import MesStats from './MesStats'
 import { choisirEquipePrincipale } from '../lib/statsFusion'
@@ -1321,6 +1321,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         { data: effectif },
         { data: matchsEquipe },
         { data: notationsMoi },
+        { data: nouvellesEvals },
       ],
     ] = await Promise.all([
       tousEntIds.length
@@ -1335,6 +1336,8 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         qEffectif,
         fetchToutesLignes(qMatchsEquipe),
         supabase.rpc('mes_notations_match', { p_equipe_joueur_id: equipeJoueurId }).then(r => ({ ...r, data: (r.data || []).map(adapterNotation) })),
+        // Nouvelles fiches (bloc 9) : la base ne renvoie que ce que le joueur ou son parent a le droit de voir
+        supabase.from('evaluations').select('id').eq('equipe_joueur_id', equipeJoueurId),
       ]),
     ])
 
@@ -1510,7 +1513,7 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
         etatCartons: etatCartons(datesJaunes, new Date().toLocaleDateString('sv-SE')),
         presenceMensuelle,
         rankButs, rankPasses, rankMatchs, rankClean, rankPoints,
-        evaluations: evaluations || [],
+        evaluations: [...(evaluations || []), ...(nouvellesEvals || [])],
         ligueUrl: profilEdu?.ligue_url || null,
         prochainMatchs: prochainMatchs || [],
         leaderButs, leaderPasses, leaderVictoires, leaderPointsSaison, leaderPointsMois,
@@ -5665,10 +5668,10 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
       )}
 
       {evalFicheOuverte && (
-        <FicheEvaluationJoueur
+        <MesEvaluationsJoueur
           equipeJoueurId={evalFicheOuverte.equipeJoueurId}
           educateurId={evalFicheOuverte.educateurId}
-          role="joueur"
+          role={readOnly ? 'parent' : 'joueur'}
           readOnly={readOnly}
           onClose={() => setEvalFicheOuverte(null)}
         />

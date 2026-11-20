@@ -4293,7 +4293,7 @@ export default function DashboardClub() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
               <BoutonHistoriqueSaison onClick={() => setHistoriqueSaison({ vue: 'projet' })} style={{ width: isMobile ? '100%' : 'auto' }} />
             </div>
-            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')} onVue={setVueProjetSportif}
+            <ProjetSportif categories={categories} clubId={clubId} readOnly={!canEditSection('sportif')} peutEditerModeles={canEditSection('evaluations_modeles')} onVue={setVueProjetSportif}
               logoUrl={club?.avatar_url} couleurPrimaire={couleurPrincipale} couleurSecondaire={couleurSecondaire} />
             {/* Permissions éducateurs — Projet Sportif / Planification : réglage
                 secondaire, placé sous les pôles (le contenu passe d'abord). */}

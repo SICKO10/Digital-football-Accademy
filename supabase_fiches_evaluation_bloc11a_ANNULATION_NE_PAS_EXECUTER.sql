@@ -1,0 +1,56 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 11a des fiches
+-- d'évaluation (PLAN-fiches-evaluation.md).
+--
+-- Effet : arrête la tâche de nuit « conservation-evaluations », supprime les
+-- 4 tables du bloc 11a ET TOUT CE QUI Y A ÉTÉ ENREGISTRÉ (suivi de
+-- conservation, demandes de correction et leurs réponses, versions des
+-- conditions, acceptations des clubs), les 13 fonctions et les 3 déclencheurs
+-- ajoutés, efface du journal les lignes « suppression_donnees »,
+-- « suppression_auto » et « prolongation », et remet la liste de motifs du
+-- journal du bloc 2.
+-- Les données déjà supprimées par la tâche de nuit ou par un club ne
+-- reviennent pas. Les blocs 1 et 2 restent en place.
+--
+-- La première ligne bloque volontairement l'exécution. Pour l'utiliser, il
+-- faudra la supprimer ET décommenter le reste, après une sauvegarde.
+-- ============================================================================
+
+do $$ begin raise exception 'Fichier d''annulation : exécution bloquée volontairement.'; end $$;
+
+-- begin;
+--
+-- select cron.unschedule('conservation-evaluations')
+--  where exists (select 1 from cron.job where jobname = 'conservation-evaluations');
+--
+-- drop trigger if exists evaluations_conditions on public.evaluations;
+-- drop trigger if exists notes_suivi_conditions on public.notes_suivi;
+-- drop trigger if exists modeles_evaluation_versions_conditions on public.modeles_evaluation_versions;
+--
+-- drop policy if exists dc_lecture on public.demandes_correction_evaluation;
+-- drop function if exists public.secu_demande_correction_traitant(public.demandes_correction_evaluation);
+-- drop table if exists public.acceptations_conditions_evaluation;
+-- drop table if exists public.conditions_evaluation_versions;
+-- drop table if exists public.demandes_correction_evaluation;
+-- drop table if exists public.conservation_evaluations;
+--
+-- drop function if exists public.versions_conditions_acceptees();
+-- drop function if exists public.evaluations_conditions_acceptees();
+-- drop function if exists public.accepter_conditions_evaluation(uuid, text);
+-- drop function if exists public.conditions_evaluation_acceptees(uuid);
+-- drop function if exists public.conditions_evaluation_version_en_vigueur();
+-- drop function if exists public.repondre_demande_correction(uuid, text, text);
+-- drop function if exists public.demandes_correction_avant_ajout();
+-- drop function if exists public.supprimer_donnees_evaluation_joueur(uuid, uuid, uuid, uuid[]);
+-- drop function if exists public.prolonger_conservation_evaluations(uuid[]);
+-- drop function if exists public.conservation_evaluations_nuit();
+-- drop function if exists public.evaluation_joueur_present(uuid, uuid, uuid, uuid);
+-- drop function if exists public.conservation_date_suppression(date, integer);
+--
+-- delete from public.journal_acces_evaluations
+--  where objet in ('suppression_donnees', 'suppression_auto', 'prolongation');
+-- alter table public.journal_acces_evaluations drop constraint journal_acces_evaluations_objet_check;
+-- alter table public.journal_acces_evaluations add constraint journal_acces_evaluations_objet_check
+--   check (objet in ('evaluations', 'tests', 'notes', 'historique', 'suppression_note'));
+--
+-- commit;

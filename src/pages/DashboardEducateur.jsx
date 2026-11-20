@@ -63,7 +63,11 @@ import DerniereCauserieWidget from '../components/DerniereCauserieWidget'
 // du wrapper.
 const ProjetSportifEducateur = lazy(() => import('../components/ProjetSportifEducateur'))
 const ProjetClubCFF4 = lazy(() => import('../components/ProjetClubCFF4'))
-const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationJoueur'))
+const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationRouteur'))
+const SeanceTests = lazy(() => import('../components/SeanceTests'))
+const ModeleEvaluationClub = lazy(() => import('../components/club/ModeleEvaluationClub'))
+const RgpdEvaluationsStaff = lazy(() => import('../components/club/RgpdEvaluationsStaff'))
+const ConditionsEvaluation = lazy(() => import('../components/club/ConditionsEvaluation'))
 import AlertesPanel from '../components/AlertesPanel'
 import { estimerDeplacement } from '../lib/mapbox'
 import { effectifParDefautMatch } from '../lib/repartitionBus'
@@ -1942,6 +1946,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   // Notes / Évaluations
   const [notationsMatch, setNotationsMatch] = useState([]) // notations_match brutes : [{ joueur_id, note, match_id }]
   const [filtreCompTableau, setFiltreCompTableau] = useState('all') // filtre compétition, onglet Stats > Tableau
+  const [seanceTestsOuverte, setSeanceTestsOuverte] = useState(false)
   const [evalJoueurOuverte, setEvalJoueurOuverte] = useState(null) // joueur dont la fiche d'évaluation est ouverte
 
   // Mon Profil éducateur
@@ -6024,7 +6029,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       { key: 'projets', label: 'Projets', icon: <IcoStar />, subKeys: ['projet_sportif', 'projet_club_cff4'] },
     ] },
     { titre: t('section_suivi_reseau', lang), items: [
-      { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'clotures_saison'] },
+      { key: 'suivi', label: 'Rapports & Évaluations', icon: <IcoClipboard />, subKeys: ['analyse_video', 'notes', 'ma_fiche', 'clotures_saison'] },
       ...(recrutementActif(profil?.email) ? [{ key: 'recrutement', label: t('nav_recrutement', lang), icon: <IcoSearch /> }] : []),
     ] },
   ]
@@ -9984,11 +9989,12 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           </>
         )}
 
-        {['analyse_video', 'notes', 'clotures_saison'].includes(activeSection) && (
+        {['analyse_video', 'notes', 'ma_fiche', 'clotures_saison'].includes(activeSection) && (
           <SousOngletsBar
             items={[
               { key: 'analyse_video', label: t('nav_analyse', lang) },
               { key: 'notes', label: t('nav_evaluations', lang) },
+              { key: 'ma_fiche', label: 'Ma fiche d\'évaluation' },
               { key: 'clotures_saison', label: t('nav_clotures', lang) },
             ].filter(it => canView(it.key))}
             activeSection={activeSection} setActiveSection={setActiveSection}
@@ -10028,6 +10034,10 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '13px', color: colors.text.secondary }}><strong style={{ ...styleChiffreHeros(colors, 20), verticalAlign: 'baseline' }}>{nbEvalues}</strong> / {joueurs.length} joueurs évalués</span>
                       <Jauge libelle={null} legende={false} hauteur={6} style={{ flex: '0 1 220px' }} segments={[{ libelle: 'Évalués', valeur: nbEvalues }, { libelle: 'À évaluer', valeur: joueurs.length - nbEvalues }]} />
+                      <button type="button" onClick={() => setSeanceTestsOuverte(true)}
+                        style={{ marginLeft: 'auto', minHeight: 44, padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                        Séance de tests
+                      </button>
                     </div>
                     {groupes.filter(g => g.joueurs.length).map(g => (
                       <div key={g.label}>
@@ -10073,12 +10083,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 )
               })()
             )}
+            {seanceTestsOuverte && (
+              <Suspense fallback={<SectionLoader />}>
+                <SeanceTests joueurs={joueurs} educateurId={userId} readOnly={!canEdit('notes')} onClose={() => setSeanceTestsOuverte(false)} />
+              </Suspense>
+            )}
             {evalJoueurOuverte && (
               <Suspense fallback={<SectionLoader />}>
               <FicheEvaluationJoueur
                 equipeJoueurId={evalJoueurOuverte.id}
                 educateurId={userId}
                 joueurNom={`${evalJoueurOuverte.prenom} ${evalJoueurOuverte.nom}`}
+                poste={evalJoueurOuverte.poste}
                 role="educateur"
                 readOnly={!canEdit('notes')}
                 onClose={() => setEvalJoueurOuverte(null)}
@@ -12191,6 +12207,30 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
         {activeSection === 'prep_physique' && (
           <Suspense fallback={<SectionLoader />}><GestionPrepPhysique educateurId={userId} clubId={clubAffiliation?.club_id} equipeActiveId={equipeActive?.id} equipeUnique={mesEquipes.length <= 1} readOnly={!canEdit('prep_physique')} isMobile={isMobile} lang={lang} /></Suspense>
+        )}
+
+        {activeSection === 'ma_fiche' && (
+          <>
+            <TitreEcran titre="Ma fiche d'évaluation" sousTitre="Les critères avec lesquels tu évalues tes joueurs, par catégorie." />
+            <Suspense fallback={<SectionLoader />}>
+              <ModeleEvaluationClub
+                mode="educateur"
+                educateurId={userId}
+                clubId={clubAffilieAccepte ? clubAffiliation.club_id : null}
+                categories={(() => {
+                  const noms = [...new Set(mesEquipes.map(e => e.nom).filter(Boolean))]
+                  return noms.length ? noms : (clubAffilieAccepte ? [] : CATEGORIES_MASCULIN)
+                })()}
+                couleur={couleurClub(colors)}
+                peutEditer={!permissions}
+              />
+              <div style={{ marginTop: 28 }}>
+                <h3 style={{ margin: '0 0 8px', color: colors.text.primary, fontSize: 16, fontWeight: 800 }}>Données personnelles des fiches</h3>
+                <ConditionsEvaluation proprietaireId={clubAffilieAccepte ? null : userId} />
+                <RgpdEvaluationsStaff mode="educateur" clubId={clubAffilieAccepte ? clubAffiliation.club_id : null} userId={userId} />
+              </div>
+            </Suspense>
+          </>
         )}
 
         {activeSection === 'clotures_saison' && (

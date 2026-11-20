@@ -1,0 +1,73 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 2 des fiches
+-- d'évaluation (PLAN-fiches-evaluation.md).
+--
+-- Effet : supprime les 4 tables du bloc 2 ET TOUT CE QUI Y A ÉTÉ ENREGISTRÉ
+-- (évaluations, résultats, auto-évaluations, notes de suivi, journal des
+-- accès), les 20 fonctions, les 3 règles de lecture ajoutées aux tables du
+-- bloc 1, retire 'evaluations' et 'evaluations_tests' des sections réglables
+-- (les réglages de rôle déjà enregistrés pour ces sections sont effacés), et
+-- remet l'ANCIENNE règle club_lit_evaluations (tout le staff du club lit les
+-- anciennes fiches, quel que soit son rôle).
+-- Le bloc 1 reste en place.
+--
+-- La première ligne bloque volontairement l'exécution. Pour l'utiliser, il
+-- faudra la supprimer ET décommenter le reste, après une sauvegarde.
+-- ============================================================================
+
+do $$ begin raise exception 'Fichier d''annulation : exécution bloquée volontairement.'; end $$;
+
+-- begin;
+--
+-- -- Ancienne règle des anciennes fiches, à l'identique
+-- drop policy if exists club_lit_evaluations on public.evaluations_joueur;
+-- create policy club_lit_evaluations on public.evaluations_joueur
+--   for select to public
+--   using (exists (
+--     select 1 from public.club_educateurs
+--     where club_educateurs.educateur_id = evaluations_joueur.educateur_id
+--       and club_educateurs.statut = 'accepte'
+--       and (club_educateurs.club_id = auth.uid()
+--            or exists (select 1 from public.staff_club
+--                       where staff_club.club_id = club_educateurs.club_id
+--                         and staff_club.user_id = auth.uid()))));
+--
+-- drop policy if exists ce_lecture_evaluation on public.criteres_evaluation;
+-- drop policy if exists mev_lecture_evaluation on public.modeles_evaluation_versions;
+-- drop policy if exists me_lecture_evaluation on public.modeles_evaluation;
+--
+-- drop table if exists public.journal_acces_evaluations;
+-- drop table if exists public.notes_suivi cascade;
+-- drop table if exists public.evaluation_resultats;
+-- drop table if exists public.evaluations cascade;
+--
+-- drop function if exists public.noter_acces_evaluations(uuid, text);
+-- drop function if exists public.secu_modele_lu_par_evaluation(uuid);
+-- drop function if exists public.secu_version_lue_par_evaluation(uuid);
+-- drop function if exists public.secu_evaluation_droit(uuid, text);
+-- drop function if exists public.secu_est_parent_du_joueur(uuid, uuid);
+-- drop function if exists public.secu_est_le_joueur(uuid, uuid);
+-- drop function if exists public.secu_educateur_a_le_joueur(uuid, uuid, uuid);
+-- drop function if exists public.secu_membre_club(uuid);
+-- drop function if exists public.a_permission_evaluations(uuid, text, boolean, text);
+-- drop function if exists public.secu_staff_couvre_categorie(uuid, text, text);
+-- drop function if exists public.secu_categorie_effectif(uuid);
+-- drop function if exists public.evaluation_contexte_joueur(uuid);
+-- drop function if exists public.evaluation_famille_poste(text);
+-- drop function if exists public.evaluation_cle_categorie(text);
+-- drop function if exists public.evaluations_avant_ecriture();
+-- drop function if exists public.evaluation_resultats_avant_ecriture();
+-- drop function if exists public.notes_suivi_avant_ecriture();
+-- drop function if exists public.notes_suivi_apres_suppression();
+--
+-- delete from public.role_permissions where section in ('evaluations', 'evaluations_tests');
+-- alter table public.role_permissions drop constraint role_permissions_section_check;
+-- alter table public.role_permissions add constraint role_permissions_section_check
+--   check (section = any (array[
+--     'sportif', 'seances', 'terrains', 'deplacements', 'budget', 'sponsors',
+--     'repartition_bus', 'profil', 'evenements', 'stages', 'organigramme', 'staff',
+--     'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'mon_club',
+--     'bibliotheque', 'evaluations_modeles'
+--   ]::text[]));
+--
+-- commit;

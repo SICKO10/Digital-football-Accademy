@@ -1,0 +1,48 @@
+-- ============================================================================
+-- NE PAS EXÉCUTER sauf décision explicite d'annuler le bloc 1 des fiches
+-- d'évaluation (PLAN-fiches-evaluation.md).
+--
+-- Effet : supprime les 5 tables du bloc 1 ET TOUT CE QUE LES CLUBS ET
+-- ÉDUCATEURS Y ONT ENREGISTRÉ (bibliothèque chargée, modèles, versions,
+-- critères, réglages), les 10 fonctions, et retire 'evaluations_modeles' des
+-- sections réglables (les réglages de rôle déjà enregistrés pour cette
+-- section sont effacés).
+-- Si le bloc 2 a été appliqué, ses tables dépendent de celles-ci : il faut
+-- d'abord annuler le bloc 2.
+--
+-- La première ligne bloque volontairement l'exécution. Pour l'utiliser, il
+-- faudra la supprimer ET décommenter le reste, après une sauvegarde.
+-- ============================================================================
+
+do $$ begin raise exception 'Fichier d''annulation : exécution bloquée volontairement.'; end $$;
+
+-- begin;
+--
+-- drop table if exists public.criteres_evaluation;
+-- drop table if exists public.modeles_evaluation_versions;
+-- drop table if exists public.modeles_evaluation;
+-- drop table if exists public.parametres_evaluation;
+-- drop table if exists public.bibliotheque_criteres;
+--
+-- drop function if exists public.modeles_evaluation_avant_ecriture();
+-- drop function if exists public.modeles_evaluation_versions_avant_ecriture();
+-- drop function if exists public.criteres_evaluation_avant_ecriture();
+-- drop function if exists public.parametres_evaluation_avant_ecriture();
+-- drop function if exists public.secu_version_evaluation_acces(uuid, boolean);
+-- drop function if exists public.secu_modele_evaluation_acces(uuid, boolean);
+-- drop function if exists public.secu_modele_evaluation_edition(uuid, uuid);
+-- drop function if exists public.secu_modele_evaluation_lecture(uuid, uuid);
+-- drop function if exists public.secu_educateur_peut_modele_evaluation(uuid);
+-- drop function if exists public.a_permission_modeles_evaluation(uuid, boolean);
+--
+-- delete from public.role_permissions where section = 'evaluations_modeles';
+-- alter table public.role_permissions drop constraint role_permissions_section_check;
+-- alter table public.role_permissions add constraint role_permissions_section_check
+--   check (section = any (array[
+--     'sportif', 'seances', 'terrains', 'deplacements', 'budget', 'sponsors',
+--     'repartition_bus', 'profil', 'evenements', 'stages', 'organigramme', 'staff',
+--     'inventaire', 'newsletter', 'taches', 'projet_club_cff4', 'mon_club',
+--     'bibliotheque'
+--   ]::text[]));
+--
+-- commit;

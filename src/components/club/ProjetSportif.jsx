@@ -9,6 +9,10 @@ import { LIGNES } from '../../constants/lignesJeu'
 import { saisonActuelle } from '../../lib/saison'
 import PlanificationAnnuelle from './PlanificationAnnuelle'
 import PlanDeJeu from './PlanDeJeu'
+import BibliothequeCriteres from './BibliothequeCriteres'
+import ModeleEvaluationClub from './ModeleEvaluationClub'
+import RgpdEvaluationsStaff from './RgpdEvaluationsStaff'
+import ConditionsEvaluation from './ConditionsEvaluation'
 import TerrainZonesSvg from '../TerrainZonesSvg'
 import PastillePlan from '../PastillePlan'
 import { principesDeLaPhase, numerosParZone, selectionDerivee } from '../../lib/planDeJeu'
@@ -23,6 +27,7 @@ const ONGLETS = [
   { key: 'plan_de_jeu', label: 'Plan de jeu' },
   { key: 'planification', label: 'Planification annuelle' },
   { key: 'regles', label: 'Règles du jeu' },
+  { key: 'criteres', label: 'Critères d\'évaluation' },
 ]
 
 // Les 8 phases de jeu de la plateforme (src/constants/phasesJeu.js), lues depuis
@@ -1006,9 +1011,10 @@ export function SectionZones({ pole, clubId, readOnly, phaseFixe = null, compact
   )
 }
 
-function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimaire, couleurSecondaire, onRetour, onVue }) {
+function DetailPole({ pole, categories, clubId, readOnly, peutEditerModeles, logoUrl, couleurPrimaire, couleurSecondaire, onRetour, onVue }) {
   const colors = useColors()
   const [onglet, setOnglet] = useState('categories')
+  const [vueCriteres, setVueCriteres] = useState('modele')
   // Le dashboard suit l'onglet ouvert pour afficher le bon tutoriel.
   const choisirOnglet = (cle) => { setOnglet(cle); onVue(cle) }
   const equipesDuPole = categories.filter(c => pole.categories.includes(c.nom))
@@ -1096,6 +1102,24 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
         )
       )}
       {onglet === 'regles' && <SectionRegles pole={pole} clubId={clubId} readOnly={readOnly} />}
+      {onglet === 'criteres' && (
+        <div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+            {[['modele', 'Fiche du club'], ['biblio', 'Liste Digital Football'], ['rgpd', 'Données et RGPD']].map(([k, l]) => (
+              <button key={k} onClick={() => setVueCriteres(k)} style={{
+                padding: '6px 14px', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+                border: `1px solid ${vueCriteres === k ? pole.couleur : colors.border.faint}`,
+                background: vueCriteres === k ? pole.couleur + '22' : 'transparent',
+                color: vueCriteres === k ? pole.couleur : colors.text.dim,
+              }}>{l}</button>
+            ))}
+          </div>
+          <ConditionsEvaluation proprietaireId={clubId} />
+          {vueCriteres === 'modele' && <ModeleEvaluationClub categories={pole.categories} clubId={clubId} couleur={pole.couleur} peutEditer={!!peutEditerModeles} />}
+          {vueCriteres === 'biblio' && <BibliothequeCriteres categories={pole.categories} couleur={pole.couleur} />}
+          {vueCriteres === 'rgpd' && <RgpdEvaluationsStaff mode="club" clubId={clubId} />}
+        </div>
+      )}
     </div>
   )
 }
@@ -1105,13 +1129,13 @@ function DetailPole({ pole, categories, clubId, readOnly, logoUrl, couleurPrimai
 // club (club_categories) ; Principes de jeu / Planification annuelle / Règles
 // du jeu sont des sections à part entière (principes_jeu, planification_annuelle,
 // regles_jeu), en écriture pour le club/staff et lecture seule sinon.
-export default function ProjetSportif({ categories = [], clubId, readOnly = false, logoUrl, couleurPrimaire, couleurSecondaire, onVue = () => {} }) {
+export default function ProjetSportif({ categories = [], clubId, readOnly = false, peutEditerModeles = false, logoUrl, couleurPrimaire, couleurSecondaire, onVue = () => {} }) {
   const colors = useColors()
   const [poleActifKey, setPoleActifKey] = useState(null)
   const [genre, setGenre] = useState('masculin')
 
   if (poleActifKey) {
-    return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly}
+    return <DetailPole pole={{ key: poleActifKey, ...POLES[poleActifKey] }} categories={categories} clubId={clubId} readOnly={readOnly} peutEditerModeles={peutEditerModeles}
       logoUrl={logoUrl} couleurPrimaire={couleurPrimaire} couleurSecondaire={couleurSecondaire} onRetour={() => { setPoleActifKey(null); onVue('poles') }} onVue={onVue} />
   }
 

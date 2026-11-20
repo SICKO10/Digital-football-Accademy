@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DemandeCorrection } from './RgpdJoueur'
 import { supabase } from '../supabase'
 import { useColors } from '../lib/theme'
 import { saisonActuelle } from '../lib/saison'
@@ -251,6 +252,10 @@ export default function FicheEvaluationJoueur({ equipeJoueurId, educateurId, jou
                   {saving ? 'Enregistrement...' : role === 'educateur' ? 'Enregistrer (verrouille la fiche)' : 'Enregistrer mon pré-remplissage'}
                 </button>
               </div>
+            )}
+
+            {role !== 'educateur' && existeDeja && form.visible_joueur && form.id && (
+              <DemandeCorrection key={form.id} cible={{ ancienne_fiche_id: form.id }} role={role} />
             )}
           </>
         )}
