@@ -17,3 +17,17 @@ export async function envoyerImageStage(fichier, clubId) {
   if (!data.secure_url) throw new Error(data.error?.message || 'Échec de l\'envoi de l\'image.')
   return data.secure_url
 }
+
+// Logo d'un sponsor de tournoi : même circuit Cloudinary signé, usage dédié.
+export async function envoyerImageTournoi(fichier, clubId) {
+  if (!fichier) throw new Error('Aucun fichier choisi.')
+  if (!fichier.type.startsWith('image/')) throw new Error('Seules les images sont acceptées.')
+  if (fichier.size > TAILLE_MAX) throw new Error('Image trop lourde (12 Mo maximum).')
+  const signature = await demanderSignatureImage({ usage: 'tournoi_sponsor', clubId })
+  const formData = ajouterChampsSignes(new FormData(), signature)
+  formData.append('file', fichier)
+  const res = await fetch(urlUploadCloudinary(signature), { method: 'POST', body: formData })
+  const data = await res.json().catch(() => ({}))
+  if (!data.secure_url) throw new Error(data.error?.message || 'Échec de l\'envoi de l\'image.')
+  return data.secure_url
+}

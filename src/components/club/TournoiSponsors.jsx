@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 import StatsSponsorsTournoi from './StatsSponsorsTournoi'
+import { envoyerImageTournoi } from '../../lib/stagesUpload'
 
 const VIDE = { nom: '', lien_url: '', message: '', montant: '', logo_url: '' }
 
@@ -14,6 +15,7 @@ export default function TournoiSponsors({ tournoi, st, colors }) {
   const [edition, setEdition] = useState(null)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
+  const [fichier, setFichier] = useState(null) // nouveau logo choisi sur l'appareil, envoyé à l'enregistrement
 
   useEffect(() => {
     let annule = false
@@ -36,7 +38,8 @@ export default function TournoiSponsors({ tournoi, st, colors }) {
     if (montant !== null && !(montant >= 0)) return setErreur('Montant invalide.')
     setEnvoi(true); setErreur('')
     try {
-      const valeurs = { nom: e.nom.trim(), lien_url: lien || null, message: e.message.trim() || null, montant, logo_url: e.logo_url.trim() || null }
+      const logo_url = fichier ? await envoyerImageTournoi(fichier, tournoi.club_id) : (e.logo_url.trim() || null)
+      const valeurs = { nom: e.nom.trim(), lien_url: lien || null, message: e.message.trim() || null, montant, logo_url }
       let resultat
       if (e.id) {
         resultat = await supabase.from('tournois_sponsors').update(valeurs).eq('id', e.id).select().single()
@@ -47,7 +50,7 @@ export default function TournoiSponsors({ tournoi, st, colors }) {
       if (resultat.error) throw resultat.error
       const data = resultat.data
       setSponsors(prev => e.id ? prev.map(x => x.id === data.id ? data : x) : [...prev, data])
-      setEdition(null)
+      setEdition(null); setFichier(null)
     } catch (err) {
       setErreur('Enregistrement impossible : ' + err.message)
     }
@@ -87,7 +90,7 @@ export default function TournoiSponsors({ tournoi, st, colors }) {
                   <div style={{ fontSize: '12px', color: colors.text.dim }}>{[s.montant ? `${Number(s.montant).toFixed(2).replace('.', ',')} €` : null, s.lien_url].filter(Boolean).join(' · ') || 'Aucun détail'}</div>
                   {s.message && <div style={{ fontSize: '12px', color: colors.text.faint, marginTop: '2px' }}>« {s.message} »</div>}
                 </div>
-                <button onClick={() => { setErreur(''); setEdition({ ...VIDE, ...s, lien_url: s.lien_url || '', message: s.message || '', montant: s.montant ?? '', logo_url: s.logo_url || '' }) }} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
+                <button onClick={() => { setErreur(''); setFichier(null); setEdition({ ...VIDE, ...s, lien_url: s.lien_url || '', message: s.message || '', montant: s.montant ?? '', logo_url: s.logo_url || '' }) }} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>Modifier</button>
                 <button onClick={() => basculer(s)} style={{ ...st.btnSecondary, padding: '4px 10px', fontSize: '12px' }}>{s.actif ? 'Masquer' : 'Afficher'}</button>
                 <button onClick={() => supprimer(s)} style={st.iconBtn(colors.accent.red)}>✕</button>
               </div>
@@ -100,15 +103,27 @@ export default function TournoiSponsors({ tournoi, st, colors }) {
             <div><label style={st.label}>Nom *</label><input value={edition.nom} onChange={e => setEdition(p => ({ ...p, nom: e.target.value }))} style={st.input} /></div>
             <div><label style={st.label}>Lien (site, boutique)</label><input value={edition.lien_url} onChange={e => setEdition(p => ({ ...p, lien_url: e.target.value }))} style={st.input} placeholder="https://" /></div>
             <div><label style={st.label}>Montant (interne)</label><input type="number" min="0" step="0.01" value={edition.montant} onChange={e => setEdition(p => ({ ...p, montant: e.target.value }))} style={st.input} /></div>
-            <div><label style={st.label}>Logo (URL)</label><input value={edition.logo_url} onChange={e => setEdition(p => ({ ...p, logo_url: e.target.value }))} style={st.input} placeholder="https://" /></div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={st.label}>Logo</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {(fichier || edition.logo_url) && (
+                  <img src={fichier ? URL.createObjectURL(fichier) : edition.logo_url} alt="" style={{ width: 56, height: 56, objectFit: 'contain', background: '#fff', borderRadius: 8 }} />
+                )}
+                <input type="file" accept="image/*" onChange={e => setFichier(e.target.files?.[0] || null)} style={{ fontSize: '13px', color: colors.text.dim }} />
+                {edition.logo_url && !fichier && (
+                  <button type="button" onClick={() => setEdition(p => ({ ...p, logo_url: '' }))} style={st.btnSecondary}>Retirer le logo</button>
+                )}
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.text.faint }}>Choisis une image sur ton appareil (PNG, JPG, SVG). Pas besoin de lien.</p>
+            </div>
             <div style={{ gridColumn: '1 / -1' }}><label style={st.label}>Message affiché</label><input value={edition.message} onChange={e => setEdition(p => ({ ...p, message: e.target.value }))} style={st.input} maxLength={160} placeholder="Partenaire officiel du tournoi" /></div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button onClick={enregistrer} disabled={envoi} style={{ ...st.btnSolid, opacity: envoi ? 0.6 : 1 }}>{envoi ? 'Enregistrement…' : 'Enregistrer'}</button>
-              <button onClick={() => { setEdition(null); setErreur('') }} style={st.btnSecondary}>Annuler</button>
+              <button onClick={() => { setEdition(null); setFichier(null); setErreur('') }} style={st.btnSecondary}>Annuler</button>
             </div>
           </div>
         ) : (
-          <button onClick={() => { setErreur(''); setEdition({ ...VIDE }) }} style={{ ...st.btnSolid, marginTop: '12px' }}>+ Ajouter un sponsor</button>
+          <button onClick={() => { setErreur(''); setFichier(null); setEdition({ ...VIDE }) }} style={{ ...st.btnSolid, marginTop: '12px' }}>+ Ajouter un sponsor</button>
         )}
         {erreur && <p style={{ color: colors.accent.red, fontSize: '13px', marginTop: '10px' }}>{erreur}</p>}
       </div>

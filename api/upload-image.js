@@ -39,6 +39,9 @@ export const USAGES = {
   // peut_gerer_stages() côté base — club, staff autorisé sur « stages »,
   // éducateur affilié accepté.
   stage: { formats: FORMATS_IMAGE, cible: ['club'], section: 'stages', educateursAcceptes: true },
+  // Logos des sponsors d'un tournoi organisé par le club : même droit que
+  // l'onglet Tournoi du dashboard club (section « sportif »).
+  tournoi_sponsor: { formats: FORMATS_IMAGE, cible: ['club'], section: 'sportif' },
 }
 
 // Droit d'agir pour un club : règle partagée (api/_droits.js).
