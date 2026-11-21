@@ -126,6 +126,19 @@ function normaliserFiche(f) {
   }
 }
 
+// Livraison d'un PDF : feuille de partage sur téléphone (d'où l'on imprime),
+// nouvel onglet sur ordinateur (prêt à imprimer), téléchargement en dernier recours.
+async function livrerPdf(pdf, nomFichier) {
+  const blob = pdf.output('blob')
+  const fichier = new File([blob], nomFichier, { type: 'application/pdf' })
+  if (navigator.canShare?.({ files: [fichier] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    try { await navigator.share({ files: [fichier] }); return } catch (e) { if (e?.name === 'AbortError') return }
+  }
+  const url = URL.createObjectURL(blob)
+  const fenetre = window.open(url, '_blank')
+  if (!fenetre) pdf.save(nomFichier)
+}
+
 // Portail vers document.body (même mécanisme que FicheSeancePrint plus haut
 // dans DashboardEducateur.jsx) : #fiche-print est déjà utilisé et stylé pour
 // l'impression des fiches de séance (index.css, fond blanc/texte noir,
@@ -185,8 +198,8 @@ function fondPresentation(pal, theme, photo, accent, intro) {
   }
 }
 
-function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdversaire, couleurClub, photoClub, onFermer }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('causerie_presentation_theme') || 'sombre')
+function PresentationCauserie({ exportAuto = null, f, equipeNom, tactipadsDispo, logoClub, logoAdversaire, couleurClub, photoClub, onFermer }) {
+  const [theme, setTheme] = useState(() => exportAuto || localStorage.getItem('causerie_presentation_theme') || 'sombre')
   const pal = PALETTES_PRESENTATION[theme]
   const changerTheme = () => {
     const suivant = theme === 'sombre' ? 'claire' : 'sombre'
@@ -275,14 +288,23 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
         await new Promise(r => setTimeout(r, 350))
         const el = contenuRef.current
         if (!el) continue
-        const canvas = await html2canvas(el, { scale: 2, backgroundColor: pal.fond, useCORS: true })
+        // Capture au format exact d'une feuille A4 paysage (297 x 210) : la slide
+        // remplit la page sans bande en haut ni en bas.
+        const L = el.clientWidth
+        const H = Math.round(L / Math.SQRT2)
+        const canvas = await html2canvas(el, {
+          scale: 2, backgroundColor: pal.fond, useCORS: true, width: L, height: H,
+          onclone: (doc, clone) => { Object.assign(clone.style, { inset: 'auto', top: '0', left: '0', width: `${L}px`, height: `${H}px` }) },
+        })
         const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height)
         const w = canvas.width * ratio
         const h = canvas.height * ratio
         if (i > 0) pdf.addPage()
+        pdf.setFillColor(pal.fond)
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F')
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', (pageWidth - w) / 2, (pageHeight - h) / 2, w, h)
       }
-      pdf.save(`causerie-${(f.adversaire || 'match').trim().replace(/\s+/g, '-')}.pdf`)
+      await livrerPdf(pdf, `causerie-${(f.adversaire || 'match').trim().replace(/\s+/g, '-')}.pdf`)
     } catch (err) {
       console.error('telechargerPresentation error:', err)
       alert("Erreur lors de la génération du PDF : " + err.message)
@@ -291,6 +313,15 @@ function PresentationCauserie({ f, equipeNom, tactipadsDispo, logoClub, logoAdve
       setExportEnCours(false)
     }
   }
+
+  // Ouverture via « Imprimer » : on laisse la première slide se peindre, on
+  // exporte le PDF, puis on referme la présentation.
+  useEffect(() => {
+    if (!exportAuto) return
+    const t = setTimeout(async () => { await telechargerPresentation(); onFermer() }, 900)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Téléphone en paysage : très large mais peu haut (souvent <500px de
   // hauteur) — le padding et les marges pensés pour un écran de PC/tablette
@@ -444,6 +475,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   const [ficheCourante, setFicheCourante] = useState(null)
   const [tableMissing, setTableMissing] = useState(false)
   const [presentationOuverte, setPresentationOuverte] = useState(false)
+  const [exportAuto, setExportAuto] = useState(null) // 'claire' | 'sombre' : la présentation s'ouvre, exporte son PDF puis se ferme
   const [menuOuvert, setMenuOuvert] = useState(null) // id de la fiche dont le menu "…" est ouvert, vue liste
   const [tactipadsDispo, setTactipadsDispo] = useState([]) // schémas Tactipad de l'éducateur, pour le sélecteur "Mouvement tactique"
   const [tactipadsLoaded, setTactipadsLoaded] = useState(false) // évite d'ouvrir la présentation avant la fin du chargement — sinon les slides "Mouvement tactique" liées à f.tactipad_ids sont silencieusement absentes de la première ouverture (tactipadsDispo encore vide)
@@ -1113,7 +1145,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   const dateLabel = f.date_match ? new Date(f.date_match + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
   const contenuFiche = (
-    <div style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '20px', overflow: 'hidden', fontFamily: "'Barlow', sans-serif", color: colors.text.primary }}>
+    <div className="causerie-feuille" style={{ background: colors.background.base, border: `1px solid ${colors.border.faint}`, borderRadius: '20px', overflow: 'hidden', fontFamily: "'Barlow', sans-serif", color: colors.text.primary }}>
       <div style={{ background: themeApp === 'claire' ? 'linear-gradient(135deg, #ecfdf3 0%, #f8fafc 60%)' : 'linear-gradient(135deg, #0f2010 0%, #080808 60%)', borderBottom: `1px solid ${colors.border.faint}`, padding: '28px 32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
@@ -1160,7 +1192,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: `1px solid ${colors.border.faint}` }}>
+      <div className="causerie-grille" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: `1px solid ${colors.border.faint}` }}>
         <div style={{ padding: '24px', borderRight: `1px solid ${colors.border.faint}` }}>
           <p style={{ margin: '0 0 14px', color: '#818cf8', fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Avec ballon</p>
           {(f.animation_avec_ballon || []).filter(Boolean).map((pt, i) => (
@@ -1309,7 +1341,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         <button onClick={() => setPresentationOuverte(true)} disabled={!tactipadsLoaded} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, opacity: tactipadsLoaded ? 1 : 0.5, cursor: tactipadsLoaded ? 'pointer' : 'default' }}>
           {tactipadsLoaded ? <><Icone icone={MonitorPlay} /> Présenter la causerie</> : 'Chargement…'}
         </button>
-        <button onClick={() => window.print()} className={CLASSE_BOUTON_SECONDAIRE} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={Printer} /> Imprimer</button>
+        <button onClick={() => { setExportAuto('claire'); setPresentationOuverte(true) }} disabled={!tactipadsLoaded} title="PDF A4 paysage, une page par slide, fond clair pour économiser l'encre" className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={Printer} /> Imprimer</button>
         <button onClick={() => supprimer(f.id)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, color: colors.accent.red, borderColor: colors.accent.red }}>Supprimer</button>
       </div>
 
@@ -1364,13 +1396,17 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
       <FicheCauseriePrint>{contenuFiche}</FicheCauseriePrint>
       <style>{`
         #fiche-causerie-print { display: none; }
+        @page causerie-paysage { size: A4 landscape; margin: 5mm; }
         @media print {
           body > *:not(#fiche-causerie-print) { display: none !important; }
-          #fiche-causerie-print { display: block !important; }
+          #fiche-causerie-print { display: block !important; page: causerie-paysage; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          /* La fiche occupe toute la hauteur de la feuille (297 x 210 mm moins 5 mm de marge) : pas de blanc en haut ni en bas. */
+          #fiche-causerie-print .causerie-feuille { display: flex !important; flex-direction: column; min-height: 199mm; border-radius: 0 !important; border: none !important; }
+          #fiche-causerie-print .causerie-grille { flex: 1 1 auto; }
         }
       `}</style>
 
-      {presentationOuverte && <PresentationCauserie f={f} equipeNom={equipeNom} tactipadsDispo={tactipadsDispo} logoClub={logoClub} logoAdversaire={logoAdversaire(f.adversaire)} couleurClub={couleurClub} photoClub={photoClub} onFermer={() => setPresentationOuverte(false)} />}
+      {presentationOuverte && <PresentationCauserie exportAuto={exportAuto} f={f} equipeNom={equipeNom} tactipadsDispo={tactipadsDispo} logoClub={logoClub} logoAdversaire={logoAdversaire(f.adversaire)} couleurClub={couleurClub} photoClub={photoClub} onFermer={() => { setPresentationOuverte(false); setExportAuto(null) }} />}
     </div>
   )
 }
