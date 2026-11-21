@@ -13,7 +13,7 @@ const ROUGE_MODELE = '#B24B5B'
 const LOGO_DEFAUT = '/icons/icon-192.png'
 const COLONNES = [['GB', 'GB'], ['DEF', 'DEF'], ['MIL', 'MIL'], ['ATT', 'ATT']]
 const JOURS = ['J+1', 'J+2', 'J+3', 'J-3', 'J-2', 'J-1']
-const LIGNES_MIN = 5
+const LIGNES_MIN = 4
 
 function formaterDate(d) {
   if (!d) return ''
@@ -114,7 +114,14 @@ function Rubrique({ titre, texte }) {
 }
 
 function Face({ numeros, face, fiche, logo, joueursParPoste, nonRenseignes }) {
-  const nbLignes = Math.max(LIGNES_MIN, ...COLONNES.map(([cle]) => (joueursParPoste?.[cle] || []).length))
+  // Tableau comme sur le modèle papier : 4 lignes, chaque poste s'étale en colonnes
+  // (4 joueurs par colonne) sous un bandeau couleur qui couvre ses colonnes.
+  // Si l'effectif est grand, on ajoute des lignes pour garder au plus 10 colonnes.
+  const parPoste = (cle) => joueursParPoste?.[cle] || []
+  const largeurTotale = (n) => COLONNES.reduce((t, [cle]) => t + Math.max(1, Math.ceil(parPoste(cle).length / n)), 0)
+  let nbLignes = LIGNES_MIN
+  while (nbLignes < 10 && largeurTotale(nbLignes) > 10) nbLignes += 1
+  const groupes = COLONNES.map(([cle, lib]) => ({ cle, lib, nbCol: Math.max(1, Math.ceil(parPoste(cle).length / nbLignes)) }))
   const phasesCochees = new Set(fiche.phases_club || [])
   const jourCoche = fiche.jour_match || ''
   return (
@@ -127,12 +134,14 @@ function Face({ numeros, face, fiche, logo, joueursParPoste, nonRenseignes }) {
         </div>
         <table className="fc-effectif">
           <thead>
-            <tr>{COLONNES.map(([cle, lib]) => <th key={cle}>{lib}</th>)}</tr>
+            <tr>{groupes.map(g => <th key={g.cle} colSpan={g.nbCol}>{g.lib}</th>)}</tr>
           </thead>
           <tbody>
-            {Array.from({ length: nbLignes }, (_, i) => (
-              <tr key={i} style={{ height: `${Math.min(28, Math.floor(140 / nbLignes))}px` }}>
-                {COLONNES.map(([cle]) => <td key={cle}>{joueursParPoste?.[cle]?.[i] || ''}</td>)}
+            {Array.from({ length: nbLignes }, (_, r) => (
+              <tr key={r} style={{ height: `${Math.min(24, Math.floor(100 / nbLignes))}px` }}>
+                {groupes.flatMap(g => Array.from({ length: g.nbCol }, (_, c) => (
+                  <td key={`${g.cle}${c}`} className={c === 0 ? 'fc-eff-debut' : undefined}>{parPoste(g.cle)[c * nbLignes + r] || ''}</td>
+                )))}
               </tr>
             ))}
           </tbody>
@@ -170,11 +179,17 @@ function Face({ numeros, face, fiche, logo, joueursParPoste, nonRenseignes }) {
         <div className="fc-strip">
           {[0, 1, 2].map(k => {
             const p = (fiche.procedes || [])[numeros[k] - 1] || {}
-            const entete = [p.titre, [p.duree && `${p.duree} min`, p.nb_joueurs && `${p.nb_joueurs} joueurs`].filter(Boolean).join(' · ')].filter(Boolean)
+            const duree = String(p.duree || '').trim()
+            const tempsGlobal = /^\d+$/.test(duree) ? `${duree}'` : duree
             return (
             <div className="fc-strip-groupe" key={k}>
-              <TexteAjuste className="fc-carre-gris" signature={`${p.titre}|${p.duree}|${p.nb_joueurs}|${p.organisation}|${p.criteres_realisation}`}>
-                {entete.length > 0 && <div className="fc-entete-procede">{entete.map((e, j) => <span key={j}>{e}</span>)}</div>}
+              <div className="fc-ligne-procede">
+                <TexteAjuste className="fc-lp-titre" signature={`${numeros[k]}|${p.titre}`}>{`${numeros[k]}) ${p.titre || ''}`}</TexteAjuste>
+                <TexteAjuste className="fc-lp-seq" signature={p.sequence}>{p.sequence || ''}</TexteAjuste>
+                <div className="fc-lp-temps">{tempsGlobal}</div>
+              </div>
+              <TexteAjuste className="fc-carre-gris" signature={`${p.nb_joueurs}|${p.organisation}|${p.criteres_realisation}`}>
+                {p.nb_joueurs && <div className="fc-entete-procede"><span>{p.nb_joueurs} joueurs</span></div>}
                 <Rubrique titre="Organisation" texte={p.organisation} />
                 <Rubrique titre="Critères de réalisation" texte={p.criteres_realisation} />
               </TexteAjuste>

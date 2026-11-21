@@ -260,14 +260,15 @@ input[type="date"] {
 .fc-doc { width: 1500px; background: #fff; color: #111; font-family: Calibri, Carlito, Arial, sans-serif; }
 .fc-page { width: 1500px; height: 1060px; padding: 22px 30px 18px; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; page: fc-paysage; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .fc-page * { box-sizing: border-box; }
-.fc-haut { display: flex; gap: 12px; height: 172px; flex-shrink: 0; }
+.fc-haut { display: flex; gap: 12px; height: 124px; flex-shrink: 0; }
 .fc-identite { width: 368px; flex-shrink: 0; display: flex; flex-direction: column; }
-.fc-logo { height: 100px; display: flex; align-items: center; }
+.fc-logo { height: 70px; display: flex; align-items: center; }
 .fc-logo img { max-height: 100%; max-width: 160px; object-fit: contain; }
-.fc-ligne-id { font-size: 20px; line-height: 1.5; white-space: nowrap; }
-.fc-effectif { flex: 1; border-collapse: collapse; table-layout: fixed; height: 172px; border: 2px solid #333; }
-.fc-effectif th { background: var(--fc); color: var(--fc-on); font-size: 15px; letter-spacing: 1px; height: 26px; border: 1px solid #333; }
-.fc-effectif td { border: 1px solid #555; padding: 0 8px; font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fc-ligne-id { font-size: 18px; line-height: 1.5; white-space: nowrap; }
+.fc-effectif { flex: 1; border-collapse: collapse; table-layout: fixed; align-self: flex-start; border: 2px solid #333; }
+.fc-effectif th { background: var(--fc); color: var(--fc-on); font-size: 14px; letter-spacing: 1px; height: 20px; border: 1px solid #333; }
+.fc-effectif td.fc-eff-debut { border-left: 2px solid #333; }
+.fc-effectif td { border: 1px solid #555; padding: 0 8px; font-size: 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .fc-non-renseignes { height: 16px; flex-shrink: 0; font-size: 11px; color: #555; margin-top: 2px; }
 .fc-corps { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 12px; margin-top: 8px; height: 104px; flex-shrink: 0; }
 .fc-gauche, .fc-droite { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -303,6 +304,10 @@ input[type="date"] {
 .fc-schema-cadre { position: absolute; inset: 0; background: #fff; border: 1px solid #555; box-sizing: border-box; overflow: hidden; }
 .fc-schema { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .fc-schema-pivote { inset: auto; top: 50%; left: 50%; width: 147.06%; height: 68%; transform: translate(-50%, -50%) rotate(90deg); }
+.fc-ligne-procede { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 54px; height: 34px; flex-shrink: 0; border: 2px solid #333; border-bottom: none; background: #fff; font-weight: 700; font-size: 15px; }
+.fc-lp-titre, .fc-lp-seq { padding: 3px 8px; overflow: hidden; line-height: 1.1; display: flex; align-items: center; }
+.fc-lp-seq { border-left: 1px solid #555; justify-content: center; text-align: center; }
+.fc-lp-temps { border-left: 1px solid #555; display: flex; align-items: center; justify-content: center; }
 .fc-entete-procede { display: flex; flex-direction: column; margin-bottom: 4px; font-weight: 700; }
 .fc-rubrique { margin-bottom: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .fc-rubrique b { display: block; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; color: #444; }

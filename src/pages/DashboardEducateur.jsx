@@ -10761,14 +10761,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <input
-                      placeholder={t('seance_titre_procede', lang)}
+                      placeholder={fiche.mode_diplome === 'CLUB' ? 'Procédé (ex : échauffement, jeu, situation, exercice)' : t('seance_titre_procede', lang)}
                       value={p.titre}
                       onChange={e => updateProcede(i, 'titre', e.target.value)}
                       className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
                     />
+                    {fiche.mode_diplome === 'CLUB' && (
+                      <input
+                        placeholder="Séquence et répétitions (ex : 3x3' 2S)"
+                        value={p.sequence || ''}
+                        onChange={e => updateProcede(i, 'sequence', e.target.value)}
+                        className={CLASSE_CHAMP} style={{ ...styleChamp(colors), width: '100%', boxSizing: 'border-box' }}
+                      />
+                    )}
                     <div className="procede-duree-joueurs" style={{ display: 'flex', gap: '10px' }}>
                       <input
-                        placeholder={t('seance_duree_min', lang)}
+                        placeholder={fiche.mode_diplome === 'CLUB' ? "Temps global du procédé (ex : 20')" : t('seance_duree_min', lang)}
                         value={p.duree}
                         onChange={e => updateProcede(i, 'duree', e.target.value)}
                         className={CLASSE_CHAMP} style={{ ...styleChamp(colors), flex: 1, width: '100%', boxSizing: 'border-box' }}
@@ -13455,8 +13463,14 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                           <label>Titre</label>
                           <input value={p.titre} onChange={e => updateProcedeApercu(i, 'titre', e.target.value)} style={champEditStyle} />
                         </div>
+                        {ficheApercuEdit.mode_diplome === 'CLUB' && (
+                        <div className="procede-field" style={{ gridColumn: '1 / -1' }}>
+                          <label>Séquence et répétitions (ex : 3x3' 2S)</label>
+                          <input value={p.sequence || ''} onChange={e => updateProcedeApercu(i, 'sequence', e.target.value)} style={champEditStyle} />
+                        </div>
+                        )}
                         <div className="procede-field">
-                          <label>Durée</label>
+                          <label>{ficheApercuEdit.mode_diplome === 'CLUB' ? "Temps global (ex : 20')" : 'Durée'}</label>
                           <input value={p.duree} onChange={e => updateProcedeApercu(i, 'duree', e.target.value)} style={champEditStyle} />
                         </div>
                         <div className="procede-field">
