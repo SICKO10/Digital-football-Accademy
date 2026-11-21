@@ -475,6 +475,7 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
   const [ficheCourante, setFicheCourante] = useState(null)
   const [tableMissing, setTableMissing] = useState(false)
   const [presentationOuverte, setPresentationOuverte] = useState(false)
+  const [menuImpression, setMenuImpression] = useState(false)
   const [exportAuto, setExportAuto] = useState(null) // 'claire' | 'sombre' : la présentation s'ouvre, exporte son PDF puis se ferme
   const [menuOuvert, setMenuOuvert] = useState(null) // id de la fiche dont le menu "…" est ouvert, vue liste
   const [tactipadsDispo, setTactipadsDispo] = useState([]) // schémas Tactipad de l'éducateur, pour le sélecteur "Mouvement tactique"
@@ -1341,7 +1342,23 @@ export default function CauserieAvantMatch({ userId, equipeNom, equipeActiveId, 
         <button onClick={() => setPresentationOuverte(true)} disabled={!tactipadsLoaded} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, opacity: tactipadsLoaded ? 1 : 0.5, cursor: tactipadsLoaded ? 'pointer' : 'default' }}>
           {tactipadsLoaded ? <><Icone icone={MonitorPlay} /> Présenter la causerie</> : 'Chargement…'}
         </button>
-        <button onClick={() => { setExportAuto('claire'); setPresentationOuverte(true) }} disabled={!tactipadsLoaded} title="PDF A4 paysage, une page par slide, fond clair pour économiser l'encre" className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={Printer} /> Imprimer</button>
+        <span style={{ position: 'relative', display: 'inline-block' }}>
+          <button onClick={() => setMenuImpression(v => !v)} disabled={!tactipadsLoaded} aria-expanded={menuImpression} className={CLASSE_BOUTON_SECONDAIRE} style={btnO}><Icone icone={Printer} /> Imprimer</button>
+          {menuImpression && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '6px', zIndex: 20, minWidth: '260px', padding: '6px', background: colors.background.base, border: `1px solid ${colors.border.default}`, borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {[
+                { theme: 'claire', titre: 'Papier, fond clair', detail: 'Économise l\'encre, lisible sur feuille' },
+                { theme: 'sombre', titre: 'Écran, fond sombre', detail: 'Comme la présentation, pour tablette ou PDF' },
+              ].map(o => (
+                <button key={o.theme} type="button" onClick={() => { setMenuImpression(false); setExportAuto(o.theme); setPresentationOuverte(true) }}
+                  style={{ textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', color: colors.text.primary, fontFamily: 'inherit' }}>
+                  <span style={{ display: 'block', fontWeight: 700, fontSize: '14px' }}>{o.titre}</span>
+                  <span style={{ display: 'block', fontSize: '12px', color: colors.text.secondary }}>{o.detail}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </span>
         <button onClick={() => supprimer(f.id)} className={CLASSE_BOUTON_SECONDAIRE} style={{ ...btnO, color: colors.accent.red, borderColor: colors.accent.red }}>Supprimer</button>
       </div>
 
