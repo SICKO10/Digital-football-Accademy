@@ -33,7 +33,7 @@ export default function SponsorsTournoiBandeau({ sponsors, code }) {
           const avecLien = sp.lien_url && /^https?:\/\//i.test(sp.lien_url)
           const contenu = (
             <>
-              <div style={{ width: '100%', aspectRatio: '1 / 1', maxWidth: '140px', margin: '0 auto', borderRadius: '14px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '12px', boxSizing: 'border-box' }}>
+              <div style={{ width: '100%', aspectRatio: '1 / 1', maxWidth: '120px', margin: '0 auto', borderRadius: '12px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '8px', boxSizing: 'border-box' }}>
                 {sp.logo_url
                   ? <img src={sp.logo_url} alt={sp.nom} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   : <strong style={{ color: '#070707', fontSize: '28px', fontWeight: 900 }}>{sp.nom?.slice(0, 2).toUpperCase()}</strong>}
@@ -43,7 +43,7 @@ export default function SponsorsTournoiBandeau({ sponsors, code }) {
               {avecLien && <div style={{ fontSize: '12px', fontWeight: 700, color: accent, marginTop: '8px' }}>Découvrir</div>}
             </>
           )
-          const style = { display: 'block', width: 'clamp(140px, 40vw, 190px)', padding: '16px', borderRadius: '16px', background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, textDecoration: 'none', boxSizing: 'border-box' }
+          const style = { display: 'block', width: 'clamp(130px, 38vw, 165px)', padding: '14px', borderRadius: '16px', background: colors.background.raised, border: `1px solid ${colors.border.subtle}`, textDecoration: 'none', boxSizing: 'border-box' }
           return avecLien
             ? <a key={sp.id} className="df-sponsor-tuile" href={sp.lien_url} target="_blank" rel="noreferrer noopener" style={style} onClick={() => loguerClicSponsorTournoi(code, sp.id)}>{contenu}</a>
             : <div key={sp.id} className="df-sponsor-tuile" style={style}>{contenu}</div>
