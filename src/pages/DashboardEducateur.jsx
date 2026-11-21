@@ -13260,13 +13260,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         onClick={() => setApercuFicheEnCoursOuvert(false)}
         onScroll={e => setApercuEnCoursEnHaut(e.currentTarget.scrollTop <= 20)}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
-          {apercuEnCoursEnHaut ? (
-            <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
+          {/* La barre garde toujours sa place (visibility, pas démontage) : sinon la hauteur de la page change au passage du seuil de défilement et l'aperçu saute ou se bloque. */}
+          {true ? (
+            <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: apercuEnCoursEnHaut ? '#000000dd' : 'transparent', visibility: apercuEnCoursEnHaut ? 'visible' : 'hidden', padding: '6px 0', borderRadius: '8px' }}>
               <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: police.texte }}>
                 {icoTexte(X)}{t('btn_fermer', lang)}
               </button>
             </div>
-          ) : (
+          ) : null}
+          {!apercuEnCoursEnHaut && (
             <button onClick={() => setApercuFicheEnCoursOuvert(false)} title={t('btn_fermer', lang)}
               style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
               <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
@@ -13303,8 +13305,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         onClick={() => { if (!modeEditionApercu) setFicheApercu(null) }}
         onScroll={e => setFicheApercuEnHaut(e.currentTarget.scrollTop <= 20)}>
         <div style={{ background: 'transparent', maxWidth: '840px', width: '100%' }} onClick={e => e.stopPropagation()}>
-          {(modeEditionApercu || ficheApercuEnHaut) ? (
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: '#000000dd', padding: '6px 0', borderRadius: '8px' }}>
+          {true ? (
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: (modeEditionApercu || ficheApercuEnHaut) ? '#000000dd' : 'transparent', visibility: (modeEditionApercu || ficheApercuEnHaut) ? 'visible' : 'hidden', padding: '6px 0', borderRadius: '8px' }}>
             {!modeEditionApercu && (
               ficheApercu.fichier_url ? (
                 <>
@@ -13350,7 +13352,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               </>
             )}
           </div>
-          ) : (
+          ) : null}
+          {!(modeEditionApercu || ficheApercuEnHaut) && (
             <button onClick={() => setFicheApercu(null)} title={t('btn_fermer', lang)}
               style={{ position: 'fixed', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: '16px', zIndex: 20, width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: `1px solid ${colors.border.strong}`, color: colors.text.primary, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
               <Icone icone={X} taille={18} libelle={t('btn_fermer', lang)} />
