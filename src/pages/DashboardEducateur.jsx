@@ -1952,6 +1952,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const [renfortsParMatch, setRenfortsParMatch] = useState({}) // { [match_id]: renforts } pour la feuille de match et la notation
   const [convocationForm, setConvocationForm] = useState({ type_terrain: 'Herbe', arbitre_nom: '', notes: '', timeline: [] })
   const [publiantConvocation, setPubliantConvocation] = useState(false)
+  const [sondageSeulConvoques, setSondageSeulConvoques] = useState(false) // ouvert depuis l'accueil : on n'affiche que les joueurs convoqués
   const [scrollVersConvocation, setScrollVersConvocation] = useState(false) // ouverture via le bouton "📢 Convocation" plutôt que "📋 Sondage dispo" → scroll direct à la section
   const convocationSectionRef = useRef(null)
 
@@ -6544,7 +6545,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <EncartOutilsClub outils={outils} userId={userId} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
               onOuvrirFiche={ouvrirFicheParId}
-              onOuvrirSondageMatch={(m) => { setActiveSection('matchs'); setCompetitionSubTab('calendrier'); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }}
+              onOuvrirSondageMatch={(m) => { setSondageSeulConvoques(true); setActiveSection('matchs'); setCompetitionSubTab('calendrier'); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }}
               clubId={clubAffiliation?.club_id}
               clubInfo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club : null}
               prenom={profil?.prenom}
@@ -8712,8 +8713,8 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {items.map(m => {
                             const itemsMenu = [
-                              { label: 'Sondage dispo', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) } },
-                              { label: 'Convocation', action: () => { setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) } },
+                              { label: 'Sondage dispo', action: () => { setSondageSeulConvoques(false); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) } },
+                              { label: 'Convocation', action: () => { setSondageSeulConvoques(false); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id); setScrollVersConvocation(true) } },
                               ...(canEdit('competition') ? [{ label: t('comp_modifier_match', lang), action: () => ouvrirModalModifierMatch(m) }] : []),
                               ...(canEdit('competition') ? [{
                                 label: 'Supprimer', danger: true, action: async () => {
@@ -8833,8 +8834,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             {/* ── Modale résultats "Sondage dispo" match ── */}
             {modalSondageMatch && (() => {
               const m = modalSondageMatch
-              const reponses = reponsesDispoMatch(m.id)
-              const nomsCoches = reponses.filter(j => convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')).map(j => `${j.prenom} ${j.nom}`)
+              const reponsesTous = reponsesDispoMatch(m.id)
+              const reponses = sondageSeulConvoques ? reponsesTous.filter(j => convocationsCoches[j.id]) : reponsesTous
+              const nomsCoches = reponsesTous.filter(j => convocationsCoches[j.id] ?? (j.statut === 'present' || j.statut === 'convoque')).map(j => `${j.prenom} ${j.nom}`)
                 .concat(renfortsConvoc.filter(r => r.joueur_id).map(r => `${r.prenom} ${r.nom}`))
               const copierConvocations = async () => {
                 try {
@@ -8846,13 +8848,27 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <div style={{ position: 'fixed', inset: 0, background: colors.background.overlay, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
                   <div role="dialog" aria-modal="true" aria-label="Sondage de disponibilité" style={{ ...styleCarte(colors), border: `1px solid ${colors.border.default}`, padding: '1.5rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <p style={{ ...styleTitreCarte(colors), margin: 0 }}>Sondage dispo — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
+                      <p style={{ ...styleTitreCarte(colors), margin: 0 }}>{sondageSeulConvoques ? 'Sondage des convoqués' : 'Sondage dispo'} — {m.domicile ? 'vs' : '@'} {m.adversaire}</p>
                       <button type="button" onClick={() => setModalSondageMatch(null)} aria-label="Fermer" className={CLASSE_CLIQUABLE} style={{ background: 'none', border: 'none', color: colors.text.secondary, cursor: 'pointer', padding: '8px', minWidth: '40px', minHeight: '40px' }}><IcoX /></button>
                     </div>
                     <p style={{ fontSize: '12px', color: colors.text.secondary, margin: '0 0 16px' }}>
                       {new Date(m.date).toLocaleDateString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                       {m.heure ? ` · ${m.heure}` : ''}
                     </p>
+
+                    {sondageSeulConvoques && (() => {
+                      const nbP = reponses.filter(j => j.statut === 'present' || j.statut === 'convoque').length
+                      const nbA = reponses.filter(j => ['absent', 'blesse', 'malade'].includes(j.statut)).length
+                      const nbS = reponses.length - nbP - nbA
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', margin: '0 0 14px', fontSize: '13px', color: colors.text.secondary }}>
+                          <span><strong style={{ color: colors.accent.success }}>{nbP}</strong> présent{nbP > 1 ? 's' : ''}</span>
+                          <span><strong style={{ color: colors.accent.red }}>{nbA}</strong> absent{nbA > 1 ? 's' : ''}</span>
+                          <span><strong style={{ color: colors.text.primary }}>{nbS}</strong> sans réponse</span>
+                          <span style={{ color: colors.text.dim }}>sur {reponses.length} convoqué{reponses.length > 1 ? 's' : ''}</span>
+                        </div>
+                      )
+                    })()}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
                       {reponses.map(j => {
@@ -8869,10 +8885,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         )
                       })}
                       {reponses.length === 0 && (
-                        <p style={{ color: colors.text.dim, fontSize: '12px', margin: 0 }}>Aucun joueur dans l'effectif.</p>
+                        <p style={{ color: colors.text.dim, fontSize: '12px', margin: 0 }}>{sondageSeulConvoques ? 'Aucun joueur convoqué pour ce match.' : "Aucun joueur dans l'effectif."}</p>
                       )}
                     </div>
 
+                    {sondageSeulConvoques ? (
+                      canEdit('competition') && (
+                        <button type="button" className={CLASSE_BOUTON_SECONDAIRE} onClick={() => setSondageSeulConvoques(false)} style={styleBoutonSecondaire(colors)}>
+                          Modifier la convocation / voir tout l'effectif
+                        </button>
+                      )
+                    ) : (<>
                     <div style={{ ...stK.card, background: colors.background.sunken }}>
                       <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 4px' }}>Générer les convocations</p>
                       <p style={{ fontSize: '11px', color: colors.text.secondary, margin: '0 0 12px' }}>Pré-coché : joueurs disponibles ou déjà convoqués. Décoche/coche pour ajuster, puis copie la liste.</p>
@@ -8944,6 +8967,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                         {publiantConvocation ? '...' : convocationExistante ? 'Mettre à jour la convocation' : 'Publier la convocation'}
                       </button>
                     </div>
+                    </>)}
                   </div>
                 </div>
               )
