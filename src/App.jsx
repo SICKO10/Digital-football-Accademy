@@ -132,7 +132,7 @@ function App() {
         <Route path="/club" element={<PorteeThemeClub accentVert="statut"><DashboardClub /></PorteeThemeClub>} />
         <Route path="/recruteur" element={<DashboardRecruteur />} />
         <Route path="/educateur" element={<PorteeThemeClub accentVert="educateur"><DashboardEducateur /></PorteeThemeClub>} />
-        <Route path="/dashboard-dirigeant" element={<DashboardDirigeant />} />
+        <Route path="/dashboard-dirigeant" element={<PorteeThemeClub accentVert="educateur"><DashboardDirigeant /></PorteeThemeClub>} />
         <Route path="/dashboard-parent" element={<DashboardParent />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/feed" element={<Feed />} />

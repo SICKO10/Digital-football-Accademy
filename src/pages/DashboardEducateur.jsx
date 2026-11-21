@@ -1130,7 +1130,7 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
   )
 }
 
-function AccueilEducateur({ onOuvrirSondageMatch, clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
+function AccueilEducateur({ onOuvrirFiche, onOuvrirSondageMatch, clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -1508,7 +1508,7 @@ function AccueilEducateur({ onOuvrirSondageMatch, clubId, prenom, userId, equipe
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
                 {prochainEnt.fiche_id ? (
                   <button type="button" className={CLASSE_BOUTON}
-                    onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochainEnt.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }}
+                    onClick={() => onOuvrirFiche(prochainEnt.fiche_id)}
                     style={{ ...styleBoutonPrincipal(colors), ...flexBtn }}>
                     <Icone icone={FileText} /> Fiche séance
                   </button>
@@ -2228,6 +2228,22 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
     }
     setConfirmSuppr(null)
     await Promise.all([chargerMesSeances(userId), chargerMesSeancesOuvertes(userId)])
+  }
+
+  // Ouvre l'aperçu d'une fiche de séance. Cherche d'abord dans la liste déjà
+  // chargée ; sinon (liste pas encore arrivée, fiche d'une autre origine, accès
+  // de dirigeant) la lit directement en base. Avant, un clic sans fiche trouvée
+  // ne faisait rien, sans le dire.
+  const ouvrirFicheParId = async (ficheId) => {
+    if (!ficheId) return
+    let fiche = mesSeancesOuvertes.find(x => x.id === ficheId)
+    if (!fiche) {
+      const { data, error } = await supabase.from('seances_uploadees').select('*').eq('id', ficheId).maybeSingle()
+      if (error || !data) { afficherToast(`Impossible d'ouvrir la fiche${error ? ` : ${error.message}` : ''}`, 'erreur'); return }
+      fiche = data
+    }
+    setFicheApercu(fiche)
+    setFicheApercuEnHaut(true)
   }
 
   const chargerMesSeancesOuvertes = async (uid) => {
@@ -6527,6 +6543,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <EncartFinEssai outils={outils} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <EncartOutilsClub outils={outils} userId={userId} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
+              onOuvrirFiche={ouvrirFicheParId}
               onOuvrirSondageMatch={(m) => { setActiveSection('matchs'); setCompetitionSubTab('calendrier'); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }}
               clubId={clubAffiliation?.club_id}
               clubInfo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club : null}
@@ -6543,7 +6560,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
               setSousOngletEnt={setSousOngletEnt}
               setStatsSubTab={setStatsSubTab}
               setCompetitionSubTab={setCompetitionSubTab}
-              peutVoir={outils.menuVisible}
+              peutVoir={canView}
               outilActif={outils.outilActif}
               lang={lang}
               isMobile={isMobile}
@@ -9399,7 +9416,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
 
             <Suspense fallback={<SectionLoader />}>
             <SondageSemaine mode="educateur" userId={userId} equipeCategorieId={equipeActive?.id} accentColor={colors.accent.blue}
-              onVoirFiche={ficheId => { const s = mesSeancesOuvertes.find(x => x.id === ficheId); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} />
+              onVoirFiche={ficheId => ouvrirFicheParId(ficheId)} />
             </Suspense>
 
             {sousOngletEnt === 'prochaine' && (() => {
@@ -9520,7 +9537,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       </div>
                       <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                         {prochaineSeance.fiche_id ? (
-                          <button type="button" onClick={() => { const s = mesSeancesOuvertes.find(x => x.id === prochaineSeance.fiche_id); if (s) { setFicheApercu(s); setFicheApercuEnHaut(true) } }} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
+                          <button type="button" onClick={() => ouvrirFicheParId(prochaineSeance.fiche_id)} className={CLASSE_BOUTON_SECONDAIRE} style={styleBoutonSecondaire(colors)}>
                             <IcoFileText /> Voir la fiche
                           </button>
                         ) : canEdit('entrainements') && (
@@ -9914,7 +9931,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                               {e.fiche_id && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center' }} onClick={ev => ev.stopPropagation()}>
                                   <button type="button"
-                                    onClick={() => { const s2 = mesSeancesOuvertes.find(x => x.id === e.fiche_id); if (s2) { setFicheApercu(s2); setFicheApercuEnHaut(true) } }}
+                                    onClick={() => ouvrirFicheParId(e.fiche_id)}
                                     className={CLASSE_CLIQUABLE}
                                     style={{ ...styleEtiquetteNeutre(colors), gap: '6px', color: colors.text.primary, borderRadius: `${forme.rayonPastille} 0 0 ${forme.rayonPastille}`, cursor: 'pointer' }}>
                                     <IcoFileText /> {t('ent_voir_fiche', lang)}

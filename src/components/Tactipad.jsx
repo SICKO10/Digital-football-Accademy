@@ -2617,7 +2617,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
                           {(dossier || s.partage || s.visible_joueurs) && (
                             <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '6px' }}>
                               {dossier && <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: dossier.couleur, background: dossier.couleur + '1a' }}>{dossier.nom}</span>}
-                              {s.visible_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: '#4ade80', background: '#4ade801a' }}><IcoJoueurs />{categories.find(c => c.id === s.categorie_id)?.nom || 'Toutes catégories'}</span>}
+                              {s.visible_joueurs && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: '#4ade80', background: '#4ade801a' }}><IcoJoueurs />{(() => { const nomCat = categories.find(c => c.id === s.categorie_id)?.nom; return nomCat ? `Accès joueurs · ${nomCat}` : 'Accès joueurs' })()}</span>}
                               {s.partage && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', color: '#a78bfa', background: '#a78bfa1a' }}><IcoLien />Partagé</span>}
                             </div>
                           )}
