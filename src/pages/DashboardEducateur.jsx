@@ -1130,7 +1130,7 @@ function PlanningSemaineAccueil({ entrainements, matchs, lang, onClickEntraineme
   )
 }
 
-function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
+function AccueilEducateur({ onOuvrirSondageMatch, clubId, prenom, userId, equipeActiveId, equipeUnique, joueurs, entrainements, matchs, setActiveSection, setSousOngletEnt, setStatsSubTab, setCompetitionSubTab, lang, isMobile, mesSeancesOuvertes, dispoJoueurs, setFicheApercu, setFicheApercuEnHaut, setModalImportFicheEntrainement, onNouvelleSeance, peutVoir = () => true, outilActif = () => true, clubInfo = null }) {
   const colors = useColors()
   const aujourdHui = new Date().toISOString().split('T')[0]
 
@@ -1287,6 +1287,28 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
     .filter(m => m.date >= aujourdHui && (m.score_nous === '' || m.score_nous === null || m.score_nous === undefined))
     .sort((a, b) => a.date.localeCompare(b.date))[0] || null
 
+  // Convocation publiée du prochain match (si elle existe et n'a pas expiré) :
+  // programme + nombre de convoqués qui ont répondu présent au sondage.
+  const [convocProchain, setConvocProchain] = useState(null) // { conv, nbConvoques, nbPresents }
+  useEffect(() => {
+    let annule = false
+    if (!prochainMatch?.id) { Promise.resolve().then(() => { if (!annule) setConvocProchain(null) }); return () => { annule = true } }
+    ;(async () => {
+      const { data: conv } = await supabase.from('convocations').select('*').eq('match_id', prochainMatch.id).gt('expire_at', new Date().toISOString()).maybeSingle()
+      if (annule) return
+      if (!conv) { setConvocProchain(null); return }
+      const [{ data: cj }, { data: dispo }] = await Promise.all([
+        supabase.from('convocation_joueurs').select('joueur_id').eq('convocation_id', conv.id),
+        supabase.from('disponibilites').select('joueur_id, statut').eq('match_id', prochainMatch.id),
+      ])
+      if (annule) return
+      const ids = new Set((cj || []).map(r => r.joueur_id))
+      const nbPresents = (dispo || []).filter(d => ids.has(d.joueur_id) && (d.statut === 'present' || d.statut === 'convoque')).length
+      setConvocProchain({ conv, nbConvoques: ids.size, nbPresents })
+    })()
+    return () => { annule = true }
+  }, [prochainMatch?.id])
+
   // Bilan V/N/D — calcul déplacé ici (hors IIFE) pour être partagé par la
   // bande de score (V2 "centre de commandement", 2026-10-12) ; même calcul
   // exact qu'avant, juste sorti de la fonction anonyme qui l'encapsulait.
@@ -1375,6 +1397,68 @@ function AccueilEducateur({ clubId, prenom, userId, equipeActiveId, equipeUnique
           detail={prochainMatch ? `${prochainMatch.adversaire || '—'} · ${prochainMatch.domicile ? 'Domicile' : 'Extérieur'}` : 'Aucun match planifié'}
           style={{ height: '100%' }} />
       </div>
+
+      {/* Convocation publiée du prochain match : programme de la journée +
+          accès direct au sondage des convoqués. */}
+      {convocProchain && prochainMatch && peutVoir('matchs') && (() => {
+        const { conv, nbConvoques, nbPresents } = convocProchain
+        const etapes = (conv.timeline || []).filter(e => e.heure || e.label)
+        const dMatch = new Date(prochainMatch.date + 'T12:00:00')
+        const puce = (texte) => (
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: '999px', border: `1px solid ${couleurCraie(colors)}`, fontSize: '12px', color: colors.text.secondary, whiteSpace: 'nowrap' }}>{texte}</span>
+        )
+        return (
+          <div style={{ ...styleCarteLiseree(colors), marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px 24px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0, flex: '1 1 340px' }}>
+                <div style={{ width: '64px', flexShrink: 0, textAlign: 'center' }}>
+                  <Etiquette as="p">{dMatch.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</Etiquette>
+                  <p style={{ ...styleChiffreHeros(colors, 40), margin: '4px 0' }}>{dMatch.getDate()}</p>
+                  <Etiquette as="p">{dMatch.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}</Etiquette>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <Etiquette as="p">Convocation publiée</Etiquette>
+                  <p style={{ margin: '3px 0 8px', fontFamily: police.titre, fontSize: '22px', fontWeight: 700, letterSpacing: '0.01em', color: colors.text.primary }}>
+                    {prochainMatch.domicile ? 'vs' : '@'} {prochainMatch.adversaire || '—'}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {prochainMatch.heure && puce(`Coup d'envoi ${prochainMatch.heure}`)}
+                    {puce(prochainMatch.domicile ? 'Domicile' : 'Extérieur')}
+                    {conv.type_terrain && puce(conv.type_terrain)}
+                    {conv.arbitre_nom && puce(`Arbitre : ${conv.arbitre_nom}`)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flex: isMobile ? '1 1 100%' : '0 0 260px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', color: colors.text.secondary }}>Présents parmi les convoqués</span>
+                  <span style={{ fontFamily: police.titre, fontSize: '20px', fontWeight: 700, color: colors.text.primary, fontVariantNumeric: 'tabular-nums' }}>{nbPresents}<span style={{ fontSize: '14px', color: colors.text.dim }}> / {nbConvoques}</span></span>
+                </div>
+                <Jauge legende={false} segments={[{ libelle: 'Présents', valeur: nbPresents }, { libelle: 'Sans réponse ou absents', valeur: Math.max(0, nbConvoques - nbPresents) }]} />
+                <button type="button" className={CLASSE_BOUTON} onClick={() => onOuvrirSondageMatch?.(prochainMatch)} style={{ ...styleBoutonPrincipal(colors), justifyContent: 'center' }}>
+                  <Icone icone={CircleCheck} /> Sondage des convoqués
+                </button>
+              </div>
+            </div>
+
+            {etapes.length > 0 && (
+              <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: `1px solid ${couleurCraie(colors)}` }}>
+                <Etiquette as="p" style={{ margin: '0 0 12px' }}>Programme de la journée</Etiquette>
+                <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(etapes.length, 4)}, minmax(0, 1fr))`, gap: isMobile ? '10px' : '12px' }}>
+                  {etapes.map((e, i) => (
+                    <li key={i} style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'baseline' : 'flex-start', gap: isMobile ? '14px' : '4px', paddingLeft: isMobile ? 0 : '12px', borderLeft: isMobile ? 'none' : `2px solid ${colors.accent.blue}` }}>
+                      <span style={{ ...styleChiffreHeros(colors, 22), minWidth: isMobile ? '56px' : 0, fontVariantNumeric: 'tabular-nums' }}>{e.heure || '—'}</span>
+                      <span style={{ fontSize: '13px', color: colors.text.secondary }}>{e.label}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {conv.notes && <p style={{ margin: '14px 0 0', fontSize: '13px', color: colors.text.secondary, whiteSpace: 'pre-wrap' }}>{conv.notes}</p>}
+          </div>
+        )
+      })()}
 
       {/* 3. Prochaine séance : carte blanche, trait couleur du club à gauche.
           Les raccourcis réutilisent les mêmes mécanismes que le reste de l'app
@@ -6443,6 +6527,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
             <EncartFinEssai outils={outils} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <EncartOutilsClub outils={outils} userId={userId} onVoirMesOutils={() => setActiveSection('mes_outils')} />
             <AccueilEducateur
+              onOuvrirSondageMatch={(m) => { setActiveSection('matchs'); setCompetitionSubTab('calendrier'); setConvocationsCoches({}); setModalSondageMatch(m); chargerConvocation(m.id) }}
               clubId={clubAffiliation?.club_id}
               clubInfo={clubAffiliation?.statut === 'accepte' ? clubAffiliation.club : null}
               prenom={profil?.prenom}
