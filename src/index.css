@@ -158,6 +158,8 @@ input[type="date"] {
 @media print {
   body > *:not(#fiche-print) { display: none; }
   #fiche-print { display: block; }
+  /* Papier blanc même en thème sombre : sinon le fond noir de la page est imprimé autour de la fiche. */
+  html, body { background: #fff !important; }
 }
 
 /* ── Fiche séance officielle BMF (modèle FFF reproduit à l'identique) ───────
@@ -326,7 +328,9 @@ input[type="date"] {
 #plan-print { display: none; }
 @page plan-a4 { size: A4 portrait; margin: 10mm; }
 @media print {
-  body > *:not(#plan-print) { display: none !important; }
+  /* Seulement quand une fiche Plan de jeu est montée : sans ce :has(), la règle
+     masquait aussi #fiche-print et la fiche séance sortait en page vide (noire en thème sombre). */
+  body:has(> #plan-print) > *:not(#plan-print) { display: none !important; }
   body > #plan-print { display: block !important; page: plan-a4; background: #fff; color: #16161A; font-family: 'Barlow', sans-serif; }
   #plan-print, #plan-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .plan-a4 { width: 100%; }
