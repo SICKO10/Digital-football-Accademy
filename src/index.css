@@ -209,7 +209,7 @@ input[type="date"] {
    faire entrer la page entière, une .bmf-page par feuille. */
 @page bmf-paysage { size: A4 landscape; margin: 5mm; }
 @media print {
-  #fiche-print:has(.bmf-doc) { width: auto; }
+  #fiche-print:has(.bmf-doc), .bmf-doc { width: auto; }
   .bmf-page { zoom: 0.71; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .bmf-page:last-child { break-after: auto; }
 }
@@ -316,7 +316,9 @@ input[type="date"] {
 
 @page fc-paysage { size: A4 landscape; margin: 5mm; }
 @media print {
-  #fiche-print:has(.fc-doc) { width: auto; }
+  /* .fc-doc aussi : resté à 1500 px, il dépassait la feuille et le navigateur
+     réduisait tout le document, d'où une fiche qui n'occupait que 2/3 de l'A4. */
+  #fiche-print:has(.fc-doc), .fc-doc { width: auto; }
   .fc-doc, .fc-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .fc-page { zoom: 0.71; break-after: page; break-inside: avoid; }
   .fc-page:last-child { break-after: auto; }
