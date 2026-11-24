@@ -100,7 +100,7 @@ import { TitreEcran, Etiquette, CarteChiffre, Jauge, Icone, EtiquetteStatut } fr
 import ChampsFicheClub from '../components/fiches/ChampsFicheClub'
 import { jourMatchAuto } from '../lib/jourMatchFiche'
 import { styleTitreEcran, styleCarte, styleCarteLiseree, styleEtiquette, styleChiffreHeros, styleBoutonPrincipal, styleBoutonSecondaire, styleChamp, styleTableau, styleLigneCraie, couleurCraie, couleurClub, texteSur, CLASSE_BOUTON, CLASSE_BOUTON_SECONDAIRE, CLASSE_CHAMP, CLASSE_CLIQUABLE } from '../lib/identite'
-import { Plus, FileText, Link as LienIcone, CircleCheck, TriangleAlert, MapPin, Users, Target, CalendarDays, Clock, Save, ClipboardList, Star, X, IdCard, Activity, CircleX, Bandage, Thermometer, Goal, ShieldCheck, Timer, Medal, Pencil, FolderOpen, Trophy, Inbox, Camera, Landmark, Bot, Sparkles, Trash2, Printer, Folder, Video, Palette, Library, GraduationCap, CircleAlert, ChevronUp, ChevronDown, Check, Square, Lock, Download, Rocket, ChartColumn, Eye, ScanLine, Ellipsis, EllipsisVertical, ExternalLink, Package, ArrowRight, ChevronLeft, ChevronRight, Copy, Search, Zap, Megaphone, Mail, BadgeCheck, Send, Globe, MessageSquare, Mic, CreditCard, Smartphone, Paperclip } from 'lucide-react'
+import { Plus, FileText, Link as LienIcone, CircleCheck, TriangleAlert, MapPin, Users, Target, CalendarDays, Clock, Save, ClipboardList, Star, X, IdCard, Activity, CircleX, Bandage, Thermometer, Goal, ShieldCheck, Timer, Medal, Pencil, FolderOpen, Trophy, Inbox, Camera, Landmark, Bot, Sparkles, Trash2, Printer, Folder, Video, Palette, Library, GraduationCap, CircleAlert, ChevronUp, ChevronDown, Check, Square, Lock, Download, Rocket, ChartColumn, Eye, ScanLine, Ellipsis, EllipsisVertical, ExternalLink, Package, ArrowRight, ChevronLeft, ChevronRight, Copy, Search, Zap, Megaphone, Mail, BadgeCheck, Send, Globe, MessageSquare, Mic, CreditCard, Smartphone, Paperclip, Share2 } from 'lucide-react'
 import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
@@ -3794,6 +3794,76 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       el.style.display = prevDisplay
       el.style.position = prevPosition
       el.style.left = prevLeft
+    }
+  }
+
+  // Télécharger / partager depuis l'aperçu de la fiche en cours de rédaction.
+  // Le PDF est fabriqué sur l'appareil (rien n'est envoyé ni enregistré en base).
+  // Il est préparé dès l'ouverture de l'aperçu : sur iPhone, le menu de partage
+  // doit s'ouvrir juste après le toucher, sans attendre plusieurs secondes de calcul.
+  const pdfApercuEnCoursRef = useRef(null)
+  const [pdfApercuEnCoursAction, setPdfApercuEnCoursAction] = useState(null) // 'telecharger' | 'partager' | null
+  useEffect(() => {
+    if (!apercuFicheEnCoursOuvert) { pdfApercuEnCoursRef.current = null; return }
+    const id = setTimeout(() => {
+      const promesse = genererPdfFiche()
+      promesse.catch(() => {})
+      pdfApercuEnCoursRef.current = promesse
+    }, 300) // laisse l'aperçu s'afficher d'abord
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apercuFicheEnCoursOuvert])
+  const nomFichierFicheEnCours = () => {
+    const base = (fiche.theme || 'fiche-seance').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase()
+    return `${base || 'fiche-seance'}${fiche.date ? `-${fiche.date}` : ''}.pdf`
+  }
+  const obtenirPdfApercuEnCours = async () => {
+    const blob = await (pdfApercuEnCoursRef.current || (pdfApercuEnCoursRef.current = genererPdfFiche()))
+    if (!blob) throw new Error('Fiche introuvable')
+    return blob
+  }
+  const telechargerBlob = (blob, nom) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nom
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  }
+  const telechargerFicheEnCours = async () => {
+    setPdfApercuEnCoursAction('telecharger')
+    try {
+      telechargerBlob(await obtenirPdfApercuEnCours(), nomFichierFicheEnCours())
+    } catch (e) {
+      console.error('Erreur téléchargement fiche:', e)
+      alert('Impossible de créer le PDF pour le moment.')
+    } finally {
+      setPdfApercuEnCoursAction(null)
+    }
+  }
+  const partagerFicheEnCours = async () => {
+    setPdfApercuEnCoursAction('partager')
+    try {
+      const blob = await obtenirPdfApercuEnCours()
+      const fichier = new File([blob], nomFichierFicheEnCours(), { type: 'application/pdf' })
+      if (navigator.canShare?.({ files: [fichier] })) {
+        try {
+          await navigator.share({ files: [fichier], title: fiche.theme || 'Fiche séance' })
+          return
+        } catch (e) {
+          if (e.name === 'AbortError') return
+          // Autre refus (ex. délai du toucher dépassé) : on retombe sur le téléchargement.
+        }
+      }
+      // Navigateur sans partage de fichier : le PDF est téléchargé, prêt à être envoyé.
+      telechargerBlob(blob, nomFichierFicheEnCours())
+    } catch (e) {
+      console.error('Erreur partage fiche:', e)
+      alert('Impossible de créer le PDF pour le moment.')
+    } finally {
+      setPdfApercuEnCoursAction(null)
     }
   }
 
@@ -13389,6 +13459,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
           {/* La barre garde toujours sa place (visibility, pas démontage) : sinon la hauteur de la page change au passage du seuil de défilement et l'aperçu saute ou se bloque. */}
           {true ? (
             <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '12px', background: apercuEnCoursEnHaut ? '#000000dd' : 'transparent', visibility: apercuEnCoursEnHaut ? 'visible' : 'hidden', padding: '6px 0', borderRadius: '8px' }}>
+              {[
+                { action: 'telecharger', icone: Download, libelle: 'Télécharger la fiche en PDF' },
+                { action: 'partager', icone: Share2, libelle: 'Partager la fiche en PDF' },
+              ].map(b => (
+                <button key={b.action} type="button" onClick={() => (b.action === 'partager' ? partagerFicheEnCours() : telechargerFicheEnCours())} disabled={!!pdfApercuEnCoursAction} title={b.libelle} aria-label={b.libelle}
+                  style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', width: '40px', minHeight: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: pdfApercuEnCoursAction ? 'wait' : 'pointer', opacity: pdfApercuEnCoursAction && pdfApercuEnCoursAction !== b.action ? 0.5 : 1 }}>
+                  {pdfApercuEnCoursAction === b.action
+                    ? <span aria-hidden="true" style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${colors.border.strong}`, borderTopColor: colors.text.primary, animation: 'df-pdf-tourne 0.8s linear infinite' }}><style>{'@keyframes df-pdf-tourne { to { transform: rotate(360deg) } }'}</style></span>
+                    : <Icone icone={b.icone} taille={18} libelle={b.libelle} />}
+                </button>
+              ))}
               <button onClick={() => setApercuFicheEnCoursOuvert(false)} style={{ background: colors.background.raised, border: `1px solid ${colors.border.strong}`, color: colors.text.primary, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: police.texte }}>
                 {icoTexte(X)}{t('btn_fermer', lang)}
               </button>
