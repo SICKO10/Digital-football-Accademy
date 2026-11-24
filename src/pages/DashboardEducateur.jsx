@@ -3736,7 +3736,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
   const genererPdfDepuisElement = async (el, orientation) => {
     const html2canvas = (await import('html2canvas')).default
     const { jsPDF } = await import('jspdf')
-    const pdf = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
+    const pdf = new jsPDF({ orientation, unit: 'pt', format: 'a4', compress: true })
     const pageWidth = pdf.internal.pageSize.getWidth()
     const pageHeight = pdf.internal.pageSize.getHeight()
 
@@ -3753,16 +3753,18 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
         imgHeight = pageHeight
         decalageX = (pageWidth - imgWidth) / 2
       }
-      const imgData = canvas.toDataURL('image/png')
+      // JPEG compressé et non PNG : jsPDF rangeait le PNG brut, environ 18 Mo par
+      // page (fiche club recto verso = 36 Mo, refusée en pièce jointe Gmail).
+      const imgData = canvas.toDataURL('image/jpeg', 0.9)
       let heightLeft = imgHeight
       let position = 0
       if (!premierePage) pdf.addPage()
-      pdf.addImage(imgData, 'PNG', decalageX, position, imgWidth, imgHeight)
+      pdf.addImage(imgData, 'JPEG', decalageX, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
       while (heightLeft > 0) {
         position -= pageHeight
         pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
     }
