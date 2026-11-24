@@ -210,7 +210,7 @@ input[type="date"] {
 @page bmf-paysage { size: A4 landscape; margin: 5mm; }
 @media print {
   #fiche-print:has(.bmf-doc), .bmf-doc { width: auto; }
-  .bmf-page { zoom: 0.71; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bmf-page { zoom: 0.64; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .bmf-page:last-child { break-after: auto; }
 }
 
@@ -320,7 +320,10 @@ input[type="date"] {
      réduisait tout le document, d'où une fiche qui n'occupait que 2/3 de l'A4. */
   #fiche-print:has(.fc-doc), .fc-doc { width: auto; }
   .fc-doc, .fc-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .fc-page { zoom: 0.71; break-after: page; break-inside: avoid; }
+  /* 0.64 et non 0.71 : Safari impose ses propres marges d'imprimante (plus
+     grandes que les 5 mm demandés) ; à 0.71 le bas de chaque feuille passait
+     sur une page de plus (4 pages au lieu du recto verso). */
+  .fc-page { zoom: 0.64; break-after: page; break-inside: avoid; }
   .fc-page:last-child { break-after: auto; }
 }
 
