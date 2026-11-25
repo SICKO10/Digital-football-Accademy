@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
@@ -282,7 +283,9 @@ function ApercuStage({ st, colors, accent, stage, onMisAJour }) {
             <p style={{ margin: '0 0 8px', fontSize: '12px', color: colors.text.dim, wordBreak: 'break-all' }}>{lien}</p>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <button onClick={copier} style={st.bouton}>{copie ? 'Lien copié' : 'Copier le lien'}</button>
-              <a href={lien} target="_blank" rel="noreferrer" style={{ ...st.boutonDiscret, textDecoration: 'none' }}>Ouvrir la page</a>
+              {/* Même onglet (pas target=_blank) : sur l'app installée, un nouvel onglet
+                  s'ouvre sans historique et le bouton retour de la page publique ne s'affiche pas. */}
+              <Link to={`/stage/${stage.lien_public}`} style={{ ...st.boutonDiscret, textDecoration: 'none' }}>Ouvrir la page</Link>
             </div>
           </div>
         </div>

@@ -1512,7 +1512,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             })()}
 
           <div style={{ ...st.card, maxWidth: 560 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
               <div>
                 <label style={st.label}>Heure de début</label>
                 <input type="time" value={reglagesForm.heure_debut} onChange={e => setReglagesForm(f => ({ ...f, heure_debut: e.target.value }))} style={st.input} />
@@ -1538,12 +1538,12 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 <input type="number" min="0" value={reglagesForm.pause_minutes} onChange={e => setReglagesForm(f => ({ ...f, pause_minutes: parseInt(e.target.value) || 0 }))} style={st.input} />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
-              <div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '12px' }}>
+              <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                 <label style={st.label}>Heure de fin</label>
                 <input type="time" value={reglagesForm.heure_fin} onChange={e => setReglagesForm(f => ({ ...f, heure_fin: e.target.value }))} style={st.input} />
               </div>
-              <div style={{ gridColumn: 'span 2', alignSelf: 'end' }}>
+              <div style={{ flex: '2 1 220px', alignSelf: 'end' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', height: '38px' }}>
                   <input type="checkbox" checked={Number(reglagesForm.pause_midi_duree) > 0}
                     onChange={e => setReglagesForm(f => ({ ...f, pause_midi_duree: e.target.checked ? DUREE_PAUSE_MIDI_DEFAUT : 0 }))}
@@ -1554,7 +1554,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
               </div>
             </div>
             {Number(reglagesForm.pause_midi_duree) > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginTop: '12px' }}>
                 <div>
                   <label style={st.label}>Début pause midi</label>
                   <input type="time" value={reglagesForm.pause_midi_debut} onChange={e => setReglagesForm(f => ({ ...f, pause_midi_debut: e.target.value }))} style={st.input} />
@@ -1570,7 +1570,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                 </div>
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginTop: '12px' }}>
               <div>
                 <label style={st.label}>Prix d'inscription par équipe (€)</label>
                 <input type="number" min="0" step="0.01" placeholder="0.00" value={reglagesForm.prix_inscription_equipe} onChange={e => setReglagesForm(f => ({ ...f, prix_inscription_equipe: e.target.value }))} style={st.input} />
