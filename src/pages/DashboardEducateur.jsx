@@ -11255,13 +11255,13 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                 <button
                   onClick={sauvegarderFiche}
                   disabled={savingFiche}
-                  className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: 2, minWidth: '160px' }}
+                  className={CLASSE_BOUTON} style={{ ...styleBoutonPrincipal(colors), flex: '2 1 200px' }}
                 >
                   {savingFiche ? 'Enregistrement...' : <><Icone icone={Save} /> {t('seance_sauvegarder_fiche', lang)}</>}
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: 1, minWidth: '110px' }}
+                  className={CLASSE_BOUTON_SECONDAIRE} style={{ ...styleBoutonSecondaire(colors), flex: '1 1 170px' }}
                 >
                   <Icone icone={Printer} /> {t('seance_imprimer_fiche', lang)}
                 </button>
