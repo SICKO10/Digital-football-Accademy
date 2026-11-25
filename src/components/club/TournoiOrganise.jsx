@@ -839,9 +839,9 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
             const couleur = couleurStatutTournoi(colors, t.statut)
             return (
               <Fragment key={t.id}>
-              <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
+              <div style={{ ...st.card, display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', padding: '12px 16px', borderLeft: `3px solid ${couleur}` }}>
                 <PaveDateTournoi iso={t.date} colors={colors} couleur={t.statut === 'termine' ? null : couleur} />
-                <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => chargerDetail(t)}>
+                <div style={{ flex: '1 1 140px', minWidth: 0, cursor: 'pointer' }} onClick={() => chargerDetail(t)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
                     <EtiquetteStatut colors={colors} couleur={couleur} libelle={STATUT_LABEL[t.statut]} />
                     {t.categorie_age && <span style={{ ...styleEtiquette(colors), fontSize: '11px' }}>{t.categorie_age}</span>}
@@ -849,7 +849,7 @@ export default function TournoiOrganise({ clubId, userId, readOnly = false }) {
                   <div style={{ color: colors.text.primary, fontWeight: 700, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nom}</div>
                   {t.lieu && <div style={{ color: colors.text.dim, fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.lieu}</div>}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
                   <button onClick={() => chargerDetail(t)} style={st.btnSecondary}>Gérer</button>
                   {!readOnly && <button onClick={() => setDuplication(d => d?.source.id === t.id ? null : { source: t, nom: `${t.nom} (copie)`, date: '', erreur: '', enCours: false })} style={st.btnSecondary}>Dupliquer</button>}
                   {!readOnly && <button onClick={() => supprimerTournoi(t.id)} title="Supprimer ce tournoi" aria-label="Supprimer ce tournoi" style={st.iconBtn(colors.accent.red)}><IcoX /></button>}

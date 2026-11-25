@@ -213,7 +213,7 @@ export default function StatsSponsors({ clubId, sponsors, accentColor = '#4ade80
       <div style={st.card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: st.textDim }}>Évolution des clics</p>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {PERIODES.map(p => (
               <button key={p.val} onClick={() => setPeriodeGraph(p.val)} style={st.tab(periodeGraph === p.val, accentColor)}>{p.label}</button>
             ))}
