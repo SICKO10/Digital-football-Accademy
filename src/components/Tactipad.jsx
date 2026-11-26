@@ -852,6 +852,19 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
     setElements(next)
   }
 
+  // Terrain blanc : le blanc (cages, flèches, zones, textes) serait invisible.
+  // On le bascule en noir, et inversement au retour sur le terrain vert.
+  const changerFond = (v) => {
+    if (v === fond) return
+    const de = v === 'blanc' ? '#ffffff' : '#111111'
+    const vers = v === 'blanc' ? '#111111' : '#ffffff'
+    if (elements.some(el => el.color === de)) {
+      applyElements(elements.map(el => (el.color === de ? { ...el, color: vers } : el)))
+    }
+    if (arrowColor === de) setArrowColor(vers)
+    setFond(v)
+  }
+
   const undo = () => {
     if (history.length === 0) return
     const prev = history[history.length - 1]
@@ -1810,7 +1823,7 @@ export default function Tactipad({ userId, mode = 'standalone', vueParDefaut, in
         </div>
         <div style={{ display: 'flex', background: colors.background.surface, borderRadius: '8px', padding: '3px' }}>
           {[['vert', t(sport === 'futsal' ? 'tac_salle' : 'tac_vert', lang)], ['blanc', t('tac_blanc', lang)]].map(([v, label]) => (
-            <button key={v} onClick={() => setFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : colors.text.faint }}>{label}</button>
+            <button key={v} onClick={() => changerFond(v)} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: fond === v ? '#4ade80' : 'transparent', color: fond === v ? '#000' : colors.text.faint }}>{label}</button>
           ))}
         </div>
         <select
