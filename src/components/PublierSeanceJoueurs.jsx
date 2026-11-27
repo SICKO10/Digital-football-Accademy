@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabase'
 import { colors } from '../tokens'
 import { getPosteFamille } from '../lib/postes'
-import { dateParisAujourdhui, heureParis, NOTIF_SEANCE_PUBLIEE } from '../lib/seancePubliee'
+import { dateParisAujourdhui, heureParis, NOTIF_SEANCE_PUBLIEE, copieProcede, ficheModifieeDepuisPublication } from '../lib/seancePubliee'
 
 // « Séance du jour » publiée aux joueurs (PLAN-entrainement.md bloc 2).
 // L'éducateur coche les procédés de la fiche liée à l'entraînement, choisit
@@ -22,23 +22,6 @@ const FAMILLES = [
 
 // Un bloc de gabarit laissé vide (fiche à 4 blocs par défaut) n'est pas un procédé.
 const procedeRempli = p => !!(p && (p.titre?.trim() || p.consignes?.trim() || p.consignes_bef?.trim() || p.organisation?.trim() || p.criteres_realisation?.trim() || p.variables?.trim() || p.schema_png))
-
-// Copie figée de ce que le joueur a besoin de voir. Gabarit BEF/BMF : ses
-// blocs écrivent but_bef/consignes_bef, d'où les replis.
-const copieProcede = p => ({
-  numero: p.numero,
-  titre: p.titre || '',
-  duree: p.duree || '',
-  nb_joueurs: p.nb_joueurs || '',
-  but: p.but || p.but_bef || '',
-  organisation: p.organisation || p.surface || '',
-  consignes: p.consignes || p.consignes_bef || '',
-  criteres_realisation: p.criteres_realisation || '',
-  variables: p.variables || p.variantes_bef || '',
-  criteres_reussite: p.criteres_reussite || '',
-  schema_png: p.schema_png || '',
-  schema_data: p.schema_data || null,
-})
 
 const cleProcede = p => `${p.numero}|${(p.titre || '').trim()}`
 
@@ -190,6 +173,11 @@ export default function PublierSeanceJoueurs({ userId, entrainement, fiche, club
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '6px' }}>
+          {publication && ficheModifieeDepuisPublication(publication, fiche) && (
+            <p style={{ margin: '10px 0 0', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', lineHeight: 1.5, background: colors.accent.green + '1a', color: colors.text.primary }}>
+              La fiche a été modifiée depuis la publication. Les joueurs voient encore l'ancienne version : clique sur le bouton de mise à jour pour la remplacer.
+            </p>
+          )}
           <p style={{ margin: '10px 0 0', fontSize: '12px', color: colors.text.muted, lineHeight: 1.5 }}>
             Les joueurs la voient dès la publication, jusqu'à 22h le jour de la séance.
           </p>

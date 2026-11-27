@@ -82,7 +82,7 @@ import { schemaExerciceIA } from '../lib/schemasSeanceIA'
 import { remplacerSchemaParLien, miniatureSchema } from '../lib/schemaUpload'
 import LigneResultat from '../components/LigneResultat'
 import PublierSeanceJoueurs from '../components/PublierSeanceJoueurs'
-import { dateParisAujourdhui } from '../lib/seancePubliee'
+import { dateParisAujourdhui, NOTIF_SEANCE_MODIFIEE, ficheModifieeDepuisPublication } from '../lib/seancePubliee'
 import CarteMatchAVenir from '../components/CarteMatchAVenir'
 import { sondageEstClos, sondageHeureCloture } from '../lib/sondage'
 import { useLang } from '../hooks/useLang'
@@ -5774,7 +5774,17 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       const maj = { date_seance: date, heure: heure ? String(heure).slice(0, 5) : null, lieu: lieu || null }
       const { error: errPub } = await supabase.from('seances_publiees').update(maj).eq('id', pub.id)
       if (errPub) alert('Séance modifiée, mais la version publiée aux joueurs n\'a pas suivi : ' + errPub.message)
-      else setPublicationsSeance(prev => ({ ...prev, [id]: { ...pub, ...maj } }))
+      else {
+        setPublicationsSeance(prev => ({ ...prev, [id]: { ...pub, ...maj } }))
+        const change = maj.date_seance !== pub.date_seance || (maj.heure || null) !== (pub.heure ? String(pub.heure).slice(0, 5) : null) || (maj.lieu || null) !== (pub.lieu || null)
+        if (change && pub.destinataires?.length) {
+          const { error: errNotif } = await supabase.from('notifications').insert(pub.destinataires.map(joueurId => ({
+            user_id: joueurId, type: NOTIF_SEANCE_MODIFIEE.type, titre: NOTIF_SEANCE_MODIFIEE.titre,
+            contenu: NOTIF_SEANCE_MODIFIEE.texte(maj.date_seance, maj.heure), lien: '/dashboard',
+          })))
+          if (errNotif) console.error('Erreur notification séance modifiée:', errNotif)
+        }
+      }
     }
   }
 
@@ -10058,7 +10068,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                                   className={CLASSE_CLIQUABLE}
                                   style={{ ...styleEtiquetteNeutre(colors), gap: '6px', cursor: 'pointer', color: colors.text.primary, boxShadow: publicationsSeance[e.id] ? `inset ${forme.lisere} 0 0 ${colors.accent.success}` : 'none' }}>
                                   {publicationsSeance[e.id]
-                                    ? `Publiée · ${publicationsSeance[e.id].destinataires.length} joueur${publicationsSeance[e.id].destinataires.length > 1 ? 's' : ''}`
+                                    ? (ficheModifieeDepuisPublication(publicationsSeance[e.id], mesSeancesOuvertes.find(s => s.id === e.fiche_id))
+                                      ? 'Publiée · fiche modifiée, à mettre à jour'
+                                      : `Publiée · ${publicationsSeance[e.id].destinataires.length} joueur${publicationsSeance[e.id].destinataires.length > 1 ? 's' : ''}`)
                                     : 'Publier aux joueurs'}
                                 </button>
                               )}
