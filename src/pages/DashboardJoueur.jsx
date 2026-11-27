@@ -1540,7 +1540,15 @@ function DashboardJoueur({ joueurIdOverride, readOnly } = {}) {
     // Vérifier si déjà affilié
     const { data: exist } = await supabase.from('affiliations').select('id, statut').eq('educateur_id', pe.user_id).eq('joueur_id', userId).single()
     if (exist) {
-      if (exist.statut === 'accepte') { setCodeError('Tu es déjà affilié à cet éducateur.') }
+      if (exist.statut === 'accepte') {
+        // L'affiliation existe en base (ex: l'éducateur a réintégré le joueur
+        // pendant que l'écran était ouvert) : on rafraîchit la liste au lieu
+        // de laisser « aucune équipe » affiché.
+        await chargerAffiliations(userId)
+        setCodeEquipe('')
+        setCodeSuccess(true)
+        setSendingCode(false); return
+      }
       else if (exist.statut === 'en_attente') { setCodeError('Ta demande est déjà en attente de validation.') }
       else { setCodeError('Ta demande a été refusée. Contacte ton éducateur.') }
       setSendingCode(false); return
