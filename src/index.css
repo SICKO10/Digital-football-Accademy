@@ -362,3 +362,62 @@ input[type="date"] {
   .plan-a4-photo { max-width: 100%; max-height: 200px; border-radius: 6px; margin-top: 14px; }
   .plan-a4-pied { margin-top: 18px; font-size: 9px; color: #888; text-align: right; }
 }
+
+/* ── Fiche d'évaluation imprimable (ImprimerEvaluation.jsx) ─────────────────
+   Montée dans <body> (#eval-print) seulement pendant l'impression ; papier
+   blanc, couleurs fixes. Fiche d'un joueur : A4 portrait ; tableau d'équipe : A4 paysage. */
+#eval-print { display: none; }
+@page ev-portrait { size: A4 portrait; margin: 10mm; }
+@page ev-paysage { size: A4 landscape; margin: 8mm; }
+@media print {
+  body:has(> #eval-print) > *:not(#eval-print) { display: none !important; }
+  body > #eval-print { display: block !important; background: #fff; color: #16161A; font-family: 'Barlow', sans-serif; }
+  #eval-print, #eval-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+  .ev-portrait { page: ev-portrait; width: 100%; font-size: 11px; }
+  .ev-paysage { page: ev-paysage; width: 100%; font-size: 10px; }
+  .ev-paysage .ev-entete { padding: 6px 14px; }
+  .ev-paysage .ev-titre { font-size: 18px; }
+  .ev-entete { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-radius: 6px; }
+  .ev-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; background: #fff; padding: 3px; }
+  .ev-kicker { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+  .ev-titre { font-size: 22px; font-weight: 800; text-transform: uppercase; line-height: 1.1; margin-top: 2px; }
+  .ev-sous { font-size: 11px; opacity: 0.9; margin-top: 3px; }
+  .ev-identite { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 14px; margin-top: 10px; }
+  .ev-identite div { display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid #333; min-height: 20px; }
+  .ev-identite span { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #555; flex-shrink: 0; }
+  .ev-identite b { font-size: 12px; font-weight: 700; }
+  .ev-legende { margin: 8px 0 4px; font-size: 10px; color: #444; }
+  .ev-pilier { margin-top: 8px; border-left: 4px solid #999; padding-left: 10px; }
+  .ev-pilier h4 { margin: 0 0 3px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; break-after: avoid; }
+  .ev-moyenne { margin-left: 10px; font-size: 10px; font-weight: 700; color: #333; text-transform: none; letter-spacing: 0; }
+  .ev-ligne { padding: 3px 0; border-bottom: 1px solid #ddd; break-inside: avoid; }
+  .ev-ligne-haut { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ev-libelle { flex: 1; min-width: 0; font-size: 11.5px; line-height: 1.3; }
+  .ev-libelle i { margin-left: 6px; font-size: 8px; font-weight: 800; text-transform: uppercase; color: #666; font-style: normal; }
+  .ev-libelle small { display: block; font-size: 9px; color: #666; }
+  .ev-controle { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .ev-case { width: 20px; height: 20px; border: 1.5px solid #222; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #555; }
+  .ev-case-pleine { background: #16161A; color: #fff; }
+  .ev-oui-non { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; }
+  .ev-test { gap: 5px; font-size: 11px; }
+  .ev-trait { display: inline-block; width: 70px; border-bottom: 1px solid #222; height: 14px; }
+  .ev-objectif { font-size: 9px; color: #666; }
+  .ev-lignes { margin-top: 2px; }
+  .ev-lignes span { display: block; height: 18px; border-bottom: 1px solid #aaa; }
+  .ev-texte { margin: 3px 0 0; font-size: 11px; line-height: 1.4; white-space: pre-wrap; }
+  .ev-bas { margin-top: 12px; break-inside: avoid; }
+  .ev-bas > div { margin-bottom: 8px; }
+  .ev-bas span { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #555; }
+  .ev-pied { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 9px; color: #666; }
+  .ev-page-tableau { break-after: page; }
+  .ev-page-tableau:last-child { break-after: auto; }
+  .ev-tableau { width: 100%; border-collapse: collapse; margin-top: 8px; table-layout: fixed; }
+  .ev-tableau th, .ev-tableau td { border: 1px solid #333; text-align: center; }
+  .ev-tableau td { height: 6mm; font-size: 10.5px; padding: 0; font-weight: 700; }
+  .ev-th-joueur { width: 46mm; text-align: left !important; padding: 4px 6px; font-size: 10px; vertical-align: bottom; }
+  .ev-th-critere { height: 32mm; border-top: 3px solid #999 !important; vertical-align: bottom; padding: 3px 1px; }
+  .ev-th-critere span { display: block; writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; max-height: 30mm; overflow: hidden; font-size: 8.5px; font-weight: 700; line-height: 1.15; }
+  .ev-td-joueur { text-align: left !important; padding: 0 6px; font-size: 10.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev-td-joueur em { display: inline-block; min-width: 18px; margin-right: 4px; font-style: normal; color: #666; }
+  .ev-td-na { background: repeating-linear-gradient(45deg, #eee, #eee 3px, #fff 3px, #fff 6px); }
+}

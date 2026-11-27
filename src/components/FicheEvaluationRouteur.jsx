@@ -5,18 +5,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import FicheEvaluationJoueur from './FicheEvaluationJoueur'
 import FicheJoueurOnglets from './FicheJoueurOnglets'
-
-const POSTE_PAR_MOT = [
-  [/gardien/i, 'gardien'],
-  [/milieu/i, 'milieu'],
-  [/(défenseur|defenseur|latéral|lateral|piston|arrière|arriere)/i, 'defenseur'],
-  [/(attaquant|ailier|avant|buteur|pointe)/i, 'attaquant'],
-]
-const famillePoste = (txt) => {
-  if (!txt) return null
-  const t = POSTE_PAR_MOT.find(([re]) => re.test(txt))
-  return t ? t[1] : null
-}
+import { famillePoste } from '../lib/ficheEvaluationPapier'
 
 export default function FicheEvaluationRouteur({ equipeJoueurId, educateurId, joueurNom, poste, role = 'educateur', readOnly = false, onClose }) {
   const [choix, setChoix] = useState(null) // null = chargement ; { ancienne: true } ou { modele, version, criteres, params, categorieCle }

@@ -8,6 +8,7 @@ import { useColors } from '../lib/theme'
 import { labelCategorie } from '../lib/categories'
 import { PERIODES, ASPECTS } from '../constants/evaluation'
 import FicheEvaluationNouvelle from './FicheEvaluationNouvelle'
+import BoutonImprimerEvaluation from './ImprimerEvaluation'
 
 const LIBELLE_POSTE = { gardien: 'Gardien', defenseur: 'Défenseur', milieu: 'Milieu', attaquant: 'Attaquant' }
 const ORDRE_PILIERS = ['Tactique', 'Technique', 'Physique', 'Mental']
@@ -91,6 +92,8 @@ export default function FicheJoueurOnglets({ equipeJoueurId, joueurNom, poste, c
               {[categorieCle ? labelCategorie(categorieCle) : null, poste ? LIBELLE_POSTE[poste] : null, ligne?.numero ? `n° ${ligne.numero}` : null, `${modele.nom} (version ${version.numero})`].filter(Boolean).join(' · ')}
             </p>
           </div>
+          {<BoutonImprimerEvaluation mode="joueur" educateurId={educateurId} equipeJoueurId={equipeJoueurId} joueurNom={joueurNom} poste={poste} numero={ligne?.numero}
+            cadre={{ modele, version, criteres, params, categorieCle }} libelle="Imprimer" style={{ padding: '6px 10px', fontSize: 12, minHeight: 36 }} />}
           {onOuvrirAncienne && <button onClick={onOuvrirAncienne} style={{ background: 'none', border: `1px solid ${colors.border.default}`, color: colors.text.secondary, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 36 }}>Ancienne fiche</button>}
           {pastilleVisible && <span style={{ ...cartePasti, color: colors.accent.green, border: `1px solid ${colors.accent.green}` }}>Visible par le joueur</span>}
           <button onClick={onClose} aria-label="Fermer" style={{ background: 'none', border: 'none', color: colors.text.faint, fontSize: 24, cursor: 'pointer', lineHeight: 1, minWidth: 36, minHeight: 36 }}>×</button>

@@ -65,6 +65,7 @@ const ProjetSportifEducateur = lazy(() => import('../components/ProjetSportifEdu
 const ProjetClubCFF4 = lazy(() => import('../components/ProjetClubCFF4'))
 const FicheEvaluationJoueur = lazy(() => import('../components/FicheEvaluationRouteur'))
 const SeanceTests = lazy(() => import('../components/SeanceTests'))
+const BoutonImprimerEvaluation = lazy(() => import('../components/ImprimerEvaluation'))
 const ModeleEvaluationClub = lazy(() => import('../components/club/ModeleEvaluationClub'))
 const RgpdEvaluationsStaff = lazy(() => import('../components/club/RgpdEvaluationsStaff'))
 const ConditionsEvaluation = lazy(() => import('../components/club/ConditionsEvaluation'))
@@ -105,12 +106,14 @@ import { useDonnerCouleurClub } from '../lib/clubTheme'
 import { ThemeToggleButton } from '../lib/ThemeProvider'
 import { resultatMatch, estCoupe } from '../lib/resultatMatch'
 import { etatCartons } from '../lib/disciplineCartons'
+import { normaliserCompetition } from '../lib/sanctions'
 import { precharger, memoriserVue } from '../lib/prechargement'
 import { regrouperEffectifCommun } from '../lib/categoriesEffectif'
 import { calculerExpirationConvocation } from '../lib/convocations'
 import { chargerCategorieCommune } from '../components/categories/chargerCategorieCommune'
 import BandeauEffectifCommun from '../components/categories/BandeauEffectifCommun'
 import FicheJoueurCategorie from '../components/categories/FicheJoueurCategorie'
+import BlocDisciplineJoueur from '../components/discipline/BlocDisciplineJoueur'
 import GrilleConvocations from '../components/categories/GrilleConvocations'
 import RenfortConvocation from '../components/categories/RenfortConvocation'
 import { comptesRenforts, lignesFeuilleMatch } from '../lib/categoriesRenfort'
@@ -274,7 +277,8 @@ const COTES_BUT = [
 // déjà un champ à 3 valeurs fixes dans le formulaire de création de match
 // (modalMatchForm : "Championnat" / "Coupe" / "Amical"), comparé ici en
 // minuscule pour rester robuste aux quelques formulaires qui laissent encore
-// ce champ en saisie libre (newMatch, scannerMatchData).
+// ce champ en saisie libre (newMatch ; le scanner de feuille utilise aussi la
+// liste fixe depuis le chantier Discipline).
 const FILTRES_COMPETITION = [
   { id: 'toutes', label: 'Toutes' },
   { id: 'championnat', label: 'Championnat' },
@@ -5630,7 +5634,9 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
       setScannerMatchData({
         date: parsed.date || '',
         adversaire: parsed.equipe_adversaire || '',
-        competition: parsed.competition || '',
+        // Texte lu sur la feuille (« U17 D1 »...) : on ne garde que ce qui désigne
+        // sans doute possible Championnat, Coupe ou Amical, sinon l'éducateur choisit.
+        competition: normaliserCompetition(parsed.competition),
         score_nous: String(scoreNous),
         score_eux: String(scoreAdv),
         domicile: parsed.domicile !== false
@@ -7045,6 +7051,7 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                       })()}
 
                       <div style={{ marginBottom: '1rem' }}><FicheJoueurCategorie ficheId={j.id} /></div>
+                      <div style={{ marginBottom: '1rem' }}><BlocDisciplineJoueur ficheId={j.id} /></div>
 
                       {canEdit('effectif') && (
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -10244,8 +10251,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '13px', color: colors.text.secondary }}><strong style={{ ...styleChiffreHeros(colors, 20), verticalAlign: 'baseline' }}>{nbEvalues}</strong> / {joueurs.length} joueurs évalués</span>
                       <Jauge libelle={null} legende={false} hauteur={6} style={{ flex: '0 1 220px' }} segments={[{ libelle: 'Évalués', valeur: nbEvalues }, { libelle: 'À évaluer', valeur: joueurs.length - nbEvalues }]} />
+                      <span style={{ marginLeft: 'auto' }}>
+                        <Suspense fallback={null}>
+                          <BoutonImprimerEvaluation mode="equipe" educateurId={userId} joueurs={joueurs}
+                            equipeNom={equipeActive ? `${labelCategorie(equipeActive.nom)} ${equipeActive.equipe || ''}`.trim() : ''}
+                            libelle="Imprimer le tableau" style={{ minHeight: 44, borderRadius: 10 }} />
+                        </Suspense>
+                      </span>
                       <button type="button" onClick={() => setSeanceTestsOuverte(true)}
-                        style={{ marginLeft: 'auto', minHeight: 44, padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                        style={{ marginLeft: 0, minHeight: 44, padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border.default}`, background: colors.background.surface, color: colors.text.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                         Séance de tests
                       </button>
                     </div>
@@ -13342,7 +13356,15 @@ export default function DashboardEducateur({ educateurIdOverride, permissions } 
                   <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div><label style={st.label}>{t('ent_date', lang)}</label><input className={CLASSE_CHAMP} style={st.input} type="date" value={scannerMatchData.date} onChange={e => setScannerMatchData(d => ({ ...d, date: e.target.value }))} /></div>
                     <div><label style={st.label}>{t('comp_adversaire', lang)}</label><input className={CLASSE_CHAMP} style={st.input} value={scannerMatchData.adversaire} onChange={e => setScannerMatchData(d => ({ ...d, adversaire: e.target.value }))} /></div>
-                    <div><label style={st.label}>{t('comp_competition', lang)}</label><input className={CLASSE_CHAMP} style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))} /></div>
+                    <div>
+                      <label style={st.label}>{t('comp_type_match', lang)}</label>
+                      <select className={CLASSE_CHAMP} style={st.input} value={scannerMatchData.competition || ''} onChange={e => setScannerMatchData(d => ({ ...d, competition: e.target.value }))}>
+                        <option value="">—</option>
+                        <option value="Championnat">{t('comp_type_championnat', lang)}</option>
+                        <option value="Coupe">{t('comp_type_coupe', lang)}</option>
+                        <option value="Amical">{t('comp_type_amical', lang)}</option>
+                      </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <div style={{ flex: 1 }}><label style={st.label}>Score (nous)</label><input className={CLASSE_CHAMP} style={st.input} type="number" value={scannerMatchData.score_nous} onChange={e => setScannerMatchData(d => ({ ...d, score_nous: e.target.value }))} /></div>
                       <div style={{ flex: 1 }}><label style={st.label}>Score (eux)</label><input className={CLASSE_CHAMP} style={st.input} type="number" value={scannerMatchData.score_eux} onChange={e => setScannerMatchData(d => ({ ...d, score_eux: e.target.value }))} /></div>

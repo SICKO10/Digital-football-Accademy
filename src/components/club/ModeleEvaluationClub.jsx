@@ -13,6 +13,7 @@ import { supabase } from '../../supabase'
 import { useColors } from '../../lib/theme'
 import { labelCategorie } from '../../lib/categories'
 import { police } from '../../tokens'
+import BoutonImprimerEvaluation from '../ImprimerEvaluation'
 import { PILIERS, POSTES, trancheDeCategorie, dispoPour, LIBELLE_TRANCHE } from './BibliothequeCriteres'
 
 const PILIER_TESTS = 'Tests'
@@ -394,6 +395,11 @@ export default function ModeleEvaluationClub({ categories = [], clubId, couleur,
         {estEduc && modele ? 'Ma fiche' : 'Fiche'} {labelCategorie(categorie)}
         {versionAffichee && <span style={{ color: colors.text.dim, fontWeight: 400 }}> · version {versionAffichee.numero} {versionAffichee.publiee_le ? '(publiée)' : '(brouillon)'}</span>}
       </div>
+      {modele && versionAffichee && criteresVersion.length > 0 && (
+        <div style={{ margin: '6px 0 10px' }}>
+          <BoutonImprimerEvaluation mode="modele" educateurId={educateurId} cadre={{ modele, version: versionAffichee, criteres: criteresVersion, categorieCle: cle, params: null }} libelle="Imprimer la fiche vierge" />
+        </div>
+      )}
       {info && <div style={{ color: colors.text.dim, fontSize: 13, margin: '6px 0' }}>{info}</div>}
 
       {/* Pas encore de modèle */}
